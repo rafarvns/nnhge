@@ -1,6 +1,6 @@
 # Spec 002: Core foundation
 
-Status: draft
+Status: approved (2026-11-17)
 Author: NNHGE maintainers · Date: 2026-11-17
 Implementation order: **before** [spec 001](../001-event-bus-and-scenes/spec.md), which depends on it
 (logging, asserts, overflow handling).
@@ -137,8 +137,13 @@ memory tracking, debug tools and file safety. Design pages:
 
 ## Open questions
 
-- [ ] Ring buffer size and max line length (proposal: 64 lines × 160 chars ≈ 10 KB).
-- [ ] Overlay combo on 3DS (proposal: hold SELECT + press L).
-- [ ] Release flavor: keep `warn`/`error` logs to SD by default, or console only?
-- [ ] Fuzzing tool: libFuzzer (clang) in CI on Linux, plus a plain random-input runner for MinGW/MSVC?
-- [ ] Crash screen in Release: full details or a friendly message + "report saved" (details in file)?
+Resolved at approval (2026-11-17, maintainer accepted the proposals):
+
+- [x] Ring buffer: 64 lines × 160 characters (~10 KB).
+- [x] Overlay combo on 3DS: hold SELECT + press L. PC: F1.
+- [x] Release flavor logs: `warn` and above go to the console **and** to `log.txt` on the SD/data folder.
+- [x] Fuzzing: libFuzzer + AddressSanitizer (clang) in a Linux CI job with a short time budget; the same
+  targets also build as a plain corpus runner so the seed corpus runs as unit tests on every compiler.
+- [x] Release crash screen: a friendly message ("The game stopped because of an error. A report was saved
+  to …") plus file:line; full details (registers, logs) only in `crash.txt`. Debug/Development show
+  everything on screen.

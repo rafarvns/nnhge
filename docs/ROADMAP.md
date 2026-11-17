@@ -29,7 +29,7 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 ## M1 — Core foundation ([spec 002](../specs/002-core-foundation/spec.md)) — in progress
 - [x] Core + platform libraries split (`nnh::core`, `nnh::platform_{pc,3ds,fake}`), platform contract, conformance tests (stage 1)
 - [ ] Capabilities and system info; extension headers mechanism
-- [ ] Build flavors (Debug, Development, Release)
+- [x] Build flavors (Debug, Development, Release) (stage 2)
 - [ ] Time: monotonic clock, frame delta, fixed timestep
 - [ ] Logging: levels, channels, sinks (console, file, ring buffer, 3dslink, debugger)
 - [ ] Errors: `NNH_ASSERT`/`VERIFY`/`PANIC`, `Result<T>`, crash screen + report, 3DS exception handler

@@ -7,8 +7,12 @@ options in game code.
 
 | Preset | Target | Toolchain |
 |--------|--------|-----------|
-| `pc-debug`, `pc-release` | PC simulator | host compiler (MinGW GCC, MSVC, clang) |
-| `3ds-debug`, `3ds-release` | Nintendo 3DS | `$DEVKITPRO/cmake/3DS.cmake` (run via `scripts/dkp.sh` on Windows) |
+| `pc-debug`, `pc-dev`, `pc-release` | PC simulator | host compiler (MinGW GCC, MSVC, clang) |
+| `3ds-debug`, `3ds-dev`, `3ds-release` | Nintendo 3DS | `$DEVKITPRO/cmake/3DS.cmake` (run via `scripts/dkp.sh` on Windows) |
+
+The suffix is the build flavor ([docs/api/build.md](../api/build.md)): `-debug` → `Debug`,
+`-dev` → `RelWithDebInfo` (Development), `-release` → `Release`. Hidden presets `flavor-*` hold the
+build types; platform presets combine `base`/`3ds-base` with one of them.
 
 ```sh
 cmake --preset pc-debug && cmake --build --preset pc-debug && ctest --preset pc-debug
@@ -92,9 +96,21 @@ From `C:\devkitPro\cmake\Platform\Nintendo3DS.cmake`: `ctr_generate_smdh`, `ctr_
 
 ## CI
 
-`.github/workflows/ci.yml`: `docs` (broken-link check with `scripts/docs_tool.py check`), `pc-linux`
-(installs SDL deps, builds, `ctest`, runs `hello` headless with `SDL_VIDEO_DRIVER=offscreen`) and
-`nintendo-3ds` (container `devkitpro/devkitarm`, uploads `.3dsx`). Job ids must start with a letter.
+**CI is manual** (maintainer's decision, 2026-11-17, to save Actions minutes): run it from the Actions
+tab (CI → Run workflow) before releases or when a Linux/container check is needed. Day-to-day
+verification happens locally (Windows: PC + 3DS presets) and on the homelab build VM (Linux).
+
+`.github/workflows/ci.yml`: `docs` (broken links, layering check), `pc-linux` (installs SDL deps,
+builds, `ctest`, runs `hello` headless with `SDL_VIDEO_DRIVER=offscreen`) and `nintendo-3ds` (container
+`devkitpro/devkitarm`, uploads `.3dsx`). Job ids must start with a letter.
+
+Before pushing, run the same checks locally:
+
+```sh
+python -I scripts/docs_tool.py check
+cmake --build --preset pc-debug && ctest --preset pc-debug
+scripts/dkp.sh cmake --build --preset 3ds-release
+```
 
 `.github/workflows/wiki.yml`: on push to `main` touching docs, regenerates the GitHub wiki from the
 repository docs and pushes it ([documentation.md](../process/documentation.md)).

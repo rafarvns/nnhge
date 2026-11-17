@@ -89,7 +89,7 @@ Prerequisites and setup: [docs/guides/getting-started.md](docs/guides/getting-st
 Maintainer's machine: WinLibs MinGW-w64 GCC + CMake + Ninja on PATH (Git Bash); devkitPro at `C:\devkitPro`.
 
 ```sh
-cmake --preset pc-debug && cmake --build --preset pc-debug     # simulator
+cmake --preset pc-debug && cmake --build --preset pc-debug     # simulator (flavors: -debug, -dev, -release)
 ctest --preset pc-debug                                        # unit tests
 build/pc-debug/tests/nnh_tests.exe [name-filter]               # tests, one line each
 scripts/dkp.sh cmake --preset 3ds-release                      # 3DS configure (once)
@@ -99,6 +99,9 @@ python -I scripts/docs_tool.py check                           # docs: broken li
 ```
 
 - **3DS builds go through `scripts/dkp.sh` on Windows**: devkitPro's toolchain only runs from its MSYS2.
+- **GitHub CI is manual** (saves Actions minutes): verify locally before pushing and use the homelab
+  build VM for Linux checks; don't trigger or wait for CI runs unless asked. The wiki workflow still
+  runs on push to `main` (a few seconds).
 - Read the screenshot PNG to verify simulator output without a human.
 - Run on a console: Homebrew Launcher → Y, then `/c/devkitPro/tools/bin/3dslink.exe <file>.3dsx -a <ip>`.
 - Build budgets: edit one game `.cpp` → simulator < 2 s, `.3dsx` < 5 s; clean engine < 30 s. Measure

@@ -8,45 +8,33 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}"
     },
-    {
-      "name": "pc-debug",
-      "displayName": "PC simulator (Debug)",
-      "inherits": "base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
-    },
-    {
-      "name": "pc-release",
-      "displayName": "PC simulator (Release)",
-      "inherits": "base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
-    },
+    { "name": "flavor-debug", "hidden": true, "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "flavor-dev", "hidden": true, "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" } },
+    { "name": "flavor-release", "hidden": true, "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
     {
       "name": "3ds-base",
       "hidden": true,
       "inherits": "base",
       "toolchainFile": "$env{DEVKITPRO}/cmake/3DS.cmake"
     },
-    {
-      "name": "3ds-debug",
-      "displayName": "Nintendo 3DS (Debug)",
-      "inherits": "3ds-base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
-    },
-    {
-      "name": "3ds-release",
-      "displayName": "Nintendo 3DS (Release)",
-      "inherits": "3ds-base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
-    }
+    { "name": "pc-debug", "displayName": "PC simulator (Debug)", "inherits": ["base", "flavor-debug"] },
+    { "name": "pc-dev", "displayName": "PC simulator (Development)", "inherits": ["base", "flavor-dev"] },
+    { "name": "pc-release", "displayName": "PC simulator (Release)", "inherits": ["base", "flavor-release"] },
+    { "name": "3ds-debug", "displayName": "Nintendo 3DS (Debug)", "inherits": ["3ds-base", "flavor-debug"] },
+    { "name": "3ds-dev", "displayName": "Nintendo 3DS (Development)", "inherits": ["3ds-base", "flavor-dev"] },
+    { "name": "3ds-release", "displayName": "Nintendo 3DS (Release)", "inherits": ["3ds-base", "flavor-release"] }
   ],
   "buildPresets": [
     { "name": "pc-debug", "configurePreset": "pc-debug" },
+    { "name": "pc-dev", "configurePreset": "pc-dev" },
     { "name": "pc-release", "configurePreset": "pc-release" },
     { "name": "3ds-debug", "configurePreset": "3ds-debug" },
+    { "name": "3ds-dev", "configurePreset": "3ds-dev" },
     { "name": "3ds-release", "configurePreset": "3ds-release" }
   ],
   "testPresets": [
     { "name": "pc-debug", "configurePreset": "pc-debug", "output": { "outputOnFailure": true } },
+    { "name": "pc-dev", "configurePreset": "pc-dev", "output": { "outputOnFailure": true } },
     { "name": "pc-release", "configurePreset": "pc-release", "output": { "outputOnFailure": true } }
   ]
 }

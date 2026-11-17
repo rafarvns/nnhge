@@ -17,8 +17,8 @@ stage 4 when platform sinks log through core. The fake's manual clock comes with
 (T3.1). New: CI "layering" check (no SDK include in `engine/core`), 11 unit + 5×2 conformance tests,
 mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clean 3DS build 3.6 s.
 ## Stage 2 — Build flavors (FR-B1–B2)
-- [ ] **T2.1** Presets `*-dev`, flavor defines on `nnh::core` — test: `tests/flavor/` compile-time check of the active flavor
-- [ ] **T2.2** docs: cmake.md, getting-started, CLAUDE.md commands
+- [x] **T2.1** Presets `*-dev`, flavor defines on `nnh::core` — test: `tests/flavor/` compile-time check of the active flavor
+- [x] **T2.2** docs: cmake.md, getting-started, CLAUDE.md commands
 ## Stage 3 — Time (FR-T1–T2)
 - [ ] **T3.1** contract `time.hpp` + pc/3ds/fake — test: conformance (monotonic)
 - [ ] **T3.2** `<nnh/time.hpp>` Duration, now, delta — test: `tests/time/test_clock.cpp`

@@ -8,6 +8,7 @@ target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 # Unit tests: nnh::core driven through the fake platform.
 add_executable(nnh_tests
     app/test_frame_loop.cpp
+    build/test_flavor.cpp
     input/test_input_state.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)

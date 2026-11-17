@@ -21,12 +21,17 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 | Edit one game `.cpp` → `.3dsx` | < 5 s | 1.4 s |
 | Clean build, 3DS (engine + hello) | < 30 s | 3.3 s |
 
+After spec 002 (2026-11-17, same machine): edit one game `.cpp` → simulator 1.4 s, `.3dsx` 2.1 s; clean
+3DS configure + build (engine + 2 examples) 14.3 s. Release `hello.3dsx`: 155,776 → 193,016 bytes
+(+37 KB for the whole foundation). Linux (homelab build VM, GCC 13): cold `pc-debug` incl. SDL3 from
+source ~60 s.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
 - [x] Code reorganized into module folders, one concept per file
 
-## M1 — Core foundation ([spec 002](../specs/002-core-foundation/spec.md)) — in progress
+## M1 — Core foundation ([spec 002](../specs/002-core-foundation/spec.md)) — implemented
 - [x] Core + platform libraries split (`nnh::core`, `nnh::platform_{pc,3ds,fake}`), platform contract, conformance tests (stage 1)
 - [x] Capabilities and system info; extension headers mechanism (stage 8)
 - [x] Build flavors (Debug, Development, Release) (stage 2)
@@ -35,9 +40,10 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 - [x] Errors: `NNH_ASSERT`/`VERIFY`/`PANIC`, `Result<T>`, crash screen, 3DS exception handler (stage 5; report file in stage 7)
 - [x] Memory: tagged allocators, budgets, leak report (stage 6)
 - [x] Debug overlay, profiler, simulator pause/step (stage 8)
-- [ ] GDB-on-3DS guide, foundation example (stage 9)
+- [x] GDB-on-3DS guide ([guides/debugging-on-3ds.md](guides/debugging-on-3ds.md)), `examples/foundation` (stage 9)
 - [x] File safety: confined `nnh::fs`, atomic saves, fuzzed parsers (stage 7)
-- [ ] CI hardening (stage 9)
+- [x] CI hardening: least-privilege permissions, actions pinned by SHA, release-strings check, fuzz job (stage 9)
+- [ ] Foundation verified on a real 3DS (3dslink logs, overlay, crash screen, crash.txt) — maintainer
 
 ## M1b — Events, scenes, input
 - [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — after spec 002

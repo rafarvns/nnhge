@@ -46,6 +46,9 @@ One file per module: `<module>_3ds.cpp`.
 
 ## Debugging console-only bugs
 
+Full guide: `docs/guides/debugging-on-3ds.md` (3dslink -s logs, SELECT+L overlay, crash.txt, Luma3DS
+UNITINFO for CPU faults, `arm-none-eabi-addr2line`, GDB via Rosalina).
+
 1. Reproduce in the simulator first; if it doesn't reproduce, suspect memory region, texture size,
    alignment, uninitialized VRAM, or float/precision differences.
 2. Add temporary `printf` + `link3dsStdio()` or on-screen debug text; remove afterwards.

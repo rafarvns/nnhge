@@ -1,6 +1,6 @@
 # Spec 002: Core foundation
 
-Status: approved (2026-11-17)
+Status: implemented (2026-11-17)
 Author: NNHGE maintainers · Date: 2026-11-17
 Implementation order: **before** [spec 001](../001-event-bus-and-scenes/spec.md), which depends on it
 (logging, asserts, overflow handling).

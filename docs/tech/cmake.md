@@ -104,6 +104,10 @@ verification happens locally (Windows: PC + 3DS presets) and on the homelab buil
 builds, `ctest`, runs `hello` headless with `SDL_VIDEO_DRIVER=offscreen`) and `nintendo-3ds` (container
 `devkitpro/devkitarm`, uploads `.3dsx`). Job ids must start with a letter.
 
+Linux builds and libFuzzer run on the homelab build VM (`ssh nnhge-build`, VM 120, off by default; see
+CLAUDE.md "Build" for the start/sync/stop commands). Its devkitPro comes from the official
+`devkitpro/devkitarm` image because `*.devkitpro.org` answers 403 to the maintainer's IP.
+
 Before pushing, run the same checks locally:
 
 ```sh

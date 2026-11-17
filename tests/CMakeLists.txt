@@ -17,6 +17,8 @@ add_executable(nnh_tests
     build/test_flavor.cpp
     crash/test_assert.cpp
     crash/test_report.cpp
+    debug/test_overlay.cpp
+    debug/test_profile.cpp
     fs/test_files.cpp
     fs/test_log_files.cpp
     fs/test_path.cpp
@@ -28,6 +30,7 @@ add_executable(nnh_tests
     log/test_ring.cpp
     memory/test_memory.cpp
     result/test_result.cpp
+    system/test_system.cpp
     time/test_clock.cpp
     time/test_duration.cpp
     time/test_fixed_step.cpp
@@ -55,6 +58,15 @@ nnh_add_conformance(fake)
 nnh_add_conformance(pc)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software")
+
+# 3DS extension headers must refuse to compile for other platforms (FR-P5).
+if(NOT MSVC)
+    add_test(NAME extension_header_rejected_off_platform
+        COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only
+                -I${PROJECT_SOURCE_DIR}/engine/platforms/3ds/include
+                ${CMAKE_CURRENT_SOURCE_DIR}/system/compile_fail_3ds_extension.cpp)
+    set_tests_properties(extension_header_rejected_off_platform PROPERTIES WILL_FAIL TRUE)
+endif()
 
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60

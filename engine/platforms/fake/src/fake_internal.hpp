@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "nnh/memory.hpp"
+#include "nnh/system.hpp"
 
 #include "nnh/platform_fake.hpp"
 
@@ -17,6 +18,8 @@ struct Controls {
     std::int64_t time_ns = 0; // manual clock read by ticks_ns()
     std::size_t region_capacity[kMemRegionCount] = {64u << 20, 32u << 20, 6u << 20};
     std::size_t region_used[kMemRegionCount] = {};
+    std::uint32_t capabilities = 1u << static_cast<unsigned>(Capability::SecondScreen);
+    std::uint32_t dev_requests = 0;
 };
 
 State& mutable_state();

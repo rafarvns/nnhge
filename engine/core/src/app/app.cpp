@@ -5,6 +5,10 @@
 #include "app/data_folder.hpp"
 #include "core/engine_state.hpp"
 #include "crash/crash_internal.hpp"
+#include "debug/dev_tools.hpp"
+#include "nnh/input.hpp"
+#include "nnh/platform/system.hpp"
+#include "nnh/time.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "input/input_internal.hpp"
 #include "log/engine_channels.hpp"
@@ -29,6 +33,7 @@ char g_data_folder[48];
 
 void close_frame() {
     if (g_frame_open) {
+        detail::overlay_draw();
         platform::end_frame();
         g_frame_open = false;
     }
@@ -54,6 +59,8 @@ bool init(const AppConfig& config) {
     g_frame_count = 0;
     detail::input_reset();
     detail::time_reset(platform::ticks_ns());
+    detail::profile_reset();
+    detail::overlay_reset();
     detail::crash_install();
     detail::log_file_start();
     NNH_LOG_INFO(app, "started \"%s\" (%s build), data in %s", config.title, build::flavor_name(),
@@ -67,6 +74,9 @@ bool frame() {
     if (!platform::poll_events()) return false;
     detail::time_frame_started(platform::ticks_ns());
     detail::input_update(platform::read_buttons());
+    detail::profile_frame_boundary();
+    detail::overlay_update(time::delta(), input::held_mask(), detail::input_pressed_mask(),
+                           platform::poll_dev_requests());
     platform::begin_frame(detail::clear_color(Screen::Top), detail::clear_color(Screen::Bottom));
     g_frame_open = true;
     ++g_frame_count;

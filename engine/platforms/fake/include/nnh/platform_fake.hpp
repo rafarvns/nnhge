@@ -4,11 +4,13 @@
 /// tests to drive nnh::core without hardware. Not available to games.
 
 #include <cstdint>
+#include <initializer_list>
 
 #include "nnh/gfx.hpp"
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/crash.hpp"
+#include "nnh/system.hpp"
 #include "nnh/time.hpp"
 
 namespace nnh::platform_fake {
@@ -41,6 +43,9 @@ struct State {
     char last_console_line[log::kMaxLineLength] = {}; ///< the latest of them
     int vram_writes_by_core = 0; ///< Vram blocks found modified when freed (must stay 0)
     int fs_calls = 0;            ///< calls into the fs contract (invalid paths must not add any)
+    int rect_count = 0;          ///< fill_rect() calls in the current frame
+    int last_frame_rects = 0;    ///< fill_rect() calls in the frame that ended last
+    int last_frame_text_count = 0; ///< debug texts in the frame that ended last
 };
 
 const State& state();
@@ -72,6 +77,12 @@ void fail_next_writes(int count);
 
 /// Flips the bits of one byte of a stored file (simulates corruption on the SD card).
 void corrupt_file(const char* path, std::size_t byte_index);
+
+/// Capabilities reported by the platform (default: SecondScreen only).
+void set_capabilities(std::initializer_list<Capability> capabilities);
+
+/// Makes the next poll_dev_requests() ask to toggle the debug overlay (like F1 on PC).
+void request_overlay_toggle();
 
 /// The last crash screen requested through crash_show().
 struct Crash {

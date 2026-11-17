@@ -10,6 +10,16 @@ The PC build of a game is a native desktop app (SDL3) that behaves like the 3DS:
 It is not an emulator: use [Azahar](https://azahar-emu.org/) or a real console to check console behaviour.
 Enforcement of 3DS memory and texture limits arrives with the features that need them.
 
+## Developer keys (Debug and Development builds)
+
+| Key | Action |
+|-----|--------|
+| `F1` | toggle the debug overlay |
+| `Pause` | pause / resume the game loop (the last frame stays on screen) |
+| `F10` | while paused: run one frame |
+| `F11` | slow motion (15 Hz) on/off |
+| `F12` | screenshot to `<data folder>/screenshots/shot-NNN.png` |
+
 ## Environment variables (for tests and CI)
 
 | Variable | Effect |

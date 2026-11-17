@@ -28,13 +28,14 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 
 ## M1 — Core foundation ([spec 002](../specs/002-core-foundation/spec.md)) — in progress
 - [x] Core + platform libraries split (`nnh::core`, `nnh::platform_{pc,3ds,fake}`), platform contract, conformance tests (stage 1)
-- [ ] Capabilities and system info; extension headers mechanism
+- [x] Capabilities and system info; extension headers mechanism (stage 8)
 - [x] Build flavors (Debug, Development, Release) (stage 2)
 - [x] Time: monotonic clock, frame delta, fixed timestep (stage 3)
 - [x] Logging: levels, channels, sinks (console, ring buffer, 3dslink, debugger) (stage 4; file sink in stage 7)
 - [x] Errors: `NNH_ASSERT`/`VERIFY`/`PANIC`, `Result<T>`, crash screen, 3DS exception handler (stage 5; report file in stage 7)
 - [x] Memory: tagged allocators, budgets, leak report (stage 6)
-- [ ] Debug overlay, profiler, simulator pause/step; GDB-on-3DS guide
+- [x] Debug overlay, profiler, simulator pause/step (stage 8)
+- [ ] GDB-on-3DS guide, foundation example (stage 9)
 - [x] File safety: confined `nnh::fs`, atomic saves, fuzzed parsers (stage 7)
 - [ ] CI hardening (stage 9)
 

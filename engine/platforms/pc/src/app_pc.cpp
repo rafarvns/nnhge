@@ -90,7 +90,9 @@ bool poll_events() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) return false;
+        if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) pc::dev_key_pressed(event.key.scancode);
     }
+    if (g_context.quit_requested) return false;
     return g_context.exit_after == 0 || g_context.frames < g_context.exit_after;
 }
 

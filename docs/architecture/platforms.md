@@ -1,8 +1,8 @@
 # Core and platform libraries
 
-> Status: **implemented** for the layout, CMake targets, contract areas app/video/input, the fake
-> platform and conformance tests (spec 002 stage 1). Capabilities, extension headers and more contract
-> areas arrive in later stages of [spec 002](../../specs/002-core-foundation/spec.md).
+> Status: **implemented** (spec 002 stages 1–8): layout, CMake targets, contract areas (app, video,
+> input, time, log, crash, memory, fs, system), the fake platform, conformance tests, capabilities
+> ([docs/api/system.md](../api/system.md)) and the first extension header (`<nnh/3ds/console.hpp>`).
 
 ## The idea
 

@@ -19,6 +19,13 @@ struct Context {
     std::uint64_t frames = 0;               // frames ended since init
     std::uint64_t exit_after = 0;           // NNH_EXIT_AFTER_FRAMES (0 = never)
     const char* screenshot_path = nullptr;  // NNH_SCREENSHOT
+    // Developer controls (devtools_pc.cpp)
+    std::uint32_t dev_requests = 0;         // platform::DevRequest bits for core
+    bool paused = false;
+    bool step_requested = false;
+    bool slow_motion = false;
+    bool screenshot_requested = false;
+    bool quit_requested = false;
 };
 
 Context& context();
@@ -33,5 +40,12 @@ inline void set_draw_color(Color c) { SDL_SetRenderDrawColor(context().renderer,
 
 /// Starts the 60 Hz pacing clock (called by init).
 void reset_frame_pacing();
+
+/// Developer keys (F1, Pause, F10, F11, F12); ignored in Release.
+void dev_key_pressed(SDL_Scancode key);
+/// Takes a requested F12 screenshot (called before presenting).
+void dev_before_present();
+/// Blocks while paused, until F10 (one frame), Pause (resume) or quit (called after presenting).
+void dev_wait_while_paused();
 
 } // namespace nnh::platform::pc

@@ -1,8 +1,9 @@
 name: CI
 
+# Manual only (Actions tab → CI → Run workflow), to save Actions minutes. Day-to-day builds run
+# locally and on the homelab build VM; see docs/tech/cmake.md#ci.
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   docs:

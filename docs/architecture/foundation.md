@@ -24,14 +24,18 @@ No foundation module depends on the event bus or scenes.
 
 ## Build flavors
 
-| Flavor | Preset suffix | Asserts | Min log level | Overlay + profiler | Optimization | Use |
-|--------|---------------|---------|---------------|--------------------|--------------|-----|
-| **Debug** | `-debug` | `ASSERT` + `VERIFY` | trace | yes | none (`-O0 -g`) | stepping in a debugger |
-| **Development** | `-dev` | `ASSERT` + `VERIFY` | debug (info shown by default) | yes | `-O2 -g` | daily work, testing on 3DS |
-| **Release** | `-release` | `VERIFY` only | warn | no | `-O2` | what players get |
+> Status: **implemented** (spec 002 stage 2). API: [docs/api/build.md](../api/build.md).
 
-The flavor sets one macro, `NNH_FLAVOR_DEBUG`, `NNH_FLAVOR_DEVELOPMENT` or `NNH_FLAVOR_RELEASE`, used
-**only** inside foundation headers to turn macros into nothing. Game code never tests flavors directly.
+| Flavor | Preset suffix | CMake build type | Asserts | Min log level | Overlay + profiler | Optimization | Use |
+|--------|---------------|------------------|---------|---------------|--------------------|--------------|-----|
+| **Debug** | `-debug` | `Debug` | `ASSERT` + `VERIFY` | trace | yes | none (`-O0 -g`) | stepping in a debugger |
+| **Development** | `-dev` | `RelWithDebInfo` | `ASSERT` + `VERIFY` | debug (info shown by default) | yes | `-O2 -g` | daily work, testing on 3DS |
+| **Release** | `-release` | `Release` | `VERIFY` only | warn | no | toolchain release flags (`-O2`/`-O3`) | what players get |
+
+CMake defines one macro on `nnh::core` (PUBLIC), `NNH_FLAVOR_DEBUG`, `NNH_FLAVOR_DEVELOPMENT` or
+`NNH_FLAVOR_RELEASE`, and `<nnh/build.hpp>` turns it into `nnh::build::flavor()`,
+`kAssertsEnabled` and `kDevToolsEnabled`. Foundation headers use them to compile things out; game code
+may display the flavor but shouldn't branch gameplay on it.
 
 ## Time
 

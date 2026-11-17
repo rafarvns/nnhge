@@ -16,3 +16,13 @@ add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract)
 nnh_engine_options(nnh_core)
+
+# Build flavor (docs/architecture/foundation.md#build-flavors), PUBLIC so games and platform
+# libraries see the same value through <nnh/build.hpp>:
+#   Debug -> Debug, RelWithDebInfo -> Development, Release/MinSizeRel -> Release.
+set(_nnh_flavor_definitions
+    $<$<CONFIG:Debug>:NNH_FLAVOR_DEBUG>
+    $<$<CONFIG:RelWithDebInfo>:NNH_FLAVOR_DEVELOPMENT>
+    $<$<CONFIG:Release,MinSizeRel>:NNH_FLAVOR_RELEASE>)
+target_compile_definitions(nnh_core PUBLIC ${_nnh_flavor_definitions})
+target_compile_definitions(nnh_core_contract INTERFACE ${_nnh_flavor_definitions})

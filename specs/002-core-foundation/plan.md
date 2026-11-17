@@ -1,6 +1,6 @@
 # Plan 002: Core foundation
 
-Status: in progress (stage 1 done)
+Status: in progress (stages 1–2 done)
 Spec: [spec.md](spec.md)
 
 ## Constitution Check (before design)

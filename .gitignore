@@ -1,0 +1,13 @@
+/build/
+/out/
+/.cache/
+/.vs/
+/.idea/
+/.vscode/*
+!/.vscode/extensions.json
+CMakeUserPresets.json
+compile_commands.json
+*.3dsx
+*.cia
+*.smdh
+*.elf

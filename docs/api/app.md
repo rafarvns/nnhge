@@ -1,0 +1,37 @@
+# app — lifecycle and main loop
+
+Header: `<nnh/app.hpp>`
+
+| Function | Purpose |
+|----------|---------|
+| `bool nnh::init(const AppConfig& = {})` | Start the engine. Returns false on failure: exit the game. |
+| `bool nnh::frame()` | Present the previous frame, wait for vsync, read input, start a new frame. False = must exit. |
+| `void nnh::shutdown()` | Present the open frame and release everything. Idempotent. |
+| `std::uint64_t nnh::frame_count()` | Frames started since `init()`; the first frame is 1. |
+
+`AppConfig` fields: `title` (PC window title; consoles use `TITLE` from `nnh_add_game`) and
+`pc_window_scale` (initial simulator window size, default 2×).
+
+## The loop
+
+```cpp
+int main() {
+    if (!nnh::init({.title = "My Game"})) return 1;
+    while (nnh::frame()) {
+        // 1. read input   2. update the game   3. draw
+    }
+    nnh::shutdown();
+}
+```
+
+- Everything drawn between two `frame()` calls is one frame. Drawing outside a frame is ignored.
+- The loop runs at **60 Hz** on every platform (vsync on 3DS; paced on PC even with 144 Hz monitors).
+  A fixed-timestep helper for game logic is planned (M1).
+- `frame()` returns false when the system asks the game to close: HOME Menu → Close on 3DS,
+  window closed on PC. Always leave the loop and call `shutdown()`; never `exit()` from inside a frame.
+- `break` out of the loop to quit on your own (e.g. START). `shutdown()` presents the last frame.
+
+## Platform notes
+
+- **3DS**: `init()` sets up the GPU (citro3d/citro2d). Title and icon come from the SMDH metadata.
+- **PC**: one window shows both screens. See [simulator.md](simulator.md).

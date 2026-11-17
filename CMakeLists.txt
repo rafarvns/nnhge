@@ -1,0 +1,45 @@
+cmake_minimum_required(VERSION 3.25)
+
+project(nnhge VERSION 0.1.0 LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Platform selection. devkitPro's toolchain file sets NINTENDO_3DS.
+if(NINTENDO_3DS)
+    set(NNH_PLATFORM "3ds")
+else()
+    set(NNH_PLATFORM "pc")
+endif()
+message(STATUS "NNHGE platform: ${NNH_PLATFORM}")
+
+# Fast rebuilds: use a compiler cache when one is installed.
+find_program(NNH_CCACHE NAMES ccache sccache)
+if(NNH_CCACHE)
+    message(STATUS "NNHGE compiler cache: ${NNH_CCACHE}")
+    set(CMAKE_C_COMPILER_LAUNCHER "${NNH_CCACHE}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${NNH_CCACHE}")
+endif()
+
+option(NNH_BUILD_EXAMPLES "Build the examples" ON)
+if(NNH_PLATFORM STREQUAL "pc")
+    option(NNH_BUILD_TESTS "Build the unit tests" ON)
+else()
+    set(NNH_BUILD_TESTS OFF)
+endif()
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(nnh_game)
+
+add_subdirectory(engine)
+
+if(NNH_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+if(NNH_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

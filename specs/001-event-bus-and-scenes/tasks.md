@@ -1,16 +1,16 @@
 # Tasks 001: Event bus and scenes
 
-Status: draft (2026-11-17)
+Status: in progress — stage 1 done (2026-11-17)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each stage ends green: PC (Debug + Release) and 3DS builds, tests, docs updated (nnh-docs); Linux checks on
 the homelab build VM when useful. `[P]` = parallelizable.
 
 ## Stage 1 — Building blocks (FR-1, FR-5)
-- [ ] **T1.1** `nnh/detail/type_id.hpp` — test: `tests/events/test_type_id.cpp` — covers FR-1
-- [ ] **T1.2** [P] `nnh/detail/small_function.hpp` (16-byte inline storage, typed adapter, clear static_assert) — test: `tests/events/test_small_function.cpp` — covers FR-2, FR-5
-- [ ] **T1.3** [P] `events/event_queue` (records, FIFO, wrap-around, alignment, full) — test: `tests/events/test_event_queue.cpp` — covers FR-3, FR-5
-- [ ] **T1.4** [P] `events/subscriber_table` (slots, generations, since-sequence) — test: `tests/events/test_subscriber_table.cpp` — covers FR-2, FR-4
+- [x] **T1.1** `nnh/detail/type_id.hpp` — test: `tests/events/test_type_id.cpp` — covers FR-1
+- [x] **T1.2** [P] `nnh/detail/small_function.hpp` (16-byte inline storage, typed adapter, clear static_assert) — test: `tests/events/test_small_function.cpp` — covers FR-2, FR-5
+- [x] **T1.3** [P] `events/event_queue` (records, FIFO, wrap-around, alignment, full) — test: `tests/events/test_event_queue.cpp` — covers FR-3, FR-5
+- [x] **T1.4** [P] `events/subscriber_table` (slots, generations, since-sequence) — test: `tests/events/test_subscriber_table.cpp` — covers FR-2, FR-4
 
 ## Stage 2 — Bus API (FR-2–FR-6)
 - [ ] **T2.1** `<nnh/events.hpp>`, `events/bus.cpp`, `AppConfig::events`; allocation at init (tag `events`), release at shutdown — test: `tests/events/test_capacities.cpp`

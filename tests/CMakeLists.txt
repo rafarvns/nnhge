@@ -19,6 +19,10 @@ add_executable(nnh_tests
     crash/test_report.cpp
     debug/test_overlay.cpp
     debug/test_profile.cpp
+    events/test_event_queue.cpp
+    events/test_small_function.cpp
+    events/test_subscriber_table.cpp
+    events/test_type_id.cpp
     fs/test_files.cpp
     fs/test_log_files.cpp
     fs/test_path.cpp
@@ -66,6 +70,12 @@ if(NOT MSVC)
                 -I${PROJECT_SOURCE_DIR}/engine/platforms/3ds/include
                 ${CMAKE_CURRENT_SOURCE_DIR}/system/compile_fail_3ds_extension.cpp)
     set_tests_properties(extension_header_rejected_off_platform PROPERTIES WILL_FAIL TRUE)
+
+    # Event handlers with captures larger than the inline storage must not compile (spec 001 FR-2).
+    add_test(NAME large_handler_capture_rejected
+        COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include
+                ${CMAKE_CURRENT_SOURCE_DIR}/events/compile_fail_big_capture.cpp)
+    set_tests_properties(large_handler_capture_rejected PROPERTIES WILL_FAIL TRUE)
 endif()
 
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++

@@ -43,7 +43,8 @@ source ~60 s.
 - [x] GDB-on-3DS guide ([guides/debugging-on-3ds.md](guides/debugging-on-3ds.md)), `examples/foundation` (stage 9)
 - [x] File safety: confined `nnh::fs`, atomic saves, fuzzed parsers (stage 7)
 - [x] CI hardening: least-privilege permissions, actions pinned by SHA, release-strings check, fuzz job (stage 9)
-- [ ] Foundation verified on a real 3DS (3dslink logs, overlay, crash screen, crash.txt) — maintainer
+- [x] Foundation verified on a real 3DS (3dslink logs, overlay, save counter, crash screen, crash.txt) — 2026-11-17
+- [ ] CPU-fault crash screen on 3DS with Luma3DS "Set developer UNITINFO" — maintainer, later
 
 ## M1b — Events, scenes, input
 - [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — after spec 002

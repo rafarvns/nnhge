@@ -6,10 +6,13 @@
 
 namespace nnh::detail {
 
-void SubscriberTable::reset(SubscriberSlot* slots, int capacity) {
+void SubscriberTable::reset(SubscriberSlot* slots, int capacity, std::uint32_t first_generation) {
     slots_ = slots;
     capacity_ = capacity;
-    for (int i = 0; i < capacity_; ++i) new (&slots_[i]) SubscriberSlot{};
+    for (int i = 0; i < capacity_; ++i) {
+        new (&slots_[i]) SubscriberSlot{};
+        slots_[i].generation = first_generation;
+    }
 }
 
 int SubscriberTable::add(TypeId type, EventHandler handler, std::uint32_t since_sequence,
@@ -37,10 +40,21 @@ bool SubscriberTable::remove(int slot, std::uint32_t generation) {
     return true;
 }
 
+bool SubscriberTable::is_active(int slot, std::uint32_t generation) const {
+    if (slot < 0 || slot >= capacity_) return false;
+    return slots_[slot].active && slots_[slot].generation == generation;
+}
+
 int SubscriberTable::active_count() const {
     int n = 0;
     for (int i = 0; i < capacity_; ++i) n += slots_[i].active ? 1 : 0;
     return n;
+}
+
+std::uint32_t SubscriberTable::next_generation() const {
+    std::uint32_t highest = 0;
+    for (int i = 0; i < capacity_; ++i) highest = slots_[i].generation > highest ? slots_[i].generation : highest;
+    return highest + 1;
 }
 
 void SubscriberTable::invalidate_all() {

@@ -14,8 +14,10 @@ add_library(nnh_core STATIC
     src/debug/debug.cpp
     src/debug/overlay.cpp
     src/debug/profiler.cpp
+    src/events/bus.cpp
     src/events/event_queue.cpp
     src/events/subscriber_table.cpp
+    src/events/subscription.cpp
     src/fs/files.cpp
     src/fs/path.cpp
     src/fs/save.cpp

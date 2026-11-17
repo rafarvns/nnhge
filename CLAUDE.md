@@ -65,7 +65,9 @@ Portable core + one library per system, plugged in at link time through the plat
 ([platforms.md](docs/architecture/platforms.md)). Foundation services (spec 002, implemented):
 `<nnh/time.hpp>`, `<nnh/log.hpp>`, `<nnh/assert.hpp>`, `<nnh/result.hpp>`, `<nnh/memory.hpp>`,
 `<nnh/fs.hpp>` (+ `nnh::save`), `<nnh/system.hpp>`, `<nnh/profile.hpp>`, debug overlay — use them instead
-of ad-hoc code ([foundation.md](docs/architecture/foundation.md), demo `examples/foundation`).
+of ad-hoc code ([foundation.md](docs/architecture/foundation.md), demo `examples/foundation`). Event bus
+(spec 001, in progress): `<nnh/events.hpp>` — `subscribe`/`publish`/`Subscription`, delivered in `nnh::frame()`
+([api/events.md](docs/api/events.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

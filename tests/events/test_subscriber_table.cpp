@@ -76,6 +76,41 @@ NNH_TEST(subscribers_only_see_sequences_from_their_start) {
     CHECK(count_matching(t, type_id<A>(), 10) == 1);
 }
 
+NNH_TEST(start_sequences_survive_the_32_bit_wrap_around) {
+    SubscriberTable t;
+    t.reset(g_slots, 4);
+    std::uint32_t gen = 0;
+    t.add(type_id<A>(), noop(), 0xFFFFFFF0u, gen);
+    CHECK(count_matching(t, type_id<A>(), 0xFFFFFFEFu) == 0);
+    CHECK(count_matching(t, type_id<A>(), 0xFFFFFFFFu) == 1);
+    CHECK(count_matching(t, type_id<A>(), 5) == 1); // wrapped past zero: still later
+}
+
+NNH_TEST(is_active_follows_add_and_remove) {
+    SubscriberTable t;
+    t.reset(g_slots, 4);
+    std::uint32_t gen = 0;
+    const int slot = t.add(type_id<A>(), noop(), 0, gen);
+    CHECK(t.is_active(slot, gen));
+    CHECK(!t.is_active(slot, gen + 1));
+    CHECK(!t.is_active(-1, gen) && !t.is_active(4, gen));
+    t.remove(slot, gen);
+    CHECK(!t.is_active(slot, gen));
+}
+
+NNH_TEST(a_new_table_continues_after_the_previous_generations) {
+    SubscriberTable t;
+    t.reset(g_slots, 4);
+    std::uint32_t old_gen = 0;
+    const int slot = t.add(type_id<A>(), noop(), 0, old_gen);
+    t.invalidate_all();
+    t.reset(g_slots, 4, t.next_generation());
+    std::uint32_t new_gen = 0;
+    CHECK(t.add(type_id<A>(), noop(), 0, new_gen) == slot);
+    CHECK(!t.remove(slot, old_gen)); // a handle from before the reset is still stale
+    CHECK(t.is_active(slot, new_gen));
+}
+
 NNH_TEST(removing_during_iteration_skips_the_removed_slot) {
     SubscriberTable t;
     t.reset(g_slots, 4);

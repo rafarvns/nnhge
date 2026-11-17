@@ -37,6 +37,10 @@ Games link one target, `nnh::engine`, which is `nnh::core` + the selected platfo
 
 ## Contract rules
 
+- **One-way dependency**: platform libraries never call `nnh::core` (not even to log). They report
+  problems through return values and `platform::last_error()`; core logs them. Core → contract is the
+  only direction, so the libraries link without cycles.
+
 - The contract is the **only** thing core knows about a system. Adding a system = implementing the
   contract in a new library; core does not change.
 - Every contract function documents: inputs, outputs, when it's called, what it may not do (e.g. allocate

@@ -17,6 +17,10 @@ bool init(const AppConfig& config);
 /// After it returns, init() may be called again.
 void shutdown();
 
+/// Short description of the last failure (e.g. why init() returned false), or "" if none.
+/// Never null; the string stays valid until the next contract call. Core logs it.
+const char* last_error();
+
 /// Processes pending system events. Called once per nnh::frame(), outside a frame (no frame begun).
 /// @return false when the app must quit (HOME Menu close, window closed, test/automation limit).
 bool poll_events();

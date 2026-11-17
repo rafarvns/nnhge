@@ -1,13 +1,13 @@
 # Logging
 
-> Status: **design**, specified in [spec 002](../../specs/002-core-foundation/spec.md).
+> Status: **implemented** (spec 002 stage 4), except the file sink (stage 7). API: [docs/api/log.md](../api/log.md).
 
 ## Usage
 
 ```cpp
 #include <nnh/log.hpp>
 
-NNH_LOG_CHANNEL(player);                       // declare a channel (once, in a .cpp or header)
+NNH_LOG_CHANNEL(player);                       // define a channel (once, in a .cpp)
 
 NNH_LOG_INFO(player, "spawned at %d,%d", x, y);
 NNH_LOG_WARN(gfx, "texture %s is %dx%d, not a power of two", name, w, h);
@@ -26,7 +26,8 @@ NNH_LOG_ERROR(fs, "save failed: %s", result.error().message);
 | `fatal` | about to crash (used by `NNH_PANIC`) | all |
 
 Levels below the flavor's minimum **compile to nothing**: no call, no format string in the binary.
-At runtime the minimum can be raised per channel (`nnh::log::set_level(gfx, Level::Warn)`).
+At runtime the minimum can be raised per channel (`NNH_LOG_CHANNEL_REF(gfx).min_level = nnh::LogLevel::Warn`)
+or for all channels (`nnh::log::set_global_level`).
 
 ## Channels
 
@@ -37,11 +38,11 @@ filtered out.
 ## Line format
 
 ```
-[f1234   20.571s] W gfx    texture hero.png is 100x60, not a power of two
+[f1234    20.571s] W gfx    texture hero.png is 100x60, not a power of two
 ```
 
-Frame number, seconds since start, level letter, channel, message. Lines are at most 160 characters
-(longer messages are truncated with `…`), formatted into a stack buffer: **no heap allocation**.
+Frame number, seconds since start, level letter, channel, message. Lines are at most 159 characters
+(longer messages end with `...`), formatted into a stack buffer: **no heap allocation**.
 
 ## Sinks
 
@@ -52,10 +53,17 @@ A sink receives each formatted line. Several sinks run at once.
 | Console (colored by level) | PC | all flavors |
 | File (`<data dir>/log.txt`, rotated on start) | PC, 3DS | Debug, Development |
 | Ring buffer (last 64 lines, in memory) | all | all (feeds the crash screen) |
-| 3dslink stdio → PC terminal | 3DS | Debug, Development, when launched via 3dslink |
+| 3dslink stdio → PC terminal (`3dslink -s`) | 3DS | Debug, Development, when launched via 3dslink |
 | Debugger (`svcOutputDebugString`) | 3DS | Debug |
 
 Games can add sinks (e.g. an in-game log viewer) through `nnh::log::add_sink`.
+
+## Platform libraries never log
+
+Platform libraries don't call core, so they never log directly (this keeps the core ↔ platform
+dependency one-way). They report failures through return values and `platform::last_error()`, and core
+logs them on channel `app`. Core writes every line to `platform::log_console()`, which each platform
+implements (PC terminal with colors; 3DS stdout + debugger).
 
 ## Rules
 

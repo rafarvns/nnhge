@@ -39,7 +39,9 @@ One file per module: `<module>_3ds.cpp`.
 - Textures: power-of-two sides 8–1024, tiled (tex3ds produces `.t3x` already tiled).
 - citro2d: max objects per frame set at `C2D_Init` (default 4096); text needs a `C2D_TextBuf` cleared per frame.
 - ZL/ZR/C-Stick only on New 3DS (`APT_CheckNew3DS`). Audio (`ndspInit`) needs `sdmc:/3ds/dspfirm.cdc`.
-- Logs to PC: `link3dsStdio()` from `<3ds/3dslink.h>` (port 17491) — planned in M1.
+- Logs to PC: automatic in Debug/Development when launched by 3dslink (`app_3ds.cpp` does `socInit` +
+  `link3dsStdio()`); run `3dslink -s <file> -a <ip>` to see them. Platform code never logs itself: it
+  returns errors and sets `last_error()`, core logs.
 - No platform headers outside `engine/platforms/3ds/`.
 
 ## Debugging console-only bugs

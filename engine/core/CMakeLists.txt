@@ -11,6 +11,9 @@ add_library(nnh_core STATIC
     src/debug/debug.cpp
     src/gfx/gfx.cpp
     src/input/input.cpp
+    src/log/engine_channels.cpp
+    src/log/format.cpp
+    src/log/log.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )

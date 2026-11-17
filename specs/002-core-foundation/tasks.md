@@ -25,12 +25,12 @@ mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clea
 - [x] **T3.3** FixedStep — test: `tests/time/test_fixed_step.cpp` (steps per second, catch-up cap)
 - [x] **T3.4** `docs/api/time.md`
 ## Stage 4 — Logging (FR-L1–L6)
-- [ ] **T4.1** format + truncation — test: `tests/log/test_format.cpp`
-- [ ] **T4.2** levels, channels, compile-out macros — test: `tests/log/test_filter.cpp`
-- [ ] **T4.3** ring buffer — test: `tests/log/test_ring.cpp`
-- [ ] **T4.4** sink registry — test: `tests/log/test_sinks.cpp`
-- [ ] **T4.5** [P] PC console sink (colors) · 3DS stdout/3dslink + debugger sinks — test: example output on PC; 3dslink terminal on console
-- [ ] **T4.6** replace ad-hoc `SDL_Log` calls with channels; `docs/api/log.md`
+- [x] **T4.1** format + truncation — test: `tests/log/test_format.cpp`
+- [x] **T4.2** levels, channels, compile-out macros — test: `tests/log/test_filter.cpp`
+- [x] **T4.3** ring buffer — test: `tests/log/test_ring.cpp`
+- [x] **T4.4** sink registry — test: `tests/log/test_sinks.cpp`
+- [x] **T4.5** [P] PC console sink (colors) · 3DS stdout/3dslink + debugger sinks — test: example output on PC; 3dslink terminal on console
+- [x] **T4.6** replace ad-hoc `SDL_Log` calls with channels; `docs/api/log.md`
 ## Stage 5 — Errors (FR-E1–E4)
 - [ ] **T5.1** `Result<T>` / `Error` — test: `tests/result/test_result.cpp`
 - [ ] **T5.2** assert macros + fail path (fake `crash_show` records) — test: `tests/assert/test_assert.cpp`

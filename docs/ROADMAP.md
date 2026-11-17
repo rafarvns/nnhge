@@ -30,7 +30,7 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 - [x] Core + platform libraries split (`nnh::core`, `nnh::platform_{pc,3ds,fake}`), platform contract, conformance tests (stage 1)
 - [ ] Capabilities and system info; extension headers mechanism
 - [x] Build flavors (Debug, Development, Release) (stage 2)
-- [ ] Time: monotonic clock, frame delta, fixed timestep
+- [x] Time: monotonic clock, frame delta, fixed timestep (stage 3)
 - [ ] Logging: levels, channels, sinks (console, file, ring buffer, 3dslink, debugger)
 - [ ] Errors: `NNH_ASSERT`/`VERIFY`/`PANIC`, `Result<T>`, crash screen + report, 3DS exception handler
 - [ ] Memory: tagged allocators, budgets, leak report

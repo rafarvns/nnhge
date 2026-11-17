@@ -6,6 +6,7 @@ add_library(nnh_platform_pc STATIC
     src/app_pc.cpp
     src/debug_text_pc.cpp
     src/input_pc.cpp
+    src/time_pc.cpp
     src/video_pc.cpp
 )
 add_library(nnh::platform_pc ALIAS nnh_platform_pc)

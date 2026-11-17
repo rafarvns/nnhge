@@ -4,6 +4,7 @@
 
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/input.hpp"
+#include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
 #include "test.hpp"
 
@@ -49,6 +50,17 @@ NNH_TEST(no_buttons_are_held_without_input) {
     CHECK(platform::init(config()));
     CHECK(platform::poll_events());
     CHECK(platform::read_buttons() == 0);
+    platform::shutdown();
+}
+
+NNH_TEST(clock_never_goes_backwards) {
+    CHECK(platform::init(config()));
+    std::int64_t previous = platform::ticks_ns();
+    for (int i = 0; i < 1000; ++i) {
+        const std::int64_t now = platform::ticks_ns();
+        CHECK(now >= previous);
+        previous = now;
+    }
     platform::shutdown();
 }
 

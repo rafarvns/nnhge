@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include "nnh/gfx.hpp"
+#include "nnh/time.hpp"
 
 namespace nnh::platform_fake {
 
@@ -48,5 +49,11 @@ void set_quit_requested(bool quit);
 
 /// When true, init() fails.
 void set_init_fails(bool fails);
+
+/// Sets the manual clock returned by ticks_ns() (starts at 0 after reset()).
+void set_time_ns(std::int64_t ns);
+
+/// Moves the manual clock forward.
+void advance_time(Duration elapsed);
 
 } // namespace nnh::platform_fake

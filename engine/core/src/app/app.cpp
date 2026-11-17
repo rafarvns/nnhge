@@ -7,7 +7,9 @@
 #include "input/input_internal.hpp"
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/input.hpp"
+#include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
+#include "time/time_internal.hpp"
 
 namespace nnh {
 namespace {
@@ -33,6 +35,7 @@ bool init(const AppConfig& config) {
     g_initialized = true;
     g_frame_count = 0;
     detail::input_reset();
+    detail::time_reset(platform::ticks_ns());
     return true;
 }
 
@@ -40,6 +43,7 @@ bool frame() {
     if (!g_initialized) return false;
     close_frame();
     if (!platform::poll_events()) return false;
+    detail::time_frame_started(platform::ticks_ns());
     detail::input_update(platform::read_buttons());
     platform::begin_frame(detail::clear_color(Screen::Top), detail::clear_color(Screen::Bottom));
     g_frame_open = true;

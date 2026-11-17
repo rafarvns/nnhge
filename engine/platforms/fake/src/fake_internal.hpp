@@ -11,6 +11,7 @@ struct Controls {
     std::uint32_t held_buttons = 0;
     bool quit_requested = false;
     bool init_fails = false;
+    std::int64_t time_ns = 0; // manual clock read by ticks_ns()
 };
 
 State& mutable_state();

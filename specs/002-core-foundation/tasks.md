@@ -20,10 +20,10 @@ mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clea
 - [x] **T2.1** Presets `*-dev`, flavor defines on `nnh::core` — test: `tests/flavor/` compile-time check of the active flavor
 - [x] **T2.2** docs: cmake.md, getting-started, CLAUDE.md commands
 ## Stage 3 — Time (FR-T1–T2)
-- [ ] **T3.1** contract `time.hpp` + pc/3ds/fake — test: conformance (monotonic)
-- [ ] **T3.2** `<nnh/time.hpp>` Duration, now, delta — test: `tests/time/test_clock.cpp`
-- [ ] **T3.3** FixedStep — test: `tests/time/test_fixed_step.cpp` (steps per second, catch-up cap)
-- [ ] **T3.4** `docs/api/time.md`
+- [x] **T3.1** contract `time.hpp` + pc/3ds/fake — test: conformance (monotonic)
+- [x] **T3.2** `<nnh/time.hpp>` Duration, now, delta — test: `tests/time/test_clock.cpp`
+- [x] **T3.3** FixedStep — test: `tests/time/test_fixed_step.cpp` (steps per second, catch-up cap)
+- [x] **T3.4** `docs/api/time.md`
 ## Stage 4 — Logging (FR-L1–L6)
 - [ ] **T4.1** format + truncation — test: `tests/log/test_format.cpp`
 - [ ] **T4.2** levels, channels, compile-out macros — test: `tests/log/test_filter.cpp`

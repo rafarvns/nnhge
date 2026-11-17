@@ -11,6 +11,8 @@ add_library(nnh_core STATIC
     src/debug/debug.cpp
     src/gfx/gfx.cpp
     src/input/input.cpp
+    src/time/clock.cpp
+    src/time/fixed_step.cpp
 )
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)

@@ -4,6 +4,7 @@ add_library(nnh_platform_fake STATIC
     src/app_fake.cpp
     src/control_fake.cpp
     src/input_fake.cpp
+    src/time_fake.cpp
     src/video_fake.cpp
 )
 add_library(nnh::platform_fake ALIAS nnh_platform_fake)

@@ -39,6 +39,8 @@ may display the flavor but shouldn't branch gameplay on it.
 
 ## Time
 
+> Status: **implemented** (spec 002 stage 3). API: [docs/api/time.md](../api/time.md).
+
 - `nnh::time::now()` — monotonic `Duration` since `init()` (3DS: `svcGetSystemTick`, 268 MHz ticks;
   PC: `SDL_GetTicksNS`).
 - `nnh::time::delta()` — duration of the last frame; `nnh::frame_count()` already exists.

@@ -10,6 +10,9 @@ add_executable(nnh_tests
     app/test_frame_loop.cpp
     build/test_flavor.cpp
     input/test_input_state.cpp
+    time/test_clock.cpp
+    time/test_duration.cpp
+    time/test_fixed_step.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh::core nnh::platform_fake)

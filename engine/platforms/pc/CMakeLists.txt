@@ -6,9 +6,11 @@ add_library(nnh_platform_pc STATIC
     src/app_pc.cpp
     src/crash_pc.cpp
     src/debug_text_pc.cpp
+    src/devtools_pc.cpp
     src/input_pc.cpp
     src/log_pc.cpp
     src/memory_pc.cpp
+    src/system_pc.cpp
     src/time_pc.cpp
     src/video_pc.cpp
     ../shared/stdio_fs.cpp

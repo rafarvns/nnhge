@@ -1,13 +1,14 @@
 # Debugging tools
 
-> Status: **design**, specified in [spec 002](../../specs/002-core-foundation/spec.md). Debug text
-> (`nnh::debug::print`) already exists.
+> Status: **implemented** (spec 002 stage 8): overlay, profiler, simulator keys. The GDB-on-3DS guide
+> comes in stage 9. APIs: [debug.md](../api/debug.md), [profile.md](../api/profile.md),
+> [simulator.md](../api/simulator.md).
 
 ## In-game tools (Debug and Development flavors)
 
 | Tool | How | Shows |
 |------|-----|-------|
-| Debug overlay | PC: `F1` · 3DS: hold SELECT + press L (proposal) | FPS, frame time graph (last 120 frames), memory per region and per tag |
+| Debug overlay | PC: `F1` · 3DS: hold SELECT + press L | FPS, frame time graph (last 120 frames), memory per region |
 | Profiler | `NNH_PROFILE_SCOPE("update");` in a scope | slowest scopes of recent frames, in the overlay |
 | Debug text | `nnh::debug::print/printf` | anything, drawn on top of the frame |
 | Logs | `NNH_LOG_*` | see [logging.md](logging.md) |
@@ -22,14 +23,14 @@ All of them compile out in Release.
 | `Pause` | pause / resume the game loop |
 | `F10` | advance one frame while paused |
 | `F11` | slow motion (¼ speed) toggle |
-| `F12` | screenshot to `build/screenshots/` |
+| `F12` | screenshot to `<data folder>/screenshots/` |
 
 Plus the existing environment variables `NNH_EXIT_AFTER_FRAMES` / `NNH_SCREENSHOT` for automation.
 
 ## Debuggers
 
 **PC**: build `pc-debug` and run the game under any debugger (VS Code with the CMake Tools extension,
-Visual Studio, CLion, gdb). Asserts break into the debugger when one is attached.
+Visual Studio, CLion, gdb). On Windows, asserts break into an attached debugger.
 
 **3DS**: Luma3DS includes a GDB stub.
 1. Build `3ds-debug` (keeps symbols in the `.elf`).

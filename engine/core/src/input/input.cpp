@@ -16,6 +16,7 @@ bool has(std::uint32_t mask, Button button) { return (mask & static_cast<std::ui
 
 void detail::input_reset() { g_input = {}; }
 void detail::input_update(std::uint32_t held_mask) { g_input.update(held_mask); }
+std::uint32_t detail::input_pressed_mask() { return g_input.pressed(); }
 
 bool input::held(Button button) { return has(g_input.held, button); }
 bool input::pressed(Button button) { return has(g_input.pressed(), button); }

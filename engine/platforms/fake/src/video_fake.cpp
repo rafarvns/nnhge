@@ -16,12 +16,18 @@ void begin_frame(Color top_clear, Color bottom_clear) {
     s.top_clear = top_clear;
     s.bottom_clear = bottom_clear;
     s.text_count = 0;
+    s.rect_count = 0;
 }
 
 void end_frame() {
-    ++mutable_state().frames_ended;
-    mutable_state().frame_open = false;
+    platform_fake::State& s = mutable_state();
+    ++s.frames_ended;
+    s.frame_open = false;
+    s.last_frame_text_count = s.text_count;
+    s.last_frame_rects = s.rect_count;
 }
+
+void fill_rect(Screen, int, int, int, int, Color) { ++mutable_state().rect_count; }
 
 void debug_text(Screen screen, int x, int y, const char* text, Color color) {
     platform_fake::State& s = mutable_state();

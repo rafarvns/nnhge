@@ -23,4 +23,8 @@ void debug_text(Screen screen, int x, int y, const char* text, Color color);
 /// Height in pixels of one line of debug text. Always > 0 once init() succeeded.
 int debug_line_height();
 
+/// Fills a rectangle (screen pixels, clipped to the screen), alpha-blended. Only between begin_frame()
+/// and end_frame(). Used by the debug overlay. Must not allocate.
+void fill_rect(Screen screen, int x, int y, int width, int height, Color color);
+
 } // namespace nnh::platform

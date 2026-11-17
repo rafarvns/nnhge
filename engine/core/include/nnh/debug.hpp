@@ -27,4 +27,9 @@ void printf(Screen screen, int x, int y, const char* format, ...) NNH_PRINTF_FOR
 /// Height in pixels of one line of debug text on the current platform.
 int line_height();
 
+/// Shows or hides the debug overlay (FPS, frame-time graph, memory, slowest profile scopes) on the
+/// bottom screen. Players toggle it with SELECT + L (3DS) or F1 (PC simulator). Always hidden in Release.
+void set_overlay_visible(bool visible);
+bool overlay_visible();
+
 } // namespace nnh::debug

@@ -31,4 +31,10 @@ void begin_frame(Color top_clear, Color bottom_clear) {
 
 void end_frame() { C3D_FrameEnd(0); }
 
+void fill_rect(Screen screen, int x, int y, int width, int height, Color color) {
+    ctr::draw_on(screen);
+    C2D_DrawRectSolid(static_cast<float>(x), static_cast<float>(y), 0.4f, static_cast<float>(width),
+                      static_cast<float>(height), ctr::to_c2d(color));
+}
+
 } // namespace nnh::platform

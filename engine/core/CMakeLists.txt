@@ -12,6 +12,8 @@ add_library(nnh_core STATIC
     src/crash/crash.cpp
     src/crash/report.cpp
     src/debug/debug.cpp
+    src/debug/overlay.cpp
+    src/debug/profiler.cpp
     src/fs/files.cpp
     src/fs/path.cpp
     src/fs/save.cpp
@@ -24,6 +26,7 @@ add_library(nnh_core STATIC
     src/log/log.cpp
     src/memory/memory.cpp
     src/result/error.cpp
+    src/system/system.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )

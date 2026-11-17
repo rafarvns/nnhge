@@ -12,17 +12,14 @@
 /// condition is **not evaluated** — never put side effects in it.
 
 #include "nnh/build.hpp"
+#include "nnh/detail/printf_format.hpp"
 
 namespace nnh::detail {
 
 enum class FailKind { Assert, Verify, Panic };
 
 [[noreturn]] void fail(FailKind kind, const char* expression, const char* file, int line, const char* function,
-                       const char* format, ...)
-#if defined(__GNUC__)
-    __attribute__((format(printf, 6, 7)))
-#endif
-    ;
+                       const char* format, ...) NNH_PRINTF_FORMAT(6, 7);
 
 } // namespace nnh::detail
 

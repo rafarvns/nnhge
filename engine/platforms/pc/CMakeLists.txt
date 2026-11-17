@@ -8,6 +8,7 @@ add_library(nnh_platform_pc STATIC
     src/debug_text_pc.cpp
     src/input_pc.cpp
     src/log_pc.cpp
+    src/memory_pc.cpp
     src/time_pc.cpp
     src/video_pc.cpp
 )

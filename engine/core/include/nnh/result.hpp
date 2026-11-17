@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "nnh/assert.hpp"
+#include "nnh/detail/printf_format.hpp"
 
 namespace nnh {
 
@@ -41,11 +42,7 @@ struct Error {
     ErrorCode code = ErrorCode::Unknown;
     char message[64] = {};
 
-    static Error make(ErrorCode code, const char* format, ...)
-#if defined(__GNUC__)
-        __attribute__((format(printf, 2, 3)))
-#endif
-        ;
+    static Error make(ErrorCode code, const char* format, ...) NNH_PRINTF_FORMAT(2, 3);
 };
 
 /// Either a T or an Error. Check it (`if (r)`, `r.ok()`) before calling value(): reading the value of

@@ -9,5 +9,6 @@ namespace nnh {
 NNH_LOG_CHANNEL_EXTERN(app);
 NNH_LOG_CHANNEL_EXTERN(gfx);
 NNH_LOG_CHANNEL_EXTERN(input);
+NNH_LOG_CHANNEL_EXTERN(memory);
 
 } // namespace nnh

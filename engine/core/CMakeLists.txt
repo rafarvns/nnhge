@@ -16,6 +16,7 @@ add_library(nnh_core STATIC
     src/log/engine_channels.cpp
     src/log/format.cpp
     src/log/log.cpp
+    src/memory/memory.cpp
     src/result/error.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp

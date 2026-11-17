@@ -7,6 +7,7 @@
 
 #include "nnh/gfx.hpp"
 #include "nnh/log.hpp"
+#include "nnh/memory.hpp"
 #include "nnh/platform/crash.hpp"
 #include "nnh/time.hpp"
 
@@ -38,6 +39,7 @@ struct State {
     DrawnText texts[kMaxRecordedTexts];
     int console_lines = 0;                          ///< log lines written with log_console()
     char last_console_line[log::kMaxLineLength] = {}; ///< the latest of them
+    int vram_writes_by_core = 0; ///< Vram blocks found modified when freed (must stay 0)
 };
 
 const State& state();
@@ -59,6 +61,9 @@ void set_time_ns(std::int64_t ns);
 
 /// Moves the manual clock forward.
 void advance_time(Duration elapsed);
+
+/// Bytes region_alloc() may hand out in a region (defaults: heap 64 MB, linear 32 MB, vram 6 MB).
+void set_region_capacity(MemRegion region, std::size_t bytes);
 
 /// The last crash screen requested through crash_show().
 struct Crash {

@@ -39,10 +39,10 @@ mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clea
 - [x] **T5.5** (console check pending: maintainer task) 3DS `crash_show` (text console) + `threadOnException` handler — test: on console (assert and null write)
 - [x] **T5.6** `docs/api/assert.md`, `docs/api/result.md`
 ## Stage 6 — Memory (FR-M1–M3)
-- [ ] **T6.1** contract `memory.hpp` + pc (emulated linear/VRAM budgets) / 3ds (linearAlloc, vramAlloc) / fake
-- [ ] **T6.2** tagged allocator bookkeeping, stats, budgets — test: `tests/memory/test_accounting.cpp`
-- [ ] **T6.3** leak report at shutdown — test: `tests/memory/test_leaks.cpp`
-- [ ] **T6.4** move engine allocations (citro2d text buffer etc.) to tags where possible; `docs/api/memory.md`
+- [x] **T6.1** contract `memory.hpp` + pc (emulated linear/VRAM budgets) / 3ds (linearAlloc, vramAlloc) / fake
+- [x] **T6.2** tagged allocator bookkeeping, stats, budgets — test: `tests/memory/test_accounting.cpp`
+- [x] **T6.3** leak report at shutdown — test: `tests/memory/test_leaks.cpp`
+- [x] **T6.4** (citro2d internal buffers stay uncounted; noted in docs/api/memory.md) move engine allocations (citro2d text buffer etc.) to tags where possible; `docs/api/memory.md`
 ## Stage 7 — File safety (FR-S1–S3)
 - [ ] **T7.1** path validation — test: `tests/fs/test_path.cpp` (accept/reject tables)
 - [ ] **T7.2** contract `fs.hpp` + pc/3ds/fake (fake simulates interrupted writes) — test: conformance

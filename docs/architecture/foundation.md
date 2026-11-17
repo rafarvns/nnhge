@@ -51,14 +51,16 @@ may display the flavor but shouldn't branch gameplay on it.
 
 ## Memory
 
+> Status: **implemented** (spec 002 stage 6). API: [docs/api/memory.md](../api/memory.md).
+
 - Regions: **heap** (`malloc`), **linear** (GPU-visible, 3DS), **VRAM** (3DS). The PC simulator emulates
   linear and VRAM budgets so overruns show up on PC first.
 - Every engine allocation names a **tag** (`gfx`, `audio`, `events`, user tags). Counters per region and
   tag: current bytes, peak, allocation count.
 - **Budgets** per region (defaults = Old 3DS) and optional per tag; going over logs a warning once.
 - At shutdown (Debug/Development), any live allocation is reported per tag: a leak list.
-- Per-frame code must not allocate; allocators can assert on allocation during a frame for tags marked
-  "load-time only".
+- Per-frame code must not allocate (constitution V). An assert for "load-time only" tags allocating
+  during a frame is a possible later addition.
 
 ## Further reading
 

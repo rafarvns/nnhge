@@ -12,6 +12,7 @@
 #include <cstdint>
 
 #include "nnh/build.hpp"
+#include "nnh/detail/printf_format.hpp"
 
 namespace nnh {
 
@@ -54,11 +55,7 @@ const char* ring_line(int index);
 void reset();
 
 /// Use the NNH_LOG_* macros instead. Formats and dispatches one message.
-void write(LogChannel& channel, LogLevel level, const char* format, ...)
-#if defined(__GNUC__)
-    __attribute__((format(printf, 3, 4)))
-#endif
-    ;
+void write(LogChannel& channel, LogLevel level, const char* format, ...) NNH_PRINTF_FORMAT(3, 4);
 
 } // namespace log
 } // namespace nnh

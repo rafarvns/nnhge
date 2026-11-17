@@ -104,7 +104,7 @@ scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # 
 ```
 
 Linux checks and libFuzzer run on the homelab build VM `nnhge-build` (VM 120, off by default; the
-maintainer allowed this session to start/stop it and run builds; `apt`/system changes need an OK):
+maintainer allows any session to start/stop it and run builds; `apt`/system changes need an OK):
 
 ```sh
 ssh homelab 'sudo qm status 101 | grep -q stopped && free -m && sudo qm start 120'   # never with Bazzite (101)

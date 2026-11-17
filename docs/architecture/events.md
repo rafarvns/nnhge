@@ -75,7 +75,8 @@ nnh::events::publish(CoinCollected{10, pos});   // queued, delivered at the next
 
 - **No RTTI**: event type ids are compile-time (template static address), not `typeid`.
 - **No per-frame heap allocation**: the queue is a fixed-capacity ring buffer of bytes; subscriber slots
-  are fixed arrays. Capacities are set at `init()` and documented in `docs/api/events.md`.
+  are fixed arrays. Capacities are set at `init()` (defaults 16 KB queue, 256 subscribers, configurable
+  through `AppConfig`) and documented in `docs/api/events.md`.
 - Overflowing the queue is a bug: it asserts in debug builds and drops + logs in release.
 - Handlers should be short. Heavy work belongs in the scene's `update()`, triggered by a flag the handler sets.
 

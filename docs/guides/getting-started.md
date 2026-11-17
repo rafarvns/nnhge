@@ -22,7 +22,8 @@ automatically; otherwise set the environment variable `CMAKE_TLS_CAINFO` to a CA
 ### Linux / macOS (not yet tested)
 
 Install CMake ≥ 3.25, Ninja and a C++20 compiler. SDL3 is used from the system if installed, otherwise
-built from source on first configure. For 3DS, install devkitPro pacman and `sudo dkp-pacman -S 3ds-dev`.
+built from source on first configure; on Linux that needs the X11 (or Wayland) headers, e.g.
+`sudo apt install libx11-dev libxext-dev` (this is what CI uses). For 3DS, install devkitPro pacman and `sudo dkp-pacman -S 3ds-dev`.
 
 ## 2. Build and run on PC (simulator)
 

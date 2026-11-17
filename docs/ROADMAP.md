@@ -10,7 +10,7 @@ Order may change; keep this file honest.
 - [x] `nnh_add_game()` CMake function
 - [x] Example `hello`: clear both screens, print text, exit on START — verified on PC (screenshot)
 - [x] `hello` verified on a real 3DS (2026-11-17, sent with 3dslink to the Homebrew Launcher)
-- [ ] CI (GitHub Actions): workflow written, not yet run (no remote repository yet)
+- [x] CI (GitHub Actions): Linux PC build + tests + headless `hello` smoke test; 3DS build with `.3dsx` artifact
 - [x] Build-time baseline (2026-11-17, see below)
 
 Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkitARM):

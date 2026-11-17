@@ -49,7 +49,9 @@ spec (approved by the maintainer) → plan (Constitution Check) → tasks → TD
 - **Docs with every change**: after any modification, run the `nnh-docs` skill — update every doc the
   change made false and check links. Repository docs are the source of truth; the
   [GitHub wiki](https://github.com/rafarvns/nnhge/wiki) is generated from them by CI on push to `main`
-  (never edit it by hand). See [docs/process/documentation.md](docs/process/documentation.md).
+  (never edit it by hand). A Stop hook (`.claude/settings.json` → `scripts/hooks/docs_reminder.py`)
+  sends you back if a turn ends with changed files but no doc change, or with broken links. See
+  [docs/process/documentation.md](docs/process/documentation.md).
 
 Project skills (`.claude/skills/`): `nnh-architecture`, `nnh-spec`, `nnh-tdd`, `nnh-new-module`,
 `nnh-review`, `nnh-docs`, `nnh-devkitpro`, `nnh-cmake`, `nnh-cpp`, `nnh-sdl3`.

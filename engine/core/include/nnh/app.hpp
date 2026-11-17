@@ -2,9 +2,19 @@
 /// @file nnh/app.hpp
 /// Engine lifecycle and the main loop. See docs/api/app.md.
 
+#include <cstddef>
 #include <cstdint>
 
 namespace nnh {
+
+/// Event bus capacities (see <nnh/events.hpp>), allocated once at init().
+struct EventsConfig {
+    /// Ring buffer for queued events. Each event takes 16 bytes + its size rounded up to 8.
+    /// Minimum 1024.
+    std::size_t queue_bytes = 16 * 1024;
+    /// Maximum simultaneous subscriptions (about 48 bytes each on 3DS). Minimum 8.
+    int max_subscribers = 256;
+};
 
 /// Options for nnh::init(). Use designated initializers:
 /// @code
@@ -19,6 +29,8 @@ struct AppConfig {
     /// Name of the game's data folder (saves, log.txt, crash.txt): letters, digits, '-' and '_'.
     /// 3DS: sdmc:/3ds/<data_folder>/. nullptr = derived from `title` ("My Game" -> "my-game").
     const char* data_folder = nullptr;
+    /// Event bus capacities: `.events = {.queue_bytes = 32 * 1024, .max_subscribers = 512}`.
+    EventsConfig events = {};
 };
 
 /// Initializes the engine (video, input). Call once, before anything else.

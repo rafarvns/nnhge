@@ -1,6 +1,6 @@
 # Tasks 001: Event bus and scenes
 
-Status: in progress — stage 1 done (2026-11-17)
+Status: in progress — stages 1–2 done (2026-11-17)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each stage ends green: PC (Debug + Release) and 3DS builds, tests, docs updated (nnh-docs); Linux checks on
@@ -13,12 +13,12 @@ the homelab build VM when useful. `[P]` = parallelizable.
 - [x] **T1.4** [P] `events/subscriber_table` (slots, generations, since-sequence) — test: `tests/events/test_subscriber_table.cpp` — covers FR-2, FR-4
 
 ## Stage 2 — Bus API (FR-2–FR-6)
-- [ ] **T2.1** `<nnh/events.hpp>`, `events/bus.cpp`, `AppConfig::events`; allocation at init (tag `events`), release at shutdown — test: `tests/events/test_capacities.cpp`
-- [ ] **T2.2** `Subscription` RAII/move/reset/stale handles — test: `tests/events/test_subscriptions.cpp`
-- [ ] **T2.3** dispatch in `nnh::frame()` (after input, before returning to the game) — test: `tests/events/test_dispatch.cpp`
-- [ ] **T2.4** re-entrancy rules + depth limit — test: `tests/events/test_reentrancy.cpp` — covers FR-4
-- [ ] **T2.5** overflow: assert (Debug/Dev) / drop + log (Release) — test: `tests/events/test_overflow.cpp` — covers FR-6
-- [ ] **T2.6** `docs/api/events.md`; `docs/architecture/events.md` status → implemented
+- [x] **T2.1** `<nnh/events.hpp>`, `events/bus.cpp`, `AppConfig::events`; allocation at init (tag `events`), release at shutdown — test: `tests/events/test_capacities.cpp`
+- [x] **T2.2** `Subscription` RAII/move/reset/stale handles — test: `tests/events/test_subscriptions.cpp`
+- [x] **T2.3** dispatch in `nnh::frame()` (after input, before returning to the game) — test: `tests/events/test_dispatch.cpp`
+- [x] **T2.4** re-entrancy rules + depth limit — test: `tests/events/test_reentrancy.cpp` — covers FR-4
+- [x] **T2.5** overflow: assert (Debug/Dev) / drop + log (Release) — test: `tests/events/test_overflow.cpp` — covers FR-6
+- [x] **T2.6** `docs/api/events.md`; `docs/architecture/events.md` status → implemented
 
 ## Stage 3 — Input events (FR-7)
 - [ ] **T3.1** `ButtonPressed` / `ButtonReleased` published by the input module — test: `tests/events/test_input_events.cpp`

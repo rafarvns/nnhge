@@ -6,5 +6,6 @@
 #include "nnh/app.hpp"
 #include "nnh/build.hpp"
 #include "nnh/debug.hpp"
+#include "nnh/events.hpp"
 #include "nnh/gfx.hpp"
 #include "nnh/input.hpp"

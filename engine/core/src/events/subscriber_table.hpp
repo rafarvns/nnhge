@@ -8,12 +8,9 @@
 
 #include <cstdint>
 
-#include "nnh/detail/small_function.hpp"
-#include "nnh/detail/type_id.hpp"
+#include "nnh/events.hpp"
 
 namespace nnh::detail {
-
-using EventHandler = SmallFunction<void(const void*)>;
 
 struct SubscriberSlot {
     TypeId type = nullptr;
@@ -25,8 +22,9 @@ struct SubscriberSlot {
 
 class SubscriberTable {
 public:
-    /// Uses `slots` (constructed here) for storage and removes every subscriber.
-    void reset(SubscriberSlot* slots, int capacity);
+    /// Uses `slots` (constructed here) for storage and removes every subscriber. Generations start at
+    /// `first_generation`, so handles from a previous table (see next_generation()) stay stale.
+    void reset(SubscriberSlot* slots, int capacity, std::uint32_t first_generation = 1);
 
     /// @return slot index, or -1 if the table is full. `generation_out` identifies this subscription.
     int add(TypeId type, EventHandler handler, std::uint32_t since_sequence, std::uint32_t& generation_out);
@@ -40,9 +38,15 @@ public:
     void for_each_matching(TypeId type, std::uint32_t sequence, Fn&& fn) {
         for (int i = 0; i < capacity_; ++i) {
             SubscriberSlot& slot = slots_[i];
-            if (slot.active && slot.type == type && sequence >= slot.since_sequence) fn(slot);
+            // Wrap-safe "sequence >= since_sequence" (sequences are 32-bit and may wrap around).
+            if (slot.active && slot.type == type && static_cast<std::int32_t>(sequence - slot.since_sequence) >= 0) {
+                fn(slot);
+            }
         }
     }
+
+    /// True if {slot, generation} is a live subscription.
+    bool is_active(int slot, std::uint32_t generation) const;
 
     int active_count() const;
 
@@ -50,6 +54,9 @@ public:
     void invalidate_all();
 
     int capacity() const { return capacity_; }
+
+    /// A generation higher than any used so far: pass it to the next reset().
+    std::uint32_t next_generation() const;
 
 private:
     SubscriberSlot* slots_ = nullptr;

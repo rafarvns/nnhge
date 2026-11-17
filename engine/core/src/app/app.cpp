@@ -6,6 +6,7 @@
 #include "core/engine_state.hpp"
 #include "crash/crash_internal.hpp"
 #include "debug/dev_tools.hpp"
+#include "events/events_internal.hpp"
 #include "nnh/input.hpp"
 #include "nnh/platform/system.hpp"
 #include "nnh/time.hpp"
@@ -55,6 +56,10 @@ bool init(const AppConfig& config) {
         NNH_LOG_ERROR(app, "platform init failed: %s", platform::last_error());
         return false;
     }
+    if (!detail::events_init(config.events)) {
+        platform::shutdown();
+        return false;
+    }
     g_initialized = true;
     g_frame_count = 0;
     detail::input_reset();
@@ -80,6 +85,7 @@ bool frame() {
     platform::begin_frame(detail::clear_color(Screen::Top), detail::clear_color(Screen::Bottom));
     g_frame_open = true;
     ++g_frame_count;
+    detail::events_dispatch(); // after input, before the game's update
     return true;
 }
 
@@ -87,6 +93,7 @@ void shutdown() {
     if (!g_initialized) return;
     close_frame();
     NNH_LOG_INFO(app, "shutdown after %llu frames", static_cast<unsigned long long>(g_frame_count));
+    detail::events_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();
     platform::shutdown();

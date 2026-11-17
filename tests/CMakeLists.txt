@@ -19,9 +19,14 @@ add_executable(nnh_tests
     crash/test_report.cpp
     debug/test_overlay.cpp
     debug/test_profile.cpp
+    events/test_capacities.cpp
+    events/test_dispatch.cpp
     events/test_event_queue.cpp
+    events/test_overflow.cpp
+    events/test_reentrancy.cpp
     events/test_small_function.cpp
     events/test_subscriber_table.cpp
+    events/test_subscriptions.cpp
     events/test_type_id.cpp
     fs/test_files.cpp
     fs/test_log_files.cpp

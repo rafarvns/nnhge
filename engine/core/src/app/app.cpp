@@ -5,6 +5,9 @@
 #include "core/engine_state.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "input/input_internal.hpp"
+#include "log/engine_channels.hpp"
+#include "nnh/build.hpp"
+#include "nnh/log.hpp"
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/time.hpp"
@@ -31,11 +34,15 @@ bool detail::frame_open() { return g_frame_open; }
 
 bool init(const AppConfig& config) {
     if (g_initialized) return true;
-    if (!platform::init(config)) return false;
+    if (!platform::init(config)) {
+        NNH_LOG_ERROR(app, "platform init failed: %s", platform::last_error());
+        return false;
+    }
     g_initialized = true;
     g_frame_count = 0;
     detail::input_reset();
     detail::time_reset(platform::ticks_ns());
+    NNH_LOG_INFO(app, "started \"%s\" (%s build)", config.title, build::flavor_name());
     return true;
 }
 
@@ -54,6 +61,7 @@ bool frame() {
 void shutdown() {
     if (!g_initialized) return;
     close_frame();
+    NNH_LOG_INFO(app, "shutdown after %llu frames", static_cast<unsigned long long>(g_frame_count));
     platform::shutdown();
     g_initialized = false;
 }

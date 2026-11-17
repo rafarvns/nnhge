@@ -10,6 +10,9 @@ add_executable(nnh_tests
     app/test_frame_loop.cpp
     build/test_flavor.cpp
     input/test_input_state.cpp
+    log/test_format.cpp
+    log/test_log.cpp
+    log/test_ring.cpp
     time/test_clock.cpp
     time/test_duration.cpp
     time/test_fixed_step.cpp

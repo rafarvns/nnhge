@@ -103,7 +103,9 @@ python -I scripts/docs_tool.py check                           # docs: broken li
   build VM for Linux checks; don't trigger or wait for CI runs unless asked. The wiki workflow still
   runs on push to `main` (a few seconds).
 - Read the screenshot PNG to verify simulator output without a human.
-- Run on a console: Homebrew Launcher → Y, then `/c/devkitPro/tools/bin/3dslink.exe <file>.3dsx -a <ip>`.
+- Run on a console: Homebrew Launcher → Y, then `/c/devkitPro/tools/bin/3dslink.exe -s <file>.3dsx -a <ip>`
+  (`-s` keeps the PC listening, so logs of Debug/Development builds appear in the terminal).
+- Platform libraries never call core (no logging there): return errors / set `platform::last_error()`.
 - Build budgets: edit one game `.cpp` → simulator < 2 s, `.3dsx` < 5 s; clean engine < 30 s. Measure
   build changes before/after ([docs/tech/cmake.md](docs/tech/cmake.md)).
 

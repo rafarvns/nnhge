@@ -4,6 +4,7 @@
 
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/input.hpp"
+#include "nnh/platform/log.hpp"
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
 #include "test.hpp"
@@ -62,6 +63,16 @@ NNH_TEST(clock_never_goes_backwards) {
         previous = now;
     }
     platform::shutdown();
+}
+
+NNH_TEST(console_accepts_lines_of_every_level) {
+    for (int l = 0; l <= static_cast<int>(nnh::LogLevel::Fatal); ++l) {
+        platform::log_console(static_cast<nnh::LogLevel>(l), "[f0        0.000s] I test   conformance line");
+    }
+}
+
+NNH_TEST(last_error_is_never_null) {
+    CHECK(platform::last_error() != nullptr);
 }
 
 NNH_TEST(debug_line_height_is_positive) {

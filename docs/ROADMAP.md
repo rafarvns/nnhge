@@ -31,7 +31,7 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 - [ ] Capabilities and system info; extension headers mechanism
 - [x] Build flavors (Debug, Development, Release) (stage 2)
 - [x] Time: monotonic clock, frame delta, fixed timestep (stage 3)
-- [ ] Logging: levels, channels, sinks (console, file, ring buffer, 3dslink, debugger)
+- [x] Logging: levels, channels, sinks (console, ring buffer, 3dslink, debugger) (stage 4; file sink in stage 7)
 - [ ] Errors: `NNH_ASSERT`/`VERIFY`/`PANIC`, `Result<T>`, crash screen + report, 3DS exception handler
 - [ ] Memory: tagged allocators, budgets, leak report
 - [ ] Debug overlay, profiler, simulator pause/step; GDB-on-3DS guide

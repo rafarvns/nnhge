@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include "nnh/gfx.hpp"
+#include "nnh/log.hpp"
 #include "nnh/time.hpp"
 
 namespace nnh::platform_fake {
@@ -34,6 +35,8 @@ struct State {
     Color bottom_clear{};
     int text_count = 0; ///< texts drawn in the current frame (cleared by begin_frame)
     DrawnText texts[kMaxRecordedTexts];
+    int console_lines = 0;                          ///< log lines written with log_console()
+    char last_console_line[log::kMaxLineLength] = {}; ///< the latest of them
 };
 
 const State& state();

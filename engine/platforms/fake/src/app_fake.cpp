@@ -4,13 +4,22 @@
 #include "nnh/platform/app.hpp"
 
 namespace nnh::platform {
+namespace {
+
+const char* g_last_error = "";
+
+} // namespace
 
 using platform_fake::detail::controls;
 using platform_fake::detail::mutable_state;
 
 bool init(const AppConfig&) {
     ++mutable_state().init_calls;
-    if (controls().init_fails) return false;
+    if (controls().init_fails) {
+        g_last_error = "fake init failure (set_init_fails)";
+        return false;
+    }
+    g_last_error = "";
     mutable_state().initialized = true;
     return true;
 }
@@ -19,6 +28,8 @@ void shutdown() {
     ++mutable_state().shutdown_calls;
     mutable_state().initialized = false;
 }
+
+const char* last_error() { return g_last_error; }
 
 bool poll_events() { return !controls().quit_requested; }
 

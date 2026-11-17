@@ -1,6 +1,6 @@
 # Plan 002: Core foundation
 
-Status: in progress (stages 1–3 done)
+Status: in progress (stages 1–4 done)
 Spec: [spec.md](spec.md)
 
 ## Constitution Check (before design)
@@ -180,8 +180,8 @@ Simulator controls in `platforms/pc/src/devtools_pc.cpp`. All compiled out in Re
   reading it. Asserts/panics don't depend on this.
 - **Crash screen after GPU state corruption** may fail on 3DS: we drop to libctru's text console
   (CPU framebuffer), which only needs `gfxInit`.
-- **Static library cycle** core ↔ platform: handled with link multiplicity; alternative is moving
-  platform→core calls (logging) behind a callback set at init, if the linker setup proves fragile.
+- **Static library cycle** core ↔ platform: *resolved in stage 4* — platform libraries never call core;
+  they report through return values and `platform::last_error()` and core logs. No link multiplicity needed.
 - **libFuzzer unavailable on MinGW/MSVC**: fuzz only in Linux CI; corpus runner everywhere.
 - **Build time** grows with more modules: measure after stages 1 and 9; keep headers light.
 - Alternative rejected: runtime platform registry with virtual interfaces (D15).

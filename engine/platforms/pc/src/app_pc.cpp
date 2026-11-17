@@ -9,6 +9,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL3/SDL_main.h>
 
+#include <cstdio>
 #include <cstdlib>
 
 #include "context_pc.hpp"
@@ -18,6 +19,9 @@ namespace nnh::platform {
 namespace {
 
 pc::Context g_context;
+char g_last_error[256] = "";
+
+void set_error(const char* what) { std::snprintf(g_last_error, sizeof g_last_error, "%s: %s", what, SDL_GetError()); }
 
 void read_dev_options() {
     const char* n = std::getenv("NNH_EXIT_AFTER_FRAMES");
@@ -31,14 +35,15 @@ pc::Context& pc::context() { return g_context; }
 
 bool init(const AppConfig& config) {
     SDL_SetMainReady();
+    g_last_error[0] = '\0';
     if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_Log("NNHGE: SDL_Init failed: %s", SDL_GetError());
+        set_error("SDL_Init failed");
         return false;
     }
     const int scale = config.pc_window_scale > 0 ? config.pc_window_scale : 1;
     if (!SDL_CreateWindowAndRenderer(config.title, pc::kLogicalWidth * scale, pc::kLogicalHeight * scale,
                                      SDL_WINDOW_RESIZABLE, &g_context.window, &g_context.renderer)) {
-        SDL_Log("NNHGE: window creation failed: %s", SDL_GetError());
+        set_error("window creation failed");
         SDL_Quit();
         return false;
     }
@@ -57,6 +62,8 @@ void shutdown() {
     g_context = {};
     SDL_Quit();
 }
+
+const char* last_error() { return g_last_error; }
 
 bool poll_events() {
     SDL_Event event;

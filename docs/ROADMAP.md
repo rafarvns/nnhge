@@ -26,8 +26,8 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 - [x] Project skills and agents in `.claude/`
 - [x] Code reorganized into module folders, one concept per file
 
-## M1 — Core foundation ([spec 002](../specs/002-core-foundation/spec.md)) — spec drafted, awaiting approval
-- [ ] Core + platform libraries split (`nnh::core`, `nnh::platform_{pc,3ds,fake}`), platform contract, conformance tests
+## M1 — Core foundation ([spec 002](../specs/002-core-foundation/spec.md)) — in progress
+- [x] Core + platform libraries split (`nnh::core`, `nnh::platform_{pc,3ds,fake}`), platform contract, conformance tests (stage 1)
 - [ ] Capabilities and system info; extension headers mechanism
 - [ ] Build flavors (Debug, Development, Release)
 - [ ] Time: monotonic clock, frame delta, fixed timestep

@@ -6,7 +6,7 @@ are true again.
 ## One source of truth
 
 The Markdown files **in the repository** are the source: `docs/`, `specs/`, `README.md`,
-`CONTRIBUTING.md`, plus the Doxygen comments in `engine/include/nnh/`. The
+`CONTRIBUTING.md`, plus the Doxygen comments in `engine/core/include/nnh/`. The
 [GitHub wiki](https://github.com/rafarvns/nnhge/wiki) is **generated** from them and never edited by
 hand (manual edits are overwritten).
 
@@ -18,7 +18,7 @@ repo docs ──(push to main)──> .github/workflows/wiki.yml ──> scripts
 
 | You changed... | Update |
 |----------------|--------|
-| A public header `engine/include/nnh/<m>.hpp` | Doxygen comments in the header, `docs/api/<m>.md`, the example that shows it |
+| A public header `engine/core/include/nnh/<m>.hpp` | Doxygen comments in the header, `docs/api/<m>.md`, the example that shows it |
 | A new module | New `docs/api/<m>.md`, link it from `docs/api/` users (README "Documentation" if central) |
 | Keyboard mapping / simulator behaviour | `docs/api/input.md`, `docs/api/simulator.md`, `docs/tech/sdl3.md` |
 | 3DS backend behaviour or limits | `docs/tech/devkitpro-3ds.md` |

@@ -28,7 +28,7 @@ If the preset isn't configured yet: `cmake --preset pc-debug` first.
 ## Writing tests
 
 ```cpp
-// tests/<module>/test_<concept>.cpp  — mirrors engine/src/<module>/
+// tests/<module>/test_<concept>.cpp  — mirrors engine/core/src/<module>/
 #include "<module>/<concept>.hpp"
 #include "test.hpp"
 
@@ -48,8 +48,8 @@ NNH_TEST(behaviour_when_condition) {
 
 | Code | Verification |
 |------|--------------|
-| Logic in `engine/src/<module>/` | unit test first |
-| Public API wiring | unit tests linked with the **fake** platform backend (`engine/src/platform/fake/`, added with spec 001) |
+| Logic in `engine/core/src/<module>/` | unit test first |
+| Public API wiring | unit tests linked with the **fake** platform backend (`engine/platforms/fake/`, controls in `nnh/platform_fake.hpp`) |
 | Platform backends (pc, 3ds) | example program + simulator screenshot + run on 3DS |
 
 Screenshot check: `NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/<ex>/<ex>.exe`,

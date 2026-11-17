@@ -6,11 +6,16 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 Each stage ends green: PC + 3DS build, tests, CI, docs updated (nnh-docs). `[P]` = parallelizable.
 
 ## Stage 1 — Core / platform split (FR-P1–P3)
-- [ ] **T1.1** Move code to `engine/core/{include,src}` and `engine/platforms/{pc,3ds}/src`; split `platform.hpp` into `engine/core/contract/nnh/platform/{app,video,input}.hpp` — test: existing unit tests + hello screenshot unchanged
-- [ ] **T1.2** CMake targets `nnh::core_contract`, `nnh::core`, `nnh::platform_pc`, `nnh::platform_3ds`, `nnh::engine` (link multiplicity) — test: all presets build from clean
-- [ ] **T1.3** `nnh::platform_fake` (scriptable buttons, recorded draw calls, manual clock) — test: `tests/platform_conformance/` skeleton passes on fake — covers FR-P3
-- [ ] **T1.4** Conformance tests also run against `platform_pc` headless in CI — covers FR-P3
-- [ ] **T1.5** Platform READMEs; update project-structure, platforms ("Status: implemented" for layout), CLAUDE.md, skills paths — measure build times
+- [x] **T1.1** Move code to `engine/core/{include,src}` and `engine/platforms/{pc,3ds}/src`; split `platform.hpp` into `engine/core/contract/nnh/platform/{app,video,input}.hpp` — test: existing unit tests + hello screenshot unchanged
+- [x] **T1.2** CMake targets `nnh::core_contract`, `nnh::core`, `nnh::platform_pc`, `nnh::platform_3ds`, `nnh::engine` (link multiplicity) — test: all presets build from clean
+- [x] **T1.3** `nnh::platform_fake` (scriptable buttons, recorded draw calls, manual clock) — test: `tests/platform_conformance/` skeleton passes on fake — covers FR-P3
+- [x] **T1.4** Conformance tests also run against `platform_pc` headless in CI — covers FR-P3
+- [x] **T1.5** Platform READMEs; update project-structure, platforms ("Status: implemented" for layout), CLAUDE.md, skills paths — measure build times
+
+Stage 1 notes (2026-11-17): link multiplicity was not needed yet (platforms don't call core); add it in
+stage 4 when platform sinks log through core. The fake's manual clock comes with the time contract
+(T3.1). New: CI "layering" check (no SDK include in `engine/core`), 11 unit + 5×2 conformance tests,
+mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clean 3DS build 3.6 s.
 ## Stage 2 — Build flavors (FR-B1–B2)
 - [ ] **T2.1** Presets `*-dev`, flavor defines on `nnh::core` — test: `tests/flavor/` compile-time check of the active flavor
 - [ ] **T2.2** docs: cmake.md, getting-started, CLAUDE.md commands

@@ -1,5 +1,5 @@
 #pragma once
-// State shared by the 3DS backend files. Internal to engine/src/platform/3ds/.
+// State shared by the 3DS platform library files. Internal to engine/platforms/3ds/.
 
 #include <citro2d.h>
 

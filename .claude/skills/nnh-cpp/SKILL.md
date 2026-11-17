@@ -17,7 +17,7 @@ Full notes: `docs/tech/cpp.md`. Naming/structure: `docs/architecture/project-str
 | `virtual` per object in hot loops | Arrays of plain structs + one function (virtual per scene/system is OK) |
 | `std::function` in hot paths | Function pointer + context, fixed-size callable |
 | `<iostream>`, `<regex>`, `<locale>` | `printf`-style, hand-written parsing |
-| Platform headers in `engine/include/` | Keep `<3ds.h>`, `<SDL3/SDL.h>` inside `engine/src/platform/<target>/` |
+| Platform headers in `engine/core/include/` | Keep `<3ds.h>`, `<SDL3/SDL.h>` inside `engine/platforms/<target>/` |
 | `using namespace` in headers | Qualify names |
 
 ## Do

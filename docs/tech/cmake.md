@@ -22,16 +22,23 @@ Build folders: `build/<preset>/`. Personal presets go in `CMakeUserPresets.json`
 | File | Role |
 |------|------|
 | `CMakeLists.txt` | Project, C++20, platform detection (`NINTENDO_3DS` → `NNH_PLATFORM`), ccache, subdirectories |
-| `engine/CMakeLists.txt` | `nnh_engine` static library (alias `nnh::engine`), per-platform backend sources |
+| `engine/CMakeLists.txt` | Adds core + the preset's platform library; defines `nnh::engine` (INTERFACE: core + platform), what games link |
+| `engine/core/CMakeLists.txt` | `nnh::core` (static) and `nnh::core_contract` (contract headers, INTERFACE) |
+| `engine/platforms/<system>/CMakeLists.txt` | `nnh::platform_<system>` (static), links the system SDK `PRIVATE` |
+| `cmake/nnh_engine_options.cmake` | `nnh_engine_options(target)`: C++20, warnings, no exceptions/RTTI |
 | `cmake/nnh_game.cmake` | `nnh_add_game()` |
-| `cmake/nnh_sdl3.cmake` | Provides `SDL3::SDL3` for the simulator |
+| `cmake/nnh_sdl3.cmake` | Provides `SDL3::SDL3` for the PC platform |
 | `examples/CMakeLists.txt` | One `add_subdirectory` per example |
-| `tests/CMakeLists.txt` | `nnh_tests` (PC only) |
+| `tests/CMakeLists.txt` | `nnh_tests` (core + fake), `nnh_conformance_<platform>` (PC only) |
 
 ## Common changes
 
-**Add a source file to the engine**: list it in `engine/CMakeLists.txt` (shared sources in
-`add_library`, backend files in the matching platform block). Sources are always listed explicitly.
+**Add a source file**: core files go in `engine/core/CMakeLists.txt`; a system's files go in
+`engine/platforms/<system>/CMakeLists.txt` (and every platform implements each new contract function,
+fake included). Sources are always listed explicitly.
+
+**Add a platform**: new folder `engine/platforms/<system>/` with a `nnh_platform_<system>` target and
+presets selecting it ([platforms.md](../architecture/platforms.md)).
 
 **Add an example**: `examples/<name>/CMakeLists.txt` with `nnh_add_game(...)`, then
 `add_subdirectory(<name>)` in `examples/CMakeLists.txt`.

@@ -25,8 +25,7 @@ commands owned by that module) or through the **event bus** (facts and requests 
  foundation inside core: time · log · assert/result · memory · fs · debug · system
 ```
 
-Dependencies only point **down**. Core never includes a system SDK header. Today the backends still
-live inside one library (`engine/src/platform/`); spec 002 performs the split.
+Dependencies only point **down**. Core never includes a system SDK header (checked in CI).
 
 ## Frame flow
 

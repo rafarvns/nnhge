@@ -29,8 +29,8 @@ Public functions document: does it allocate? is it per-frame safe? what happens 
 ## Headers
 
 - A public header includes only what its declarations need (`<cstdint>`, other `nnh/` headers). No
-  platform headers (`<3ds.h>`, `<SDL3/SDL.h>`) in anything under `engine/include/`.
-- Hide implementation: opaque handles, internal headers in `engine/src/`, or PIMPL. Changing an
+  platform headers (`<3ds.h>`, `<SDL3/SDL.h>`) in anything under `engine/core/include/`.
+- Hide implementation: opaque handles, internal headers in `engine/core/src/`, or PIMPL. Changing an
   implementation must not recompile games.
 - `#pragma once`. Include order: own header, standard library, third party, project (clang-format regroups).
 

@@ -1,6 +1,6 @@
 # Plan 002: Core foundation
 
-Status: approved (follows spec approval, 2026-11-17)
+Status: in progress (stage 1 done)
 Spec: [spec.md](spec.md)
 
 ## Constitution Check (before design)

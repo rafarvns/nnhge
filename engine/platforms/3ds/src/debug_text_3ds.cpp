@@ -3,8 +3,8 @@
 #include <3ds.h>
 #include <citro2d.h>
 
-#include "platform/3ds/context_3ds.hpp"
-#include "platform/platform.hpp"
+#include "context_3ds.hpp"
+#include "nnh/platform/video.hpp"
 
 namespace nnh::platform {
 namespace {

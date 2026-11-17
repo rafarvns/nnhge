@@ -5,7 +5,9 @@
 #include "core/engine_state.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "input/input_internal.hpp"
-#include "platform/platform.hpp"
+#include "nnh/platform/app.hpp"
+#include "nnh/platform/input.hpp"
+#include "nnh/platform/video.hpp"
 
 namespace nnh {
 namespace {

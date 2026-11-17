@@ -1,10 +1,10 @@
-// Nintendo 3DS: GPU setup and frame lifecycle (libctru + citro3d/citro2d).
+// Nintendo 3DS platform: application lifecycle — GPU setup and APT events (libctru + citro3d/citro2d).
 
 #include <3ds.h>
 #include <citro2d.h>
 
-#include "platform/3ds/context_3ds.hpp"
-#include "platform/platform.hpp"
+#include "context_3ds.hpp"
+#include "nnh/platform/app.hpp"
 
 namespace nnh::platform {
 namespace {
@@ -16,14 +16,6 @@ ctr::Context g_context;
 } // namespace
 
 ctr::Context& ctr::context() { return g_context; }
-
-void ctr::draw_on(Screen screen) {
-    C3D_RenderTarget* target = g_context.targets[screen == Screen::Top ? 0 : 1];
-    if (g_context.current_target != target) {
-        C2D_SceneBegin(target);
-        g_context.current_target = target;
-    }
-}
 
 bool init(const AppConfig& config) {
     (void)config; // title and icon come from the SMDH on 3DS
@@ -53,18 +45,5 @@ void shutdown() {
 }
 
 bool poll_events() { return aptMainLoop(); }
-
-void begin_frame(Color top_clear, Color bottom_clear) {
-    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-    C2D_TextBufClear(g_context.text_buffer);
-    C2D_TargetClear(g_context.targets[0], ctr::to_c2d(top_clear));
-    C2D_TargetClear(g_context.targets[1], ctr::to_c2d(bottom_clear));
-    // Begin a scene on both targets so each one is presented even if nothing is drawn on it.
-    g_context.current_target = nullptr;
-    ctr::draw_on(Screen::Bottom);
-    ctr::draw_on(Screen::Top);
-}
-
-void end_frame() { C3D_FrameEnd(0); }
 
 } // namespace nnh::platform

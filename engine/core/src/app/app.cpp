@@ -85,6 +85,7 @@ bool frame() {
     platform::begin_frame(detail::clear_color(Screen::Top), detail::clear_color(Screen::Bottom));
     g_frame_open = true;
     ++g_frame_count;
+    detail::input_publish_events();
     detail::events_dispatch(); // after input, before the game's update
     return true;
 }

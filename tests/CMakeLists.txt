@@ -22,6 +22,7 @@ add_executable(nnh_tests
     events/test_capacities.cpp
     events/test_dispatch.cpp
     events/test_event_queue.cpp
+    events/test_input_events.cpp
     events/test_overflow.cpp
     events/test_reentrancy.cpp
     events/test_small_function.cpp

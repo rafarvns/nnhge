@@ -25,6 +25,21 @@ enum class Button : std::uint32_t {
     Right = 1u << 13, ///< D-Pad.
 };
 
+/// Event published once per button that went down this frame (see <nnh/events.hpp>):
+/// @code
+/// nnh::Subscription sub = nnh::events::subscribe<nnh::ButtonPressed>([this](const nnh::ButtonPressed& e) {
+///     if (e.button == nnh::Button::Start) paused_ = true;
+/// });
+/// @endcode
+struct ButtonPressed {
+    Button button;
+};
+
+/// Event published once per button that went up this frame.
+struct ButtonReleased {
+    Button button;
+};
+
 namespace input {
 
 /// True while the button is down this frame.

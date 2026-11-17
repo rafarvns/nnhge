@@ -1,6 +1,6 @@
 # Tasks 001: Event bus and scenes
 
-Status: in progress — stages 1–2 done (2026-11-17)
+Status: in progress — stages 1–3 done (2026-11-17)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each stage ends green: PC (Debug + Release) and 3DS builds, tests, docs updated (nnh-docs); Linux checks on
@@ -21,8 +21,8 @@ the homelab build VM when useful. `[P]` = parallelizable.
 - [x] **T2.6** `docs/api/events.md`; `docs/architecture/events.md` status → implemented
 
 ## Stage 3 — Input events (FR-7)
-- [ ] **T3.1** `ButtonPressed` / `ButtonReleased` published by the input module — test: `tests/events/test_input_events.cpp`
-- [ ] **T3.2** `docs/api/input.md` events section
+- [x] **T3.1** `ButtonPressed` / `ButtonReleased` published by the input module — test: `tests/events/test_input_events.cpp`
+- [x] **T3.2** `docs/api/input.md` events section
 
 ## Stage 4 — Scenes (FR-8–FR-10)
 - [ ] **T4.1** `nnh::Scene` + `scene/scene_stack` (deferred push/pop/replace, enter/exit order, double push, destroy-while-on-stack check) — test: `tests/scene/test_scene_stack.cpp`

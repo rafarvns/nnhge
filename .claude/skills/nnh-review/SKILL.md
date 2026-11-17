@@ -27,11 +27,11 @@ Order findings by severity: **blocker** (breaks a constitution article or a buil
 - [ ] O: new behaviour added by subscribing/new scene, not by editing central switches
 - [ ] L: Scene/backends honour their documented contract
 - [ ] I: includes only what's used; no `nnh/nnh.hpp` in engine/examples
-- [ ] D: core depends on `platform.hpp`, never on SDL/libctru directly
+- [ ] D: core depends on the contract `nnh/platform/*.hpp`, never on SDL/libctru directly
 
 **C++ subset and cost**
 - [ ] No exceptions, RTTI, per-frame heap, `std::function` in hot paths, `virtual` per object
-- [ ] No platform headers or `#ifdef __3DS__` in `engine/include/` or game code
+- [ ] No platform headers or `#ifdef __3DS__` in `engine/core/include/` or game code
 - [ ] 3DS memory/texture limits respected
 
 **Safety and diagnostics (constitution X)**

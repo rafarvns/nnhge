@@ -1,6 +1,6 @@
 ---
 name: nnh-sdl3
-description: The NNHGE PC simulator backend built on SDL 3.4 — window with both 3DS screens, rendering, keyboard/gamepad input, 60 Hz pacing, screenshots and headless runs. Use when changing engine/src/platform/pc/ or verifying visual output on PC.
+description: The NNHGE PC simulator backend built on SDL 3.4 — window with both 3DS screens, rendering, keyboard/gamepad input, 60 Hz pacing, screenshots and headless runs. Use when changing engine/platforms/pc/ or verifying visual output on PC.
 ---
 
 # SDL3 simulator backend
@@ -10,9 +10,11 @@ Full notes: `docs/tech/sdl3.md`. Check SDL APIs in the fetched headers
 
 ## Layout
 
-`engine/src/platform/pc/`: `context_pc.hpp` (window/renderer, `screen_rect`, `set_draw_color`),
-`video_pc.cpp` (init, events, frame, pacing, env vars, screenshot), `input_pc.cpp` (keyboard map),
-`debug_text_pc.cpp`. One file per module: `<module>_pc.cpp`. Namespace `nnh::platform` (`::pc` internals).
+`engine/platforms/pc/` (target `nnh::platform_pc`, see its README): `src/context_pc.hpp`
+(window/renderer, frame counter, dev options, `screen_rect`, `set_draw_color`), `src/app_pc.cpp` (init,
+window, events, env vars), `src/video_pc.cpp` (frame, pacing, screenshot), `src/input_pc.cpp` (keyboard
+map), `src/debug_text_pc.cpp`. One file per contract area: `<area>_pc.cpp`. Namespace `nnh::platform`
+(`::pc` internals). Contract tests: `tests/platform_conformance/` (`nnh_conformance_pc`, headless).
 
 ## Rules
 
@@ -20,7 +22,7 @@ Full notes: `docs/tech/sdl3.md`. Check SDL APIs in the fetched headers
   Draw in logical coordinates, offset by the screen rect, clip to it.
 - 60 Hz like the console (vsync + `SDL_DelayPrecise` pacing).
 - The game owns `main()`: `SDL_MAIN_HANDLED` + `SDL_SetMainReady()`.
-- SDL stays inside `engine/src/platform/pc/` and is linked `PRIVATE`.
+- SDL stays inside `engine/platforms/pc/` and is linked `PRIVATE`.
 - Never more capable than the 3DS in ways games could depend on; enforce 3DS limits as features arrive.
 - Keyboard map changes must update `docs/api/input.md`.
 

@@ -20,10 +20,10 @@ affected, say so in one line and finish — it won't ask again for the same chan
 
 | Changed | Update |
 |---------|--------|
-| `engine/include/nnh/<m>.hpp` | header Doxygen comments, `docs/api/<m>.md`, its example |
+| `engine/core/include/nnh/<m>.hpp` | header Doxygen comments, `docs/api/<m>.md`, its example |
 | new module | new `docs/api/<m>.md` |
 | simulator / keyboard map | `docs/api/input.md`, `docs/api/simulator.md`, `docs/tech/sdl3.md` |
-| `engine/src/platform/3ds/` behaviour, limits | `docs/tech/devkitpro-3ds.md` |
+| `engine/platforms/3ds/` behaviour, limits | `docs/tech/devkitpro-3ds.md` |
 | CMake, presets, `scripts/`, CI | `docs/tech/cmake.md`; `docs/guides/getting-started.md` if setup changed; `CLAUDE.md` Build section if commands changed |
 | C++ rules | `docs/tech/cpp.md` + `nnh-cpp` skill |
 | architecture decision | `docs/architecture/decisions.md` (row + change log) + affected page |

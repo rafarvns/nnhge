@@ -12,7 +12,7 @@ here once accepted.
 | **Event Queue** | inside the bus | Decouples *in time*: events are delivered at one deterministic point per frame. |
 | **State** | `nnh::Scene` + scene stack | Each game mode is a class; switching scenes replaces mode flags. See [scenes.md](scenes.md). |
 | **Facade** | public headers `<nnh/*.hpp>` | Games see a small, stable API; platform and internals stay hidden. |
-| **Bridge (link-time)** | `engine/src/platform/platform.hpp` + one backend per target | Core depends on an interface; the backend is chosen by the build, so there is no `virtual` cost. |
+| **Bridge (link-time)** | `engine/core/contract/nnh/platform/*.hpp` + one backend per target | Core depends on an interface; the backend is chosen by the build, so there is no `virtual` cost. |
 | **RAII handles** | `Subscription`, textures, sounds | Resources and subscriptions are released automatically; no manual cleanup lists. |
 | **Object Pool** | bullets, particles, entities (later) | No heap allocation per frame; predictable memory on 3DS. |
 | **Command** | input actions (later) | Map buttons to actions, enable remapping and replays. |
@@ -20,10 +20,10 @@ here once accepted.
 ### Example: Bridge without virtual
 
 ```cpp
-// engine/src/platform/platform.hpp   (the interface)
+// engine/core/contract/nnh/platform/*.hpp   (the interface)
 namespace nnh::platform { std::uint32_t read_buttons(); }
 
-// engine/src/platform/3ds/input_3ds.cpp  (one implementation per target, picked by CMake)
+// engine/platforms/3ds/src/input_3ds.cpp  (one implementation per target, picked by CMake)
 std::uint32_t nnh::platform::read_buttons() { hidScanInput(); /* ... */ }
 ```
 

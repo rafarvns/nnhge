@@ -39,7 +39,7 @@ spec (approved by the maintainer) → plan (Constitution Check) → tasks → TD
 ```
 
 - **No feature code without an approved spec** in `specs/NNN-slug/`. Bug fixes start with a failing test.
-- **Test first** for all logic in `engine/src/<module>/`; backends are verified by examples, simulator
+- **Test first** for all logic in `engine/core/src/<module>/`; backends are verified by examples, simulator
   screenshots and the 3DS.
 - **Small steps**: one roadmap item at a time, working on PC *and* 3DS, documented, with an example.
 - **Organized files**: one concept per file, `.cpp` aim ≤ 200 / hard 400 lines, one public header per
@@ -61,23 +61,27 @@ Project agents (`.claude/agents/`): `nnh-spec-writer` → `nnh-architect` → `n
 
 ## Repository layout
 
-Current layout below. Spec 002 (next) splits the engine into a portable `nnh::core` and one library per
-system, `nnh::platform_<system>`, plugged in at link time through the platform contract
+Portable core + one library per system, plugged in at link time through the platform contract
 ([platforms.md](docs/architecture/platforms.md)). Foundation services (time, log, assert/Result,
-memory, fs, debug overlay, system capabilities) come with it ([foundation.md](docs/architecture/foundation.md)).
+memory, fs, debug overlay, system capabilities) are being added by spec 002
+([foundation.md](docs/architecture/foundation.md)).
 
 ```
-engine/include/nnh/<module>.hpp          public API (app, gfx, input, debug, ...)
-engine/src/<module>/                     module implementation (app/, gfx/, input/, debug/)
-engine/src/core/                         engine-wide internal state
-engine/src/platform/platform.hpp         backend interface
-engine/src/platform/{pc,3ds}/<module>_<target>.cpp   backends (SDL3 / libctru+citro2d)
-tests/framework/  tests/<module>/        in-house test framework, unit tests mirroring engine/src
-examples/<name>/                         one small program per feature
-specs/NNN-slug/                          spec.md, plan.md, tasks.md
-docs/                                    architecture/, process/, tech/, api/, guides/
-cmake/  scripts/                         nnh_add_game(), SDL3 fetch, dkp.sh
+engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)
+engine/core/src/<module>/                        core implementation (app/, gfx/, input/, debug/, core/)
+engine/core/contract/nnh/platform/<area>.hpp     platform contract (app, video, input, ...)
+engine/platforms/<system>/src/<area>_<system>.cpp   platform libraries: pc (SDL3), 3ds (libctru+citro2d)
+engine/platforms/fake/                           scriptable fake platform for tests (nnh/platform_fake.hpp)
+tests/framework/  tests/<module>/                in-house test framework, unit tests mirroring core/src
+tests/platform_conformance/                      contract tests run against every platform
+examples/<name>/                                 one small program per feature
+specs/NNN-slug/                                  spec.md, plan.md, tasks.md
+docs/                                            architecture/, process/, tech/, api/, guides/
+cmake/  scripts/                                 nnh_add_game(), engine options, SDL3 fetch, dkp.sh, docs tool
 ```
+
+CMake targets: `nnh::core`, `nnh::core_contract`, `nnh::platform_{pc,3ds,fake}`, and `nnh::engine`
+(core + the preset's platform), which games link.
 
 ## Build
 

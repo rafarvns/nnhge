@@ -4,8 +4,8 @@
 
 #include <cstddef>
 
-#include "platform/pc/context_pc.hpp"
-#include "platform/platform.hpp"
+#include "context_pc.hpp"
+#include "nnh/platform/video.hpp"
 
 namespace nnh::platform {
 

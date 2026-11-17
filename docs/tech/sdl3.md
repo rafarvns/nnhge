@@ -1,14 +1,15 @@
 # SDL3 (PC simulator backend)
 
-The simulator backend (`engine/src/platform/pc/`) uses SDL 3.4 for the window, rendering, input and
-timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear under `engine/include/`.
+The PC platform library (`engine/platforms/pc/`, target `nnh::platform_pc`) uses SDL 3.4 for the window, rendering, input and
+timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear under `engine/core/include/`.
 
 ## Files
 
 | File | Responsibility |
 |------|----------------|
 | `context_pc.hpp` | Shared state (window, renderer), screen rectangles, helpers |
-| `video_pc.cpp` | Init/shutdown, event polling, frame begin/end, 60 Hz pacing, dev env vars, screenshots |
+| `app_pc.cpp` | Init/shutdown, window, event polling, dev env vars |
+| `video_pc.cpp` | Frame begin/end, 60 Hz pacing, screenshots |
 | `input_pc.cpp` | Keyboard → `nnh::Button` mapping |
 | `debug_text_pc.cpp` | Debug text with SDL's built-in 8×8 font |
 
@@ -35,7 +36,7 @@ Use the screenshot to verify visual changes without a human: build, run with bot
 
 ## Rules
 
-- Any SDL call stays inside `engine/src/platform/pc/`.
+- Any SDL call stays inside `engine/platforms/pc/`.
 - The simulator must not be *more capable* than the 3DS in ways games could rely on: enforce 3DS
   limits (texture sizes, memory budget) as those features arrive.
 - New input devices (gamepad, mouse as touch) map onto the same `nnh::` input API.

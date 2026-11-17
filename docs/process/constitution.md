@@ -28,7 +28,7 @@ No exceptions, no RTTI, no heap allocation in per-frame paths, no `virtual` per 
 returned; misuse is caught by `NNH_ASSERT`. See [../tech/cpp.md](../tech/cpp.md).
 
 ## VI. Spec first, test first
-Every feature starts with an approved spec. Every behaviour in `engine/src/` that can run without
+Every feature starts with an approved spec. Every behaviour in `engine/core/src/` that can run without
 hardware has a unit test written before the code. Hardware-facing behaviour is verified by an example
 (simulator screenshot) and on 3DS.
 

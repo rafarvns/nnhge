@@ -3,7 +3,7 @@
 #include <3ds.h>
 
 #include "nnh/input.hpp"
-#include "platform/platform.hpp"
+#include "nnh/platform/input.hpp"
 
 namespace nnh::platform {
 namespace {

@@ -6,7 +6,7 @@
 #include <cstdio>
 
 #include "core/engine_state.hpp"
-#include "platform/platform.hpp"
+#include "nnh/platform/video.hpp"
 
 namespace nnh::debug {
 

@@ -5,28 +5,28 @@ examples and tests.
 
 ## Folder map
 
-> Spec 002 moves the engine to the core + platform libraries layout in
-> [platforms.md](platforms.md#folder-layout-after-spec-002) (`engine/core/`, `engine/platforms/<system>/`).
-> Until then, the current layout is:
-
 ```
 engine/
-  include/nnh/<module>.hpp           public API, one header per module (what games include)
-  src/<module>/<concept>.cpp|.hpp    module implementation, internal headers
-  src/core/                          engine-wide internal state shared by modules
-  src/platform/platform.hpp          interface every backend implements
-  src/platform/<target>/<module>_<target>.cpp   one backend file per module per target
+  core/include/nnh/<module>.hpp              public API, one header per module (what games include)
+  core/src/<module>/<concept>.cpp|.hpp       core implementation, internal headers
+  core/src/core/                             engine-wide internal state shared by modules
+  core/contract/nnh/platform/<area>.hpp      platform contract (what each platform library implements)
+  platforms/<system>/CMakeLists.txt          nnh::platform_<system> (pc, 3ds, fake)
+  platforms/<system>/src/<area>_<system>.cpp one file per contract area per system
+  platforms/<system>/include/nnh/<system>/   extension headers (optional, system-only features)
+  platforms/<system>/README.md               requirements, limits, capabilities
 tests/
-  framework/                         the tiny test framework
-  <module>/test_<concept>.cpp        mirrors engine/src/<module>/
-examples/<name>/                     one small program per feature (main.cpp + CMakeLists.txt)
+  framework/                                 the tiny test framework
+  <module>/test_<concept>.cpp                mirrors engine/core/src/<module>/
+  platform_conformance/                      contract tests, linked against every platform
+examples/<name>/                             one small program per feature (main.cpp + CMakeLists.txt)
 docs/
-  api/<module>.md                    reference for each public module
+  api/<module>.md                            reference for each public module
   architecture/  process/  tech/  guides/
-specs/NNN-<slug>/                    spec.md, plan.md, tasks.md per feature
-tools/<tool>/                        nnh CLI, assetc (later)
-cmake/                               CMake helpers
-scripts/                             small shell helpers
+specs/NNN-<slug>/                            spec.md, plan.md, tasks.md per feature
+tools/<tool>/                                nnh CLI, assetc (later)
+cmake/                                       CMake helpers
+scripts/                                     small helpers (dkp.sh, docs tool, hooks)
 ```
 
 A game made with NNHGE follows the same idea:
@@ -49,7 +49,7 @@ mygame/
 | Header length | aim ≤ 150 lines |
 | Function length | aim ≤ 40 lines |
 | Public headers per module | exactly one: `<nnh/<module>.hpp>` |
-| Internal headers | under `engine/src/`, never included by games or public headers |
+| Internal headers | under `engine/core/src/`, never included by games or public headers |
 | Source lists in CMake | explicit (no `file(GLOB)`) |
 
 When a file grows past the aim, split it by concept before adding more (e.g. `video_pc.cpp` and
@@ -67,7 +67,7 @@ When a file grows past the aim, split it by concept before adding more (e.g. `vi
 | You are adding... | Put it in |
 |-------------------|-----------|
 | A new engine feature (audio, sprites) | New module: see the `nnh-new-module` skill |
-| Platform-specific code | `engine/src/platform/<target>/<module>_<target>.cpp`, behind `platform.hpp` |
+| Platform-specific code | `engine/platforms/<system>/src/<area>_<system>.cpp`, behind a contract header `nnh/platform/<area>.hpp` |
 | Logic shared by modules | The module that owns the concept; expose an internal header in its folder |
 | A helper used once | Next to its user, in an anonymous namespace |
 | A test | `tests/<module>/test_<concept>.cpp` |

@@ -1,7 +1,8 @@
 # Core and platform libraries
 
-> Status: **design**, specified in [spec 002](../../specs/002-core-foundation/spec.md) (FR-P*).
-> Today the backends are folders inside one `nnh_engine` library; spec 002 splits them as described here.
+> Status: **implemented** for the layout, CMake targets, contract areas app/video/input, the fake
+> platform and conformance tests (spec 002 stage 1). Capabilities, extension headers and more contract
+> areas arrive in later stages of [spec 002](../../specs/002-core-foundation/spec.md).
 
 ## The idea
 
@@ -56,7 +57,7 @@ Games link one target, `nnh::engine`, which is `nnh::core` + the selected platfo
    file non-portable on purpose; the build fails clearly on other platforms. Keep extension use in a
    few files of the game, behind the game's own interface.
 
-## Folder layout (after spec 002)
+## Folder layout
 
 ```
 engine/core/include/nnh/<module>.hpp           public portable API

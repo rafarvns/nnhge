@@ -1,6 +1,6 @@
 # devkitPro and the Nintendo 3DS
 
-The 3DS backend (`engine/src/platform/3ds/`) is built with devkitPro's open toolchain. Headers are in
+The 3DS backend (`engine/platforms/3ds/`) is built with devkitPro's open toolchain. Headers are in
 `C:\devkitPro\libctru\include` (Linux/macOS: `/opt/devkitpro/libctru/include`); read them when in doubt.
 
 ## Pieces

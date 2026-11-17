@@ -13,7 +13,7 @@ PC simulator (SDL3). You turn an approved spec into a plan and tasks.
 
 The spec you're given, `docs/process/constitution.md`, `docs/process/sdd.md`, `docs/process/solid.md`,
 all of `docs/architecture/`, the relevant `docs/tech/` pages, and the existing code you'll touch
-(`engine/include/nnh/`, `engine/src/`). Verify toolchain APIs in installed headers
+(`engine/core/include/nnh/`, `engine/core/src/`). Verify toolchain APIs in installed headers
 (`C:/devkitPro/libctru/include`, SDL headers under `build/pc-debug/_deps`) instead of assuming.
 
 ## What you do

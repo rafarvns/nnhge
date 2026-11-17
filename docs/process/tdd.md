@@ -35,7 +35,7 @@ NNH_TEST(press_is_reported_only_on_first_frame) {
 }
 ```
 
-- File: `tests/<module>/test_<concept>.cpp`, mirroring `engine/src/<module>/`. Add it to
+- File: `tests/<module>/test_<concept>.cpp`, mirroring `engine/core/src/<module>/`. Add it to
   `tests/CMakeLists.txt`.
 - Name: `behaviour_when_condition`, read as a sentence.
 - One behaviour per test. Arrange, act, check. No logic (loops, ifs) in tests unless it's table data.
@@ -45,8 +45,8 @@ NNH_TEST(press_is_reported_only_on_first_frame) {
 
 | Code | How it's verified |
 |------|-------------------|
-| Engine logic in `engine/src/<module>/` (event bus, input edges, scene stack, math, parsers) | Unit tests, written first |
-| Platform backends (`engine/src/platform/<target>/`) | Example program + simulator screenshot (`NNH_SCREENSHOT`) + run on 3DS |
+| Engine logic in `engine/core/src/<module>/` (event bus, input edges, scene stack, math, parsers) | Unit tests, written first |
+| Platform backends (`engine/platforms/<target>/`) | Example program + simulator screenshot (`NNH_SCREENSHOT`) + run on 3DS |
 | Public API wiring | Unit tests against the **fake** platform backend |
 
 Design for testability: put decisions in plain logic that takes data in and gives data out (like
@@ -55,11 +55,13 @@ Logic that needs time or randomness receives them as parameters.
 
 ## Fakes, not mocks
 
-A **fake** is a working, simplified implementation (e.g. `engine/src/platform/fake/` that records draw
+A **fake** is a working, simplified implementation (e.g. `engine/platforms/fake/` that records draw
 calls and lets a test script button presses). A **mock** verifies call sequences. We prefer fakes: tests
 check results, not how the code got there, so refactoring doesn't break them.
 
-The fake platform backend is introduced together with the first test that needs it (spec 001).
+Tests include `nnh/platform_fake.hpp` to script input (`set_held_buttons`, `set_quit_requested`) and
+inspect what core asked the platform to do (`state().frames_begun`, drawn texts, clear colors).
+The same contract is checked on every platform by `tests/platform_conformance/`.
 
 ## Don'ts
 

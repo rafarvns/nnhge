@@ -30,8 +30,8 @@ every file access (confined to the game folder, atomic saves). Pages: `foundatio
 
 ## Layers (dependencies point down only)
 
-game (scenes) → public API `engine/include/nnh/<module>.hpp` → modules `engine/src/<module>/` →
-platform interface `engine/src/platform/platform.hpp` → backends `engine/src/platform/{3ds,pc,fake}/`.
+game (scenes) → public API `engine/core/include/nnh/<module>.hpp` → modules `engine/core/src/<module>/` →
+platform interface `engine/core/contract/nnh/platform/*.hpp` → backends `engine/platforms/{3ds,pc,fake}/`.
 
 ## Events
 
@@ -62,8 +62,8 @@ platform `#ifdef` in game code or public headers, generic events, giant files.
 | Adding | Location |
 |--------|----------|
 | Engine feature | new module (use the `nnh-new-module` skill) |
-| Platform-specific code | `engine/src/platform/<target>/<module>_<target>.cpp` behind `platform.hpp` |
-| Internal API another module needs | `engine/src/<module>/<module>_internal.hpp` |
+| Platform-specific code | `engine/platforms/<system>/src/<area>_<system>.cpp` behind `platform.hpp` |
+| Internal API another module needs | `engine/core/src/<module>/<module>_internal.hpp` |
 | Test | `tests/<module>/test_<concept>.cpp` |
 | Demo | `examples/<feature>/` |
 

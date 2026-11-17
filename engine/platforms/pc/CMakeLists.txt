@@ -1,0 +1,18 @@
+# nnh::platform_pc — the PC simulator (SDL3). See README.md.
+
+include(nnh_sdl3)
+
+add_library(nnh_platform_pc STATIC
+    src/app_pc.cpp
+    src/debug_text_pc.cpp
+    src/input_pc.cpp
+    src/video_pc.cpp
+)
+add_library(nnh::platform_pc ALIAS nnh_platform_pc)
+target_link_libraries(nnh_platform_pc PRIVATE nnh::core_contract SDL3::SDL3)
+nnh_engine_options(nnh_platform_pc)
+
+if(MINGW)
+    # Games should run without the MinGW runtime DLLs on PATH.
+    target_link_options(nnh_platform_pc INTERFACE -static-libgcc -static-libstdc++)
+endif()

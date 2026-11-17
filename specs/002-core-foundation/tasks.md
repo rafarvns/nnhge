@@ -32,12 +32,12 @@ mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clea
 - [x] **T4.5** [P] PC console sink (colors) · 3DS stdout/3dslink + debugger sinks — test: example output on PC; 3dslink terminal on console
 - [x] **T4.6** replace ad-hoc `SDL_Log` calls with channels; `docs/api/log.md`
 ## Stage 5 — Errors (FR-E1–E4)
-- [ ] **T5.1** `Result<T>` / `Error` — test: `tests/result/test_result.cpp`
-- [ ] **T5.2** assert macros + fail path (fake `crash_show` records) — test: `tests/assert/test_assert.cpp`
-- [ ] **T5.3** crash report builder (ring snapshot, location, registers) — test: `tests/crash/test_report.cpp`
-- [ ] **T5.4** PC `crash_show` + signal/unhandled-exception hooks — test: example screenshot of crash screen
-- [ ] **T5.5** 3DS `crash_show` (text console) + `threadOnException` handler — test: on console (assert and null write)
-- [ ] **T5.6** `docs/api/assert.md`, `docs/api/result.md`
+- [x] **T5.1** `Result<T>` / `Error` — test: `tests/result/test_result.cpp`
+- [x] **T5.2** assert macros + fail path (fake `crash_show` records) — test: `tests/assert/test_assert.cpp`
+- [x] **T5.3** crash report builder (ring snapshot, location, registers) — test: `tests/crash/test_report.cpp`
+- [x] **T5.4** (screenshot in stage 9 example) PC `crash_show` + signal/unhandled-exception hooks — test: example screenshot of crash screen
+- [x] **T5.5** (console check pending: maintainer task) 3DS `crash_show` (text console) + `threadOnException` handler — test: on console (assert and null write)
+- [x] **T5.6** `docs/api/assert.md`, `docs/api/result.md`
 ## Stage 6 — Memory (FR-M1–M3)
 - [ ] **T6.1** contract `memory.hpp` + pc (emulated linear/VRAM budgets) / 3ds (linearAlloc, vramAlloc) / fake
 - [ ] **T6.2** tagged allocator bookkeeping, stats, budgets — test: `tests/memory/test_accounting.cpp`

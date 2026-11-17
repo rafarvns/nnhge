@@ -21,7 +21,7 @@ apply to `engine/` and `tools/`. Games may use more of C++, but the same rules k
 std::optional<Texture> load_texture(const char* path);
 
 // Programmer error (null handle, frame not open): assert, documented in the header.
-NNH_ASSERT(handle.valid(), "texture used after destroy");   // arrives in M1
+NNH_VERIFY(handle.valid(), "texture used after destroy");   // see docs/api/assert.md
 ```
 
 Public functions document: does it allocate? is it per-frame safe? what happens on misuse?

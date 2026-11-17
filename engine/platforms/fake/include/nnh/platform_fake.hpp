@@ -7,6 +7,7 @@
 
 #include "nnh/gfx.hpp"
 #include "nnh/log.hpp"
+#include "nnh/platform/crash.hpp"
 #include "nnh/time.hpp"
 
 namespace nnh::platform_fake {
@@ -58,5 +59,20 @@ void set_time_ns(std::int64_t ns);
 
 /// Moves the manual clock forward.
 void advance_time(Duration elapsed);
+
+/// The last crash screen requested through crash_show().
+struct Crash {
+    char top[2048] = {};
+    char bottom[2048] = {};
+};
+
+/// Runs `fn`; if it reaches crash_show(), the crash is recorded (last_crash()) and control returns
+/// here instead of ending the process. @return true if a crash happened.
+bool run_expecting_crash(void (*fn)());
+const Crash& last_crash();
+
+/// Calls the CPU fault handler core installed with crash_install_hooks(), as if the CPU faulted.
+/// Use inside run_expecting_crash().
+void simulate_cpu_fault(const platform::CpuFault& fault);
 
 } // namespace nnh::platform_fake

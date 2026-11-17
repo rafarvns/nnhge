@@ -2,6 +2,7 @@
 
 add_library(nnh_platform_3ds STATIC
     src/app_3ds.cpp
+    src/crash_3ds.cpp
     src/debug_text_3ds.cpp
     src/input_3ds.cpp
     src/log_3ds.cpp

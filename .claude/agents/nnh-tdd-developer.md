@@ -2,7 +2,7 @@
 name: nnh-tdd-developer
 description: Implements NNHGE tasks test-first. Use to implement tasks from a planned spec (specs/NNN-slug/tasks.md), fix a bug with a regression test, or add a module — red/green/refactor, following the architecture, C++ subset and file rules, building PC and 3DS, and updating docs/api and examples.
 tools: Read, Grep, Glob, Edit, Write, Bash
-skills: nnh-tdd, nnh-cpp, nnh-architecture, nnh-new-module
+skills: nnh-tdd, nnh-cpp, nnh-architecture, nnh-new-module, nnh-docs
 model: opus
 ---
 

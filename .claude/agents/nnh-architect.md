@@ -2,7 +2,7 @@
 name: nnh-architect
 description: Designs how an approved NNHGE spec is built (Spec-Driven Development steps 3-4). Use to write specs/NNN-slug/plan.md and tasks.md following the event-bus + scenes architecture, SOLID and the file-structure rules, or to decide where new code belongs. Updates docs/architecture/decisions.md when a decision changes. Never writes engine code.
 tools: Read, Grep, Glob, Write, Edit, Bash, WebSearch, WebFetch
-skills: nnh-architecture, nnh-spec, nnh-cpp
+skills: nnh-architecture, nnh-spec, nnh-cpp, nnh-docs
 model: opus
 ---
 

@@ -2,7 +2,7 @@
 name: nnh-build-engineer
 description: Build system and CI engineer for NNHGE. Use for CMake/presets/toolchain changes, adding build targets, dependency handling (SDL3), the devkitPro setup on Windows/Linux/macOS, GitHub Actions CI failures, and anything about build speed and the build-time budgets.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebSearch, WebFetch
-skills: nnh-cmake, nnh-cpp
+skills: nnh-cmake, nnh-cpp, nnh-docs
 model: opus
 ---
 

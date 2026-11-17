@@ -11,7 +11,8 @@ change.
  5. analyze   (optional) cross-check spec/plan/tasks      report only
  6. build     per task: red → green → refactor (TDD)      engine/, tests/
  7. review    checklist: SOLID, structure, events, docs   report only
- 8. finish    docs/api page, example, ROADMAP checkbox    docs/, examples/
+ 8. docs      update every doc the change made false      docs/, specs/, CLAUDE.md → wiki (auto)
+ 9. finish    example, ROADMAP checkbox, spec status      examples/, docs/ROADMAP.md
 ```
 
 The maintainer approves the spec (step 1) before any code is written.
@@ -22,6 +23,7 @@ The maintainer approves the spec (step 1) before any code is written.
 | [sdd.md](sdd.md) | Spec-Driven Development: spec, plan and tasks files |
 | [tdd.md](tdd.md) | Test-Driven Development: the loop, commands, fakes |
 | [solid.md](solid.md) | SOLID principles applied to this engine |
+| [documentation.md](documentation.md) | What to update when something changes; the generated GitHub wiki |
 
 ## Claude Code skills and agents
 
@@ -37,6 +39,7 @@ Anyone who opens the repo in Claude Code gets them.
 | 3DS backend work | `nnh-devkitpro` | `nnh-3ds-specialist` |
 | Build system, CI | `nnh-cmake` | `nnh-build-engineer` |
 | PC simulator backend | `nnh-sdl3` | `nnh-tdd-developer` |
+| 8 docs + wiki (after any change) | `nnh-docs` | every agent that edits files |
 
 Example: *"Use the nnh-spec-writer agent to write a spec for sprite rendering"*, then
 *"nnh-architect, plan spec 002"*, then *"nnh-tdd-developer, implement tasks 1–3 of spec 002"*.

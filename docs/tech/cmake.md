@@ -85,9 +85,12 @@ From `C:\devkitPro\cmake\Platform\Nintendo3DS.cmake`: `ctr_generate_smdh`, `ctr_
 
 ## CI
 
-`.github/workflows/ci.yml`: `pc-linux` (installs SDL deps, builds, `ctest`, runs `hello` headless with
-`SDL_VIDEO_DRIVER=offscreen`) and `nintendo-3ds` (container `devkitpro/devkitarm`, uploads `.3dsx`).
-Job ids must start with a letter.
+`.github/workflows/ci.yml`: `docs` (broken-link check with `scripts/docs_tool.py check`), `pc-linux`
+(installs SDL deps, builds, `ctest`, runs `hello` headless with `SDL_VIDEO_DRIVER=offscreen`) and
+`nintendo-3ds` (container `devkitpro/devkitarm`, uploads `.3dsx`). Job ids must start with a letter.
+
+`.github/workflows/wiki.yml`: on push to `main` touching docs, regenerates the GitHub wiki from the
+repository docs and pushes it ([documentation.md](../process/documentation.md)).
 
 ## Further reading
 

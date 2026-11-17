@@ -35,7 +35,9 @@ lists. See [../architecture/project-structure.md](../architecture/project-struct
 
 ## VIII. Documented API
 A public API change is done only when its header comments, its `docs/api/` page and an example are
-updated. Docs never show code that doesn't compile.
+updated. Every change updates the docs it makes false ([documentation.md](documentation.md)). Docs never
+show code that doesn't compile. The repository docs are the source of truth; the GitHub wiki is generated
+from them and never edited by hand.
 
 ## IX. Clean and legal
 zlib license. No Nintendo SDK, leaked code or copyrighted assets. Code from other projects only with a

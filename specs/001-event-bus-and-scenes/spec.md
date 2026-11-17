@@ -1,9 +1,9 @@
 # Spec 001: Event bus and scenes
 
-Status: draft
+Status: approved (2026-11-17)
 Author: NNHGE maintainers · Date: 2026-11-17
 Depends on: [spec 002 — core foundation](../002-core-foundation/spec.md) (logging, asserts, platform
-contract), which is implemented first.
+contract) — implemented.
 
 ## Problem and goal
 
@@ -28,18 +28,23 @@ let parts **react to events** without knowing each other, as described in
 
 - **FR-1** Games can define any trivially copyable struct as an event type, without registering it.
 - **FR-2** `subscribe<T>(handler)` registers a handler and returns an RAII subscription; destroying or
-  resetting it unsubscribes.
+  resetting it unsubscribes. Handlers are small fixed-size callables (lambdas with a few captures,
+  function pointers, member functions bound to an object): no heap allocation, and a capture that is
+  too large is a compile-time error with a clear message.
 - **FR-3** `publish<T>(event)` queues a copy of the event; queued events are delivered once per frame at
   a fixed point (after input is read, before the active scene updates), in publish order.
 - **FR-4** Re-entrancy follows the rules in `events.md`: events published during dispatch are delivered in
   the same dispatch after earlier ones; a handler removed during dispatch is not called again; a handler
   added during dispatch only receives later publishes; a depth limit stops feedback loops.
 - **FR-5** No RTTI and no heap allocation per publish/dispatch; capacities (queue bytes, subscribers) are
-  fixed at `init()` with documented defaults.
+  fixed at `init()`. Defaults: 16 KB queue, 256 subscribers; the game can change them through
+  `AppConfig` (e.g. a bigger queue for an event-heavy game, smaller to save memory).
 - **FR-6** Overflowing a capacity asserts in debug builds and drops the event with a log line in release.
 - **FR-7** The input module publishes `ButtonPressed` and `ButtonReleased` events.
 - **FR-8** `nnh::Scene` defines `on_enter`, `on_exit`, `update`, `draw`. The engine runs a scene stack with
   `push`, `pop`, `replace`; changes requested during a frame take effect at the end of that frame.
+  **The game creates its scene objects** and passes them to the stack (the engine never constructs
+  scenes); the ownership/lifetime rule is decided in the plan and documented in `docs/api/scene.md`.
 - **FR-9** The top scene updates; scenes draw bottom to top (so a pause menu draws over its level).
 - **FR-10** A game can run entirely through scenes: `nnh::run(first_scene)` (or equivalent) replaces the
   hand-written loop, while the plain `while (nnh::frame())` loop keeps working.
@@ -70,7 +75,8 @@ let parts **react to events** without knowing each other, as described in
 
 ## Open questions
 
-- [ ] Handler type: `std::function` (may allocate) or a small fixed-size callable (no heap)? Leaning to a
-  fixed-size, non-allocating callable with a size limit.
-- [ ] Should scenes be created by the game (`std::unique_ptr`) or by the engine from a type (`push<Level>()`)?
-- [ ] Default capacities: queue 16 KB, 256 subscribers? To be confirmed in the plan.
+Resolved at approval (2026-11-17, maintainer):
+
+- [x] Handler type: a small fixed-size, non-allocating callable (not `std::function`).
+- [x] Scenes are created by the game, not by the engine from a type.
+- [x] Capacities: defaults 16 KB queue and 256 subscribers, configurable by the developer.

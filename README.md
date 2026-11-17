@@ -36,8 +36,14 @@ See [docs/guides/getting-started.md](docs/guides/getting-started.md).
 ## Documentation
 
 - API reference: [docs/api/](docs/api/)
-- Architecture and decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Architecture (event bus + scenes, patterns, structure, decisions): [docs/architecture/](docs/architecture/)
+- How we work (Spec-Driven Development, TDD, SOLID, constitution): [docs/process/](docs/process/)
+- Technology notes (devkitPro/3DS, CMake, C++, SDL3): [docs/tech/](docs/tech/)
+- Feature specs: [specs/](specs/)
 - Prior art we learn from: [docs/REFERENCES.md](docs/REFERENCES.md)
+
+Using Claude Code? The repo ships project skills and agents (`.claude/`) that follow these rules —
+see [docs/process/README.md](docs/process/README.md).
 
 ## License
 

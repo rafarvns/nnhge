@@ -1,5 +1,5 @@
 #pragma once
-// Engine-wide state shared between core modules. Internal.
+// Engine-wide frame state shared by modules. Internal; owned by app/app.cpp.
 
 namespace nnh::detail {
 

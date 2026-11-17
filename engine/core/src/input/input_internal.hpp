@@ -14,4 +14,7 @@ void input_update(std::uint32_t held_mask);
 /// Buttons that went down this frame, as a mask.
 std::uint32_t input_pressed_mask();
 
+/// Publishes ButtonPressed/ButtonReleased for this frame's changes (called by nnh::frame() before dispatch).
+void input_publish_events();
+
 } // namespace nnh::detail

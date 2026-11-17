@@ -1,4 +1,4 @@
-#include "core/input_state.hpp"
+#include "input/input_state.hpp"
 #include "nnh/input.hpp"
 #include "test.hpp"
 

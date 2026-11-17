@@ -21,8 +21,14 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 | Edit one game `.cpp` → `.3dsx` | < 5 s | 1.4 s |
 | Clean build, 3DS (engine + hello) | < 30 s | 3.3 s |
 
-## M1 — Loop, input, logging
-- [ ] App lifecycle, fixed-timestep loop, frame timing
+## M0.5 — Way of working
+- [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
+- [x] Project skills and agents in `.claude/`
+- [x] Code reorganized into module folders, one concept per file
+
+## M1 — Events, scenes, loop, input, logging
+- [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — spec drafted, awaiting approval
+- [ ] Fixed-timestep helper, frame timing
 - [ ] Input: buttons, Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (keyboard, gamepad, mouse = touch)
 - [ ] Logging with levels; stdout redirect to PC via 3dslink on console
 - [ ] `NNH_ASSERT` and on-screen crash report

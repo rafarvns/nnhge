@@ -1,9 +1,11 @@
+// Debug text (nnh/debug.hpp).
+
 #include "nnh/debug.hpp"
 
 #include <cstdarg>
 #include <cstdio>
 
-#include "core/state.hpp"
+#include "core/engine_state.hpp"
 #include "platform/platform.hpp"
 
 namespace nnh::debug {

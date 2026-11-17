@@ -5,6 +5,10 @@ examples and tests.
 
 ## Folder map
 
+> Spec 002 moves the engine to the core + platform libraries layout in
+> [platforms.md](platforms.md#folder-layout-after-spec-002) (`engine/core/`, `engine/platforms/<system>/`).
+> Until then, the current layout is:
+
 ```
 engine/
   include/nnh/<module>.hpp           public API, one header per module (what games include)

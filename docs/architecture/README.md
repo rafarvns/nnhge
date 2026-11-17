@@ -1,6 +1,7 @@
 # Architecture
 
-NNHGE is an **event-driven engine** organized in layers, with games split into **scenes**.
+NNHGE is an **event-driven engine** made of a **portable core** plus **one library per system** that
+plugs into it, with games split into **scenes**.
 
 ## Mental model
 
@@ -15,16 +16,17 @@ commands owned by that module) or through the **event bus** (facts and requests 
 ## Layers
 
 ```
- game code (scenes)              your game: examples/, your project
-        │  uses only <nnh/...>
- public API (engine/include/nnh) one header per module: app, gfx, input, debug, events, scene, ...
+ game code (scenes)                         your game: examples/, your project
+        │  <nnh/...>  (+ optional <nnh/<system>/...> extensions)
+ nnh::core   public API + modules           portable: loop, events, scenes, log, memory, fs rules
+        │  platform contract (nnh/platform/*.hpp), resolved at link time
+ nnh::platform_<system>                     pc (SDL3), 3ds (libctru/citro2d), fake (tests), later switch...
         │
- engine modules (engine/src/<module>)   platform-independent logic, unit tested
-        │  depends only on the platform interface
- platform backends (engine/src/platform/<target>)   3ds (libctru/citro2d), pc (SDL3), fake (tests)
+ foundation inside core: time · log · assert/result · memory · fs · debug · system
 ```
 
-Dependencies only point **down**. Lower layers never include headers from higher ones.
+Dependencies only point **down**. Core never includes a system SDK header. Today the backends still
+live inside one library (`engine/src/platform/`); spec 002 performs the split.
 
 ## Frame flow
 
@@ -41,6 +43,12 @@ nnh::frame()
 
 | Document | What it covers |
 |----------|----------------|
+| [platforms.md](platforms.md) | Core + platform libraries, the platform contract, capabilities and extensions |
+| [foundation.md](foundation.md) | Core foundation: time, build flavors, memory; index of the foundation modules |
+| [logging.md](logging.md) | Logging levels, channels, sinks |
+| [errors.md](errors.md) | `Result`, asserts, crash screen and report |
+| [debugging.md](debugging.md) | Overlay, profiler, simulator controls, debuggers |
+| [security.md](security.md) | Threat model, confined files, atomic saves, fuzzing, supply chain |
 | [events.md](events.md) | The event bus: event types, publish/subscribe, dispatch rules |
 | [scenes.md](scenes.md) | Scenes and the scene stack (State pattern) |
 | [patterns.md](patterns.md) | Approved design patterns and anti-patterns |

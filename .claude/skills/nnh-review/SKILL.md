@@ -34,6 +34,13 @@ Order findings by severity: **blocker** (breaks a constitution article or a buil
 - [ ] No platform headers or `#ifdef __3DS__` in `engine/include/` or game code
 - [ ] 3DS memory/texture limits respected
 
+**Safety and diagnostics (constitution X)**
+- [ ] File access only through `nnh::fs` (confined to the game folder); saves atomic with checksum
+- [ ] Parsers of external data bounded, with fuzz target and bad-input tests
+- [ ] Bugs caught with `NNH_ASSERT`/`VERIFY`, expected failures returned as `Result`; logs via `NNH_LOG_*`
+- [ ] No system SDK header or `#ifdef` system in core; system code only in its platform library
+- [ ] CI changes keep least-privilege `permissions` and SHA-pinned actions
+
 **Structure**
 - [ ] One concept per file; `.cpp` ≤ 400 (aim 200), headers aim ≤ 150, functions aim ≤ 40
 - [ ] Paths and names follow `docs/architecture/project-structure.md`; CMake lists explicit

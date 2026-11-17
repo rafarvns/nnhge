@@ -20,6 +20,10 @@ the table; never silently. New decisions get the next number.
 | D13 | **Small files, one concept per file, module folders** | Easy to navigate for humans and AI tools, small diffs, fast incremental builds. See [project-structure.md](project-structure.md). |
 
 | D14 | **Repository docs are the source of truth; the GitHub wiki is generated** (`scripts/docs_tool.py`, published by CI) | Docs are reviewed with the code in the same commit; the wiki gives readers navigation without a second copy that drifts. See [../process/documentation.md](../process/documentation.md). |
+| D15 | **Portable core + one static library per system**, plugged in at link time through a documented platform contract, with conformance tests | Adding a system never touches core; no virtual cost on ARM11; consoles can't load libraries at runtime anyway. A runtime registry with virtual interfaces was rejected. See [platforms.md](platforms.md). |
+| D16 | **System-only features via capability queries + extension headers** `<nnh/<system>/...>` | Games stay portable by default, unique hardware (stereo 3D, Joy-Con) stays reachable, and non-portable code is explicit at the include line. |
+| D17 | **Core foundation before features**: time, logging, asserts/`Result`/crash report, memory accounting, debug overlay/profiler, confined `fs`; three build flavors (Debug, Development, Release) | Every later module needs them; a console without a debugger needs logs and crash reports from day one. See [foundation.md](foundation.md). |
+| D18 | **Safe by default** (constitution X): confined file writes, atomic saves, fuzzed parsers, pinned supply chain, no telemetry | Homebrew has no sandbox; players' SD cards and saves must be safe. See [security.md](security.md). |
 
 ## NNH Link (planned flow, D7/D8)
 
@@ -48,3 +52,5 @@ never through `#ifdef` in game code.
 
 - 2026-11-17: D11–D13 added (event-driven architecture, SDD + TDD, file structure rules).
 - 2026-11-17: D14 added (docs as source of truth, generated wiki).
+- 2026-11-17: D15–D18 added (core + platform libraries, capabilities/extensions, foundation first,
+  safe by default). D3's "PC simulator" is now `nnh::platform_pc`.

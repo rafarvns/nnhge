@@ -5,7 +5,10 @@ and get the maintainer's explicit approval; otherwise it is changed.
 
 ## I. Same game code everywhere
 Games only include `<nnh/...>`. No platform `#ifdef` in game code or public headers. Every feature works
-on the PC simulator **and** on 3DS before it is done.
+on the PC simulator **and** on 3DS before it is done. The core is portable; each system plugs in through
+its own platform library implementing the platform contract
+([platforms.md](../architecture/platforms.md)). System-only features are reached through capability
+queries or explicit extension headers `<nnh/<system>/...>`, never through `#ifdef`.
 
 ## II. The 3DS is the constraint
 Design for ~64 MB usable RAM on Old 3DS (32 MB linear heap by default), 6 MB VRAM, a 268 MHz ARM11 and
@@ -42,3 +45,9 @@ from them and never edited by hand.
 ## IX. Clean and legal
 zlib license. No Nintendo SDK, leaked code or copyrighted assets. Code from other projects only with a
 compatible license and attribution.
+
+## X. Safe by default
+Homebrew has no sandbox, so the engine is careful for the player: file writes only inside the game's own
+folder, saves written atomically, every parser of external data bounded and fuzz-tested, no telemetry,
+dependencies and CI actions pinned. Bugs are caught loudly (asserts, crash report), never silently.
+See [security.md](../architecture/security.md) and [errors.md](../architecture/errors.md).

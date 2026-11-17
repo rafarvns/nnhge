@@ -1,6 +1,6 @@
 # Errors, asserts and crashes
 
-> Status: **implemented** (spec 002 stage 5), except writing `crash.txt` (stage 7).
+> Status: **implemented** (spec 002 stages 5 and 7).
 > API: [assert.md](../api/assert.md), [result.md](../api/result.md).
 
 ## Two kinds of failure

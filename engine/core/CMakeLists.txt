@@ -8,12 +8,18 @@ target_include_directories(nnh_core_contract INTERFACE contract include)
 
 add_library(nnh_core STATIC
     src/app/app.cpp
+    src/app/data_folder.cpp
     src/crash/crash.cpp
     src/crash/report.cpp
     src/debug/debug.cpp
+    src/fs/files.cpp
+    src/fs/path.cpp
+    src/fs/save.cpp
+    src/fs/save_format.cpp
     src/gfx/gfx.cpp
     src/input/input.cpp
     src/log/engine_channels.cpp
+    src/log/file_sink.cpp
     src/log/format.cpp
     src/log/log.cpp
     src/memory/memory.cpp

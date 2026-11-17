@@ -40,6 +40,7 @@ struct State {
     int console_lines = 0;                          ///< log lines written with log_console()
     char last_console_line[log::kMaxLineLength] = {}; ///< the latest of them
     int vram_writes_by_core = 0; ///< Vram blocks found modified when freed (must stay 0)
+    int fs_calls = 0;            ///< calls into the fs contract (invalid paths must not add any)
 };
 
 const State& state();
@@ -64,6 +65,13 @@ void advance_time(Duration elapsed);
 
 /// Bytes region_alloc() may hand out in a region (defaults: heap 64 MB, linear 32 MB, vram 6 MB).
 void set_region_capacity(MemRegion region, std::size_t bytes);
+
+/// The next `count` fs_write() calls fail after writing half the data (a torn write, e.g. power loss).
+/// Files live in memory and survive nnh::shutdown()/init() until reset().
+void fail_next_writes(int count);
+
+/// Flips the bits of one byte of a stored file (simulates corruption on the SD card).
+void corrupt_file(const char* path, std::size_t byte_index);
 
 /// The last crash screen requested through crash_show().
 struct Crash {

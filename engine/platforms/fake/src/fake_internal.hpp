@@ -21,5 +21,6 @@ struct Controls {
 
 State& mutable_state();
 Controls& controls();
+void fs_reset(); // fs_fake.cpp
 
 } // namespace nnh::platform_fake::detail

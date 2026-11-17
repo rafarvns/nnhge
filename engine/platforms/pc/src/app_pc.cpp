@@ -13,7 +13,9 @@
 #include <cstdlib>
 
 #include "context_pc.hpp"
+#include "nnh/build.hpp"
 #include "nnh/platform/app.hpp"
+#include "stdio_fs.hpp"
 
 namespace nnh::platform {
 namespace {
@@ -22,6 +24,24 @@ pc::Context g_context;
 char g_last_error[256] = "";
 
 void set_error(const char* what) { std::snprintf(g_last_error, sizeof g_last_error, "%s: %s", what, SDL_GetError()); }
+
+/// Debug/Development: <exe dir>/data/<folder>/ (easy to inspect next to the build);
+/// Release: the user's app-data folder (SDL_GetPrefPath).
+void set_data_root(const AppConfig& config) {
+    char root[256];
+    if constexpr (build::kDevToolsEnabled) {
+        const char* base = SDL_GetBasePath();
+        std::snprintf(root, sizeof root, "%sdata/%s/", base != nullptr ? base : "./", config.data_folder);
+    } else {
+        char* pref = SDL_GetPrefPath("NNHGE", config.data_folder);
+        std::snprintf(root, sizeof root, "%s", pref != nullptr ? pref : "./");
+        SDL_free(pref);
+    }
+    for (char* p = root; *p != '\0'; ++p) {
+        if (*p == '\\') *p = '/';
+    }
+    shared::stdio_fs_set_root(root);
+}
 
 void read_dev_options() {
     const char* n = std::getenv("NNH_EXIT_AFTER_FRAMES");
@@ -51,6 +71,7 @@ bool init(const AppConfig& config) {
                                      SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
     SDL_SetRenderVSync(g_context.renderer, 1);
     read_dev_options();
+    set_data_root(config);
     g_context.frames = 0;
     pc::reset_frame_pacing();
     return true;

@@ -7,9 +7,12 @@
 #include <malloc.h>
 #include <unistd.h>
 
+#include <cstdio>
+
 #include "context_3ds.hpp"
 #include "nnh/build.hpp"
 #include "nnh/platform/app.hpp"
+#include "stdio_fs.hpp"
 
 namespace nnh::platform {
 namespace {
@@ -53,7 +56,7 @@ void stop_3dslink_stdio() {
 ctr::Context& ctr::context() { return g_context; }
 
 bool init(const AppConfig& config) {
-    (void)config; // title and icon come from the SMDH on 3DS
+    // The window title and icon come from the SMDH on 3DS; config gives the data folder.
     g_last_error = "";
     gfxInitDefault();
     if (!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)) {
@@ -72,6 +75,9 @@ bool init(const AppConfig& config) {
     g_context.targets[1] = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     g_context.text_buffer = C2D_TextBufNew(kDebugTextGlyphs);
     start_3dslink_stdio();
+    char root[96];
+    std::snprintf(root, sizeof root, "sdmc:/3ds/%s/", config.data_folder);
+    shared::stdio_fs_set_root(root);
     return true;
 }
 

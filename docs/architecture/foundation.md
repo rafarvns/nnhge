@@ -57,7 +57,8 @@ may display the flavor but shouldn't branch gameplay on it.
   linear and VRAM budgets so overruns show up on PC first.
 - Every engine allocation names a **tag** (`gfx`, `audio`, `events`, user tags). Counters per region and
   tag: current bytes, peak, allocation count.
-- **Budgets** per region (defaults = Old 3DS) and optional per tag; going over logs a warning once.
+- **Budgets** per region (defaults = the region capacity, Old 3DS values on PC); going over logs a warning
+  once. Per-tag budgets are a possible later addition.
 - At shutdown (Debug/Development), any live allocation is reported per tag: a leak list.
 - Per-frame code must not allocate (constitution V). An assert for "load-time only" tags allocating
   during a frame is a possible later addition.

@@ -2,15 +2,18 @@
 
 #include "nnh/app.hpp"
 
+#include "app/data_folder.hpp"
 #include "core/engine_state.hpp"
 #include "crash/crash_internal.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "input/input_internal.hpp"
 #include "log/engine_channels.hpp"
+#include "log/file_sink.hpp"
 #include "nnh/build.hpp"
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/app.hpp"
+#include "nnh/platform/fs.hpp"
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
@@ -22,6 +25,7 @@ namespace {
 bool g_initialized = false;
 bool g_frame_open = false;
 std::uint64_t g_frame_count = 0;
+char g_data_folder[48];
 
 void close_frame() {
     if (g_frame_open) {
@@ -33,10 +37,16 @@ void close_frame() {
 } // namespace
 
 bool detail::frame_open() { return g_frame_open; }
+bool detail::engine_initialized() { return g_initialized; }
 
 bool init(const AppConfig& config) {
     if (g_initialized) return true;
-    if (!platform::init(config)) {
+    // Platforms always receive a sanitized data folder name.
+    AppConfig resolved = config;
+    detail::derive_data_folder(config.data_folder != nullptr ? config.data_folder : config.title, g_data_folder,
+                               sizeof g_data_folder);
+    resolved.data_folder = g_data_folder;
+    if (!platform::init(resolved)) {
         NNH_LOG_ERROR(app, "platform init failed: %s", platform::last_error());
         return false;
     }
@@ -45,7 +55,9 @@ bool init(const AppConfig& config) {
     detail::input_reset();
     detail::time_reset(platform::ticks_ns());
     detail::crash_install();
-    NNH_LOG_INFO(app, "started \"%s\" (%s build)", config.title, build::flavor_name());
+    detail::log_file_start();
+    NNH_LOG_INFO(app, "started \"%s\" (%s build), data in %s", config.title, build::flavor_name(),
+                 platform::fs_root());
     return true;
 }
 
@@ -66,6 +78,7 @@ void shutdown() {
     close_frame();
     NNH_LOG_INFO(app, "shutdown after %llu frames", static_cast<unsigned long long>(g_frame_count));
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
+    detail::log_file_stop();
     platform::shutdown();
     g_initialized = false;
 }

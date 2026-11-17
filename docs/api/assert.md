@@ -35,8 +35,8 @@ aborts and undefined instructions — when the console reports them to the game 
 "Set developer UNITINFO"); otherwise Luma3DS shows its own exception screen and saves a dump in
 `/luma/dumps/arm11/`.
 
-The report file (`crash.txt` in the game's data folder) is written once file support lands (spec 002
-stage 7); until then the full report goes to the log console.
+The full report is written to `crash.txt` in the game's data folder (previous one kept as
+`crash.prev.txt`); the crash screen says where.
 
 ## When to use which
 

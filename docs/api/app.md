@@ -9,8 +9,9 @@ Header: `<nnh/app.hpp>`
 | `void nnh::shutdown()` | Present the open frame and release everything. Idempotent. |
 | `std::uint64_t nnh::frame_count()` | Frames started since `init()`; the first frame is 1. |
 
-`AppConfig` fields: `title` (PC window title; consoles use `TITLE` from `nnh_add_game`) and
-`pc_window_scale` (initial simulator window size, default 2×).
+`AppConfig` fields: `title` (PC window title; consoles use `TITLE` from `nnh_add_game`),
+`pc_window_scale` (initial simulator window size, default 2×) and `data_folder` (name of the game's
+data folder for saves and logs; default derived from the title, see [fs.md](fs.md)).
 
 ## The loop
 

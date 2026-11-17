@@ -4,7 +4,8 @@ Homebrew runs **without a sandbox**: a bug in a game can delete or corrupt any f
 card. Players trust that a game made with NNHGE won't. These rules make the engine safe by default
 (constitution article X).
 
-> Status: **design** for the items marked (spec 002); the rest is already in place.
+> Status: confined files, atomic saves, bounded parsers and fuzzing are **implemented** (spec 002 stage 7,
+> API: [docs/api/fs.md](../api/fs.md)); CI hardening comes in stage 9.
 
 ## Threat model (what we protect against)
 
@@ -22,9 +23,11 @@ Out of scope: protecting a game against cheating or piracy, and protecting the c
 ## Confined file access (spec 002)
 
 - All engine file I/O goes through `nnh::fs`. Games use it too; the engine never calls `fopen` elsewhere.
-- Writable root: `sdmc:/3ds/<game>/` on 3DS, a per-game data folder on PC. Read-only: `romfs:/` (assets).
+- Writable root: `sdmc:/3ds/<data_folder>/` on 3DS; on PC `<exe dir>/data/<data_folder>/` (Debug/Development)
+  or the user's app-data folder (Release). Read-only assets (`romfs:/`) arrive with the asset pipeline.
 - Paths are **relative** to those roots. Rejected with an error: absolute paths, `..` segments, drive or
-  device prefixes (`sdmc:`, `C:`), empty segments, control characters, overly long paths.
+  device prefixes (`sdmc:`, `C:`), empty segments, backslashes, characters outside `[A-Za-z0-9._-]`,
+  more than 96 characters or 4 levels. Invalid paths never reach the platform (tested).
 - The engine never touches NAND, system saves or other titles' data.
 
 ## Atomic saves (spec 002)
@@ -38,8 +41,10 @@ least one valid file.
 
 - Every reader of external data checks sizes and offsets before using them, never trusts counts from the
   file, and fails with a `Result` error instead of crashing.
-- Each parser has a fuzz target (libFuzzer with sanitizers on Linux CI, time-limited) plus a fixed corpus
-  of known-bad files kept as regular unit tests.
+- Each parser has a fuzz target in `tests/fuzz/` (today: path validator, save-file validator). They run as
+  a deterministic mini-fuzz (20 000 mutated inputs) inside `nnh_tests` on every compiler, and with
+  libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab build VM or the
+  manual CI job).
 
 ## Supply chain and CI
 

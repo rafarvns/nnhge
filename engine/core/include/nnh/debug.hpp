@@ -6,11 +6,7 @@
 
 #include "nnh/gfx.hpp"
 
-#if defined(__GNUC__)
-#define NNH_PRINTF_FORMAT(fmt_index, args_index) __attribute__((format(printf, fmt_index, args_index)))
-#else
-#define NNH_PRINTF_FORMAT(fmt_index, args_index)
-#endif
+#include "nnh/detail/printf_format.hpp"
 
 namespace nnh::debug {
 

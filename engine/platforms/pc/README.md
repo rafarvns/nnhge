@@ -7,7 +7,7 @@ SDL 3.4, imitating a Nintendo 3DS: one window with both screens, 60 Hz, keyboard
 |-|-|
 | Target | `nnh::platform_pc` (selected by the `pc-*` presets) |
 | Requirements | C++20 host compiler; SDL3 is found or downloaded by `cmake/nnh_sdl3.cmake` |
-| Files | `src/app_pc.cpp` · `src/video_pc.cpp` · `src/input_pc.cpp` · `src/log_pc.cpp` · `src/time_pc.cpp` · `src/debug_text_pc.cpp` · `src/context_pc.hpp` |
+| Files | `src/app_pc.cpp` · `src/video_pc.cpp` · `src/input_pc.cpp` · `src/log_pc.cpp` · `src/memory_pc.cpp` · `src/time_pc.cpp` · `src/debug_text_pc.cpp` · `src/context_pc.hpp` |
 | Capabilities | two screens (simulated), buttons (keyboard); touch, Circle Pad, stereo 3D: not yet |
 | Developer options | `NNH_EXIT_AFTER_FRAMES`, `NNH_SCREENSHOT`, `SDL_VIDEO_DRIVER=offscreen` |
 

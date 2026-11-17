@@ -9,6 +9,7 @@
 #include "log/engine_channels.hpp"
 #include "nnh/build.hpp"
 #include "nnh/log.hpp"
+#include "nnh/memory.hpp"
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/time.hpp"
@@ -64,6 +65,7 @@ void shutdown() {
     if (!g_initialized) return;
     close_frame();
     NNH_LOG_INFO(app, "shutdown after %llu frames", static_cast<unsigned long long>(g_frame_count));
+    if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     platform::shutdown();
     g_initialized = false;
 }

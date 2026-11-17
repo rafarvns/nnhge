@@ -15,6 +15,7 @@ add_executable(nnh_tests
     log/test_format.cpp
     log/test_log.cpp
     log/test_ring.cpp
+    memory/test_memory.cpp
     result/test_result.cpp
     time/test_clock.cpp
     time/test_duration.cpp

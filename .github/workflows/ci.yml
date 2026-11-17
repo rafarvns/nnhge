@@ -57,3 +57,19 @@ jobs:
         with:
           name: examples-3dsx
           path: build/3ds-release/examples/**/*.3dsx
+
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang libclang-rt-dev
+      - name: Build fuzzers (clang + libFuzzer + ASan)
+        run: |
+          cmake -S . -B build/fuzz -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang \
+                -DCMAKE_CXX_COMPILER=clang++ -DNNH_BUILD_FUZZERS=ON -DNNH_BUILD_EXAMPLES=OFF
+          cmake --build build/fuzz --target fuzz_path fuzz_save
+      - name: Fuzz (60 s per target)
+        run: |
+          build/fuzz/tests/fuzz_path -max_total_time=60
+          build/fuzz/tests/fuzz_save -max_total_time=60

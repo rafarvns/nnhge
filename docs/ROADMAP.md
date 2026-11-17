@@ -35,7 +35,8 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 - [x] Errors: `NNH_ASSERT`/`VERIFY`/`PANIC`, `Result<T>`, crash screen, 3DS exception handler (stage 5; report file in stage 7)
 - [x] Memory: tagged allocators, budgets, leak report (stage 6)
 - [ ] Debug overlay, profiler, simulator pause/step; GDB-on-3DS guide
-- [ ] File safety: confined `nnh::fs`, atomic saves, fuzzed parsers; CI hardening
+- [x] File safety: confined `nnh::fs`, atomic saves, fuzzed parsers (stage 7)
+- [ ] CI hardening (stage 9)
 
 ## M1b — Events, scenes, input
 - [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — after spec 002

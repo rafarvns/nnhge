@@ -2,6 +2,10 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
+
+#include "core/engine_state.hpp"
+#include "nnh/platform/fs.hpp"
 
 #include "crash/crash_internal.hpp"
 #include "crash/report.hpp"
@@ -14,10 +18,31 @@
 namespace nnh {
 namespace {
 
-constexpr const char* kReportPath = "crash.txt (written once file support arrives)";
+constexpr const char* kReportFile = "crash.txt";
+constexpr const char* kPreviousReportFile = "crash.prev.txt";
 constexpr int kScreenLogLines = 12; // what fits on the bottom screen below the header
 
 bool g_crashing = false;
+
+/// Writes the full report (every detail, all ring lines) to crash.txt, keeping the previous one.
+/// Best effort: the crash screen is shown even if this fails. @return where the report went.
+const char* write_report_file(const detail::CrashInfo& info) {
+    if (!detail::engine_initialized()) return "the log console (engine not initialized)";
+    static detail::CrashTexts details;
+    detail::format_crash_texts(details, info, nullptr, 0, true, kReportFile);
+    static char report[log::kRingLines * log::kMaxLineLength + 64];
+    std::size_t used = static_cast<std::size_t>(
+        std::snprintf(report, sizeof report, "NNHGE crash report (%s build)\n\n", build::flavor_name()));
+    for (int i = 0; i < log::ring_size() && used + log::kMaxLineLength + 1 < sizeof report; ++i) {
+        used += static_cast<std::size_t>(std::snprintf(report + used, sizeof report - used, "%s\n", log::ring_line(i)));
+    }
+    const platform::FsChunk chunks[3] = {{details.top, std::strlen(details.top)}, {"\nLog:\n", 6}, {report, used}};
+    platform::fs_remove(kPreviousReportFile);
+    platform::fs_rename(kReportFile, kPreviousReportFile);
+    static char where[160];
+    std::snprintf(where, sizeof where, "%s%s", platform::fs_root(), kReportFile);
+    return platform::fs_write(kReportFile, chunks, 3) ? where : "the log console (writing crash.txt failed)";
+}
 
 const char* kind_name(detail::FailKind kind) {
     switch (kind) {
@@ -40,8 +65,9 @@ const char* kind_name(detail::FailKind kind) {
     int count = 0;
     for (int i = first; i < total; ++i) lines[count++] = log::ring_line(i);
 
+    const char* report_location = write_report_file(info);
     static detail::CrashTexts texts; // static: keep it off a possibly tiny fault stack
-    detail::format_crash_texts(texts, info, lines, count, build::kDevToolsEnabled, kReportPath);
+    detail::format_crash_texts(texts, info, lines, count, build::kDevToolsEnabled, report_location);
     platform::crash_show(texts.top, texts.bottom);
 }
 

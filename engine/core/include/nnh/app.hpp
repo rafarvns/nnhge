@@ -16,6 +16,9 @@ struct AppConfig {
     const char* title = "NNHGE";
     /// PC simulator only: initial window size as a multiple of the native resolution (400x480).
     int pc_window_scale = 2;
+    /// Name of the game's data folder (saves, log.txt, crash.txt): letters, digits, '-' and '_'.
+    /// 3DS: sdmc:/3ds/<data_folder>/. nullptr = derived from `title` ("My Game" -> "my-game").
+    const char* data_folder = nullptr;
 };
 
 /// Initializes the engine (video, input). Call once, before anything else.

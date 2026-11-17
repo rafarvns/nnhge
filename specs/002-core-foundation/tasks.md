@@ -44,13 +44,13 @@ mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clea
 - [x] **T6.3** leak report at shutdown — test: `tests/memory/test_leaks.cpp`
 - [x] **T6.4** (citro2d internal buffers stay uncounted; noted in docs/api/memory.md) move engine allocations (citro2d text buffer etc.) to tags where possible; `docs/api/memory.md`
 ## Stage 7 — File safety (FR-S1–S3)
-- [ ] **T7.1** path validation — test: `tests/fs/test_path.cpp` (accept/reject tables)
-- [ ] **T7.2** contract `fs.hpp` + pc/3ds/fake (fake simulates interrupted writes) — test: conformance
-- [ ] **T7.3** `nnh::fs` read/write/atomic write — test: `tests/fs/test_atomic.cpp`
-- [ ] **T7.4** save format (header, CRC-32, backup fallback) — test: `tests/fs/test_save.cpp`
-- [ ] **T7.5** file log sink + `crash.txt` writing — test: fake fs contents
-- [ ] **T7.6** fuzz targets `fuzz_path`, `fuzz_save`, seed corpus, corpus runner in `nnh_tests`; CI job `fuzz` (clang + libFuzzer + ASan)
-- [ ] **T7.7** `docs/api/fs.md`
+- [x] **T7.1** path validation — test: `tests/fs/test_path.cpp` (accept/reject tables)
+- [x] **T7.2** contract `fs.hpp` + pc/3ds/fake (fake simulates interrupted writes) — test: conformance
+- [x] **T7.3** `nnh::fs` read/write/atomic write — test: `tests/fs/test_atomic.cpp`
+- [x] **T7.4** save format (header, CRC-32, backup fallback) — test: `tests/fs/test_save.cpp`
+- [x] **T7.5** file log sink + `crash.txt` writing — test: fake fs contents
+- [x] **T7.6** fuzz targets `fuzz_path`, `fuzz_save`, seed corpus, corpus runner in `nnh_tests`; CI job `fuzz` (clang + libFuzzer + ASan)
+- [x] **T7.7** `docs/api/fs.md`
 ## Stage 8 — System, overlay, profiler (FR-P4–P5, FR-D1–D3)
 - [ ] **T8.1** contract `system.hpp`; `<nnh/system.hpp>` capabilities/info — test: conformance + fake
 - [ ] **T8.2** `<nnh/3ds/console.hpp>` extension with `#error` guard — test: building a file that includes it for PC fails (CI compile-fail check)

@@ -1,6 +1,6 @@
 # Logging
 
-> Status: **implemented** (spec 002 stage 4), except the file sink (stage 7). API: [docs/api/log.md](../api/log.md).
+> Status: **implemented** (spec 002 stages 4 and 7). API: [docs/api/log.md](../api/log.md).
 
 ## Usage
 
@@ -51,7 +51,7 @@ A sink receives each formatted line. Several sinks run at once.
 | Sink | Platform | Default in |
 |------|----------|------------|
 | Console (colored by level) | PC | all flavors |
-| File (`<data dir>/log.txt`, rotated on start) | PC, 3DS | Debug, Development |
+| File (`<data dir>/log.txt`, previous run in `log.prev.txt`) | PC, 3DS | all flavors (Release: warn and above) |
 | Ring buffer (last 64 lines, in memory) | all | all (feeds the crash screen) |
 | 3dslink stdio → PC terminal (`3dslink -s`) | 3DS | Debug, Development, when launched via 3dslink |
 | Debugger (`svcOutputDebugString`) | 3DS | Debug |

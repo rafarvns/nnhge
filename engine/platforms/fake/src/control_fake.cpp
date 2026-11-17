@@ -18,6 +18,7 @@ const State& state() { return g_state; }
 void reset() {
     g_state = {};
     g_controls = {};
+    detail::fs_reset();
 }
 
 void set_held_buttons(std::uint32_t mask) { g_controls.held_buttons = mask; }

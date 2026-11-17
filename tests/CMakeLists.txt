@@ -5,12 +5,23 @@ add_library(nnh_test_framework STATIC framework/test_main.cpp)
 target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
+# Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
+add_library(nnh_fuzz_targets STATIC fuzz/fuzz_targets.cpp)
+target_include_directories(nnh_fuzz_targets PUBLIC fuzz PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
+target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
+
 # Unit tests: nnh::core driven through the fake platform.
 add_executable(nnh_tests
+    app/test_data_folder.cpp
     app/test_frame_loop.cpp
     build/test_flavor.cpp
     crash/test_assert.cpp
     crash/test_report.cpp
+    fs/test_files.cpp
+    fs/test_log_files.cpp
+    fs/test_path.cpp
+    fs/test_save.cpp
+    fuzz/test_fuzz_smoke.cpp
     input/test_input_state.cpp
     log/test_format.cpp
     log/test_log.cpp
@@ -22,7 +33,7 @@ add_executable(nnh_tests
     time/test_fixed_step.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
-target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh::core nnh::platform_fake)
+target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.
@@ -44,3 +55,15 @@ nnh_add_conformance(fake)
 nnh_add_conformance(pc)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software")
+
+# libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
+# then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60
+option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)
+if(NNH_BUILD_FUZZERS)
+    foreach(name path save)
+        add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
+        target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
+        target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)
+        target_link_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)
+    endforeach()
+endif()

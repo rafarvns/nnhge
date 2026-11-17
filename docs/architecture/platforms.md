@@ -71,6 +71,8 @@ engine/platforms/<system>/CMakeLists.txt       nnh::platform_<system>
 engine/platforms/<system>/src/<area>_<system>.cpp
 engine/platforms/<system>/include/nnh/<system>/...   extension headers (optional)
 engine/platforms/<system>/README.md            requirements, limits, capabilities, setup
+engine/platforms/shared/                       code reused by several platforms (e.g. stdio_fs.cpp: the fs
+                                               contract on C stdio, used by pc and 3ds)
 ```
 
 ## Adding a new system (e.g. Switch)

@@ -2,6 +2,8 @@
 
 Status: draft
 Author: NNHGE maintainers · Date: 2026-11-17
+Depends on: [spec 002 — core foundation](../002-core-foundation/spec.md) (logging, asserts, platform
+contract), which is implemented first.
 
 ## Problem and goal
 

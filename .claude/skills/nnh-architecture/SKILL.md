@@ -14,6 +14,20 @@ Constitution: `docs/process/constitution.md`. Read the relevant page before a no
 (queries, commands it owns) or the event bus (facts, requests nobody owns alone). Never reach into
 another module's internals or hold pointers to other scenes.
 
+## Core + platform libraries (D15, D16)
+
+Portable `nnh::core` + one static `nnh::platform_<system>` per system implementing the platform contract
+(`nnh/platform/*.hpp`), linked by the preset — no virtual dispatch. System-only features: capability
+queries (`nnh::system::has`) or explicit extension headers `<nnh/<system>/...>`. Never `#ifdef` a system
+in core or game code. Design: `docs/architecture/platforms.md` (split happens in spec 002).
+
+## Foundation services (spec 002)
+
+Use them instead of ad-hoc code: `NNH_LOG_*` (never `printf` for diagnostics), `NNH_ASSERT`/`VERIFY`/`PANIC`
+for bugs, `nnh::Result<T>` for expected failures, tagged allocators, `NNH_PROFILE_SCOPE`, `nnh::fs` for
+every file access (confined to the game folder, atomic saves). Pages: `foundation.md`, `logging.md`,
+`errors.md`, `debugging.md`, `security.md` in `docs/architecture/`.
+
 ## Layers (dependencies point down only)
 
 game (scenes) → public API `engine/include/nnh/<module>.hpp` → modules `engine/src/<module>/` →

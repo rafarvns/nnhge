@@ -61,6 +61,11 @@ Project agents (`.claude/agents/`): `nnh-spec-writer` → `nnh-architect` → `n
 
 ## Repository layout
 
+Current layout below. Spec 002 (next) splits the engine into a portable `nnh::core` and one library per
+system, `nnh::platform_<system>`, plugged in at link time through the platform contract
+([platforms.md](docs/architecture/platforms.md)). Foundation services (time, log, assert/Result,
+memory, fs, debug overlay, system capabilities) come with it ([foundation.md](docs/architecture/foundation.md)).
+
 ```
 engine/include/nnh/<module>.hpp          public API (app, gfx, input, debug, ...)
 engine/src/<module>/                     module implementation (app/, gfx/, input/, debug/)

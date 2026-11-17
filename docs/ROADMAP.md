@@ -26,12 +26,20 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 - [x] Project skills and agents in `.claude/`
 - [x] Code reorganized into module folders, one concept per file
 
-## M1 — Events, scenes, loop, input, logging
-- [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — spec drafted, awaiting approval
-- [ ] Fixed-timestep helper, frame timing
-- [ ] Input: buttons, Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (keyboard, gamepad, mouse = touch)
-- [ ] Logging with levels; stdout redirect to PC via 3dslink on console
-- [ ] `NNH_ASSERT` and on-screen crash report
+## M1 — Core foundation ([spec 002](../specs/002-core-foundation/spec.md)) — spec drafted, awaiting approval
+- [ ] Core + platform libraries split (`nnh::core`, `nnh::platform_{pc,3ds,fake}`), platform contract, conformance tests
+- [ ] Capabilities and system info; extension headers mechanism
+- [ ] Build flavors (Debug, Development, Release)
+- [ ] Time: monotonic clock, frame delta, fixed timestep
+- [ ] Logging: levels, channels, sinks (console, file, ring buffer, 3dslink, debugger)
+- [ ] Errors: `NNH_ASSERT`/`VERIFY`/`PANIC`, `Result<T>`, crash screen + report, 3DS exception handler
+- [ ] Memory: tagged allocators, budgets, leak report
+- [ ] Debug overlay, profiler, simulator pause/step; GDB-on-3DS guide
+- [ ] File safety: confined `nnh::fs`, atomic saves, fuzzed parsers; CI hardening
+
+## M1b — Events, scenes, input
+- [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — after spec 002
+- [ ] Input: Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (gamepad, mouse = touch)
 
 ## M2 — 2D graphics
 - [ ] Textures, sprites, sprite batching, both screens, camera
@@ -40,7 +48,7 @@ Build-time baseline (2026-11-17, maintainer's PC, MinGW GCC 16 + ccache / devkit
 
 ## M3 — Assets
 - [ ] `assetc`: PNG → platform textures, incremental cache
-- [ ] romfs packaging and `nnh::fs` API
+- [ ] romfs packaging (read side of `nnh::fs`; the confined write side comes with spec 002)
 
 ## M4 — Audio
 - [ ] Sound effects (WAV), streaming music (OGG), mixer channels — ndsp / SDL3

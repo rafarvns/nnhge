@@ -8,6 +8,10 @@ description: Keep NNHGE documentation true after every change and publish the Gi
 Full guide: `docs/process/documentation.md`. Constitution VIII: a change is not done until its docs are
 true again.
 
+A Stop hook (`scripts/hooks/docs_reminder.py`, registered in `.claude/settings.json`) sends you here
+when a turn ends with changed files but no doc change, or with broken links. If no doc is really
+affected, say so in one line and finish — it won't ask again for the same changes.
+
 ## 1. Find what changed
 
 `git status --short` and `git diff --stat` (plus your own memory of the task).

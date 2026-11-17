@@ -43,6 +43,19 @@ them too.
 - Don't duplicate: one page owns a topic, others link to it.
 - Mark the status of designs that aren't implemented yet (`> Status: design`).
 
+## Automatic reminder (Claude Code hook)
+
+`.claude/settings.json` registers a **Stop hook** (`scripts/hooks/docs_reminder.py`) for everyone who
+opens the repo in Claude Code. When Claude finishes a turn, it looks at the uncommitted changes:
+
+- broken relative links → Claude is sent back to fix them;
+- files changed but no Markdown/doc changed → Claude is sent back once to run the `nnh-docs` skill
+  (or to say no doc is affected).
+
+It reminds only once per set of changed files (state in `.git/nnh-docs-hook`) and never blocks twice in
+a row, so it can't loop. Disable it locally with `"disableAllHooks": true` in
+`.claude/settings.local.json`, or review it with `/hooks`.
+
 ## Tools
 
 ```sh

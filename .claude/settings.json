@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PY=$(command -v python || command -v python3); [ -n \"$PY\" ] && \"$PY\" -I \"$CLAUDE_PROJECT_DIR/scripts/hooks/docs_reminder.py\"",
+            "timeout": 30,
+            "statusMessage": "Checking docs are in sync..."
+          }
+        ]
+      }
+    ]
+  }
+}

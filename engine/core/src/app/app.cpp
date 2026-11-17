@@ -3,6 +3,7 @@
 #include "nnh/app.hpp"
 
 #include "core/engine_state.hpp"
+#include "crash/crash_internal.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "input/input_internal.hpp"
 #include "log/engine_channels.hpp"
@@ -42,6 +43,7 @@ bool init(const AppConfig& config) {
     g_frame_count = 0;
     detail::input_reset();
     detail::time_reset(platform::ticks_ns());
+    detail::crash_install();
     NNH_LOG_INFO(app, "started \"%s\" (%s build)", config.title, build::flavor_name());
     return true;
 }

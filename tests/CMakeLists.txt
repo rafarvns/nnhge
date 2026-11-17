@@ -9,10 +9,13 @@ target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 add_executable(nnh_tests
     app/test_frame_loop.cpp
     build/test_flavor.cpp
+    crash/test_assert.cpp
+    crash/test_report.cpp
     input/test_input_state.cpp
     log/test_format.cpp
     log/test_log.cpp
     log/test_ring.cpp
+    result/test_result.cpp
     time/test_clock.cpp
     time/test_duration.cpp
     time/test_fixed_step.cpp

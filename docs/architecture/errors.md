@@ -1,6 +1,7 @@
 # Errors, asserts and crashes
 
-> Status: **design**, specified in [spec 002](../../specs/002-core-foundation/spec.md).
+> Status: **implemented** (spec 002 stage 5), except writing `crash.txt` (stage 7).
+> API: [assert.md](../api/assert.md), [result.md](../api/result.md).
 
 ## Two kinds of failure
 
@@ -24,8 +25,8 @@ if (!save) {
 use(save.value());
 ```
 
-`Result<T>` holds either a `T` or an `nnh::Error { ErrorCode code; const char* message; }` (the message
-is a static string or a short fixed buffer — no heap). `Result<void>` for operations without a value.
+`Result<T>` holds either a `T` or an `nnh::Error { ErrorCode code; char message[64]; }` (a short fixed
+buffer — no heap). `Result<void>` for operations without a value.
 
 ## Asserts
 
@@ -52,11 +53,19 @@ On a failed assert/verify, a panic, or a CPU exception:
 Platform hooks:
 - **3DS**: `threadOnException` (from `<3ds/thread.h>`) installs a per-thread handler for data abort,
   prefetch abort and undefined instruction, with its own small stack; it gets `CpuRegisters`.
-- **PC**: signal handlers (`SIGSEGV`, `SIGABRT`, `SIGFPE`) and, on Windows, an unhandled-exception
-  filter; the report goes to the console and the file. A debugger attached on PC breaks at the assert
-  instead (`NNH_DEBUG_BREAK`).
+- **PC**: signal handlers (`SIGSEGV`, `SIGABRT`, `SIGFPE`, `SIGILL`); the report goes to the console,
+  the simulator window and the file. On Windows, if a debugger is attached, failed asserts break into it
+  first (`platform::debugger_attached()` / `debug_break()`).
+
+## How the platform reaches core on a fault
+
+Platform libraries never call core directly. At `nnh::init()`, core hands the platform a function
+pointer with `platform::crash_install_hooks(handler)`; the platform's fault hook (3DS `threadOnException`,
+PC signal handlers) calls that pointer with a `platform::CpuFault`. Core formats the report and calls
+`platform::crash_show(top, bottom)`. The 3DS crash screen uses libctru's text consoles on the CPU
+framebuffers, so it works even if the GPU state is broken.
 
 ## Release builds
 
-Open question in spec 002: full details on the crash screen, or a friendly message with the details only
-in `crash.txt`. Either way the report file is always written.
+Decided at approval of spec 002: a friendly message plus `file:line` on screen; the full details
+(message, registers, logs) only in `crash.txt`. Debug and Development show everything on screen.

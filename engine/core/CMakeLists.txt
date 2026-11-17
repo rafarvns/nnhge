@@ -8,12 +8,15 @@ target_include_directories(nnh_core_contract INTERFACE contract include)
 
 add_library(nnh_core STATIC
     src/app/app.cpp
+    src/crash/crash.cpp
+    src/crash/report.cpp
     src/debug/debug.cpp
     src/gfx/gfx.cpp
     src/input/input.cpp
     src/log/engine_channels.cpp
     src/log/format.cpp
     src/log/log.cpp
+    src/result/error.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )

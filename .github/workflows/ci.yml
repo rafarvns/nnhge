@@ -5,6 +5,13 @@ on:
   pull_request:
 
 jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check documentation links
+        run: python3 scripts/docs_tool.py check
+
   pc-linux:
     runs-on: ubuntu-latest
     steps:

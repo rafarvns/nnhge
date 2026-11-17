@@ -41,6 +41,8 @@ Order findings by severity: **blocker** (breaks a constitution article or a buil
 **Build speed and docs**
 - [ ] Public headers stayed light; no new heavy dependency (or measured and justified)
 - [ ] Public API changes: header comments + `docs/api/` page + example updated
+- [ ] Every doc the change made false is updated (table in `docs/process/documentation.md`);
+      `python -I scripts/docs_tool.py check` reports 0 broken links; nothing edited in the wiki by hand
 
 ## Analyze (spec / plan / tasks)
 

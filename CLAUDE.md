@@ -46,9 +46,13 @@ spec (approved by the maintainer) → plan (Constitution Check) → tasks → TD
   module, explicit CMake source lists ([project-structure.md](docs/architecture/project-structure.md)).
 - **Query for state, events for changes**; scenes for game modes; no platform `#ifdef` in game code or
   public headers; no exceptions/RTTI/per-frame heap in the engine.
+- **Docs with every change**: after any modification, run the `nnh-docs` skill — update every doc the
+  change made false and check links. Repository docs are the source of truth; the
+  [GitHub wiki](https://github.com/rafarvns/nnhge/wiki) is generated from them by CI on push to `main`
+  (never edit it by hand). See [docs/process/documentation.md](docs/process/documentation.md).
 
 Project skills (`.claude/skills/`): `nnh-architecture`, `nnh-spec`, `nnh-tdd`, `nnh-new-module`,
-`nnh-review`, `nnh-devkitpro`, `nnh-cmake`, `nnh-cpp`, `nnh-sdl3`.
+`nnh-review`, `nnh-docs`, `nnh-devkitpro`, `nnh-cmake`, `nnh-cpp`, `nnh-sdl3`.
 Project agents (`.claude/agents/`): `nnh-spec-writer` → `nnh-architect` → `nnh-tdd-developer` →
 `nnh-reviewer`; specialists `nnh-3ds-specialist`, `nnh-build-engineer`. Mapping per step:
 [docs/process/README.md](docs/process/README.md).
@@ -80,6 +84,7 @@ build/pc-debug/tests/nnh_tests.exe [name-filter]               # tests, one line
 scripts/dkp.sh cmake --preset 3ds-release                      # 3DS configure (once)
 scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-release/**/<game>.3dsx
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
+python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 ```
 
 - **3DS builds go through `scripts/dkp.sh` on Windows**: devkitPro's toolchain only runs from its MSYS2.

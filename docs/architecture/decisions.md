@@ -19,6 +19,8 @@ the table; never silently. New decisions get the next number.
 | D12 | **Spec-Driven Development + TDD** for every feature | Specs make intent reviewable before code and give Claude Code a precise contract; tests first keep core logic decoupled from hardware. See [../process/](../process/). |
 | D13 | **Small files, one concept per file, module folders** | Easy to navigate for humans and AI tools, small diffs, fast incremental builds. See [project-structure.md](project-structure.md). |
 
+| D14 | **Repository docs are the source of truth; the GitHub wiki is generated** (`scripts/docs_tool.py`, published by CI) | Docs are reviewed with the code in the same commit; the wiki gives readers navigation without a second copy that drifts. See [../process/documentation.md](../process/documentation.md). |
+
 ## NNH Link (planned flow, D7/D8)
 
 ```
@@ -45,3 +47,4 @@ never through `#ifdef` in game code.
 ## Change log
 
 - 2026-11-17: D11–D13 added (event-driven architecture, SDD + TDD, file structure rules).
+- 2026-11-17: D14 added (docs as source of truth, generated wiki).

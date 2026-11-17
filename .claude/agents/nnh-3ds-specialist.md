@@ -2,7 +2,7 @@
 name: nnh-3ds-specialist
 description: Nintendo 3DS / devkitPro specialist for NNHGE. Use for work in engine/src/platform/3ds/ (libctru, citro2d, citro3d, ndsp, romfs), questions about 3DS hardware limits and memory, building/sending .3dsx with 3dslink, and diagnosing bugs that only happen on the console.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebSearch, WebFetch
-skills: nnh-devkitpro, nnh-cpp, nnh-tdd
+skills: nnh-devkitpro, nnh-cpp, nnh-tdd, nnh-docs
 model: opus
 ---
 

@@ -2,7 +2,7 @@
 name: nnh-spec-writer
 description: Writes NNHGE feature specs (Spec-Driven Development step 1-2). Use when someone asks for a new engine feature, wants to "spec" something, or a spec needs clarifying. Produces specs/NNN-slug/spec.md (what and why, FR/AC, non-goals) and updates specs/README.md. Never writes code or plans.
 tools: Read, Grep, Glob, Write, Edit, WebSearch, WebFetch
-skills: nnh-spec, nnh-architecture
+skills: nnh-spec, nnh-architecture, nnh-docs
 model: opus
 ---
 

@@ -1,7 +1,7 @@
 # Debugging tools
 
-> Status: **implemented** (spec 002 stage 8): overlay, profiler, simulator keys. The GDB-on-3DS guide
-> comes in stage 9. APIs: [debug.md](../api/debug.md), [profile.md](../api/profile.md),
+> Status: **implemented** (spec 002): overlay, profiler, simulator keys, crash reports; step-by-step
+> guide: [debugging-on-3ds.md](../guides/debugging-on-3ds.md). APIs: [debug.md](../api/debug.md), [profile.md](../api/profile.md),
 > [simulator.md](../api/simulator.md).
 
 ## In-game tools (Debug and Development flavors)
@@ -38,7 +38,7 @@ Visual Studio, CLion, gdb). On Windows, asserts break into an attached debugger.
 3. On the PC: `arm-none-eabi-gdb build/3ds-debug/examples/<ex>/<ex>.elf`, then
    `target remote <console-ip>:<port>` (the port is shown in the Rosalina debugger menu).
 
-Full step-by-step guide: `docs/guides/debugging-on-3ds.md` (written with spec 002).
+Full step-by-step guide: [debugging-on-3ds.md](../guides/debugging-on-3ds.md).
 
 ## Choosing a tool
 

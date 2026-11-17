@@ -1,6 +1,6 @@
 # Tasks 002: Core foundation
 
-Status: in progress
+Status: implemented (2026-11-17); T9.5 on hardware pending (maintainer)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each stage ends green: PC + 3DS build, tests, CI, docs updated (nnh-docs). `[P]` = parallelizable.
@@ -59,9 +59,11 @@ mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clea
 - [x] **T8.5** simulator controls (F1, Pause, F10, F11, F12)
 - [x] **T8.6** `docs/api/system.md`, `docs/api/profile.md`, update `docs/api/debug.md`
 ## Stage 9 — Closing (FR-S4, FR-D4, AC-3–AC-7)
-- [ ] **T9.1** CI: `permissions` per workflow, actions pinned by SHA
-- [ ] **T9.2** `examples/foundation/` (logs, overlay, profile, save/load, deliberate assert combo)
-- [ ] **T9.3** CI check: Release `.elf` has no trace/assert strings (AC-5); size budget measured
-- [ ] **T9.4** `docs/guides/debugging-on-3ds.md` (GDB via Luma3DS, UNITINFO, Luma dumps)
-- [ ] **T9.5** run on 3DS: logs over 3dslink, crash screen, `crash.txt`, conformance example
-- [ ] **T9.6** build-time baseline update in ROADMAP; architecture pages "Status: implemented"; ROADMAP checkboxes; spec/plan/tasks → implemented
+- [x] **T9.1** CI: `permissions` per workflow, actions pinned by SHA
+- [x] **T9.2** `examples/foundation/` (logs, overlay, profile, save/load, deliberate assert combo)
+- [x] **T9.3** CI check: Release `.elf` has no trace/assert strings (AC-5); size budget measured
+- [x] **T9.4** `docs/guides/debugging-on-3ds.md` (GDB via Luma3DS, UNITINFO, Luma dumps)
+- [ ] **T9.5** run on 3DS: logs over 3dslink, crash screen, `crash.txt` — needs the maintainer (console).
+  Deviation: no dedicated console conformance runner; on 3DS the contract is exercised by `hello` and
+  `foundation`. A conformance runner for consoles is deferred to the next platform work.
+- [x] **T9.6** build-time baseline update in ROADMAP; architecture pages "Status: implemented"; ROADMAP checkboxes; spec/plan/tasks → implemented

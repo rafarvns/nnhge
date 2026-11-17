@@ -19,7 +19,7 @@ int g_screenshot_number = 0;
 void save_screenshot_now() {
     pc::Context& ctx = pc::context();
     char folder[384];
-    char path[400];
+    char path[sizeof folder + 32]; // folder + "/shot-NNN.png" with room for any counter value
     std::snprintf(folder, sizeof folder, "%sscreenshots", fs_root());
     SDL_CreateDirectory(folder);
     std::snprintf(path, sizeof path, "%s/shot-%03d.png", folder, ++g_screenshot_number);

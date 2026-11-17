@@ -4,8 +4,8 @@ Homebrew runs **without a sandbox**: a bug in a game can delete or corrupt any f
 card. Players trust that a game made with NNHGE won't. These rules make the engine safe by default
 (constitution article X).
 
-> Status: confined files, atomic saves, bounded parsers and fuzzing are **implemented** (spec 002 stage 7,
-> API: [docs/api/fs.md](../api/fs.md)); CI hardening comes in stage 9.
+> Status: **implemented** (spec 002): confined files, atomic saves, bounded parsers, fuzzing, CI hardening.
+> API: [docs/api/fs.md](../api/fs.md).
 
 ## Threat model (what we protect against)
 
@@ -49,8 +49,8 @@ least one valid file.
 ## Supply chain and CI
 
 - Already: downloaded dependencies pinned by URL + SHA-256 (`cmake/nnh_sdl3.cmake`); no binaries in git.
-- Spec 002: every workflow declares minimal `permissions`; third-party actions pinned by commit SHA;
-  only the wiki job has `contents: write`.
+- Every workflow declares minimal `permissions` (CI: `contents: read`; only the wiki job has
+  `contents: write`) and actions are pinned by commit SHA (`# vN` comment next to it). CI runs manually.
 - New dependencies follow `docs/tech/cmake.md` (small, permissive, pinned, justified).
 
 ## Reporting a vulnerability

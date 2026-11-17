@@ -1,7 +1,7 @@
 # Core foundation
 
-> Status: **design**, specified in [spec 002](../../specs/002-core-foundation/spec.md). Built before
-> the event bus (spec 001), which uses it.
+> Status: **implemented** ([spec 002](../../specs/002-core-foundation/spec.md)). Demo:
+> `examples/foundation`; guide: [debugging-on-3ds.md](../guides/debugging-on-3ds.md).
 
 The services every other module relies on. Each is its own small module with one public header:
 

@@ -23,14 +23,28 @@ enum class FailKind { Assert, Verify, Panic };
 
 } // namespace nnh::detail
 
+// The message is optional: `"" __VA_ARGS__` turns a missing message into an empty format string, which
+// GCC flags with -Wformat-zero-length. The macros below silence that one warning around their own
+// statement (pragmas must sit at statement level, so they wrap the whole do/while block).
+#if defined(__GNUC__)
+#define NNH_DETAIL_DIAG_PUSH _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wformat-zero-length\"")
+#define NNH_DETAIL_DIAG_POP _Pragma("GCC diagnostic pop")
+#else
+#define NNH_DETAIL_DIAG_PUSH
+#define NNH_DETAIL_DIAG_POP
+#endif
+
 #define NNH_DETAIL_FAIL(kind, expr, ...)                                                                      \
     ::nnh::detail::fail(::nnh::detail::FailKind::kind, expr, __FILE__, __LINE__, __func__, "" __VA_ARGS__)
 
 /// Checks a condition in every flavor; on failure shows the crash screen.
 #define NNH_VERIFY(cond, ...)                                                                                 \
     do {                                                                                                      \
-        if (!(cond)) [[unlikely]]                                                                             \
+        NNH_DETAIL_DIAG_PUSH                                                                                  \
+        if (!(cond)) [[unlikely]] {                                                                           \
             NNH_DETAIL_FAIL(Verify, #cond, __VA_ARGS__);                                                      \
+        }                                                                                                     \
+        NNH_DETAIL_DIAG_POP                                                                                   \
     } while (0)
 
 #if defined(NNH_FLAVOR_RELEASE)
@@ -42,10 +56,18 @@ enum class FailKind { Assert, Verify, Panic };
 #else
 #define NNH_ASSERT(cond, ...)                                                                                 \
     do {                                                                                                      \
-        if (!(cond)) [[unlikely]]                                                                             \
+        NNH_DETAIL_DIAG_PUSH                                                                                  \
+        if (!(cond)) [[unlikely]] {                                                                           \
             NNH_DETAIL_FAIL(Assert, #cond, __VA_ARGS__);                                                      \
+        }                                                                                                     \
+        NNH_DETAIL_DIAG_POP                                                                                   \
     } while (0)
 #endif
 
 /// Marks a state that must never happen; always shows the crash screen.
-#define NNH_PANIC(...) NNH_DETAIL_FAIL(Panic, nullptr, __VA_ARGS__)
+#define NNH_PANIC(...)                                                                                        \
+    do {                                                                                                      \
+        NNH_DETAIL_DIAG_PUSH                                                                                  \
+        NNH_DETAIL_FAIL(Panic, nullptr, __VA_ARGS__);                                                         \
+        NNH_DETAIL_DIAG_POP                                                                                   \
+    } while (0)

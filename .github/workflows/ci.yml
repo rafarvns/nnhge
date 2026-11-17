@@ -5,11 +5,15 @@ name: CI
 on:
   workflow_dispatch:
 
+# Least privilege (docs/architecture/security.md): CI only reads the repository.
+permissions:
+  contents: read
+
 jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Check documentation links
         run: python3 scripts/docs_tool.py check
       - name: Check layering (core never includes a system SDK)
@@ -21,7 +25,7 @@ jobs:
   pc-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install build tools
         # SDL3 build dependencies, from https://wiki.libsdl.org/SDL3/README-linux
         run: >
@@ -46,14 +50,16 @@ jobs:
     runs-on: ubuntu-latest
     container: devkitpro/devkitarm:latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install build tools
         run: apt-get update && apt-get install -y ninja-build cmake
       - name: Configure
         run: cmake --preset 3ds-release
       - name: Build
         run: cmake --build --preset 3ds-release
-      - uses: actions/upload-artifact@v5
+      - name: Release builds contain no debug-only strings (spec 002 AC-5)
+        run: scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: examples-3dsx
           path: build/3ds-release/examples/**/*.3dsx
@@ -61,7 +67,7 @@ jobs:
   fuzz:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y ninja-build clang libclang-rt-dev
       - name: Build fuzzers (clang + libFuzzer + ASan)

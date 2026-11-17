@@ -62,9 +62,10 @@ Project agents (`.claude/agents/`): `nnh-spec-writer` → `nnh-architect` → `n
 ## Repository layout
 
 Portable core + one library per system, plugged in at link time through the platform contract
-([platforms.md](docs/architecture/platforms.md)). Foundation services (time, log, assert/Result,
-memory, fs, debug overlay, system capabilities) are being added by spec 002
-([foundation.md](docs/architecture/foundation.md)).
+([platforms.md](docs/architecture/platforms.md)). Foundation services (spec 002, implemented):
+`<nnh/time.hpp>`, `<nnh/log.hpp>`, `<nnh/assert.hpp>`, `<nnh/result.hpp>`, `<nnh/memory.hpp>`,
+`<nnh/fs.hpp>` (+ `nnh::save`), `<nnh/system.hpp>`, `<nnh/profile.hpp>`, debug overlay — use them instead
+of ad-hoc code ([foundation.md](docs/architecture/foundation.md), demo `examples/foundation`).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)
@@ -72,8 +73,11 @@ engine/core/src/<module>/                        core implementation (app/, gfx/
 engine/core/contract/nnh/platform/<area>.hpp     platform contract (app, video, input, ...)
 engine/platforms/<system>/src/<area>_<system>.cpp   platform libraries: pc (SDL3), 3ds (libctru+citro2d)
 engine/platforms/fake/                           scriptable fake platform for tests (nnh/platform_fake.hpp)
+engine/platforms/shared/                         code shared by platforms (stdio_fs.cpp)
+engine/platforms/3ds/include/nnh/3ds/            3DS extension headers (system-only features)
 tests/framework/  tests/<module>/                in-house test framework, unit tests mirroring core/src
 tests/platform_conformance/                      contract tests run against every platform
+tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_tests; libFuzzer with NNH_BUILD_FUZZERS)
 examples/<name>/                                 one small program per feature
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
 docs/                                            architecture/, process/, tech/, api/, guides/
@@ -96,6 +100,17 @@ scripts/dkp.sh cmake --preset 3ds-release                      # 3DS configure (
 scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-release/**/<game>.3dsx
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
+scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
+```
+
+Linux checks and libFuzzer run on the homelab build VM `nnhge-build` (VM 120, off by default; the
+maintainer allowed this session to start/stop it and run builds; `apt`/system changes need an OK):
+
+```sh
+ssh homelab 'sudo qm status 101 | grep -q stopped && free -m && sudo qm start 120'   # never with Bazzite (101)
+git ls-files -z -co --exclude-standard | tar --null -T - -cf - | ssh nnhge-build 'rm -rf ~/wt/nnhge && mkdir -p ~/wt/nnhge && tar -xf - -C ~/wt/nnhge'
+ssh nnhge-build 'cd ~/wt/nnhge && cmake --preset pc-debug && cmake --build --preset pc-debug && ctest --preset pc-debug'
+ssh homelab 'sudo qm shutdown 120'                                                  # when done (it also idles off)
 ```
 
 - **3DS builds go through `scripts/dkp.sh` on Windows**: devkitPro's toolchain only runs from its MSYS2.

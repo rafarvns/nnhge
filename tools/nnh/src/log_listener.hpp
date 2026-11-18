@@ -6,8 +6,7 @@
 #include <cstdint>
 #include <string>
 
-#include "address.hpp"
-#include "net.hpp"
+#include "link_types.hpp"
 
 namespace nnh::tool {
 

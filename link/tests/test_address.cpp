@@ -1,9 +1,9 @@
 // IPv4 parsing and the local-network rule (address.hpp, spec 010 FR-7).
 
-#include "address.hpp"
+#include "nnh_link/address.hpp"
 #include "test.hpp"
 
-using namespace nnh::tool;
+using namespace nnh::link;
 
 NNH_TEST(ipv4_parses_dotted_quads_only) {
     const auto a = parse_ipv4("192.168.10.52");

@@ -38,6 +38,7 @@ file(WRITE "${CMAKE_BINARY_DIR}/nnh_games.txt" "")
 
 add_subdirectory(third_party/stb_vorbis)
 add_subdirectory(engine)
+add_subdirectory(link) # shared by the nnh tool and the NNH Link app (spec 011)
 
 if(NNH_BUILD_EXAMPLES)
     add_subdirectory(examples)

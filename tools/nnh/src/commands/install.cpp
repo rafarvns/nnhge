@@ -8,7 +8,7 @@
 #include "console_link.hpp"
 #include "fbi.hpp"
 #include "file_server.hpp"
-#include "net.hpp"
+#include "link_types.hpp"
 #include "user_config.hpp"
 
 namespace nnh::tool {

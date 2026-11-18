@@ -6,7 +6,7 @@
 
 #include "cli.hpp"
 #include "commands.hpp"
-#include "net.hpp"
+#include "link_types.hpp"
 
 int main(int argc, char** argv) {
     using namespace nnh::tool;

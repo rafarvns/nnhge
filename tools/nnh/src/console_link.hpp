@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "address.hpp"
+#include "link_types.hpp"
 
 namespace nnh::tool {
 

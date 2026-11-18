@@ -11,7 +11,7 @@
 #include "console_link.hpp"
 #include "file_server.hpp"
 #include "log_listener.hpp"
-#include "net.hpp"
+#include "link_types.hpp"
 #include "netloader.hpp"
 #include "stored_inflate.hpp"
 #include "test.hpp"

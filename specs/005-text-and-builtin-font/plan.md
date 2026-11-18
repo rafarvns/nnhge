@@ -47,9 +47,11 @@ Vec2 measure_text(const char* utf8, int scale = 1);   // {widest line × 8, line
 
 ### Font
 
-- **Cell 8×8, monospace**, advance 8, line height 10. Glyph rows: 0 = room for accents on capitals,
-  1–6 = capitals and digits (6 rows), 2–6 = x-height (lowercase), 7 = descenders. Accented capitals use
-  a 5-row capital (rows 2–6) with the accent on rows 0–1.
+- **Cell 8×8, monospace**, advance 8, line height 10. Glyph rows: 1–6 capitals and digits (6 rows),
+  2–6 lowercase x-height (5 rows), 0 ascenders, 7 descenders, 0–1 accents (over lowercase, and over
+  capitals shortened to rows 2–6). Glyphs are mostly 5 pixels wide (odd, so A, T, V, X, Y, I, + keep a
+  centre column); M, W and a few symbols use a 6th column. Columns 0 and 7 stay empty (≥ 2 px gap).
+  (Revised after the maintainer's review of the first preview: lowercase was 4 rows and too small.)
 - **192 glyphs**: ASCII 32–126 (95), a replacement glyph (a hollow box, index 95), Latin-1 160–255 (96).
   Latin-1 letters are composed by the generator from base letters + diacritic marks (grave, acute,
   circumflex, tilde, diaeresis, ring, cedilla, stroke), so they stay consistent.

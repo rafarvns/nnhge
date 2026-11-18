@@ -47,10 +47,17 @@ NNH_TEST(frames_can_begin_draw_and_end_repeatedly) {
     platform::shutdown();
 }
 
-NNH_TEST(no_buttons_are_held_without_input) {
+NNH_TEST(idle_input_is_zero) {
     CHECK(platform::init(config()));
     CHECK(platform::poll_events());
-    CHECK(platform::read_buttons() == 0);
+    platform::InputSample sample;
+    sample.buttons = ~0u; // read_input must overwrite everything
+    sample.circle_x = sample.cstick_y = 5.0f;
+    sample.touching = true;
+    platform::read_input(sample);
+    CHECK(sample.buttons == 0);
+    CHECK(sample.circle_x == 0.0f && sample.circle_y == 0.0f && sample.cstick_x == 0.0f && sample.cstick_y == 0.0f);
+    CHECK(!sample.touching);
     platform::shutdown();
 }
 

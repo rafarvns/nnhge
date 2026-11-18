@@ -80,7 +80,9 @@ bool frame() {
     detail::scenes_apply_pending(); // changes requested during the frame that just ended
     if (!platform::poll_events()) return false;
     detail::time_frame_started(platform::ticks_ns());
-    detail::input_update(platform::read_buttons());
+    platform::InputSample input_sample;
+    platform::read_input(input_sample);
+    detail::input_update(input_sample);
     detail::profile_frame_boundary();
     detail::overlay_update(time::delta(), input::held_mask(), detail::input_pressed_mask(),
                            platform::poll_dev_requests());

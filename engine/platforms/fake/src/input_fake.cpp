@@ -5,6 +5,6 @@
 
 namespace nnh::platform {
 
-std::uint32_t read_buttons() { return platform_fake::detail::controls().held_buttons; }
+void read_input(InputSample& out) { out = platform_fake::detail::controls().input; }
 
 } // namespace nnh::platform

@@ -57,6 +57,8 @@ add_executable(nnh_tests
     scene/test_scene_stack.cpp
     system/test_system.cpp
     text/test_builtin_font.cpp
+    simulator/test_sim_layout.cpp
+    simulator/test_sim_settings.cpp
     text/test_draw_text.cpp
     text/test_font_atlas.cpp
     text/test_font_texture.cpp
@@ -69,6 +71,10 @@ add_executable(nnh_tests
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
+# The PC simulator's window layout and settings are pure (SDL-free) and tested here (spec 006).
+set(_pc_src ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
+target_sources(nnh_tests PRIVATE ${_pc_src}/sim_layout.cpp ${_pc_src}/sim_settings.cpp)
+target_include_directories(nnh_tests PRIVATE ${_pc_src})
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.

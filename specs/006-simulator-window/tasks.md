@@ -1,6 +1,6 @@
 # Tasks 006: Simulator window — layouts, scale, fullscreen
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); checked by the maintainer
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -30,5 +30,5 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 - [x] **T5.1** docs: `docs/api/simulator.md` (layouts, keys, settings, screenshots), `docs/tech/sdl3.md` (targets, composition), `docs/api/input.md` (touch in layouts) — covers AC-4
 - [x] **T5.2** budgets, Linux gcc + clang ASan/UBSan, 3DS build unaffected — covers AC-4 (edit → simulator 1.3 s, → `.3dsx` 2.2 s, `hello.3dsx` unchanged at 237,380 bytes; Linux gcc + ASan/UBSan 344 tests, every layout under ASan)
-- [ ] **T5.3** maintainer: layouts, scales, fullscreen, touch in each layout, settings restored — covers AC-3
-- [ ] **T5.4** `docs/ROADMAP.md` checkbox; spec, plan and tasks status → implemented
+- [x] **T5.3** maintainer: layouts, scales, fullscreen, touch in each layout, settings restored — covers AC-3 (2026-11-18: all layouts, scales, fit, fullscreen, Alt+Enter, touch in each layout, settings restored)
+- [x] **T5.4** `docs/ROADMAP.md` checkbox; spec, plan and tasks status → implemented

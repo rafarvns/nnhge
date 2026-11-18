@@ -1,6 +1,6 @@
 # Spec 010: The `nnh` tool and `nnh run`
 
-Status: draft
+Status: approved (2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002](../002-core-foundation/spec.md) (logs, the 3dslink stdio redirect),
 [spec 009](../009-packaging/spec.md) (dist, `.cia`, FBI install). First part of ROADMAP M6; the console
@@ -78,13 +78,15 @@ the first half of NNH Link: the protocols and network code the console app will 
 
 ## Open questions
 
-- [ ] **Split M6** — proposal: this spec is the PC tool (`nnh build/run/install`); spec 011 adds NNH Link
+Answered by the maintainer (2026-11-18): the proposals, all accepted.
+
+- [x] **Split M6** — proposal: this spec is the PC tool (`nnh build/run/install`); spec 011 adds NNH Link
   on the console, `nnh serve` (the console asks the PC for builds), pairing, and launching the received
   game through Luma's homebrew loader (`hb:ldr`, as the Homebrew Launcher does).
-- [ ] **Own protocol code or devkitPro's `3dslink`** — proposal: our own, small implementation: NNH Link
+- [x] **Own protocol code or devkitPro's `3dslink`** — proposal: our own, small implementation: NNH Link
   needs the same code on both sides anyway, it works where `3dslink` isn't on the PATH, and the netloader
   accepts an uncompressed zlib stream (stored blocks), so no compression library is needed.
-- [ ] **How the tool knows the games** — proposal: `nnh_add_game()` writes a small manifest into the build
+- [x] **How the tool knows the games** — proposal: `nnh_add_game()` writes a small manifest into the build
   folder (game name, outputs); `nnh` reads it, so `<game>` is the CMake target name.
-- [ ] **Remembered console** — proposal: the last IP per user (`%APPDATA%/nnhge/nnh.ini`,
+- [x] **Remembered console** — proposal: the last IP per user (`%APPDATA%/nnhge/nnh.ini`,
   `~/.config/nnhge/nnh.ini`); `--console` overrides and updates it.

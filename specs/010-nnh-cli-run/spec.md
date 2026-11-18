@@ -1,6 +1,6 @@
 # Spec 010: The `nnh` tool and `nnh run`
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002](../002-core-foundation/spec.md) (logs, the 3dslink stdio redirect),
 [spec 009](../009-packaging/spec.md) (dist, `.cia`, FBI install). First part of ROADMAP M6; the console

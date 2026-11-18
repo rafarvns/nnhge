@@ -87,11 +87,11 @@ linked); `text.3dsx` 239,736 bytes.
 - [ ] Later, if games need them: positional audio, effects (reverb, filters), more than one music track (layers), streaming on a thread for long loads
 
 ## M5 — Packaging
-- [x] `.3dsx` with icon/metadata and an installable `.cia` with banner and jingle ([spec 009](../specs/009-packaging/spec.md)): one identity in `nnh_add_game()` (`TITLE`/`DESCRIPTION`/`AUTHOR`/`VERSION`/`ICON`, NNHGE icon by default, TITLE = PC window title), `CIA UNIQUE_ID ...` with `BANNER`/`BANNER_AUDIO` (NNHGE defaults), every field checked at configure; `<game>_cia`, `<game>_dist`, `dist`; makerom + bannertool fetched pinned on the first `.cia` build only; `scripts/fbi_install.py` installs over the network; guide [Distributing your game](guides/packaging.md) — `examples/audio` `.cia` installed with FBI and played on an Old 3DS XL (2026-11-18)
+- [x] `.3dsx` with icon/metadata and an installable `.cia` with banner and jingle ([spec 009](../specs/009-packaging/spec.md)): one identity in `nnh_add_game()` (`TITLE`/`DESCRIPTION`/`AUTHOR`/`VERSION`/`ICON`, NNHGE icon by default, TITLE = PC window title), `CIA UNIQUE_ID ...` with `BANNER`/`BANNER_AUDIO` (NNHGE defaults), every field checked at configure; `<game>_cia`, `<game>_dist`, `dist`; makerom + bannertool fetched pinned on the first `.cia` build only; `nnh install` installs over the network (spec 010); guide [Distributing your game](guides/packaging.md) — `examples/audio` `.cia` installed with FBI and played on an Old 3DS XL (2026-11-18)
 - [ ] Later: `SYSTEM_MODE` (more memory, New 3DS 804 MHz) for `.cia`; `nnh package` with the CLI (M6)
 
 ## M6 — NNH Link
-- [ ] `nnh run --console <ip>` (3dslink-compatible send + log stream) — [spec 010](../specs/010-nnh-cli-run/spec.md) (in progress)
+- [x] The `nnh` tool ([spec 010](../specs/010-nnh-cli-run/spec.md)): `nnh build`, `nnh run` (3dslink-compatible send with its own code, console found on every local network and remembered, coloured log saved in `build/logs/`, `--pc` for the simulator), `nnh install` (`.cia` through FBI) — guide [The nnh tool](guides/nnh-tool.md); verified with `hello` and `audio` on an Old 3DS XL (2026-11-18)
 - [ ] NNH Link app: discover dev server, list projects, request build, receive and launch
 - [ ] Pairing code for LAN safety
 

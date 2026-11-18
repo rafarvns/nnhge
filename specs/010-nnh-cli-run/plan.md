@@ -1,6 +1,6 @@
 # Plan 010: The `nnh` tool and `nnh run`
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Spec: [spec.md](spec.md) · Decision D23 (below) · Updates D8
 
 ## Constitution Check (before design)

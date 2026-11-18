@@ -99,4 +99,45 @@ bool paused(AudioGroup group);
 bool available();
 
 } // namespace audio
+
+/// Published in nnh::frame() when a track that doesn't loop has played to its end (not for stop(), a
+/// replaced track or the one a crossfade fades out).
+struct MusicFinished {};
+
+/// Music: one track at a time (two during a crossfade), streamed from the assets while the game runs,
+/// so memory doesn't grow with its length. Plays in AudioGroup::Music.
+/// @code
+/// nnh::music::play("music/forest", {.fade_in = 1.0f});              // assets/music/forest.ogg
+/// nnh::music::crossfade("music/boss", 2.0f);
+/// @endcode
+namespace music {
+
+struct Options {
+    bool loop = true;
+    /// Where a loop restarts, in frames (samples per channel). 0 = the file's LOOPSTART tag if it has
+    /// one, else the start. An intro before it plays once.
+    std::uint32_t loop_start = 0;
+    float volume = 1.0f;  ///< 0..1, times the Music group and master volume
+    float fade_in = 0.0f; ///< seconds
+};
+
+/// Plays `path` (without extension: .wav, else .ogg, like load_sound) from the start, replacing any
+/// music at once. Errors: like load_sound, plus InvalidArgument for a loop point past the end and
+/// OutOfMemory if the decoder's memory (~256 KB per Ogg track) can't be allocated.
+Result<void> play(const char* path, const Options& options = {});
+/// Fades the current track out and `path` in, over `seconds`. Without current music, plays it with
+/// that fade-in. A track still fading out from an earlier crossfade stops at once.
+Result<void> crossfade(const char* path, float seconds, const Options& options = {});
+/// Stops the current track, at once or fading out over `fade_out` seconds. No MusicFinished.
+void stop(float fade_out = 0.0f);
+void set_paused(bool paused);
+bool paused();
+/// The current track's own volume (0..1); fades multiply it.
+void set_volume(float volume);
+/// True while a current track plays (paused counts; one fading out after stop() doesn't).
+bool playing();
+/// Seconds into the current track (loops wrap back to the loop point); 0 without music.
+float position();
+
+} // namespace music
 } // namespace nnh

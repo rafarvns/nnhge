@@ -132,7 +132,30 @@ NNH_TEST(audio_either_plays_voices_or_says_why_not) {
     platform::voice_stop(0);
     CHECK(!platform::voice_playing(0));
     platform::sample_destroy(info.handle);
+    // A stream: buffers to fill, queued in order, dropped by stop.
+    platform::stream_start(0, 2, {0.0f, 0.0f, 32000.0f});
+    std::uint32_t capacity = 0;
+    std::int16_t* buffer = platform::stream_buffer(0, capacity);
+    CHECK(buffer != nullptr && capacity == platform::kStreamBufferFrames);
+    if (buffer != nullptr) {
+        for (std::uint32_t i = 0; i < 2 * capacity; ++i) buffer[i] = 0;
+        platform::stream_submit(0, capacity);
+        CHECK(platform::stream_queued(0) <= capacity);
+    }
+    platform::stream_pause(0, true);
+    platform::stream_stop(0);
+    CHECK(platform::stream_queued(0) == 0);
     platform::audio_shutdown();
+    platform::shutdown();
+}
+
+NNH_TEST(a_missing_asset_cannot_be_opened_as_a_stream) {
+    CHECK(platform::init(config()));
+    (void)platform::assets_mount();
+    platform::AssetStream stream = 123;
+    CHECK(!platform::asset_open("definitely/missing.ogg", stream));
+    platform::asset_close(0); // closing "none" is safe
+    platform::assets_unmount();
     platform::shutdown();
 }
 

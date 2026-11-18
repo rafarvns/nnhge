@@ -53,4 +53,26 @@ void voice_stop(int voice);
 /// voice is playing.
 bool voice_playing(int voice);
 
+// Streams (music): PCM the core decodes while the game runs, queued in fixed buffers the platform owns
+// (allocated by audio_init(): kStreams x kStreamBuffers x kStreamBufferFrames stereo frames, counted by
+// core under `audio` in the Linear region as kStreamBytes). Played after the voices' channels.
+inline constexpr int kStreams = 2; // a crossfade plays two tracks
+inline constexpr int kStreamBuffers = 4;
+inline constexpr std::uint32_t kStreamBufferFrames = 4096; // ~0.13 s at 32 kHz; 4 queued = ~0.5 s
+inline constexpr std::size_t kStreamBytes = std::size_t{kStreams} * kStreamBuffers * kStreamBufferFrames * 2 * 2;
+
+/// Starts stream `stream` (0..kStreams-1) empty, for `channels` (1 or 2) at `params`. Replaces what it played.
+void stream_start(int stream, int channels, const VoiceParams& params);
+/// A free buffer to fill (`capacity` = kStreamBufferFrames frames of the stream's channels), or nullptr
+/// if all are queued. Must not allocate.
+std::int16_t* stream_buffer(int stream, std::uint32_t& capacity);
+/// Queues the buffer stream_buffer() returned, holding `frames` (1..capacity) frames, after the others.
+void stream_submit(int stream, std::uint32_t frames);
+void stream_update(int stream, const VoiceParams& params);
+void stream_pause(int stream, bool paused);
+/// Stops a stream and drops what is queued.
+void stream_stop(int stream);
+/// Frames queued and not played yet (0 = it played everything it was given).
+std::uint32_t stream_queued(int stream);
+
 } // namespace nnh::platform

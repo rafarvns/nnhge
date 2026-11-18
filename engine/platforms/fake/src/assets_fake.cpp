@@ -40,4 +40,28 @@ bool asset_read(const char* path, void* buffer, std::size_t capacity, std::size_
     return true;
 }
 
+bool asset_open(const char* path, AssetStream& out) {
+    ++platform_fake::detail::mutable_state().asset_reads;
+    out = 0;
+    const auto* asset = find(path);
+    if (asset == nullptr) return false;
+    out = reinterpret_cast<AssetStream>(asset);
+    ++platform_fake::detail::mutable_state().open_asset_streams;
+    return true;
+}
+
+bool asset_read_at(AssetStream stream, std::uint64_t offset, void* buffer, std::size_t size, std::size_t& read) {
+    read = 0;
+    const auto* asset = reinterpret_cast<const platform_fake::detail::FakeAsset*>(stream);
+    if (asset == nullptr || offset > asset->size) return false;
+    const std::size_t left = asset->size - static_cast<std::size_t>(offset);
+    read = size < left ? size : left;
+    if (read > 0) std::memcpy(buffer, static_cast<const char*>(asset->data) + offset, read);
+    return true;
+}
+
+void asset_close(AssetStream stream) {
+    if (stream != 0) --platform_fake::detail::mutable_state().open_asset_streams;
+}
+
 } // namespace nnh::platform

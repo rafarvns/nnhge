@@ -23,5 +23,15 @@ void voice_update(int, const VoiceParams&) {}
 void voice_pause(int, bool) {}
 void voice_stop(int) {}
 bool voice_playing(int) { return false; }
+void stream_start(int, int, const VoiceParams&) {}
+std::int16_t* stream_buffer(int, std::uint32_t& capacity) {
+    capacity = 0;
+    return nullptr;
+}
+void stream_submit(int, std::uint32_t) {}
+void stream_update(int, const VoiceParams&) {}
+void stream_pause(int, bool) {}
+void stream_stop(int) {}
+std::uint32_t stream_queued(int) { return 0; }
 
 } // namespace nnh::platform

@@ -1,10 +1,10 @@
-# audio — sound effects and the mixer
+# audio — sound effects, music and the mixer
 
 Header: `<nnh/audio.hpp>` · Spec: [008](../../specs/008-audio/spec.md) · Files: [assets.md](assets.md)
 
-> Status: **in progress** (spec 008). Sound effects, voices, groups and `SoundFinished` work, and are
-> tested on the fake platform. Streaming music comes in stage 3. The PC and 3DS outputs come in stage 4:
-> until then `audio::available()` is false there and games run silently with the same behaviour.
+> Status: **in progress** (spec 008). Sound effects, voices, groups, streamed music and the events work,
+> and are tested on the fake platform. The PC and 3DS outputs come in stage 4: until then
+> `audio::available()` is false there and games run silently with the same behaviour.
 
 Put WAV or Ogg Vorbis files in the game's [assets](assets.md) folder. Load each one once, then play it as
 many times as you like. Every play is a **voice** with its own volume, pan and pitch.
@@ -32,7 +32,7 @@ nnh::audio::set_pitch(engine, 1.0f + speed / 200.0f);
   every `.wav`/`.ogg` in the assets folder and fails, naming the file, for anything else (24-bit,
   3 channels, 96 kHz, Opus…; [cmake.md](../tech/cmake.md#common-changes)).
 - A decoded sound is 16-bit and at most **4 MB** (about 65 s of mono at 32 kHz). Longer audio is music
-  (streamed, stage 3). On the 3DS, 32 kHz or less saves memory; the hardware plays any rate.
+  (streamed, see [Music](#music)). On the 3DS, 32 kHz or less saves memory; the hardware plays any rate.
 - Memory: decoded samples live in `Linear` memory (the 3DS DSP reads them), counted under the tag `audio`
   ([memory.md](memory.md)).
 
@@ -67,11 +67,44 @@ Every voice belongs to a group (`PlayOptions::group`): `AudioGroup::Effects` (de
 | `audio::set_paused(group, bool)`, `paused(group)` | e.g. pause effects and dialogue during a pause menu; a voice paused on its own stays paused when its group resumes |
 | `audio::available()` | false when there is no audio output (see below) |
 
+## Music
+
+One track at a time — two during a crossfade — **streamed** from the assets while the game runs:
+memory doesn't grow with its length (the platform keeps ~0.5 s queued; an Ogg track also needs ~256 KB
+for its decoder while it plays). Music plays in `AudioGroup::Music`.
+
+```cpp
+nnh::music::play("music/forest", {.fade_in = 1.0f});   // assets/music/forest.ogg, loops by default
+nnh::music::crossfade("music/boss", 2.0f);              // forest fades out while boss fades in
+nnh::music::play("music/jingle", {.loop = false});     // MusicFinished when it has played
+nnh::music::stop(0.5f);                                 // fade out, no event
+```
+
+| API | |
+|-----|-|
+| `music::play(path, options = {})` | replaces any music at once. `Options`: `loop` (default true), `loop_start`, `volume`, `fade_in` (seconds) |
+| `music::crossfade(path, seconds, options = {})` | the current track fades out while `path` fades in; without music, a fade-in |
+| `music::stop(fade_out = 0)` | stop now or fade out; no `MusicFinished` |
+| `music::set_paused(bool)`, `paused()` | also paused while `AudioGroup::Music` is paused |
+| `music::set_volume(x)` | the track's own volume (fades and the Music group multiply it) |
+| `music::playing()`, `position()` | a current track plays (paused counts); seconds into it |
+
+- **Loop points**: a looping track restarts at `loop_start` (in frames: samples per channel), so an
+  intro plays once. With `loop_start = 0`, an Ogg file's `LOOPSTART` comment tag is used when it has one
+  (many music tools write it). The jump is sample-exact and doesn't decode the intro again.
+- `position()` wraps at the loop: after the end it continues from the loop point.
+- A failed `play`/`crossfade` (missing file, bad loop point…) leaves the current music playing.
+- Music formats are those of sounds (WAV or Ogg Vorbis; the build checks them). A WAV's header must fit
+  in its first 4 KB.
+- Streaming happens in `nnh::frame()`: a frame longer than ~0.5 s (e.g. loading many files) can make the
+  music stutter. Load at the start of a scene.
+
 ## Events
 
 | Event | When | Payload |
 |-------|------|---------|
 | `nnh::SoundFinished` | in `nnh::frame()`, after a voice played to its end (not after `stop()`, nor when replaced) | `Voice voice` |
+| `nnh::MusicFinished` | in `nnh::frame()`, after a track that doesn't loop has played its last frame (not after `stop()`, `play()` replacing it, or a crossfade fading it out) | — |
 
 ```cpp
 nnh::Subscription s = nnh::events::subscribe<nnh::SoundFinished>([&](const nnh::SoundFinished& e) {
@@ -84,17 +117,18 @@ nnh::Subscription s = nnh::events::subscribe<nnh::SoundFinished>([&](const nnh::
 A 3DS without its DSP firmware (`sdmc:/3ds/dspfirm.cdc`, dumped once by the user) or a PC without a
 sound device still runs the game: `init()` succeeds, the reason is logged once, `audio::available()` is
 false, and everything above keeps working **silently**. Sounds load, voices play and end on time (by the
-clock), and `SoundFinished` is published as usual. Games need no special case.
+clock), music keeps time (its `position()` advances, loops wrap) and `SoundFinished`/`MusicFinished`
+are published as usual. Games need no special case.
 
 ## Capacities and errors
 
 `AppConfig::audio`: `.voices` (1–22, default 16) and `.max_sounds` (sounds loaded at once, default 128,
 about 40 bytes each).
 
-| `ErrorCode` (`load_sound`) | When |
+| `ErrorCode` (`load_sound`, `music::play`) | When |
 |----------------------------|------|
 | `NotFound` | no `.wav` or `.ogg` with that path in the assets |
-| `InvalidArgument` | the path breaks the [asset path rules](assets.md#paths), or is null |
+| `InvalidArgument` | the path breaks the [asset path rules](assets.md#paths), or is null; a `loop_start` past the end |
 | `Unsupported` | another encoding, bit depth, channel count or rate; or called before `nnh::init()` |
 | `Corrupted` | the file is damaged |
 | `LimitReached` | `max_sounds` are loaded, or the decoded sound is over 4 MB |

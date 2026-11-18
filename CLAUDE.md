@@ -79,7 +79,8 @@ debug text uses it too ([api/text.md](docs/api/text.md)). Assets (spec 007; demo
 `nnh_add_game(... ASSETS assets)` packs a folder (romfs on 3DS, a folder next to the PC program);
 `<nnh/assets.hpp>` reads files by case-sensitive path, `load_texture("art/hero")` loads images
 ([api/assets.md](docs/api/assets.md)). Audio (spec 008, in progress): `<nnh/audio.hpp>` — `load_sound("sfx/jump")` (WAV/Ogg from
-assets), `audio::play` voices with volume/pan/pitch/priority, groups and master, `SoundFinished`; Ogg via
+assets), `audio::play` voices with volume/pan/pitch/priority, groups and master, `SoundFinished`; streamed
+`music::play`/`crossfade` with loop points and fades, `MusicFinished`; Ogg via
 vendored `third_party/stb_vorbis` ([api/audio.md](docs/api/audio.md)).
 
 ```

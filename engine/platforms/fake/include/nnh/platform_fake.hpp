@@ -34,6 +34,18 @@ struct FakeVoice {
     int stops = 0;  ///< voice_stop() calls
 };
 
+/// A stream of the fake audio output (music, spec 008).
+struct FakeStream {
+    bool active = false;
+    bool paused = false;
+    int channels = 0;
+    platform::VoiceParams params{};
+    std::uint32_t queued = 0;    ///< frames submitted and not consumed
+    std::uint32_t submitted = 0; ///< frames submitted since stream_start()
+    int starts = 0;
+    int stops = 0;
+};
+
 /// Everything the fake platform recorded since the last reset().
 struct State {
     int init_calls = 0;
@@ -64,6 +76,8 @@ struct State {
     int live_samples = 0;    ///< created and not yet destroyed
     int samples_ready = 0;   ///< sample_ready() calls
     FakeVoice voices[kMaxFakeVoices];
+    FakeStream streams[platform::kStreams];
+    int open_asset_streams = 0; ///< asset_open() minus asset_close()
 };
 
 const State& state();
@@ -94,6 +108,12 @@ void finish_voice(int voice);
 
 /// The frames core wrote into a sample (interleaved), or nullptr for a stale handle.
 const std::int16_t* sample_frames(platform::SampleHandle sample);
+
+/// Plays `frames` of what a stream has queued (oldest first), freeing its emptied buffers.
+void consume_stream(int stream, std::uint32_t frames);
+
+/// Everything submitted to a stream since its last stream_start(), interleaved (the first 1 M values).
+const std::int16_t* stream_log(int stream, std::uint32_t& frames);
 
 /// When true, poll_events() returns false (the system asks the app to quit).
 void set_quit_requested(bool quit);

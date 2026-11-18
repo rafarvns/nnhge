@@ -55,6 +55,7 @@ NNH_TEST(without_output_the_game_runs_silently_and_says_why_once) {
     nnh::shutdown();
     fake::reset();
     fake::set_audio_available(false);
+    nnh::log::reset(); // only this init's lines in the ring
     CHECK(nnh::init());
     CHECK(!audio::available());
     int mentions = 0;

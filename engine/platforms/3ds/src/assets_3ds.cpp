@@ -56,4 +56,25 @@ bool asset_read(const char* path, void* buffer, std::size_t capacity, std::size_
     return read == size;
 }
 
+bool asset_open(const char* path, AssetStream& out) {
+    out = 0;
+    char full[300];
+    if (!g_mounted || !full_path(path, full, sizeof full)) return false;
+    std::FILE* file = std::fopen(full, "rb");
+    out = reinterpret_cast<AssetStream>(file);
+    return file != nullptr;
+}
+
+bool asset_read_at(AssetStream stream, std::uint64_t offset, void* buffer, std::size_t size, std::size_t& read) {
+    read = 0;
+    auto* file = reinterpret_cast<std::FILE*>(stream);
+    if (file == nullptr || std::fseek(file, static_cast<long>(offset), SEEK_SET) != 0) return false;
+    read = size > 0 ? std::fread(buffer, 1, size, file) : 0;
+    return read == size || std::feof(file) != 0;
+}
+
+void asset_close(AssetStream stream) {
+    if (stream != 0) std::fclose(reinterpret_cast<std::FILE*>(stream));
+}
+
 } // namespace nnh::platform

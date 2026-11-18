@@ -14,6 +14,8 @@ add_library(nnh_core STATIC
     src/assets/asset_index.cpp
     src/audio/audio.cpp
     src/audio/mix.cpp
+    src/audio/music.cpp
+    src/audio/music_track.cpp
     src/audio/ogg_pages.cpp
     src/audio/ogg_reader.cpp
     src/audio/ogg_seek.cpp
@@ -22,6 +24,7 @@ add_library(nnh_core STATIC
     src/audio/voice_api.cpp
     src/audio/voice_table.cpp
     src/audio/wav_reader.cpp
+    src/audio/wav_stream.cpp
     src/assets/asset_path.cpp
     src/assets/assets.cpp
     src/debug/debug.cpp

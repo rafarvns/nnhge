@@ -5,6 +5,7 @@
 
 #include "gfx_fixture.hpp"
 #include "nnh/memory.hpp"
+#include "nnh/platform/audio.hpp"
 
 namespace fake = nnh::platform_fake;
 using gfx_test::load;
@@ -14,9 +15,12 @@ namespace {
 
 bool message_has(const nnh::Error& e, const char* text) { return std::strstr(e.message, text) != nullptr; }
 
-// While the engine runs, the built-in font holds one texture of 128x128 RGBA (spec 005): count the rest.
+// While the engine runs, the built-in font holds one texture of 128x128 RGBA (spec 005) and the audio
+// output its stream buffers (spec 008): count the rest.
 constexpr std::size_t kFontBytes = 128u * 128u * 4u;
-std::size_t linear_bytes() { return nnh::mem::region_stats(nnh::MemRegion::Linear).bytes - kFontBytes; }
+std::size_t linear_bytes() {
+    return nnh::mem::region_stats(nnh::MemRegion::Linear).bytes - kFontBytes - nnh::platform::kStreamBytes;
+}
 int game_textures() { return fake::state().live_textures - 1; }
 
 } // namespace

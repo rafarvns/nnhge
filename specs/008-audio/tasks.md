@@ -1,16 +1,16 @@
 # Tasks 008: Audio — sound effects, streaming music, mixer
 
-Status: draft
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — readers and the build check
 
-- [ ] **T1.1** WAV reader (bounded, chunk skipping, formats) — files: `core/src/audio/wav_reader.{hpp,cpp}` — test: `tests/audio/test_wav_reader.cpp` + fixtures `tests/data/sounds/` — covers FR-1, FR-10
-- [ ] **T1.2** vendor stb_vorbis (pinned, license, REFERENCES); OGG reader on the push-data API with an arena, `LOOPSTART`, page offsets for the loop point — files: `third_party/stb_vorbis/`, `core/src/audio/ogg_reader.{hpp,cpp}` — test: `tests/audio/test_ogg_reader.cpp` — covers FR-1, FR-3, FR-10
-- [ ] **T1.3** [P] fuzz targets `wav`, `ogg` (mini-fuzz + libFuzzer) — files: `tests/fuzz/` — covers FR-10
-- [ ] **T1.4** [P] `nnh_check_sound.cmake` in the assets pipeline — test: ctest `sound_check_*` (valid, 24-bit, 3 channels, not OGG) — covers FR-1
+- [x] **T1.1** WAV reader (bounded, chunk skipping, formats) — files: `core/src/audio/wav_reader.{hpp,cpp}` — test: `tests/audio/test_wav_reader.cpp` + fixtures `tests/data/sounds/` — covers FR-1, FR-10
+- [x] **T1.2** vendor stb_vorbis (pinned, license, REFERENCES); OGG reader on the push-data API with an arena, `LOOPSTART`, page offsets for the loop point — files: `third_party/stb_vorbis/`, `core/src/audio/ogg_reader.{hpp,cpp}` — test: `tests/audio/test_ogg_reader.cpp` — covers FR-1, FR-3, FR-10
+- [x] **T1.3** [P] fuzz targets `wav`, `ogg` (mini-fuzz + libFuzzer) — files: `tests/fuzz/` — covers FR-10
+- [x] **T1.4** [P] `nnh_check_sound.cmake` in the assets pipeline — test: ctest `sound_check_*` (valid, 24-bit, 3 channels, not OGG) — covers FR-1
 
 ## Stage 2 — contract, fake, effects and mixer
 

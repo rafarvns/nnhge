@@ -4,6 +4,7 @@
 # becomes an asset named by its path relative to it ('/'-separated). One build step per file, rerun only
 # when that file changes, writes into <binary dir>/assets/<path>:
 #   *.png  -> checked (nnh_check_image.cmake); 3DS: converted by tex3ds (same name), PC: copied;
+#   *.wav, *.ogg -> checked (nnh_check_sound.cmake: PCM 8/16-bit or Vorbis, mono/stereo, 8-48 kHz), copied;
 #   others -> copied unchanged.
 # nnh_asset_index.cmake then writes <binary dir>/assets/.nnh_assets (the sorted list core reads at init),
 # refuses invalid names and names differing only by letter case, and removes stale outputs.
@@ -44,6 +45,14 @@ function(nnh_add_assets target folder)
                 COMMAND ${check}
                 COMMAND ${convert}
                 DEPENDS "${input}" "${_NNH_ASSETS_DIR}/nnh_check_image.cmake"
+                COMMENT "Asset ${name}"
+                VERBATIM)
+        elseif(name MATCHES "\\.([wW][aA][vV]|[oO][gG][gG])$")
+            add_custom_command(OUTPUT "${output}"
+                COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
+                COMMAND ${CMAKE_COMMAND} -DSOUND=${input} -P ${_NNH_ASSETS_DIR}/nnh_check_sound.cmake
+                COMMAND ${CMAKE_COMMAND} -E copy ${input} ${output}
+                DEPENDS "${input}" "${_NNH_ASSETS_DIR}/nnh_check_sound.cmake"
                 COMMENT "Asset ${name}"
                 VERBATIM)
         else()

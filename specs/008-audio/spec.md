@@ -1,6 +1,6 @@
 # Spec 008: Audio — sound effects, streaming music, mixer
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (sounds are assets), [spec 002](../002-core-foundation/spec.md)
 (memory tags, `Result`, logs), [spec 001](../001-event-bus-and-scenes/spec.md) (events). Implements ROADMAP M4.
@@ -114,6 +114,8 @@ Answered by the maintainer (2026-11-18): the proposals, all accepted (music form
   load time (OGG for long effects saves space in the romfs).
 - [x] **Sample rate** — proposal: keep each file's rate and let the mixer resample (the 3DS DSP does it
   per channel); the build warns above 48 kHz. Alternative: convert everything at build time to one rate.
+  (Implementation note: the build **refuses** files above 48 kHz instead of warning, since the readers
+  reject them at run time; the message suggests 32 kHz.)
 - [x] **Voice count** — proposal: 16 effect voices by default (configurable up to 22), 2 DSP channels
   reserved for music.
 - [x] **Groups** — proposal: fixed `master`, `music`, `effects`, plus `dialogue` (named so it is not confused with a playing voice), so menus can

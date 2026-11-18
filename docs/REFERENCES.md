@@ -12,6 +12,10 @@ Projects to study (learn from them; check licenses before reusing any code). Res
 - **makerom** (Project_CTR) and **bannertool** (Epicpkmn11 fork) — build `.cia`. Not bundled with devkitPro.
   https://www.3dbrew.org/wiki/Makerom · Makefile pattern: https://github.com/TricksterGuy/3ds-template
 - **3dbrew wiki** — hardware and system reference: https://www.3dbrew.org/wiki/Setting_up_Development_Environment
+- **stb_vorbis** (Sean Barrett; public domain or MIT) — the Ogg Vorbis decoder we vendor in
+  `third_party/stb_vorbis` (spec 008; version and hash in its README): https://github.com/nothings/stb
+- **libsndfile / python-soundfile** — used only by `make_sounds.py` scripts to encode the test and example
+  sounds (not shipped): https://python-soundfile.readthedocs.io
 
 ## Engines and frameworks (design inspiration)
 - **Butano** (GBA, modern C++, zlib) — best model for API style and documentation quality; no exceptions/RTTI,

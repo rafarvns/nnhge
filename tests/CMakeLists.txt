@@ -18,6 +18,8 @@ add_executable(nnh_tests
     assets/test_asset_path.cpp
     assets/test_asset_textures.cpp
     assets/test_assets.cpp
+    audio/test_ogg_reader.cpp
+    audio/test_wav_reader.cpp
     build/test_flavor.cpp
     crash/test_assert.cpp
     crash/test_report.cpp
@@ -74,6 +76,8 @@ add_executable(nnh_tests
     time/test_fixed_step.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
+# Sound fixtures (tests/data/sounds, made by make_sounds.py) are read from the source tree.
+target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
 # The PC simulator's window layout and settings are pure (SDL-free) and tested here (spec 006).
 set(_pc_src ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
@@ -137,6 +141,26 @@ foreach(case "npot_100x60.png|npot_100x60.png is 100x60: textures need power-of-
     set_tests_properties(image_check_explains_${file} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
 endforeach()
 
+# Sound check of nnh_add_game(... ASSETS ...) (spec 008 FR-1): fixtures from data/sounds/make_sounds.py.
+set(_sounds ${CMAKE_CURRENT_SOURCE_DIR}/data/sounds)
+set(_sound_check ${PROJECT_SOURCE_DIR}/cmake/nnh_check_sound.cmake)
+foreach(file ok_mono16.wav sweep_mono_22k.ogg sweep_stereo_32k_loop.ogg)
+    add_test(NAME sound_check_accepts_${file} COMMAND ${CMAKE_COMMAND} -DSOUND=${_sounds}/${file} -P ${_sound_check})
+endforeach()
+foreach(case "bad_24bit.wav|bad_24bit.wav is 24-bit"
+             "bad_3ch.wav|bad_3ch.wav has 3 channels"
+             "bad_96k.wav|bad_96k.wav is at 96000 Hz"
+             "bad_not_ogg.ogg|bad_not_ogg.ogg: not an Ogg file"
+             "missing.wav|missing.wav: file not found")
+    string(REPLACE "|" ";" case "${case}")
+    list(GET case 0 file)
+    list(GET case 1 expected)
+    add_test(NAME sound_check_rejects_${file} COMMAND ${CMAKE_COMMAND} -DSOUND=${_sounds}/${file} -P ${_sound_check})
+    set_tests_properties(sound_check_rejects_${file} PROPERTIES WILL_FAIL TRUE)
+    add_test(NAME sound_check_explains_${file} COMMAND ${CMAKE_COMMAND} -DSOUND=${_sounds}/${file} -P ${_sound_check})
+    set_tests_properties(sound_check_explains_${file} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+endforeach()
+
 # Asset index of nnh_add_game(... ASSETS ...) (spec 007 FR-1, FR-6): sorted output; bad names fail the
 # build with a message naming the file.
 set(_lists ${CMAKE_CURRENT_SOURCE_DIR}/data/asset_lists)
@@ -170,10 +194,10 @@ option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)
 if(NNH_BUILD_FUZZERS)
     # The code under test lives in these libraries: instrument it for coverage and ASan, or libFuzzer
     # mutates blind (it reported "cov: 1" before this was added).
-    foreach(lib nnh_core nnh_fuzz_targets)
+    foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index)
+    foreach(name path save asset_index wav ogg)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

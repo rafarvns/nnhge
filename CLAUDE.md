@@ -95,6 +95,7 @@ examples/<name>/                                 one small program per feature
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
 docs/                                            architecture/, process/, tech/, api/, guides/
 cmake/  scripts/                                 nnh_add_game(), engine options, SDL3 fetch, dkp.sh, docs tool
+third_party/<library>/                           vendored, unmodified, pinned code (stb_vorbis)
 ```
 
 CMake targets: `nnh::core`, `nnh::core_contract`, `nnh::platform_{pc,3ds,fake}`, and `nnh::engine`

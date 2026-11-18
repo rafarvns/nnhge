@@ -24,6 +24,7 @@ add_library(nnh_core STATIC
     src/fs/save.cpp
     src/fs/save_format.cpp
     src/gfx/draw2d.cpp
+    src/gfx/draw_text.cpp
     src/gfx/draw_list.cpp
     src/gfx/gfx.cpp
     src/gfx/gfx_frame.cpp

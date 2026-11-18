@@ -24,7 +24,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 4 — drawing text
 
-- [ ] **T4.1** `TextOptions`, `draw_text`, `measure_text` → draw list (alignment, scale, layer, camera, shadow, capacity) — files: `nnh/gfx.hpp`, `gfx/draw_text.cpp` — test: `tests/text/test_draw_text.cpp` — covers FR-3, FR-4, FR-8
+- [x] **T4.1** `TextOptions`, `draw_text`, `measure_text` → draw list (alignment, scale, layer, camera, shadow, capacity) — files: `nnh/gfx.hpp`, `gfx/draw_text.cpp` — test: `tests/text/test_draw_text.cpp` — covers FR-3, FR-4, FR-8
 
 ## Stage 5 — debug text on the font
 
@@ -33,7 +33,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 6 — example, docs, closing
 
-- [ ] **T6.1** `examples/text`: character set, Portuguese sentence, alignments, scales, shadow, a measured box; screenshots — covers AC-2
+- [x] **T6.1** `examples/text`: character set, Portuguese sentence, alignments, scales, shadow, a measured box; screenshots — covers AC-2 (done in stage 4)
 - [ ] **T6.2** `examples/sprites` HUD box sized with `measure_text` — covers AC-3
 - [ ] **T6.3** run `examples/text` and `examples/sprites` on the 3DS, compare with the screenshots — maintainer — covers AC-3, FR-5
 - [ ] **T6.4** docs: new `docs/api/text.md`; `gfx.md`, `debug.md`, `rendering.md`, `platforms.md` (contract), `sdl3.md`, `devkitpro-3ds.md` (tiling), `simulator.md`; CLAUDE.md — covers AC-5

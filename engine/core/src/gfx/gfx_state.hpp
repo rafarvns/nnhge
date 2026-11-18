@@ -50,6 +50,15 @@ struct GfxState {
 
 GfxState& gfx_state();
 
+/// True inside a frame with the graphics module ready (draw calls are recorded).
+bool gfx_drawing();
+
+/// Records a 2D draw; on overflow asserts (Debug/Development) or drops it (Release).
+void gfx_record(const DrawCommand& command);
+
+/// Clamps a layer to 0..15.
+std::uint8_t gfx_clamp_layer(int layer);
+
 /// Frees a texture's platform resource and memory accounting now.
 void destroy_texture_now(int slot, std::uint32_t generation);
 

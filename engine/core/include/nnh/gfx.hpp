@@ -98,6 +98,20 @@ enum class TextAlign : std::uint8_t { Left, Center, Right };
 inline constexpr int kFontCellSize = 8;
 inline constexpr int kFontLineHeight = 10;
 
+/// How gfx::draw_text() draws. Every field is optional:
+/// @code
+/// nnh::gfx::draw_text(nnh::Screen::Top, {200, 8}, "PAUSED", {.scale = 2, .align = nnh::TextAlign::Center});
+/// @endcode
+struct TextOptions {
+    Color color = colors::white;
+    int scale = 1;                           ///< 1 to 8: whole pixels, so text stays sharp
+    TextAlign align = TextAlign::Left;       ///< relative to the position's x, line by line
+    bool shadow = false;                     ///< a drop shadow one (scaled) pixel down-right
+    Color shadow_color = rgba(0, 0, 0, 160);
+    int layer = 0;                           ///< 0..15, like sprites
+    bool ignore_camera = false;              ///< position in screen pixels (HUD)
+};
+
 class Texture; // <nnh/texture.hpp>
 
 namespace gfx {
@@ -115,6 +129,19 @@ void draw_rect(Screen screen, Rect rect, Color color, const ShapeOptions& option
 
 /// 1-pixel line from `from` to `to`.
 void draw_line(Screen screen, Vec2 from, Vec2 to, Color color, const ShapeOptions& options = {});
+
+/// Draws UTF-8 text with the built-in NNHGE font, the first line's top-left at `position` (for
+/// TextAlign::Left). '\n' starts a new line. Pixel-identical on every system. Each drawn character (and
+/// its shadow) is one draw of AppConfig::gfx.max_draws. Only inside a frame. No allocation.
+void draw_text(Screen screen, Vec2 position, const char* utf8, const TextOptions& options = {});
+
+/// Size `utf8` takes when drawn at `scale`: {widest line, lines x kFontLineHeight}, times the scale.
+/// The same on every system; callable anytime.
+/// @code
+/// const nnh::Vec2 size = nnh::gfx::measure_text("Game Over", 2);
+/// nnh::gfx::fill_rect(nnh::Screen::Top, {x - 4, y - 4, size.x + 8, size.y + 8}, nnh::rgba(0, 0, 0, 160));
+/// @endcode
+Vec2 measure_text(const char* utf8, int scale = 1);
 
 /// Sets / reads a screen's camera (both start at (0, 0) at init()).
 void set_camera(Screen screen, Camera2D camera);

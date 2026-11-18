@@ -1,23 +1,32 @@
-// nnh — the NNHGE command-line tool (spec 010). Stage 1: the command line; the commands come in stage 3.
+// nnh — the NNHGE command-line tool (spec 010): build, run on the console with readable logs, install.
 
 #include <cstdio>
 #include <string>
 #include <vector>
 
 #include "cli.hpp"
+#include "commands.hpp"
+#include "net.hpp"
 
 int main(int argc, char** argv) {
+    using namespace nnh::tool;
     std::vector<std::string> args(argv + 1, argv + argc);
-    nnh::tool::Options options;
+    Options options;
     std::string error;
-    if (!nnh::tool::parse_command_line(args, options, error)) {
+    if (!parse_command_line(args, options, error)) {
         std::fprintf(stderr, "nnh: %s\n", error.c_str());
         return 2;
     }
-    if (options.command == nnh::tool::Command::Help) {
-        std::fputs(nnh::tool::help_text(), stdout);
-        return 0;
+    if (!net::startup()) {
+        std::fprintf(stderr, "nnh: the network library didn't start\n");
+        return 1;
     }
-    std::fprintf(stderr, "nnh: this command isn't implemented yet (spec 010 stage 3)\n");
-    return 1;
+    switch (options.command) {
+    case Command::Build: return command_build(options);
+    case Command::Run: return command_run(options);
+    case Command::Install: return command_install(options);
+    case Command::Help: break;
+    }
+    std::fputs(help_text(), stdout);
+    return 0;
 }

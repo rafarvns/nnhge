@@ -33,6 +33,9 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(nnh_game)
 
+# The games manifest the nnh tool reads (spec 010): nnh_add_game() appends one line per game.
+file(WRITE "${CMAKE_BINARY_DIR}/nnh_games.txt" "")
+
 add_subdirectory(third_party/stb_vorbis)
 add_subdirectory(engine)
 

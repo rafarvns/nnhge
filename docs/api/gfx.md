@@ -82,11 +82,9 @@ Draws are shifted by it unless they set `ignore_camera`. Both cameras start at (
 
 ## Text
 
-Text with the built-in NNHGE font arrives with [spec 005](../../specs/005-text-and-builtin-font/spec.md)
-(in progress): the font's texture is created at `init()` for every game, and the header already defines
-`TextAlign` (Left, Center, Right) and the font's grid,
-`kFontCellSize` (8 pixels per character) and `kFontLineHeight` (10 pixels per line), the same on every
-system.
+`gfx::draw_text(screen, position, "Olá!", {.scale = 2, .align = TextAlign::Center, .shadow = true})` and
+`gfx::measure_text(text, scale)` draw and measure UTF-8 text with the built-in NNHGE font, identical on
+every system: see [text.md](text.md).
 
 ## Capacities
 

@@ -13,19 +13,9 @@ namespace {
 using Kind = platform::DrawItem2D::Kind;
 
 int screen_index(Screen screen) { return screen == Screen::Top ? 0 : 1; }
-
-std::uint8_t clamp_layer(int layer) {
-    if (layer < 0) return 0;
-    return static_cast<std::uint8_t>(layer >= detail::kLayerCount ? detail::kLayerCount - 1 : layer);
-}
-
-void record(const detail::DrawCommand& command) {
-    detail::GfxState& g = detail::gfx_state();
-    if (!g.draws.record(command)) {
-        // Release: dropped and logged once per frame (gfx_submit).
-        NNH_ASSERT(false, "more than %d 2D draws in a frame: raise AppConfig::gfx.max_draws", g.max_draws);
-    }
-}
+std::uint8_t clamp_layer(int layer) { return detail::gfx_clamp_layer(layer); }
+void record(const detail::DrawCommand& command) { detail::gfx_record(command); }
+bool drawing() { return detail::gfx_drawing(); }
 
 detail::DrawCommand shape(Kind kind, Screen screen, Vec2 a, Vec2 b, Color color, const ShapeOptions& options) {
     detail::DrawCommand c;
@@ -39,9 +29,22 @@ detail::DrawCommand shape(Kind kind, Screen screen, Vec2 a, Vec2 b, Color color,
     return c;
 }
 
-bool drawing() { return detail::frame_open() && detail::gfx_state().ready; }
-
 } // namespace
+
+bool detail::gfx_drawing() { return frame_open() && gfx_state().ready; }
+
+void detail::gfx_record(const DrawCommand& command) {
+    GfxState& g = gfx_state();
+    if (!g.draws.record(command)) {
+        // Release: dropped and logged once per frame (gfx_submit).
+        NNH_ASSERT(false, "more than %d 2D draws in a frame: raise AppConfig::gfx.max_draws", g.max_draws);
+    }
+}
+
+std::uint8_t detail::gfx_clamp_layer(int layer) {
+    if (layer < 0) return 0;
+    return static_cast<std::uint8_t>(layer >= kLayerCount ? kLayerCount - 1 : layer);
+}
 
 void gfx::draw(Screen screen, const Texture& texture, Vec2 position, const DrawOptions& options) {
     if (!drawing() || !texture.valid()) return;

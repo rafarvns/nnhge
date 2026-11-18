@@ -55,3 +55,23 @@ NNH_TEST(debug_list_clear_starts_a_new_frame) {
     CHECK(list.count() == 0 && list.dropped() == 0);
     CHECK(list.add(Screen::Top, 0, 0, "0123456789", nnh::colors::white));
 }
+
+NNH_TEST(debug_list_also_keeps_rectangles_in_call_order) {
+    DebugList list = make();
+    CHECK(list.add(Screen::Bottom, 1, 2, "a", nnh::colors::white));
+    CHECK(list.add_rect(Screen::Bottom, 5, 6, 7, 8, nnh::colors::red));
+    CHECK(list.count() == 2);
+    CHECK(list.at(0).kind == DebugText::Kind::Text);
+    const DebugText& r = list.at(1);
+    CHECK(r.kind == DebugText::Kind::Rect && r.x == 5 && r.y == 6 && r.w == 7 && r.h == 8);
+    CHECK(r.color.r == 255 && r.color.g == 0);
+}
+
+NNH_TEST(debug_list_rectangles_use_entries_but_no_text) {
+    DebugList list = make();
+    CHECK(list.add_rect(Screen::Top, 0, 0, 1, 1, nnh::colors::white));
+    CHECK(list.add_rect(Screen::Top, 0, 0, 1, 1, nnh::colors::white));
+    CHECK(list.add(Screen::Top, 0, 0, "012345678901234", nnh::colors::white)); // 16 bytes: all the text
+    CHECK(!list.add_rect(Screen::Top, 0, 0, 1, 1, nnh::colors::white));        // entries full
+    CHECK(list.dropped() == 1);
+}

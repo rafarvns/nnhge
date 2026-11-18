@@ -1,5 +1,6 @@
 #pragma once
-// Debug text recorded during the frame and drawn in the debug pass at its end, on top of the 2D passes
+// Debug text and overlay rectangles recorded during the frame and drawn in the debug pass at its end,
+// on top of the 2D passes
 // (docs/architecture/rendering.md). Pure logic over caller-provided storage; unit tested in
 // tests/debug/test_debug_list.cpp.
 
@@ -10,12 +11,17 @@
 
 namespace nnh::detail {
 
+/// One debug pass entry: a text (debug::print) or a filled rectangle (the debug overlay).
 struct DebugText {
+    enum class Kind : std::uint8_t { Text, Rect };
+    Kind kind = Kind::Text;
     Screen screen = Screen::Top;
     std::int16_t x = 0;
     std::int16_t y = 0;
+    std::int16_t w = 0; ///< Rect only
+    std::int16_t h = 0;
     Color color{};
-    std::uint32_t offset = 0; ///< start of the text (nul-terminated) in the text buffer
+    std::uint32_t offset = 0; ///< Text: start of the text (nul-terminated) in the text buffer
 };
 
 class DebugList {
@@ -25,6 +31,9 @@ public:
 
     /// Copies `text`. @return false (and counts a drop) if the entries or the text buffer are full.
     bool add(Screen screen, int x, int y, const char* text, Color color);
+
+    /// A filled rectangle. @return false (and counts a drop) if the entries are full.
+    bool add_rect(Screen screen, int x, int y, int w, int h, Color color);
 
     int count() const { return count_; }
     int dropped() const { return dropped_; }

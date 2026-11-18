@@ -36,6 +36,10 @@ struct Context {
 
 Context& context();
 
+/// Text with SDL's 8x8 debug font, for the crash screen only (debug_text_pc.cpp).
+void sdl_text(Screen screen, int x, int y, const char* text, Color color);
+int sdl_text_line_height();
+
 /// Sets platform::last_error() to "<what>: <SDL_GetError()>".
 void set_error(const char* what);
 

@@ -30,6 +30,9 @@ struct TextureAccess {
 
 namespace detail {
 
+/// Items of the debug pass per screen (debug text glyphs + overlay rectangles), apart from max_draws.
+inline constexpr int kDebugPassCapacity = 4096;
+
 struct PendingDestroy {
     int slot = -1;
     std::uint32_t generation = 0;
@@ -40,6 +43,7 @@ struct GfxState {
     TextureTable textures;
     DrawList draws;
     platform::DrawItem2D* pass = nullptr; // max_draws items, reused for every pass
+    platform::DrawItem2D* debug_items = nullptr; // kDebugPassCapacity items for the debug pass
     PendingDestroy* pending = nullptr;    // textures released during the frame (max_textures)
     int pending_count = 0;
     int max_draws = 0;

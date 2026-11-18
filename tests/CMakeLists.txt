@@ -18,6 +18,7 @@ add_executable(nnh_tests
     crash/test_assert.cpp
     crash/test_report.cpp
     debug/test_debug_list.cpp
+    debug/test_debug_pass.cpp
     debug/test_overlay.cpp
     debug/test_profile.cpp
     events/test_capacities.cpp

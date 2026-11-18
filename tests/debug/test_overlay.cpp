@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#include "debug/debug_list.hpp"
+#include "debug/dev_tools.hpp"
 #include "nnh/app.hpp"
 #include "nnh/build.hpp"
 #include "nnh/debug.hpp"
@@ -23,9 +25,20 @@ void fresh() {
     nnh::debug::set_overlay_visible(false);
 }
 
+using nnh::detail::DebugText;
+
+/// Texts / rectangles the last finished frame drew in its debug pass.
+int last_frame(DebugText::Kind kind) {
+    const nnh::detail::DebugList& list = nnh::detail::debug_list_last_frame();
+    int n = 0;
+    for (int i = 0; i < list.count(); ++i) n += list.at(i).kind == kind ? 1 : 0;
+    return n;
+}
+
 bool drew_text_containing(const char* needle) {
-    for (int i = 0; i < fake::state().text_count; ++i) {
-        if (std::strstr(fake::state().texts[i].text, needle) != nullptr) return true;
+    const nnh::detail::DebugList& list = nnh::detail::debug_list_last_frame();
+    for (int i = 0; i < list.count(); ++i) {
+        if (list.at(i).kind == DebugText::Kind::Text && std::strstr(list.text(i), needle) != nullptr) return true;
     }
     return false;
 }
@@ -76,8 +89,8 @@ NNH_TEST(visible_overlay_draws_fps_and_memory_before_the_frame_ends) {
     CHECK(nnh::frame());
     fake::advance_time(nnh::Duration::from_ms(16));
     CHECK(nnh::frame()); // ends frame 1: overlay drawn into it
-    CHECK(fake::state().last_frame_text_count > 0);
-    CHECK(fake::state().last_frame_rects > 0); // frame-time graph
+    CHECK(last_frame(DebugText::Kind::Text) > 0);
+    CHECK(last_frame(DebugText::Kind::Rect) > 0); // frame-time graph
     nnh::shutdown();
 }
 
@@ -85,8 +98,8 @@ NNH_TEST(hidden_overlay_draws_nothing) {
     fresh();
     CHECK(nnh::frame());
     CHECK(nnh::frame());
-    CHECK(fake::state().last_frame_text_count == 0);
-    CHECK(fake::state().last_frame_rects == 0);
+    CHECK(last_frame(DebugText::Kind::Text) == 0);
+    CHECK(last_frame(DebugText::Kind::Rect) == 0);
     nnh::shutdown();
 }
 

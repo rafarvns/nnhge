@@ -1,5 +1,7 @@
 #include "world.hpp"
 
+#include <cstdio>
+
 #include <nnh/debug.hpp>
 #include <nnh/gfx.hpp>
 #include <nnh/input.hpp>
@@ -90,11 +92,16 @@ void World::draw_ground() const {
 }
 
 void World::draw_hud() const {
-    // HUD: camera-free, on the highest layer; debug text always draws on top of it.
-    const nnh::ShapeOptions hud{.layer = 15, .ignore_camera = true};
-    nnh::gfx::fill_rect(Screen::Top, {4, 4, 200, 16}, nnh::rgba(0, 0, 0, 150), hud);
-    nnh::gfx::draw_rect(Screen::Top, {4, 4, 200, 16}, nnh::colors::white, hud);
-    nnh::debug::printf(Screen::Top, 10, 8, "x %4d / %d", static_cast<int>(hero_.x), static_cast<int>(kWorldWidth));
+    // HUD: camera-free, on the top layers. The box is sized by measuring the text, which gives the same
+    // size on every system (built-in font), so it fits on the console exactly as in the simulator.
+    char text[32];
+    std::snprintf(text, sizeof text, "x %4d / %d", static_cast<int>(hero_.x), static_cast<int>(kWorldWidth));
+    const nnh::Vec2 size = nnh::gfx::measure_text(text);
+    const nnh::Rect box{4, 4, size.x + 10, size.y + 6};
+    const nnh::ShapeOptions hud{.layer = 14, .ignore_camera = true};
+    nnh::gfx::fill_rect(Screen::Top, box, nnh::rgba(0, 0, 0, 150), hud);
+    nnh::gfx::draw_rect(Screen::Top, box, nnh::colors::white, hud);
+    nnh::gfx::draw_text(Screen::Top, {box.x + 5, box.y + 3}, text, {.layer = 15, .ignore_camera = true});
 }
 
 void World::draw_minimap() const {

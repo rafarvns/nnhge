@@ -15,7 +15,7 @@ end of frame (next nnh::frame() or shutdown())
    2D pass, layers below the world      (today: all 2D)          ┐ sorted by layer, then call order
    3D pass  (M8: meshes, 3D camera)     (not yet)                │ batched by texture
    2D pass, layers above the world      (HUD)                    ┘
-   debug pass (debug text, overlay)     always on top
+   debug pass (debug text, overlay)     always on top, built-in font, own capacity
  present, wait for 60 Hz
 ```
 
@@ -59,6 +59,8 @@ SDL's default renderer, which is enough for 2D (3D will need a GPU device).
 - Textures follow the 3DS rules everywhere (power-of-two sides, 8–1024), checked at build time and on load.
 - Texture memory is accounted in the `Linear` region under the `textures` tag on every system.
 - No drawing outside a frame; calls outside one are ignored (as for debug text).
+- Text, game and debug alike, is engine sprites of the built-in font ([text.md](../api/text.md)); a
+  platform has no text functions, only `texture_create_rgba` and `draw_2d`.
 
 See also: [decisions D5, D19, D20](decisions.md), [platforms.md](platforms.md),
 [devkitpro-3ds.md](../tech/devkitpro-3ds.md), [sdl3.md](../tech/sdl3.md).

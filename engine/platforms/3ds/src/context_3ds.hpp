@@ -12,7 +12,6 @@ namespace nnh::platform::ctr {
 struct Context {
     C3D_RenderTarget* targets[2] = {nullptr, nullptr}; // [0] top, [1] bottom
     C3D_RenderTarget* current_target = nullptr;        // scene currently begun this frame
-    C2D_TextBuf text_buffer = nullptr;                 // debug text glyphs, cleared every frame
     bool c_stick_ready = false;                        // irrst started (New 3DS)
 };
 

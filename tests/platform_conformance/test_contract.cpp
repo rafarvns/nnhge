@@ -40,8 +40,13 @@ NNH_TEST(frames_can_begin_draw_and_end_repeatedly) {
     for (int i = 0; i < 3; ++i) {
         CHECK(platform::poll_events());
         platform::begin_frame(nnh::colors::black, nnh::colors::gray);
-        platform::debug_text(nnh::Screen::Top, 0, 0, "conformance\nsecond line", nnh::colors::white);
-        platform::debug_text(nnh::Screen::Bottom, 500, 500, "clipped", nnh::colors::white);
+        platform::DrawItem2D far_away;
+        far_away.kind = platform::DrawItem2D::Kind::FillRect;
+        far_away.x = 500; // outside the screen: clipped
+        far_away.y = 500;
+        far_away.w = 10;
+        far_away.h = 10;
+        platform::draw_2d(nnh::Screen::Bottom, &far_away, 1);
         platform::end_frame();
     }
     platform::shutdown();
@@ -123,8 +128,3 @@ NNH_TEST(last_error_is_never_null) {
     CHECK(platform::last_error() != nullptr);
 }
 
-NNH_TEST(debug_line_height_is_positive) {
-    CHECK(platform::init(config()));
-    CHECK(platform::debug_line_height() > 0);
-    platform::shutdown();
-}

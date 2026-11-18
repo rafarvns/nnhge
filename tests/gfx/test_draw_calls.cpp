@@ -116,7 +116,7 @@ NNH_TEST(the_frame_submits_top_then_bottom_then_debug_text_on_top) {
     nnh::gfx::fill_rect(Screen::Bottom, {0, 0, 1, 1}, nnh::colors::red);
     nnh::gfx::fill_rect(Screen::Top, {0, 0, 1, 1}, nnh::colors::red);
     CHECK(nnh::frame());
-    CHECK(std::strcmp(calls(), "TBd") == 0); // ...but drawn after the 2D passes
+    CHECK(std::strcmp(calls(), "TBT") == 0); // ...but drawn after the 2D passes, in the debug pass
     nnh::shutdown();
 }
 

@@ -62,17 +62,6 @@ void end_frame() {
     wait_for_next_frame();
 }
 
-void fill_rect(Screen screen, int x, int y, int width, int height, Color color) {
-    pc::Context& ctx = pc::context();
-    const SDL_FRect area = pc::screen_rect(screen);
-    const SDL_Rect clip{static_cast<int>(area.x), static_cast<int>(area.y), static_cast<int>(area.w),
-                        static_cast<int>(area.h)};
-    SDL_SetRenderClipRect(ctx.renderer, &clip);
-    pc::set_draw_color(color);
-    const SDL_FRect rect{area.x + static_cast<float>(x), area.y + static_cast<float>(y), static_cast<float>(width),
-                         static_cast<float>(height)};
-    SDL_RenderFillRect(ctx.renderer, &rect);
-}
 
 } // namespace nnh::platform
 

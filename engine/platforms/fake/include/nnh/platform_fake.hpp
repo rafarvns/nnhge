@@ -16,19 +16,8 @@
 
 namespace nnh::platform_fake {
 
-inline constexpr int kMaxRecordedTexts = 32;
-inline constexpr int kMaxTextLength = 64;
 inline constexpr int kMaxRecordedItems = 64;
 inline constexpr int kMaxRecordedCalls = 32;
-
-/// One recorded debug_text() call (text truncated to kMaxTextLength - 1 characters).
-struct DrawnText {
-    Screen screen = Screen::Top;
-    int x = 0;
-    int y = 0;
-    Color color{};
-    char text[kMaxTextLength] = {};
-};
 
 /// Everything the fake platform recorded since the last reset().
 struct State {
@@ -40,21 +29,16 @@ struct State {
     bool frame_open = false;
     Color top_clear{};
     Color bottom_clear{};
-    int text_count = 0; ///< texts drawn in the current frame (cleared by begin_frame)
-    DrawnText texts[kMaxRecordedTexts];
     int console_lines = 0;                          ///< log lines written with log_console()
     char last_console_line[log::kMaxLineLength] = {}; ///< the latest of them
     int vram_writes_by_core = 0; ///< Vram blocks found modified when freed (must stay 0)
     int fs_calls = 0;            ///< calls into the fs contract (invalid paths must not add any)
-    int rect_count = 0;          ///< fill_rect() calls in the current frame
-    int last_frame_rects = 0;    ///< fill_rect() calls in the frame that ended last
-    int last_frame_text_count = 0; ///< debug texts in the frame that ended last
     // 2D drawing (spec 004)
     int live_textures = 0;      ///< created and not yet destroyed
     int rgba_textures_created = 0; ///< texture_create_rgba() calls that succeeded
     int item_count = 0;         ///< draw_2d() items in the current frame (first kMaxRecordedItems kept)
     platform::DrawItem2D items[kMaxRecordedItems];
-    char calls[kMaxRecordedCalls] = {}; ///< current frame: 'T'/'B' draw_2d top/bottom, 'd' debug_text, 'r' fill_rect
+    char calls[kMaxRecordedCalls] = {}; ///< current frame: 'T'/'B' = draw_2d() on the top/bottom screen
     int last_frame_item_count = 0;      ///< the same, for the frame that ended last
     platform::DrawItem2D last_frame_items[kMaxRecordedItems];
     char last_frame_calls[kMaxRecordedCalls] = {};

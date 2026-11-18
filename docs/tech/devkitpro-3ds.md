@@ -72,6 +72,9 @@ C-Stick exist only on New 3DS models.
 - **Logs on the PC** (implemented): in Debug/Development builds started by 3dslink (`__3dslink_host` set),
   the platform library calls `socInit` (1 MB buffer) + `link3dsStdio()` at init, so every log line
   reaches the PC (TCP port 17491). Launch with `3dslink -s ...` so the PC keeps listening.
+  `link3dsStdio()` `dup2`s the socket onto stdout/stderr: at shutdown, flush and `close()` fds 1 and 2
+  as well as the socket **before** `socExit()`, or newlib's exit-time stdio cleanup hangs the console on
+  a black screen instead of returning to the Homebrew Launcher.
 - `.cia` (installable): needs `makerom` + `bannertool` (not bundled with devkitPro). Planned in M5.
 - Launching another `.3dsx` from a homebrew app: libctru only offers `aptSetChainloader()` for installed
   titles; there is no 3dsx-to-3dsx API (relevant for NNH Link, see [decisions](../architecture/decisions.md)).

@@ -1,6 +1,6 @@
 # Spec 001: Event bus and scenes
 
-Status: implemented (2026-11-17); run on a real 3DS pending (maintainer)
+Status: implemented (2026-11-17); verified on a real 3DS
 Author: NNHGE maintainers · Date: 2026-11-17
 Depends on: [spec 002 — core foundation](../002-core-foundation/spec.md) (logging, asserts, platform
 contract) — implemented.

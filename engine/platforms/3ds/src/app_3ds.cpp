@@ -41,8 +41,17 @@ void start_3dslink_stdio() {
     g_link_socket = link3dsStdio();
 }
 
+/// link3dsStdio() dup2()s the socket onto stdout and stderr: those descriptors must be closed too
+/// before socExit(), or newlib's exit-time flush/close of stdio talks to a dead SOC service and the
+/// console hangs on a black screen instead of returning to the Homebrew Launcher.
 void stop_3dslink_stdio() {
-    if (g_link_socket >= 0) close(g_link_socket);
+    if (g_link_socket >= 0) {
+        std::fflush(stdout);
+        std::fflush(stderr);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+        close(g_link_socket);
+    }
     g_link_socket = -1;
     if (g_soc_buffer != nullptr) {
         socExit();

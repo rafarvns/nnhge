@@ -12,6 +12,13 @@
 
 namespace nnh::platform_fake::detail {
 
+struct FakeAsset {
+    const char* path = nullptr; // points into the caller's string literal or storage
+    const void* data = nullptr;
+    std::size_t size = 0;
+};
+inline constexpr int kMaxFakeAssets = 32;
+
 struct Controls {
     platform::InputSample input; // what read_input() reports
     bool quit_requested = false;
@@ -21,6 +28,8 @@ struct Controls {
     std::size_t region_used[kMemRegionCount] = {};
     std::uint32_t capabilities = 1u << static_cast<unsigned>(Capability::SecondScreen);
     std::uint32_t dev_requests = 0;
+    FakeAsset assets[kMaxFakeAssets];
+    int asset_count = 0;
 };
 
 State& mutable_state();

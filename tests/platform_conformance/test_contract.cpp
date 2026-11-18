@@ -3,6 +3,7 @@
 // nnh_conformance_fake and nnh_conformance_pc (headless) in CI; on 3DS through an example later.
 
 #include "nnh/platform/app.hpp"
+#include "nnh/platform/assets.hpp"
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/log.hpp"
 #include "nnh/platform/time.hpp"
@@ -90,6 +91,20 @@ NNH_TEST(draw_2d_accepts_empty_and_shape_passes) {
     }
     platform::draw_2d(nnh::Screen::Bottom, shapes, 3);
     platform::end_frame();
+    platform::shutdown();
+}
+
+NNH_TEST(a_missing_asset_cannot_be_read_and_unmount_is_safe) {
+    CHECK(platform::init(config()));
+    const bool mounted = platform::assets_mount(); // the tests have no assets folder: usually false
+    std::size_t size = 123;
+    char buffer[8];
+    std::size_t read = 99;
+    CHECK(!platform::asset_size("definitely/missing.bin", size));
+    CHECK(!platform::asset_read("definitely/missing.bin", buffer, sizeof buffer, read));
+    CHECK(read == 0);
+    platform::assets_unmount();
+    (void)mounted;
     platform::shutdown();
 }
 

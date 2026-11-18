@@ -20,7 +20,7 @@ nnh::gfx::draw(nnh::Screen::Top, hero, {100, 80});
 
 | API | |
 |-----|-|
-| `Result<Texture> load_texture(name)` | loads an embedded image; load time only (allocates GPU memory) |
+| `Result<Texture> load_texture(name)` | loads an image: from the game's [assets](assets.md) first (`"characters/hero"` → `assets/characters/hero.png`), then from `IMAGES` (file name only); load time only (allocates GPU memory) |
 | `Texture::valid()` | loaded and usable (false when empty, reset, or after `shutdown()`) |
 | `Texture::width()`, `height()` | size in pixels |
 | `Texture::reset()` | frees it now (the Texture becomes empty) |
@@ -41,7 +41,7 @@ Handles kept after `nnh::shutdown()` are harmless (`valid()` is false, `reset()`
 
 | `ErrorCode` | When |
 |-------------|------|
-| `NotFound` | no image with that name in this game's `IMAGES` |
+| `NotFound` | no image with that name in the game's assets or `IMAGES` |
 | `InvalidArgument` | the image breaks the size rule (the message gives its size) |
 | `Corrupted` | the system couldn't decode it or has no GPU memory left (details in the log) |
 | `LimitReached` | `AppConfig::gfx.max_textures` textures are already loaded |

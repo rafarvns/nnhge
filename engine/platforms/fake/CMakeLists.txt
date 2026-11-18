@@ -2,6 +2,7 @@
 
 add_library(nnh_platform_fake STATIC
     src/app_fake.cpp
+    src/assets_fake.cpp
     src/control_fake.cpp
     src/crash_fake.cpp
     src/fs_fake.cpp

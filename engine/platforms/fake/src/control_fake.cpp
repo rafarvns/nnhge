@@ -36,6 +36,9 @@ void set_touch(int x, int y) {
     g_controls.input.touch_y = static_cast<std::int16_t>(y);
 }
 void release_touch() { g_controls.input.touching = false; }
+void add_asset(const char* path, const void* data, std::size_t size) {
+    if (g_controls.asset_count < detail::kMaxFakeAssets) g_controls.assets[g_controls.asset_count++] = {path, data, size};
+}
 void set_quit_requested(bool quit) { g_controls.quit_requested = quit; }
 void set_init_fails(bool fails) { g_controls.init_fails = fails; }
 void set_time_ns(std::int64_t ns) { g_controls.time_ns = ns; }

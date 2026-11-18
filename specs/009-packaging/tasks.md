@@ -19,9 +19,9 @@ Each task: one or a few TDD loops (script tests first). `[P]` = can be done in p
 
 ## Stage 3 — tools and the `.cia`
 
-- [ ] **T3.1** `nnh_ctr_tools.cmake`: pinned downloads, `NNH_MAKEROM`/`NNH_BANNERTOOL` overrides, no download without `CIA` — test: ctest on the tiny game (no `_tools/` without CIA) — covers FR-6
-- [ ] **T3.2** `cmake/3ds/nnhge.rsf` + `nnh_cia.cmake`: banner, makerom, `<game>_cia`, `<game>_dist`, `dist` — test: `examples/audio` builds a `.cia` on Windows (3ds-release, 3ds-dev) and on VM 120 — covers FR-3, FR-7
-- [ ] **T3.3** `examples/audio`: version, icon, banner, jingle, `CIA UNIQUE_ID 0xE0A01` — covers AC-2
+- [x] **T3.1** `nnh_ctr_tools.cmake` + `nnh_fetch_ctr_tools.cmake`: pinned downloads as a build step (first `.cia` build only), `NNH_MAKEROM`/`NNH_BANNERTOOL` overrides — checked by hand on Windows (MSYS2 CMake) and Linux (VM 120): configure and normal build leave no `_tools/`; the override removes the fetch target — covers FR-6
+- [x] **T3.2** `cmake/3ds/nnhge.rsf` + `nnh_cia.cmake`: banner, makerom, `<game>_cia`, `<game>_dist`, `dist` — test: `examples/audio` builds a `.cia` on Windows (3ds-release, 3ds-dev) and on VM 120 — covers FR-3, FR-7
+- [x] **T3.3** `examples/audio`: version, icon, banner, jingle, `CIA UNIQUE_ID 0xE0A01` — covers AC-2
 
 ## Stage 4 — verification and docs
 

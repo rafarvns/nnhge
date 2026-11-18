@@ -1,16 +1,16 @@
 # Tasks 009: Packaging — icon, metadata and installable `.cia`
 
-Status: draft
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops (script tests first). `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — checks and default art
 
-- [ ] **T1.1** `nnh_check_icon.cmake` — test: ctest `icon_check_*` + fixtures `tests/data/package/` — covers FR-2
-- [ ] **T1.2** [P] `nnh_check_package.cmake` (ID, product code, version, lengths in characters) — test: ctest `package_check_*` — covers FR-5
-- [ ] **T1.3** [P] `nnh_check_banner.cmake` (256×128 PNG, WAV ≤ 3 s, PCM 16-bit) — test: ctest `banner_check_*` — covers FR-5
-- [ ] **T1.4** `scripts/make_package_art.py` → `cmake/3ds/default_icon.png`, `default_banner.png`, `default_banner.wav` — covers FR-2, FR-3
+- [x] **T1.1** `nnh_check_icon.cmake` — test: ctest `icon_check_*` + fixtures `tests/data/package/` — covers FR-2
+- [x] **T1.2** [P] `nnh_check_package.cmake` (ID, product code, version, lengths in characters) — test: ctest `package_check_*` — covers FR-5
+- [x] **T1.3** [P] `nnh_check_banner.cmake` (256×128 PNG, WAV ≤ 3 s, PCM 16-bit) — test: ctest `banner_check_*` — covers FR-5
+- [x] **T1.4** `scripts/make_package_art.py` → `cmake/3ds/default_icon.png`, `default_banner.png`, `default_banner.wav` — covers FR-2, FR-3
 
 ## Stage 2 — metadata in nnh_add_game
 

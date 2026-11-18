@@ -170,6 +170,53 @@ foreach(case "bad_24bit.wav|bad_24bit.wav is 24-bit"
     set_tests_properties(sound_check_explains_${file} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
 endforeach()
 
+# Packaging checks of nnh_add_game() (spec 009 FR-2, FR-5): fixtures from data/package/make_fixtures.py.
+# nnh_script_check(<name> <script> <expected message or OK> <-D args...>): OK = must pass; otherwise it
+# must fail AND print the message.
+function(nnh_script_check name script expected)
+    if(expected STREQUAL "OK")
+        add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} ${ARGN} -P ${script})
+    else()
+        add_test(NAME ${name}_fails COMMAND ${CMAKE_COMMAND} ${ARGN} -P ${script})
+        set_tests_properties(${name}_fails PROPERTIES WILL_FAIL TRUE)
+        add_test(NAME ${name}_explains COMMAND ${CMAKE_COMMAND} ${ARGN} -P ${script})
+        set_tests_properties(${name}_explains PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+    endif()
+endfunction()
+set(_pkg ${CMAKE_CURRENT_SOURCE_DIR}/data/package)
+set(_cm ${PROJECT_SOURCE_DIR}/cmake)
+nnh_script_check(icon_check_48 ${_cm}/nnh_check_icon.cmake OK -DICON=${_pkg}/icon_48.png)
+nnh_script_check(icon_check_64 ${_cm}/nnh_check_icon.cmake "icon_64.png is 64x64: the icon must be a 48x48 PNG" -DICON=${_pkg}/icon_64.png)
+nnh_script_check(icon_check_not_png ${_cm}/nnh_check_icon.cmake "not_png.png: not a PNG file" -DICON=${_pkg}/not_png.png)
+nnh_script_check(banner_check_ok ${_cm}/nnh_check_banner.cmake OK -DBANNER=${_pkg}/banner_256x128.png -DAUDIO=${_pkg}/jingle_ok.wav)
+nnh_script_check(banner_check_3s ${_cm}/nnh_check_banner.cmake OK -DAUDIO=${_pkg}/jingle_3s.wav)
+nnh_script_check(banner_check_size ${_cm}/nnh_check_banner.cmake "banner_200x120.png is 200x120: the banner must be a 256x128 PNG" -DBANNER=${_pkg}/banner_200x120.png)
+nnh_script_check(banner_check_long ${_cm}/nnh_check_banner.cmake "jingle_long.wav lasts 3.2 s: the banner sound can last at most 3 s" -DAUDIO=${_pkg}/jingle_long.wav)
+nnh_script_check(banner_check_24bit ${_cm}/nnh_check_banner.cmake "jingle_24bit.wav is 24-bit: the banner sound must be a 16-bit PCM WAV" -DAUDIO=${_pkg}/jingle_24bit.wav)
+nnh_script_check(banner_check_not_wav ${_cm}/nnh_check_banner.cmake "icon_48.png: not a WAV file" -DAUDIO=${_pkg}/icon_48.png)
+# Metadata: tests/data/package/check_package.cmake calls nnh_check_package_values() with -D values.
+set(_ok -DUNIQUE_ID=0xE0A01 -DPRODUCT_CODE=CTR-H-AUDI -DVERSION=1.2.3 -DTITLE=Game -DDESCRIPTION=Desc -DAUTHOR=Me)
+set(_check ${_pkg}/check_package.cmake)
+string(REPEAT "a" 64 _a64)
+string(REPEAT "a" 65 _a65)
+string(REPEAT "a" 128 _a128)
+string(REPEAT "a" 129 _a129)
+string(REPEAT "ç" 64 _c64) # 64 characters, 128 bytes
+nnh_script_check(package_check_ok ${_check} OK ${_ok})
+nnh_script_check(package_check_limits ${_check} OK ${_ok} -DTITLE=${_a64} -DDESCRIPTION=${_a128} -DAUTHOR=${_a64} -DUNIQUE_ID=0x00300 -DVERSION=63.63.15)
+nnh_script_check(package_check_utf8 ${_check} OK ${_ok} -DTITLE=${_c64})
+nnh_script_check(package_check_id_low ${_check} "UNIQUE_ID 0x2FF is outside the homebrew range 0x00300-0xF7FFF" ${_ok} -DUNIQUE_ID=0x2FF)
+nnh_script_check(package_check_id_high ${_check} "UNIQUE_ID 0xF8000 is outside the homebrew range" ${_ok} -DUNIQUE_ID=0xF8000)
+nnh_script_check(package_check_id_hex ${_check} "UNIQUE_ID 123 must be hexadecimal" ${_ok} -DUNIQUE_ID=123)
+nnh_script_check(package_check_code ${_check} "PRODUCT_CODE CTR-H-abc must look like CTR-H-ABCD" ${_ok} -DPRODUCT_CODE=CTR-H-abc)
+nnh_script_check(package_check_version ${_check} "VERSION 1.2 must be major.minor.micro" ${_ok} -DVERSION=1.2)
+nnh_script_check(package_check_major ${_check} "VERSION 64.0.0 must be major.minor.micro" ${_ok} -DVERSION=64.0.0)
+nnh_script_check(package_check_micro ${_check} "VERSION 1.0.16 must be major.minor.micro" ${_ok} -DVERSION=1.0.16)
+nnh_script_check(package_check_title ${_check} "TITLE is 65 characters: at most 64" ${_ok} -DTITLE=${_a65})
+nnh_script_check(package_check_title_utf8 ${_check} "TITLE is 65 characters" ${_ok} -DTITLE=${_c64}x)
+nnh_script_check(package_check_description ${_check} "DESCRIPTION is 129 characters: at most 128" ${_ok} -DDESCRIPTION=${_a129})
+nnh_script_check(package_check_author ${_check} "AUTHOR is 65 characters: at most 64" ${_ok} -DAUTHOR=${_a65})
+
 # Asset index of nnh_add_game(... ASSETS ...) (spec 007 FR-1, FR-6): sorted output; bad names fail the
 # build with a message naming the file.
 set(_lists ${CMAKE_CURRENT_SOURCE_DIR}/data/asset_lists)

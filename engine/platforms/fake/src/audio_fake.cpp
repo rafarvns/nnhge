@@ -60,6 +60,9 @@ bool audio_init(int voices) {
 void audio_shutdown() {
     mutable_state().audio_initialized = false;
     for (auto& v : mutable_state().voices) v.playing = false;
+    for (int i = 0; i < kStreams; ++i) {
+        if (mutable_state().streams[i].active) stream_stop(i);
+    }
 }
 
 bool sample_create(std::uint32_t count, int channels, SampleInfo& out) {

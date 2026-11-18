@@ -61,4 +61,25 @@ bool asset_read(const char* path, void* buffer, std::size_t capacity, std::size_
     return ok;
 }
 
+bool asset_open(const char* path, AssetStream& out) {
+    out = 0;
+    char full[1024];
+    if (g_root[0] == '\0' || !full_path(path, full, sizeof full)) return false;
+    SDL_IOStream* io = SDL_IOFromFile(full, "rb");
+    out = reinterpret_cast<AssetStream>(io);
+    return io != nullptr;
+}
+
+bool asset_read_at(AssetStream stream, std::uint64_t offset, void* buffer, std::size_t size, std::size_t& read) {
+    read = 0;
+    auto* io = reinterpret_cast<SDL_IOStream*>(stream);
+    if (io == nullptr || SDL_SeekIO(io, static_cast<Sint64>(offset), SDL_IO_SEEK_SET) < 0) return false;
+    read = size > 0 ? SDL_ReadIO(io, buffer, size) : 0;
+    return read == size || SDL_GetIOStatus(io) == SDL_IO_STATUS_EOF;
+}
+
+void asset_close(AssetStream stream) {
+    if (stream != 0) SDL_CloseIO(reinterpret_cast<SDL_IOStream*>(stream));
+}
+
 } // namespace nnh::platform

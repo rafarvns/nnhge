@@ -21,6 +21,8 @@ add_executable(nnh_tests
     audio/test_audio_lifecycle.cpp
     audio/test_audio_play.cpp
     audio/test_mix.cpp
+    audio/test_music.cpp
+    audio/test_music_track.cpp
     audio/test_ogg_reader.cpp
     audio/test_sounds.cpp
     audio/test_voice_table.cpp

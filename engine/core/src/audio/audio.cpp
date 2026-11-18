@@ -58,6 +58,7 @@ bool audio_init(const AudioConfig& config) {
     g_audio.mixer = Mixer{};
     g_audio.available = platform::audio_init(voices);
     if (!g_audio.available) NNH_LOG_WARN(audio, "no audio output, running silently: %s", platform::last_error());
+    if (g_audio.available) mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(audio), platform::kStreamBytes, true);
     g_audio.ready = true;
     return true;
 }
@@ -72,6 +73,8 @@ void audio_shutdown() {
         if (s.bytes > 0) mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(audio), s.bytes, false);
         s = SoundSlot{};
     }
+    if (g_audio.music != nullptr) g_audio.music->shutdown();
+    if (g_audio.available) mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(audio), platform::kStreamBytes, false);
     platform::audio_shutdown();
     free_tables();
     g_audio.voices.reset(nullptr, 0);
@@ -96,6 +99,7 @@ void audio_frame(Duration delta) {
         g_audio.voices.release(i);
         events::publish(SoundFinished{handle});
     });
+    if (g_audio.music != nullptr) g_audio.music->frame(delta);
 }
 
 void stop_voices_of(int sound_slot) {

@@ -22,8 +22,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 3 — music streaming
 
-- [ ] **T3.1** music: open, top up stream buffers each frame, WAV and OGG, loop + loop point, pause/stop, position — files: `core/src/audio/music.{hpp,cpp}` — test: `test_music.cpp` — covers FR-3
-- [ ] **T3.2** fade-in/out and crossfade on two streams; `MusicFinished` — test: `test_music.cpp` — covers FR-3, FR-6
+- [x] **T3.1** music: contract streams + asset streams (fake, pc/3ds asset reads, audio stubs), open, top up stream buffers each frame, WAV and OGG, loop + loop point, pause/stop, position — files: `core/src/audio/music.cpp`, `music_track.{hpp,cpp}`, `wav_stream.{hpp,cpp}` — test: `test_music.cpp`, `test_music_track.cpp`, conformance — covers FR-3
+- [x] **T3.2** fade-in/out and crossfade on two streams; `MusicFinished` — test: `test_music.cpp` — covers FR-3, FR-6
 
 ## Stage 4 — platforms and the example
 

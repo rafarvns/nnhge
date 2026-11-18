@@ -112,6 +112,7 @@ void set_volume(AudioGroup group, float volume) {
     detail::for_each_voice([group](int i) {
         if (audio_state().voices.at(i).group == group) apply_params(i);
     });
+    if (audio_state().music != nullptr) audio_state().music->mix_changed();
 }
 
 float volume(AudioGroup group) { return audio_state().mixer.group_volume(group); }
@@ -119,6 +120,7 @@ float volume(AudioGroup group) { return audio_state().mixer.group_volume(group);
 void set_master_volume(float volume) {
     audio_state().mixer.set_master(volume);
     detail::for_each_voice(apply_params);
+    if (audio_state().music != nullptr) audio_state().music->mix_changed();
 }
 
 float master_volume() { return audio_state().mixer.master(); }
@@ -128,6 +130,7 @@ void set_paused(AudioGroup group, bool paused) {
     detail::for_each_voice([group](int i) {
         if (audio_state().voices.at(i).group == group) apply_pause(i);
     });
+    if (audio_state().music != nullptr) audio_state().music->mix_changed();
 }
 
 bool paused(AudioGroup group) { return audio_state().mixer.group_paused(group); }

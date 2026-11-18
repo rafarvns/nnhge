@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "assets/asset_path.hpp"
 #include "audio/mix.hpp"
 #include "audio/voice_table.hpp"
 #include "nnh/app.hpp"
@@ -44,6 +45,14 @@ struct SoundSlot {
     bool drop_logged = false;
 };
 
+/// Music's part of the frame loop (music.cpp). Registered the first time a game uses music::, so a game
+/// without music doesn't link the decoders (stb_vorbis is ~60 KB on the 3DS).
+struct MusicHooks {
+    void (*frame)(Duration delta);
+    void (*shutdown)();
+    void (*mix_changed)(); ///< group volume or pause changed: re-send the streams' gains and pause
+};
+
 struct AudioState {
     bool ready = false;
     bool available = false; ///< the platform has audio output
@@ -52,6 +61,7 @@ struct AudioState {
     SoundSlot* sounds = nullptr;
     int max_sounds = 0;
     Mixer mixer;
+    const MusicHooks* music = nullptr; ///< set by music.cpp on first use
 };
 
 AudioState& audio_state();
@@ -64,6 +74,11 @@ void audio_shutdown();
 
 /// Once per frame, before events are dispatched: ends finished voices and publishes SoundFinished.
 void audio_frame(Duration delta);
+
+/// The asset of a sound or track `path` given without extension: path.wav, else path.ogg (written to
+/// `out`). @return true for Ogg. Errors (logged): InvalidArgument, NotFound.
+Result<bool> find_audio_asset(const char* path, char (&out)[kMaxAssetPath + 1]);
+
 
 /// The live sound behind a handle, or nullptr.
 SoundSlot* sound_get(int slot, std::uint32_t generation);

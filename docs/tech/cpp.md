@@ -60,6 +60,10 @@ Public functions document: does it allocate? is it per-frame safe? what happens 
 - Watch what the C library pulls in: one `sscanf` added about **40 KB** to a 3DS `.3dsx` (the whole
   `scanf` family); `strtol`/`strtof` or a small hand-written parser cost almost nothing. Check the
   `.3dsx` size after adding parsing or formatting code.
+- The same for the engine itself: anything `init()`/`frame()` calls directly is linked into **every**
+  game. Calling music from the frame loop put the Ogg decoder (+60 KB) in `hello`; now music registers
+  function pointers the first time a game uses it (`MusicHooks`, spec 008), so games without music
+  don't link it. Measure `hello.3dsx` when the frame loop gains a call.
 
 ## Compile-time hygiene (build speed)
 

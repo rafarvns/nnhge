@@ -23,8 +23,8 @@ using detail::SoundSlot;
 std::uint32_t g_next_generation = 1; // never reused, so handles from an earlier init() stay stale
 
 Error refuse(ErrorCode code, const char* path, const char* what) {
-    NNH_LOG_WARN(audio, "load_sound(\"%s\"): %s", path, what);
-    return Error::make(code, "sound \"%s\": %s", path, what);
+    NNH_LOG_WARN(audio, "\"%s\": %s", path, what);
+    return Error::make(code, "\"%s\": %s", path, what);
 }
 
 int free_slot() {
@@ -33,18 +33,6 @@ int free_slot() {
         if (!a.sounds[i].active) return i;
     }
     return -1;
-}
-
-/// The asset of `path`: path.wav, else path.ogg. Writes the full name to `out`.
-Result<bool> find_sound_asset(const char* path, char (&out)[detail::kMaxAssetPath + 1]) {
-    for (const char* ext : {".wav", ".ogg"}) {
-        const int n = std::snprintf(out, sizeof out, "%s%s", path, ext);
-        if (n < 0 || n >= static_cast<int>(sizeof out) || !detail::valid_asset_path(out)) {
-            return refuse(ErrorCode::InvalidArgument, path, "invalid asset path");
-        }
-        if (detail::asset_lookup(out) != nullptr) return std::strcmp(ext, ".ogg") == 0;
-    }
-    return refuse(ErrorCode::NotFound, path, "no .wav or .ogg with that path in the game's assets");
 }
 
 struct MemoryBytes {
@@ -117,6 +105,17 @@ Result<int> decode_into_slot(const char* path, const AssetData& file, bool ogg) 
 
 } // namespace
 
+Result<bool> detail::find_audio_asset(const char* path, char (&out)[kMaxAssetPath + 1]) {
+    for (const char* ext : {".wav", ".ogg"}) {
+        const int n = std::snprintf(out, sizeof out, "%s%s", path, ext);
+        if (n < 0 || n >= static_cast<int>(sizeof out) || !valid_asset_path(out)) {
+            return refuse(ErrorCode::InvalidArgument, path, "invalid asset path");
+        }
+        if (asset_lookup(out) != nullptr) return std::strcmp(ext, ".ogg") == 0;
+    }
+    return refuse(ErrorCode::NotFound, path, "no .wav or .ogg with that path in the game's assets");
+}
+
 detail::SoundSlot* detail::sound_get(int slot, std::uint32_t generation) {
     AudioState& a = audio_state();
     if (!a.ready || slot < 0 || slot >= a.max_sounds) return nullptr;
@@ -167,7 +166,7 @@ Result<Sound> load_sound(const char* path) {
     if (!audio_state().ready) return Error::make(ErrorCode::Unsupported, "load_sound before nnh::init()");
     if (path == nullptr) return Error::make(ErrorCode::InvalidArgument, "load_sound(nullptr)");
     char asset[detail::kMaxAssetPath + 1];
-    auto found = find_sound_asset(path, asset);
+    auto found = detail::find_audio_asset(path, asset);
     if (!found) return found.error();
     const bool ogg = found.value();
     if (!ogg) { // a WAV's samples are its size: refuse a huge one before reading it

@@ -1,6 +1,6 @@
 # Spec 005: Text — the built-in NNHGE font
 
-Status: draft
+Status: approved (2026-11-18, maintainer)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 004 — 2D graphics](../004-2d-graphics/spec.md) (textures, draw list, passes) —
 implemented.
@@ -86,17 +86,12 @@ before it is drawn, it covers Portuguese and other Latin languages, and debug te
 
 ## Open questions
 
-- [ ] **Glyph size** — 8×8 cells, monospace (proposed: simple, predictable layouts, fits debug text and
-  the 3DS's small screens; 50 characters per line on the top screen), or a slightly larger cell
-  (e.g. 6×10 with descenders)?
-- [ ] **Game fonts in this spec?** — keep them for a follow-up spec (proposed), or include a simple
-  "fixed-grid font from one of the game's IMAGES" now (cheap, same layout code)?
-- [ ] **Shadow/outline option** — a one-pixel drop shadow option for readable text over busy
-  backgrounds (proposed: yes, `shadow` color in the options, costs one extra draw per character), or
-  leave it to the game (draw the text twice)?
-- [ ] **How characters count against `max_draws`** — each character is one draw (proposed: simple and
-  honest about the GPU cost), or a text counts as one draw and expands at submission with its own budget?
-- [ ] **Debug text budget** — today about 4096 glyphs per frame on 3DS; keep that as the debug pass's
-  own fixed capacity (proposed), separate from the game's `max_draws`?
-- [ ] **API name** — `nnh::gfx::draw_text(...)` + `nnh::gfx::measure_text(...)` in `<nnh/gfx.hpp>`
-  (proposed, next to `draw`), or a separate `<nnh/text.hpp>` module?
+Answered by the maintainer (2026-11-18): the proposed options, all accepted.
+
+- [x] **Glyph size** — 8×8 cells, monospace (50 characters per line on the top screen).
+- [x] **Game fonts** — a follow-up spec.
+- [x] **Shadow** — yes: a `shadow` option draws a 1-pixel drop shadow (one extra draw per character).
+- [x] **Characters vs `max_draws`** — each drawn character (and its shadow) is one draw.
+- [x] **Debug text budget** — the debug pass keeps its own fixed capacity (about 4096 characters per
+  frame), separate from the game's `max_draws`.
+- [x] **API** — `nnh::gfx::draw_text(...)` and `nnh::gfx::measure_text(...)` in `<nnh/gfx.hpp>`.

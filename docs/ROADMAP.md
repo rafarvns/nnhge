@@ -34,6 +34,12 @@ After spec 003 (2026-11-18, same machine): edit one game `.cpp` → simulator 1.
 3DS configure + build (engine + 4 examples) 17.7 s. Release `hello.3dsx`: 199,648 → 201,336 bytes (+1.7 KB:
 sticks, touch, mirror); `input.3dsx` 213,912 bytes.
 
+After spec 004 (2026-11-18, same machine): edit one game `.cpp` → simulator 1.2 s, `.3dsx` 2.3 s; edit
+one image → `.3dsx` 2.7 s; clean 3DS configure + build (engine + 5 examples) 17.4 s. Release
+`hello.3dsx`: 201,336 → 224,768 bytes (+23 KB: 2D drawing, textures, tex3ds import); `sprites.3dsx`
+(2 embedded images) 243,208 bytes. Old 3DS XL: about **1300 sprites of 16×16 at 60 Hz** (one texture,
+`examples/sprites` benchmark, Release); it starts dropping at 1400.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -61,7 +67,7 @@ sticks, touch, mirror); `input.3dsx` 213,912 bytes.
 - [ ] C-Stick and ZL/ZR on a real New 3DS (and measure the C-Stick range) — maintainer, when one is available
 
 ## M2 — 2D graphics
-- [ ] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md) (in progress)
+- [x] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md): `<nnh/texture.hpp>` (`IMAGES` in `nnh_add_game`), `gfx::draw`/shapes/layers/`Camera2D`, draw list ready for 3D passes and stereo, `examples/sprites` — verified on PC and an Old 3DS XL (2026-11-18)
 - [ ] Text rendering (bitmap fonts first). First goal: text **identical on every system** — debug text too, which today uses the 3DS system font vs. an 8×8 font on PC, so widths differ and layouts break (found on the 3DS in spec 004)
 - [ ] Simulator window: two screens layout, scale, 3D slider control
 

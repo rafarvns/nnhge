@@ -1,6 +1,6 @@
 # Plan 004: 2D graphics — textures, sprites, shapes, camera
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); verified on PC and an Old 3DS XL
 Spec: [spec.md](spec.md) · Architecture: [rendering.md](../../docs/architecture/rendering.md) · Decisions D19, D20
 
 ## Constitution Check (before design)

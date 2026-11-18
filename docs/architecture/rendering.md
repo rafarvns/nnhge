@@ -1,7 +1,6 @@
 # Rendering: 2D now, 3D later
 
-> Status: design for [spec 004](../../specs/004-2d-graphics/spec.md) (2D graphics, in progress:
-> everything works on the PC simulator and on an Old 3DS XL; benchmark still to come). 3D (M8) is not
+> Status: **2D implemented** ([spec 004](../../specs/004-2d-graphics/spec.md), PC and 3DS). 3D (M8) is not
 > built yet; this page fixes the structure so it can be added without rewriting games.
 
 ## The frame, per screen

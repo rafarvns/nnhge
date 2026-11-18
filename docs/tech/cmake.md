@@ -102,6 +102,10 @@ error) to the arrays; games without `IMAGES` link an empty default from core. Ge
   exact. (Asset folders are the exception, see `ASSETS` above.)
 - Custom functions parse arguments with `cmake_parse_arguments(PARSE_ARGV ...)`.
 - C++ standard through `CMAKE_CXX_STANDARD` / `target_compile_features`, never `-std=` flags.
+- Build-step scripts run with `cmake -P` (`cmake/nnh_*.cmake` with `-D` arguments) start with
+  `cmake_minimum_required(VERSION 3.25)`: a `-P` script doesn't inherit the project's policies. Without
+  it, CMake 3.x rejects `if(x IN_LIST y)`; CMake 4 (Windows) silently accepts it, so the bug only shows on
+  Linux. Test such scripts with a ctest (`tests/data/asset_lists/`).
 
 ## SDL3 for the simulator
 

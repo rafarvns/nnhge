@@ -4,6 +4,8 @@
 # texture rule, enforced on every system: decision D4). Reads only the PNG header. Writes STAMP on
 # success so the build can track it.
 
+cmake_minimum_required(VERSION 3.25) # -P scripts don't inherit the project's policies
+
 if(NOT IMAGE)
     message(FATAL_ERROR "nnh_check_image: IMAGE is required")
 endif()

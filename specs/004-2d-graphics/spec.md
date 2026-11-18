@@ -1,6 +1,6 @@
 # Spec 004: 2D graphics — textures, sprites, shapes, camera
 
-Status: draft
+Status: draft — open questions answered (2026-11-18); "ready for 3D" section (FR-11–FR-14) awaiting the maintainer's OK
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002 — core foundation](../002-core-foundation/spec.md) (memory regions, platform
 contract, debug overlay) — implemented. Related: M3 (`assetc`, romfs) in [ROADMAP](../../docs/ROADMAP.md).
@@ -59,6 +59,24 @@ at 60 Hz.
   logic driven through the platform contract, so it is unit tested with the fake platform recording what
   would be drawn.
 
+### Ready for 3D
+
+The engine must render 3D later (M8: citro3d meshes, stereoscopic top screen) without rewriting games
+or this spec's API. Nothing here draws 3D; these requirements keep the door open.
+
+- **FR-11 One texture type.** A texture loaded by this spec is the same resource a future 3D renderer
+  will sample (3DS: a citro3d texture, which citro2d draws through; PC: a texture of the GPU device the
+  future 3D renderer will use). Same handle, same memory accounting, same 3DS rules.
+- **FR-12 Frame passes.** Each screen's frame is drawn in passes: today one 2D pass; later a 3D pass
+  before it (world), with 2D on top (HUD), and 2D allowed before it (backgrounds). The platform contract
+  is organized by screen and pass so a 3D pass can be added without changing the 2D calls.
+- **FR-13 Replayable draw list.** 2D draws are recorded into a per-frame list and submitted at the end of
+  the frame, not drawn on the spot, so the same list can later be submitted twice for the stereoscopic
+  top screen (left and right eye). A layer can later get a stereo depth (parallax) without new draw calls.
+- **FR-14 Names that leave room.** 2D concepts are named as 2D where a 3D counterpart will exist
+  (e.g. the screen camera is a 2D camera; positions are 2D vectors), so 3D types (3D camera, 3D vectors,
+  matrices) can be added beside them later without renames.
+
 ## Acceptance criteria
 
 - **AC-1** Unit tests (fake platform) cover texture validation and failures (FR-2/FR-3), region and
@@ -80,7 +98,9 @@ at 60 Hz.
 
 - Bitmap fonts and real text rendering — next spec (the ROADMAP M2 item "Text rendering").
 - Tilemaps, animation playback (timelines), tweens, particles — M7 or later specs.
-- Stereoscopic 3D and the 3D slider; shaders; render-to-texture.
+- Drawing anything in 3D: meshes, 3D camera, lighting, depth buffer use, stereoscopic output and the 3D
+  slider (M8). Only the readiness of FR-11–FR-14 is in scope.
+- Custom shaders and render-to-texture.
 - The full asset pipeline (`assetc`, romfs, incremental cache) — M3; this spec only needs enough to get
   images into a game (FR-1) and must not block M3 from replacing it without changing the game API.
 - Simulator window options (layout, scale presets) — separate small item.
@@ -94,21 +114,23 @@ at 60 Hz.
 - Constitution V: no heap allocation or RTTI per frame; fixed draw capacity.
 - Constitution VII: texture loading, draw list, camera and per-platform backends in separate files.
 - Constitution IX: no copyrighted art in examples; example images are made for the project (zlib).
+- FR-11/FR-12 on PC must keep headless simulator runs (`SDL_VIDEO_DRIVER=offscreen`, screenshots) working:
+  if the GPU device is not available there, the plan must say what the simulator falls back to.
 
 ## Open questions
 
-- [ ] **Where images come from in this spec** — (a) embedded in the executable: the build converts each
-  declared image (tex3ds → `.t3x` on 3DS, PNG kept for SDL on PC) and links it in; M3 later moves them to
-  romfs without changing the game API (proposed: no romfs work yet, small games are fine); or (b) bring
-  the romfs part of M3 forward into this spec.
-- [ ] **API style** — immediate draw calls every frame (`gfx::draw(texture, x, y, options)`, the engine
-  batches; proposed: simple, fits the frame loop and scenes' `draw()`), or retained sprite objects the
-  engine keeps and draws each frame (Butano style, fewer calls but more state)?
-- [ ] **Layers** — a small integer layer per draw (proposed, e.g. 0–15) or only call order?
-- [ ] **Camera** — position only (proposed for now) or also zoom/rotation?
-- [ ] **Sprite budget** — default draw capacity per frame (proposed 2048, citro2d's default object limit
-  is 4096) and the Old 3DS benchmark target for AC-3 (proposed: 1000 16×16 sprites at 60 Hz).
-- [ ] **Sub-pixel positions** — `float` positions (proposed: smooth movement and camera) or integer pixels
-  only (pixel-perfect by construction)?
-- [ ] **Transparency** — alpha from the PNG (proposed), plus a per-draw opacity; color-key transparency
-  not supported?
+Answered by the maintainer (2026-11-18): the proposed options, all accepted.
+
+- [x] **Where images come from** — embedded in the executable: the build converts each declared image
+  (tex3ds on 3DS, PNG decoded by SDL on PC) and links it in; M3 later moves images to romfs without
+  changing the game API.
+- [x] **API style** — immediate draw calls every frame (`gfx::draw(texture, x, y, options)`), recorded
+  into the frame's draw list (FR-13) and batched by the engine.
+- [x] **Layers** — a small integer layer per draw (0–15), then call order.
+- [x] **Camera** — position only for now.
+- [x] **Sprite budget** — default capacity 2048 draws per frame (configurable at `init()`); AC-3 target:
+  1000 16×16 sprites at 60 Hz on an Old 3DS.
+- [x] **Sub-pixel positions** — `float` positions.
+- [x] **Transparency** — alpha from the PNG plus a per-draw opacity; no color key.
+- [ ] **3D readiness (FR-11–FR-14)** — added after the answers above, at the maintainer's request; to be
+  confirmed before the plan.

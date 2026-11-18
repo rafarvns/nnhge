@@ -53,6 +53,12 @@ least one valid file.
   Audio readers (2026-11-18, seeded with `tests/data/sounds/`): WAV 60 s (5.3 M runs), Ogg 9 min, cov 953 —
   its first minute found a real bug (seeking into a damaged part reported success; now `Corrupted`,
   regression test `ogg_seek_into_a_damaged_part_is_an_error`); no memory error in stb_vorbis.
+- NNH Link (spec 011) parses network input in `link/`: the message decoders, the frame reader with the
+  sealed channel, and discovery answers each have a target in `link/tests/fuzz/` with a round-trip check
+  (a decoded message must encode and decode again). Mini-fuzz in `nnh_link_tests`; libFuzzer executables
+  `fuzz_link_*`. First run (2026-11-18, 60 s each): messages cov 451, frames cov 271, discovery cov 169,
+  no crash. Pairing and authentication (mutual HMAC proofs, 5 wrong codes lock pairing) are unit tested
+  in `link/tests/test_handshake.cpp`; the threat model comes with the spec 011 guide.
 
 ## Supply chain and CI
 

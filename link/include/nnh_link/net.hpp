@@ -1,16 +1,16 @@
 #pragma once
-// Small blocking sockets for nnh (spec 010): TCP and UDP over IPv4 with timeouts, on Winsock and BSD
-// sockets. A host-tool module: platform #ifdefs live in net.cpp only. Tested on the loopback interface in
-// tools/nnh/tests/test_net.cpp.
+// Small blocking sockets for nnh and NNH Link (specs 010, 011): TCP and UDP over IPv4 with timeouts, on
+// Winsock, BSD sockets and the 3DS (libctru's BSD layer). Platform #ifdefs live in net.cpp only. Tested on
+// the loopback interface in link/tests/test_net.cpp.
 
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <vector>
 
-#include "address.hpp"
+#include "nnh_link/address.hpp"
 
-namespace nnh::tool::net {
+namespace nnh::link::net {
 
 /// Starts the socket library once (WSAStartup on Windows). @return false if it can't.
 bool startup();
@@ -20,7 +20,9 @@ public:
     Socket() = default;
     explicit Socket(std::intptr_t handle) : handle_(handle) {}
     ~Socket() { close(); }
-    Socket(Socket&& other) noexcept : handle_(other.handle_) { other.handle_ = -1; }
+    Socket(Socket&& other) noexcept : handle_(other.handle_), recv_timeout_ms_(other.recv_timeout_ms_) {
+        other.handle_ = -1;
+    }
     Socket& operator=(Socket&& other) noexcept;
     Socket(const Socket&) = delete;
     Socket& operator=(const Socket&) = delete;
@@ -42,6 +44,7 @@ public:
 
 private:
     std::intptr_t handle_ = -1;
+    int recv_timeout_ms_ = 0;
 };
 
 /// Connects within `timeout_ms`. Invalid socket on failure (refused, unreachable, timeout).
@@ -67,4 +70,4 @@ std::vector<Ipv4> local_broadcast_addresses();
 /// This computer's address on the route to `host` (no packet is sent).
 std::optional<Ipv4> local_address_towards(Ipv4 host);
 
-} // namespace nnh::tool::net
+} // namespace nnh::link::net

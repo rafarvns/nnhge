@@ -105,6 +105,12 @@ error) to the arrays; games without `IMAGES` link an empty default from core. Ge
 
 **Host tools** (`tools/`, PC presets only, never a dependency of games): `tools/nnh/CMakeLists.txt` builds the `nnh` program (spec 010) from `nnh_tool_lib` and its tests `nnh_tool_tests` (ctest `nnh_tool`). With MinGW they link the C++ runtime statically (`-static`): Git for Windows puts an older `libstdc++-6.dll` first on the PATH, which made the test program fail to start (exit code 127, no output) as soon as it used `std::filesystem`.
 
+**Shared link library** (`link/`, every preset, spec 011): `nnh_link` holds the network code `nnh` and the
+NNH Link console app share (sockets, SHA-256/HMAC, message codec, pairing). It never depends on
+`nnh::core`, so the tool doesn't pull the engine in; on the 3DS it builds against libctru's sockets.
+Its tests `nnh_link_tests` (ctest `nnh_link`, also static on MinGW) include a mini-fuzz; with
+`-DNNH_BUILD_FUZZERS=ON` and clang, `fuzz_link_{messages,frames,discovery}` are built in `build/<preset>/link/`.
+
 **Add a test file**: list it in `tests/CMakeLists.txt`.
 
 **Add a dependency**: avoid it. If unavoidable: small, permissive license, fetched with a pinned URL and

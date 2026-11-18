@@ -5,10 +5,10 @@
 #include <chrono>
 #include <thread>
 
-#include "net.hpp"
+#include "nnh_link/net.hpp"
 #include "test.hpp"
 
-using namespace nnh::tool;
+using namespace nnh::link;
 
 namespace {
 
@@ -74,6 +74,21 @@ NNH_TEST(udp_datagrams_carry_their_sender) {
     Ipv4 from;
     CHECK(net::udp_receive(b, buffer, sizeof buffer, 2000, &from) == 7 && from == kLoopback);
     CHECK(net::udp_receive(b, buffer, sizeof buffer, 30) == -1); // nothing else: timeout
+}
+
+NNH_TEST(udp_receive_survives_a_datagram_to_a_closed_port) {
+    // Windows turns the "port unreachable" answer into an error on the next recvfrom (WSAECONNRESET),
+    // which once lost the console's discovery reply.
+    net::Socket me = net::udp_open(kLoopback, 0);
+    net::Socket closed = net::udp_open(kLoopback, 0);
+    const std::uint16_t nobody = closed.local_port();
+    closed.close();
+    net::Socket peer = net::udp_open(kLoopback, 0);
+    CHECK(net::udp_send(me, kLoopback, nobody, "x", 1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50)); // let the unreachable answer arrive
+    CHECK(net::udp_send(peer, kLoopback, me.local_port(), "boot3ds", 7));
+    char buffer[16];
+    CHECK(net::udp_receive(me, buffer, sizeof buffer, 1000) == 7);
 }
 
 NNH_TEST(local_broadcasts_are_local_networks_without_loopback) {

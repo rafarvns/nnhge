@@ -95,6 +95,7 @@ engine/platforms/3ds/include/nnh/3ds/            3DS extension headers (system-o
 tests/framework/  tests/<module>/                in-house test framework, unit tests mirroring core/src
 tests/platform_conformance/                      contract tests run against every platform
 tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_tests; libFuzzer with NNH_BUILD_FUZZERS)
+link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing; PC + 3DS
 tools/nnh/                                       the nnh command (spec 010): build, run on the console, install
 examples/<name>/                                 one small program per feature
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md

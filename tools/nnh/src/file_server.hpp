@@ -9,8 +9,7 @@
 #include <string>
 #include <thread>
 
-#include "address.hpp"
-#include "net.hpp"
+#include "link_types.hpp"
 
 namespace nnh::tool {
 

@@ -1,4 +1,4 @@
-#include "net.hpp"
+#include "nnh_link/net.hpp"
 
 #include <cstring>
 
@@ -12,18 +12,24 @@ using NativeSocket = SOCKET;
 #else
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <ifaddrs.h>
-#include <net/if.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
-using NativeSocket = int;
-#define NNH_CLOSE_SOCKET ::close
+#ifdef __3DS__ // libctru's BSD layer: no getifaddrs, no MSG_NOSIGNAL (no SIGPIPE either)
+#include <3ds/types.h>
+#include <3ds/services/soc.h> // gethostid
+#define NNH_SEND_FLAGS 0
+#else
+#include <ifaddrs.h>
+#include <net/if.h>
 #define NNH_SEND_FLAGS MSG_NOSIGNAL
 #endif
+using NativeSocket = int;
+#define NNH_CLOSE_SOCKET ::close
+#endif
 
-namespace nnh::tool::net {
+namespace nnh::link::net {
 
 namespace {
 
@@ -89,6 +95,7 @@ Socket& Socket::operator=(Socket&& other) noexcept {
     if (this != &other) {
         close();
         handle_ = other.handle_;
+        recv_timeout_ms_ = other.recv_timeout_ms_;
         other.handle_ = -1;
     }
     return *this;
@@ -123,19 +130,16 @@ bool Socket::recv_all(void* data, std::size_t size) {
 }
 
 long Socket::recv_some(void* data, std::size_t size) {
+    // The timeout is a select() before reading: the same everywhere (the 3DS has no SO_RCVTIMEO).
+    if (recv_timeout_ms_ > 0 && !wait_ready(native(handle_), recv_timeout_ms_, false)) return -1;
     const int chunk = size > 65536 ? 65536 : static_cast<int>(size);
     const auto n = ::recv(native(handle_), static_cast<char*>(data), chunk, 0);
     return n < 0 ? -1 : static_cast<long>(n);
 }
 
 bool Socket::set_recv_timeout(int ms) {
-#ifdef _WIN32
-    const DWORD value = static_cast<DWORD>(ms);
-    return setsockopt(native(handle_), SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&value), sizeof value) == 0;
-#else
-    timeval tv{ms / 1000, (ms % 1000) * 1000};
-    return setsockopt(native(handle_), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv) == 0;
-#endif
+    recv_timeout_ms_ = ms > 0 ? ms : 0;
+    return valid();
 }
 
 std::uint16_t Socket::local_port() const {
@@ -199,6 +203,14 @@ Socket udp_open(Ipv4 address, std::uint16_t port) {
     if (!s.valid()) return {};
     const int yes = 1;
     setsockopt(native(s.handle()), SOL_SOCKET, SO_BROADCAST, reinterpret_cast<const char*>(&yes), sizeof yes);
+#ifdef _WIN32
+    // A datagram to a port nobody listens on (a console whose netloader is closed) comes back as "port
+    // unreachable", and Windows then fails the next recvfrom with WSAECONNRESET, losing real answers.
+    BOOL report = FALSE;
+    DWORD returned = 0;
+    WSAIoctl(native(s.handle()), _WSAIOW(IOC_VENDOR, 12) /* SIO_UDP_CONNRESET */, &report, sizeof report, nullptr, 0,
+             &returned, nullptr, nullptr);
+#endif
     const sockaddr_in sa = to_sockaddr(address, port);
     if (::bind(native(s.handle()), reinterpret_cast<const sockaddr*>(&sa), sizeof sa) != 0) return {};
     return s;
@@ -249,6 +261,11 @@ std::vector<Ipv4> local_broadcast_addresses() {
             add(from_sockaddr(*sa), a->OnLinkPrefixLength);
         }
     }
+#elif defined(__3DS__)
+    // One Wi-Fi interface; gethostid() gives its address (first octet in the low byte, like the Homebrew
+    // Launcher reads it). The mask isn't available: assume a /24, the usual home network.
+    const auto id = static_cast<std::uint32_t>(gethostid());
+    add(Ipv4{{std::uint8_t(id), std::uint8_t(id >> 8), std::uint8_t(id >> 16), std::uint8_t(id >> 24)}}, 24);
 #else
     ifaddrs* list = nullptr;
     if (getifaddrs(&list) != 0) return out;
@@ -278,4 +295,4 @@ std::optional<Ipv4> local_address_towards(Ipv4 host) {
     return from_sockaddr(local);
 }
 
-} // namespace nnh::tool::net
+} // namespace nnh::link::net

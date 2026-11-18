@@ -3,7 +3,7 @@
 #include <cstring>
 
 #include "fbi.hpp"
-#include "net.hpp"
+#include "link_types.hpp"
 #include "netloader.hpp"
 #include "zlib_stored.hpp"
 

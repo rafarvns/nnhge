@@ -2,7 +2,6 @@
 # A host program built with the PC presets; never a dependency of games. Explicit source lists.
 
 add_library(nnh_tool_lib STATIC
-    src/address.cpp
     src/cli.cpp
     src/commands/build.cpp
     src/commands/install.cpp
@@ -13,7 +12,6 @@ add_library(nnh_tool_lib STATIC
     src/log_listener.cpp
     src/log_view.cpp
     src/manifest.cpp
-    src/net.cpp
     src/netloader.cpp
     src/repo.cpp
     src/terminal.cpp
@@ -23,10 +21,7 @@ add_library(nnh_tool_lib STATIC
 target_include_directories(nnh_tool_lib PUBLIC src)
 nnh_engine_options(nnh_tool_lib)
 find_package(Threads REQUIRED) # the HTTP server runs on a thread
-target_link_libraries(nnh_tool_lib PUBLIC Threads::Threads)
-if(WIN32)
-    target_link_libraries(nnh_tool_lib PUBLIC ws2_32 iphlpapi)
-endif()
+target_link_libraries(nnh_tool_lib PUBLIC Threads::Threads nnh_link)
 
 add_executable(nnh src/main.cpp)
 target_link_libraries(nnh PRIVATE nnh_tool_lib)
@@ -43,13 +38,11 @@ _nnh_tool_static_runtime(nnh)
 
 if(NNH_BUILD_TESTS)
     add_executable(nnh_tool_tests
-        tests/test_address.cpp
         tests/test_cli.cpp
         tests/test_console_link.cpp
         tests/test_fbi.cpp
         tests/test_log_view.cpp
         tests/test_manifest.cpp
-        tests/test_net.cpp
         tests/test_netloader.cpp
         tests/test_repo.cpp
         tests/test_user_config.cpp

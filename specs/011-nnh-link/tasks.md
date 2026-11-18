@@ -1,16 +1,16 @@
 # Tasks 011: NNH Link — build and run from the console
 
-Status: draft
+Status: in progress (stage 1 done 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — the link library: crypto and messages
 
-- [ ] **T1.1** `link/` library `nnh_link` (PC and 3DS) + `nnh_link_tests`; sockets moved from `tools/nnh` — covers FR-7
-- [ ] **T1.2** SHA-256 and HMAC-SHA-256 — test: FIPS 180-4 and RFC 4231 vectors — covers FR-3
-- [ ] **T1.3** [P] message codec (framing, types, sequence + MAC) and discovery datagrams — tests + fuzz targets — covers FR-3, FR-7
-- [ ] **T1.4** pairing and authentication state machines (both sides) — tests: wrong code, rate limit, impostor, unpaired, replay, tampering — covers FR-3
+- [x] **T1.1** `link/` library `nnh_link` (PC and 3DS) + `nnh_link_tests`; sockets moved from `tools/nnh` — covers FR-7
+- [x] **T1.2** SHA-256 and HMAC-SHA-256 — test: FIPS 180-4 and RFC 4231 vectors — covers FR-3
+- [x] **T1.3** [P] message codec (framing, types, sequence + MAC) and discovery datagrams — tests + fuzz targets — covers FR-3, FR-7
+- [x] **T1.4** pairing and authentication state machines (both sides) — tests: wrong code, rate limit, impostor, unpaired, replay, tampering — covers FR-3
 
 ## Stage 2 — sessions
 

@@ -10,7 +10,7 @@
 #include "console_link.hpp"
 #include "log_listener.hpp"
 #include "log_view.hpp"
-#include "net.hpp"
+#include "link_types.hpp"
 #include "netloader.hpp"
 #include "repo.hpp"
 #include "terminal.hpp"

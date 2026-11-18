@@ -1,6 +1,6 @@
-#include "address.hpp"
+#include "nnh_link/address.hpp"
 
-namespace nnh::tool {
+namespace nnh::link {
 
 std::optional<Ipv4> parse_ipv4(const std::string& text) {
     Ipv4 out;
@@ -42,4 +42,4 @@ Ipv4 broadcast_of(Ipv4 address, int prefix_length) {
     return Ipv4{{std::uint8_t(b >> 24), std::uint8_t(b >> 16), std::uint8_t(b >> 8), std::uint8_t(b)}};
 }
 
-} // namespace nnh::tool
+} // namespace nnh::link

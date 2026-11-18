@@ -113,7 +113,8 @@ bool init(const AppConfig& config) {
     const int scale = config.pc_window_scale > 0 ? config.pc_window_scale : 1;
     g_context.scale = scale < pc::kMaxSimScale ? scale : pc::kMaxSimScale;
     const pc::SimSize size = pc::natural_size(g_context.layout, g_context.scale);
-    g_context.window = SDL_CreateWindow(config.title, size.w, size.h, SDL_WINDOW_RESIZABLE);
+    std::snprintf(g_context.title, sizeof g_context.title, "%s", config.title != nullptr ? config.title : "NNHGE");
+    g_context.window = SDL_CreateWindow(g_context.title, size.w, size.h, SDL_WINDOW_RESIZABLE);
     g_context.renderer = g_context.window != nullptr ? create_renderer(g_context.window) : nullptr;
     if (g_context.renderer == nullptr || !create_screen_targets()) {
         set_error("window creation failed");
@@ -142,9 +143,13 @@ bool poll_events() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) return false;
-        if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) pc::dev_key_pressed(event.key.scancode);
+        if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+            pc::dev_key_pressed(event.key.scancode);
+            pc::view_key_pressed(event.key.scancode, event.key.mod);
+        }
         pc::gamepad_event(event);
     }
+    pc::view_update();
     if (g_context.quit_requested) return false;
     return g_context.exit_after == 0 || g_context.frames < g_context.exit_after;
 }

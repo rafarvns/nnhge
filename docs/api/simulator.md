@@ -2,13 +2,35 @@
 
 The PC build of a game is a native desktop app (SDL3) that behaves like the 3DS:
 
-- One window, the top screen (400×240) above the bottom screen (320×240, centered), scaled by an integer
-  factor (`AppConfig::pc_window_scale`, default 2). The window is resizable.
+- One window with both screens, by default the top screen (400×240) above the bottom screen (320×240,
+  centered), scaled by an integer factor (`AppConfig::pc_window_scale`, default 2). Other layouts,
+  scales and fullscreen: see [Window](#window). Pixels always stay sharp (integer scales).
 - Runs at 60 Hz like the console, even on faster monitors.
 - Controls: keyboard, mouse (touch screen) and a gamepad — see [input.md](input.md#pc-simulator-controls).
 
 It is not an emulator: use [Azahar](https://azahar-emu.org/) or a real console to check console behaviour.
 Enforcement of 3DS memory and texture limits arrives with the features that need them.
+
+## Window
+
+Keys that change how the screens are shown (every build, including Release; the game doesn't notice):
+
+| Key | Action |
+|-----|--------|
+| `F2` | next layout: Stacked → Side by side → Large top → Top only → Bottom only |
+| `F3` / `F4` | scale down / up (1× to 6×); the window resizes to fit the screens |
+| `F5` | fit: the largest integer scale that fits the window, screens centered |
+| `F9` or `Alt+Enter` | fullscreen on / off (always "fit" while fullscreen) |
+
+| Layout | Screens |
+|--------|---------|
+| Stacked | like the console: top above, bottom centered below |
+| Side by side | top on the left, bottom on the right |
+| Large top | top big, bottom at half its scale to the right (bottom-aligned) |
+| Top only / Bottom only | one screen; with Top only there is no touch screen |
+
+The window title shows the new layout and scale for two seconds. The mouse touches the bottom screen
+wherever the layout draws it ([input.md](input.md#pc-simulator-controls)).
 
 ## Developer keys (Debug and Development builds)
 

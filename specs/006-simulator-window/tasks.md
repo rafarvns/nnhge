@@ -18,8 +18,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 3 — layouts, scale, fullscreen
 
-- [ ] **T3.1** keys F2/F3/F4/F5/F9/Alt+Enter, window resize to natural size, fit, fullscreen — files: `window_pc.cpp`, `devtools_pc.cpp`, `app_pc.cpp` — covers FR-1, FR-2, FR-3
-- [ ] **T3.2** title notice — covers FR-8
+- [x] **T3.1** keys F2/F3/F4/F5/F9/Alt+Enter, window resize to natural size, fit, fullscreen — files: `window_pc.cpp`, `devtools_pc.cpp`, `app_pc.cpp` — covers FR-1, FR-2, FR-3
+- [x] **T3.2** title notice — covers FR-8
 
 ## Stage 4 — settings and scripted runs
 

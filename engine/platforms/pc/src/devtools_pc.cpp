@@ -60,7 +60,10 @@ void pc::dev_wait_while_paused() {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) ctx.quit_requested = true;
-            if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) dev_key_pressed(event.key.scancode);
+            if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                dev_key_pressed(event.key.scancode);
+                view_key_pressed(event.key.scancode, event.key.mod);
+            }
             gamepad_event(event); // a pad plugged in while paused
         }
         SDL_Delay(16);

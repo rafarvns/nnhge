@@ -75,3 +75,17 @@ void fill_rect(Screen screen, int x, int y, int width, int height, Color color) 
 }
 
 } // namespace nnh::platform
+
+// 2D drawing: implemented in spec 004 stages 4 (pc) and 5 (3ds). Until then nothing is drawn.
+namespace nnh::platform {
+
+bool texture_create(const void*, std::size_t, TextureInfo& out) {
+    out = TextureInfo{};
+    return false;
+}
+
+void texture_destroy(TextureHandle) {}
+
+void draw_2d(Screen, const DrawItem2D*, int) {}
+
+} // namespace nnh::platform

@@ -47,6 +47,36 @@ NNH_TEST(frames_can_begin_draw_and_end_repeatedly) {
     platform::shutdown();
 }
 
+NNH_TEST(texture_create_rejects_data_it_cannot_decode) {
+    CHECK(platform::init(config()));
+    const unsigned char garbage[] = {1, 2, 3, 4, 5, 6, 7, 8};
+    platform::TextureInfo info;
+    CHECK(!platform::texture_create(garbage, sizeof garbage, info));
+    CHECK(info.handle == 0);
+    platform::shutdown();
+}
+
+NNH_TEST(draw_2d_accepts_empty_and_shape_passes) {
+    CHECK(platform::init(config()));
+    CHECK(platform::poll_events());
+    platform::begin_frame(nnh::colors::black, nnh::colors::black);
+    platform::draw_2d(nnh::Screen::Top, nullptr, 0);
+    platform::DrawItem2D shapes[3];
+    shapes[0].kind = platform::DrawItem2D::Kind::FillRect;
+    shapes[1].kind = platform::DrawItem2D::Kind::RectOutline;
+    shapes[2].kind = platform::DrawItem2D::Kind::Line;
+    for (auto& s : shapes) {
+        s.x = 10;
+        s.y = 10;
+        s.w = 20;
+        s.h = 20;
+        s.color = nnh::colors::red;
+    }
+    platform::draw_2d(nnh::Screen::Bottom, shapes, 3);
+    platform::end_frame();
+    platform::shutdown();
+}
+
 NNH_TEST(idle_input_is_zero) {
     CHECK(platform::init(config()));
     CHECK(platform::poll_events());

@@ -17,6 +17,7 @@ add_executable(nnh_tests
     build/test_flavor.cpp
     crash/test_assert.cpp
     crash/test_report.cpp
+    debug/test_debug_list.cpp
     debug/test_overlay.cpp
     debug/test_profile.cpp
     events/test_capacities.cpp
@@ -34,9 +35,12 @@ add_executable(nnh_tests
     fs/test_path.cpp
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
+    gfx/test_draw_calls.cpp
     gfx/test_draw_list.cpp
     gfx/test_texture_rules.cpp
     gfx/test_texture_table.cpp
+    gfx/test_textures.cpp
+    gfx/test_images.cpp
     input/test_dpad_mirror.cpp
     input/test_input_queries.cpp
     input/test_input_state.cpp

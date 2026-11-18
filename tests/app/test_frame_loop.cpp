@@ -91,10 +91,12 @@ NNH_TEST(clear_colors_reach_the_platform_on_the_next_frame) {
 NNH_TEST(debug_print_is_drawn_inside_a_frame_and_ignored_outside) {
     fresh_engine();
     nnh::debug::print(nnh::Screen::Top, 1, 2, "outside");
-    CHECK(fake::state().text_count == 0);
     CHECK(nnh::frame());
+    CHECK(fake::state().text_count == 0);
     nnh::debug::print(nnh::Screen::Bottom, 3, 4, "inside");
-    CHECK(fake::state().text_count == 1);
+    CHECK(fake::state().text_count == 0); // recorded, drawn on top at the end of the frame
+    CHECK(nnh::frame());
+    CHECK(fake::state().last_frame_text_count == 1);
     CHECK(fake::state().texts[0].screen == nnh::Screen::Bottom);
     CHECK(fake::state().texts[0].x == 3 && fake::state().texts[0].y == 4);
     nnh::shutdown();

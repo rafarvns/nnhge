@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "memory/memory_internal.hpp"
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform_fake.hpp"
@@ -112,5 +113,17 @@ NNH_TEST(leak_report_lists_live_allocations_per_tag) {
 NNH_TEST(freeing_null_is_a_no_op) {
     fresh();
     mem::free(nullptr);
+    CHECK(mem::live_allocations() == 0);
+}
+
+NNH_TEST(memory_owned_by_the_platform_can_be_accounted_under_a_tag) {
+    fresh();
+    nnh::detail::mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(testmem), 4096, true);
+    CHECK(mem::region_stats(MemRegion::Linear).bytes == 4096);
+    CHECK(mem::tag_stats(NNH_MEM_TAG_REF(testmem)).count == 1);
+    CHECK(mem::live_allocations() == 1);
+    nnh::detail::mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(testmem), 4096, false);
+    CHECK(mem::region_stats(MemRegion::Linear).bytes == 0);
+    CHECK(mem::region_stats(MemRegion::Linear).peak == 4096);
     CHECK(mem::live_allocations() == 0);
 }

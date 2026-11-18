@@ -10,6 +10,7 @@
 #include "log/engine_channels.hpp"
 #include "nnh/assert.hpp"
 #include "nnh/log.hpp"
+#include "memory/memory_internal.hpp"
 #include "nnh/platform/memory.hpp"
 
 namespace nnh::mem {
@@ -157,6 +158,14 @@ void free(void* pointer) {
     count(region, header->tag_slot, header->size, false);
     platform::region_free(region, static_cast<unsigned char*>(pointer) - header->offset);
 }
+
+} // namespace nnh::mem
+
+void nnh::detail::mem_account(MemRegion region, MemTag& tag, std::size_t bytes, bool add) {
+    mem::count(region, mem::slot_for(tag), bytes, add);
+}
+
+namespace nnh::mem {
 
 MemStats region_stats(MemRegion region) { return g_regions[index_of(region)]; }
 

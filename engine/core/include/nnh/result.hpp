@@ -46,18 +46,28 @@ struct Error {
 };
 
 /// Either a T or an Error. Check it (`if (r)`, `r.ok()`) before calling value(): reading the value of
-/// a failed result is a bug and triggers NNH_VERIFY.
+/// a failed result is a bug and triggers NNH_VERIFY. T may be move-only (e.g. nnh::Texture): take it out
+/// with `std::move(r.value())`.
 template <typename T>
 class [[nodiscard]] Result {
 public:
     Result(T value) : ok_(true) { new (&value_) T(std::move(value)); }
     Result(const Error& error) : ok_(false), error_(error) {}
     Result(const Result& other) : ok_(other.ok_) { copy_from(other); }
+    Result(Result&& other) : ok_(other.ok_) { move_from(other); }
     Result& operator=(const Result& other) {
         if (this != &other) {
             destroy();
             ok_ = other.ok_;
             copy_from(other);
+        }
+        return *this;
+    }
+    Result& operator=(Result&& other) {
+        if (this != &other) {
+            destroy();
+            ok_ = other.ok_;
+            move_from(other);
         }
         return *this;
     }
@@ -88,6 +98,13 @@ private:
     void copy_from(const Result& other) {
         if (ok_) {
             new (&value_) T(other.value_);
+        } else {
+            error_ = other.error_;
+        }
+    }
+    void move_from(Result& other) {
+        if (ok_) {
+            new (&value_) T(std::move(other.value_));
         } else {
             error_ = other.error_;
         }

@@ -13,7 +13,8 @@ Header: `<nnh/app.hpp>`
 `pc_window_scale` (initial simulator window size, default 2×) and `data_folder` (name of the game's
 data folder for saves and logs; default derived from the title, see [fs.md](fs.md)) and `events`
 (event bus capacities: `.events = {.queue_bytes = 32 * 1024, .max_subscribers = 512}`, see
-[events.md](events.md#capacities)).
+[events.md](events.md#capacities)) and `gfx` (2D capacities: `.gfx = {.max_draws = 4096, .max_textures = 256}`,
+see [gfx.md](gfx.md#capacities)).
 
 ## The loop
 
@@ -28,6 +29,7 @@ int main() {
 ```
 
 - Everything drawn between two `frame()` calls is one frame. Drawing outside a frame is ignored.
+  Draws are recorded and reach the screen when the frame ends (the next `frame()` or `shutdown()`).
 - The loop runs at **60 Hz** on every platform (vsync on 3DS; paced on PC even with 144 Hz monitors).
   A fixed-timestep helper for game logic is planned (M1).
 - `frame()` returns false when the system asks the game to close: HOME Menu → Close on 3DS,

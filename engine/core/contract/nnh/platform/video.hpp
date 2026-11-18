@@ -3,6 +3,7 @@
 /// Platform contract — frames and drawing. Implemented by every platform library, called only by
 /// nnh::core. Not for games. See docs/architecture/platforms.md.
 
+#include <cstddef>
 #include <cstdint>
 
 #include "nnh/gfx.hpp"
@@ -33,6 +34,27 @@ struct DrawItem2D {
     float rotation = 0; ///< Sprite: radians, clockwise on screen, around the pivot
     Color color{};      ///< Sprite: tint (white = unchanged), alpha = opacity. Shapes: the color.
 };
+
+/// What the platform reports about a texture it created.
+struct TextureInfo {
+    TextureHandle handle = 0;
+    int width = 0;
+    int height = 0;
+    std::size_t bytes = 0; ///< GPU memory it uses (core accounts it in the Linear region)
+};
+
+/// Decodes an image embedded by the build in this platform's format (3DS: tex3ds .t3x, PC: PNG) into a
+/// GPU texture with nearest filtering. Load time only (may allocate). @return false (and `out.handle`
+/// 0) if the data can't be decoded or there is no memory; set last_error() then.
+bool texture_create(const void* data, std::size_t size, TextureInfo& out);
+
+/// Frees a texture from texture_create(). Core calls it only when no submitted frame uses it anymore.
+void texture_destroy(TextureHandle handle);
+
+/// Draws one 2D pass on `screen`: `items` are already sorted, camera-adjusted and in whole pixels
+/// (see DrawItem2D). Called by core at the end of the frame, between begin_frame() and end_frame(),
+/// possibly several times per screen (passes). Draws are clipped to the screen. Must not allocate.
+void draw_2d(Screen screen, const DrawItem2D* items, int count);
 
 /// Starts a frame with both screens cleared to the given colors. Called once per nnh::frame(), after
 /// poll_events() returned true. Drawing functions are valid until end_frame(). Must not allocate.

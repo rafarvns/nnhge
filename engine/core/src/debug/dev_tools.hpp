@@ -1,5 +1,5 @@
 #pragma once
-// Developer tools driven by the frame loop: profiler frame boundary and the debug overlay. Internal.
+// Developer tools driven by the frame loop: profiler frame boundary, debug overlay, debug text. Internal.
 
 #include <cstdint>
 
@@ -20,5 +20,11 @@ void overlay_update(Duration frame_delta, std::uint32_t held_buttons, std::uint3
 void overlay_draw();
 
 void overlay_reset();
+
+/// Draws the debug text recorded this frame (debug::print) and forgets it: the debug pass, after the
+/// 2D passes so the text stays on top.
+void debug_text_flush();
+/// Forgets recorded debug text (init).
+void debug_text_clear();
 
 } // namespace nnh::detail

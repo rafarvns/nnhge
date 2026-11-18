@@ -57,17 +57,18 @@ bool texture_create_rgba(const void* pixels, int width, int height, TextureInfo&
         ctr::set_error("C3D_TexInit failed (out of linear memory?)");
         return false;
     }
-    // GPU layout: 8x8 tiles left to right, rows of tiles from the bottom of the image (citro3d's v = 0),
-    // Morton order inside a tile; each pixel a u32 0xRRGGBBAA.
+    // GPU layout: 8x8 tiles left to right, rows of tiles from the TOP of the image, Morton order inside a
+    // tile (rows top-down too); each pixel a u32 0xRRGGBBAA. No vertical flip: verified on an Old 3DS XL
+    // (2026-11-18) — flipping gave scrambled or upside-down glyphs. Sampling uses v = 1 at the image top
+    // (draw2d_3ds.cpp subtexture), the same as tex3ds textures.
     const auto* src = static_cast<const u8*>(pixels);
     auto* dst = static_cast<u32*>(texture->tex.data);
     const u32 w = static_cast<u32>(width);
     const u32 h = static_cast<u32>(height);
     for (u32 y = 0; y < h; ++y) {
-        const u32 gy = h - 1 - y;
         for (u32 x = 0; x < w; ++x) {
             const u8* p = src + (y * w + x) * 4;
-            const u32 index = (((gy >> 3) * (w >> 3) + (x >> 3)) << 6) + morton_in_tile(x & 7, gy & 7);
+            const u32 index = (((y >> 3) * (w >> 3) + (x >> 3)) << 6) + morton_in_tile(x & 7, y & 7);
             dst[index] = (u32{p[0]} << 24) | (u32{p[1]} << 16) | (u32{p[2]} << 8) | u32{p[3]};
         }
     }

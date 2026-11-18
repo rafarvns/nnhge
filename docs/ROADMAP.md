@@ -59,6 +59,7 @@ one image → `.3dsx` 2.7 s; clean 3DS configure + build (engine + 5 examples) 1
 - [x] CI hardening: least-privilege permissions, actions pinned by SHA, release-strings check, fuzz job (stage 9)
 - [x] Foundation verified on a real 3DS (3dslink logs, overlay, save counter, crash screen, crash.txt) — 2026-11-17
 - [ ] CPU-fault crash screen on 3DS with Luma3DS "Set developer UNITINFO" — maintainer, later
+- [ ] Development builds started by 3dslink **without `-s`** hang on a black screen (power cycle needed): the stdio connection to the PC seems to block when nobody listens — investigate and fall back to no logs (found 2026-11-18)
 
 ## M1b — Events, scenes, input
 - [x] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)): `<nnh/events.hpp>`, `ButtonPressed`/`ButtonReleased`, `<nnh/scene.hpp>` + `nnh::run()`, `examples/scenes` (2026-11-17)

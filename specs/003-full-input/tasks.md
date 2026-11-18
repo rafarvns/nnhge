@@ -1,15 +1,15 @@
 # Tasks 003: Full input — sticks, touch, gamepad
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — pure logic
 
-- [ ] **T1.1** stick shaping (dead zone, rescale, clamp, non-finite) — files: `core/src/input/stick.{hpp,cpp}` — test: `tests/input/test_stick.cpp` — covers FR-1
-- [ ] **T1.2** [P] touch edges and last point — files: `core/src/input/touch_state.hpp` — test: `tests/input/test_touch_state.cpp` — covers FR-4
-- [ ] **T1.3** [P] Circle Pad → D-Pad mirror with hysteresis — files: `core/src/input/dpad_mirror.{hpp,cpp}` — test: `tests/input/test_dpad_mirror.cpp` — covers FR-12
+- [x] **T1.1** stick shaping (dead zone, rescale, clamp, non-finite) — files: `core/src/input/stick.{hpp,cpp}` — test: `tests/input/test_stick.cpp` — covers FR-1
+- [x] **T1.2** [P] touch edges and last point — files: `core/src/input/touch_state.hpp` — test: `tests/input/test_touch_state.cpp` — covers FR-4
+- [x] **T1.3** [P] Circle Pad → D-Pad mirror with hysteresis — files: `core/src/input/dpad_mirror.{hpp,cpp}` — test: `tests/input/test_dpad_mirror.cpp` — covers FR-12
 
 ## Stage 2 — contract, fake, public API, events
 

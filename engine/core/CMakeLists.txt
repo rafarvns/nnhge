@@ -23,7 +23,9 @@ add_library(nnh_core STATIC
     src/fs/save.cpp
     src/fs/save_format.cpp
     src/gfx/gfx.cpp
+    src/input/dpad_mirror.cpp
     src/input/input.cpp
+    src/input/stick.cpp
     src/log/engine_channels.cpp
     src/log/file_sink.cpp
     src/log/format.cpp

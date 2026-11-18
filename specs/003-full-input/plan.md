@@ -1,6 +1,6 @@
 # Plan 003: Full input — sticks, touch, gamepad
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md)
 
 ## Constitution Check (before design)

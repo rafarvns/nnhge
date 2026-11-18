@@ -1,6 +1,6 @@
 # Plan 004: 2D graphics — textures, sprites, shapes, camera
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Architecture: [rendering.md](../../docs/architecture/rendering.md) · Decisions D19, D20
 
 ## Constitution Check (before design)

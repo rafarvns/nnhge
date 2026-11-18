@@ -22,7 +22,9 @@ add_library(nnh_core STATIC
     src/fs/path.cpp
     src/fs/save.cpp
     src/fs/save_format.cpp
+    src/gfx/draw_list.cpp
     src/gfx/gfx.cpp
+    src/gfx/texture_table.cpp
     src/input/dpad_mirror.cpp
     src/input/input.cpp
     src/input/stick.cpp

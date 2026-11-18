@@ -34,6 +34,9 @@ add_executable(nnh_tests
     fs/test_path.cpp
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
+    gfx/test_draw_list.cpp
+    gfx/test_texture_rules.cpp
+    gfx/test_texture_table.cpp
     input/test_dpad_mirror.cpp
     input/test_input_queries.cpp
     input/test_input_state.cpp
@@ -42,6 +45,7 @@ add_executable(nnh_tests
     log/test_format.cpp
     log/test_log.cpp
     log/test_ring.cpp
+    math/test_vec2.cpp
     memory/test_memory.cpp
     result/test_result.cpp
     scene/test_run.cpp

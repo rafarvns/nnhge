@@ -109,11 +109,15 @@ What our backend (`input_3ds.cpp`) does:
 - `.3dsx` + `.smdh`: `ctr_generate_smdh` / `ctr_create_3dsx` in CMake (see [cmake.md](cmake.md)).
 - Send: Homebrew Launcher → **Y**, then `3dslink <file>.3dsx -a <ip>` (`-a` takes only the IP).
 - **Logs on the PC** (implemented): in Debug/Development builds started by 3dslink (`__3dslink_host` set),
-  the platform library calls `socInit` (1 MB buffer) + `link3dsStdio()` at init, so every log line
-  reaches the PC (TCP port 17491). Launch with `3dslink -s ...` so the PC keeps listening.
-  `link3dsStdio()` `dup2`s the socket onto stdout/stderr: at shutdown, flush and `close()` fds 1 and 2
-  as well as the socket **before** `socExit()`, or newlib's exit-time stdio cleanup hangs the console on
-  a black screen instead of returning to the Homebrew Launcher.
+  the platform library calls `socInit` (1 MB buffer), connects to the PC on port 17491
+  (`LINK3DS_COMM_PORT`) and `dup2`s the socket onto stdout/stderr, so every log line reaches the PC.
+  Launch with `3dslink -s ...` so the PC keeps listening. We don't use libctru's `link3dsStdio()`: its
+  `connect` blocks with no timeout, and when the PC isn't listening and its firewall drops the attempt
+  the console hangs on a black screen. Our connect is non-blocking with a 1 s limit (`poll`; connected =
+  `POLLOUT` without `POLLERR`/`POLLHUP` — `getsockopt(SO_ERROR)` reported a failure for a good
+  connection on hardware); without a listening PC the game starts without logs. At shutdown, flush and `close()` fds 1 and 2 as well as the
+  socket **before** `socExit()`, or newlib's exit-time stdio cleanup hangs the console on a black screen
+  instead of returning to the Homebrew Launcher.
 - `.cia` (installable): needs `makerom` + `bannertool` (not bundled with devkitPro). Planned in M5.
 - Launching another `.3dsx` from a homebrew app: libctru only offers `aptSetChainloader()` for installed
   titles; there is no 3dsx-to-3dsx API (relevant for NNH Link, see [decisions](../architecture/decisions.md)).

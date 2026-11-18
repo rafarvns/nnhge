@@ -10,6 +10,7 @@
 #include "console_link.hpp"
 #include "log_listener.hpp"
 #include "log_view.hpp"
+#include "net.hpp"
 #include "netloader.hpp"
 #include "repo.hpp"
 #include "terminal.hpp"
@@ -29,15 +30,24 @@ bool read_bytes(const std::string& path, std::vector<std::uint8_t>& out) {
     return true;
 }
 
-/// The console to use: --console, else whichever answers the discovery broadcast, else the remembered one.
+/// The console to use: --console, else whichever answers the discovery, else the remembered one.
 std::optional<Ipv4> choose_console(const Options& options, const Settings& settings) {
     if (!options.console.empty()) return parse_ipv4(options.console);
     std::printf("nnh: looking for the console (Homebrew Launcher open, Y pressed)...\n");
-    const Ipv4 broadcast{{255, 255, 255, 255}};
-    if (auto found = discover_console(broadcast, kNetloaderPort, kNetloaderPort, 3, 1000)) return found;
+    // Ask the remembered console directly, every local network's broadcast address (255.255.255.255
+    // leaves through one interface only, often a VPN's), and the global broadcast.
+    std::vector<Ipv4> targets;
     const auto remembered = settings.find("console");
-    if (remembered != settings.end()) return parse_ipv4(remembered->second);
-    return std::nullopt;
+    const auto last = remembered != settings.end() ? parse_ipv4(remembered->second) : std::nullopt;
+    if (last) targets.push_back(*last);
+    for (const Ipv4& b : net::local_broadcast_addresses()) targets.push_back(b);
+    targets.push_back(Ipv4{{255, 255, 255, 255}});
+    if (auto found = discover_console(targets, kNetloaderPort, kNetloaderPort, 3, 1000)) {
+        std::printf("nnh: found the console at %s\n", to_string(*found).c_str());
+        return found;
+    }
+    if (last) std::printf("nnh: no answer; trying the last console used, %s\n", to_string(*last).c_str());
+    return last;
 }
 
 struct LogSink {

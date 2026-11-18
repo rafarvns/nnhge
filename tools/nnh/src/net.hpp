@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 #include "address.hpp"
 
@@ -58,6 +59,10 @@ Socket udp_open(Ipv4 address, std::uint16_t port);
 bool udp_send(const Socket& socket, Ipv4 to, std::uint16_t port, const void* data, std::size_t size);
 /// Waits up to `timeout_ms` for a datagram: its size, or -1 on timeout or error.
 long udp_receive(const Socket& socket, void* data, std::size_t size, int timeout_ms, Ipv4* from = nullptr);
+
+/// The broadcast address of every local-network IPv4 interface that is up (e.g. 192.168.10.255): a
+/// broadcast to 255.255.255.255 leaves through one interface only, often a VPN's.
+std::vector<Ipv4> local_broadcast_addresses();
 
 /// This computer's address on the route to `host` (no packet is sent).
 std::optional<Ipv4> local_address_towards(Ipv4 host);

@@ -9,11 +9,12 @@
 
 namespace nnh::tool {
 
-std::optional<Ipv4> discover_console(Ipv4 target, std::uint16_t port, std::uint16_t reply_port, int tries, int wait_ms) {
+std::optional<Ipv4> discover_console(const std::vector<Ipv4>& targets, std::uint16_t port, std::uint16_t reply_port,
+                                     int tries, int wait_ms) {
     net::Socket udp = net::udp_open(Ipv4{}, reply_port);
     if (!udp.valid()) return std::nullopt;
     for (int i = 0; i < tries; ++i) {
-        net::udp_send(udp, target, port, kDiscoveryRequest, sizeof kDiscoveryRequest - 1);
+        for (const Ipv4& target : targets) net::udp_send(udp, target, port, kDiscoveryRequest, sizeof kDiscoveryRequest - 1);
         char reply[64];
         Ipv4 from;
         const long n = net::udp_receive(udp, reply, sizeof reply, wait_ms, &from);

@@ -25,7 +25,7 @@ nnh_engine_options(nnh_tool_lib)
 find_package(Threads REQUIRED) # the HTTP server runs on a thread
 target_link_libraries(nnh_tool_lib PUBLIC Threads::Threads)
 if(WIN32)
-    target_link_libraries(nnh_tool_lib PUBLIC ws2_32)
+    target_link_libraries(nnh_tool_lib PUBLIC ws2_32 iphlpapi)
 endif()
 
 add_executable(nnh src/main.cpp)

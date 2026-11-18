@@ -16,6 +16,14 @@ NNH_TEST(ipv4_parses_dotted_quads_only) {
     }
 }
 
+NNH_TEST(broadcast_addresses_come_from_the_prefix) {
+    CHECK(broadcast_of(*parse_ipv4("192.168.10.53"), 24) == *parse_ipv4("192.168.10.255"));
+    CHECK(broadcast_of(*parse_ipv4("10.1.2.3"), 8) == *parse_ipv4("10.255.255.255"));
+    CHECK(broadcast_of(*parse_ipv4("172.17.112.1"), 20) == *parse_ipv4("172.17.127.255"));
+    CHECK(broadcast_of(*parse_ipv4("10.0.0.7"), 32) == *parse_ipv4("10.0.0.7"));
+    CHECK(broadcast_of(*parse_ipv4("10.0.0.7"), 0) == *parse_ipv4("255.255.255.255"));
+}
+
 NNH_TEST(only_the_local_network_is_allowed) {
     for (const char* ok : {"10.0.0.1", "172.16.0.1", "172.31.255.255", "192.168.10.52", "169.254.1.2", "127.0.0.1"}) {
         CHECK(is_local_network(*parse_ipv4(ok)));

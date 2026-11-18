@@ -5,12 +5,15 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <iphlpapi.h>
 using NativeSocket = SOCKET;
 #define NNH_CLOSE_SOCKET closesocket
 #define NNH_SEND_FLAGS 0
 #else
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -217,6 +220,49 @@ long udp_receive(const Socket& socket, void* data, std::size_t size, int timeout
     if (n < 0) return -1;
     if (from != nullptr) *from = from_sockaddr(sa);
     return static_cast<long>(n);
+}
+
+std::vector<Ipv4> local_broadcast_addresses() {
+    std::vector<Ipv4> out;
+    auto add = [&out](Ipv4 address, int prefix) {
+        if (!is_local_network(address) || address.b[0] == 127) return;
+        const Ipv4 b = broadcast_of(address, prefix);
+        for (const Ipv4& known : out) {
+            if (known == b) return;
+        }
+        out.push_back(b);
+    };
+#ifdef _WIN32
+    ULONG size = 16 * 1024;
+    std::vector<unsigned char> buffer(size);
+    const ULONG flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER;
+    auto* list = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
+    if (GetAdaptersAddresses(AF_INET, flags, nullptr, list, &size) == ERROR_BUFFER_OVERFLOW) {
+        buffer.resize(size);
+        list = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
+    }
+    if (GetAdaptersAddresses(AF_INET, flags, nullptr, list, &size) != NO_ERROR) return out;
+    for (auto* adapter = list; adapter != nullptr; adapter = adapter->Next) {
+        if (adapter->OperStatus != IfOperStatusUp) continue;
+        for (auto* a = adapter->FirstUnicastAddress; a != nullptr; a = a->Next) {
+            const auto* sa = reinterpret_cast<const sockaddr_in*>(a->Address.lpSockaddr);
+            add(from_sockaddr(*sa), a->OnLinkPrefixLength);
+        }
+    }
+#else
+    ifaddrs* list = nullptr;
+    if (getifaddrs(&list) != 0) return out;
+    for (ifaddrs* i = list; i != nullptr; i = i->ifa_next) {
+        if (i->ifa_addr == nullptr || i->ifa_netmask == nullptr || i->ifa_addr->sa_family != AF_INET) continue;
+        if ((i->ifa_flags & IFF_UP) == 0 || (i->ifa_flags & IFF_BROADCAST) == 0) continue;
+        const std::uint32_t mask = ntohl(reinterpret_cast<const sockaddr_in*>(i->ifa_netmask)->sin_addr.s_addr);
+        int prefix = 0;
+        while (prefix < 32 && (mask & (0x80000000u >> prefix)) != 0) ++prefix;
+        add(from_sockaddr(*reinterpret_cast<const sockaddr_in*>(i->ifa_addr)), prefix);
+    }
+    freeifaddrs(list);
+#endif
+    return out;
 }
 
 std::optional<Ipv4> local_address_towards(Ipv4 host) {

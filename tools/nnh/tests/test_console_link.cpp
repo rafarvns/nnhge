@@ -117,14 +117,15 @@ NNH_TEST(discovery_finds_the_console_that_answers) {
         // Like the launcher: answer to the sender's address, on the netloader's reply port.
         if (n == 7 && std::memcmp(buffer, "3dsboot", 7) == 0) net::udp_send(fake, from, reply_port, "boot3ds", 7);
     });
-    const auto found = discover_console(kLoopback, fake.local_port(), reply_port, 3, 1000);
+    // The first target answers nothing (another network); the console is found through the second.
+    const auto found = discover_console({Ipv4{{127, 0, 0, 2}}, kLoopback}, fake.local_port(), reply_port, 3, 1000);
     netloader.join();
     CHECK(found && *found == kLoopback);
 }
 
 NNH_TEST(discovery_without_a_console_gives_up) {
     net::Socket silent = net::udp_open(kLoopback, 0);
-    CHECK(!discover_console(kLoopback, silent.local_port(), 0, 2, 50).has_value());
+    CHECK(!discover_console({kLoopback}, silent.local_port(), 0, 2, 50).has_value());
 }
 
 NNH_TEST(a_3dsx_reaches_the_netloader_intact) {

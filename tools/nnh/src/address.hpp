@@ -20,4 +20,7 @@ std::string to_string(Ipv4 address);
 /// Private (10/8, 172.16/12, 192.168/16), link-local (169.254/16) or loopback (127/8): the local network.
 bool is_local_network(Ipv4 address);
 
+/// The broadcast address of a network: `address` with every bit after the first `prefix_length` set.
+Ipv4 broadcast_of(Ipv4 address, int prefix_length);
+
 } // namespace nnh::tool

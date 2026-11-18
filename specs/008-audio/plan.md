@@ -1,6 +1,6 @@
 # Plan 008: Audio — sound effects, streaming music, mixer
 
-Status: draft
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · New decision D21 (below) · Uses spec 007 (assets)
 
 ## Constitution Check (before design)

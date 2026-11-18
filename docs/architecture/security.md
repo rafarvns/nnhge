@@ -42,16 +42,23 @@ least one valid file.
 - Every reader of external data checks sizes and offsets before using them, never trusts counts from the
   file, and fails with a `Result` error instead of crashing.
 - Each parser has a fuzz target in `tests/fuzz/` (today: path validator, save-file validator, asset
-  index). They run as a deterministic mini-fuzz (20 000 mutated inputs) inside `nnh_tests` on every
+  index, WAV reader, Ogg Vorbis reader — which drives the vendored stb_vorbis through open, decoding and
+  seeking). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+  for Ogg, where each run decodes) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
-  build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_fuzz_targets`) are built
+  build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built
   with `-fsanitize=fuzzer-no-link,address` in that configuration: without it libFuzzer gets no coverage
   feedback (it reported `cov: 1` until 2026-11-18) and only mutates blindly. Check that `cov:` grows
   when adding a target. Last run (60 s each): asset index cov 125, path cov 46, save cov 44, no crash.
+  Audio readers (2026-11-18, seeded with `tests/data/sounds/`): WAV 60 s (5.3 M runs), Ogg 9 min, cov 953 —
+  its first minute found a real bug (seeking into a damaged part reported success; now `Corrupted`,
+  regression test `ogg_seek_into_a_damaged_part_is_an_error`); no memory error in stb_vorbis.
 
 ## Supply chain and CI
 
 - Already: downloaded dependencies pinned by URL + SHA-256 (`cmake/nnh_sdl3.cmake`); no binaries in git.
+  Vendored code (`third_party/stb_vorbis`) is unmodified, pinned by commit and SHA-256 in its README,
+  and fuzzed through our reader; assets come from the game's own build, not from the network.
 - Every workflow declares minimal `permissions` (CI: `contents: read`; only the wiki job has
   `contents: write`) and actions are pinned by commit SHA (`# vN` comment next to it). CI runs manually.
 - New dependencies follow `docs/tech/cmake.md` (small, permissive, pinned, justified).

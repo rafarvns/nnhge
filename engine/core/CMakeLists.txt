@@ -12,6 +12,10 @@ add_library(nnh_core STATIC
     src/crash/crash.cpp
     src/crash/report.cpp
     src/assets/asset_index.cpp
+    src/audio/ogg_pages.cpp
+    src/audio/ogg_reader.cpp
+    src/audio/ogg_seek.cpp
+    src/audio/wav_reader.cpp
     src/assets/asset_path.cpp
     src/assets/assets.cpp
     src/debug/debug.cpp
@@ -57,7 +61,8 @@ add_library(nnh_core STATIC
 )
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
-target_link_libraries(nnh_core PRIVATE nnh::core_contract)
+target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)
+target_include_directories(nnh_core PRIVATE ${PROJECT_SOURCE_DIR}/third_party/stb_vorbis)
 nnh_engine_options(nnh_core)
 
 # Build flavor (docs/architecture/foundation.md#build-flavors), PUBLIC so games and platform

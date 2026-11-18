@@ -64,7 +64,10 @@ On 3DS this calls devkitPro's `ctr_generate_smdh()` and `ctr_create_3dsx()`; on 
 **Assets** (`ASSETS <folder>`, spec 007, the recommended way): every file of the folder becomes an asset
 named by its relative path ([api/assets.md](../api/assets.md)). One build step per file, rerun only when
 that file changes, writes into `build/<preset>/<game dir>/assets/<path>`: PNGs are checked like images
-(below) and, on 3DS, converted by `tex3ds` under the same name; other files are copied. Then
+(below) and, on 3DS, converted by `tex3ds` under the same name; `.wav` and `.ogg` files are checked by
+`nnh_check_sound.cmake` (header only: PCM 8/16-bit WAV or Ogg Vorbis, mono or stereo, 8000–48000 Hz —
+`jump.wav is 24-bit: save it as PCM 16-bit (or 8-bit)`; ctest cases `sound_check_*`, fixtures in
+`tests/data/sounds/`) and copied; other files are copied. Then
 `nnh_asset_index.cmake` writes `assets/.nnh_assets` (the sorted list core reads at init) and fails the
 build for names that break the asset path rules, use characters outside `A-Z a-z 0-9 space - _ .`, are
 reserved, or differ from another only by letter case; it also deletes outputs of removed assets. On PC
@@ -90,7 +93,10 @@ error) to the arrays; games without `IMAGES` link an empty default from core. Ge
 **Add a test file**: list it in `tests/CMakeLists.txt`.
 
 **Add a dependency**: avoid it. If unavoidable: small, permissive license, fetched with a pinned URL and
-`URL_HASH SHA256=...`, linked `PRIVATE`, and the build-time impact measured (constitution III).
+`URL_HASH SHA256=...`, linked `PRIVATE`, and the build-time impact measured (constitution III). A
+single-file library may instead be vendored, unmodified, in `third_party/<name>/` with a `README.md`
+(upstream, commit, SHA-256, license) and its own `CMakeLists.txt` building an object library with
+warnings off — like `third_party/stb_vorbis` (spec 008), linked into `nnh_core`.
 
 ## Rules (Modern CMake)
 

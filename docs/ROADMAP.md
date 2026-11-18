@@ -91,7 +91,7 @@ linked); `text.3dsx` 239,736 bytes.
 - [ ] Later: `SYSTEM_MODE` (more memory, New 3DS 804 MHz) for `.cia`; `nnh package` with the CLI (M6)
 
 ## M6 — NNH Link
-- [ ] `nnh run --console <ip>` (3dslink-compatible send + log stream)
+- [ ] `nnh run --console <ip>` (3dslink-compatible send + log stream) — [spec 010](../specs/010-nnh-cli-run/spec.md) (draft)
 - [ ] NNH Link app: discover dev server, list projects, request build, receive and launch
 - [ ] Pairing code for LAN safety
 

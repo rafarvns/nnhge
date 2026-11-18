@@ -44,7 +44,7 @@ Always leave through `aptMainLoop()` returning false or the game's own exit; nev
 | RAM for apps | ~64 MB on Old 3DS in the default mode (more on New 3DS) | Budget assets; stream music |
 | Linear heap | 32 MB by default on Old 3DS; rest is the normal heap (`malloc`) | GPU buffers and textures must be in linear memory or VRAM |
 | VRAM | 6 MB, two 3 MB banks; allocations don't cross banks | Render targets (including the screens) live here |
-| Textures | Width and height each a power of two, 8 to 1024 | Pad or atlas images; `assetc` enforces this |
+| Textures | Width and height each a power of two, 8 to 1024 | Pad or atlas images; the build checks it (`IMAGES` and `ASSETS`) |
 | Screens | Top 400×240 (stereo 3D), bottom 320×240 (touch) | Framebuffers are rotated in memory; citro2d handles it |
 
 - The CPU **cannot write VRAM** directly; upload with the GPU (citro3d does it).

@@ -7,17 +7,20 @@
 
 #include "nnh/gfx.hpp"
 #include "nnh/platform/input.hpp"
+#include "sim_layout.hpp"
 
 namespace nnh::platform::pc {
-
-/// The simulator window shows both screens in a 400x480 logical area.
-inline constexpr int kLogicalWidth = 400;
-inline constexpr int kLogicalHeight = 480;
 
 struct Context {
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
     bool gpu_renderer = false;              // renderer runs on an SDL_GPUDevice (see app_pc.cpp)
+    SDL_Texture* screens[2] = {nullptr, nullptr}; // render targets, native size: [0] top, [1] bottom
+    // Window view (window_pc.cpp, spec 006)
+    SimLayout layout = SimLayout::Stacked;
+    int scale = 2;                          // 1..kMaxSimScale, when not fitting
+    bool fit = false;                       // largest scale that fits the window
+    bool fullscreen = false;
     std::uint64_t frames = 0;               // frames ended since init
     std::uint64_t exit_after = 0;           // NNH_EXIT_AFTER_FRAMES (0 = never)
     const char* screenshot_path = nullptr;  // NNH_SCREENSHOT
@@ -43,11 +46,16 @@ int sdl_text_line_height();
 /// Sets platform::last_error() to "<what>: <SDL_GetError()>".
 void set_error(const char* what);
 
-/// Area of a 3DS screen inside the logical window: top at (0,0), bottom centered below it.
-inline SDL_FRect screen_rect(Screen screen) {
-    if (screen == Screen::Top) return SDL_FRect{0, 0, 400, 240};
-    return SDL_FRect{40, 240, 320, 240};
+/// Makes a 3DS screen's render target current: drawing then uses native screen pixels, clipped to it.
+inline void draw_on(Screen screen) {
+    SDL_SetRenderTarget(context().renderer, context().screens[screen == Screen::Top ? 0 : 1]);
 }
+
+/// Where the screens are in the window now (render-output pixels), from the view settings.
+LayoutResult current_layout();
+
+/// Copies both screens into the window according to the layout (end of frame, crash screen).
+void compose_screens();
 
 inline void set_draw_color(Color c) { SDL_SetRenderDrawColor(context().renderer, c.r, c.g, c.b, c.a); }
 

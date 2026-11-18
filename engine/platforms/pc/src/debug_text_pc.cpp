@@ -11,10 +11,8 @@ namespace nnh::platform::pc {
 
 void sdl_text(Screen screen, int x, int y, const char* text, Color color) {
     SDL_Renderer* renderer = context().renderer;
-    const SDL_FRect area = screen_rect(screen);
-    const SDL_Rect clip{static_cast<int>(area.x), static_cast<int>(area.y), static_cast<int>(area.w),
-                        static_cast<int>(area.h)};
-    SDL_SetRenderClipRect(renderer, &clip);
+    draw_on(screen);
+    const SDL_FRect area{0, 0, 0, 0};
     set_draw_color(color);
 
     // SDL_RenderDebugText does not handle '\n': draw line by line.

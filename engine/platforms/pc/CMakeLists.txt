@@ -20,6 +20,7 @@ add_library(nnh_platform_pc STATIC
     src/time_pc.cpp
     src/touch_pc.cpp
     src/video_pc.cpp
+    src/window_pc.cpp
     ../shared/stdio_fs.cpp
 )
 add_library(nnh::platform_pc ALIAS nnh_platform_pc)

@@ -16,16 +16,22 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `gamepad_pc.cpp` | First connected gamepad (hot-plug), buttons by position, sticks, triggers |
 | `touch_pc.cpp` | Left mouse button on the bottom screen → touch, window → 3DS pixels |
 | `sim_layout.cpp`, `sim_settings.cpp` | Window layouts and remembered settings (spec 006, in progress): pure, SDL-free, unit tested in `tests/simulator/` |
+| `window_pc.cpp` | The window view: current layout, composition of the two screen targets (spec 006) |
 | `input_override_pc.cpp` | `NNH_SIM_INPUT` scripted input (Debug/Development) |
 | `debug_text_pc.cpp` | SDL's 8×8 debug font, for the crash screen only (it must work when the engine is broken); game and debug text use the engine's built-in font |
 | `texture_pc.cpp` (also) | `texture_create_rgba`: `SDL_CreateTexture` + `SDL_UpdateTexture` (the built-in font) |
 
 ## How the 3DS is simulated
 
-- One window with a **400×480 logical area**: top screen at (0,0) 400×240, bottom screen at (40,240)
-  320×240. `SDL_SetRenderLogicalPresentation(..., SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)` keeps pixels
-  sharp at any window size; drawing code always uses logical coordinates.
-- Drawing on a screen = offset by its rectangle + clip rect to it, so nothing leaks onto the other screen.
+- Each 3DS screen is a **render target at native size** (400×240, 320×240): drawing on a screen =
+  `pc::draw_on(screen)` and native screen pixels, clipped by the target itself. Sprites, rotation and
+  blending are rasterized at the console's resolution, like on the 3DS.
+- At the end of the frame `compose_screens()` (`window_pc.cpp`) copies both targets into the window at an
+  integer scale (nearest filtering) where the layout says (`sim_layout.cpp`, spec 006): stacked like the
+  console by default, at `AppConfig::pc_window_scale`. No SDL logical presentation: the window works in
+  render-output pixels; the mouse goes through `SDL_RenderCoordinatesFromWindow` and the layout.
+  (Before spec 006 the simulator drew into one 400×480 logical canvas scaled by SDL, which rasterized
+  rotated sprites at the window's resolution: those screenshots changed slightly.)
 - **60 Hz** like the console: vsync on, plus `SDL_DelayPrecise` pacing for faster monitors; if far behind
   (debugger, window drag) it resyncs instead of catching up.
 - The game owns `main()`: the backend defines `SDL_MAIN_HANDLED`, includes `<SDL3/SDL_main.h>` and calls

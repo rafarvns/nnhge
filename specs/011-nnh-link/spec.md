@@ -1,6 +1,6 @@
 # Spec 011: NNH Link — build and run from the console
 
-Status: draft
+Status: approved (2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 010](../010-nnh-cli-run/spec.md) (the `nnh` tool, its netloader/log code, decision D23).
 Second half of ROADMAP M6 (decisions D7, D8: builds always happen on the PC).
@@ -81,18 +81,18 @@ A pairing code entered once makes sure only your console and your PC talk to eac
 
 ## Open questions
 
-Proposals from the maintainers, to confirm or change:
+Answered by the maintainer (2026-11-18): the proposals, all accepted.
 
-- [ ] **Launching** — proposal: Luma's `hb:ldr` (set the target path, exit; the system loads it), the
+- [x] **Launching** — proposal: Luma's `hb:ldr` (set the target path, exit; the system loads it), the
   mechanism the Homebrew Launcher itself uses; NNH Link runs as a `.3dsx`.
-- [ ] **Returning to NNH Link** — proposal: NNH Link starts the game with an argument naming itself; the
+- [x] **Returning to NNH Link** — proposal: NNH Link starts the game with an argument naming itself; the
   engine's 3DS platform, seeing it, sets `hb:ldr`'s target back to NNH Link when the game exits. Games
   started any other way are unaffected.
-- [ ] **Pairing and authentication** — proposal: `nnh serve` shows a 6-digit code valid for 2 minutes; the
+- [x] **Pairing and authentication** — proposal: `nnh serve` shows a 6-digit code valid for 2 minutes; the
   console sends it once; both derive a 256-bit secret; every connection then does a challenge–response
   with HMAC-SHA-256 (no encryption). Five wrong codes block pairing until `nnh serve` restarts.
-- [ ] **Protocol and ports** — proposal: our own small TCP protocol (versioned, length-prefixed messages)
+- [x] **Protocol and ports** — proposal: our own small TCP protocol (versioned, length-prefixed messages)
   on port 17492, discovery by UDP broadcast on the same port; the game's log still uses 17491 as in
   `nnh run`.
-- [ ] **Where NNH Link lives** — proposal: `apps/nnh-link/`, built with `nnh_add_game()` in every preset
+- [x] **Where NNH Link lives** — proposal: `apps/nnh-link/`, built with `nnh_add_game()` in every preset
   (a new top-level `apps/` folder for programs that ship with the engine, unlike `examples/`).

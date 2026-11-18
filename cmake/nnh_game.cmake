@@ -62,6 +62,12 @@ function(nnh_add_game target)
         NNH_TITLE "${G_TITLE}" NNH_DESCRIPTION "${G_DESCRIPTION}" NNH_AUTHOR "${G_AUTHOR}"
         NNH_VERSION_MAJOR ${P_VERSION_MAJOR} NNH_VERSION_MINOR ${P_VERSION_MINOR} NNH_VERSION_MICRO ${P_VERSION_MICRO}
         NNH_CIA ${P_CIA})
+    # One line in the games manifest for the nnh tool (spec 010): name|binary dir|has a .cia.
+    set(_has_cia 0)
+    if(P_CIA)
+        set(_has_cia 1)
+    endif()
+    file(APPEND "${CMAKE_BINARY_DIR}/nnh_games.txt" "${target}|${CMAKE_CURRENT_BINARY_DIR}|${_has_cia}\n")
     if(P_CIA)
         set_target_properties(${target} PROPERTIES NNH_CIA_UNIQUE_ID "${P_UNIQUE_ID}"
             NNH_CIA_PRODUCT_CODE "${P_PRODUCT_CODE}" NNH_CIA_BANNER "${P_BANNER}" NNH_CIA_BANNER_AUDIO "${P_BANNER_AUDIO}")

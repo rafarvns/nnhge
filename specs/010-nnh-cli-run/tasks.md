@@ -22,9 +22,9 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 3 — commands
 
-- [ ] **T3.1** games manifest written by `nnh_add_game()`; `repo` (root, presets, CMake through devkitPro on Windows) — covers FR-2
-- [ ] **T3.2** `nnh build`, `nnh run` (3DS and `--pc`), saved logs, remembered console — covers FR-2, FR-3, FR-4, FR-5
-- [ ] **T3.3** `nnh install` — covers FR-6
+- [x] **T3.1** games manifest written by `nnh_add_game()`; `repo` (root, presets, CMake through devkitPro on Windows) — covers FR-2
+- [x] **T3.2** `nnh build`, `nnh run` (3DS and `--pc`), saved logs, remembered console — covers FR-2, FR-3, FR-4, FR-5
+- [x] **T3.3** `nnh install` — covers FR-6
 
 ## Stage 4 — verification and docs
 

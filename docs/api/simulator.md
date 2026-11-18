@@ -32,6 +32,17 @@ Keys that change how the screens are shown (every build, including Release; the 
 The window title shows the new layout and scale for two seconds. The mouse touches the bottom screen
 wherever the layout draws it ([input.md](input.md#pc-simulator-controls)).
 
+**Remembered**: layout, scale, fit, fullscreen and the window's position and size are saved when the game
+closes and restored next time, per game, in the user's preferences — on Windows
+`%APPDATA%\NNHGE simulator\<data folder>\window.ini` — never in the game's data folder or saves. Delete
+the file to go back to the defaults; a damaged file is ignored, and so is a saved position that is no
+longer on any monitor.
+
+**Screenshots and scripted runs** (`NNH_EXIT_AFTER_FRAMES`, `NNH_SCREENSHOT`, `SDL_VIDEO_DRIVER=offscreen`)
+neither read nor write that file: they use the stacked layout at `AppConfig::pc_window_scale` (default 2),
+so reference images don't depend on anyone's preferences. To capture another layout, set
+`NNH_SIM_LAYOUT` / `NNH_SIM_SCALE` (below).
+
 ## Developer keys (Debug and Development builds)
 
 | Key | Action |
@@ -48,9 +59,13 @@ wherever the layout draws it ([input.md](input.md#pc-simulator-controls)).
 |----------|--------|
 | `NNH_EXIT_AFTER_FRAMES=<n>` | `nnh::frame()` returns false after *n* frames. |
 | `NNH_SCREENSHOT=<file.png>` | With `NNH_EXIT_AFTER_FRAMES`, saves the last frame as PNG. |
+| `NNH_SIM_LAYOUT=<layout>` | Layout for this run: `stacked`, `side`, `large`, `top`, `bottom`. Disables the remembered settings. |
+| `NNH_SIM_SCALE=<n>` | Scale for this run: `1`–`6`, or `fit`. Disables the remembered settings. |
 | `NNH_SIM_RENDERER=sdl` | Use SDL's default renderer instead of the GPU-device one (see [sdl3.md](../tech/sdl3.md#renderer-2d-now-3d-later)). |
 | `NNH_SIM_INPUT=<script>` | Debug/Development: replaces keyboard, mouse and gamepad on every frame with fixed input, e.g. `circle=0.7,0.5;cstick=-1,0;touch=160,120;buttons=A+R+Start`. Every part is optional; sticks in [-1, 1] (y up, before the dead zone), touch in bottom-screen pixels, buttons by `nnh::Button` name joined with `+`. |
 
 ```sh
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=shot.png build/pc-debug/examples/hello/hello.exe
+NNH_SIM_LAYOUT=side NNH_SIM_SCALE=2 NNH_EXIT_AFTER_FRAMES=60 NNH_SCREENSHOT=side.png \
+  build/pc-debug/examples/sprites/sprites.exe
 ```

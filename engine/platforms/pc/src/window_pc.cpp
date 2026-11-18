@@ -6,9 +6,12 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "context_pc.hpp"
 #include "sim_layout.hpp"
+#include "sim_settings.hpp"
 
 namespace nnh::platform {
 namespace {
@@ -104,6 +107,135 @@ void pc::view_update() {
     if (ctx.notice_until_ms != 0 && SDL_GetTicks() >= ctx.notice_until_ms) {
         SDL_SetWindowTitle(ctx.window, ctx.title);
         ctx.notice_until_ms = 0;
+    }
+}
+
+namespace {
+
+/// Scripted runs (screenshots, CI, headless) must not depend on, or change, the developer's settings.
+bool scripted_run() {
+    const pc::Context& ctx = pc::context();
+    const char* driver = SDL_GetCurrentVideoDriver();
+    return ctx.exit_after != 0 || ctx.screenshot_path != nullptr ||
+           (driver != nullptr && std::strcmp(driver, "offscreen") == 0) || std::getenv("NNH_SIM_LAYOUT") != nullptr ||
+           std::getenv("NNH_SIM_SCALE") != nullptr;
+}
+
+/// NNH_SIM_LAYOUT=stacked|side|large|top|bottom, NNH_SIM_SCALE=1..6|fit.
+void apply_environment() {
+    pc::Context& ctx = pc::context();
+    pc::parse_layout(std::getenv("NNH_SIM_LAYOUT"), ctx.layout);
+    if (const char* scale = std::getenv("NNH_SIM_SCALE")) {
+        if (std::strcmp(scale, "fit") == 0) {
+            ctx.fit = true;
+        } else {
+            const int value = std::atoi(scale);
+            if (value >= 1 && value <= pc::kMaxSimScale) ctx.scale = value;
+        }
+    }
+}
+
+void load_settings_file() {
+    pc::Context& ctx = pc::context();
+    SDL_IOStream* io = SDL_IOFromFile(ctx.settings_path, "rb");
+    if (io == nullptr) return; // first run: defaults
+    char text[pc::kMaxSettingsBytes];
+    const Sint64 size = SDL_GetIOSize(io);
+    const std::size_t read = size > 0 && size <= static_cast<Sint64>(sizeof text) ? SDL_ReadIO(io, text, sizeof text) : 0;
+    SDL_CloseIO(io);
+    pc::SimSettings s;
+    s.scale = ctx.scale; // AppConfig's scale unless the file says otherwise
+    if (read == 0 || !pc::parse_settings(text, read, s)) return;
+    ctx.layout = s.layout;
+    ctx.scale = s.scale;
+    ctx.fit = s.fit;
+    ctx.fullscreen = s.fullscreen; // applied after the window exists
+    ctx.has_window_rect = s.has_window;
+    ctx.window_x = s.x;
+    ctx.window_y = s.y;
+    ctx.window_w = s.w;
+    ctx.window_h = s.h;
+}
+
+/// True if the rectangle overlaps a connected display by at least 64x64 pixels.
+bool on_some_display(int x, int y, int w, int h) {
+    int count = 0;
+    SDL_DisplayID* displays = SDL_GetDisplays(&count);
+    bool found = false;
+    for (int i = 0; displays != nullptr && i < count && !found; ++i) {
+        SDL_Rect bounds;
+        if (!SDL_GetDisplayBounds(displays[i], &bounds)) continue;
+        const int overlap_w = SDL_min(x + w, bounds.x + bounds.w) - SDL_max(x, bounds.x);
+        const int overlap_h = SDL_min(y + h, bounds.y + bounds.h) - SDL_max(y, bounds.y);
+        found = overlap_w >= 64 && overlap_h >= 64;
+    }
+    SDL_free(displays);
+    return found;
+}
+
+} // namespace
+
+void pc::view_load(const char* data_folder) {
+    Context& ctx = context();
+    ctx.persist_view = !scripted_run();
+    if (!ctx.persist_view) {
+        apply_environment();
+        return;
+    }
+    // Never the game's data folder (saves): a separate per-user folder for the simulator.
+    char* folder = SDL_GetPrefPath("NNHGE simulator", data_folder != nullptr ? data_folder : "game");
+    if (folder == nullptr) {
+        ctx.persist_view = false;
+        return;
+    }
+    std::snprintf(ctx.settings_path, sizeof ctx.settings_path, "%swindow.ini", folder);
+    SDL_free(folder);
+    load_settings_file();
+}
+
+pc::SimSize pc::view_initial_window_size() {
+    const Context& ctx = context();
+    if (ctx.has_window_rect && (ctx.fit || ctx.fullscreen)) return SimSize{ctx.window_w, ctx.window_h};
+    return natural_size(ctx.layout, ctx.scale);
+}
+
+void pc::view_after_create() {
+    Context& ctx = context();
+    if (ctx.has_window_rect && on_some_display(ctx.window_x, ctx.window_y, ctx.window_w, ctx.window_h)) {
+        SDL_SetWindowPosition(ctx.window, ctx.window_x, ctx.window_y);
+    }
+    if (ctx.fullscreen) {
+        ctx.fullscreen = false;
+        set_fullscreen(true);
+    } else {
+        view_resize_window(); // high-DPI: the natural size is in pixels, the window in window units
+    }
+}
+
+void pc::view_save() {
+    Context& ctx = context();
+    if (!ctx.persist_view || ctx.window == nullptr) return;
+    if (!ctx.fullscreen) { // in fullscreen keep the last windowed place
+        SDL_GetWindowPosition(ctx.window, &ctx.window_x, &ctx.window_y);
+        SDL_GetWindowSize(ctx.window, &ctx.window_w, &ctx.window_h);
+        ctx.has_window_rect = true;
+    }
+    SimSettings s;
+    s.layout = ctx.layout;
+    s.scale = ctx.scale;
+    s.fit = ctx.fit;
+    s.fullscreen = ctx.fullscreen;
+    s.has_window = ctx.has_window_rect && ctx.window_w >= 100 && ctx.window_h >= 100;
+    s.x = ctx.window_x;
+    s.y = ctx.window_y;
+    s.w = ctx.window_w;
+    s.h = ctx.window_h;
+    char text[kMaxSettingsBytes];
+    const int length = format_settings(s, text, sizeof text);
+    if (length <= 0) return;
+    if (SDL_IOStream* io = SDL_IOFromFile(ctx.settings_path, "wb")) {
+        SDL_WriteIO(io, text, static_cast<std::size_t>(length));
+        SDL_CloseIO(io);
     }
 }
 

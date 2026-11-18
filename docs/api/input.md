@@ -114,7 +114,8 @@ pushed further wins.
   its buttons are released and another connected pad takes over.
 - A touch starts when the left button goes down **on the bottom screen**, then follows the mouse
   (clamped to the screen's edges, even outside the window) until the button is released. The position is
-  in 3DS pixels whatever the window size.
+  in 3DS pixels whatever the window size and layout ([simulator.md](simulator.md#window)); in the "Top
+  only" layout there is no touch screen.
 - Scripted input for screenshots and tests: `NNH_SIM_INPUT` ([simulator.md](simulator.md)).
 
 Remapping (actions like "Jump" bound to several keys) is a later spec.

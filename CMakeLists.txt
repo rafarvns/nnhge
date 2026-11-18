@@ -44,3 +44,8 @@ if(NNH_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# The nnh command-line tool (spec 010): a host program, so only in the PC presets.
+if(NNH_PLATFORM STREQUAL "pc")
+    add_subdirectory(tools/nnh)
+endif()

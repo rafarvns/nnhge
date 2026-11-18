@@ -51,6 +51,8 @@ void read_input(InputSample& out) {
     for (const KeyBinding& binding : kKeyBindings) {
         if (keys[binding.key]) out.buttons |= static_cast<std::uint32_t>(binding.button);
     }
+    // Alt+Enter toggles fullscreen (window_pc.cpp): it must not also press START.
+    if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) out.buttons &= ~static_cast<std::uint32_t>(Button::Start);
     float stick[4] = {};
     read_stick_keys(keys, kCirclePadKeys, stick[0], stick[1]);
     read_stick_keys(keys, kCStickKeys, stick[2], stick[3]);

@@ -21,6 +21,8 @@ struct Context {
     int scale = 2;                          // 1..kMaxSimScale, when not fitting
     bool fit = false;                       // largest scale that fits the window
     bool fullscreen = false;
+    char title[128] = {};                   // the game's window title, without a notice
+    std::uint64_t notice_until_ms = 0;      // the title shows the view until then (0 = no notice)
     std::uint64_t frames = 0;               // frames ended since init
     std::uint64_t exit_after = 0;           // NNH_EXIT_AFTER_FRAMES (0 = never)
     const char* screenshot_path = nullptr;  // NNH_SCREENSHOT
@@ -56,6 +58,13 @@ LayoutResult current_layout();
 
 /// Copies both screens into the window according to the layout (end of frame, crash screen).
 void compose_screens();
+
+/// Window keys, in every build: F2 layout, F3/F4 scale, F5 fit, F9 or Alt+Enter fullscreen.
+void view_key_pressed(SDL_Scancode key, SDL_Keymod mods);
+/// Once per frame: ends the title notice when its time is up.
+void view_update();
+/// Resizes the window to the layout's natural size (unless fitting or fullscreen).
+void view_resize_window();
 
 inline void set_draw_color(Color c) { SDL_SetRenderDrawColor(context().renderer, c.r, c.g, c.b, c.a); }
 

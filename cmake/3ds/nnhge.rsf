@@ -1,0 +1,169 @@
+# NNHGE's ROM spec for homebrew .cia files (spec 009). makerom reads it with values substituted by
+# nnh_cia.cmake: -DAPP_TITLE, -DAPP_PRODUCT_CODE, -DAPP_UNIQUE_ID, -DAPP_ROMFS.
+# Format: makerom's RSF (YAML), documented at github.com/3DSGuy/Project_CTR/tree/master/makerom.
+# The system call numbers, service names and system module title IDs are fixed facts of the 3DS OS.
+# Defaults on purpose (spec 009): 64 MB application memory, 268 MHz, no L2 cache — the Old 3DS budget the
+# engine is built for; the New 3DS modes come later as an option.
+
+BasicInfo:
+  Title                   : "$(APP_TITLE)"
+  ProductCode             : "$(APP_PRODUCT_CODE)"
+  Logo                    : Homebrew
+
+RomFs:
+  RootPath                : "$(APP_ROMFS)" # the game's built assets folder (romfs:/ at run time)
+
+TitleInfo:
+  Category                : Application
+  UniqueId                : $(APP_UNIQUE_ID)
+
+Option:
+  UseOnSD                 : true  # installed to the SD card
+  FreeProductCode         : true  # homebrew product codes
+  MediaFootPadding        : false
+  EnableCrypt             : false # homebrew: unencrypted
+  EnableCompress          : true  # compresses the code
+
+AccessControlInfo:
+  CoreVersion                   : 2
+  DescVersion                   : 2
+  ReleaseKernelMajor            : "02"
+  ReleaseKernelMinor            : "33"
+  UseExtSaveData                : false
+  FileSystemAccess:
+   - DirectSdmc                 # the game's data folder: sdmc:/3ds/<data_folder>/
+  MemoryType                    : Application
+  SystemMode                    : 64MB
+  IdealProcessor                : 0
+  AffinityMask                  : 1
+  Priority                      : 16
+  MaxCpu                        : 0x9E
+  HandleTableSize               : 0x200
+  DisableDebug                  : false
+  EnableForceDebug              : false
+  CanWriteSharedPage            : true
+  CanUsePrivilegedPriority      : false
+  CanUseNonAlphabetAndNumber    : true
+  PermitMainFunctionArgument    : true
+  CanShareDeviceMemory          : true  # GPU and DSP buffers shared with system services
+  RunnableOnSleep               : false
+  SpecialMemoryArrange          : true
+  SystemModeExt                 : Legacy
+  CpuSpeed                      : 268MHz
+  EnableL2Cache                 : false
+  CanAccessCore2                : true
+  IORegisterMapping:
+   - 1ff00000-1ff7ffff          # DSP memory (ndsp)
+  MemoryMapping:
+   - 1f000000-1f5fffff:r        # VRAM (read)
+  SystemCallAccess:
+    ControlMemory: 1
+    QueryMemory: 2
+    ExitProcess: 3
+    GetProcessIdealProcessor: 6
+    CreateThread: 8
+    ExitThread: 9
+    SleepThread: 10
+    GetThreadPriority: 11
+    SetThreadPriority: 12
+    GetThreadIdealProcessor: 15
+    GetCurrentProcessorNumber: 17
+    CreateMutex: 19
+    ReleaseMutex: 20
+    CreateSemaphore: 21
+    ReleaseSemaphore: 22
+    CreateEvent: 23
+    SignalEvent: 24
+    ClearEvent: 25
+    CreateTimer: 26
+    SetTimer: 27
+    CancelTimer: 28
+    ClearTimer: 29
+    CreateMemoryBlock: 30
+    MapMemoryBlock: 31
+    UnmapMemoryBlock: 32
+    CreateAddressArbiter: 33
+    ArbitrateAddress: 34
+    CloseHandle: 35
+    WaitSynchronization1: 36
+    WaitSynchronizationN: 37
+    DuplicateHandle: 39
+    GetSystemTick: 40
+    GetHandleInfo: 41
+    GetSystemInfo: 42
+    GetProcessInfo: 43
+    GetThreadInfo: 44
+    ConnectToPort: 45
+    SendSyncRequest1: 46
+    SendSyncRequest2: 47
+    SendSyncRequest3: 48
+    SendSyncRequest4: 49
+    SendSyncRequest: 50
+    GetProcessId: 53
+    GetProcessIdOfThread: 54
+    GetThreadId: 55
+    GetResourceLimit: 56
+    GetResourceLimitLimitValues: 57
+    GetResourceLimitCurrentValues: 58
+    GetThreadContext: 59
+    Break: 60                   # the crash handler (spec 002)
+    OutputDebugString: 61
+    ControlProcessMemory: 112
+    Backdoor: 123
+  ServiceAccessControl:         # what libctru and the engine use, plus common extras for games
+   - APT:U                      # app lifecycle, HOME Menu, sleep
+   - ac:u                       # network status
+   - cfg:u                      # system language, model
+   - csnd:SND
+   - dsp::DSP                   # audio (spec 008)
+   - frd:u
+   - fs:USER                    # romfs and the SD card
+   - gsp::Gpu                   # graphics
+   - gsp::Lcd
+   - hid:USER                   # buttons, Circle Pad, touch
+   - http:C
+   - ir:rst                     # New 3DS C-Stick, ZL/ZR (spec 003)
+   - ir:USER
+   - mic:u
+   - ndm:u
+   - nwm::UDS
+   - ptm:u                      # battery, sleep
+   - soc:U                      # 3dslink logs in Development builds
+   - ssl:C
+   - y2r:u
+
+SystemControlInfo:
+  SaveDataSize: 0KB             # games save on the SD card (nnh::save), not in title save data
+  RemasterVersion: 0
+  StackSize: 0x40000
+  Dependency:
+    ac: 0x0004013000002402
+    am: 0x0004013000001502
+    boss: 0x0004013000003402
+    camera: 0x0004013000001602
+    cecd: 0x0004013000002602
+    cfg: 0x0004013000001702
+    codec: 0x0004013000001802
+    csnd: 0x0004013000002702
+    dlp: 0x0004013000002802
+    dsp: 0x0004013000001a02
+    friends: 0x0004013000003202
+    gpio: 0x0004013000001b02
+    gsp: 0x0004013000001c02
+    hid: 0x0004013000001d02
+    http: 0x0004013000002902
+    i2c: 0x0004013000001e02
+    ir: 0x0004013000003302
+    mcu: 0x0004013000001f02
+    mic: 0x0004013000002002
+    ndm: 0x0004013000002b02
+    news: 0x0004013000003502
+    nim: 0x0004013000002c02
+    nwm: 0x0004013000002d02
+    pdn: 0x0004013000002102
+    ps: 0x0004013000003102
+    ptm: 0x0004013000002202
+    ro: 0x0004013000003702
+    socket: 0x0004013000002e02
+    spi: 0x0004013000002302
+    ssl: 0x0004013000002f02

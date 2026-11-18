@@ -70,7 +70,9 @@ WAV, at most 3 s), with NNHGE defaults from `cmake/3ds/` (drawn by `scripts/make
 icon is checked by a build step on every system (`nnh_check_icon.cmake`), so a wrong icon fails on PC
 too. `TITLE` is also compiled into the game as `NNH_GAME_TITLE`, the default `AppConfig::title`. Script
 tests: `icon_check_*`, `banner_check_*`, `package_check_*`, `package_resolve_*`, `game_title_*`
-(fixtures in `tests/data/package/`). The `.cia` step itself comes with spec 009 stage 3.
+(fixtures in `tests/data/package/`).
+
+**Distribution** (3DS, spec 009, `cmake/nnh_cia.cmake`): none of these is part of the normal build. `<game>_dist` copies the `.3dsx` (and, with `CIA`, the `.cia`) into `build/<preset>/dist/<game>/`; `dist` does it for every game; `<game>_cia` builds `dist/<game>/<game>.cia` with makerom from the same ELF, SMDH and assets folder (as romfs; an empty one without `ASSETS`), our RSF `cmake/3ds/nnhge.rsf` and a banner made by bannertool. The tools are fetched by the target `nnh_ctr_tools` the first time a `.cia` is built (`cmake/nnh_fetch_ctr_tools.cmake`: makerom v0.19.0 and bannertool 1.2.3, Windows and Linux x86-64, pinned by SHA-256, into `build/<preset>/_tools/`), so configuring and building games downloads nothing. Offline or on macOS, configure with `-DNNH_MAKEROM=<path> -DNNH_BANNERTOOL=<path>`.
 
 **Assets** (`ASSETS <folder>`, spec 007, the recommended way): every file of the folder becomes an asset
 named by its relative path ([api/assets.md](../api/assets.md)). One build step per file, rerun only when

@@ -15,11 +15,13 @@
 # IMAGES are checked, converted and embedded (nnh_images.cmake); load them with nnh::load_texture("name").
 # Package (spec 009, nnh_package_rules.cmake): the metadata is checked at configure time; ICON (default:
 # the NNHGE icon) at build time, on every system. TITLE becomes the default AppConfig::title. CIA options
-# are stored as target properties (NNH_CIA_*) for the .cia step.
+# are stored as target properties (NNH_CIA_*); on 3DS, nnh_cia.cmake adds <target>_dist, dist and, with
+# CIA, <target>_cia.
 
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_assets.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_images.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_package_rules.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_cia.cmake")
 set(_NNH_GAME_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(nnh_add_game target)
@@ -82,6 +84,11 @@ function(nnh_add_game target)
         ctr_generate_smdh(${target}.smdh NAME "${G_TITLE}" DESCRIPTION "${G_DESCRIPTION}" AUTHOR "${G_AUTHOR}"
                           ICON "${P_ICON}")
         ctr_create_3dsx(${target} SMDH ${target}.smdh ${_romfs})
+        set(_assets_flag "")
+        if(G_ASSETS)
+            set(_assets_flag ASSETS)
+        endif()
+        nnh_add_3ds_package(${target} ${_assets_flag}) # <target>_dist, dist, <target>_cia
     elseif(WIN32)
         # Copy runtime DLLs (SDL3.dll) next to the executable so it runs from the build folder.
         add_custom_command(TARGET ${target} POST_BUILD

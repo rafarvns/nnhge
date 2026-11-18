@@ -57,7 +57,7 @@ nnh_add_game(audio
 
 ### Tools (`cmake/nnh_ctr_tools.cmake`)
 
-`nnh_ctr_tools()` — called only when a game has `CIA`:
+`nnh_ctr_tools()` — called only when a game has `CIA` (implementation note: the download became a build step, target `nnh_ctr_tools`, run by the first `.cia` build — with a `CIA` example in the repository, a configure-time download would have hit every 3DS configure):
 - cache variables `NNH_MAKEROM` and `NNH_BANNERTOOL`: if set (offline, macOS), they are used as is;
 - else download into `build/<preset>/_tools/` with `file(DOWNLOAD ... EXPECTED_HASH SHA256=...)` (reusing
   the CA-bundle fallback of `nnh_sdl3.cmake`) and extract:

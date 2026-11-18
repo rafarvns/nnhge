@@ -10,6 +10,7 @@
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/crash.hpp"
+#include "nnh/platform/video.hpp"
 #include "nnh/system.hpp"
 #include "nnh/time.hpp"
 
@@ -17,6 +18,8 @@ namespace nnh::platform_fake {
 
 inline constexpr int kMaxRecordedTexts = 32;
 inline constexpr int kMaxTextLength = 64;
+inline constexpr int kMaxRecordedItems = 64;
+inline constexpr int kMaxRecordedCalls = 32;
 
 /// One recorded debug_text() call (text truncated to kMaxTextLength - 1 characters).
 struct DrawnText {
@@ -46,6 +49,14 @@ struct State {
     int rect_count = 0;          ///< fill_rect() calls in the current frame
     int last_frame_rects = 0;    ///< fill_rect() calls in the frame that ended last
     int last_frame_text_count = 0; ///< debug texts in the frame that ended last
+    // 2D drawing (spec 004)
+    int live_textures = 0;      ///< created and not yet destroyed
+    int item_count = 0;         ///< draw_2d() items in the current frame (first kMaxRecordedItems kept)
+    platform::DrawItem2D items[kMaxRecordedItems];
+    char calls[kMaxRecordedCalls] = {}; ///< current frame: 'T'/'B' draw_2d top/bottom, 'd' debug_text, 'r' fill_rect
+    int last_frame_item_count = 0;      ///< the same, for the frame that ended last
+    platform::DrawItem2D last_frame_items[kMaxRecordedItems];
+    char last_frame_calls[kMaxRecordedCalls] = {};
 };
 
 const State& state();

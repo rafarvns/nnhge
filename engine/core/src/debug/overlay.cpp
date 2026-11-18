@@ -75,6 +75,12 @@ void draw_memory(int& y, int line) {
         platform::debug_text(Screen::Bottom, 4, y, text, colors::white);
         y += line;
     }
+    const gfx::Stats g = gfx::stats();
+    char text[96];
+    std::snprintf(text, sizeof text, "2D %d/%d draws  %d tex %.2f MB", g.draws_last_frame, g.max_draws, g.textures,
+                  static_cast<double>(g.texture_bytes) / 1048576.0);
+    platform::debug_text(Screen::Bottom, 4, y, text, colors::white);
+    y += line;
 }
 
 void draw_scopes(int& y, int line) {

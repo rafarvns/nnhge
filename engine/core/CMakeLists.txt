@@ -12,6 +12,7 @@ add_library(nnh_core STATIC
     src/crash/crash.cpp
     src/crash/report.cpp
     src/debug/debug.cpp
+    src/debug/debug_list.cpp
     src/debug/overlay.cpp
     src/debug/profiler.cpp
     src/events/bus.cpp
@@ -22,9 +23,13 @@ add_library(nnh_core STATIC
     src/fs/path.cpp
     src/fs/save.cpp
     src/fs/save_format.cpp
+    src/gfx/draw2d.cpp
     src/gfx/draw_list.cpp
     src/gfx/gfx.cpp
+    src/gfx/gfx_frame.cpp
+    src/gfx/image_registry_default.cpp
     src/gfx/texture_table.cpp
+    src/gfx/textures.cpp
     src/input/dpad_mirror.cpp
     src/input/input.cpp
     src/input/stick.cpp

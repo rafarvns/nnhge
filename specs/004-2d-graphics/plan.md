@@ -142,9 +142,11 @@ nnh_add_game(sprites SOURCES main.cpp ... IMAGES art/hero.png art/background.png
 
 ### Data and memory (3DS defaults)
 
-One draw list for both screens (each draw keeps its screen): 2048 × ~56 B ≈ 112 KB, plus a 2048-entry
-index for sorting (4 KB) — ≈ 120 KB of heap at `init()`, tag `gfx`. Texture table 128 × ~32 B = 4 KB.
-Debug list 8 KB. Textures themselves: linear memory, w·h·4 bytes each (a 256×256 RGBA8 = 256 KB).
+One draw list for both screens (each draw keeps its screen): 2048 recorded draws (~72 B) + a 2048-entry
+sort index (2 B) + a reusable pass buffer of 2048 items (~60 B) ≈ 136 B per draw, ≈ 280 KB of heap at
+`init()` with the default, tag `gfx` (measured in stage 2; a game drawing less lowers `max_draws`).
+Texture table 128 × ~32 B = 4 KB. Debug list 12 KB (static). Textures themselves: linear memory, w·h·4
+bytes each (a 256×256 RGBA8 = 256 KB).
 
 ## Test strategy
 
@@ -183,4 +185,4 @@ Debug list 8 KB. Textures themselves: linear memory, w·h·4 bytes each (a 256×
 ## Constitution Check (after design)
 
 No change. The contract grows (`texture_create/destroy`, `draw_2d`) and the debug calls move to the end
-of the frame; games only see additions. Heap use at `init()` ≈ 130 KB with defaults, configurable.
+of the frame; games only see additions. Heap use at `init()` ≈ 285 KB with defaults, configurable.

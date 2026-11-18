@@ -1,8 +1,12 @@
 #pragma once
 /// @file nnh/gfx.hpp
-/// Screens, colors and per-frame graphics state. See docs/api/gfx.md.
+/// Screens, colors, 2D drawing (sprites, shapes) and cameras. See docs/api/gfx.md and
+/// docs/architecture/rendering.md.
 
+#include <cstddef>
 #include <cstdint>
+
+#include "nnh/math.hpp"
 
 namespace nnh {
 
@@ -54,6 +58,70 @@ namespace gfx {
 /// nnh::gfx::set_clear_color(nnh::Screen::Top, nnh::rgb(32, 48, 96));
 /// @endcode
 void set_clear_color(Screen screen, Color color);
+
+} // namespace gfx
+
+/// How a texture is drawn by gfx::draw(). Every field is optional:
+/// @code
+/// nnh::gfx::draw(nnh::Screen::Top, hero, pos, {.region = {16 * frame, 0, 16, 16}, .flip_x = facing_left});
+/// @endcode
+struct DrawOptions {
+    Region region{};            ///< pixels of the texture to draw (a sprite-sheet frame); empty = all
+    Vec2 pivot{};               ///< point of the region placed at `position`; rotation and scale use it
+    float rotation = 0;         ///< radians, clockwise on screen
+    Vec2 scale{1, 1};           ///< a negative scale mirrors, like flip_x/flip_y
+    bool flip_x = false;        ///< mirror horizontally
+    bool flip_y = false;        ///< mirror vertically
+    Color tint = colors::white; ///< multiplies the texture's colors (white = unchanged)
+    float opacity = 1;          ///< 0 (invisible) to 1, multiplies the tint's alpha
+    int layer = 0;              ///< 0..15: higher layers draw on top; same layer = call order
+    bool ignore_camera = false; ///< draw in screen pixels (HUD)
+};
+
+/// Layer and camera for shapes.
+struct ShapeOptions {
+    int layer = 0;              ///< 0..15
+    bool ignore_camera = false; ///< draw in screen pixels (HUD)
+};
+
+/// The view of a screen: `position` is the world point shown at the screen's top-left corner.
+/// Draws are shifted by it unless they ignore the camera. A 3D camera will be a separate type.
+struct Camera2D {
+    Vec2 position{};
+};
+
+class Texture; // <nnh/texture.hpp>
+
+namespace gfx {
+
+/// Draws a texture (or a region of it) with its pivot at `position`, in world pixels (screen pixels
+/// minus the screen's camera). Records the draw: it appears when the frame ends, ordered by layer, then
+/// call. Only inside a frame; an empty texture draws nothing. No allocation.
+void draw(Screen screen, const Texture& texture, Vec2 position, const DrawOptions& options = {});
+
+/// Filled rectangle.
+void fill_rect(Screen screen, Rect rect, Color color, const ShapeOptions& options = {});
+
+/// Rectangle outline, 1 pixel wide, inside `rect`.
+void draw_rect(Screen screen, Rect rect, Color color, const ShapeOptions& options = {});
+
+/// 1-pixel line from `from` to `to`.
+void draw_line(Screen screen, Vec2 from, Vec2 to, Color color, const ShapeOptions& options = {});
+
+/// Sets / reads a screen's camera (both start at (0, 0) at init()).
+void set_camera(Screen screen, Camera2D camera);
+Camera2D camera(Screen screen);
+
+/// Capacities and usage, to size AppConfig::gfx.
+struct Stats {
+    int draws_last_frame = 0;     ///< draws submitted by the last finished frame
+    int max_draws = 0;            ///< AppConfig::gfx.max_draws
+    int dropped_draws = 0;        ///< draws dropped since init() because the frame was full
+    int textures = 0;             ///< textures loaded now
+    int max_textures = 0;         ///< AppConfig::gfx.max_textures
+    std::size_t texture_bytes = 0; ///< GPU memory of the loaded textures
+};
+Stats stats();
 
 } // namespace gfx
 } // namespace nnh

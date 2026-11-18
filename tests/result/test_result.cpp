@@ -60,3 +60,39 @@ NNH_TEST(long_error_messages_are_truncated) {
 NNH_TEST(error_codes_have_names) {
     CHECK(std::strcmp(nnh::error_code_name(ErrorCode::Corrupted), "Corrupted") == 0);
 }
+
+namespace {
+
+struct MoveOnly {
+    int value = 0;
+    explicit MoveOnly(int v) : value(v) {}
+    MoveOnly(MoveOnly&& other) noexcept : value(other.value) { other.value = -1; }
+    MoveOnly& operator=(MoveOnly&& other) noexcept {
+        value = other.value;
+        other.value = -1;
+        return *this;
+    }
+    MoveOnly(const MoveOnly&) = delete;
+    MoveOnly& operator=(const MoveOnly&) = delete;
+};
+
+Result<MoveOnly> make_move_only(bool ok) {
+    if (!ok) return Error::make(ErrorCode::NotFound, "none");
+    return MoveOnly{7};
+}
+
+} // namespace
+
+NNH_TEST(result_holds_a_move_only_value) {
+    Result<MoveOnly> r = make_move_only(true);
+    CHECK(r.ok() && r.value().value == 7);
+    Result<MoveOnly> moved = std::move(r);
+    CHECK(moved.ok() && moved.value().value == 7);
+    MoveOnly taken = std::move(moved.value());
+    CHECK(taken.value == 7);
+    Result<MoveOnly> failed = make_move_only(false);
+    failed = make_move_only(true); // move assignment replaces the error
+    CHECK(failed.ok() && failed.value().value == 7);
+    failed = make_move_only(false);
+    CHECK(!failed.ok() && failed.error().code == ErrorCode::NotFound);
+}

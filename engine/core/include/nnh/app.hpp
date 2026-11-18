@@ -16,6 +16,15 @@ struct EventsConfig {
     int max_subscribers = 256;
 };
 
+/// 2D graphics capacities (see <nnh/gfx.hpp>, <nnh/texture.hpp>), allocated once at init().
+struct GfxConfig {
+    /// 2D draws (sprites and shapes, both screens) per frame; more are dropped. About 136 bytes each.
+    /// 16 to 65535.
+    int max_draws = 2048;
+    /// Textures loaded at the same time. About 32 bytes each. Minimum 4.
+    int max_textures = 128;
+};
+
 /// Options for nnh::init(). Use designated initializers:
 /// @code
 /// nnh::init({.title = "My Game"});
@@ -31,6 +40,8 @@ struct AppConfig {
     const char* data_folder = nullptr;
     /// Event bus capacities: `.events = {.queue_bytes = 32 * 1024, .max_subscribers = 512}`.
     EventsConfig events = {};
+    /// 2D graphics capacities: `.gfx = {.max_draws = 4096}`.
+    GfxConfig gfx = {};
 };
 
 /// Initializes the engine (video, input). Call once, before anything else.

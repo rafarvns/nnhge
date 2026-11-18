@@ -14,11 +14,11 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — contract, fake, public API
 
-- [ ] **T2.1** contract `texture_create/destroy`, `DrawItem2D`, `draw_2d`; fake implementation recording passes; pc/3ds stubs — files: `nnh/platform/video.hpp`, `platforms/*/src/video_*.cpp`, `platform_fake.hpp` — test: conformance `texture_create_rejects_garbage`, `draw_2d_accepts_empty_pass` — covers FR-10, FR-12
-- [ ] **T2.2** `mem_account` for platform-owned memory — files: `core/src/memory/` — test: `tests/memory/test_memory.cpp` — covers FR-2
-- [ ] **T2.3** `Texture` + `load_texture` (registry, size rule, table, accounting, deferred destroy) and `AppConfig::gfx` — files: `nnh/texture.hpp`, `gfx/textures.cpp`, `gfx/image_registry.hpp`, `app.cpp` — test: `tests/gfx/test_textures.cpp` — covers FR-2, FR-3, FR-11
-- [ ] **T2.4** draw calls, shapes, cameras, stats; end-of-frame passes per screen — files: `nnh/gfx.hpp`, `gfx/draw2d.cpp`, `app.cpp` — test: `tests/gfx/test_draw_calls.cpp` — covers FR-4, FR-5, FR-7, FR-8, FR-12
-- [ ] **T2.5** debug text and overlay deferred to the debug pass (on top) — files: `debug/debug_list.{hpp,cpp}`, debug/overlay sources — test: `tests/debug/test_debug_list.cpp`, existing overlay tests — covers FR-6
+- [x] **T2.1** contract `texture_create/destroy`, `DrawItem2D`, `draw_2d`; fake implementation recording passes; pc/3ds stubs — files: `nnh/platform/video.hpp`, `platforms/*/src/video_*.cpp`, `platform_fake.hpp` — test: conformance `texture_create_rejects_garbage`, `draw_2d_accepts_empty_pass` — covers FR-10, FR-12
+- [x] **T2.2** `mem_account` for platform-owned memory — files: `core/src/memory/` — test: `tests/memory/test_memory.cpp` — covers FR-2
+- [x] **T2.3** `Texture` + `load_texture` (registry, size rule, table, accounting, deferred destroy) and `AppConfig::gfx` — files: `nnh/texture.hpp`, `gfx/textures.cpp`, `gfx/image_registry.hpp`, `app.cpp` — test: `tests/gfx/test_textures.cpp` — covers FR-2, FR-3, FR-11
+- [x] **T2.4** draw calls, shapes, cameras, stats; end-of-frame passes per screen — files: `nnh/gfx.hpp`, `gfx/draw2d.cpp`, `app.cpp` — test: `tests/gfx/test_draw_calls.cpp` — covers FR-4, FR-5, FR-7, FR-8, FR-12
+- [x] **T2.5** debug text and overlay deferred to the debug pass (on top) — files: `debug/debug_list.{hpp,cpp}`, debug/overlay sources — test: `tests/debug/test_debug_list.cpp`, existing overlay tests — covers FR-6
 
 ## Stage 3 — images in the build
 

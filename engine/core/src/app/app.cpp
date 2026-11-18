@@ -33,11 +33,15 @@ bool g_frame_open = false;
 std::uint64_t g_frame_count = 0;
 char g_data_folder[48];
 
+/// Ends the open frame: 2D passes per screen, then the debug pass (text, overlay) on top, then present.
 void close_frame() {
     if (g_frame_open) {
+        detail::gfx_submit();
+        detail::debug_text_flush();
         detail::overlay_draw();
         platform::end_frame();
         g_frame_open = false;
+        detail::gfx_after_frame(); // textures released during the frame are no longer in use
     }
 }
 
@@ -61,12 +65,18 @@ bool init(const AppConfig& config) {
         platform::shutdown();
         return false;
     }
+    if (!detail::gfx_init(config.gfx)) {
+        detail::events_shutdown();
+        platform::shutdown();
+        return false;
+    }
     g_initialized = true;
     g_frame_count = 0;
     detail::input_reset();
     detail::time_reset(platform::ticks_ns());
     detail::profile_reset();
     detail::overlay_reset();
+    detail::debug_text_clear();
     detail::crash_install();
     detail::log_file_start();
     NNH_LOG_INFO(app, "started \"%s\" (%s build), data in %s", config.title, build::flavor_name(),
@@ -100,6 +110,7 @@ void shutdown() {
     NNH_LOG_INFO(app, "shutdown after %llu frames", static_cast<unsigned long long>(g_frame_count));
     detail::scenes_shutdown(); // on_exit() may still unsubscribe: before the bus goes away
     detail::events_shutdown();
+    detail::gfx_shutdown(); // after scenes: on_exit() may still release textures
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();
     platform::shutdown();

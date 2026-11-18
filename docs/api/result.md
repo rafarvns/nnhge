@@ -32,3 +32,6 @@ no heap). Codes: `InvalidArgument`, `NotFound`, `IoError`, `Corrupted`, `OutOfMe
 `Unsupported`, `Unknown`; `error_code_name(code)` gives the name.
 
 `Result` is `[[nodiscard]]`: ignoring a returned result is a compiler warning.
+
+`T` may be move-only (e.g. [`nnh::Texture`](texture.md)): take the value out with
+`std::move(result.value())`; `value_or` needs a copyable `T`.

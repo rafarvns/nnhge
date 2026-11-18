@@ -2,9 +2,8 @@
 
 Header: `<nnh/math.hpp>`
 
-Plain structs for 2D positions and rectangles, used by the drawing API
-([spec 004](../../specs/004-2d-graphics/spec.md), in progress). 3D types (vectors, matrices) will be added
-beside them later; these keep their names.
+Plain structs for 2D positions and rectangles, used by the drawing API ([gfx.md](gfx.md)). 3D types
+(vectors, matrices) will be added beside them later; these keep their names.
 
 | Type | Fields | Use |
 |------|--------|-----|

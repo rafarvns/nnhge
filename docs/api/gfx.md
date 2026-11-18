@@ -3,10 +3,6 @@
 Header: `<nnh/gfx.hpp>` · Design: [architecture/rendering.md](../architecture/rendering.md) · Textures:
 [texture.md](texture.md) · Types: [math.md](math.md)
 
-> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): works on the PC simulator and on an Old
-> 3DS XL; the benchmark and the closing docs are still to come. Example:
-> [`examples/sprites`](../../examples/sprites/main.cpp).
-
 ## Screens
 
 | `nnh::Screen` | Size | Notes |
@@ -97,7 +93,7 @@ Fixed at `nnh::init()` through `AppConfig::gfx` (allocated once, memory tag `gfx
 nnh::init({.title = "Bullet Hell", .gfx = {.max_draws = 8192}});
 ```
 
-How many sprites fit in a frame at 60 Hz: run the benchmark of [`examples/sprites`](../../examples/sprites/main.cpp)
+How many sprites fit in a frame at 60 Hz (an Old 3DS XL: about 1300 of 16×16 from one texture): run the benchmark of [`examples/sprites`](../../examples/sprites/main.cpp)
 (SELECT on the console, `SPRITES_DEMO=bench` on PC; L/R and Y/X change the count).
 
 More draws than `max_draws` in a frame is a bug: Debug and Development **assert**; Release drops the

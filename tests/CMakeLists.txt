@@ -127,6 +127,15 @@ if(NOT MSVC)
         COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include
                 ${CMAKE_CURRENT_SOURCE_DIR}/events/compile_fail_big_capture.cpp)
     set_tests_properties(large_handler_capture_rejected PROPERTIES WILL_FAIL TRUE)
+
+    # AppConfig::title defaults to the game's TITLE (spec 009 FR-1); the last case proves the check bites.
+    set(_title_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    add_test(NAME game_title_default COMMAND ${_title_check} ${CMAKE_CURRENT_SOURCE_DIR}/app/compile_game_title.cpp)
+    add_test(NAME game_title_from_build COMMAND ${_title_check} "-DNNH_GAME_TITLE=\"My Game\""
+             "-DEXPECTED_TITLE=\"My Game\"" ${CMAKE_CURRENT_SOURCE_DIR}/app/compile_game_title.cpp)
+    add_test(NAME game_title_mismatch_fails COMMAND ${_title_check} "-DNNH_GAME_TITLE=\"My Game\""
+             ${CMAKE_CURRENT_SOURCE_DIR}/app/compile_game_title.cpp)
+    set_tests_properties(game_title_mismatch_fails PROPERTIES WILL_FAIL TRUE)
 endif()
 
 # Image check of nnh_add_game(... IMAGES ...) (spec 004 FR-3, AC-4): run the script on fixture images.
@@ -216,6 +225,27 @@ nnh_script_check(package_check_title ${_check} "TITLE is 65 characters: at most 
 nnh_script_check(package_check_title_utf8 ${_check} "TITLE is 65 characters" ${_ok} -DTITLE=${_c64}x)
 nnh_script_check(package_check_description ${_check} "DESCRIPTION is 129 characters: at most 128" ${_ok} -DDESCRIPTION=${_a129})
 nnh_script_check(package_check_author ${_check} "AUTHOR is 65 characters: at most 64" ${_ok} -DAUTHOR=${_a65})
+
+# Resolving nnh_add_game()'s package options (spec 009 FR-1, FR-3, FR-5): defaults, CIA group, errors.
+set(_resolve ${_pkg}/resolve_package.cmake)
+nnh_script_check(package_resolve_defaults ${_resolve} OK -DTARGET=hello)
+set_tests_properties(package_resolve_defaults PROPERTIES PASS_REGULAR_EXPRESSION
+    "version=0[.]1[.]0 icon=default_icon[.]png cia=FALSE")
+nnh_script_check(package_resolve_cia ${_resolve} OK -DTARGET=audio -DVERSION=1.2.3 -DICON=icon_48.png "-DCIA=UNIQUE_ID,0xE0A01")
+set_tests_properties(package_resolve_cia PROPERTIES PASS_REGULAR_EXPRESSION
+    "version=1[.]2[.]3 icon=icon_48[.]png cia=TRUE id=0xE0A01 code=CTR-H-AUDI banner=default_banner[.]png audio=default_banner[.]wav")
+nnh_script_check(package_resolve_short_name ${_resolve} OK -DTARGET=a_b "-DCIA=UNIQUE_ID,0x00400")
+set_tests_properties(package_resolve_short_name PROPERTIES PASS_REGULAR_EXPRESSION "code=CTR-H-ABXX")
+nnh_script_check(package_resolve_own_banner ${_resolve} OK -DTARGET=x
+    "-DCIA=UNIQUE_ID,0x00400,PRODUCT_CODE,CTR-P-GAME,BANNER,banner_256x128.png,BANNER_AUDIO,jingle_ok.wav")
+set_tests_properties(package_resolve_own_banner PROPERTIES PASS_REGULAR_EXPRESSION
+    "code=CTR-P-GAME banner=banner_256x128[.]png audio=jingle_ok[.]wav")
+nnh_script_check(package_resolve_no_id ${_resolve} "CIA needs UNIQUE_ID" -DTARGET=x "-DCIA=PRODUCT_CODE,CTR-P-GAME")
+nnh_script_check(package_resolve_unknown ${_resolve} "unknown CIA option: SYSTEM_MOD" -DTARGET=x "-DCIA=UNIQUE_ID,0x400,SYSTEM_MOD,64MB")
+nnh_script_check(package_resolve_no_banner ${_resolve} "BANNER not found: missing[.]png" -DTARGET=x "-DCIA=UNIQUE_ID,0x400,BANNER,missing.png")
+nnh_script_check(package_resolve_no_icon ${_resolve} "ICON not found: nope[.]png" -DTARGET=x -DICON=nope.png)
+nnh_script_check(package_resolve_bad_version ${_resolve} "VERSION 2 must be major[.]minor[.]micro" -DTARGET=x -DVERSION=2)
+nnh_script_check(package_resolve_long_title ${_resolve} "TITLE is 65 characters" -DTARGET=x -DTITLE=${_a65})
 
 # Asset index of nnh_add_game(... ASSETS ...) (spec 007 FR-1, FR-6): sorted output; bad names fail the
 # build with a message naming the file.

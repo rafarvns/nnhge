@@ -1,13 +1,22 @@
-# Package metadata rules (spec 009), include()d by nnh_game.cmake and the ctest driver
-# tests/data/package/check_package.cmake.
+# Package metadata rules (spec 009), include()d by nnh_game.cmake and the ctest drivers in
+# tests/data/package/.
 #
-#   nnh_check_package_values(UNIQUE_ID <0x...> PRODUCT_CODE <CTR-X-XXXX> VERSION <a.b.c>
-#                            TITLE <text> DESCRIPTION <text> AUTHOR <text>)
+#   nnh_check_package_values([UNIQUE_ID <0x...>] [PRODUCT_CODE <CTR-X-XXXX>] [VERSION <a.b.c>]
+#                            [TITLE <text>] [DESCRIPTION <text>] [AUTHOR <text>])
+#     Fails with a message naming the field for anything a .cia (or the SMDH) can't hold: a unique ID
+#     outside the homebrew range, a malformed product code or version, text longer than the SMDH allows.
+#     Only the fields given are checked.
 #
-# Fails with a message naming the field for anything a .cia (or the SMDH) can't hold: a unique ID outside
-# the homebrew range, a malformed product code or version, text longer than the SMDH allows.
+#   nnh_resolve_package(<prefix> TARGET <name> SOURCE_DIR <dir> TITLE .. DESCRIPTION .. AUTHOR ..
+#                       [VERSION <a.b.c>] [ICON <png>] [CIA <options...>])
+#     What nnh_add_game() packages: sets <prefix>_VERSION_MAJOR/_MINOR/_MICRO, <prefix>_ICON (absolute;
+#     the NNHGE icon by default) and <prefix>_CIA (TRUE/FALSE) with, for a .cia, <prefix>_UNIQUE_ID,
+#     _PRODUCT_CODE (default CTR-H- + the target's first 4 letters/digits), _BANNER, _BANNER_AUDIO
+#     (absolute; NNHGE defaults). Every check runs at configure time.
 
-# Characters in a UTF-8 string: bytes that aren't continuation bytes (0x80-0xBF).
+set(_NNH_PACKAGE_ART "${CMAKE_CURRENT_LIST_DIR}/3ds")
+
+# Characters in a UTF-8 string: bytes that are not continuation bytes (0x80-0xBF).
 function(nnh_utf8_length text out)
     string(HEX "${text}" hex)
     string(REGEX MATCHALL ".." bytes "${hex}")
@@ -21,33 +30,112 @@ function(nnh_utf8_length text out)
 endfunction()
 
 function(nnh_check_package_values)
-    cmake_parse_arguments(PARSE_ARGV 0 P "" "UNIQUE_ID;PRODUCT_CODE;VERSION;TITLE;DESCRIPTION;AUTHOR" "")
-    if(NOT P_UNIQUE_ID MATCHES "^0[xX][0-9A-Fa-f]+$")
-        message(FATAL_ERROR "UNIQUE_ID ${P_UNIQUE_ID} must be hexadecimal, like 0xE0A01")
-    endif()
-    math(EXPR id "${P_UNIQUE_ID}")
-    if(id LESS 768 OR id GREATER 1015807) # 0x00300 .. 0xF7FFF
-        message(FATAL_ERROR "UNIQUE_ID ${P_UNIQUE_ID} is outside the homebrew range 0x00300-0xF7FFF")
-    endif()
-    if(NOT P_PRODUCT_CODE MATCHES "^CTR-[A-Z]-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]$")
-        message(FATAL_ERROR "PRODUCT_CODE ${P_PRODUCT_CODE} must look like CTR-H-ABCD (upper case)")
-    endif()
-    set(version_ok FALSE)
-    if(P_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
-        if(CMAKE_MATCH_1 LESS_EQUAL 63 AND CMAKE_MATCH_2 LESS_EQUAL 63 AND CMAKE_MATCH_3 LESS_EQUAL 15)
-            set(version_ok TRUE)
+    set(keys UNIQUE_ID PRODUCT_CODE VERSION TITLE DESCRIPTION AUTHOR)
+    cmake_parse_arguments(PARSE_ARGV 0 P "" "${keys}" "")
+    foreach(key IN LISTS keys) # given, even if empty?
+        set(has_${key} FALSE)
+        if(DEFINED P_${key} OR key IN_LIST P_KEYWORDS_MISSING_VALUES)
+            set(has_${key} TRUE)
+        endif()
+    endforeach()
+    if(has_UNIQUE_ID)
+        if(NOT P_UNIQUE_ID MATCHES "^0[xX][0-9A-Fa-f]+$")
+            message(FATAL_ERROR "UNIQUE_ID ${P_UNIQUE_ID} must be hexadecimal, like 0xE0A01")
+        endif()
+        math(EXPR id "${P_UNIQUE_ID}")
+        if(id LESS 768 OR id GREATER 1015807) # 0x00300 .. 0xF7FFF
+            message(FATAL_ERROR "UNIQUE_ID ${P_UNIQUE_ID} is outside the homebrew range 0x00300-0xF7FFF")
         endif()
     endif()
-    if(NOT version_ok)
-        message(FATAL_ERROR "VERSION ${P_VERSION} must be major.minor.micro, at most 63.63.15")
+    if(has_PRODUCT_CODE AND NOT P_PRODUCT_CODE MATCHES "^CTR-[A-Z]-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]$")
+        message(FATAL_ERROR "PRODUCT_CODE ${P_PRODUCT_CODE} must look like CTR-H-ABCD (upper case)")
+    endif()
+    if(has_VERSION)
+        set(version_ok FALSE)
+        if(P_VERSION MATCHES "^([0-9]+)[.]([0-9]+)[.]([0-9]+)$")
+            if(CMAKE_MATCH_1 LESS_EQUAL 63 AND CMAKE_MATCH_2 LESS_EQUAL 63 AND CMAKE_MATCH_3 LESS_EQUAL 15)
+                set(version_ok TRUE)
+            endif()
+        endif()
+        if(NOT version_ok)
+            message(FATAL_ERROR "VERSION ${P_VERSION} must be major.minor.micro, at most 63.63.15")
+        endif()
     endif()
     foreach(field_limit TITLE:64 DESCRIPTION:128 AUTHOR:64)
         string(REPLACE ":" ";" pair "${field_limit}")
         list(GET pair 0 field)
         list(GET pair 1 limit)
+        if(NOT has_${field})
+            continue()
+        endif()
         nnh_utf8_length("${P_${field}}" n)
         if(n GREATER limit)
             message(FATAL_ERROR "${field} is ${n} characters: at most ${limit}")
         endif()
     endforeach()
+endfunction()
+
+# An existing file, absolute (relative paths are from `dir`); fails naming the option otherwise.
+function(_nnh_package_file option path dir out)
+    get_filename_component(full "${path}" ABSOLUTE BASE_DIR "${dir}")
+    if(NOT EXISTS "${full}")
+        get_filename_component(name "${path}" NAME)
+        message(FATAL_ERROR "${option} not found: ${name} (${full})")
+    endif()
+    set(${out} "${full}" PARENT_SCOPE)
+endfunction()
+
+function(nnh_resolve_package prefix)
+    cmake_parse_arguments(PARSE_ARGV 1 A "" "TARGET;SOURCE_DIR;TITLE;DESCRIPTION;AUTHOR;VERSION;ICON" "CIA")
+    if(NOT A_VERSION)
+        set(A_VERSION "0.1.0")
+    endif()
+    nnh_check_package_values(VERSION "${A_VERSION}" TITLE "${A_TITLE}" DESCRIPTION "${A_DESCRIPTION}"
+                             AUTHOR "${A_AUTHOR}")
+    string(REPLACE "." ";" parts "${A_VERSION}")
+    list(GET parts 0 major)
+    list(GET parts 1 minor)
+    list(GET parts 2 micro)
+    set(${prefix}_VERSION_MAJOR ${major} PARENT_SCOPE)
+    set(${prefix}_VERSION_MINOR ${minor} PARENT_SCOPE)
+    set(${prefix}_VERSION_MICRO ${micro} PARENT_SCOPE)
+
+    set(icon "${_NNH_PACKAGE_ART}/default_icon.png")
+    if(A_ICON)
+        _nnh_package_file(ICON "${A_ICON}" "${A_SOURCE_DIR}" icon)
+    endif()
+    set(${prefix}_ICON "${icon}" PARENT_SCOPE)
+
+    set(${prefix}_CIA FALSE PARENT_SCOPE)
+    if(NOT DEFINED A_CIA AND NOT "CIA" IN_LIST A_KEYWORDS_MISSING_VALUES)
+        return()
+    endif()
+    cmake_parse_arguments(C "" "UNIQUE_ID;PRODUCT_CODE;BANNER;BANNER_AUDIO" "" ${A_CIA})
+    if(C_UNPARSED_ARGUMENTS)
+        list(GET C_UNPARSED_ARGUMENTS 0 unknown)
+        message(FATAL_ERROR "unknown CIA option: ${unknown} (UNIQUE_ID, PRODUCT_CODE, BANNER, BANNER_AUDIO)")
+    endif()
+    if(NOT C_UNIQUE_ID)
+        message(FATAL_ERROR "CIA needs UNIQUE_ID (a number in 0x00300-0xF7FFF that no other homebrew uses)")
+    endif()
+    if(NOT C_PRODUCT_CODE)
+        string(TOUPPER "${A_TARGET}" upper)
+        string(REGEX REPLACE "[^A-Z0-9]" "" upper "${upper}")
+        string(SUBSTRING "${upper}XXXX" 0 4 four)
+        set(C_PRODUCT_CODE "CTR-H-${four}")
+    endif()
+    nnh_check_package_values(UNIQUE_ID "${C_UNIQUE_ID}" PRODUCT_CODE "${C_PRODUCT_CODE}")
+    set(banner "${_NNH_PACKAGE_ART}/default_banner.png")
+    set(audio "${_NNH_PACKAGE_ART}/default_banner.wav")
+    if(C_BANNER)
+        _nnh_package_file(BANNER "${C_BANNER}" "${A_SOURCE_DIR}" banner)
+    endif()
+    if(C_BANNER_AUDIO)
+        _nnh_package_file(BANNER_AUDIO "${C_BANNER_AUDIO}" "${A_SOURCE_DIR}" audio)
+    endif()
+    set(${prefix}_CIA TRUE PARENT_SCOPE)
+    set(${prefix}_UNIQUE_ID "${C_UNIQUE_ID}" PARENT_SCOPE)
+    set(${prefix}_PRODUCT_CODE "${C_PRODUCT_CODE}" PARENT_SCOPE)
+    set(${prefix}_BANNER "${banner}" PARENT_SCOPE)
+    set(${prefix}_BANNER_AUDIO "${audio}" PARENT_SCOPE)
 endfunction()

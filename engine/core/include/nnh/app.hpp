@@ -5,6 +5,11 @@
 #include <cstddef>
 #include <cstdint>
 
+// The game's TITLE from nnh_add_game() (spec 009): build metadata, not a platform switch.
+#ifndef NNH_GAME_TITLE
+#define NNH_GAME_TITLE "NNHGE"
+#endif
+
 namespace nnh {
 
 /// Event bus capacities (see <nnh/events.hpp>), allocated once at init().
@@ -39,8 +44,9 @@ struct AudioConfig {
 /// @endcode
 struct AppConfig {
     /// Window title in the PC simulator. On consoles the title comes from the game metadata
-    /// (TITLE in nnh_add_game()).
-    const char* title = "NNHGE";
+    /// (TITLE in nnh_add_game()). Defaults to that TITLE (the build defines NNH_GAME_TITLE for each
+    /// game), so a game rarely needs to set it.
+    const char* title = NNH_GAME_TITLE;
     /// PC simulator only: initial window size as a multiple of the native resolution (400x480).
     int pc_window_scale = 2;
     /// Name of the game's data folder (saves, log.txt, crash.txt): letters, digits, '-' and '_'.

@@ -55,11 +55,22 @@ nnh_add_game(sprites
     ASSETS assets                       # optional folder: assets/art/hero.png -> load_texture("art/hero")
     IMAGES art/logo.png                 # optional embedded images: load_texture("logo")
     TITLE "Sprites demo" DESCRIPTION "NNHGE example" AUTHOR "NNHGE contributors"
-    ICON icon.png)            # optional 48x48; default icon otherwise
+    VERSION 1.0.0                       # optional, default 0.1.0 (major.minor.micro, at most 63.63.15)
+    ICON icon.png                       # optional 48x48 PNG; the NNHGE icon otherwise
+    CIA UNIQUE_ID 0xE0A01)              # optional: an installable .cia (spec 009, see below)
 ```
 
 On 3DS this calls devkitPro's `ctr_generate_smdh()` and `ctr_create_3dsx()`; on Windows it copies
-`SDL3.dll` next to the executable.
+`SDL3.dll` next to the executable. **Package metadata** (spec 009, `cmake/nnh_package_rules.cmake`) is
+checked at configure time, naming the field: title and author at most 64 characters, description 128
+(counted in UTF-8 characters), `VERSION` major and minor 0–63 and micro 0–15; with `CIA`, a `UNIQUE_ID`
+in the homebrew range `0x00300`–`0xF7FFF`, an optional `PRODUCT_CODE` like `CTR-H-ABCD` (default
+`CTR-H-` + the target's first 4 letters), optional `BANNER` (256×128 PNG) and `BANNER_AUDIO` (16-bit
+WAV, at most 3 s), with NNHGE defaults from `cmake/3ds/` (drawn by `scripts/make_package_art.py`). The
+icon is checked by a build step on every system (`nnh_check_icon.cmake`), so a wrong icon fails on PC
+too. `TITLE` is also compiled into the game as `NNH_GAME_TITLE`, the default `AppConfig::title`. Script
+tests: `icon_check_*`, `banner_check_*`, `package_check_*`, `package_resolve_*`, `game_title_*`
+(fixtures in `tests/data/package/`). The `.cia` step itself comes with spec 009 stage 3.
 
 **Assets** (`ASSETS <folder>`, spec 007, the recommended way): every file of the folder becomes an asset
 named by its relative path ([api/assets.md](../api/assets.md)). One build step per file, rerun only when

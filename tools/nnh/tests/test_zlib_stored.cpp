@@ -1,9 +1,10 @@
-// zlib streams of stored blocks (zlib_stored.hpp): checked byte by byte and decoded by a small inflater
-// of stored blocks written here, independent of the encoder.
+// zlib streams of stored blocks (zlib_stored.hpp): checked byte by byte and decoded by the tests' own
+// inflater of stored blocks (stored_inflate.hpp), independent of the encoder.
 
 #include <cstring>
 #include <vector>
 
+#include "stored_inflate.hpp"
 #include "test.hpp"
 #include "zlib_stored.hpp"
 
@@ -12,25 +13,8 @@ using nnh::tool::zlib_stored;
 
 namespace {
 
-/// Decodes a zlib stream made only of stored blocks; false if it is malformed or the checksum is wrong.
 bool inflate_stored(const std::vector<std::uint8_t>& s, std::vector<std::uint8_t>& out) {
-    if (s.size() < 6 || s[0] != 0x78 || ((s[0] << 8) | s[1]) % 31 != 0) return false;
-    std::size_t at = 2;
-    for (;;) {
-        if (at + 5 > s.size()) return false;
-        const std::uint8_t header = s[at];
-        if ((header & 0x06) != 0) return false; // BTYPE must be 00 (stored)
-        const unsigned len = s[at + 1] | s[at + 2] << 8;
-        const unsigned nlen = s[at + 3] | s[at + 4] << 8;
-        if ((len ^ 0xFFFF) != nlen || at + 5 + len > s.size()) return false;
-        out.insert(out.end(), s.begin() + static_cast<long>(at + 5), s.begin() + static_cast<long>(at + 5 + len));
-        at += 5 + len;
-        if (header & 1) break;
-    }
-    if (at + 4 != s.size()) return false;
-    const std::uint32_t stored = std::uint32_t(s[at]) << 24 | std::uint32_t(s[at + 1]) << 16 |
-                                 std::uint32_t(s[at + 2]) << 8 | s[at + 3];
-    return stored == adler32(out.data(), out.size());
+    return nnh::tool::test::inflate_stored(s, out) == nnh::tool::test::Inflate::Done;
 }
 
 } // namespace

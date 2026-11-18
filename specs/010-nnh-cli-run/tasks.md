@@ -16,9 +16,9 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — network
 
-- [ ] **T2.1** `net` sockets (Winsock/BSD), timeouts, broadcast, local address — test: loopback echo — covers FR-3, FR-4
-- [ ] **T2.2** netloader client session + log listener — test: loopback fake netloader and fake game — covers FR-3, FR-5
-- [ ] **T2.3** HTTP file server + FBI exchange — test: loopback fake FBI — covers FR-6, FR-7
+- [x] **T2.1** `net` sockets (Winsock/BSD), timeouts, broadcast, local address — test: `test_net.cpp` (loopback echo, refused fast, timeouts, UDP) — covers FR-3, FR-4
+- [x] **T2.2** netloader client session (`console_link`) + `log_listener` — test: `test_console_link.cpp` (fake netloader checking every byte and both answers, fake game, discovery) — covers FR-3, FR-5
+- [x] **T2.3** `file_server` (exact paths, GET only) + FBI exchange — test: fake FBI downloading after a delay while the server stops on its answer — covers FR-6, FR-7
 
 ## Stage 3 — commands
 

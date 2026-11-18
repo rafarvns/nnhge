@@ -4,6 +4,7 @@
 //   NNH_EXIT_AFTER_FRAMES=<n>   quit after n frames (smoke tests, CI)
 //   NNH_SCREENSHOT=<file.png>   save the last frame before quitting (needs NNH_EXIT_AFTER_FRAMES)
 //   NNH_SIM_INPUT=<script>      scripted input, Debug/Development only (input_override_pc.cpp)
+//   NNH_SIM_RENDERER=sdl        skip the GPU-device renderer (use SDL's default renderer)
 
 #include <SDL3/SDL.h>
 // The game owns main(); SDL must not replace it.
@@ -12,6 +13,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include "context_pc.hpp"
 #include "nnh/build.hpp"
@@ -24,7 +26,27 @@ namespace {
 pc::Context g_context;
 char g_last_error[256] = "";
 
-void set_error(const char* what) { std::snprintf(g_last_error, sizeof g_last_error, "%s: %s", what, SDL_GetError()); }
+} // namespace
+
+void pc::set_error(const char* what) {
+    std::snprintf(g_last_error, sizeof g_last_error, "%s: %s", what, SDL_GetError());
+}
+
+namespace {
+
+using pc::set_error;
+
+/// The renderer runs on an SDL_GPUDevice when one is available, so the future 3D renderer can share its
+/// device and textures (docs/architecture/rendering.md, D20). Without a GPU (headless runs, old
+/// drivers, VMs) SDL's default renderer is enough for 2D.
+SDL_Renderer* create_renderer(SDL_Window* window) {
+    const char* choice = std::getenv("NNH_SIM_RENDERER");
+    const bool allow_gpu = choice == nullptr || std::strcmp(choice, "sdl") != 0;
+    SDL_Renderer* renderer = allow_gpu ? SDL_CreateGPURenderer(nullptr, window) : nullptr;
+    g_context.gpu_renderer = renderer != nullptr;
+    if (renderer == nullptr) renderer = SDL_CreateRenderer(window, nullptr);
+    return renderer;
+}
 
 /// Debug/Development: <exe dir>/data/<folder>/ (easy to inspect next to the build);
 /// Release: the user's app-data folder (SDL_GetPrefPath).
@@ -65,9 +87,13 @@ bool init(const AppConfig& config) {
     // Pads already connected arrive as SDL_EVENT_GAMEPAD_ADDED in the first poll_events().
     SDL_InitSubSystem(SDL_INIT_GAMEPAD);
     const int scale = config.pc_window_scale > 0 ? config.pc_window_scale : 1;
-    if (!SDL_CreateWindowAndRenderer(config.title, pc::kLogicalWidth * scale, pc::kLogicalHeight * scale,
-                                     SDL_WINDOW_RESIZABLE, &g_context.window, &g_context.renderer)) {
+    g_context.window = SDL_CreateWindow(config.title, pc::kLogicalWidth * scale, pc::kLogicalHeight * scale,
+                                        SDL_WINDOW_RESIZABLE);
+    g_context.renderer = g_context.window != nullptr ? create_renderer(g_context.window) : nullptr;
+    if (g_context.renderer == nullptr) {
         set_error("window creation failed");
+        SDL_DestroyWindow(g_context.window);
+        g_context = {};
         SDL_Quit();
         return false;
     }

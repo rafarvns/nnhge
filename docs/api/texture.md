@@ -2,8 +2,8 @@
 
 Header: `<nnh/texture.hpp>` · Drawing: [gfx.md](gfx.md) · Design: [architecture/rendering.md](../architecture/rendering.md)
 
-> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): `IMAGES` and loading by name work; the
-> PC and 3DS decoders arrive in stages 4–5 (until then `load_texture` fails with `Corrupted` on them).
+> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): works on the PC simulator; the 3DS
+> decoder arrives in stage 5 (until then `load_texture` fails with `Corrupted` on the console).
 
 A game declares its images in its build; they are checked, converted for each system and embedded in
 the executable (decision D19; romfs comes with M3). An image that breaks the size rule fails the

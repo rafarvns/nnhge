@@ -19,7 +19,7 @@ struct DrawItem2D {
     enum class Kind : std::uint8_t { Sprite, FillRect, RectOutline, Line };
     Kind kind = Kind::Sprite;
     std::uint8_t layer = 0; ///< 0..15; kept for stereoscopic depth later (rendering.md)
-    bool flip_x = false;    ///< Sprite: mirror the region horizontally
+    bool flip_x = false;    ///< Sprite: mirror the image inside its destination rectangle
     bool flip_y = false;
     TextureHandle texture = 0; ///< Sprite
     Region region{};           ///< Sprite: source pixels in the texture (never empty here)
@@ -29,7 +29,7 @@ struct DrawItem2D {
     float y = 0;
     float w = 0;
     float h = 0;
-    float pivot_x = 0; ///< Sprite: pivot in destination pixels from the destination's top-left
+    float pivot_x = 0; ///< Sprite: pivot in destination pixels from the (unmirrored) destination's top-left
     float pivot_y = 0;
     float rotation = 0; ///< Sprite: radians, clockwise on screen, around the pivot
     Color color{};      ///< Sprite: tint (white = unchanged), alpha = opacity. Shapes: the color.

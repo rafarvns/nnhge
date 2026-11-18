@@ -1,6 +1,6 @@
 # Spec 006: Simulator window — layouts, scale, fullscreen
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); checked by the maintainer
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002](../002-core-foundation/spec.md) (PC platform, developer keys),
 [spec 003](../003-full-input/spec.md) (mouse as touch), [spec 004](../004-2d-graphics/spec.md) (renderer).

@@ -1,6 +1,6 @@
 # Plan 006: Simulator window — layouts, scale, fullscreen
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); checked by the maintainer
 Spec: [spec.md](spec.md)
 
 ## Constitution Check (before design)

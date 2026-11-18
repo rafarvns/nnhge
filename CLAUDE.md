@@ -78,7 +78,7 @@ shapes, layers, `Camera2D`; recorded and submitted per screen so 3D can be added
 debug text uses it too ([api/text.md](docs/api/text.md)). Assets (spec 007; demo `examples/sprites`):
 `nnh_add_game(... ASSETS assets)` packs a folder (romfs on 3DS, a folder next to the PC program);
 `<nnh/assets.hpp>` reads files by case-sensitive path, `load_texture("art/hero")` loads images
-([api/assets.md](docs/api/assets.md)). Audio (spec 008, in progress): `<nnh/audio.hpp>` — `load_sound("sfx/jump")` (WAV/Ogg from
+([api/assets.md](docs/api/assets.md)). Audio (spec 008, implemented): `<nnh/audio.hpp>` — `load_sound("sfx/jump")` (WAV/Ogg from
 assets), `audio::play` voices with volume/pan/pitch/priority, groups and master, `SoundFinished`; streamed
 `music::play`/`crossfade` with loop points and fades, `MusicFinished`; Ogg via
 vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS via ndsp; demo

@@ -1,6 +1,6 @@
 # Tasks 008: Audio — sound effects, streaming music, mixer
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -33,7 +33,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 5 — verification and docs
 
-- [ ] **T5.1** docs: new `docs/api/audio.md`; `assets.md`, `cmake.md` (sound check), `devkitpro-3ds.md` (ndsp, dspfirm), `sdl3.md`, decision D21, `REFERENCES.md`, CLAUDE.md — covers AC-6
-- [ ] **T5.2** budgets, `hello` size and startup, Release strings, Linux gcc + ASan/UBSan + libFuzzer on VM 120 — covers AC-2, AC-5, AC-6
-- [ ] **T5.3** maintainer on an Old 3DS: `examples/audio` (music, overlapping effects, crossfade, HOME, lid), 60 fps with music (overlay), then without `dspfirm.cdc` — covers AC-3, AC-4, AC-5
-- [ ] **T5.4** `docs/ROADMAP.md` M4; spec, plan and tasks status → implemented
+- [x] **T5.1** docs: new `docs/api/audio.md`; `assets.md`, `cmake.md` (sound check), `devkitpro-3ds.md` (ndsp, dspfirm), `sdl3.md`, decision D21, `REFERENCES.md`, CLAUDE.md — covers AC-6
+- [x] **T5.2** budgets, `hello` size and startup, Release strings, Linux gcc + ASan/UBSan + libFuzzer on VM 120 — covers AC-2, AC-5, AC-6
+- [x] **T5.3** maintainer on an Old 3DS: `examples/audio` (music, overlapping effects, crossfade, HOME, lid), 60 fps with music (overlay), then without `dspfirm.cdc` — covers AC-3, AC-4, AC-5
+- [x] **T5.4** `docs/ROADMAP.md` M4; spec, plan and tasks status → implemented

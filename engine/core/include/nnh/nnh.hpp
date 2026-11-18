@@ -9,3 +9,4 @@
 #include "nnh/events.hpp"
 #include "nnh/gfx.hpp"
 #include "nnh/input.hpp"
+#include "nnh/scene.hpp"

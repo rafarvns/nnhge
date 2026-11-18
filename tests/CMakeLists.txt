@@ -40,6 +40,8 @@ add_executable(nnh_tests
     log/test_ring.cpp
     memory/test_memory.cpp
     result/test_result.cpp
+    scene/test_run.cpp
+    scene/test_scene_stack.cpp
     system/test_system.cpp
     time/test_clock.cpp
     time/test_duration.cpp

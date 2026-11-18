@@ -7,5 +7,5 @@ To start a new spec, copy `_templates/` to `NNN-<slug>/` with the next free numb
 
 | # | Spec | Status |
 |---|------|--------|
-| 001 | [Event bus and scenes](001-event-bus-and-scenes/spec.md) | approved — in progress (stages 1–3 of 5 done) |
+| 001 | [Event bus and scenes](001-event-bus-and-scenes/spec.md) | approved — in progress (stages 1–4 of 5 done) |
 | 002 | [Core foundation](002-core-foundation/spec.md) (core + platform libraries, time, logs, errors, memory, debug tools, file safety) | implemented, verified on 3DS |

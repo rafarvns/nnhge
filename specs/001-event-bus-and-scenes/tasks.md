@@ -1,6 +1,6 @@
 # Tasks 001: Event bus and scenes
 
-Status: in progress — stages 1–3 done (2026-11-17)
+Status: in progress — stages 1–4 done (2026-11-17)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each stage ends green: PC (Debug + Release) and 3DS builds, tests, docs updated (nnh-docs); Linux checks on
@@ -25,10 +25,10 @@ the homelab build VM when useful. `[P]` = parallelizable.
 - [x] **T3.2** `docs/api/input.md` events section
 
 ## Stage 4 — Scenes (FR-8–FR-10)
-- [ ] **T4.1** `nnh::Scene` + `scene/scene_stack` (deferred push/pop/replace, enter/exit order, double push, destroy-while-on-stack check) — test: `tests/scene/test_scene_stack.cpp`
-- [ ] **T4.2** `scenes::update_and_draw` (top updates, all draw bottom → top) — test: `tests/scene/test_scene_stack.cpp`
-- [ ] **T4.3** `nnh::run(first)` — test: `tests/scene/test_run.cpp`
-- [ ] **T4.4** `docs/api/scene.md`; `docs/architecture/scenes.md` status → implemented
+- [x] **T4.1** `nnh::Scene` + `scene/scene_stack` (deferred push/pop/replace, enter/exit order, double push, destroy-while-on-stack check) — test: `tests/scene/test_scene_stack.cpp`
+- [x] **T4.2** `scenes::update_and_draw` (top updates, all draw bottom → top) — test: `tests/scene/test_scene_stack.cpp`
+- [x] **T4.3** `nnh::run(first)` — test: `tests/scene/test_run.cpp`
+- [x] **T4.4** `docs/api/scene.md`; `docs/architecture/scenes.md` status → implemented
 
 ## Stage 5 — Example and closing (AC-2–AC-5)
 - [ ] **T5.1** `examples/scenes`: title → level (score via `CoinCollected` event) → pause on START (pushed over the level); screenshots of each scene

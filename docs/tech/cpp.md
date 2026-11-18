@@ -14,6 +14,11 @@ apply to `engine/` and `tools/`. Games may use more of C++, but the same rules k
 | `std::function` in hot paths | May allocate | Function pointers + context, or fixed-size callables |
 | `<iostream>`, `<regex>`, `<locale>` | Big, slow to compile | `printf`-style, hand-written parsing |
 
+**Classes games derive from** (e.g. `nnh::Scene`) define **every virtual function inline** in the public
+header, destructor included. The engine is built without RTTI, games may not be: an out-of-line virtual
+(the "key function") would make the engine the only place to emit the class's type info, and a game
+built with RTTI then fails to link (`undefined reference to typeinfo for nnh::Scene` with GCC on Linux).
+
 ## Error handling
 
 ```cpp

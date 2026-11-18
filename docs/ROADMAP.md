@@ -76,7 +76,7 @@ linked); `text.3dsx` 239,736 bytes.
 - [x] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md): `<nnh/texture.hpp>` (`IMAGES` in `nnh_add_game`), `gfx::draw`/shapes/layers/`Camera2D`, draw list ready for 3D passes and stereo, `examples/sprites` — verified on PC and an Old 3DS XL (2026-11-18)
 - [x] Text with the built-in NNHGE font ([spec 005](../specs/005-text-and-builtin-font/spec.md)): `gfx::draw_text`/`measure_text`, UTF-8 + Latin-1, scale, alignment, shadow; debug text and overlay on the same font — pixel-identical on PC and an Old 3DS XL (2026-11-18), `examples/text`
 - [ ] Game fonts (the game's own bitmap fonts, like `IMAGES`) — follow-up spec
-- [ ] Simulator window: two screens layout, scale, 3D slider control
+- [ ] Simulator window: layouts, scale, fullscreen — [spec 006](../specs/006-simulator-window/spec.md) (draft); 3D slider control moves to M8 with stereo rendering
 
 ## M3 — Assets
 - [ ] `assetc`: PNG → platform textures, incremental cache

@@ -56,6 +56,8 @@ add_executable(nnh_tests
     scene/test_scene_stack.cpp
     system/test_system.cpp
     text/test_builtin_font.cpp
+    text/test_font_atlas.cpp
+    text/test_font_texture.cpp
     text/test_glyphs.cpp
     text/test_layout.cpp
     text/test_utf8.cpp

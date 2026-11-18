@@ -81,6 +81,19 @@ bool texture_create(const void* data, std::size_t size, TextureInfo& out) {
     return true;
 }
 
+bool texture_create_rgba(const void* pixels, int width, int height, TextureInfo& out) {
+    out = TextureInfo{};
+    if (pixels == nullptr || width <= 0 || height <= 0) return false;
+    static TextureHandle next_handle = 0x80000;
+    out.handle = ++next_handle;
+    out.width = width;
+    out.height = height;
+    out.bytes = static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4;
+    ++mutable_state().live_textures;
+    ++mutable_state().rgba_textures_created;
+    return true;
+}
+
 void texture_destroy(TextureHandle handle) {
     if (handle != 0) --mutable_state().live_textures;
 }

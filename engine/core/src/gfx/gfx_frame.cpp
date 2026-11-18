@@ -7,6 +7,7 @@
 #include "memory/memory_internal.hpp"
 #include "nnh/assert.hpp"
 #include "nnh/log.hpp"
+#include "text/font_texture.hpp"
 
 namespace nnh {
 
@@ -54,7 +55,8 @@ bool detail::gfx_init(const GfxConfig& config) {
     free_all();
     int max_draws = config.max_draws < 16 ? 16 : config.max_draws;
     if (max_draws > 65535) max_draws = 65535;
-    const int max_textures = config.max_textures < 4 ? 4 : config.max_textures;
+    // One extra texture slot for the built-in font, so the game keeps its whole max_textures.
+    const int max_textures = (config.max_textures < 4 ? 4 : config.max_textures) + 1;
     g_commands = allocate<DrawCommand>(max_draws);
     g_order = allocate<std::uint16_t>(max_draws);
     g_state.pass = allocate<platform::DrawItem2D>(max_draws);
@@ -62,7 +64,8 @@ bool detail::gfx_init(const GfxConfig& config) {
     g_state.pending = allocate<PendingDestroy>(max_textures);
     if (g_commands == nullptr || g_order == nullptr || g_state.pass == nullptr || g_slots == nullptr ||
         g_state.pending == nullptr) {
-        NNH_LOG_ERROR(gfx, "not enough memory for %d draws and %d textures (AppConfig::gfx)", max_draws, max_textures);
+        NNH_LOG_ERROR(gfx, "not enough memory for %d draws and %d textures (AppConfig::gfx)", max_draws,
+                      max_textures - 1);
         free_all();
         return false;
     }
@@ -70,12 +73,17 @@ bool detail::gfx_init(const GfxConfig& config) {
     g_state.textures.reset(g_slots, max_textures, g_next_generation);
     g_state.max_draws = max_draws;
     g_state.ready = true;
+    if (!font_texture_create()) {
+        gfx_shutdown();
+        return false;
+    }
     return true;
 }
 
 void detail::gfx_shutdown() {
     if (!g_state.ready) return;
     gfx_after_frame();
+    font_texture_release(); // counted under its own tag
     g_state.textures.for_each_active([](const TextureData& t) {
         platform::texture_destroy(t.platform);
         mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(textures), t.bytes, false);

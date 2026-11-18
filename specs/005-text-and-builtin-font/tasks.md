@@ -18,9 +18,9 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 3 — font texture
 
-- [ ] **T3.1** contract `texture_create_rgba`; fake and pc implementations — test: conformance `texture_create_rgba_accepts_pixels` — covers FR-7
-- [ ] **T3.2** atlas built at `gfx_init`, reserved engine slot, tag `font`, not in game stats — files: `text/font_texture.cpp`, `gfx/gfx_frame.cpp` — test: `tests/text/test_font_texture.cpp` — covers FR-1, FR-8
-- [ ] **T3.3** 3DS `texture_create_rgba` (tiling, byte order) — files: `texture_3ds.cpp` — verified on hardware in T6.3 — covers FR-7
+- [x] **T3.1** contract `texture_create_rgba`; fake and pc implementations — test: conformance `texture_create_rgba_accepts_pixels` — covers FR-7
+- [x] **T3.2** atlas built at `gfx_init`, reserved engine slot, tag `font`, not in game stats — files: `text/font_texture.cpp`, `gfx/gfx_frame.cpp` — test: `tests/text/test_font_texture.cpp` — covers FR-1, FR-8
+- [x] **T3.3** 3DS `texture_create_rgba` (tiling, byte order) — files: `texture_3ds.cpp` — verified on hardware in T6.3 — covers FR-7 (code done; transparent pixels are white with alpha 0, so a wrong byte order would show as boxes)
 
 ## Stage 4 — drawing text
 

@@ -17,8 +17,13 @@ namespace {
 /// What a TextureHandle points to.
 struct Texture3ds {
     C3D_Tex tex;
-    Tex3DS_Texture t3x; // keeps the subtexture table tex3ds allocated
+    Tex3DS_Texture t3x; // keeps the subtexture table tex3ds allocated (nullptr for RGBA textures)
 };
+
+/// Index of pixel (x, y) inside an 8x8 tile: the PICA200 stores tiles in Morton (Z) order.
+u32 morton_in_tile(u32 x, u32 y) {
+    return (x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3);
+}
 
 } // namespace
 
@@ -44,11 +49,43 @@ bool texture_create(const void* data, std::size_t size, TextureInfo& out) {
     return true;
 }
 
+bool texture_create_rgba(const void* pixels, int width, int height, TextureInfo& out) {
+    out = TextureInfo{};
+    auto* texture = new (std::nothrow) Texture3ds{};
+    if (texture == nullptr || !C3D_TexInit(&texture->tex, static_cast<u16>(width), static_cast<u16>(height), GPU_RGBA8)) {
+        delete texture;
+        ctr::set_error("C3D_TexInit failed (out of linear memory?)");
+        return false;
+    }
+    // GPU layout: 8x8 tiles left to right, rows of tiles from the bottom of the image (citro3d's v = 0),
+    // Morton order inside a tile; each pixel a u32 0xRRGGBBAA.
+    const auto* src = static_cast<const u8*>(pixels);
+    auto* dst = static_cast<u32*>(texture->tex.data);
+    const u32 w = static_cast<u32>(width);
+    const u32 h = static_cast<u32>(height);
+    for (u32 y = 0; y < h; ++y) {
+        const u32 gy = h - 1 - y;
+        for (u32 x = 0; x < w; ++x) {
+            const u8* p = src + (y * w + x) * 4;
+            const u32 index = (((gy >> 3) * (w >> 3) + (x >> 3)) << 6) + morton_in_tile(x & 7, gy & 7);
+            dst[index] = (u32{p[0]} << 24) | (u32{p[1]} << 16) | (u32{p[2]} << 8) | u32{p[3]};
+        }
+    }
+    C3D_TexFlush(&texture->tex);
+    C3D_TexSetFilter(&texture->tex, GPU_NEAREST, GPU_NEAREST);
+    C3D_TexSetWrap(&texture->tex, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+    out.handle = reinterpret_cast<TextureHandle>(texture);
+    out.width = width;
+    out.height = height;
+    out.bytes = texture->tex.size;
+    return true;
+}
+
 void texture_destroy(TextureHandle handle) {
     if (handle == 0) return;
     auto* texture = reinterpret_cast<Texture3ds*>(handle);
     C3D_TexDelete(&texture->tex);
-    Tex3DS_TextureFree(texture->t3x);
+    if (texture->t3x != nullptr) Tex3DS_TextureFree(texture->t3x);
     delete texture;
 }
 

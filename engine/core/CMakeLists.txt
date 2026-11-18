@@ -43,6 +43,8 @@ add_library(nnh_core STATIC
     src/scene/scenes.cpp
     src/system/system.cpp
     src/text/builtin_font.cpp
+    src/text/font_atlas.cpp
+    src/text/font_texture.cpp
     src/text/layout.cpp
     src/text/utf8.cpp
     src/time/clock.cpp

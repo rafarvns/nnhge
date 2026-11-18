@@ -56,6 +56,17 @@ NNH_TEST(texture_create_rejects_data_it_cannot_decode) {
     platform::shutdown();
 }
 
+NNH_TEST(texture_create_rgba_accepts_pixels) {
+    CHECK(platform::init(config()));
+    static unsigned char pixels[16 * 8 * 4];
+    for (unsigned i = 0; i < sizeof pixels; ++i) pixels[i] = static_cast<unsigned char>(i);
+    platform::TextureInfo info;
+    CHECK(platform::texture_create_rgba(pixels, 16, 8, info));
+    CHECK(info.handle != 0 && info.width == 16 && info.height == 8 && info.bytes >= 16u * 8u * 4u);
+    platform::texture_destroy(info.handle);
+    platform::shutdown();
+}
+
 NNH_TEST(draw_2d_accepts_empty_and_shape_passes) {
     CHECK(platform::init(config()));
     CHECK(platform::poll_events());

@@ -48,7 +48,12 @@ struct TextureInfo {
 /// 0) if the data can't be decoded or there is no memory; set last_error() then.
 bool texture_create(const void* data, std::size_t size, TextureInfo& out);
 
-/// Frees a texture from texture_create(). Core calls it only when no submitted frame uses it anymore.
+/// Creates a texture from RGBA8 pixels in memory: row-major, top row first, 4 bytes per pixel (R, G, B,
+/// A), sides powers of two from 8 to 1024; nearest filtering. Load time only (may allocate). Used by the
+/// engine for the built-in font (spec 005). @return false (and `out.handle` 0) if out of memory.
+bool texture_create_rgba(const void* pixels, int width, int height, TextureInfo& out);
+
+/// Frees a texture from texture_create() or texture_create_rgba(). Core calls it only when no submitted frame uses it anymore.
 void texture_destroy(TextureHandle handle);
 
 /// Draws one 2D pass on `screen`: `items` are already sorted, camera-adjusted and in whole pixels

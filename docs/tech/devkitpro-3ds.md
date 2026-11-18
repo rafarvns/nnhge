@@ -106,8 +106,16 @@ What our backend (`input_3ds.cpp`) does:
   build packs `build/<preset>/<game dir>/assets/` with `ctr_create_3dsx(... ROMFS <game>_assets)`; romfs
   paths are case-sensitive, which core enforces on every system. Files are read from the SD card on
   demand, not loaded with the program.
-- Audio uses `ndspInit()` (needs the DSP firmware dumped on the console: `sdmc:/3ds/dspfirm.cdc`);
-  buffers must be in linear memory.
+- Audio uses `ndspInit()`, which needs the DSP firmware dumped once on the console
+  (`sdmc:/3ds/dspfirm.cdc`, e.g. with the DSP1 homebrew); without it `ndspInit()` fails. Our backend
+  (`audio_3ds.cpp`, spec 008, decision D21): the DSP mixes 24 channels in hardware; voices use channels
+  0–21 (one `ndspWaveBuf` each, `looping` for loops, status QUEUED/PLAYING = playing), music streams use
+  22 and 23 with 4 queued `ndspWaveBuf`s of 4096 frames. `nsamples` counts **frames** (per channel) for
+  stereo PCM16. Mix: `mix[0]`/`mix[1]` = front left/right gain; rate per channel (`ndspChnSetRate`),
+  linear interpolation. Samples and stream buffers are `linearAlloc`ed, and `DSP_FlushDataCache` runs
+  before the DSP reads new data. A missing firmware makes core run silently (`audio::available()` false).
+  Linking audio adds ~8 KB to every `.3dsx` (`ndspInit` runs in `nnh::init()`); the Ogg decoder only
+  comes with music or Ogg sounds (~60 KB).
 
 ## Getting it onto the console
 

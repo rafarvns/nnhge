@@ -2,9 +2,8 @@
 
 Header: `<nnh/audio.hpp>` · Spec: [008](../../specs/008-audio/spec.md) · Files: [assets.md](assets.md)
 
-> Status: **in progress** (spec 008). Sound effects, voices, groups, streamed music and the events work,
-> and are tested on the fake platform. The PC and 3DS outputs come in stage 4: until then
-> `audio::available()` is false there and games run silently with the same behaviour.
+> Status: **in progress** (spec 008). Everything below works on the PC simulator (SDL 3) and on the 3DS
+> (DSP); verification on a real console is pending. Example: [`examples/audio`](../../examples/audio/main.cpp).
 
 Put WAV or Ogg Vorbis files in the game's [assets](assets.md) folder. Load each one once, then play it as
 many times as you like. Every play is a **voice** with its own volume, pan and pitch.

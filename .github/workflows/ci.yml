@@ -43,6 +43,7 @@ jobs:
       - name: Smoke test (hello, headless)
         env:
           SDL_VIDEO_DRIVER: offscreen
+          SDL_AUDIO_DRIVER: dummy
           NNH_EXIT_AFTER_FRAMES: "10"
         run: build/pc-debug/examples/hello/hello
 

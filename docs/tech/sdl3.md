@@ -10,6 +10,8 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `context_pc.hpp` | Shared state (window, renderer), screen rectangles, helpers |
 | `app_pc.cpp` | Init/shutdown, window, renderer (GPU device or fallback), event polling, dev env vars |
 | `assets_pc.cpp` | Assets (spec 007): `<exe dir>assets/<path>` through `SDL_GetPathInfo`/`SDL_IOFromFile` |
+| `audio_pc.cpp` | Audio (spec 008): one `SDL_OpenAudioDeviceStream` (48 kHz stereo float) whose callback runs the mixer; every call from core takes `SDL_LockAudioStream` (SDL holds that lock during the callback). No device: `audio_init` fails and core runs silently |
+| `audio_mixer_pc.cpp` | The software stand-in for the 3DS DSP: voices and streams resampled (linear) to 48 kHz, gains ramped per block; SDL-free, unit tested in `tests/simulator/` |
 | `texture_pc.cpp` | Textures: embedded PNG → `SDL_LoadPNG_IO` → `SDL_Texture` (nearest filtering) |
 | `draw2d_pc.cpp` | One 2D pass: sprites (`SDL_RenderTextureRotated` + color/alpha mod) and shapes, clipped per screen |
 | `video_pc.cpp` | Frame begin/end, 60 Hz pacing, screenshots |
@@ -64,6 +66,7 @@ alpha mod. Textures use `SDL_SCALEMODE_NEAREST` and alpha blending; SDL batches 
 | `NNH_SIM_INPUT=<script>` | fixed input on every frame, for screenshots ([simulator.md](../api/simulator.md)) |
 | `NNH_SIM_RENDERER=sdl` | skip the GPU-device renderer and use SDL's default one (to compare) |
 | `SDL_VIDEO_DRIVER=offscreen` | run without a display (CI smoke test) |
+| `SDL_AUDIO_DRIVER=dummy` | run without sound (scripted runs and screenshots stay quiet; music still advances) |
 
 Use the screenshot to verify visual changes without a human: build, run with both variables, read the PNG.
 

@@ -70,6 +70,7 @@ add_executable(nnh_tests
     scene/test_scene_stack.cpp
     system/test_system.cpp
     text/test_builtin_font.cpp
+    simulator/test_audio_mixer_pc.cpp
     simulator/test_sim_layout.cpp
     simulator/test_sim_settings.cpp
     text/test_draw_text.cpp
@@ -88,7 +89,7 @@ target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_DIR="${CMAKE_CURRENT_
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
 # The PC simulator's window layout and settings are pure (SDL-free) and tested here (spec 006).
 set(_pc_src ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
-target_sources(nnh_tests PRIVATE ${_pc_src}/sim_layout.cpp ${_pc_src}/sim_settings.cpp)
+target_sources(nnh_tests PRIVATE ${_pc_src}/audio_mixer_pc.cpp ${_pc_src}/sim_layout.cpp ${_pc_src}/sim_settings.cpp)
 target_include_directories(nnh_tests PRIVATE ${_pc_src})
 add_test(NAME unit COMMAND nnh_tests)
 
@@ -110,7 +111,8 @@ endfunction()
 nnh_add_conformance(fake)
 nnh_add_conformance(pc)
 # The PC platform runs headless in tests (no window on screen, works in CI).
-set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software")
+# Headless and quiet: no display, no sound card needed (the dummy audio driver still runs the backend).
+set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;SDL_AUDIO_DRIVER=dummy")
 
 # 3DS extension headers must refuse to compile for other platforms (FR-P5).
 if(NOT MSVC)

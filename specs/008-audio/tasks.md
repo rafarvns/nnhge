@@ -27,9 +27,9 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 4 — platforms and the example
 
-- [ ] **T4.1** PC: SDL audio stream + software mixer (resampling, gain ramps), asset streams — files: `platforms/pc/src/audio_pc.cpp`, `audio_mixer_pc.cpp` — test: conformance on pc; listened to in the example — covers FR-9
-- [ ] **T4.2** 3DS: ndsp voices and streams, linear buffers, firmware missing → silent, asset streams — files: `platforms/3ds/src/audio_3ds.cpp` — test: conformance on 3ds (build), example on hardware — covers FR-7, FR-8, FR-9
-- [ ] **T4.3** `examples/audio` + `make_sounds.py` (WAV effects, OGG music; `pip install soundfile` once, maintainer OK) — covers AC-3
+- [x] **T4.1** PC: SDL audio stream + software mixer (resampling, gain ramps), asset streams — files: `platforms/pc/src/audio_pc.cpp`, `audio_mixer_pc.cpp` — test: conformance on pc; listened to in the example — covers FR-9
+- [x] **T4.2** 3DS: ndsp voices and streams, linear buffers, firmware missing → silent, asset streams — files: `platforms/3ds/src/audio_3ds.cpp` — test: conformance on 3ds (build), example on hardware — covers FR-7, FR-8, FR-9
+- [x] **T4.3** `examples/audio` + `make_sounds.py` (WAV effects, OGG music; `pip install soundfile` once, maintainer OK) — covers AC-3
 
 ## Stage 5 — verification and docs
 

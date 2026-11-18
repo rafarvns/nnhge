@@ -79,8 +79,8 @@ linked); `text.3dsx` 239,736 bytes.
 - [x] Simulator window ([spec 006](../specs/006-simulator-window/spec.md)): five layouts (F2), scale 1–6× (F3/F4), fit (F5), fullscreen (F9, Alt+Enter), remembered per game; each screen rendered at native resolution and composed — checked by the maintainer (2026-11-18). 3D slider control moves to M8 with stereo rendering
 
 ## M3 — Assets
-- [ ] `assetc`: PNG → platform textures, incremental cache
-- [ ] romfs packaging (read side of `nnh::fs`; the confined write side comes with spec 002)
+- [ ] `assetc`: PNG → platform textures, incremental cache — [spec 007](../specs/007-assets-and-romfs/spec.md) (draft)
+- [ ] romfs packaging (read side of `nnh::fs`; the confined write side comes with spec 002) — [spec 007](../specs/007-assets-and-romfs/spec.md) (draft)
 
 ## M4 — Audio
 - [ ] Sound effects (WAV), streaming music (OGG), mixer channels — ndsp / SDL3

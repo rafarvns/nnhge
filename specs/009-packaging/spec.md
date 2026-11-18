@@ -1,6 +1,6 @@
 # Spec 009: Packaging — icon, metadata and installable `.cia`
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (romfs), [spec 008](../008-audio/spec.md) (WAV checks).
 Implements ROADMAP M5.

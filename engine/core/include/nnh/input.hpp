@@ -25,6 +25,19 @@ enum class Button : std::uint32_t {
     Right = 1u << 13, ///< D-Pad.
 };
 
+/// Analog stick position: x grows to the right, y grows up, each in [-1, 1]; (0, 0) at rest.
+/// A small dead zone around the center reads exactly (0, 0); the length never exceeds 1.
+struct Stick {
+    float x = 0;
+    float y = 0;
+};
+
+/// A point on the bottom (touch) screen, in pixels: x 0-319, y 0-239, (0, 0) top-left.
+struct TouchPoint {
+    int x = 0;
+    int y = 0;
+};
+
 /// Event published once per button that went down this frame (see <nnh/events.hpp>):
 /// @code
 /// nnh::Subscription sub = nnh::events::subscribe<nnh::ButtonPressed>([this](const nnh::ButtonPressed& e) {

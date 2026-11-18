@@ -53,7 +53,7 @@ event bus and scene stack, linked by `nnh::frame()`); `scenes.3dsx` 214,924 byte
 ## M1b — Events, scenes, input
 - [x] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)): `<nnh/events.hpp>`, `ButtonPressed`/`ButtonReleased`, `<nnh/scene.hpp>` + `nnh::run()`, `examples/scenes` (2026-11-17)
 - [x] `examples/scenes` run on a real 3DS (2026-11-17)
-- [ ] Input: Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (gamepad, mouse = touch) — [spec 003](../specs/003-full-input/spec.md) (approved)
+- [ ] Input: Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (gamepad, mouse = touch) — [spec 003](../specs/003-full-input/spec.md) (in progress)
 
 ## M2 — 2D graphics
 - [ ] Textures, sprites, sprite batching, both screens, camera

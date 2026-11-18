@@ -34,7 +34,10 @@ add_executable(nnh_tests
     fs/test_path.cpp
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
+    input/test_dpad_mirror.cpp
     input/test_input_state.cpp
+    input/test_stick.cpp
+    input/test_touch_state.cpp
     log/test_format.cpp
     log/test_log.cpp
     log/test_ring.cpp

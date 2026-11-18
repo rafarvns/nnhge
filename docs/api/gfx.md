@@ -80,6 +80,13 @@ nnh::gfx::draw(nnh::Screen::Top, hud_icon, {4, 4}, {.ignore_camera = true}); // 
 Each screen has a `Camera2D`: its `position` is the world point shown at the screen's top-left corner.
 Draws are shifted by it unless they set `ignore_camera`. Both cameras start at (0, 0) at `init()`.
 
+## Text
+
+Text with the built-in NNHGE font arrives with [spec 005](../../specs/005-text-and-builtin-font/spec.md)
+(in progress): the header already defines `TextAlign` (Left, Center, Right) and the font's grid,
+`kFontCellSize` (8 pixels per character) and `kFontLineHeight` (10 pixels per line), the same on every
+system.
+
 ## Capacities
 
 Fixed at `nnh::init()` through `AppConfig::gfx` (allocated once, memory tag `gfx`):

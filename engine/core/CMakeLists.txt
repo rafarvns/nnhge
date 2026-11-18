@@ -42,6 +42,8 @@ add_library(nnh_core STATIC
     src/scene/scene_stack.cpp
     src/scene/scenes.cpp
     src/system/system.cpp
+    src/text/layout.cpp
+    src/text/utf8.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )

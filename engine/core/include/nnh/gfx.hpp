@@ -90,6 +90,14 @@ struct Camera2D {
     Vec2 position{};
 };
 
+/// Horizontal alignment of text, relative to the x of its position, line by line.
+enum class TextAlign : std::uint8_t { Left, Center, Right };
+
+/// The built-in font: every character is a cell of kFontCellSize x kFontCellSize pixels (at scale 1),
+/// lines are kFontLineHeight apart. The same on every system.
+inline constexpr int kFontCellSize = 8;
+inline constexpr int kFontLineHeight = 10;
+
 class Texture; // <nnh/texture.hpp>
 
 namespace gfx {

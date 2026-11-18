@@ -1,6 +1,6 @@
 # Plan 005: Text — the built-in NNHGE font
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Architecture: [rendering.md](../../docs/architecture/rendering.md)
 
 ## Constitution Check (before design)

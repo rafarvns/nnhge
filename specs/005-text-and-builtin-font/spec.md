@@ -1,6 +1,6 @@
 # Spec 005: Text — the built-in NNHGE font
 
-Status: approved (2026-11-18, maintainer)
+Status: in progress (approved 2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 004 — 2D graphics](../004-2d-graphics/spec.md) (textures, draw list, passes) —
 implemented.

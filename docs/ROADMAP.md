@@ -26,6 +26,10 @@ After spec 002 (2026-11-17, same machine): edit one game `.cpp` → simulator 1.
 (+37 KB for the whole foundation). Linux (homelab build VM, GCC 13): cold `pc-debug` incl. SDL3 from
 source ~60 s.
 
+After spec 001 (2026-11-17, same machine): edit one game `.cpp` → simulator 1.2 s, `.3dsx` 2.5 s; clean
+3DS configure + build (engine + 3 examples) 13.7 s. Release `hello.3dsx`: 193,016 → 199,648 bytes (+6.5 KB:
+event bus and scene stack, linked by `nnh::frame()`); `scenes.3dsx` 214,924 bytes.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -47,7 +51,8 @@ source ~60 s.
 - [ ] CPU-fault crash screen on 3DS with Luma3DS "Set developer UNITINFO" — maintainer, later
 
 ## M1b — Events, scenes, input
-- [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — in progress: stages 1–4 of 5 done (bus `<nnh/events.hpp>`, input events, scenes `<nnh/scene.hpp>`); next: example + 3DS check
+- [x] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)): `<nnh/events.hpp>`, `ButtonPressed`/`ButtonReleased`, `<nnh/scene.hpp>` + `nnh::run()`, `examples/scenes` (2026-11-17)
+- [ ] `examples/scenes` run on a real 3DS — maintainer
 - [ ] Input: Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (gamepad, mouse = touch)
 
 ## M2 — 2D graphics
@@ -72,7 +77,7 @@ source ~60 s.
 - [ ] Pairing code for LAN safety
 
 ## M7 — Game structure
-- [ ] Scenes, entities/components, tilemaps, collision, tweens, save data
+- [ ] Entities/components, tilemaps, collision, tweens, scene transitions (scenes and saves: done)
 
 ## M8 — 3D
 - [ ] citro3d meshes, materials, stereoscopic rendering, model import in `assetc`

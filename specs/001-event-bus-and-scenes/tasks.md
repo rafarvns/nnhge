@@ -1,6 +1,6 @@
 # Tasks 001: Event bus and scenes
 
-Status: in progress — stages 1–4 done (2026-11-17)
+Status: implemented (2026-11-17); T5.4 (run `examples/scenes` on a 3DS) is the maintainer's
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each stage ends green: PC (Debug + Release) and 3DS builds, tests, docs updated (nnh-docs); Linux checks on
@@ -31,8 +31,8 @@ the homelab build VM when useful. `[P]` = parallelizable.
 - [x] **T4.4** `docs/api/scene.md`; `docs/architecture/scenes.md` status → implemented
 
 ## Stage 5 — Example and closing (AC-2–AC-5)
-- [ ] **T5.1** `examples/scenes`: title → level (score via `CoinCollected` event) → pause on START (pushed over the level); screenshots of each scene
-- [ ] **T5.2** `hello` unchanged; Release strings check; 3DS builds
-- [ ] **T5.3** build-time measurements in ROADMAP
+- [x] **T5.1** `examples/scenes`: title → level (score via `CoinCollected` event) → pause on START (pushed over the level); screenshots of each scene
+- [x] **T5.2** `hello` unchanged; Release strings check; 3DS builds
+- [x] **T5.3** build-time measurements in ROADMAP
 - [ ] **T5.4** run `examples/scenes` on a 3DS — maintainer
-- [ ] **T5.5** ROADMAP checkbox; spec/plan/tasks → implemented
+- [x] **T5.5** ROADMAP checkbox; spec/plan/tasks → implemented

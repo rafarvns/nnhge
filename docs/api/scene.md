@@ -92,3 +92,14 @@ while (nnh::frame() && nnh::scenes::size() > 0) {
 ```
 
 A game that doesn't use scenes at all keeps its plain `while (nnh::frame())` loop.
+
+## Example
+
+[`examples/scenes`](../../examples/scenes/main.cpp): title → level → pause menu pushed over the level. The
+level publishes `CoinCollected` and a separate `Score` object counts it; buttons arrive both as
+`ButtonPressed` events and as `input::pressed()` queries. One scene per file pair.
+
+```sh
+build/pc-debug/examples/scenes/scenes.exe
+SCENES_DEMO_START=pause NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/pause.png build/pc-debug/examples/scenes/scenes.exe
+```

@@ -16,6 +16,8 @@ add_executable(nnh_tests
     app/test_frame_loop.cpp
     assets/test_asset_index.cpp
     assets/test_asset_path.cpp
+    assets/test_asset_textures.cpp
+    assets/test_assets.cpp
     build/test_flavor.cpp
     crash/test_assert.cpp
     crash/test_report.cpp

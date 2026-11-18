@@ -3,6 +3,7 @@
 #include "nnh/app.hpp"
 
 #include "app/data_folder.hpp"
+#include "assets/assets_internal.hpp"
 #include "core/engine_state.hpp"
 #include "crash/crash_internal.hpp"
 #include "debug/dev_tools.hpp"
@@ -65,7 +66,9 @@ bool init(const AppConfig& config) {
         platform::shutdown();
         return false;
     }
+    detail::assets_init(); // before gfx: textures may load from assets
     if (!detail::gfx_init(config.gfx)) {
+        detail::assets_shutdown();
         detail::events_shutdown();
         platform::shutdown();
         return false;
@@ -111,6 +114,7 @@ void shutdown() {
     detail::scenes_shutdown(); // on_exit() may still unsubscribe: before the bus goes away
     detail::events_shutdown();
     detail::gfx_shutdown(); // after scenes: on_exit() may still release textures
+    detail::assets_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();
     platform::shutdown();

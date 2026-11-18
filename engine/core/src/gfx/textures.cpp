@@ -2,9 +2,13 @@
 
 #include <cstdio>
 #include <cstring>
+#include <utility>
 
 #include "core/engine_state.hpp"
+#include "assets/asset_path.hpp"
+#include "assets/assets_internal.hpp"
 #include "gfx/gfx_state.hpp"
+#include "nnh/assets.hpp"
 #include "nnh/detail/image_registry.hpp"
 #include "gfx/texture_rules.hpp"
 #include "log/engine_channels.hpp"
@@ -87,11 +91,27 @@ Result<Texture> load_texture(const char* name) {
     detail::GfxState& g = detail::gfx_state();
     if (name == nullptr) name = "";
     if (!g.ready) return Error::make(ErrorCode::Unsupported, "load_texture(\"%s\") before nnh::init()", name);
-    const detail::EmbeddedImage* image = find_image(name);
-    if (image == nullptr) return refuse(ErrorCode::NotFound, name, "not in this game's IMAGES");
+    // The game's assets first ("characters/hero" -> assets/characters/hero.png), then IMAGES by name.
+    char asset_path[detail::kMaxAssetPath + 1];
+    AssetData asset_bytes;
+    const void* data = nullptr;
+    std::size_t data_size = 0;
+    if (std::snprintf(asset_path, sizeof asset_path, "%s.png", name) < static_cast<int>(sizeof asset_path) &&
+        detail::asset_lookup(asset_path) != nullptr) {
+        auto loaded = assets::load(asset_path);
+        if (!loaded) return loaded.error();
+        asset_bytes = std::move(loaded.value());
+        data = asset_bytes.data();
+        data_size = asset_bytes.size();
+    } else if (const detail::EmbeddedImage* image = find_image(name)) {
+        data = image->data;
+        data_size = image->size;
+    } else {
+        return refuse(ErrorCode::NotFound, name, "not in the game's assets or IMAGES");
+    }
 
     platform::TextureInfo info;
-    if (!platform::texture_create(image->data, image->size, info)) {
+    if (!platform::texture_create(data, data_size, info)) {
         NNH_LOG_WARN(gfx, "load_texture(\"%s\"): %s", name, platform::last_error());
         return Error::make(ErrorCode::Corrupted, "image \"%s\" could not be loaded", name);
     }

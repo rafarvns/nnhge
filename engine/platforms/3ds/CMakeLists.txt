@@ -2,6 +2,7 @@
 
 add_library(nnh_platform_3ds STATIC
     src/app_3ds.cpp
+    src/assets_3ds.cpp
     src/console_3ds.cpp
     src/crash_3ds.cpp
     src/draw2d_3ds.cpp

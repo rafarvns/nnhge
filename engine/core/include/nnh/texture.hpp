@@ -44,9 +44,11 @@ private:
     int height_ = 0;
 };
 
-/// Loads an image the game embedded with nnh_add_game(... IMAGES ...); `name` is the file name without
-/// folder or extension ("art/hero.png" → "hero"). Load time only (allocates GPU memory).
-/// Errors: NotFound (no such image), InvalidArgument (sides not powers of two from 8 to 1024),
+/// Loads an image: first the game's assets, `name` being the asset path without ".png"
+/// ("characters/hero" → assets/characters/hero.png, <nnh/assets.hpp>), then the images embedded with
+/// nnh_add_game(... IMAGES ...), by file name without folder or extension ("art/hero.png" → "hero").
+/// Load time only (allocates GPU memory).
+/// Errors: NotFound (in neither), InvalidArgument (sides not powers of two from 8 to 1024),
 /// Corrupted (can't be decoded, or no GPU memory left), LimitReached (AppConfig::gfx.max_textures
 /// loaded), Unsupported (before nnh::init()).
 Result<Texture> load_texture(const char* name);

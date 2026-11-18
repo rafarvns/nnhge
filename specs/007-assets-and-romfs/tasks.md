@@ -12,9 +12,9 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — contract, fake, API
 
-- [ ] **T2.1** contract `assets_mount/unmount`, `asset_size`, `asset_read`; fake table; pc/3ds stubs — test: conformance `missing_assets_mount_false_or_empty` — covers FR-8
-- [ ] **T2.2** `<nnh/assets.hpp>`: index at init, exists/size/read/load, `AssetData`, errors, tag `assets` — files: `core/src/assets/assets.cpp`, `app.cpp` — test: `tests/assets/test_assets.cpp` — covers FR-5, FR-7
-- [ ] **T2.3** `load_texture` from assets first, then `IMAGES` — files: `gfx/textures.cpp` — test: `tests/assets/test_asset_textures.cpp` — covers FR-4
+- [x] **T2.1** contract `assets_mount/unmount`, `asset_size`, `asset_read`; fake table; pc/3ds stubs — test: conformance `missing_assets_mount_false_or_empty` — covers FR-8
+- [x] **T2.2** `<nnh/assets.hpp>`: index at init, exists/size/read/load, `AssetData`, errors, tag `assets` — files: `core/src/assets/assets.cpp`, `app.cpp` — test: `tests/assets/test_assets.cpp` — covers FR-5, FR-7
+- [x] **T2.3** `load_texture` from assets first, then `IMAGES` — files: `gfx/textures.cpp` — test: `tests/assets/test_asset_textures.cpp` — covers FR-4
 
 ## Stage 3 — build pipeline
 

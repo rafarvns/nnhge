@@ -4,6 +4,7 @@ include(nnh_sdl3)
 
 add_library(nnh_platform_pc STATIC
     src/app_pc.cpp
+    src/assets_pc.cpp
     src/crash_pc.cpp
     src/debug_text_pc.cpp
     src/devtools_pc.cpp

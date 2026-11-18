@@ -36,6 +36,7 @@ struct State {
     // 2D drawing (spec 004)
     int live_textures = 0;      ///< created and not yet destroyed
     int rgba_textures_created = 0; ///< texture_create_rgba() calls that succeeded
+    int asset_reads = 0;        ///< asset_size() + asset_read() calls (invalid paths must not add any)
     int item_count = 0;         ///< draw_2d() items in the current frame (first kMaxRecordedItems kept)
     platform::DrawItem2D items[kMaxRecordedItems];
     char calls[kMaxRecordedCalls] = {}; ///< current frame: 'T'/'B' = draw_2d() on the top/bottom screen
@@ -59,6 +60,10 @@ void set_c_stick(float x, float y);
 /// The bottom screen is touched at (x, y) from now on, until release_touch().
 void set_touch(int x, int y);
 void release_touch();
+
+/// Adds a read-only asset (spec 007): `data` must stay alive until reset(). The game "has assets" (mount
+/// succeeds) once one is added. Paths are matched exactly, case included.
+void add_asset(const char* path, const void* data, std::size_t size);
 
 /// When true, poll_events() returns false (the system asks the app to quit).
 void set_quit_requested(bool quit);

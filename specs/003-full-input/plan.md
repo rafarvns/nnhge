@@ -163,11 +163,12 @@ A touch that starts and ends between two samples is not seen (60 Hz sampling, sa
 
 ## Risks and alternatives
 
-- **Hardware ranges** (Circle Pad ≈ ±156, C-Stick unknown) vary per unit: measure in T4.3 on the
+- **Hardware ranges** (Circle Pad ≈ ±156 — measured 159–167 on an Old 3DS XL; C-Stick unknown) vary per unit: measure in T4.3 on the
   maintainer's console with the example's raw readout; the dead zone absorbs small differences. If a unit
   can't reach 1.0, a later spec can add calibration.
-- **`irrst` on New 3DS**: if `irrstInit` fails, the C-Stick reads (0, 0) and `init()` still succeeds;
-  the platform sets `platform::last_error()` and core logs a warning once (platform code never logs).
+- **`irrst` on New 3DS**: if `irrstInit` fails, the C-Stick reads (0, 0) and `init()` still succeeds.
+  Not logged (platform code never logs and the contract has no channel for non-fatal errors); the
+  capability still says `CStick`, a rare case accepted for now.
 - **Laptops without a numpad** lack the keyboard C-Stick; acceptable (gamepad or `NNH_SIM_INPUT`).
 - Alternative rejected: Circle Pad merged into the D-Pad like libctru's `KEY_UP` — the maintainer chose
   D-Pad only plus the opt-in mirror.

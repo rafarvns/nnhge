@@ -59,6 +59,18 @@ Always leave through `aptMainLoop()` returning false or the game's own exit; nev
 `hidTouchRead(&touch)` for the bottom screen, `hidCircleRead(&circle)` for the Circle Pad. ZL/ZR and the
 C-Stick exist only on New 3DS models.
 
+What our backend (`input_3ds.cpp`) does:
+
+- Buttons from the D-Pad keys only (`KEY_DUP`...); `KEY_UP` would also include the Circle Pad, which the
+  engine keeps separate (the game can opt into a mirror, see [api/input.md](../api/input.md)).
+- Touch: `KEY_TOUCH` in `hidKeysHeld()` says whether the screen is touched; `hidTouchRead` gives the point
+  (`px` 0–319, `py` 0–239).
+- Circle Pad: `circlePosition.dx/dy`, y up, divided by 156. Measured on an Old 3DS XL: 159–167 at full
+  push depending on the direction, so 156 reaches full deflection everywhere; core clamps the rest.
+- C-Stick: needs the **IRRST** service. `init()` calls `irrstInit()` only when `APT_CheckNew3DS` says New
+  3DS (`irrstExit()` at shutdown); each frame `irrstScanInput()` then `hidCstickRead`. If it fails to
+  start, the C-Stick reads 0 and the game still runs. Its range (156) is not measured yet.
+
 ## Files, romfs, audio
 
 - `romfsInit()` mounts the assets packed into the `.3dsx` as `romfs:/`. `sdmc:/` is the SD card.

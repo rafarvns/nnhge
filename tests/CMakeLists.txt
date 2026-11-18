@@ -137,6 +137,30 @@ foreach(case "npot_100x60.png|npot_100x60.png is 100x60: textures need power-of-
     set_tests_properties(image_check_explains_${file} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
 endforeach()
 
+# Asset index of nnh_add_game(... ASSETS ...) (spec 007 FR-1, FR-6): sorted output; bad names fail the
+# build with a message naming the file.
+set(_lists ${CMAKE_CURRENT_SOURCE_DIR}/data/asset_lists)
+set(_index_script ${PROJECT_SOURCE_DIR}/cmake/nnh_asset_index.cmake)
+add_test(NAME asset_index_sorts_valid_names
+    COMMAND ${CMAKE_COMMAND} -DDIR=${_lists} -DOUT=${CMAKE_CURRENT_BINARY_DIR}/asset_index_valid.txt
+            -DSCRIPT=${_index_script} -P ${_lists}/check_valid.cmake)
+foreach(case "dotdot|no '.' or '..' folders"
+             "chars|use only letters"
+             "reserved|reserved"
+             "clash|differ only by letter case")
+    string(REPLACE "|" ";" case "${case}")
+    list(GET case 0 name)
+    list(GET case 1 expected)
+    add_test(NAME asset_index_rejects_${name}
+        COMMAND ${CMAKE_COMMAND} -DLIST=${_lists}/${name}.list -DOUT=${CMAKE_CURRENT_BINARY_DIR}/asset_index_${name}.txt
+                -P ${_index_script})
+    set_tests_properties(asset_index_rejects_${name} PROPERTIES WILL_FAIL TRUE)
+    add_test(NAME asset_index_explains_${name}
+        COMMAND ${CMAKE_COMMAND} -DLIST=${_lists}/${name}.list -DOUT=${CMAKE_CURRENT_BINARY_DIR}/asset_index_${name}.txt
+                -P ${_index_script})
+    set_tests_properties(asset_index_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+endforeach()
+
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60
 option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)

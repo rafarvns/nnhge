@@ -1,0 +1,10 @@
+# ctest helper: builds the index of valid.list and compares it with valid.expected (sorted, one per line).
+execute_process(COMMAND ${CMAKE_COMMAND} -DLIST=${DIR}/valid.list -DOUT=${OUT} -P ${SCRIPT} RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "index script failed on a valid list")
+endif()
+file(READ "${OUT}" got)
+file(READ "${DIR}/valid.expected" expected)
+if(NOT got STREQUAL expected)
+    message(FATAL_ERROR "index differs:\n${got}\nexpected:\n${expected}")
+endif()

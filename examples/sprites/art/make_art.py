@@ -1,4 +1,5 @@
-"""Generates the example's art (original, zlib like the rest of NNHGE): run `python -I make_art.py`.
+"""Generates the example's art into ../assets/art (original, zlib like the rest of NNHGE):
+run `python -I make_art.py`.
 
 hero.png  64x16: a round critter, 4 walking frames of 16x16, facing right.
 tiles.png 64x32: two 32x32 tiles, grass (left) and dirt (right).
@@ -112,10 +113,11 @@ def tiles():
 
 
 def main():
-    here = Path(__file__).resolve().parent
+    out = Path(__file__).resolve().parent.parent / "assets" / "art"  # the game's assets (spec 007)
+    out.mkdir(parents=True, exist_ok=True)
     for name, make in (("hero.png", hero), ("tiles.png", tiles)):
         w, h, px = make()
-        write_png(here / name, w, h, px)
+        write_png(out / name, w, h, px)
         print(f"wrote {name} {w}x{h}")
     return 0
 

@@ -2,6 +2,8 @@
 #
 # Writes OUTPUT defining `nnh_image_<SYMBOL>` (the bytes of INPUT) and `nnh_image_<SYMBOL>_size`.
 
+cmake_minimum_required(VERSION 3.25) # -P scripts don't inherit the project's policies
+
 if(NOT INPUT OR NOT OUTPUT OR NOT SYMBOL)
     message(FATAL_ERROR "nnh_embed: INPUT, OUTPUT and SYMBOL are required")
 endif()

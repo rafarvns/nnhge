@@ -144,6 +144,9 @@ set(_index_script ${PROJECT_SOURCE_DIR}/cmake/nnh_asset_index.cmake)
 add_test(NAME asset_index_sorts_valid_names
     COMMAND ${CMAKE_COMMAND} -DDIR=${_lists} -DOUT=${CMAKE_CURRENT_BINARY_DIR}/asset_index_valid.txt
             -DSCRIPT=${_index_script} -P ${_lists}/check_valid.cmake)
+add_test(NAME asset_index_removes_stale_outputs
+    COMMAND ${CMAKE_COMMAND} -DDIR=${_lists} -DWORK=${CMAKE_CURRENT_BINARY_DIR}/asset_index_stale
+            -DSCRIPT=${_index_script} -P ${_lists}/check_stale.cmake)
 foreach(case "dotdot|no '.' or '..' folders"
              "chars|use only letters"
              "reserved|reserved"

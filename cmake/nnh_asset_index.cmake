@@ -6,6 +6,10 @@
 # from another only by letter case (it would work on Windows and fail on the 3DS). With FOLDER, removes
 # outputs of assets that no longer exist.
 
+# A -P script doesn't inherit the project's policies: without this, CMake 3.x treats IN_LIST as an
+# unknown argument (CMP0057 OLD); CMake 4 forces NEW, which hid the bug on Windows.
+cmake_minimum_required(VERSION 3.25)
+
 if(NOT LIST OR NOT OUT)
     message(FATAL_ERROR "nnh_asset_index: LIST and OUT are required")
 endif()

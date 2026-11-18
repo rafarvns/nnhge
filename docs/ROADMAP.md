@@ -87,8 +87,8 @@ linked); `text.3dsx` 239,736 bytes.
 - [ ] Later, if games need them: positional audio, effects (reverb, filters), more than one music track (layers), streaming on a thread for long loads
 
 ## M5 — Packaging
-- [ ] `.3dsx` with icon/metadata (SMDH)
-- [ ] `.cia` with banner (bannertool + makerom), `nnh package`
+- [ ] `.3dsx` with icon/metadata (SMDH) — [spec 009](../specs/009-packaging/spec.md) (draft)
+- [ ] `.cia` with banner (bannertool + makerom) — [spec 009](../specs/009-packaging/spec.md) (draft); `nnh package` later (with M6)
 
 ## M6 — NNH Link
 - [ ] `nnh run --console <ip>` (3dslink-compatible send + log stream)

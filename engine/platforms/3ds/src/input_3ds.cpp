@@ -23,14 +23,13 @@ constexpr KeyBinding kKeyBindings[] = {
 
 } // namespace
 
-std::uint32_t read_buttons() {
+void read_input(InputSample& out) {
+    out = InputSample{};
     hidScanInput();
     const u32 keys = hidKeysHeld();
-    std::uint32_t mask = 0;
     for (const KeyBinding& binding : kKeyBindings) {
-        if (keys & binding.key) mask |= static_cast<std::uint32_t>(binding.button);
+        if (keys & binding.key) out.buttons |= static_cast<std::uint32_t>(binding.button);
     }
-    return mask;
 }
 
 } // namespace nnh::platform

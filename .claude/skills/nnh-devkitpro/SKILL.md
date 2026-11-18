@@ -33,7 +33,7 @@ One file per module: `<module>_3ds.cpp`.
 
 - Init order: `gfxInitDefault` → `C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)` → `C2D_Init` → `C2D_Prepare` →
   targets; shut down in reverse. Every frame between `C3D_FrameBegin` / `C3D_FrameEnd`.
-- `hidScanInput()` exactly once per frame (the engine does it in `read_buttons`).
+- `hidScanInput()` exactly once per frame (the engine does it in `read_input`).
 - Memory: Old 3DS ~64 MB for apps, 32 MB linear heap by default; GPU textures/buffers in linear or VRAM
   (6 MB, two 3 MB banks); the CPU can't write VRAM. Check `osGetMemRegionFree()` when budgeting.
 - Textures: power-of-two sides 8–1024, tiled (tex3ds produces `.t3x` already tiled).

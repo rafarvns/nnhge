@@ -13,10 +13,10 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — contract, fake, public API, events
 
-- [ ] **T2.1** `InputSample` + `read_input()` replace `read_buttons()` in the contract, fake, pc and 3ds (buttons only, behaviour unchanged) — files: contract `input.hpp`, `input_{fake,pc,3ds}.cpp`, `app.cpp` — test: existing input/event tests still pass; conformance `idle_input_is_zero` — covers FR-10
-- [ ] **T2.2** fake setters for sticks and touch — files: `platform_fake.hpp`, `control_fake.cpp`, `input_fake.cpp` — test: used by T2.3 — covers FR-10
-- [ ] **T2.3** public queries `circle_pad`, `c_stick`, `touching`, `touch_started`, `touch_ended`, `touch_position`, mirror switch — files: `nnh/input.hpp`, `input.cpp`, `input_internal.hpp` — test: `tests/input/test_input_queries.cpp` — covers FR-1, FR-2, FR-4, FR-6, FR-12
-- [ ] **T2.4** `TouchStarted`/`TouchEnded` events after button events — files: `input.cpp` — test: `tests/events/test_input_events.cpp` — covers FR-5, FR-6
+- [x] **T2.1** `InputSample` + `read_input()` replace `read_buttons()` in the contract, fake, pc and 3ds (buttons only, behaviour unchanged) — files: contract `input.hpp`, `input_{fake,pc,3ds}.cpp`, `app.cpp` — test: existing input/event tests still pass; conformance `idle_input_is_zero` — covers FR-10
+- [x] **T2.2** fake setters for sticks and touch — files: `platform_fake.hpp`, `control_fake.cpp`, `input_fake.cpp` — test: used by T2.3 — covers FR-10
+- [x] **T2.3** public queries `circle_pad`, `c_stick`, `touching`, `touch_started`, `touch_ended`, `touch_position`, mirror switch — files: `nnh/input.hpp`, `input.cpp`, `input_internal.hpp` — test: `tests/input/test_input_queries.cpp` — covers FR-1, FR-2, FR-4, FR-6, FR-12
+- [x] **T2.4** `TouchStarted`/`TouchEnded` events after button events — files: `input.cpp` — test: `tests/events/test_input_events.cpp` — covers FR-5, FR-6
 
 ## Stage 3 — PC simulator
 

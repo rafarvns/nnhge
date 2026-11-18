@@ -7,12 +7,13 @@
 #include "nnh/memory.hpp"
 #include "nnh/system.hpp"
 
+#include "nnh/platform/input.hpp"
 #include "nnh/platform_fake.hpp"
 
 namespace nnh::platform_fake::detail {
 
 struct Controls {
-    std::uint32_t held_buttons = 0;
+    platform::InputSample input; // what read_input() reports
     bool quit_requested = false;
     bool init_fails = false;
     std::int64_t time_ns = 0; // manual clock read by ticks_ns()

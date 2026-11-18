@@ -53,8 +53,16 @@ const State& state();
 /// Forgets recordings and controls (call between tests while the engine is shut down).
 void reset();
 
-/// Buttons that read_buttons() reports from now on (mask of nnh::Button bits).
+/// Buttons that read_input() reports from now on (mask of nnh::Button bits).
 void set_held_buttons(std::uint32_t mask);
+
+/// Stick readings read_input() reports from now on (platform scale: about [-1, 1], y up, no dead zone).
+void set_circle_pad(float x, float y);
+void set_c_stick(float x, float y);
+
+/// The bottom screen is touched at (x, y) from now on, until release_touch().
+void set_touch(int x, int y);
+void release_touch();
 
 /// When true, poll_events() returns false (the system asks the app to quit).
 void set_quit_requested(bool quit);

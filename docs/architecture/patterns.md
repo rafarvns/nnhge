@@ -21,13 +21,13 @@ here once accepted.
 
 ```cpp
 // engine/core/contract/nnh/platform/*.hpp   (the interface)
-namespace nnh::platform { std::uint32_t read_buttons(); }
+namespace nnh::platform { void read_input(InputSample& out); }
 
 // engine/platforms/3ds/src/input_3ds.cpp  (one implementation per target, picked by CMake)
-std::uint32_t nnh::platform::read_buttons() { hidScanInput(); /* ... */ }
+void nnh::platform::read_input(InputSample& out) { hidScanInput(); /* ... */ }
 ```
 
-The input module calls `platform::read_buttons()` without knowing which platform it runs on.
+The frame loop calls `platform::read_input()` without knowing which platform it runs on.
 
 ## Anti-patterns (don't)
 

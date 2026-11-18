@@ -50,7 +50,7 @@ NNH_TEST(press_is_reported_only_on_first_frame) {
 | Public API wiring | Unit tests against the **fake** platform backend |
 
 Design for testability: put decisions in plain logic that takes data in and gives data out (like
-`InputState::update(mask)`), and keep the platform call at the edge (`platform::read_buttons()`).
+`InputState::update(mask)`), and keep the platform call at the edge (`platform::read_input()`).
 Logic that needs time or randomness receives them as parameters.
 
 ## Fakes, not mocks

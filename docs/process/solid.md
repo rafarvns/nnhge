@@ -52,8 +52,9 @@ One public header per module, each small. Internal headers expose only what othe
 High-level code depends on abstractions, not on platform details.
 
 ```cpp
-// engine/core/src/input/input.cpp depends on the abstraction...
-g_input.update(platform::read_buttons());
+// engine/core/src/app/app.cpp depends on the abstraction...
+platform::read_input(sample);
+detail::input_update(sample);
 // ...and the build links exactly one implementation: input_3ds.cpp, input_pc.cpp or input_fake.cpp.
 ```
 

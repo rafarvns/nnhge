@@ -34,8 +34,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 5 — 3DS
 
-- [ ] **T5.1** `texture_create/destroy` with `Tex3DS_TextureImport` (linear), nearest filter — files: `texture_3ds.cpp` — covers FR-2, FR-11
-- [ ] **T5.2** `draw_2d` with citro2d (subtexture per region and flips, draw params, tint) and shapes; `C2D_Init` capacity from `AppConfig::gfx` — files: `draw2d_3ds.cpp`, `app_3ds.cpp` — covers FR-4, FR-5, FR-8, FR-9
+- [x] **T5.1** `texture_create/destroy` with `Tex3DS_TextureImport` (linear), nearest filter — files: `texture_3ds.cpp` — covers FR-2, FR-11 (verified on an Old 3DS XL, 2026-11-18)
+- [x] **T5.2** `draw_2d` with citro2d (subtexture per region and flips, draw params, tint) and shapes; `C2D_Init` capacity from `AppConfig::gfx` — files: `draw2d_3ds.cpp`, `app_3ds.cpp` — covers FR-4, FR-5, FR-8, FR-9 (verified on an Old 3DS XL, 2026-11-18)
 
 ## Stage 6 — example, benchmark, docs, closing
 

@@ -3,6 +3,8 @@
 
 #include <citro2d.h>
 
+#include <cstdint>
+
 #include "nnh/gfx.hpp"
 
 namespace nnh::platform::ctr {
@@ -15,6 +17,12 @@ struct Context {
 };
 
 Context& context();
+
+/// The citro3d texture behind a platform::TextureHandle (texture_3ds.cpp).
+C3D_Tex* texture_of(std::uintptr_t handle);
+
+/// Sets platform::last_error() (a string literal: it is kept, not copied).
+void set_error(const char* what);
 
 inline u32 to_c2d(Color c) { return C2D_Color32(c.r, c.g, c.b, c.a); }
 

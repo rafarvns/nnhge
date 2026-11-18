@@ -3,8 +3,8 @@
 Header: `<nnh/gfx.hpp>` · Design: [architecture/rendering.md](../architecture/rendering.md) · Textures:
 [texture.md](texture.md) · Types: [math.md](math.md)
 
-> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): complete on the **PC simulator**; the
-> 3DS draws sprites and shapes from stage 5 (until then nothing appears on the console). Example:
+> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): works on the PC simulator and on an Old
+> 3DS XL; the benchmark and the closing docs are still to come. Example:
 > [`examples/sprites`](../../examples/sprites/main.cpp).
 
 ## Screens

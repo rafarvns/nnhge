@@ -11,3 +11,6 @@ compile_commands.json
 *.cia
 *.smdh
 *.elf
+
+# Python bytecode (scripts in scripts/ and examples/*/art/)
+__pycache__/

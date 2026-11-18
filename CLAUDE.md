@@ -73,7 +73,9 @@ and scenes (spec 001, implemented; demo `examples/scenes`): `<nnh/events.hpp>` �
 gamepad ([api/input.md](docs/api/input.md)). 2D graphics (spec 004, implemented; demo `examples/sprites`):
 `<nnh/texture.hpp>` — `load_texture()` from `nnh_add_game(... IMAGES ...)`; `<nnh/gfx.hpp>` — `gfx::draw`,
 shapes, layers, `Camera2D`; recorded and submitted per screen so 3D can be added
-([architecture/rendering.md](docs/architecture/rendering.md)).
+([architecture/rendering.md](docs/architecture/rendering.md)). Text (spec 005, implemented; demo
+`examples/text`): `gfx::draw_text`/`measure_text` with the built-in NNHGE font, identical on every system;
+debug text uses it too ([api/text.md](docs/api/text.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

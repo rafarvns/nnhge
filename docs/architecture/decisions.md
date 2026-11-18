@@ -24,6 +24,8 @@ the table; never silently. New decisions get the next number.
 | D16 | **System-only features via capability queries + extension headers** `<nnh/<system>/...>` | Games stay portable by default, unique hardware (stereo 3D, Joy-Con) stays reachable, and non-portable code is explicit at the include line. |
 | D17 | **Core foundation before features**: time, logging, asserts/`Result`/crash report, memory accounting, debug overlay/profiler, confined `fs`; three build flavors (Debug, Development, Release) | Every later module needs them; a console without a debugger needs logs and crash reports from day one. See [foundation.md](foundation.md). |
 | D18 | **Safe by default** (constitution X): confined file writes, atomic saves, fuzzed parsers, pinned supply chain, no telemetry | Homebrew has no sandbox; players' SD cards and saves must be safe. See [security.md](security.md). |
+| D19 | **Until M3, game images are embedded in the executable**, converted at build time (tex3ds `.t3x` on 3DS, PNG on PC) and loaded by name | Games get graphics now without the romfs/`assetc` pipeline; loading by name keeps the API when M3 moves images to romfs (D6). |
+| D20 | **Rendering is recorded, then submitted per screen in passes; one texture type for 2D and 3D** (3DS: `C3D_Tex` drawn by citro2d; PC: SDL renderer on an `SDL_GPUDevice`, default renderer as headless fallback) | Layers, batching and stereo (one list, two eyes) come for free, and 3D (M8) slots in as a pass without changing 2D calls or textures. See [rendering.md](rendering.md). |
 
 ## NNH Link (planned flow, D7/D8)
 

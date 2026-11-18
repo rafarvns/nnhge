@@ -1,6 +1,6 @@
 # Plan 003: Full input — sticks, touch, gamepad
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); verified on PC and an Old 3DS XL; New 3DS run pending (maintainer)
 Spec: [spec.md](spec.md)
 
 ## Constitution Check (before design)

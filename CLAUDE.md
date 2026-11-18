@@ -68,7 +68,9 @@ Portable core + one library per system, plugged in at link time through the plat
 of ad-hoc code ([foundation.md](docs/architecture/foundation.md), demo `examples/foundation`). Event bus
 and scenes (spec 001, implemented; demo `examples/scenes`): `<nnh/events.hpp>` — `subscribe`/`publish`/`Subscription`, delivered in
 `nnh::frame()` ([api/events.md](docs/api/events.md)); `<nnh/scene.hpp>` — `Scene`, `scenes::push/pop/replace`,
-`nnh::run()` ([api/scene.md](docs/api/scene.md)).
+`nnh::run()` ([api/scene.md](docs/api/scene.md)). Full input (spec 003, implemented; demo `examples/input`):
+`<nnh/input.hpp>` — buttons, `circle_pad()`/`c_stick()`, touch queries and events; PC keyboard, mouse,
+gamepad ([api/input.md](docs/api/input.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

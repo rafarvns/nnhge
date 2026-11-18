@@ -1,6 +1,6 @@
 # Tasks 003: Full input — sticks, touch, gamepad
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); verified on PC and an Old 3DS XL; New 3DS run pending (maintainer)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -35,8 +35,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 - [x] **T5.1** `examples/input/`: buttons, both sticks (dot in a circle drawn with debug text), touch point, mirror toggle (SELECT) — covers AC-2
 - [x] **T5.2** simulator screenshots with `NNH_SIM_INPUT` (sticks deflected, touch) — covers AC-2
-- [ ] **T5.3** `docs/api/input.md` (queries, events, mirror, PC keyboard/mouse/gamepad tables), `docs/api/system.md` (PC capabilities), `docs/tech/sdl3.md` (gamepad, mouse), `docs/tech/devkitpro-3ds.md` (`irrst`), header comments; the docs that mention `read_buttons()` (`patterns.md`, `solid.md`, `tdd.md`, `nnh-devkitpro` skill) — covers AC-5
-- [ ] **T5.4** build budgets, Release strings check, Linux gcc/clang ASan on VM 120 — covers AC-6
+- [x] **T5.3** `docs/api/input.md` (queries, events, mirror, PC keyboard/mouse/gamepad tables), `docs/api/system.md` (PC capabilities), `docs/tech/sdl3.md` (gamepad, mouse), `docs/tech/devkitpro-3ds.md` (`irrst`), header comments; the docs that mention `read_buttons()` (`patterns.md`, `solid.md`, `tdd.md`, `nnh-devkitpro` skill) — covers AC-5
+- [x] **T5.4** build budgets, Release strings check, Linux gcc/clang ASan on VM 120 — covers AC-6 (simulator 1.3 s, `.3dsx` 2.5 s, clean 3DS 17.7 s; Release strings ok; Linux gcc + clang ASan/UBSan 216 tests)
 - [x] **T5.5** PC play test with keyboard, mouse and a hot-plugged gamepad — maintainer — covers AC-3 (2026-11-18)
-- [ ] **T5.6** run `examples/input` on a New 3DS (and Old 3DS if available) — maintainer — covers AC-4
-- [ ] **T5.7** `docs/ROADMAP.md` checkbox; spec, plan and tasks status → implemented
+- [ ] **T5.6** run `examples/input` on a New 3DS (and Old 3DS if available) — maintainer — covers AC-4 (Old 3DS XL done 2026-11-18: buttons, Circle Pad, touch, mirror, C-Stick reported absent; New 3DS pending)
+- [x] **T5.7** `docs/ROADMAP.md` checkbox; spec, plan and tasks status → implemented

@@ -30,6 +30,10 @@ After spec 001 (2026-11-17, same machine): edit one game `.cpp` → simulator 1.
 3DS configure + build (engine + 3 examples) 13.7 s. Release `hello.3dsx`: 193,016 → 199,648 bytes (+6.5 KB:
 event bus and scene stack, linked by `nnh::frame()`); `scenes.3dsx` 214,924 bytes.
 
+After spec 003 (2026-11-18, same machine): edit one game `.cpp` → simulator 1.3 s, `.3dsx` 2.5 s; clean
+3DS configure + build (engine + 4 examples) 17.7 s. Release `hello.3dsx`: 199,648 → 201,336 bytes (+1.7 KB:
+sticks, touch, mirror); `input.3dsx` 213,912 bytes.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -53,7 +57,8 @@ event bus and scene stack, linked by `nnh::frame()`); `scenes.3dsx` 214,924 byte
 ## M1b — Events, scenes, input
 - [x] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)): `<nnh/events.hpp>`, `ButtonPressed`/`ButtonReleased`, `<nnh/scene.hpp>` + `nnh::run()`, `examples/scenes` (2026-11-17)
 - [x] `examples/scenes` run on a real 3DS (2026-11-17)
-- [ ] Input: Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (gamepad, mouse = touch) — [spec 003](../specs/003-full-input/spec.md) (in progress)
+- [x] Input ([spec 003](../specs/003-full-input/spec.md)): Circle Pad, C-Stick/ZL/ZR (New 3DS), touch, opt-in Circle Pad → D-Pad mirror, `TouchStarted`/`TouchEnded`; PC keyboard, mouse = touch, gamepad with hot-plug; `examples/input` — verified on PC and an Old 3DS XL (2026-11-18)
+- [ ] C-Stick and ZL/ZR on a real New 3DS (and measure the C-Stick range) — maintainer, when one is available
 
 ## M2 — 2D graphics
 - [ ] Textures, sprites, sprite batching, both screens, camera

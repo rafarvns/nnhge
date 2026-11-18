@@ -68,7 +68,7 @@ one image → `.3dsx` 2.7 s; clean 3DS configure + build (engine + 5 examples) 1
 
 ## M2 — 2D graphics
 - [x] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md): `<nnh/texture.hpp>` (`IMAGES` in `nnh_add_game`), `gfx::draw`/shapes/layers/`Camera2D`, draw list ready for 3D passes and stereo, `examples/sprites` — verified on PC and an Old 3DS XL (2026-11-18)
-- [ ] Text rendering (bitmap fonts first). First goal: text **identical on every system** — debug text too, which today uses the 3DS system font vs. an 8×8 font on PC, so widths differ and layouts break (found on the 3DS in spec 004)
+- [ ] Text rendering (bitmap fonts first). First goal: text **identical on every system** — debug text too, which today uses the 3DS system font vs. an 8×8 font on PC, so widths differ and layouts break (found on the 3DS in spec 004) — [spec 005](../specs/005-text-and-builtin-font/spec.md) (draft)
 - [ ] Simulator window: two screens layout, scale, 3D slider control
 
 ## M3 — Assets

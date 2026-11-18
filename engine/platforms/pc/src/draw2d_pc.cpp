@@ -45,10 +45,8 @@ SDL_FRect shape_rect(const SDL_FRect& area, const DrawItem2D& item) {
 
 void draw_2d(Screen screen, const DrawItem2D* items, int count) {
     SDL_Renderer* renderer = pc::context().renderer;
-    const SDL_FRect area = pc::screen_rect(screen);
-    const SDL_Rect clip{static_cast<int>(area.x), static_cast<int>(area.y), static_cast<int>(area.w),
-                        static_cast<int>(area.h)};
-    SDL_SetRenderClipRect(renderer, &clip);
+    pc::draw_on(screen); // the screen's own target: native pixels, clipped to it
+    const SDL_FRect area{0, 0, 0, 0};
     for (int i = 0; i < count; ++i) {
         const DrawItem2D& item = items[i];
         switch (item.kind) {
@@ -73,7 +71,6 @@ void draw_2d(Screen screen, const DrawItem2D* items, int count) {
             break;
         }
     }
-    SDL_SetRenderClipRect(renderer, nullptr);
 }
 
 } // namespace nnh::platform

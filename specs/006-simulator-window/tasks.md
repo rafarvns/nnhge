@@ -13,8 +13,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — screen targets and composition
 
-- [ ] **T2.1** render targets per screen; `draw_2d` and crash text in native pixels; compose in `end_frame` (stacked); no logical presentation — files: `video_pc.cpp`, `draw2d_pc.cpp`, `debug_text_pc.cpp`, `app_pc.cpp`, `context_pc.hpp` — verified: default screenshots of every example compared with before — covers FR-5, FR-7
-- [ ] **T2.2** touch through the layout — files: `touch_pc.cpp` — covers FR-4
+- [x] **T2.1** render targets per screen; `draw_2d` and crash text in native pixels; compose in `end_frame` (stacked); no logical presentation — files: `video_pc.cpp`, `draw2d_pc.cpp`, `debug_text_pc.cpp`, `app_pc.cpp`, `context_pc.hpp` — verified: default screenshots of every example compared with before — covers FR-5, FR-7 (hello, input, scenes, text identical; sprites differs only in the rotated sprite, now rasterized at native resolution like the 3DS; Linux headless == Windows)
+- [x] **T2.2** touch through the layout — files: `touch_pc.cpp` — covers FR-4
 
 ## Stage 3 — layouts, scale, fullscreen
 

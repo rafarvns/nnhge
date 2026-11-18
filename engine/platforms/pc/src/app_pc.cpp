@@ -48,6 +48,30 @@ SDL_Renderer* create_renderer(SDL_Window* window) {
     return renderer;
 }
 
+/// One render target per 3DS screen at native size, scaled up when composed (nearest: sharp pixels).
+bool create_screen_targets() {
+    const int widths[2] = {400, 320};
+    for (int i = 0; i < 2; ++i) {
+        SDL_Texture* t = SDL_CreateTexture(g_context.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET,
+                                           widths[i], 240);
+        if (t == nullptr) return false;
+        SDL_SetTextureScaleMode(t, SDL_SCALEMODE_NEAREST);
+        SDL_SetTextureBlendMode(t, SDL_BLENDMODE_NONE);
+        g_context.screens[i] = t;
+    }
+    return true;
+}
+
+void destroy_window() {
+    for (SDL_Texture*& t : g_context.screens) {
+        SDL_DestroyTexture(t);
+        t = nullptr;
+    }
+    SDL_DestroyRenderer(g_context.renderer);
+    SDL_DestroyWindow(g_context.window);
+    g_context = {};
+}
+
 /// Debug/Development: <exe dir>/data/<folder>/ (easy to inspect next to the build);
 /// Release: the user's app-data folder (SDL_GetPrefPath).
 void set_data_root(const AppConfig& config) {
@@ -87,18 +111,16 @@ bool init(const AppConfig& config) {
     // Pads already connected arrive as SDL_EVENT_GAMEPAD_ADDED in the first poll_events().
     SDL_InitSubSystem(SDL_INIT_GAMEPAD);
     const int scale = config.pc_window_scale > 0 ? config.pc_window_scale : 1;
-    g_context.window = SDL_CreateWindow(config.title, pc::kLogicalWidth * scale, pc::kLogicalHeight * scale,
-                                        SDL_WINDOW_RESIZABLE);
+    g_context.scale = scale < pc::kMaxSimScale ? scale : pc::kMaxSimScale;
+    const pc::SimSize size = pc::natural_size(g_context.layout, g_context.scale);
+    g_context.window = SDL_CreateWindow(config.title, size.w, size.h, SDL_WINDOW_RESIZABLE);
     g_context.renderer = g_context.window != nullptr ? create_renderer(g_context.window) : nullptr;
-    if (g_context.renderer == nullptr) {
+    if (g_context.renderer == nullptr || !create_screen_targets()) {
         set_error("window creation failed");
-        SDL_DestroyWindow(g_context.window);
-        g_context = {};
+        destroy_window();
         SDL_Quit();
         return false;
     }
-    SDL_SetRenderLogicalPresentation(g_context.renderer, pc::kLogicalWidth, pc::kLogicalHeight,
-                                     SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
     SDL_SetRenderVSync(g_context.renderer, 1);
     read_dev_options();
     pc::input_override_init();
@@ -110,9 +132,7 @@ bool init(const AppConfig& config) {
 
 void shutdown() {
     pc::gamepad_close();
-    SDL_DestroyRenderer(g_context.renderer);
-    SDL_DestroyWindow(g_context.window);
-    g_context = {};
+    destroy_window();
     SDL_Quit();
 }
 

@@ -35,22 +35,19 @@ void pc::reset_frame_pacing() { g_next_frame_ns = SDL_GetTicksNS(); }
 
 void begin_frame(Color top_clear, Color bottom_clear) {
     SDL_Renderer* renderer = pc::context().renderer;
-    SDL_SetRenderClipRect(renderer, nullptr);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-    pc::set_draw_color(rgb(12, 12, 12)); // area outside the screens
-    SDL_RenderClear(renderer);
-    const SDL_FRect top = pc::screen_rect(Screen::Top);
-    const SDL_FRect bottom = pc::screen_rect(Screen::Bottom);
+    // Each screen is drawn into its own target at native size; end_frame composes them (spec 006).
+    pc::draw_on(Screen::Top);
     pc::set_draw_color(top_clear);
-    SDL_RenderFillRect(renderer, &top);
+    SDL_RenderClear(renderer);
+    pc::draw_on(Screen::Bottom);
     pc::set_draw_color(bottom_clear);
-    SDL_RenderFillRect(renderer, &bottom);
+    SDL_RenderClear(renderer);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 }
 
 void end_frame() {
     pc::Context& ctx = pc::context();
-    SDL_SetRenderClipRect(ctx.renderer, nullptr);
+    pc::compose_screens();
     ++ctx.frames;
     if (ctx.screenshot_path != nullptr && ctx.exit_after != 0 && ctx.frames == ctx.exit_after) {
         save_screenshot(ctx.screenshot_path);

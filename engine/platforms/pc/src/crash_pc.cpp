@@ -61,6 +61,7 @@ void draw_crash_frame(const char* top, const char* bottom) {
     begin_frame(rgb(120, 16, 16), rgb(40, 8, 8));
     draw_text_block(Screen::Top, top);
     draw_text_block(Screen::Bottom, bottom);
+    pc::compose_screens();
 }
 
 void save_screenshot_if_requested() {

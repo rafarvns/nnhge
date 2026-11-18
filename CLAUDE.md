@@ -81,7 +81,8 @@ debug text uses it too ([api/text.md](docs/api/text.md)). Assets (spec 007; demo
 ([api/assets.md](docs/api/assets.md)). Audio (spec 008, in progress): `<nnh/audio.hpp>` — `load_sound("sfx/jump")` (WAV/Ogg from
 assets), `audio::play` voices with volume/pan/pitch/priority, groups and master, `SoundFinished`; streamed
 `music::play`/`crossfade` with loop points and fades, `MusicFinished`; Ogg via
-vendored `third_party/stb_vorbis` ([api/audio.md](docs/api/audio.md)).
+vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS via ndsp; demo
+`examples/audio` ([api/audio.md](docs/api/audio.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

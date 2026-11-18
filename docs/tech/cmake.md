@@ -31,6 +31,7 @@ Build folders: `build/<preset>/`. Personal presets go in `CMakeUserPresets.json`
 | `engine/platforms/<system>/CMakeLists.txt` | `nnh::platform_<system>` (static), links the system SDK `PRIVATE` |
 | `cmake/nnh_engine_options.cmake` | `nnh_engine_options(target)`: C++20, warnings, no exceptions/RTTI |
 | `cmake/nnh_game.cmake` | `nnh_add_game()` |
+| `cmake/nnh_assets.cmake` | `nnh_add_assets()` (the `ASSETS` folder of `nnh_add_game`), with `nnh_asset_index.cmake` (the index and its name checks) |
 | `cmake/nnh_images.cmake` | `nnh_add_images()` (the `IMAGES` of `nnh_add_game`), with the build-time scripts `nnh_check_image.cmake` and `nnh_embed.cmake` |
 | `cmake/nnh_sdl3.cmake` | Provides `SDL3::SDL3` for the PC platform |
 | `examples/CMakeLists.txt` | One `add_subdirectory` per example |
@@ -51,7 +52,8 @@ presets selecting it ([platforms.md](../architecture/platforms.md)).
 ```cmake
 nnh_add_game(sprites
     SOURCES main.cpp
-    IMAGES art/hero.png art/tiles.png   # optional; loaded with nnh::load_texture("hero")
+    ASSETS assets                       # optional folder: assets/art/hero.png -> load_texture("art/hero")
+    IMAGES art/logo.png                 # optional embedded images: load_texture("logo")
     TITLE "Sprites demo" DESCRIPTION "NNHGE example" AUTHOR "NNHGE contributors"
     ICON icon.png)            # optional 48x48; default icon otherwise
 ```
@@ -59,8 +61,21 @@ nnh_add_game(sprites
 On 3DS this calls devkitPro's `ctr_generate_smdh()` and `ctr_create_3dsx()`; on Windows it copies
 `SDL3.dll` next to the executable.
 
-**Images** (`IMAGES`, decision D19, until M3 moves them to romfs): one build step per image, rerun only
-when that image changes:
+**Assets** (`ASSETS <folder>`, spec 007, the recommended way): every file of the folder becomes an asset
+named by its relative path ([api/assets.md](../api/assets.md)). One build step per file, rerun only when
+that file changes, writes into `build/<preset>/<game dir>/assets/<path>`: PNGs are checked like images
+(below) and, on 3DS, converted by `tex3ds` under the same name; other files are copied. Then
+`nnh_asset_index.cmake` writes `assets/.nnh_assets` (the sorted list core reads at init) and fails the
+build for names that break the asset path rules, use characters outside `A-Z a-z 0-9 space - _ .`, are
+reserved, or differ from another only by letter case; it also deletes outputs of removed assets. On PC
+that folder is next to the executable; on 3DS the target `<game>_assets` is a devkitPro asset target
+passed as `ROMFS` to `ctr_create_3dsx`, so the `.3dsx` is repacked when an asset changes. The folder is
+scanned with `file(GLOB_RECURSE ... CONFIGURE_DEPENDS)` — the one exception to "no GLOB" below: assets
+are data, and adding a file must not require editing CMake. Script tests: `asset_index_*` (fixtures in
+`tests/data/asset_lists/`).
+
+**Images** (`IMAGES`, decision D19: embedded in the executable, for small games; `ASSETS` is the
+recommended way): one build step per image, rerun only when that image changes:
 
 1. `nnh_check_image.cmake` reads the PNG header and fails the build unless both sides are powers of two
    from 8 to 1024 — `hero.png is 100x60: textures need power-of-two sides from 8 to 1024 ...`;
@@ -83,7 +98,8 @@ error) to the arrays; games without `IMAGES` link an empty default from core. Ge
   `target_compile_options`. No `include_directories()`, `link_libraries()`, or editing `CMAKE_CXX_FLAGS`.
 - Say `PUBLIC` / `PRIVATE` / `INTERFACE` explicitly. SDL3 is `PRIVATE` to the engine.
 - Namespaced aliases for libraries (`nnh::engine`).
-- No `file(GLOB)`: explicit lists make added/removed files visible in review and keep Ninja exact.
+- No `file(GLOB)` for sources: explicit lists make added/removed files visible in review and keep Ninja
+  exact. (Asset folders are the exception, see `ASSETS` above.)
 - Custom functions parse arguments with `cmake_parse_arguments(PARSE_ARGV ...)`.
 - C++ standard through `CMAKE_CXX_STANDARD` / `target_compile_features`, never `-std=` flags.
 

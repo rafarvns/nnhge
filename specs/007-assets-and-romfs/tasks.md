@@ -18,9 +18,9 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 3 — build pipeline
 
-- [ ] **T3.1** `nnh_assets.cmake` + `ASSETS` in `nnh_add_game`: per-file convert/copy into `<bin>/assets/`, `<game>_assets` target — covers FR-1, FR-2, FR-3
-- [ ] **T3.2** `nnh_asset_index.cmake`: sorted index, invalid names and case clashes fail the build, stale outputs removed — test: ctest script cases with fixture folders — covers FR-1, FR-6
-- [ ] **T3.3** 3DS: romfs asset target passed to `ctr_create_3dsx` — covers FR-3
+- [x] **T3.1** `nnh_assets.cmake` + `ASSETS` in `nnh_add_game`: per-file convert/copy into `<bin>/assets/`, `<game>_assets` target — covers FR-1, FR-2, FR-3
+- [x] **T3.2** `nnh_asset_index.cmake`: sorted index, invalid names and case clashes fail the build, stale outputs removed — test: ctest script cases with fixture folders — covers FR-1, FR-6
+- [x] **T3.3** 3DS: romfs asset target passed to `ctr_create_3dsx` — covers FR-3
 
 ## Stage 4 — platforms
 

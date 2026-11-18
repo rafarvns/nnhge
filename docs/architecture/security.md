@@ -41,10 +41,13 @@ least one valid file.
 
 - Every reader of external data checks sizes and offsets before using them, never trusts counts from the
   file, and fails with a `Result` error instead of crashing.
-- Each parser has a fuzz target in `tests/fuzz/` (today: path validator, save-file validator). They run as
-  a deterministic mini-fuzz (20 000 mutated inputs) inside `nnh_tests` on every compiler, and with
-  libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab build VM or the
-  manual CI job).
+- Each parser has a fuzz target in `tests/fuzz/` (today: path validator, save-file validator, asset
+  index). They run as a deterministic mini-fuzz (20 000 mutated inputs) inside `nnh_tests` on every
+  compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
+  build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_fuzz_targets`) are built
+  with `-fsanitize=fuzzer-no-link,address` in that configuration: without it libFuzzer gets no coverage
+  feedback (it reported `cov: 1` until 2026-11-18) and only mutates blindly. Check that `cov:` grows
+  when adding a target. Last run (60 s each): asset index cov 125, path cov 46, save cov 44, no crash.
 
 ## Supply chain and CI
 

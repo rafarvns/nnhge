@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "assets/asset_index.hpp"
 #include "fs/save_format.hpp"
 #include "nnh/fs.hpp"
 
@@ -25,6 +26,23 @@ int save_target(const std::uint8_t* data, std::size_t size) {
         // A valid view must point inside the input.
         const auto& v = view.value();
         if (v.payload < data || v.payload + v.size > data + size) std::abort();
+    }
+    return 0;
+}
+
+int asset_index_target(const std::uint8_t* data, std::size_t size) {
+    // The index file comes from the disk: parsing must stay in bounds, and every entry it accepts must
+    // lie inside the buffer and be found again by lookup.
+    static char text[4097];
+    static const char* entries[64];
+    const std::size_t n = size < sizeof text - 1 ? size : sizeof text - 1;
+    std::memcpy(text, data, n);
+    detail::AssetIndex index;
+    if (index.parse(text, n, entries, 64)) {
+        for (int i = 0; i < index.count(); ++i) {
+            if (entries[i] < text || entries[i] >= text + n + 1) std::abort();
+            if (index.find(entries[i]) == nullptr) std::abort();
+        }
     }
     return 0;
 }

@@ -1,6 +1,6 @@
 # Plan 007: Assets — build pipeline and romfs
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Decisions D6, D19 (narrowed by this spec)
 
 ## Constitution Check (before design)

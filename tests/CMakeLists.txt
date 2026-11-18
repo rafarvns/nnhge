@@ -14,6 +14,8 @@ target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 add_executable(nnh_tests
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
+    assets/test_asset_index.cpp
+    assets/test_asset_path.cpp
     build/test_flavor.cpp
     crash/test_assert.cpp
     crash/test_report.cpp
@@ -137,7 +139,12 @@ endforeach()
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60
 option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)
 if(NNH_BUILD_FUZZERS)
-    foreach(name path save)
+    # The code under test lives in these libraries: instrument it for coverage and ASan, or libFuzzer
+    # mutates blind (it reported "cov: 1" before this was added).
+    foreach(lib nnh_core nnh_fuzz_targets)
+        target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
+    endforeach()
+    foreach(name path save asset_index)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

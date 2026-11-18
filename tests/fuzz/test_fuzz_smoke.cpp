@@ -41,6 +41,14 @@ NNH_TEST(path_target_survives_mutated_inputs) {
     CHECK(true);
 }
 
+NNH_TEST(asset_index_target_survives_mutated_inputs) {
+    const char* seeds[] = {"art/hero.png\nlevels/level1.txt\n", "a\r\nb\r\n", "../x\n", "a//b\nc", ""};
+    for (const char* s : seeds) {
+        mutate_and_run(nnh::fuzz::asset_index_target, reinterpret_cast<const std::uint8_t*>(s), std::strlen(s));
+    }
+    CHECK(true);
+}
+
 NNH_TEST(save_target_survives_mutated_inputs) {
     std::uint8_t file[64] = {};
     const char payload[] = "seed payload";

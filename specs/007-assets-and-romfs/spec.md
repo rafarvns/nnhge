@@ -1,6 +1,6 @@
 # Spec 007: Assets — build pipeline and romfs
 
-Status: approved (2026-11-18, maintainer)
+Status: in progress (approved 2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002](../002-core-foundation/spec.md) (`nnh::fs`, memory, `Result`),
 [spec 004](../004-2d-graphics/spec.md) (textures, `IMAGES`). Implements ROADMAP M3 and decision D6.

@@ -1,14 +1,14 @@
 # Tasks 007: Assets — build pipeline and romfs
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — pure core logic
 
-- [ ] **T1.1** asset path rules — files: `core/src/assets/asset_path.{hpp,cpp}` — test: `tests/assets/test_asset_path.cpp` — covers FR-6
-- [ ] **T1.2** [P] the index: parse, case-sensitive lookup, "did you mean" hint, size bound — files: `core/src/assets/asset_index.{hpp,cpp}` — test: `tests/assets/test_asset_index.cpp` — covers FR-6
+- [x] **T1.1** asset path rules — files: `core/src/assets/asset_path.{hpp,cpp}` — test: `tests/assets/test_asset_path.cpp` — covers FR-6
+- [x] **T1.2** [P] the index: parse, case-sensitive lookup, "did you mean" hint, size bound — files: `core/src/assets/asset_index.{hpp,cpp}` — test: `tests/assets/test_asset_index.cpp` — covers FR-6
 
 ## Stage 2 — contract, fake, API
 

@@ -11,6 +11,8 @@ add_library(nnh_core STATIC
     src/app/data_folder.cpp
     src/crash/crash.cpp
     src/crash/report.cpp
+    src/assets/asset_index.cpp
+    src/assets/asset_path.cpp
     src/debug/debug.cpp
     src/debug/debug_list.cpp
     src/debug/debug_pass.cpp

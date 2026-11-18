@@ -10,5 +10,6 @@ namespace nnh::fuzz {
 
 int path_target(const std::uint8_t* data, std::size_t size);
 int save_target(const std::uint8_t* data, std::size_t size);
+int asset_index_target(const std::uint8_t* data, std::size_t size);
 
 } // namespace nnh::fuzz

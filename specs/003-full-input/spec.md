@@ -1,6 +1,6 @@
 # Spec 003: Full input — sticks, touch, gamepad
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); verified on PC and an Old 3DS XL; New 3DS run pending (maintainer)
 Author: NNHGE maintainers · Date: 2026-11-17
 Depends on: [spec 001 — event bus and scenes](../001-event-bus-and-scenes/spec.md) (input events) and
 [spec 002 — core foundation](../002-core-foundation/spec.md) (platform contract, fake platform) — both

@@ -1,6 +1,6 @@
 # Spec 006: Simulator window — layouts, scale, fullscreen
 
-Status: draft
+Status: approved (2026-11-18, maintainer)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002](../002-core-foundation/spec.md) (PC platform, developer keys),
 [spec 003](../003-full-input/spec.md) (mouse as touch), [spec 004](../004-2d-graphics/spec.md) (renderer).
@@ -47,8 +47,9 @@ touching the bottom screen wherever it is drawn.
   the simulator closes and restored on the next run (per game), in the PC's user settings — never in
   the game's data folder or saves. A broken or missing settings file falls back to the defaults.
 - **FR-7 Reproducible screenshots.** `NNH_SCREENSHOT` and headless runs (`NNH_EXIT_AFTER_FRAMES`,
-  `SDL_VIDEO_DRIVER=offscreen`) use the stacked layout at 1× unless a layout is chosen explicitly
-  (e.g. an environment variable), and ignore remembered settings, so reference images don't depend on
+  `SDL_VIDEO_DRIVER=offscreen`) use the stacked layout at the initial scale (`AppConfig::pc_window_scale`,
+  default 2 — today's images) unless a layout is chosen explicitly (e.g. an environment variable), and
+  ignore remembered settings, so reference images don't depend on
   the developer's preferences. F12 screenshots keep capturing what is on screen.
 - **FR-8 Discoverable.** The current layout and scale show briefly when changed (window title or a short
   on-screen note), and the keys are listed in `docs/api/simulator.md`. Release builds keep layouts and
@@ -84,11 +85,15 @@ touching the bottom screen wherever it is drawn.
 
 ## Open questions
 
-- [ ] **Keys** — proposed: F2 cycles layouts, F3/F4 scale down/up, F5 toggles fit, F9 fullscreen (also
-  Alt+Enter). F1, F10, F11, F12 and Pause keep their current roles. Other preference?
-- [ ] **Large top proportions** — bottom screen at half the top's scale (proposed), or a fixed 1×?
-- [ ] **Settings location** — SDL's per-user preferences folder, one file per game (proposed), or a
-  file next to the executable (easier to find, but follows the build folder)?
-- [ ] **Release builds** — keep layout/scale/fullscreen keys in Release (proposed: they are viewing
-  options, harmless for a player), or Debug/Development only like the other developer keys?
-- [ ] **Change notice** — window title only (proposed: never covers the game) or a short on-screen note?
+Answered by the maintainer (2026-11-18): the proposed options, all accepted.
+
+- [x] **Keys** — F2 cycles layouts, F3/F4 scale down/up, F5 toggles fit, F9 (and Alt+Enter) fullscreen;
+  F1, F10, F11, F12 and Pause keep their roles.
+- [x] **Large top** — the bottom screen at half the top's scale (at least 1×).
+- [x] **Settings location** — SDL's per-user preferences folder, one file per game (not the game's data
+  folder).
+- [x] **Release builds** — layout, scale and fullscreen keys work in Release too (viewing options).
+- [x] **Change notice** — in the window title only, for a moment.
+
+Note (plan, 2026-11-18): FR-7 originally said "stacked at 1×"; today's reference screenshots are at the
+default initial scale 2, so headless runs use the initial scale to keep them byte-identical (AC-2).

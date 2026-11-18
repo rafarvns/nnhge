@@ -83,7 +83,7 @@ linked); `text.3dsx` 239,736 bytes.
 - [ ] `assetc` tool (a C++ converter with an incremental cache) — only when conversion outgrows the CMake steps (texture formats, atlases, audio)
 
 ## M4 — Audio
-- [ ] Sound effects (WAV), streaming music (OGG), mixer channels — ndsp / SDL3
+- [ ] Sound effects (WAV), streaming music (OGG), mixer channels — ndsp / SDL3 — [spec 008](../specs/008-audio/spec.md) (draft)
 
 ## M5 — Packaging
 - [ ] `.3dsx` with icon/metadata (SMDH)

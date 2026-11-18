@@ -74,8 +74,11 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
   debug pass (core's 4096 debug glyphs and overlay rectangles); an outline costs 4 objects.
 - **Textures from pixels** (`texture_create_rgba`, used for the built-in font): `C3D_TexInit(w, h,
   GPU_RGBA8)` in linear memory, then the CPU writes the GPU layout itself: 8×8 tiles left to right, rows
-  of tiles from the **bottom** of the image (v = 0), Morton (Z) order inside a tile, each pixel a `u32`
-  `0xRRGGBBAA`; then `C3D_TexFlush`. No citro2d text (`C2D_TextBuf`): all text is engine sprites.
+  of tiles from the **top** of the image, Morton (Z) order inside a tile with rows top-down too, each
+  pixel a `u32` `0xRRGGBBAA`; then `C3D_TexFlush`. **No vertical flip** — measured on an Old 3DS XL
+  with four variants of the font (flipping tiles and/or rows gave scrambled or upside-down glyphs). The
+  font is a good test pattern: each glyph is exactly one tile. No citro2d text (`C2D_TextBuf`): all text
+  is engine sprites.
 
 ## Input (HID)
 

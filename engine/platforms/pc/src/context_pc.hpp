@@ -23,6 +23,13 @@ struct Context {
     bool fullscreen = false;
     char title[128] = {};                   // the game's window title, without a notice
     std::uint64_t notice_until_ms = 0;      // the title shows the view until then (0 = no notice)
+    bool persist_view = false;              // load/save window.ini (not for scripted runs)
+    char settings_path[512] = {};
+    bool has_window_rect = false;           // last windowed position/size (window units)
+    int window_x = 0;
+    int window_y = 0;
+    int window_w = 0;
+    int window_h = 0;
     std::uint64_t frames = 0;               // frames ended since init
     std::uint64_t exit_after = 0;           // NNH_EXIT_AFTER_FRAMES (0 = never)
     const char* screenshot_path = nullptr;  // NNH_SCREENSHOT
@@ -65,6 +72,14 @@ void view_key_pressed(SDL_Scancode key, SDL_Keymod mods);
 void view_update();
 /// Resizes the window to the layout's natural size (unless fitting or fullscreen).
 void view_resize_window();
+/// Before the window exists: NNH_SIM_LAYOUT/NNH_SIM_SCALE, or the remembered window.ini (per game,
+/// in the user's preferences; skipped for scripted runs).
+void view_load(const char* data_folder);
+SimSize view_initial_window_size();
+/// After the window exists: remembered position (if still on a display) and fullscreen.
+void view_after_create();
+/// At shutdown: writes window.ini (not for scripted runs).
+void view_save();
 
 inline void set_draw_color(Color c) { SDL_SetRenderDrawColor(context().renderer, c.r, c.g, c.b, c.a); }
 

@@ -5,6 +5,7 @@
 //   NNH_SCREENSHOT=<file.png>   save the last frame before quitting (needs NNH_EXIT_AFTER_FRAMES)
 //   NNH_SIM_INPUT=<script>      scripted input, Debug/Development only (input_override_pc.cpp)
 //   NNH_SIM_RENDERER=sdl        skip the GPU-device renderer (use SDL's default renderer)
+//   NNH_SIM_LAYOUT=<id>, NNH_SIM_SCALE=<1..6|fit>   window view for screenshots (window_pc.cpp)
 
 #include <SDL3/SDL.h>
 // The game owns main(); SDL must not replace it.
@@ -110,9 +111,11 @@ bool init(const AppConfig& config) {
     // Gamepads are optional: without the subsystem the simulator still runs on keyboard and mouse.
     // Pads already connected arrive as SDL_EVENT_GAMEPAD_ADDED in the first poll_events().
     SDL_InitSubSystem(SDL_INIT_GAMEPAD);
+    read_dev_options(); // the view needs to know whether this is a scripted run
     const int scale = config.pc_window_scale > 0 ? config.pc_window_scale : 1;
     g_context.scale = scale < pc::kMaxSimScale ? scale : pc::kMaxSimScale;
-    const pc::SimSize size = pc::natural_size(g_context.layout, g_context.scale);
+    pc::view_load(config.data_folder);
+    const pc::SimSize size = pc::view_initial_window_size();
     std::snprintf(g_context.title, sizeof g_context.title, "%s", config.title != nullptr ? config.title : "NNHGE");
     g_context.window = SDL_CreateWindow(g_context.title, size.w, size.h, SDL_WINDOW_RESIZABLE);
     g_context.renderer = g_context.window != nullptr ? create_renderer(g_context.window) : nullptr;
@@ -123,7 +126,7 @@ bool init(const AppConfig& config) {
         return false;
     }
     SDL_SetRenderVSync(g_context.renderer, 1);
-    read_dev_options();
+    pc::view_after_create();
     pc::input_override_init();
     set_data_root(config);
     g_context.frames = 0;
@@ -133,6 +136,7 @@ bool init(const AppConfig& config) {
 
 void shutdown() {
     pc::gamepad_close();
+    pc::view_save();
     destroy_window();
     SDL_Quit();
 }

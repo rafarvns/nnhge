@@ -25,7 +25,8 @@ docs/
   architecture/  process/  tech/  guides/
 specs/NNN-<slug>/                            spec.md, plan.md, tasks.md per feature
 link/                                        nnh_link (spec 011, D24): sockets, SHA-256/HMAC, messages, frames,
-  include/nnh_link/  src/  tests/(fuzz/)     discovery, pairing; built for PC and 3DS, shared by nnh and the app
+  include/nnh_link/  src/  tests/(fuzz/)     discovery, pairing, server/client sessions; built for PC and 3DS,
+                                             shared by nnh and the app
 tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010); assetc later
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules

@@ -4,11 +4,14 @@
 
 add_library(nnh_link STATIC
     src/address.cpp
+    src/client_session.cpp
+    src/connection.cpp
     src/discovery.cpp
     src/frame.cpp
     src/handshake.cpp
     src/messages.cpp
     src/net.cpp
+    src/server_session.cpp
     src/sha256.cpp
     src/wire.cpp
 )
@@ -31,6 +34,8 @@ if(NNH_BUILD_TESTS)
         tests/test_handshake.cpp
         tests/test_messages.cpp
         tests/test_net.cpp
+        tests/test_session_failures.cpp
+        tests/test_sessions.cpp
         tests/test_sha256.cpp
     )
     target_link_libraries(nnh_link_tests PRIVATE nnh_link nnh_link_fuzz_targets nnh_test_framework)

@@ -59,6 +59,10 @@ least one valid file.
   `fuzz_link_*`. First run (2026-11-18, 60 s each): messages cov 451, frames cov 271, discovery cov 169,
   no crash. Pairing and authentication (mutual HMAC proofs, 5 wrong codes lock pairing) are unit tested
   in `link/tests/test_handshake.cpp`; the threat model comes with the spec 011 guide.
+- The sessions (`link/src/server_session.cpp`, `client_session.cpp`) are tested end to end on the
+  loopback interface: an unpaired console can't start a build, the console refuses an impostor server
+  and anything it sends, a received game is checked against its SHA-256 and announced size (a partial or
+  damaged file is dropped), and every wait has a timeout. Also run under ASan + UBSan on Linux.
 
 ## Supply chain and CI
 

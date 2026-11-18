@@ -29,6 +29,7 @@ enum class Type : std::uint8_t {
     BuildDone = 11,
     FileChunk = 12,
     Launching = 13,
+    NeedPairing = 14, ///< the server doesn't know this console: pair (empty payload)
 };
 bool valid_type(std::uint8_t t);
 

@@ -16,7 +16,7 @@ bool printable(const std::string& s) {
 
 } // namespace
 
-bool valid_type(std::uint8_t t) { return t >= 1 && t <= static_cast<std::uint8_t>(Type::Launching); }
+bool valid_type(std::uint8_t t) { return t >= 1 && t <= static_cast<std::uint8_t>(Type::NeedPairing); }
 
 bool valid_game_name(const std::string& name) {
     if (name.empty() || name.size() > kMaxName) return false;

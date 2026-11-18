@@ -3,7 +3,9 @@
 // them the messages they receive and send what they return. Both sides start with Hello (id + nonce).
 //
 //   server knows the console:  S → Proof(server)  C checks it → Proof(console)  S checks it → session
-//   first time (no secret):    C → Pair(HMAC(code, …))  S → Paired + Proof(server, new secret) → as above
+//   it doesn't:                S → NeedPairing
+//   pairing (console asks the code when it has no secret or got NeedPairing):
+//                              C → Pair(HMAC(code, …))  S → Paired + Proof(server, new secret) → as above
 //
 // The server proves itself first, so a console never trusts an impostor. Secrets and keys come from
 // HMAC-SHA-256 over both hellos; nothing secret is sent. Unit tested in link/tests/test_handshake.cpp.
@@ -43,8 +45,8 @@ class ServerHandshake {
 public:
     explicit ServerHandshake(const Hello& mine) : mine_(mine) {}
 
-    /// The console's Hello. `known` = its secret if it was paired. Returns the frames to send (Hello, and
-    /// Proof when known) or a Refused for another protocol version.
+    /// The console's Hello. `known` = its secret if it was paired. Returns the frames to send (Hello, then
+    /// Proof when known or NeedPairing) or a Refused for another protocol version.
     std::vector<std::vector<std::uint8_t>> on_hello(const Hello& console, const std::optional<Digest>& known);
     /// A pairing attempt against the code shown now ("" = none). Returns Paired + Proof, or Refused.
     std::vector<std::vector<std::uint8_t>> on_pair(const Digest& proof, const std::string& code, PairingGuard& guard);
@@ -75,6 +77,8 @@ public:
 
     /// The server's Hello; `known` = the secret paired with that server id, if any.
     Step on_hello(const Hello& server, const std::optional<Digest>& known);
+    /// NeedPairing: the server doesn't know this console (any remembered secret is dropped).
+    Step on_pairing_needed();
     /// The frame that asks to pair with `code` (after NeedCode).
     std::vector<std::uint8_t> pair(const std::string& code);
     /// Paired: the secret is derived from the code given to pair().

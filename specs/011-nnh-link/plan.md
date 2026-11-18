@@ -42,7 +42,7 @@ HMAC-SHA-256(session key, sequence ‖ type ‖ payload), sequences strictly inc
 | Step | Console → server | Server → console |
 |------|------------------|------------------|
 | hello | `Hello{version 1, console id (16 bytes), console nonce (16)}` | `Hello{server id, server nonce}` |
-| pair (first time) | `Pair{HMAC(code, "pair" ‖ nonces ‖ ids)}` | `Paired` or `PairRefused{reason}` (5 wrong codes → refused until restart) |
+| pair (first time) | `Pair{HMAC(code, "pair" ‖ nonces ‖ ids)}` | `NeedPairing` right after its Hello when it doesn't know the console (added in stage 2: without it, a console that still remembers a server that forgot it would wait for a proof that never comes); then `Paired` or `Refused{reason}` (5 wrong codes → refused until restart) |
 | auth (every connection) | `Proof{HMAC(secret, "console" ‖ nonces)}` | `Proof{HMAC(secret, "server" ‖ nonces)}` — sent **first**: the console checks the server before trusting anything |
 | list | `ListGames` | `Games{name, title}[]` |
 | build | `Build{game, release}` | `BuildLine{text}`… then `BuildFailed{last 20 lines}` or `BuildDone{size, sha256}` |

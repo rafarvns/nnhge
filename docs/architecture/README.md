@@ -50,6 +50,7 @@ nnh::frame()
 | [security.md](security.md) | Threat model, confined files, atomic saves, fuzzing, supply chain |
 | [events.md](events.md) | The event bus: event types, publish/subscribe, dispatch rules |
 | [scenes.md](scenes.md) | Scenes and the scene stack (State pattern) |
+| [rendering.md](rendering.md) | Recorded draw list, passes per screen, one texture type: 2D now, 3D later |
 | [patterns.md](patterns.md) | Approved design patterns and anti-patterns |
 | [project-structure.md](project-structure.md) | Folders, file rules, naming, where code goes |
 | [decisions.md](decisions.md) | Every architecture decision and why |

@@ -1,6 +1,6 @@
 # Spec 004: 2D graphics — textures, sprites, shapes, camera
 
-Status: draft — open questions answered (2026-11-18); "ready for 3D" section (FR-11–FR-14) awaiting the maintainer's OK
+Status: approved (2026-11-18, maintainer; 3D readiness confirmed)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002 — core foundation](../002-core-foundation/spec.md) (memory regions, platform
 contract, debug overlay) — implemented. Related: M3 (`assetc`, romfs) in [ROADMAP](../../docs/ROADMAP.md).
@@ -132,5 +132,5 @@ Answered by the maintainer (2026-11-18): the proposed options, all accepted.
   1000 16×16 sprites at 60 Hz on an Old 3DS.
 - [x] **Sub-pixel positions** — `float` positions.
 - [x] **Transparency** — alpha from the PNG plus a per-draw opacity; no color key.
-- [ ] **3D readiness (FR-11–FR-14)** — added after the answers above, at the maintainer's request; to be
-  confirmed before the plan.
+- [x] **3D readiness (FR-11–FR-14)** — added after the answers above, at the maintainer's request;
+  confirmed (2026-11-18).

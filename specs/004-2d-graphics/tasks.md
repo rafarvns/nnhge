@@ -1,0 +1,48 @@
+# Tasks 004: 2D graphics — textures, sprites, shapes, camera
+
+Status: approved (2026-11-18)
+Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
+
+Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
+
+## Stage 1 — pure core logic
+
+- [ ] **T1.1** `Vec2`/`Rect`/`Region` — files: `nnh/math.hpp` — test: `tests/math/test_vec2.cpp` — covers FR-14
+- [ ] **T1.2** [P] texture size rule — files: `core/src/gfx/texture_rules.hpp` — test: `tests/gfx/test_texture_rules.cpp` — covers FR-3
+- [ ] **T1.3** [P] texture table (slots, generations, stale handles, generation base across init) — files: `core/src/gfx/texture_table.{hpp,cpp}` — test: `tests/gfx/test_texture_table.cpp` — covers FR-2
+- [ ] **T1.4** draw list: record, capacity and drop count, camera, pixel rounding, layer/call order, replayable passes — files: `core/src/gfx/draw_list.{hpp,cpp}` — test: `tests/gfx/test_draw_list.cpp` — covers FR-6, FR-7, FR-8, FR-13
+
+## Stage 2 — contract, fake, public API
+
+- [ ] **T2.1** contract `texture_create/destroy`, `DrawItem2D`, `draw_2d`; fake implementation recording passes; pc/3ds stubs — files: `nnh/platform/video.hpp`, `platforms/*/src/video_*.cpp`, `platform_fake.hpp` — test: conformance `texture_create_rejects_garbage`, `draw_2d_accepts_empty_pass` — covers FR-10, FR-12
+- [ ] **T2.2** `mem_account` for platform-owned memory — files: `core/src/memory/` — test: `tests/memory/test_memory.cpp` — covers FR-2
+- [ ] **T2.3** `Texture` + `load_texture` (registry, size rule, table, accounting, deferred destroy) and `AppConfig::gfx` — files: `nnh/texture.hpp`, `gfx/textures.cpp`, `gfx/image_registry.hpp`, `app.cpp` — test: `tests/gfx/test_textures.cpp` — covers FR-2, FR-3, FR-11
+- [ ] **T2.4** draw calls, shapes, cameras, stats; end-of-frame passes per screen — files: `nnh/gfx.hpp`, `gfx/draw2d.cpp`, `app.cpp` — test: `tests/gfx/test_draw_calls.cpp` — covers FR-4, FR-5, FR-7, FR-8, FR-12
+- [ ] **T2.5** debug text and overlay deferred to the debug pass (on top) — files: `debug/debug_list.{hpp,cpp}`, debug/overlay sources — test: `tests/debug/test_debug_list.cpp`, existing overlay tests — covers FR-6
+
+## Stage 3 — images in the build
+
+- [ ] **T3.1** `nnh_check_image.cmake` (PNG header, power of two, 8–1024, message naming the file) — test: ctest script test with good and bad PNGs — covers FR-1, FR-3, AC-4
+- [ ] **T3.2** `nnh_embed.cmake` + `nnh_images.cmake` + `IMAGES` in `nnh_add_game` (registry always generated, duplicates rejected) — verified by building `examples/sprites` and the edit-one-image rebuild — covers FR-1
+- [ ] **T3.3** 3DS: tex3ds step in the image command — covers FR-1
+
+## Stage 4 — PC simulator
+
+- [ ] **T4.1** renderer on a GPU device with fallback to the default renderer (logged), screenshots still work headless — files: `app_pc.cpp` — covers FR-11
+- [ ] **T4.2** `texture_create/destroy` with SDL PNG loading — files: `texture_pc.cpp` — covers FR-2, FR-3
+- [ ] **T4.3** `draw_2d`: sprites (region, pivot, rotation, scale, flips, tint, opacity) and shapes, clipped per screen — files: `draw2d_pc.cpp` — verified: screenshots — covers FR-4, FR-5, FR-9
+
+## Stage 5 — 3DS
+
+- [ ] **T5.1** `texture_create/destroy` with `Tex3DS_TextureImport` (linear), nearest filter — files: `texture_3ds.cpp` — covers FR-2, FR-11
+- [ ] **T5.2** `draw_2d` with citro2d (subtexture per region and flips, draw params, tint) and shapes; `C2D_Init` capacity from `AppConfig::gfx` — files: `draw2d_3ds.cpp`, `app_3ds.cpp` — covers FR-4, FR-5, FR-8, FR-9
+
+## Stage 6 — example, benchmark, docs, closing
+
+- [ ] **T6.1** example art (made for the project): character sprite sheet, background tile, under `examples/sprites/art/`
+- [ ] **T6.2** `examples/sprites/`: walking character over a scrolling background (camera), HUD ignoring the camera, shapes on the bottom screen; screenshots — covers AC-2
+- [ ] **T6.3** benchmark mode (`SPRITES_DEMO=bench`, L/R change the count, overlay shows FPS and draws) — covers AC-3
+- [ ] **T6.4** docs: `docs/api/gfx.md`, new `texture.md` and `math.md`, `memory.md` (`textures` tag), `simulator.md`, `docs/tech/cmake.md` (`IMAGES`), `sdl3.md`, `devkitpro-3ds.md`, `rendering.md` status, CLAUDE.md — covers AC-6
+- [ ] **T6.5** build budgets, Release strings check, Linux gcc + clang ASan/UBSan — covers AC-6
+- [ ] **T6.6** run `examples/sprites` on the 3DS, compare with the screenshot; benchmark count at 60 Hz recorded in the ROADMAP — maintainer — covers AC-3, AC-5
+- [ ] **T6.7** `docs/ROADMAP.md` checkbox; spec, plan and tasks status → implemented

@@ -61,7 +61,7 @@ sticks, touch, mirror); `input.3dsx` 213,912 bytes.
 - [ ] C-Stick and ZL/ZR on a real New 3DS (and measure the C-Stick range) — maintainer, when one is available
 
 ## M2 — 2D graphics
-- [ ] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md) (draft)
+- [ ] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md) (approved)
 - [ ] Text rendering (bitmap fonts first)
 - [ ] Simulator window: two screens layout, scale, 3D slider control
 

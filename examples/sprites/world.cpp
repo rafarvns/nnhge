@@ -109,7 +109,7 @@ void World::draw_minimap() const {
     nnh::gfx::draw_rect(Screen::Bottom, {kLeft + camera_x * scale, kTop, view, 40}, nnh::colors::yellow);
     nnh::gfx::fill_rect(Screen::Bottom, {kLeft + hero_.x * scale - 2, kTop + 24, 4, 6}, nnh::rgb(240, 160, 64));
     nnh::debug::print(Screen::Bottom, 20, 20, "D-Pad / Circle Pad: walk");
-    nnh::debug::print(Screen::Bottom, 20, 34, "START: exit");
+    nnh::debug::print(Screen::Bottom, 20, 34, "SELECT: benchmark   START: exit");
     const nnh::gfx::Stats s = nnh::gfx::stats();
     nnh::debug::printf(Screen::Bottom, 20, 120, "draws %d / %d, textures %d", s.draws_last_frame, s.max_draws,
                        s.textures);

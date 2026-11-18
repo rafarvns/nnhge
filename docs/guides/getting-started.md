@@ -52,9 +52,11 @@ The console needs custom firmware with the Homebrew Launcher.
 
 - **Over Wi-Fi**: open the Homebrew Launcher, press **Y** (netloader), then on the PC:
   ```sh
-  /c/devkitPro/tools/bin/3dslink.exe build/3ds-release/examples/hello/hello.3dsx -a <console-ip>
+  cmake --build --preset pc-debug                    # builds the nnh tool too
+  build/pc-debug/tools/nnh/nnh run hello             # build, send, show the game's log
   ```
-  `-a` is optional when UDP broadcast works on your network.
+  `nnh` finds the console and remembers it; `--console <ip>` sets it ([the nnh tool](nnh-tool.md)).
+  devkitPro's `3dslink <file>.3dsx -a <console-ip>` works too.
 - **By SD card**: copy the `.3dsx` to `sdmc:/3ds/` and open it from the Homebrew Launcher.
 - **Emulator**: open the `.3dsx` in [Azahar](https://azahar-emu.org/).
 

@@ -1,6 +1,6 @@
 # Tasks 010: The `nnh` tool and `nnh run`
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -28,7 +28,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 4 — verification and docs
 
-- [ ] **T4.1** docs: new `docs/guides/nnh-tool.md`; getting-started, debugging-on-3ds, packaging (`nnh install` replaces `scripts/fbi_install.py`), CLAUDE.md, decision D23, `tools/` in project-structure — covers AC-5
-- [ ] **T4.2** Linux gcc + ASan/UBSan on VM 120 (tool tests included); Windows — covers AC-4
-- [ ] **T4.3** maintainer: `nnh run hello`, `nnh run audio`, `nnh install audio` on the Old 3DS XL — covers AC-1, AC-2
-- [ ] **T4.4** ROADMAP M6 first item; spec, plan and tasks status → implemented
+- [x] **T4.1** docs: new `docs/guides/nnh-tool.md`; getting-started, debugging-on-3ds, packaging (`nnh install` replaces `scripts/fbi_install.py`), CLAUDE.md, decision D23, `tools/` in project-structure — covers AC-5
+- [x] **T4.2** Linux gcc + ASan/UBSan on VM 120 (tool tests included); Windows — covers AC-4
+- [x] **T4.3** maintainer: `nnh run hello`, `nnh run audio`, `nnh install audio` on the Old 3DS XL — covers AC-1, AC-2
+- [x] **T4.4** ROADMAP M6 first item; spec, plan and tasks status → implemented

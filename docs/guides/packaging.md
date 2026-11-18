@@ -66,15 +66,16 @@ Use a **Release** build for players (`3ds-release`): Development builds print lo
    address, like `192.168.10.52:5000`.
 2. On the PC (same network):
    ```sh
-   python -I scripts/fbi_install.py 192.168.10.52 build/3ds-release/dist/mygame/mygame.cia
+   nnh install mygame --console 192.168.10.52    # the address is remembered for next time
    ```
-   The script serves the file from the PC, tells FBI where to download it, and stops when FBI is done.
+   `nnh` builds the `.cia`, serves it from the PC, tells FBI where to download it, and stops when FBI is
+   done ([the nnh tool](nnh-tool.md)).
 3. Confirm the install on the console, return to the HOME Menu.
 
 **From the SD card**: copy the `.cia` to the card (e.g. `sdmc:/cia/`) and install it with FBI.
 
-`.3dsx`: copy it to `sdmc:/3ds/` and start it from the Homebrew Launcher; during development, send it
-with 3dslink instead ([getting-started.md](getting-started.md)).
+`.3dsx`: copy it to `sdmc:/3ds/` and start it from the Homebrew Launcher; during development, use
+`nnh run <game>` instead ([the nnh tool](nnh-tool.md)).
 
 Uninstall a `.cia` with FBI (Titles) or System Settings → Data Management. Saves in
 `sdmc:/3ds/<data folder>/` stay on the card.

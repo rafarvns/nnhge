@@ -1,22 +1,19 @@
 # Debugging on the 3DS
 
-Tools from the simplest to the most powerful. Build with a `3ds-dev` (or `3ds-debug`) preset: logs,
-asserts and the overlay are compiled out of Release builds.
+Tools from the simplest to the most powerful. Use a Development build (`nnh run`'s default, preset
+`3ds-dev`) or a Debug one (`3ds-debug`): logs, asserts and the overlay are compiled out of Release builds.
 
-```sh
-scripts/dkp.sh cmake --preset 3ds-dev && scripts/dkp.sh cmake --build --preset 3ds-dev
-```
-
-## 1. Logs on your PC (3dslink)
+## 1. Logs on your PC (`nnh run`)
 
 1. On the console: Homebrew Launcher → **Y** (netloader).
-2. On the PC, send the game **with `-s`**, so 3dslink stays connected and prints what the game logs:
-   ```sh
-   /c/devkitPro/tools/bin/3dslink.exe -s build/3ds-dev/examples/foundation/foundation.3dsx -a <console-ip>
-   ```
-   (PowerShell: `C:\devkitPro\tools\bin\3dslink.exe -s build\3ds-dev\examples\foundation\foundation.3dsx -a <console-ip>`)
-3. Every `NNH_LOG_*` line appears in the terminal. The same lines are written to
-   `sdmc:/3ds/<data folder>/log.txt` (the previous run: `log.prev.txt`).
+2. On the PC: `nnh run foundation` ([the nnh tool](nnh-tool.md)). It builds, sends the game and prints
+   every `NNH_LOG_*` line, coloured, until the game exits; the session is saved in
+   `build/logs/<game>-<date>-<time>.txt`.
+3. On the console, the same lines are written to `sdmc:/3ds/<data folder>/log.txt` (the previous run:
+   `log.prev.txt`).
+
+Without `nnh`, devkitPro's 3dslink works too: `3dslink -s <game>.3dsx -a <console-ip>` (`-s` keeps it
+listening for the log; in PowerShell use `C:\devkitPro\tools\bin\3dslink.exe`).
 
 ## 2. On-screen tools
 

@@ -118,7 +118,8 @@ build/pc-debug/tests/nnh_tests.exe [name-filter]               # tests, one line
 scripts/dkp.sh cmake --preset 3ds-release                      # 3DS configure (once)
 scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-release/**/<game>.3dsx
 scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3ds-release/dist/<game>/ (.3dsx, .cia)
-python -I scripts/fbi_install.py <3ds-ip> <file.cia>           # install over the network (FBI → Receive URLs)
+build/pc-debug/tools/nnh/nnh run hello                         # build, send to the console (HBL → Y), show its log
+build/pc-debug/tools/nnh/nnh install audio                      # .cia over the network (FBI → Receive URLs)
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
@@ -139,7 +140,9 @@ ssh homelab 'sudo qm shutdown 120'                                              
   build VM for Linux checks; don't trigger or wait for CI runs unless asked. The wiki workflow still
   runs on push to `main` (a few seconds).
 - Read the screenshot PNG to verify simulator output without a human.
-- Run on a console: Homebrew Launcher → Y, then `/c/devkitPro/tools/bin/3dslink.exe -s <file>.3dsx -a <ip>`
+- Run on a console: Homebrew Launcher → Y, then `nnh run <game>` (builds, finds the console, shows the coloured
+  log, saves it in `build/logs/`; [guide](docs/guides/nnh-tool.md)). devkitPro's 3dslink still works:
+  `/c/devkitPro/tools/bin/3dslink.exe -s <file>.3dsx -a <ip>`
   (`-s` keeps the PC listening, so logs of Debug/Development builds appear in the terminal).
 - Platform libraries never call core (no logging there): return errors / set `platform::last_error()`.
 - Build budgets: edit one game `.cpp` → simulator < 2 s, `.3dsx` < 5 s; clean engine < 30 s. Measure

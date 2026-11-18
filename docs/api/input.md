@@ -85,26 +85,45 @@ They are delivered in the same `nnh::frame()` that read the input, after events 
 the previous frame. Within a frame: all presses first, then all releases, each in `Button` order
 (A, B, X, Y, L, R, ZL, ZR, Start, Select, Up, Down, Left, Right), then `TouchStarted`, then
 `TouchEnded`. There is no event for touch moves or stick motion: poll `touch_position()` and the sticks.
-Inside a handler, the queries agree with the event. Use queries for continuous state ("is Left held?") and events
-for moments ("Start was pressed").
+Inside a handler, the queries agree with the event. Use queries for continuous state ("is Left held?")
+and events for moments ("Start was pressed").
 
-## Buttons and PC keyboard mapping
+## PC simulator controls
 
-| `nnh::Button` | 3DS | PC key |
-|---------------|-----|--------|
-| `A` | A | X |
-| `B` | B | Z |
-| `X` | X | S |
-| `Y` | Y | A |
-| `L` | L | Q |
-| `R` | R | W |
-| `ZL` | ZL (New 3DS) | 1 |
-| `ZR` | ZR (New 3DS) | 2 |
-| `Start` | START | Enter |
-| `Select` | SELECT | Backspace |
-| `Up` `Down` `Left` `Right` | D-Pad | Arrow keys |
+Keyboard, mouse and one gamepad work at the same time: buttons combine, and for each stick the input
+pushed further wins.
 
-The keys follow the physical layout of the 3DS face buttons (Z/X bottom row = B/A, A/S top row = Y/X).
-The PC simulator's keys for the sticks, the mouse as touch and gamepads arrive with
-[spec 003](../../specs/003-full-input/spec.md) (in progress); until then sticks read (0, 0) and the
-bottom screen isn't touchable on PC. Remapping is a later spec.
+| 3DS control | PC key | Gamepad (by position, any brand) |
+|-------------|--------|----------------------------------|
+| `Button::A` | X | right face button |
+| `Button::B` | Z | bottom face button |
+| `Button::X` | S | top face button |
+| `Button::Y` | A | left face button |
+| `Button::L` / `R` | Q / W | left / right shoulder |
+| `Button::ZL` / `ZR` (New 3DS) | 1 / 2 | left / right trigger (past half) |
+| `Button::Start` / `Select` | Enter / Backspace | Start / Back |
+| D-Pad (`Up` `Down` `Left` `Right`) | arrow keys | D-Pad |
+| Circle Pad | I / J / K / L (up / left / down / right) | left stick |
+| C-Stick | numpad 8 / 4 / 2 / 6 | right stick |
+| touch screen | left mouse button on the bottom screen | — |
+
+- The keys follow the physical layout of the 3DS face buttons (Z/X bottom row = B/A, A/S top row = Y/X);
+  the gamepad's face buttons map **by position**, so an Xbox pad's "B" (right) is the 3DS A.
+- Keys move a stick fully; two keys give a diagonal of length 1.
+- The first gamepad connected is used, also when plugged in while the game runs; if it is unplugged,
+  its buttons are released and another connected pad takes over.
+- A touch starts when the left button goes down **on the bottom screen**, then follows the mouse
+  (clamped to the screen's edges, even outside the window) until the button is released. The position is
+  in 3DS pixels whatever the window size.
+- Scripted input for screenshots and tests: `NNH_SIM_INPUT` ([simulator.md](simulator.md)).
+
+Remapping (actions like "Jump" bound to several keys) is a later spec.
+
+## Example
+
+[`examples/input`](../../examples/input/main.cpp) shows every control: buttons, both sticks, the touch
+point (live position from the query, start/end from the events) and the mirror (SELECT toggles it).
+
+```sh
+NNH_SIM_INPUT="circle=0.7,0.7;cstick=-1,0;touch=200,150;buttons=A+R" NNH_EXIT_AFTER_FRAMES=30   NNH_SCREENSHOT=build/input.png build/pc-debug/examples/input/input.exe
+```

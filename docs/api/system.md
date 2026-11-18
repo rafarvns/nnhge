@@ -14,13 +14,13 @@ nnh::SystemInfo info = nnh::system::info();   // {"Nintendo 3DS", "New 3DS XL", 
 | Capability | 3DS | PC simulator |
 |------------|-----|--------------|
 | `SecondScreen` | yes | yes (simulated) |
-| `TouchScreen` | yes | not yet (mouse as touch: M1b) |
+| `TouchScreen` | yes | yes (mouse) |
 | `Stereo3D` | yes, except 2DS models | not yet |
-| `CirclePad` | yes | not yet |
-| `CStick`, `ZButtons` | New 3DS / New 2DS XL | not yet |
+| `CirclePad` | yes | yes (keys or gamepad) |
+| `CStick`, `ZButtons` | New 3DS / New 2DS XL | yes (keys or gamepad) |
 
-Capabilities describe the hardware; engine APIs for touch, analog input and 3D arrive in later
-milestones. `capability_name(c)` returns the enum name.
+Capabilities describe the hardware. Touch, sticks and ZL/ZR are read through [input.md](input.md); the
+engine API for stereo 3D arrives in a later milestone. `capability_name(c)` returns the enum name.
 
 `SystemInfo`: `name` ("Nintendo 3DS", "PC simulator"), `model` (3DS model read from the system
 configuration, or the PC operating system) and `memory_mb` (approximate memory for the game).

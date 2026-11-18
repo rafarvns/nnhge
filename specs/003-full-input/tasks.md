@@ -20,10 +20,10 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 3 — PC simulator
 
-- [ ] **T3.1** keyboard sticks (I/J/K/L, numpad 8/4/2/6) and capabilities — files: `input_pc.cpp`, `system_pc.cpp` — verified: `NNH_SIM_INPUT`-free run + T3.4 screenshot — covers FR-7, FR-2
-- [ ] **T3.2** mouse = touch on the bottom screen — files: `touch_pc.cpp`, `context_pc.hpp` — covers FR-8
-- [ ] **T3.3** gamepad: hot-plug, buttons by position, sticks, triggers, combine with keyboard — files: `gamepad_pc.cpp`, `app_pc.cpp` — covers FR-9, FR-3
-- [ ] **T3.4** `NNH_SIM_INPUT` for headless screenshots (dev builds only) — files: `input_override_pc.cpp` — verified by T5.2 screenshots and the Release strings check
+- [x] **T3.1** keyboard sticks (I/J/K/L, numpad 8/4/2/6) and capabilities — files: `input_pc.cpp`, `system_pc.cpp` — verified: `NNH_SIM_INPUT`-free run + T3.4 screenshot — covers FR-7, FR-2
+- [x] **T3.2** mouse = touch on the bottom screen — files: `touch_pc.cpp`, `context_pc.hpp` — covers FR-8
+- [x] **T3.3** gamepad: hot-plug, buttons by position, sticks, triggers, combine with keyboard — files: `gamepad_pc.cpp`, `app_pc.cpp` — covers FR-9, FR-3
+- [x] **T3.4** `NNH_SIM_INPUT` for headless screenshots (dev builds only) — files: `input_override_pc.cpp` — verified by T5.2 screenshots and the Release strings check
 
 ## Stage 4 — 3DS
 
@@ -33,8 +33,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 5 — example, docs, closing
 
-- [ ] **T5.1** `examples/input/`: buttons, both sticks (dot in a circle drawn with debug text), touch point, mirror toggle (SELECT) — covers AC-2
-- [ ] **T5.2** simulator screenshots with `NNH_SIM_INPUT` (sticks deflected, touch) — covers AC-2
+- [x] **T5.1** `examples/input/`: buttons, both sticks (dot in a circle drawn with debug text), touch point, mirror toggle (SELECT) — covers AC-2
+- [x] **T5.2** simulator screenshots with `NNH_SIM_INPUT` (sticks deflected, touch) — covers AC-2
 - [ ] **T5.3** `docs/api/input.md` (queries, events, mirror, PC keyboard/mouse/gamepad tables), `docs/api/system.md` (PC capabilities), `docs/tech/sdl3.md` (gamepad, mouse), `docs/tech/devkitpro-3ds.md` (`irrst`), header comments; the docs that mention `read_buttons()` (`patterns.md`, `solid.md`, `tdd.md`, `nnh-devkitpro` skill) — covers AC-5
 - [ ] **T5.4** build budgets, Release strings check, Linux gcc/clang ASan on VM 120 — covers AC-6
 - [ ] **T5.5** PC play test with keyboard, mouse and a hot-plugged gamepad — maintainer — covers AC-3

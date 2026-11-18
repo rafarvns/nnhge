@@ -3,6 +3,7 @@
 // Developer environment variables (simulator only, see docs/api/simulator.md):
 //   NNH_EXIT_AFTER_FRAMES=<n>   quit after n frames (smoke tests, CI)
 //   NNH_SCREENSHOT=<file.png>   save the last frame before quitting (needs NNH_EXIT_AFTER_FRAMES)
+//   NNH_SIM_INPUT=<script>      scripted input, Debug/Development only (input_override_pc.cpp)
 
 #include <SDL3/SDL.h>
 // The game owns main(); SDL must not replace it.
@@ -60,6 +61,9 @@ bool init(const AppConfig& config) {
         set_error("SDL_Init failed");
         return false;
     }
+    // Gamepads are optional: without the subsystem the simulator still runs on keyboard and mouse.
+    // Pads already connected arrive as SDL_EVENT_GAMEPAD_ADDED in the first poll_events().
+    SDL_InitSubSystem(SDL_INIT_GAMEPAD);
     const int scale = config.pc_window_scale > 0 ? config.pc_window_scale : 1;
     if (!SDL_CreateWindowAndRenderer(config.title, pc::kLogicalWidth * scale, pc::kLogicalHeight * scale,
                                      SDL_WINDOW_RESIZABLE, &g_context.window, &g_context.renderer)) {
@@ -71,6 +75,7 @@ bool init(const AppConfig& config) {
                                      SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
     SDL_SetRenderVSync(g_context.renderer, 1);
     read_dev_options();
+    pc::input_override_init();
     set_data_root(config);
     g_context.frames = 0;
     pc::reset_frame_pacing();
@@ -78,6 +83,7 @@ bool init(const AppConfig& config) {
 }
 
 void shutdown() {
+    pc::gamepad_close();
     SDL_DestroyRenderer(g_context.renderer);
     SDL_DestroyWindow(g_context.window);
     g_context = {};
@@ -91,6 +97,7 @@ bool poll_events() {
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) return false;
         if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) pc::dev_key_pressed(event.key.scancode);
+        pc::gamepad_event(event);
     }
     if (g_context.quit_requested) return false;
     return g_context.exit_after == 0 || g_context.frames < g_context.exit_after;

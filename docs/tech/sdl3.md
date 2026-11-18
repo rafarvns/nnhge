@@ -10,7 +10,10 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `context_pc.hpp` | Shared state (window, renderer), screen rectangles, helpers |
 | `app_pc.cpp` | Init/shutdown, window, event polling, dev env vars |
 | `video_pc.cpp` | Frame begin/end, 60 Hz pacing, screenshots |
-| `input_pc.cpp` | Keyboard → `nnh::Button` mapping |
+| `input_pc.cpp` | Keyboard → buttons and sticks; combines keyboard, gamepad and mouse into one sample |
+| `gamepad_pc.cpp` | First connected gamepad (hot-plug), buttons by position, sticks, triggers |
+| `touch_pc.cpp` | Left mouse button on the bottom screen → touch, window → 3DS pixels |
+| `input_override_pc.cpp` | `NNH_SIM_INPUT` scripted input (Debug/Development) |
 | `debug_text_pc.cpp` | Debug text with SDL's built-in 8×8 font |
 
 ## How the 3DS is simulated
@@ -30,6 +33,7 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 |----------|--------|
 | `NNH_EXIT_AFTER_FRAMES=<n>` | quit after *n* frames |
 | `NNH_SCREENSHOT=<file.png>` | with the above, save the last frame (`SDL_RenderReadPixels` + `SDL_SavePNG`) |
+| `NNH_SIM_INPUT=<script>` | fixed input on every frame, for screenshots ([simulator.md](../api/simulator.md)) |
 | `SDL_VIDEO_DRIVER=offscreen` | run without a display (CI smoke test) |
 
 Use the screenshot to verify visual changes without a human: build, run with both variables, read the PNG.
@@ -39,7 +43,13 @@ Use the screenshot to verify visual changes without a human: build, run with bot
 - Any SDL call stays inside `engine/platforms/pc/`.
 - The simulator must not be *more capable* than the 3DS in ways games could rely on: enforce 3DS
   limits (texture sizes, memory budget) as those features arrive.
-- New input devices (gamepad, mouse as touch) map onto the same `nnh::` input API.
+- New input devices map onto the same `nnh::` input API.
+- Gamepads: `SDL_InitSubSystem(SDL_INIT_GAMEPAD)` after the video init (its failure is ignored: keyboard
+  and mouse still work). Pads already connected arrive as `SDL_EVENT_GAMEPAD_ADDED` in the first poll;
+  every polled event (also in the pause loop) goes through `pc::gamepad_event`. Face buttons use SDL's
+  positional names (`SOUTH`/`EAST`/...), so the mapping is the same for every brand.
+- Mouse: `SDL_GetMouseState` + `SDL_RenderCoordinatesFromWindow` give logical coordinates at any window
+  scale; SDL's mouse auto-capture keeps reporting a drag outside the window.
 
 ## Further reading
 

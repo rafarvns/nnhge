@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include "nnh/gfx.hpp"
+#include "nnh/platform/input.hpp"
 
 namespace nnh::platform::pc {
 
@@ -26,6 +27,10 @@ struct Context {
     bool slow_motion = false;
     bool screenshot_requested = false;
     bool quit_requested = false;
+    // Input (input_pc.cpp, gamepad_pc.cpp, touch_pc.cpp)
+    SDL_Gamepad* gamepad = nullptr; // the first connected gamepad, or none
+    bool mouse_was_down = false;    // left button on the previous sample
+    bool mouse_touching = false;    // a touch started on the bottom screen and the button is still down
 };
 
 Context& context();
@@ -47,5 +52,18 @@ void dev_key_pressed(SDL_Scancode key);
 void dev_before_present();
 /// Blocks while paused, until F10 (one frame), Pause (resume) or quit (called after presenting).
 void dev_wait_while_paused();
+
+/// Opens/closes the gamepad on SDL_EVENT_GAMEPAD_ADDED/REMOVED (called for every polled event).
+void gamepad_event(const SDL_Event& event);
+/// Closes the gamepad (called by shutdown).
+void gamepad_close();
+/// Adds the gamepad's buttons to `buttons` and its sticks to the given ones when they are pushed further.
+void gamepad_read(std::uint32_t& buttons, float stick[4]);
+/// Left mouse button over the bottom screen → touch, in bottom-screen pixels.
+void touch_read(bool& touching, std::int16_t& x, std::int16_t& y);
+/// Reads NNH_SIM_INPUT (Debug/Development only; called by init).
+void input_override_init();
+/// When NNH_SIM_INPUT is set, writes the scripted sample to `out` and returns true (real input is ignored).
+bool input_override(InputSample& out);
 
 } // namespace nnh::platform::pc

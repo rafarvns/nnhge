@@ -8,8 +8,13 @@
 namespace nnh::platform {
 
 std::uint32_t capabilities() {
-    // What the simulator offers today: both screens. Touch (mouse) and analog input come in M1b.
-    return 1u << static_cast<unsigned>(Capability::SecondScreen);
+    // The simulator offers every 3DS control (keyboard, mouse and gamepad stand in for them), but not
+    // stereo 3D.
+    constexpr Capability kSimulated[] = {Capability::SecondScreen, Capability::TouchScreen, Capability::CirclePad,
+                                         Capability::CStick, Capability::ZButtons};
+    std::uint32_t caps = 0;
+    for (const Capability c : kSimulated) caps |= 1u << static_cast<unsigned>(c);
+    return caps;
 }
 
 SystemInfo system_info() {

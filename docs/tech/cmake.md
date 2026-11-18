@@ -31,6 +31,7 @@ Build folders: `build/<preset>/`. Personal presets go in `CMakeUserPresets.json`
 | `engine/platforms/<system>/CMakeLists.txt` | `nnh::platform_<system>` (static), links the system SDK `PRIVATE` |
 | `cmake/nnh_engine_options.cmake` | `nnh_engine_options(target)`: C++20, warnings, no exceptions/RTTI |
 | `cmake/nnh_game.cmake` | `nnh_add_game()` |
+| `cmake/nnh_images.cmake` | `nnh_add_images()` (the `IMAGES` of `nnh_add_game`), with the build-time scripts `nnh_check_image.cmake` and `nnh_embed.cmake` |
 | `cmake/nnh_sdl3.cmake` | Provides `SDL3::SDL3` for the PC platform |
 | `examples/CMakeLists.txt` | One `add_subdirectory` per example |
 | `tests/CMakeLists.txt` | `nnh_tests` (core + fake), `nnh_conformance_<platform>` (PC only) |
@@ -48,14 +49,28 @@ presets selecting it ([platforms.md](../architecture/platforms.md)).
 `add_subdirectory(<name>)` in `examples/CMakeLists.txt`.
 
 ```cmake
-nnh_add_game(scenes
-    SOURCES main.cpp scenes/title_scene.cpp
-    TITLE "Scenes demo" DESCRIPTION "NNHGE example" AUTHOR "NNHGE contributors"
+nnh_add_game(sprites
+    SOURCES main.cpp
+    IMAGES art/hero.png art/tiles.png   # optional; loaded with nnh::load_texture("hero")
+    TITLE "Sprites demo" DESCRIPTION "NNHGE example" AUTHOR "NNHGE contributors"
     ICON icon.png)            # optional 48x48; default icon otherwise
 ```
 
 On 3DS this calls devkitPro's `ctr_generate_smdh()` and `ctr_create_3dsx()`; on Windows it copies
 `SDL3.dll` next to the executable.
+
+**Images** (`IMAGES`, decision D19, until M3 moves them to romfs): one build step per image, rerun only
+when that image changes:
+
+1. `nnh_check_image.cmake` reads the PNG header and fails the build unless both sides are powers of two
+   from 8 to 1024 — `hero.png is 100x60: textures need power-of-two sides from 8 to 1024 ...`;
+2. on 3DS, `tex3ds -f rgba8888 -z auto` converts it to a `.t3x`; on PC the PNG stays as is;
+3. `nnh_embed.cmake` writes `image_<name>.cpp` (a byte array).
+
+A registry `images.cpp` maps names (file name without folder and extension; duplicates are a configure
+error) to the arrays; games without `IMAGES` link an empty default from core. Generated files live in
+`build/<preset>/<game dir>/nnh_images/<game>/`. The check script has its own `ctest` cases
+(`image_check_*`, fixtures in `tests/data/images/`).
 
 **Add a test file**: list it in `tests/CMakeLists.txt`.
 
@@ -84,7 +99,8 @@ CMake builds with GnuTLS and no CA store), the script reuses Git for Windows' CA
 
 From `C:\devkitPro\cmake\Platform\Nintendo3DS.cmake`: `ctr_generate_smdh`, `ctr_create_3dsx`
 (`SMDH`, `ROMFS` options), `ctr_add_shader_library` (picasso), `ctr_add_graphics_target` (tex3ds:
-`IMAGE`, `ATLAS`, `CUBEMAP`, `SKYBOX`). Platform flags: `-march=armv6k -mtune=mpcore -mfloat-abi=hard`,
+`IMAGE`, `ATLAS`, `CUBEMAP`, `SKYBOX`; we call `tex3ds` directly through `CTR_TEX3DS_EXE` instead, to
+keep one step per image). Platform flags: `-march=armv6k -mtune=mpcore -mfloat-abi=hard`,
 `-D__3DS__`, links `-lctru -lm` by default.
 
 ## Build speed

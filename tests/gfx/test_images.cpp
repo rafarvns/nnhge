@@ -1,7 +1,7 @@
 // The images "embedded" in the test program, in the fake platform's format: "FAKE", width, height
 // (16-bit little endian). Games get this table from nnh_add_game(... IMAGES ...).
 
-#include "gfx/image_registry.hpp"
+#include "nnh/detail/image_registry.hpp"
 
 namespace {
 

@@ -5,7 +5,7 @@
 
 #include "core/engine_state.hpp"
 #include "gfx/gfx_state.hpp"
-#include "gfx/image_registry.hpp"
+#include "nnh/detail/image_registry.hpp"
 #include "gfx/texture_rules.hpp"
 #include "log/engine_channels.hpp"
 #include "memory/memory_internal.hpp"

@@ -98,6 +98,27 @@ if(NOT MSVC)
     set_tests_properties(large_handler_capture_rejected PROPERTIES WILL_FAIL TRUE)
 endif()
 
+# Image check of nnh_add_game(... IMAGES ...) (spec 004 FR-3, AC-4): run the script on fixture images.
+set(_images ${CMAKE_CURRENT_SOURCE_DIR}/data/images)
+set(_check ${PROJECT_SOURCE_DIR}/cmake/nnh_check_image.cmake)
+add_test(NAME image_check_accepts_power_of_two
+    COMMAND ${CMAKE_COMMAND} -DIMAGE=${_images}/ok_16x8.png -P ${_check})
+foreach(case "npot_100x60.png|npot_100x60.png is 100x60: textures need power-of-two"
+             "big_2048x8.png|big_2048x8.png is 2048x8"
+             "not_png.png|not_png.png: not a PNG file"
+             "missing.png|missing.png: file not found")
+    string(REPLACE "|" ";" case "${case}")
+    list(GET case 0 file)
+    list(GET case 1 expected)
+    add_test(NAME image_check_rejects_${file}
+        COMMAND ${CMAKE_COMMAND} -DIMAGE=${_images}/${file} -P ${_check})
+    # Must fail, and say why (with the file name).
+    set_tests_properties(image_check_rejects_${file} PROPERTIES WILL_FAIL TRUE)
+    add_test(NAME image_check_explains_${file}
+        COMMAND ${CMAKE_COMMAND} -DIMAGE=${_images}/${file} -P ${_check})
+    set_tests_properties(image_check_explains_${file} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+endforeach()
+
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60
 option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)

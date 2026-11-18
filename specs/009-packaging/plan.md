@@ -1,6 +1,6 @@
 # Plan 009: Packaging — icon, metadata and installable `.cia`
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Spec: [spec.md](spec.md) · Decision D22 (below)
 
 ## Constitution Check (before design)

@@ -72,4 +72,6 @@ nnh_add_game(mygame
 ```
 
 and `add_subdirectory(mygame)` it from the top-level `CMakeLists.txt`. A standalone project template
-(engine as a dependency) comes with the `nnh` CLI.
+(engine as a dependency) comes with the `nnh` CLI. To give it to players — a `.3dsx`, or a `.cia` with
+a banner for the HOME Menu, installed over the network with FBI — see
+[Distributing your game](packaging.md).

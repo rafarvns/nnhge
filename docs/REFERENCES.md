@@ -9,8 +9,11 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   https://github.com/devkitPro/3ds-hbmenu
 - **libctru `3ds/3dslink.h`** — `link3dsStdio()` redirects stdout/stderr to the PC (TCP port 17491):
   https://github.com/devkitPro/libctru/blob/master/libctru/include/3ds/3dslink.h
-- **makerom** (Project_CTR) and **bannertool** (Epicpkmn11 fork) — build `.cia`. Not bundled with devkitPro.
-  https://www.3dbrew.org/wiki/Makerom · Makefile pattern: https://github.com/TricksterGuy/3ds-template
+- **makerom** v0.19.0 (3DSGuy/Project_CTR, MIT) and **bannertool** 1.2.3 (carstene1ns/3ds-bannertool, the maintained fork, MIT) — build `.cia`; not bundled with devkitPro, fetched pinned by our build (spec 009): https://github.com/3DSGuy/Project_CTR · https://github.com/carstene1ns/3ds-bannertool
+  · https://www.3dbrew.org/wiki/Makerom · Makefile pattern: https://github.com/TricksterGuy/3ds-template
+- **FBI** (Steveice10) — installs `.cia` files; its "Receive URLs over the network" protocol (used by
+  `scripts/fbi_install.py`) is the one of its `servefiles.py`. The RSF of **ftpd** (mtheall) was the
+  reference for system call numbers and service names in our `nnhge.rsf`: https://github.com/mtheall/ftpd
 - **3dbrew wiki** — hardware and system reference: https://www.3dbrew.org/wiki/Setting_up_Development_Environment
 - **stb_vorbis** (Sean Barrett; public domain or MIT) — the Ogg Vorbis decoder we vendor in
   `third_party/stb_vorbis` (spec 008; version and hash in its README): https://github.com/nothings/stb

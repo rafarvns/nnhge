@@ -1,6 +1,6 @@
 # Tasks 009: Packaging — icon, metadata and installable `.cia`
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops (script tests first). `[P]` = can be done in parallel with the previous task.
@@ -25,7 +25,7 @@ Each task: one or a few TDD loops (script tests first). `[P]` = can be done in p
 
 ## Stage 4 — verification and docs
 
-- [ ] **T4.1** docs: new `docs/guides/packaging.md`; `cmake.md` (`nnh_add_game` reference), `devkitpro-3ds.md` (`.cia`), `REFERENCES.md`, decision D22, CLAUDE.md, getting-started — covers AC-5
-- [ ] **T4.2** budgets without `CIA` (configure + build time, `hello.3dsx` size) — covers AC-4
-- [ ] **T4.3** maintainer: `hello` icon in the Homebrew Launcher; `audio.cia` with FBI (banner, jingle, play, exit, uninstall) — covers AC-1, AC-2
-- [ ] **T4.4** ROADMAP M5; spec, plan and tasks status → implemented
+- [x] **T4.1** docs: new `docs/guides/packaging.md`; `cmake.md` (`nnh_add_game` reference), `devkitpro-3ds.md` (`.cia`), `REFERENCES.md`, decision D22, CLAUDE.md, getting-started — covers AC-5
+- [x] **T4.2** budgets without `CIA`: game `.cpp` edit 1.4 s PC / 2.6 s 3DS, 3DS reconfigure 2.4 s, no download, `hello.3dsx` 258 148 bytes (unchanged) — covers AC-4
+- [x] **T4.3** maintainer: `audio.cia` installed with FBI over the network and played on an Old 3DS XL (2026-11-18) — covers AC-2. Still to confirm: the default icon of `hello` in the Homebrew Launcher (AC-1)
+- [x] **T4.4** ROADMAP M5; spec, plan and tasks status → implemented

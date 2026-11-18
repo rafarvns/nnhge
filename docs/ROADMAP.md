@@ -87,8 +87,8 @@ linked); `text.3dsx` 239,736 bytes.
 - [ ] Later, if games need them: positional audio, effects (reverb, filters), more than one music track (layers), streaming on a thread for long loads
 
 ## M5 — Packaging
-- [ ] `.3dsx` with icon/metadata (SMDH) — [spec 009](../specs/009-packaging/spec.md) (in progress)
-- [ ] `.cia` with banner (bannertool + makerom) — [spec 009](../specs/009-packaging/spec.md) (in progress); `nnh package` later (with M6)
+- [x] `.3dsx` with icon/metadata and an installable `.cia` with banner and jingle ([spec 009](../specs/009-packaging/spec.md)): one identity in `nnh_add_game()` (`TITLE`/`DESCRIPTION`/`AUTHOR`/`VERSION`/`ICON`, NNHGE icon by default, TITLE = PC window title), `CIA UNIQUE_ID ...` with `BANNER`/`BANNER_AUDIO` (NNHGE defaults), every field checked at configure; `<game>_cia`, `<game>_dist`, `dist`; makerom + bannertool fetched pinned on the first `.cia` build only; `scripts/fbi_install.py` installs over the network; guide [Distributing your game](guides/packaging.md) — `examples/audio` `.cia` installed with FBI and played on an Old 3DS XL (2026-11-18)
+- [ ] Later: `SYSTEM_MODE` (more memory, New 3DS 804 MHz) for `.cia`; `nnh package` with the CLI (M6)
 
 ## M6 — NNH Link
 - [ ] `nnh run --console <ip>` (3dslink-compatible send + log stream)

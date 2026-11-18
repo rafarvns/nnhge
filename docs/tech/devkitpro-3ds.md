@@ -131,7 +131,7 @@ What our backend (`input_3ds.cpp`) does:
   connection on hardware); without a listening PC the game starts without logs. At shutdown, flush and `close()` fds 1 and 2 as well as the
   socket **before** `socExit()`, or newlib's exit-time stdio cleanup hangs the console on a black screen
   instead of returning to the Homebrew Launcher.
-- `.cia` (installable): needs `makerom` + `bannertool` (not bundled with devkitPro). Planned in M5.
+- `.cia` (installable, spec 009): `nnh_add_game(... CIA UNIQUE_ID ...)` and the target `<game>_cia`; makerom (`-f cia -target t -exefslogo`, our RSF `cmake/3ds/nnhge.rsf`, the game's SMDH, a bannertool banner, the assets folder as romfs) and bannertool are fetched pinned on the first `.cia` build. Install with FBI over the network: `scripts/fbi_install.py` ([packaging guide](../guides/packaging.md)). romfs, saves on the SD card and exit to the HOME Menu work as in the `.3dsx`.
 - Launching another `.3dsx` from a homebrew app: libctru only offers `aptSetChainloader()` for installed
   titles; there is no 3dsx-to-3dsx API (relevant for NNH Link, see [decisions](../architecture/decisions.md)).
 

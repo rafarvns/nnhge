@@ -116,6 +116,8 @@ ctest --preset pc-debug                                        # unit tests
 build/pc-debug/tests/nnh_tests.exe [name-filter]               # tests, one line each
 scripts/dkp.sh cmake --preset 3ds-release                      # 3DS configure (once)
 scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-release/**/<game>.3dsx
+scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3ds-release/dist/<game>/ (.3dsx, .cia)
+python -I scripts/fbi_install.py <3ds-ip> <file.cia>           # install over the network (FBI → Receive URLs)
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings

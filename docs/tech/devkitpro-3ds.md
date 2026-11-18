@@ -21,7 +21,7 @@ The 3DS backend (`engine/platforms/3ds/`) is built with devkitPro's open toolcha
 ```cpp
 gfxInitDefault();                       // framebuffers
 C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);      // GPU command buffer (0x40000)
-C2D_Init(C2D_DEFAULT_MAX_OBJECTS);      // 4096 2D objects per frame
+C2D_Init(max_draws + 4096 + 256);       // 2D objects per frame: draws + debug glyphs + overlay (≥ 4096)
 C2D_Prepare();
 top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
 while (aptMainLoop()) {                 // false when the user closes the app from the HOME Menu
@@ -52,6 +52,26 @@ Always leave through `aptMainLoop()` returning false or the game's own exit; nev
   (see `<3ds/env.h>`); measure before changing it. `osGetMemRegionFree()` reports free memory.
 - `APT_CheckNew3DS(&is_new)` tells the model at runtime. New 3DS extra memory/CPU modes need a `.cia`
   with the right `.rsf` settings.
+
+## 2D drawing (what our backend does)
+
+Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`, `draw2d_3ds.cpp`.
+
+- **Textures**: the build converts each PNG with `tex3ds -f rgba8888 -z auto` into a `.t3x` embedded
+  in the executable; `Tex3DS_TextureImport(data, size, &tex, nullptr, false)` decompresses it into a
+  `C3D_Tex` in **linear** memory (`false` = not VRAM). Nearest filter, clamp to edge. The handle owns
+  the `C3D_Tex` and the `Tex3DS_Texture` (freed with `C3D_TexDelete` + `Tex3DS_TextureFree`). Core
+  accounts `tex.size` bytes under the `textures` tag.
+- **Regions**: one `Tex3DS_SubTexture` per draw. citro3d textures are stored bottom-up, so
+  `top = 1 - y/H` and `bottom = 1 - (y+h)/H` (top > bottom; top < bottom would mean "rotated" to tex3ds).
+- **Sprites**: `C2D_DrawImage` with `C2D_DrawParams`: `pos.x/y` is where `center` (the pivot) lands,
+  `pos.w/h` the size — negative to flip inside the rectangle, like SDL — and `angle` in radians.
+  Tint/opacity: `C2D_SetTintMode(C2D_TintMult)` and `C2D_PlainImageTint(color, 1.0)`; white opaque
+  draws pass no tint. The mode is set back to `C2D_TintSolid` after the pass (debug text).
+- **Shapes**: `C2D_DrawRectSolid`; outlines as four 1-pixel rectangles inside the rectangle; lines with
+  `C2D_DrawLine` through pixel centers, 1 pixel thick.
+- **Capacity**: citro2d's object buffer is sized at `C2D_Init` from `AppConfig::gfx.max_draws` plus the
+  debug text glyphs; an outline costs 4 objects.
 
 ## Input (HID)
 

@@ -63,6 +63,7 @@ void stop_3dslink_stdio() {
 } // namespace
 
 ctr::Context& ctr::context() { return g_context; }
+void ctr::set_error(const char* what) { g_last_error = what; }
 
 bool init(const AppConfig& config) {
     // The window title and icon come from the SMDH on 3DS; config gives the data folder.
@@ -73,7 +74,11 @@ bool init(const AppConfig& config) {
         gfxExit();
         return false;
     }
-    if (!C2D_Init(C2D_DEFAULT_MAX_OBJECTS)) {
+    // One citro2d object per sprite or shape (outlines take 4), plus one per debug text glyph and some
+    // headroom for the debug overlay.
+    const int max_draws = config.gfx.max_draws > 0 ? config.gfx.max_draws : 0;
+    const std::size_t max_objects = static_cast<std::size_t>(max_draws) + kDebugTextGlyphs + 256;
+    if (!C2D_Init(max_objects > C2D_DEFAULT_MAX_OBJECTS ? max_objects : C2D_DEFAULT_MAX_OBJECTS)) {
         g_last_error = "C2D_Init failed";
         C3D_Fini();
         gfxExit();

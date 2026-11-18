@@ -92,8 +92,8 @@ void World::draw_ground() const {
 void World::draw_hud() const {
     // HUD: camera-free, on the highest layer; debug text always draws on top of it.
     const nnh::ShapeOptions hud{.layer = 15, .ignore_camera = true};
-    nnh::gfx::fill_rect(Screen::Top, {4, 4, 168, 16}, nnh::rgba(0, 0, 0, 150), hud);
-    nnh::gfx::draw_rect(Screen::Top, {4, 4, 168, 16}, nnh::colors::white, hud);
+    nnh::gfx::fill_rect(Screen::Top, {4, 4, 200, 16}, nnh::rgba(0, 0, 0, 150), hud);
+    nnh::gfx::draw_rect(Screen::Top, {4, 4, 200, 16}, nnh::colors::white, hud);
     nnh::debug::printf(Screen::Top, 10, 8, "x %4d / %d", static_cast<int>(hero_.x), static_cast<int>(kWorldWidth));
 }
 

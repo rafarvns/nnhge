@@ -5,10 +5,12 @@ add_library(nnh_platform_3ds STATIC
     src/console_3ds.cpp
     src/crash_3ds.cpp
     src/debug_text_3ds.cpp
+    src/draw2d_3ds.cpp
     src/input_3ds.cpp
     src/log_3ds.cpp
     src/memory_3ds.cpp
     src/system_3ds.cpp
+    src/texture_3ds.cpp
     src/time_3ds.cpp
     src/video_3ds.cpp
     ../shared/stdio_fs.cpp

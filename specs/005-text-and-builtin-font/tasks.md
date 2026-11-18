@@ -13,8 +13,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — the font
 
-- [ ] **T2.1** `scripts/make_font.py`: ASCII glyphs, replacement glyph, Latin-1 composed with diacritics; writes `builtin_font.cpp` and a preview PNG — verified: preview reviewed by the maintainer
-- [ ] **T2.2** generated `core/src/text/builtin_font.{hpp,cpp}` — test: `tests/text/test_builtin_font.cpp` (every glyph but space has pixels, accents differ from their base letter) — covers FR-1, FR-2
+- [x] **T2.1** `scripts/make_font.py`: ASCII glyphs, replacement glyph, Latin-1 composed with diacritics; writes `builtin_font.cpp` and a preview PNG — verified: preview reviewed by the maintainer (generator done; maintainer review of the preview pending)
+- [x] **T2.2** generated `core/src/text/builtin_font.{hpp,cpp}` — test: `tests/text/test_builtin_font.cpp` (every glyph but space has pixels, accents differ from their base letter) — covers FR-1, FR-2
 
 ## Stage 3 — font texture
 

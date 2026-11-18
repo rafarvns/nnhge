@@ -1,15 +1,15 @@
 # Tasks 006: Simulator window — layouts, scale, fullscreen
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — pure layout and settings
 
-- [ ] **T1.1** layout math: natural sizes, fit, centering, rectangles per layout — files: `pc/src/sim_layout.{hpp,cpp}` — test: `tests/simulator/test_sim_layout.cpp` — covers FR-1, FR-2
-- [ ] **T1.2** window → bottom-screen mapping per layout (clamped while held, none in top only) — test: same file — covers FR-4
-- [ ] **T1.3** [P] settings format: parse/format, validation, size limit — files: `pc/src/sim_settings.{hpp,cpp}` — test: `tests/simulator/test_sim_settings.cpp` — covers FR-6
+- [x] **T1.1** layout math: natural sizes, fit, centering, rectangles per layout — files: `pc/src/sim_layout.{hpp,cpp}` — test: `tests/simulator/test_sim_layout.cpp` — covers FR-1, FR-2
+- [x] **T1.2** window → bottom-screen mapping per layout (clamped while held, none in top only) — test: same file — covers FR-4
+- [x] **T1.3** [P] settings format: parse/format, validation, size limit — files: `pc/src/sim_settings.{hpp,cpp}` — test: `tests/simulator/test_sim_settings.cpp` — covers FR-6
 
 ## Stage 2 — screen targets and composition
 

@@ -1,6 +1,6 @@
 # Tasks 007: Assets — build pipeline and romfs
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -32,5 +32,5 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 - [x] **T5.1** `examples/sprites` on `ASSETS` + `levels/level1.txt`; screenshots identical — covers AC-2
 - [x] **T5.2** docs: new `docs/api/assets.md`; `texture.md`, `cmake.md` (ASSETS, GLOB exception), `devkitpro-3ds.md` (romfs), `sdl3.md`, decisions D6/D19, CLAUDE.md — covers AC-5
 - [x] **T5.3** budgets (edit one asset), Release strings, Linux gcc + clang ASan/UBSan — covers AC-4
-- [ ] **T5.4** run `examples/sprites` on the 3DS from the romfs — maintainer — covers AC-3
-- [ ] **T5.5** `docs/ROADMAP.md` M3 checkboxes; spec, plan and tasks status → implemented
+- [x] **T5.4** run `examples/sprites` on the 3DS from the romfs — maintainer — covers AC-3
+- [x] **T5.5** `docs/ROADMAP.md` M3 checkboxes; spec, plan and tasks status → implemented

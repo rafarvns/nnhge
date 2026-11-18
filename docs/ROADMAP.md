@@ -79,8 +79,8 @@ linked); `text.3dsx` 239,736 bytes.
 - [x] Simulator window ([spec 006](../specs/006-simulator-window/spec.md)): five layouts (F2), scale 1–6× (F3/F4), fit (F5), fullscreen (F9, Alt+Enter), remembered per game; each screen rendered at native resolution and composed — checked by the maintainer (2026-11-18). 3D slider control moves to M8 with stereo rendering
 
 ## M3 — Assets
-- [ ] `assetc`: PNG → platform textures, incremental cache — [spec 007](../specs/007-assets-and-romfs/spec.md) (in progress)
-- [ ] romfs packaging (read side of `nnh::fs`; the confined write side comes with spec 002) — [spec 007](../specs/007-assets-and-romfs/spec.md) (in progress)
+- [x] Assets folder and romfs ([spec 007](../specs/007-assets-and-romfs/spec.md)): `nnh_add_game(... ASSETS <folder>)` checks and converts each file in the build (one step per file, rerun only when it changes), writes a sorted case-sensitive index and packs the folder into the romfs on 3DS / next to the program on PC; `<nnh/assets.hpp>` (`exists`/`size`/`read`/`load` by path); `load_texture("art/hero")` from assets, `IMAGES` kept for embedded images; `examples/sprites` loads its textures and a level file — verified on PC, Linux and an Old 3DS XL (2026-11-18). Cost: `hello.3dsx` +10.5 KB (romfs support)
+- [ ] `assetc` tool (a C++ converter with an incremental cache) — only when conversion outgrows the CMake steps (texture formats, atlases, audio)
 
 ## M4 — Audio
 - [ ] Sound effects (WAV), streaming music (OGG), mixer channels — ndsp / SDL3

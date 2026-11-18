@@ -5,6 +5,7 @@
 #include "gfx/gfx_state.hpp"
 #include "nnh/assert.hpp"
 #include "nnh/gfx.hpp"
+#include "text/font_texture.hpp"
 
 namespace nnh {
 namespace {
@@ -86,9 +87,11 @@ gfx::Stats gfx::stats() {
     s.draws_last_frame = g.draws_last_frame;
     s.max_draws = g.max_draws;
     s.dropped_draws = g.dropped_total;
-    s.textures = g.textures.active_count();
-    s.max_textures = g.textures.capacity();
-    s.texture_bytes = g.textures.total_bytes();
+    // The game's textures only: the built-in font has its own slot and memory tag.
+    const int font = detail::font_texture_ready() ? 1 : 0;
+    s.textures = g.textures.active_count() - font;
+    s.max_textures = g.textures.capacity() > 0 ? g.textures.capacity() - 1 : 0;
+    s.texture_bytes = g.textures.total_bytes() - detail::font_texture_bytes();
     return s;
 }
 

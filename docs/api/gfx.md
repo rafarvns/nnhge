@@ -83,7 +83,8 @@ Draws are shifted by it unless they set `ignore_camera`. Both cameras start at (
 ## Text
 
 Text with the built-in NNHGE font arrives with [spec 005](../../specs/005-text-and-builtin-font/spec.md)
-(in progress): the header already defines `TextAlign` (Left, Center, Right) and the font's grid,
+(in progress): the font's texture is created at `init()` for every game, and the header already defines
+`TextAlign` (Left, Center, Right) and the font's grid,
 `kFontCellSize` (8 pixels per character) and `kFontLineHeight` (10 pixels per line), the same on every
 system.
 
@@ -105,4 +106,5 @@ How many sprites fit in a frame at 60 Hz (an Old 3DS XL: about 1300 of 16×16 fr
 
 More draws than `max_draws` in a frame is a bug: Debug and Development **assert**; Release drops the
 extra draws and logs one warning per frame. `gfx::stats()` returns `draws_last_frame`, `max_draws`,
-`dropped_draws`, `textures`, `max_textures` and `texture_bytes`; the debug overlay shows them too.
+`dropped_draws`, `textures`, `max_textures` and `texture_bytes` (the game's textures: the built-in font
+has its own slot and memory tag); the debug overlay shows them too.

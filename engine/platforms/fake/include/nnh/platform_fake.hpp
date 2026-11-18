@@ -51,6 +51,7 @@ struct State {
     int last_frame_text_count = 0; ///< debug texts in the frame that ended last
     // 2D drawing (spec 004)
     int live_textures = 0;      ///< created and not yet destroyed
+    int rgba_textures_created = 0; ///< texture_create_rgba() calls that succeeded
     int item_count = 0;         ///< draw_2d() items in the current frame (first kMaxRecordedItems kept)
     platform::DrawItem2D items[kMaxRecordedItems];
     char calls[kMaxRecordedCalls] = {}; ///< current frame: 'T'/'B' draw_2d top/bottom, 'd' debug_text, 'r' fill_rect

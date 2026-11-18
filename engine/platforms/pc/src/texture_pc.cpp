@@ -34,6 +34,24 @@ bool texture_create(const void* data, std::size_t size, TextureInfo& out) {
     return true;
 }
 
+bool texture_create_rgba(const void* pixels, int width, int height, TextureInfo& out) {
+    out = TextureInfo{};
+    SDL_Texture* texture = SDL_CreateTexture(pc::context().renderer, SDL_PIXELFORMAT_RGBA32,
+                                             SDL_TEXTUREACCESS_STATIC, width, height);
+    if (texture == nullptr || !SDL_UpdateTexture(texture, nullptr, pixels, width * 4)) {
+        pc::set_error("texture creation failed");
+        SDL_DestroyTexture(texture);
+        return false;
+    }
+    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    out.handle = reinterpret_cast<TextureHandle>(texture);
+    out.width = width;
+    out.height = height;
+    out.bytes = static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4;
+    return true;
+}
+
 void texture_destroy(TextureHandle handle) {
     if (handle != 0) SDL_DestroyTexture(reinterpret_cast<SDL_Texture*>(handle));
 }

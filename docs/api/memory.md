@@ -46,4 +46,5 @@ passes it. Up to 31 tags are counted separately; more share an "other" slot.
 - Allocate at load time; don't allocate in per-frame code (constitution V).
 - Memory allocated by libraries the engine uses (e.g. citro2d's internal buffers) isn't counted, except
   textures: the engine counts each one under the tag `textures` in `Linear` ([texture.md](texture.md)),
-  so they show in stats, budgets and the leak report. The 2D draw list is tag `gfx`, the event bus `events`.
+  so they show in stats, budgets and the leak report. The built-in font's texture (64 KB, created at
+  `init()`) is tag `font`; the 2D draw list is tag `gfx`, the event bus `events`.

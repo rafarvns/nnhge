@@ -1,5 +1,6 @@
-// sprites: textures from the game's IMAGES, sprite-sheet animation, layers, a camera that follows the
-// player, a camera-free HUD, rotation/tint/opacity, and shapes (a minimap on the bottom screen).
+// sprites: textures and a level file from the game's assets (spec 007), sprite-sheet animation, layers,
+// a camera that follows the player, a camera-free HUD, rotation/tint/opacity, and shapes (a minimap on
+// the bottom screen).
 // D-Pad or Circle Pad to walk, SELECT for the benchmark (many sprites), START to exit.
 //
 // Screenshot after walking right for a second and a half (Debug/Development):
@@ -13,6 +14,7 @@
 #include <utility>
 
 #include <nnh/app.hpp>
+#include <nnh/assets.hpp>
 #include <nnh/debug.hpp>
 #include <nnh/gfx.hpp>
 #include <nnh/input.hpp>
@@ -45,8 +47,14 @@ int main() {
     nnh::gfx::set_clear_color(nnh::Screen::Bottom, nnh::rgb(24, 24, 32));
     {
         const char* error = nullptr;
-        Art art{load("hero", error), load("tiles", error)};
-        World world(art);
+        Art art{load("art/hero", error), load("art/tiles", error)};
+        static Level level;
+        // A data file from the assets: read whole, parsed, released at the end of this block.
+        auto file = nnh::assets::load("levels/level1.txt");
+        if (!file || !parse_level(static_cast<const char*>(file.value().data()), file.value().size(), level)) {
+            error = "levels/level1.txt is missing or invalid";
+        }
+        World world(art, level);
         static Bench bench(art.hero); // ~128 KB of positions: static, not on the stack
         const char* demo = std::getenv("SPRITES_DEMO");
         bool benchmark = demo != nullptr && std::strcmp(demo, "bench") == 0;

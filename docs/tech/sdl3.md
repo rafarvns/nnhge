@@ -9,6 +9,7 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 |------|----------------|
 | `context_pc.hpp` | Shared state (window, renderer), screen rectangles, helpers |
 | `app_pc.cpp` | Init/shutdown, window, renderer (GPU device or fallback), event polling, dev env vars |
+| `assets_pc.cpp` | Assets (spec 007): `<exe dir>assets/<path>` through `SDL_GetPathInfo`/`SDL_IOFromFile` |
 | `texture_pc.cpp` | Textures: embedded PNG → `SDL_LoadPNG_IO` → `SDL_Texture` (nearest filtering) |
 | `draw2d_pc.cpp` | One 2D pass: sprites (`SDL_RenderTextureRotated` + color/alpha mod) and shapes, clipped per screen |
 | `video_pc.cpp` | Frame begin/end, 60 Hz pacing, screenshots |

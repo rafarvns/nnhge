@@ -30,7 +30,7 @@ from the next `nnh::frame()`.
 ## Drawing sprites
 
 ```cpp
-nnh::Texture hero = std::move(nnh::load_texture("hero").value());   // see texture.md
+nnh::Texture hero = std::move(nnh::load_texture("art/hero").value());   // assets/art/hero.png, see texture.md
 ...
 nnh::gfx::draw(nnh::Screen::Top, hero, player.position,
                {.region = {16 * frame, 0, 16, 16}, .pivot = {8, 16}, .flip_x = facing_left, .layer = 2});

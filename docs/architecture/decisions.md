@@ -10,7 +10,7 @@ the table; never silently. New decisions get the next number.
 | D3 | PC simulator is a host build on SDL3, not an emulator | Instant iteration and native debugging. Azahar and hardware stay as accuracy checks. |
 | D4 | Simulator enforces 3DS limits (screen sizes, memory budget, texture rules) | Avoid "works on PC, breaks on console". |
 | D5 | Rendering: 2D first on citro2d/citro3d; stereoscopic 3D later on citro3d | citro* are the maintained devkitPro GPU libraries; 2D gets games running sooner. |
-| D6 | Assets compiled ahead of time (`assetc`) into platform formats, packed in romfs | No decoding cost on the console; content-hash cache keeps it incremental. |
+| D6 | Assets compiled ahead of time into platform formats, packed in romfs (spec 007: per-file CMake build steps, incremental by timestamps; the C++ `assetc` with a content-hash cache waits for heavier conversions such as audio) | No decoding cost on the console; only changed assets rebuild. |
 | D7 | Console builds always happen on the PC | The 3DS cannot compile in useful time. NNH Link *requests* builds and runs results. |
 | D8 | NNH Link starts compatible with 3dslink, then adds its own protocol | Reuse a proven path (Homebrew Launcher netloader, stdio redirect on port 17491) before inventing. |
 | D9 | `.3dsx` for the dev loop, `.cia` for installation | `.3dsx` is fastest to send and launch; `.cia` is the native installable artifact. |
@@ -24,7 +24,7 @@ the table; never silently. New decisions get the next number.
 | D16 | **System-only features via capability queries + extension headers** `<nnh/<system>/...>` | Games stay portable by default, unique hardware (stereo 3D, Joy-Con) stays reachable, and non-portable code is explicit at the include line. |
 | D17 | **Core foundation before features**: time, logging, asserts/`Result`/crash report, memory accounting, debug overlay/profiler, confined `fs`; three build flavors (Debug, Development, Release) | Every later module needs them; a console without a debugger needs logs and crash reports from day one. See [foundation.md](foundation.md). |
 | D18 | **Safe by default** (constitution X): confined file writes, atomic saves, fuzzed parsers, pinned supply chain, no telemetry | Homebrew has no sandbox; players' SD cards and saves must be safe. See [security.md](security.md). |
-| D19 | **Until M3, game images are embedded in the executable**, converted at build time (tex3ds `.t3x` on 3DS, PNG on PC) and loaded by name | Games get graphics now without the romfs/`assetc` pipeline; loading by name keeps the API when M3 moves images to romfs (D6). |
+| D19 | **`IMAGES`: images embedded in the executable** (tex3ds `.t3x` on 3DS, PNG on PC), loaded by name — kept for small games; since spec 007 `ASSETS` (romfs, on demand) is the recommended way and `load_texture` looks there first | Games got graphics before the asset pipeline existed; the same `load_texture` call works for both. |
 | D20 | **Rendering is recorded, then submitted per screen in passes; one texture type for 2D and 3D** (3DS: `C3D_Tex` drawn by citro2d; PC: SDL renderer on an `SDL_GPUDevice`, default renderer as headless fallback) | Layers, batching and stereo (one list, two eyes) come for free, and 3D (M8) slots in as a pass without changing 2D calls or textures. See [rendering.md](rendering.md). |
 
 ## NNH Link (planned flow, D7/D8)

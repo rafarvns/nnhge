@@ -1,6 +1,6 @@
 # Spec 003: Full input — sticks, touch, gamepad
 
-Status: draft
+Status: approved (2026-11-18, maintainer)
 Author: NNHGE maintainers · Date: 2026-11-17
 Depends on: [spec 001 — event bus and scenes](../001-event-bus-and-scenes/spec.md) (input events) and
 [spec 002 — core foundation](../002-core-foundation/spec.md) (platform contract, fake platform) — both
@@ -33,7 +33,9 @@ the same on PC and 3DS.
   a dead zone applied (values inside it read exactly 0) and the result clamped to the unit circle. The
   same physical push gives the same value range on PC and 3DS.
 - **FR-2 C-Stick.** A query returns the C-Stick position with the same normalization as FR-1. On systems
-  without one (Old 3DS) it always reads (0, 0); a query tells whether the system has a C-Stick.
+  without one (Old 3DS) it always reads (0, 0); `system::has(Capability::CStick)` (already in
+  `<nnh/system.hpp>`) tells whether the system has one. The PC simulator reports the Circle Pad, C-Stick,
+  ZL/ZR and touch capabilities, since it simulates them all.
 - **FR-3 ZL/ZR.** `Button::ZL` and `Button::ZR` (already in the enum) are read on New 3DS and reported as
   never held on Old 3DS (already the contract; this spec verifies it on hardware and maps them on PC
   gamepads).
@@ -62,12 +64,16 @@ the same on PC and 3DS.
 - **FR-10 Testable without hardware.** The platform contract for input carries sticks and touch, and the
   fake platform can script them, so FR-1, FR-2, FR-4, FR-5 and FR-6 are covered by unit tests.
 - **FR-11 Cost.** No heap allocation and no RTTI per frame; the input state stays a few dozen bytes.
+- **FR-12 Circle Pad → D-Pad mirror (opt-in).** `Button::Up/Down/Left/Right` stay D-Pad only. A game can
+  turn on a mirror so that pushing the Circle Pad far enough also holds the matching D-Pad button (with
+  `pressed`/`released` and `ButtonPressed`/`ButtonReleased` as for a real press), e.g. for menus. Off by
+  default; small movements around the threshold must not make the button flicker.
 
 ## Acceptance criteria
 
 - **AC-1** Unit tests (PC, fake platform) cover normalization, dead zone and clamping (FR-1/FR-2), the
-  C-Stick-less case (FR-2), touch state and its one-frame flags (FR-4), touch events and their ordering
-  relative to button events (FR-5/FR-6).
+  C-Stick-less case (FR-2), the D-Pad mirror and its threshold (FR-12), touch state and its one-frame
+  flags (FR-4), touch events and their ordering relative to button events (FR-5/FR-6).
 - **AC-2** A new example `examples/input/` shows every control: buttons, both sticks (a dot inside a
   circle), and the touch point. Simulator screenshots show the sticks deflected and a touch, driven by
   environment variables like the other examples.
@@ -98,17 +104,12 @@ the same on PC and 3DS.
 
 ## Open questions
 
-- [ ] **Stick value type and axes** — `float` in [-1, 1] (proposed) or integers (e.g. -127..127, cheaper
-  on the ARM11 without much FPU use)? Is **up positive** (math convention, proposed) or negative (screen
-  convention)?
-- [ ] **Dead zone** — fixed engine default (proposed ≈ 10% of the range) or configurable through
-  `AppConfig`?
-- [ ] **Circle Pad as D-Pad** — libctru offers combined `KEY_UP = D-Pad Up | Circle Pad Up`. Should
-  `Button::Up` etc. stay D-Pad only (proposed, explicit), or should there be extra digital
-  "stick direction" buttons for menus?
-- [ ] **PC keys for the sticks** — proposed: Circle Pad = I/J/K/L, C-Stick = numpad 8/4/2/6 (the button
-  keys Q/W/A/S/Z/X/1/2 stay as they are).
-- [ ] **`TouchMoved`** — leave it out (proposed: games poll the position while touched) or publish it on
-  frames where the position changed?
-- [ ] **Gamepad face buttons** — map by position (proposed, matches the 3DS layout on any pad) or by label
-  (an Xbox "A" is at the bottom, where the 3DS has B)?
+Resolved at approval (2026-11-18, maintainer):
+
+- [x] **Stick value type and axes** — `float` in [-1, 1]; up and right are positive.
+- [x] **Dead zone** — fixed engine default (about 10% of the range), not configurable.
+- [x] **Circle Pad as D-Pad** — `Button::Up` etc. stay D-Pad only, plus an opt-in mirror function (FR-12).
+- [x] **PC keys for the sticks** — maintainer's choice delegated: Circle Pad = I/J/K/L, C-Stick = numpad
+  8/4/2/6; the existing button keys stay as they are.
+- [x] **`TouchMoved`** — no; games poll the position while touched.
+- [x] **Gamepad face buttons** — by position (the 3DS layout on any pad).

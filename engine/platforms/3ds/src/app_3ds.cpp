@@ -83,6 +83,7 @@ bool init(const AppConfig& config) {
     g_context.targets[0] = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     g_context.targets[1] = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     g_context.text_buffer = C2D_TextBufNew(kDebugTextGlyphs);
+    ctr::input_start();
     start_3dslink_stdio();
     char root[96];
     std::snprintf(root, sizeof root, "sdmc:/3ds/%s/", config.data_folder);
@@ -92,6 +93,7 @@ bool init(const AppConfig& config) {
 
 void shutdown() {
     stop_3dslink_stdio();
+    ctr::input_stop();
     C2D_TextBufDelete(g_context.text_buffer);
     g_context = {};
     C2D_Fini();

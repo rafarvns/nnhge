@@ -11,11 +11,17 @@ struct Context {
     C3D_RenderTarget* targets[2] = {nullptr, nullptr}; // [0] top, [1] bottom
     C3D_RenderTarget* current_target = nullptr;        // scene currently begun this frame
     C2D_TextBuf text_buffer = nullptr;                 // debug text glyphs, cleared every frame
+    bool c_stick_ready = false;                        // irrst started (New 3DS)
 };
 
 Context& context();
 
 inline u32 to_c2d(Color c) { return C2D_Color32(c.r, c.g, c.b, c.a); }
+
+/// Starts the C-Stick service on New 3DS models (input_3ds.cpp; called by init). Without it the C-Stick
+/// reads 0.
+void input_start();
+void input_stop();
 
 /// Makes `screen` the target of the following citro2d draw calls (no-op if already current).
 void draw_on(Screen screen);

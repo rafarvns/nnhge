@@ -30,8 +30,6 @@ void begin_frame(Color top_clear, Color bottom_clear) {
     s.frame_open = true;
     s.top_clear = top_clear;
     s.bottom_clear = bottom_clear;
-    s.text_count = 0;
-    s.rect_count = 0;
     s.item_count = 0;
     s.calls[0] = '\0';
 }
@@ -40,32 +38,10 @@ void end_frame() {
     platform_fake::State& s = mutable_state();
     ++s.frames_ended;
     s.frame_open = false;
-    s.last_frame_text_count = s.text_count;
-    s.last_frame_rects = s.rect_count;
     s.last_frame_item_count = s.item_count;
     std::memcpy(s.last_frame_items, s.items, sizeof s.items);
     std::memcpy(s.last_frame_calls, s.calls, sizeof s.calls);
 }
-
-void fill_rect(Screen, int, int, int, int, Color) {
-    ++mutable_state().rect_count;
-    log_call('r');
-}
-
-void debug_text(Screen screen, int x, int y, const char* text, Color color) {
-    platform_fake::State& s = mutable_state();
-    log_call('d');
-    if (s.text_count == platform_fake::kMaxRecordedTexts) return;
-    platform_fake::DrawnText& out = s.texts[s.text_count++];
-    out.screen = screen;
-    out.x = x;
-    out.y = y;
-    out.color = color;
-    std::strncpy(out.text, text, sizeof out.text - 1);
-    out.text[sizeof out.text - 1] = '\0';
-}
-
-int debug_line_height() { return 10; }
 
 // Test image format: "FAKE", width, height (16-bit little endian).
 bool texture_create(const void* data, std::size_t size, TextureInfo& out) {

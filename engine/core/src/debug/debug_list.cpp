@@ -27,9 +27,31 @@ bool DebugList::add(Screen screen, int x, int y, const char* text, Color color) 
         return false;
     }
     std::memcpy(text_ + text_used_, text, length);
-    entries_[count_++] = DebugText{screen, static_cast<std::int16_t>(x), static_cast<std::int16_t>(y), color,
-                                   static_cast<std::uint32_t>(text_used_)};
+    DebugText& entry = entries_[count_++];
+    entry = DebugText{};
+    entry.screen = screen;
+    entry.x = static_cast<std::int16_t>(x);
+    entry.y = static_cast<std::int16_t>(y);
+    entry.color = color;
+    entry.offset = static_cast<std::uint32_t>(text_used_);
     text_used_ += length;
+    return true;
+}
+
+bool DebugList::add_rect(Screen screen, int x, int y, int w, int h, Color color) {
+    if (count_ >= capacity_) {
+        ++dropped_;
+        return false;
+    }
+    DebugText& entry = entries_[count_++];
+    entry = DebugText{};
+    entry.kind = DebugText::Kind::Rect;
+    entry.screen = screen;
+    entry.x = static_cast<std::int16_t>(x);
+    entry.y = static_cast<std::int16_t>(y);
+    entry.w = static_cast<std::int16_t>(w);
+    entry.h = static_cast<std::int16_t>(h);
+    entry.color = color;
     return true;
 }
 

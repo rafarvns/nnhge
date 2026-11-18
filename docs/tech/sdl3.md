@@ -16,7 +16,8 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `gamepad_pc.cpp` | First connected gamepad (hot-plug), buttons by position, sticks, triggers |
 | `touch_pc.cpp` | Left mouse button on the bottom screen → touch, window → 3DS pixels |
 | `input_override_pc.cpp` | `NNH_SIM_INPUT` scripted input (Debug/Development) |
-| `debug_text_pc.cpp` | Debug text with SDL's built-in 8×8 font |
+| `debug_text_pc.cpp` | SDL's 8×8 debug font, for the crash screen only (it must work when the engine is broken); game and debug text use the engine's built-in font |
+| `texture_pc.cpp` (also) | `texture_create_rgba`: `SDL_CreateTexture` + `SDL_UpdateTexture` (the built-in font) |
 
 ## How the 3DS is simulated
 

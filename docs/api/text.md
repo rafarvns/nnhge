@@ -1,7 +1,7 @@
 # text — the built-in NNHGE font
 
-Header: `<nnh/gfx.hpp>` · Spec: [005](../../specs/005-text-and-builtin-font/spec.md) (in progress: debug text
-moves onto this font next) · Drawing in general: [gfx.md](gfx.md)
+Header: `<nnh/gfx.hpp>` · Spec: [005](../../specs/005-text-and-builtin-font/spec.md) · Drawing in general:
+[gfx.md](gfx.md) · Debug text uses this font too: [debug.md](debug.md)
 
 Every game has the NNHGE font: it is part of the engine (its texture is created by `nnh::init()`), so
 text looks **the same, pixel for pixel, on the PC simulator, the 3DS and any future console**, and a

@@ -50,8 +50,8 @@ void draw_text_block(Screen screen, const char* text) {
             ++n;
         }
         line[n] = '\0';
-        debug_text(screen, 6, y, line, colors::white);
-        y += debug_line_height();
+        pc::sdl_text(screen, 6, y, line, colors::white);
+        y += pc::sdl_text_line_height();
         text += n;
         if (*text == '\n') ++text;
     }

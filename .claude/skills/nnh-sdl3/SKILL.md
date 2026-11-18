@@ -13,7 +13,7 @@ Full notes: `docs/tech/sdl3.md`. Check SDL APIs in the fetched headers
 `engine/platforms/pc/` (target `nnh::platform_pc`, see its README): `src/context_pc.hpp`
 (window/renderer, frame counter, dev options, `screen_rect`, `set_draw_color`), `src/app_pc.cpp` (init,
 window, events, env vars), `src/video_pc.cpp` (frame, pacing, screenshot), `src/input_pc.cpp` (keyboard
-map), `src/debug_text_pc.cpp`. One file per contract area: `<area>_pc.cpp`. Namespace `nnh::platform`
+map), `src/texture_pc.cpp`, `src/draw2d_pc.cpp`, `src/debug_text_pc.cpp` (crash screen only). One file per contract area: `<area>_pc.cpp`. Namespace `nnh::platform`
 (`::pc` internals). Contract tests: `tests/platform_conformance/` (`nnh_conformance_pc`, headless).
 
 ## Rules

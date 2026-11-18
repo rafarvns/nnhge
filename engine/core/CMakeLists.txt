@@ -13,6 +13,7 @@ add_library(nnh_core STATIC
     src/crash/report.cpp
     src/debug/debug.cpp
     src/debug/debug_list.cpp
+    src/debug/debug_pass.cpp
     src/debug/overlay.cpp
     src/debug/profiler.cpp
     src/events/bus.cpp

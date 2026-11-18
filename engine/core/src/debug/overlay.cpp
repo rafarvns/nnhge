@@ -1,4 +1,5 @@
 // Debug overlay on the bottom screen: FPS, frame-time graph, memory per region, slowest profile scopes.
+// Recorded into the debug pass (debug_pass.cpp), so it draws with the built-in font on every system.
 // Compiled in Debug/Development; set_overlay_visible() has no effect in Release.
 
 #include <cstdio>
@@ -9,7 +10,6 @@
 #include "nnh/input.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/system.hpp"
-#include "nnh/platform/video.hpp"
 #include "nnh/profile.hpp"
 
 namespace nnh {
@@ -43,7 +43,7 @@ void draw_frame_stats(int& y, int line) {
     char text[96];
     std::snprintf(text, sizeof text, "FPS %.1f  %.1f ms (max %.1f)", avg_ms > 0 ? 1000.0 / avg_ms : 0.0, avg_ms,
                   static_cast<double>(worst.ns) / 1e6);
-    platform::debug_text(Screen::Bottom, 4, y, text, colors::white);
+    detail::debug_record_text(Screen::Bottom, 4, y, text, colors::white);
     y += line;
 }
 
@@ -54,7 +54,7 @@ void draw_graph(int& y) {
         int h = static_cast<int>(d.ns * kGraphHeight / kGraphMaxNs);
         if (h > kGraphHeight) h = kGraphHeight;
         if (h < 1) h = 1;
-        platform::fill_rect(Screen::Bottom, 4 + i * 2, bottom - h, 2, h, bar_color(d));
+        detail::debug_record_rect(Screen::Bottom, 4 + i * 2, bottom - h, 2, h, bar_color(d));
     }
     y = bottom + 4;
 }
@@ -72,14 +72,14 @@ void draw_memory(int& y, int line) {
             std::snprintf(text, sizeof text, "%-6s %6.2f MB", mem::region_name(region),
                           static_cast<double>(stats.bytes) / 1048576.0);
         }
-        platform::debug_text(Screen::Bottom, 4, y, text, colors::white);
+        detail::debug_record_text(Screen::Bottom, 4, y, text, colors::white);
         y += line;
     }
     const gfx::Stats g = gfx::stats();
     char text[96];
     std::snprintf(text, sizeof text, "2D %d/%d draws  %d tex %.2f MB", g.draws_last_frame, g.max_draws, g.textures,
                   static_cast<double>(g.texture_bytes) / 1048576.0);
-    platform::debug_text(Screen::Bottom, 4, y, text, colors::white);
+    detail::debug_record_text(Screen::Bottom, 4, y, text, colors::white);
     y += line;
 }
 
@@ -90,7 +90,7 @@ void draw_scopes(int& y, int line) {
         char text[96];
         std::snprintf(text, sizeof text, "%-14.14s %5.2f ms x%d", top[i].name,
                       static_cast<double>(top[i].total.ns) / 1e6, top[i].calls);
-        platform::debug_text(Screen::Bottom, 4, y, text, colors::yellow);
+        detail::debug_record_text(Screen::Bottom, 4, y, text, colors::yellow);
         y += line;
     }
 }
@@ -112,8 +112,8 @@ void detail::overlay_update(Duration frame_delta, std::uint32_t held, std::uint3
 
 void detail::overlay_draw() {
     if (!build::kDevToolsEnabled || !g_visible) return;
-    const int line = platform::debug_line_height();
-    platform::fill_rect(Screen::Bottom, 0, 0, screen_width(Screen::Bottom), screen_height(Screen::Bottom),
+    const int line = kFontLineHeight;
+    detail::debug_record_rect(Screen::Bottom, 0, 0, screen_width(Screen::Bottom), screen_height(Screen::Bottom),
                         rgba(0, 0, 0, 170));
     int y = 4;
     draw_frame_stats(y, line);

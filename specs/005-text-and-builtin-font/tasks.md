@@ -28,13 +28,13 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 5 — debug text on the font
 
-- [ ] **T5.1** debug pass: debug text and overlay rectangles laid out into glyph/shape items, own 4096-item buffer, after the 2D passes; `line_height()` = 10 — files: `debug/debug_pass.cpp`, `debug/debug.cpp`, `debug/overlay.cpp` — test: `tests/debug/test_debug_pass.cpp`, overlay tests via the internal hook — covers FR-6
-- [ ] **T5.2** remove `debug_text`, `debug_line_height`, `fill_rect` from the contract and the backends (3DS text buffer included) — covers FR-6, FR-7
+- [x] **T5.1** debug pass: debug text and overlay rectangles laid out into glyph/shape items, own 4096-item buffer, after the 2D passes; `line_height()` = 10 — files: `debug/debug_pass.cpp`, `debug/debug.cpp`, `debug/overlay.cpp` — test: `tests/debug/test_debug_pass.cpp`, overlay tests via the internal hook — covers FR-6
+- [x] **T5.2** remove `debug_text`, `debug_line_height`, `fill_rect` from the contract and the backends (3DS text buffer included) — covers FR-6, FR-7
 
 ## Stage 6 — example, docs, closing
 
 - [x] **T6.1** `examples/text`: character set, Portuguese sentence, alignments, scales, shadow, a measured box; screenshots — covers AC-2 (done in stage 4)
-- [ ] **T6.2** `examples/sprites` HUD box sized with `measure_text` — covers AC-3
+- [x] **T6.2** `examples/sprites` HUD box sized with `measure_text` — covers AC-3
 - [ ] **T6.3** run `examples/text` and `examples/sprites` on the 3DS, compare with the screenshots — maintainer — covers AC-3, FR-5
 - [ ] **T6.4** docs: new `docs/api/text.md`; `gfx.md`, `debug.md`, `rendering.md`, `platforms.md` (contract), `sdl3.md`, `devkitpro-3ds.md` (tiling), `simulator.md`; CLAUDE.md — covers AC-5
 - [ ] **T6.5** budgets, Release strings check, Linux gcc + clang ASan/UBSan, screenshot references — covers AC-4, AC-5

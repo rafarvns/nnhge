@@ -69,16 +69,7 @@ void begin_frame(Color top_clear, Color bottom_clear);
 /// begin_frame(). Must not allocate.
 void end_frame();
 
-/// Draws debug text with its top-left corner at (x, y) in screen pixels; '\n' starts a new line
-/// (line_height() apart). Only called between begin_frame() and end_frame(). Text outside the screen is
-/// clipped. Must not allocate.
-void debug_text(Screen screen, int x, int y, const char* text, Color color);
-
-/// Height in pixels of one line of debug text. Always > 0 once init() succeeded.
-int debug_line_height();
-
-/// Fills a rectangle (screen pixels, clipped to the screen), alpha-blended. Only between begin_frame()
-/// and end_frame(). Used by the debug overlay. Must not allocate.
-void fill_rect(Screen screen, int x, int y, int width, int height, Color color);
+// Text (game and debug) is drawn by core with the built-in font through texture_create_rgba() and
+// draw_2d() (spec 005): a platform implements no text or font functions.
 
 } // namespace nnh::platform

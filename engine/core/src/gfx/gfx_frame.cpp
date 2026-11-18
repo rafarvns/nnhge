@@ -33,6 +33,7 @@ void free_all() {
     mem::free(g_state.pass);
     mem::free(g_slots);
     mem::free(g_state.pending);
+    mem::free(g_state.debug_items);
     g_commands = nullptr;
     g_order = nullptr;
     g_slots = nullptr;
@@ -62,8 +63,9 @@ bool detail::gfx_init(const GfxConfig& config) {
     g_state.pass = allocate<platform::DrawItem2D>(max_draws);
     g_slots = allocate<TextureSlot>(max_textures);
     g_state.pending = allocate<PendingDestroy>(max_textures);
+    g_state.debug_items = allocate<platform::DrawItem2D>(kDebugPassCapacity);
     if (g_commands == nullptr || g_order == nullptr || g_state.pass == nullptr || g_slots == nullptr ||
-        g_state.pending == nullptr) {
+        g_state.pending == nullptr || g_state.debug_items == nullptr) {
         NNH_LOG_ERROR(gfx, "not enough memory for %d draws and %d textures (AppConfig::gfx)", max_draws,
                       max_textures - 1);
         free_all();

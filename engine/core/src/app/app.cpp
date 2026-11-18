@@ -37,8 +37,8 @@ char g_data_folder[48];
 void close_frame() {
     if (g_frame_open) {
         detail::gfx_submit();
-        detail::debug_text_flush();
-        detail::overlay_draw();
+        detail::overlay_draw();     // recorded after the game's debug text, so it covers it
+        detail::debug_text_flush(); // the debug pass
         platform::end_frame();
         g_frame_open = false;
         detail::gfx_after_frame(); // textures released during the frame are no longer in use

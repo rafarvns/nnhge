@@ -2,9 +2,9 @@
 
 Header: `<nnh/debug.hpp>`
 
-Quick text for development: values, state, instructions. **Not for game UI**: the font is different on
-each platform (3DS system font at half size, proportional; PC 8×8 monospace). Real text rendering with
-your own fonts comes in M2.
+Quick text for development: values, state, instructions. It uses the built-in NNHGE font, so it looks
+**the same on every system** and `line_height()` is 10 everywhere. For game text (colors, scale,
+alignment, shadow, layers, measuring) use [`gfx::draw_text`](text.md).
 
 ```cpp
 const int line = nnh::debug::line_height();
@@ -21,7 +21,8 @@ nnh::debug::printf(nnh::Screen::Top, 8, 8 + line, "x=%d y=%d", x, y);
 - Only works inside a frame (after `nnh::frame()` returned true); otherwise ignored.
 - Drawn when the frame ends, **on top of** every sprite and shape ([gfx.md](gfx.md)), in call order.
 - No heap allocation; safe every frame. Per frame: up to 256 texts and 8 KB of text; more is dropped.
-- **3DS limit**: about 4096 glyphs per frame in total. Text past the limit is dropped.
+- Debug output has its own capacity, apart from the game's `max_draws`: up to 4096 characters and
+  overlay rectangles per screen per frame; more is dropped.
 
 ## Debug overlay
 

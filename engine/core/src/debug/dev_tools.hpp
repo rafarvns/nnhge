@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+#include "nnh/gfx.hpp"
 #include "nnh/time.hpp"
 
 namespace nnh::detail {
@@ -21,10 +22,20 @@ void overlay_draw();
 
 void overlay_reset();
 
-/// Draws the debug text recorded this frame (debug::print) and forgets it: the debug pass, after the
-/// 2D passes so the text stays on top.
+/// Records debug text / an overlay rectangle for this frame's debug pass.
+void debug_record_text(Screen screen, int x, int y, const char* text, Color color);
+void debug_record_rect(Screen screen, int x, int y, int w, int h, Color color);
+
+/// The debug pass: draws what was recorded this frame with the built-in font (after the 2D passes, so
+/// it stays on top) and starts a new list.
 void debug_text_flush();
-/// Forgets recorded debug text (init).
+/// Forgets recorded debug output (init).
 void debug_text_clear();
+
+class DebugList;
+/// Submits a debug list (debug_pass.cpp).
+void debug_pass_submit(const DebugList& list);
+/// What the previous frame's debug pass drew (for tests).
+const DebugList& debug_list_last_frame();
 
 } // namespace nnh::detail

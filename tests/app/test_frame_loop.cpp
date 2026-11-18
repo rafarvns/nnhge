@@ -1,5 +1,7 @@
 // nnh::core frame loop, driven through the fake platform.
 
+#include "debug/debug_list.hpp"
+#include "debug/dev_tools.hpp"
 #include "nnh/app.hpp"
 #include "nnh/debug.hpp"
 #include "nnh/gfx.hpp"
@@ -92,12 +94,12 @@ NNH_TEST(debug_print_is_drawn_inside_a_frame_and_ignored_outside) {
     fresh_engine();
     nnh::debug::print(nnh::Screen::Top, 1, 2, "outside");
     CHECK(nnh::frame());
-    CHECK(fake::state().text_count == 0);
     nnh::debug::print(nnh::Screen::Bottom, 3, 4, "inside");
-    CHECK(fake::state().text_count == 0); // recorded, drawn on top at the end of the frame
+    CHECK(fake::state().item_count == 0); // recorded, drawn on top at the end of the frame
     CHECK(nnh::frame());
-    CHECK(fake::state().last_frame_text_count == 1);
-    CHECK(fake::state().texts[0].screen == nnh::Screen::Bottom);
-    CHECK(fake::state().texts[0].x == 3 && fake::state().texts[0].y == 4);
+    const nnh::detail::DebugList& last = nnh::detail::debug_list_last_frame();
+    CHECK(last.count() == 1); // "outside" was ignored
+    CHECK(last.at(0).screen == nnh::Screen::Bottom && last.at(0).x == 3 && last.at(0).y == 4);
+    CHECK(fake::state().last_frame_item_count == 6); // one glyph per letter of "inside"
     nnh::shutdown();
 }

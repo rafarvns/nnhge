@@ -1,24 +1,24 @@
-// PC simulator: debug text with SDL's built-in 8x8 font.
+// PC simulator: text with SDL's built-in 8x8 font, for the crash screen only (crash_pc.cpp), which must
+// work even when the engine is broken. Game and debug text use the engine's built-in font (spec 005).
 
 #include <SDL3/SDL.h>
 
 #include <cstddef>
 
 #include "context_pc.hpp"
-#include "nnh/platform/video.hpp"
 
-namespace nnh::platform {
+namespace nnh::platform::pc {
 
-void debug_text(Screen screen, int x, int y, const char* text, Color color) {
-    SDL_Renderer* renderer = pc::context().renderer;
-    const SDL_FRect area = pc::screen_rect(screen);
+void sdl_text(Screen screen, int x, int y, const char* text, Color color) {
+    SDL_Renderer* renderer = context().renderer;
+    const SDL_FRect area = screen_rect(screen);
     const SDL_Rect clip{static_cast<int>(area.x), static_cast<int>(area.y), static_cast<int>(area.w),
                         static_cast<int>(area.h)};
     SDL_SetRenderClipRect(renderer, &clip);
-    pc::set_draw_color(color);
+    set_draw_color(color);
 
     // SDL_RenderDebugText does not handle '\n': draw line by line.
-    const float line = static_cast<float>(debug_line_height());
+    const float line = static_cast<float>(sdl_text_line_height());
     float pen_y = area.y + static_cast<float>(y);
     char buffer[256];
     while (*text != '\0') {
@@ -37,6 +37,6 @@ void debug_text(Screen screen, int x, int y, const char* text, Color color) {
     }
 }
 
-int debug_line_height() { return SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE + 2; }
+int sdl_text_line_height() { return SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE + 2; }
 
-} // namespace nnh::platform
+} // namespace nnh::platform::pc

@@ -17,7 +17,7 @@
 namespace nnh::platform {
 namespace {
 
-constexpr std::size_t kDebugTextGlyphs = 4096;
+constexpr std::size_t kDebugTextGlyphs = 4096; // core: kDebugPassCapacity
 constexpr std::size_t kSocAlign = 0x1000;
 constexpr std::size_t kSocBufferSize = 0x100000; // 1 MB, only in Debug/Development when 3dslink is used
 
@@ -74,8 +74,8 @@ bool init(const AppConfig& config) {
         gfxExit();
         return false;
     }
-    // One citro2d object per sprite or shape (outlines take 4), plus one per debug text glyph and some
-    // headroom for the debug overlay.
+    // One citro2d object per sprite or shape (outlines take 4), plus the debug pass (debug text glyphs
+    // and overlay rectangles, core's kDebugPassCapacity = 4096) and some headroom.
     const int max_draws = config.gfx.max_draws > 0 ? config.gfx.max_draws : 0;
     const std::size_t max_objects = static_cast<std::size_t>(max_draws) + kDebugTextGlyphs + 256;
     if (!C2D_Init(max_objects > C2D_DEFAULT_MAX_OBJECTS ? max_objects : C2D_DEFAULT_MAX_OBJECTS)) {
@@ -87,7 +87,6 @@ bool init(const AppConfig& config) {
     C2D_Prepare();
     g_context.targets[0] = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     g_context.targets[1] = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-    g_context.text_buffer = C2D_TextBufNew(kDebugTextGlyphs);
     ctr::input_start();
     start_3dslink_stdio();
     char root[96];
@@ -99,7 +98,6 @@ bool init(const AppConfig& config) {
 void shutdown() {
     stop_3dslink_stdio();
     ctr::input_stop();
-    C2D_TextBufDelete(g_context.text_buffer);
     g_context = {};
     C2D_Fini();
     C3D_Fini();

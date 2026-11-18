@@ -4,6 +4,7 @@
 
 #include "app/data_folder.hpp"
 #include "assets/assets_internal.hpp"
+#include "audio/audio_internal.hpp"
 #include "core/engine_state.hpp"
 #include "crash/crash_internal.hpp"
 #include "debug/dev_tools.hpp"
@@ -73,6 +74,13 @@ bool init(const AppConfig& config) {
         platform::shutdown();
         return false;
     }
+    if (!detail::audio_init(config.audio)) { // after assets: sounds load from them
+        detail::gfx_shutdown();
+        detail::assets_shutdown();
+        detail::events_shutdown();
+        platform::shutdown();
+        return false;
+    }
     g_initialized = true;
     g_frame_count = 0;
     detail::input_reset();
@@ -103,6 +111,7 @@ bool frame() {
     g_frame_open = true;
     ++g_frame_count;
     detail::input_publish_events();
+    detail::audio_frame(time::delta()); // ended voices -> SoundFinished
     detail::events_dispatch(); // after input, before the game's update
     return true;
 }
@@ -114,6 +123,7 @@ void shutdown() {
     detail::scenes_shutdown(); // on_exit() may still unsubscribe: before the bus goes away
     detail::events_shutdown();
     detail::gfx_shutdown(); // after scenes: on_exit() may still release textures
+    detail::audio_shutdown(); // after scenes too (sounds); before assets
     detail::assets_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();

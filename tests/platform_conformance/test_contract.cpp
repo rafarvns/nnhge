@@ -4,6 +4,7 @@
 
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/assets.hpp"
+#include "nnh/platform/audio.hpp"
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/log.hpp"
 #include "nnh/platform/time.hpp"
@@ -105,6 +106,33 @@ NNH_TEST(a_missing_asset_cannot_be_read_and_unmount_is_safe) {
     CHECK(read == 0);
     platform::assets_unmount();
     (void)mounted;
+    platform::shutdown();
+}
+
+NNH_TEST(audio_either_plays_voices_or_says_why_not) {
+    CHECK(platform::init(config()));
+    if (!platform::audio_init(4)) {
+        // No output (no device, stub, missing firmware): a reason, and shutdown is still safe.
+        CHECK(platform::last_error()[0] != '\0');
+        platform::audio_shutdown();
+        platform::shutdown();
+        return;
+    }
+    platform::SampleInfo info;
+    CHECK(platform::sample_create(64, 2, info));
+    CHECK(info.handle != 0 && info.frames != nullptr && info.bytes >= 64 * 2 * 2);
+    for (int i = 0; i < 128; ++i) info.frames[i] = 0;
+    platform::sample_ready(info.handle);
+    CHECK(!platform::voice_playing(0));
+    platform::voice_start(0, info.handle, 64, 2, true, {0.0f, 0.0f, 32000.0f}); // silent, looping
+    CHECK(platform::voice_playing(0));
+    platform::voice_update(0, {0.0f, 0.0f, 16000.0f});
+    platform::voice_pause(0, true);
+    CHECK(platform::voice_playing(0)); // paused is still playing
+    platform::voice_stop(0);
+    CHECK(!platform::voice_playing(0));
+    platform::sample_destroy(info.handle);
+    platform::audio_shutdown();
     platform::shutdown();
 }
 

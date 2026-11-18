@@ -9,6 +9,7 @@
 #include "nnh/gfx.hpp"
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
+#include "nnh/platform/audio.hpp"
 #include "nnh/platform/crash.hpp"
 #include "nnh/platform/video.hpp"
 #include "nnh/system.hpp"
@@ -18,6 +19,20 @@ namespace nnh::platform_fake {
 
 inline constexpr int kMaxRecordedItems = 64;
 inline constexpr int kMaxRecordedCalls = 32;
+inline constexpr int kMaxFakeVoices = 24;
+
+/// What a voice of the fake audio output is doing (spec 008).
+struct FakeVoice {
+    bool playing = false;
+    bool paused = false;
+    bool loop = false;
+    platform::SampleHandle sample = 0;
+    std::uint32_t count = 0; ///< frames
+    int channels = 0;
+    platform::VoiceParams params{};
+    int starts = 0; ///< voice_start() calls on this voice
+    int stops = 0;  ///< voice_stop() calls
+};
 
 /// Everything the fake platform recorded since the last reset().
 struct State {
@@ -43,6 +58,12 @@ struct State {
     int last_frame_item_count = 0;      ///< the same, for the frame that ended last
     platform::DrawItem2D last_frame_items[kMaxRecordedItems];
     char last_frame_calls[kMaxRecordedCalls] = {};
+    // Audio (spec 008)
+    bool audio_initialized = false;
+    int audio_voices = 0;    ///< voices asked for by audio_init()
+    int live_samples = 0;    ///< created and not yet destroyed
+    int samples_ready = 0;   ///< sample_ready() calls
+    FakeVoice voices[kMaxFakeVoices];
 };
 
 const State& state();
@@ -64,6 +85,15 @@ void release_touch();
 /// Adds a read-only asset (spec 007): `data` must stay alive until reset(). The game "has assets" (mount
 /// succeeds) once one is added. Paths are matched exactly, case included.
 void add_asset(const char* path, const void* data, std::size_t size);
+
+/// When false, audio_init() fails like a system without audio output (default true).
+void set_audio_available(bool available);
+
+/// A non-looping voice reached its end: voice_playing() returns false from now on.
+void finish_voice(int voice);
+
+/// The frames core wrote into a sample (interleaved), or nullptr for a stale handle.
+const std::int16_t* sample_frames(platform::SampleHandle sample);
 
 /// When true, poll_events() returns false (the system asks the app to quit).
 void set_quit_requested(bool quit);

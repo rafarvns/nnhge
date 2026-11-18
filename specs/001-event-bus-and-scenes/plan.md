@@ -1,6 +1,6 @@
 # Plan 001: Event bus and scenes
 
-Status: draft (2026-11-17)
+Status: implemented (2026-11-17)
 Spec: [spec.md](spec.md)
 
 ## Constitution Check (before design)

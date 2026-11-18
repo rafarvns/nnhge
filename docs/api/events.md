@@ -80,6 +80,9 @@ Fixed at `nnh::init()` through `AppConfig::events`, allocated once (memory tag `
 nnh::init({.title = "My Game", .events = {.queue_bytes = 32 * 1024, .max_subscribers = 512}});
 ```
 
+Example: [`examples/scenes`](../../examples/scenes/main.cpp) (`CoinCollected` published by the level,
+counted by `Score`).
+
 Running out is a bug: in Debug and Development a full queue or subscriber table **asserts** (crash screen
 with the message). In Release the event is dropped (or `subscribe` returns an empty `Subscription`) and
 one warning per frame is logged; `events::stats().dropped_events` counts drops. Use `stats()` while

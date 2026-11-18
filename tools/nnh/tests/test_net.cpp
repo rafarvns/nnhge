@@ -1,5 +1,6 @@
 // Sockets (net.hpp, spec 010) on the loopback interface only: no firewall prompt, no network needed.
 
+#include <cstdio>
 #include <cstring>
 #include <chrono>
 #include <thread>
@@ -73,6 +74,14 @@ NNH_TEST(udp_datagrams_carry_their_sender) {
     Ipv4 from;
     CHECK(net::udp_receive(b, buffer, sizeof buffer, 2000, &from) == 7 && from == kLoopback);
     CHECK(net::udp_receive(b, buffer, sizeof buffer, 30) == -1); // nothing else: timeout
+}
+
+NNH_TEST(local_broadcasts_are_local_networks_without_loopback) {
+    const auto broadcasts = net::local_broadcast_addresses();
+    for (const Ipv4& b : broadcasts) {
+        CHECK(is_local_network(b) && b.b[0] != 127);
+        std::printf("  broadcast %s\n", to_string(b).c_str());
+    }
 }
 
 NNH_TEST(local_address_towards_loopback_is_loopback) {

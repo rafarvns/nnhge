@@ -12,10 +12,11 @@
 
 namespace nnh::tool {
 
-/// Broadcasts "3dsboot" to `target`:`port` and waits for "boot3ds", which the netloader sends back to
-/// this computer's `reply_port` (17491, whatever port asked). Tries `tries` times, `wait_ms` each.
-/// @return the console's address, or nullopt if none answered.
-std::optional<Ipv4> discover_console(Ipv4 target, std::uint16_t port, std::uint16_t reply_port, int tries, int wait_ms);
+/// Sends "3dsboot" to every `targets` address (broadcasts, a remembered console) at `port` and waits for
+/// "boot3ds", which the netloader sends back to this computer's `reply_port` (17491, whatever port asked).
+/// Tries `tries` times, `wait_ms` each. @return the console's address, or nullopt if none answered.
+std::optional<Ipv4> discover_console(const std::vector<Ipv4>& targets, std::uint16_t port, std::uint16_t reply_port,
+                                     int tries, int wait_ms);
 
 /// Sends `file` as `name` (saved as sdmc:/3ds/<name>, argv[0]) and starts it with `extra_args`.
 /// @return "" on success, else what went wrong.

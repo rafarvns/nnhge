@@ -34,4 +34,12 @@ bool is_local_network(Ipv4 a) {
            (a.b[0] == 192 && a.b[1] == 168) || (a.b[0] == 169 && a.b[1] == 254);
 }
 
+Ipv4 broadcast_of(Ipv4 address, int prefix_length) {
+    const std::uint32_t value = std::uint32_t(address.b[0]) << 24 | std::uint32_t(address.b[1]) << 16 |
+                                std::uint32_t(address.b[2]) << 8 | address.b[3];
+    const std::uint32_t host_bits = prefix_length <= 0 ? 0xFFFFFFFFu : (prefix_length >= 32 ? 0u : 0xFFFFFFFFu >> prefix_length);
+    const std::uint32_t b = value | host_bits;
+    return Ipv4{{std::uint8_t(b >> 24), std::uint8_t(b >> 16), std::uint8_t(b >> 8), std::uint8_t(b)}};
+}
+
 } // namespace nnh::tool

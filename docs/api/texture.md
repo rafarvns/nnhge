@@ -2,12 +2,13 @@
 
 Header: `<nnh/texture.hpp>` · Drawing: [gfx.md](gfx.md) · Design: [architecture/rendering.md](../architecture/rendering.md)
 
-> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): loading by name works; declaring images
-> in `nnh_add_game(... IMAGES ...)` arrives in stage 3, and the PC/3DS decoders in stages 4–5.
+> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): `IMAGES` and loading by name work; the
+> PC and 3DS decoders arrive in stages 4–5 (until then `load_texture` fails with `Corrupted` on them).
 
-A game declares its images in its build; they are converted for each system and embedded in the
-executable (decision D19; romfs comes with M3). At run time it loads them **by name**: the file name
-without folder or extension.
+A game declares its images in its build; they are checked, converted for each system and embedded in
+the executable (decision D19; romfs comes with M3). An image that breaks the size rule fails the
+**build**, naming the file ([cmake.md](../tech/cmake.md#common-changes)). At run time it loads them
+**by name**: the file name without folder or extension.
 
 ```cpp
 // CMakeLists.txt: nnh_add_game(my_game SOURCES ... IMAGES art/hero.png art/tiles.png)

@@ -1,13 +1,17 @@
 # nnh_add_game(<target>
 #     SOURCES <files...>
+#     [IMAGES <png files...>]
 #     [TITLE <text>] [DESCRIPTION <text>] [AUTHOR <text>] [ICON <48x48 png>])
 #
 # Creates a game executable linked to the engine.
 #   PC : <target>.exe (plus SDL3.dll copied next to it on Windows).
 #   3DS: <target>.elf and <target>.3dsx with SMDH metadata (title, description, author, icon).
+# IMAGES are checked, converted and embedded (nnh_images.cmake); load them with nnh::load_texture("name").
+
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_images.cmake")
 
 function(nnh_add_game target)
-    cmake_parse_arguments(PARSE_ARGV 1 G "" "TITLE;DESCRIPTION;AUTHOR;ICON" "SOURCES")
+    cmake_parse_arguments(PARSE_ARGV 1 G "" "TITLE;DESCRIPTION;AUTHOR;ICON" "SOURCES;IMAGES")
     if(NOT G_SOURCES)
         message(FATAL_ERROR "nnh_add_game(${target}): SOURCES is required")
     endif()
@@ -23,6 +27,9 @@ function(nnh_add_game target)
 
     add_executable(${target} ${G_SOURCES})
     target_link_libraries(${target} PRIVATE nnh::engine)
+    if(G_IMAGES)
+        nnh_add_images(${target} ${G_IMAGES})
+    endif()
 
     if(NNH_PLATFORM STREQUAL "3ds")
         set(_smdh_args NAME "${G_TITLE}" DESCRIPTION "${G_DESCRIPTION}" AUTHOR "${G_AUTHOR}")

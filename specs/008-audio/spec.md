@@ -1,6 +1,6 @@
 # Spec 008: Audio — sound effects, streaming music, mixer
 
-Status: draft
+Status: approved (2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (sounds are assets), [spec 002](../002-core-foundation/spec.md)
 (memory tags, `Result`, logs), [spec 001](../001-event-bus-and-scenes/spec.md) (events). Implements ROADMAP M4.
@@ -100,19 +100,23 @@ the simulator and on the 3DS, and a console without the DSP firmware still runs 
 
 ## Open questions
 
-Proposals from the maintainers, to confirm or change:
+Answered by the maintainer (2026-11-18): the proposals, all accepted (music format after comparing the costs below).
 
-- [ ] **Music format** — proposal: **OGG Vorbis** in the assets, decoded on the CPU while streaming with
+- [x] **Music format** — proposal: **OGG Vorbis** in the assets, decoded on the CPU while streaming with
   a vendored public-domain/MIT decoder (stb_vorbis-style; no portlibs install needed, same code on PC and
   3DS). Alternative: the build converts music to DSP-ADPCM, which the 3DS decodes in hardware (no CPU
-  cost) but files are ~3× bigger than OGG and the PC needs an ADPCM decoder too.
-- [ ] **Effect formats** — proposal: WAV and OGG both accepted for effects, decoded to 16-bit PCM at
+  cost) but files are ~2–3× bigger than OGG (32 KB/s for 32 kHz stereo vs. ~12–16 KB/s), needs an
+  encoder tool we'd write (the CMake scripts can't do it), and the PC needs an ADPCM decoder too.
+  Another alternative: the devkitPro portlibs `libogg` + Tremor (BSD-3-Clause, compatible with zlib but
+  their notice must ship with games), one `pacman` command per machine, but every contributor, CI and
+  the Linux VM must install them, and the PC side needs a second copy of the library.
+- [x] **Effect formats** — proposal: WAV and OGG both accepted for effects, decoded to 16-bit PCM at
   load time (OGG for long effects saves space in the romfs).
-- [ ] **Sample rate** — proposal: keep each file's rate and let the mixer resample (the 3DS DSP does it
+- [x] **Sample rate** — proposal: keep each file's rate and let the mixer resample (the 3DS DSP does it
   per channel); the build warns above 48 kHz. Alternative: convert everything at build time to one rate.
-- [ ] **Voice count** — proposal: 16 effect voices by default (configurable up to 22), 2 DSP channels
+- [x] **Voice count** — proposal: 16 effect voices by default (configurable up to 22), 2 DSP channels
   reserved for music.
-- [ ] **Groups** — proposal: fixed `master`, `music`, `effects`, plus `voice` (dialogue), so menus can
+- [x] **Groups** — proposal: fixed `master`, `music`, `effects`, plus `dialogue` (named so it is not confused with a playing voice), so menus can
   expose the usual sliders; no user-defined groups yet.
-- [ ] **Loop point source** — proposal: an argument when playing (`loop_start` in samples), and the
+- [x] **Loop point source** — proposal: an argument when playing (`loop_start` in samples), and the
   `LOOPSTART` comment tag in OGG files read automatically when present.

@@ -55,6 +55,9 @@ add_executable(nnh_tests
     scene/test_run.cpp
     scene/test_scene_stack.cpp
     system/test_system.cpp
+    text/test_glyphs.cpp
+    text/test_layout.cpp
+    text/test_utf8.cpp
     time/test_clock.cpp
     time/test_duration.cpp
     time/test_fixed_step.cpp

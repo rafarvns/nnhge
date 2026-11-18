@@ -1,0 +1,101 @@
+// UTF-8 decoding for text (text/utf8.hpp, spec 005 FR-2): never crashes, never reads past the end.
+
+#include <cstdint>
+
+#include "test.hpp"
+#include "text/utf8.hpp"
+
+using nnh::detail::kReplacementChar;
+using nnh::detail::next_codepoint;
+
+namespace {
+
+/// Decodes all of `s` into `out`; returns how many code points.
+int decode_all(const char* s, char32_t* out, int max) {
+    int n = 0;
+    while (n < max) {
+        const char32_t c = next_codepoint(s);
+        if (c == 0) break;
+        out[n++] = c;
+    }
+    return n;
+}
+
+} // namespace
+
+NNH_TEST(utf8_decodes_ascii) {
+    char32_t c[4];
+    CHECK(decode_all("Ab1", c, 4) == 3);
+    CHECK(c[0] == U'A' && c[1] == U'b' && c[2] == U'1');
+}
+
+NNH_TEST(utf8_decodes_two_byte_latin_letters) {
+    char32_t c[8];
+    CHECK(decode_all("ação", c, 8) == 4);
+    CHECK(c[0] == U'a' && c[1] == U'ç' && c[2] == U'ã' && c[3] == U'o');
+}
+
+NNH_TEST(utf8_decodes_three_and_four_byte_sequences) {
+    char32_t c[4];
+    CHECK(decode_all("\xE2\x82\xAC\xF0\x9F\x98\x80", c, 4) == 2); // euro sign, emoji
+    CHECK(c[0] == 0x20AC && c[1] == 0x1F600);
+}
+
+NNH_TEST(utf8_end_of_string_returns_zero_and_stays) {
+    const char* s = "";
+    CHECK(next_codepoint(s) == 0);
+    CHECK(next_codepoint(s) == 0);
+    CHECK(*s == '\0');
+}
+
+NNH_TEST(utf8_invalid_lead_bytes_become_replacement_one_byte_each) {
+    char32_t c[4];
+    CHECK(decode_all("\x80\xFFz", c, 4) == 3);
+    CHECK(c[0] == kReplacementChar && c[1] == kReplacementChar && c[2] == U'z');
+}
+
+NNH_TEST(utf8_truncated_sequence_does_not_skip_the_end) {
+    char32_t c[4];
+    CHECK(decode_all("a\xC3", c, 4) == 2); // the string ends inside a 2-byte sequence
+    CHECK(c[0] == U'a' && c[1] == kReplacementChar);
+    CHECK(decode_all("\xE2\x82z", c, 4) == 2); // 3-byte sequence cut by a normal character
+    CHECK(c[0] == kReplacementChar && c[1] == U'z');
+}
+
+NNH_TEST(utf8_overlong_and_surrogate_sequences_are_rejected) {
+    char32_t c[8];
+    CHECK(decode_all("\xC0\xAF", c, 8) >= 1); // overlong '/'
+    CHECK(c[0] == kReplacementChar);
+    CHECK(decode_all("\xE0\x80\xAF", c, 8) >= 1); // overlong 3-byte
+    CHECK(c[0] == kReplacementChar);
+    CHECK(decode_all("\xED\xA0\x80", c, 8) >= 1); // UTF-16 surrogate
+    CHECK(c[0] == kReplacementChar);
+    CHECK(decode_all("\xF4\x90\x80\x80", c, 8) >= 1); // above U+10FFFF
+    CHECK(c[0] == kReplacementChar);
+}
+
+NNH_TEST(utf8_a_bad_byte_does_not_swallow_the_next_character) {
+    char32_t c[4];
+    CHECK(decode_all("\xC3" "A", c, 4) == 2); // lead byte followed by a non-continuation
+    CHECK(c[0] == kReplacementChar && c[1] == U'A');
+}
+
+NNH_TEST(utf8_random_bytes_always_end_at_the_terminator) {
+    // Property: for any bytes, decoding visits the string once, ends exactly at '\0' and never past it.
+    std::uint32_t seed = 2026;
+    char buffer[33];
+    for (int round = 0; round < 2000; ++round) {
+        const int length = static_cast<int>(seed % 32);
+        for (int i = 0; i < length; ++i) {
+            seed = seed * 1664525u + 1013904223u;
+            buffer[i] = static_cast<char>((seed >> 24) | 1); // never 0 inside the string
+        }
+        buffer[length] = '\0';
+        const char* p = buffer;
+        int steps = 0;
+        while (next_codepoint(p) != 0 && steps <= length) ++steps;
+        CHECK(p == buffer + length);
+        CHECK(steps <= length);
+        seed = seed * 1664525u + 1013904223u;
+    }
+}

@@ -1,15 +1,15 @@
 # Tasks 005: Text — the built-in NNHGE font
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — pure text logic
 
-- [ ] **T1.1** UTF-8 decoder — files: `core/src/text/utf8.{hpp,cpp}` — test: `tests/text/test_utf8.cpp` — covers FR-2
-- [ ] **T1.2** [P] glyph mapping — files: `core/src/text/glyphs.hpp` — test: `tests/text/test_glyphs.cpp` — covers FR-2
-- [ ] **T1.3** layout: measure and glyph positions, lines, alignment, scale — files: `core/src/text/layout.{hpp,cpp}` — test: `tests/text/test_layout.cpp` — covers FR-3, FR-4
+- [x] **T1.1** UTF-8 decoder — files: `core/src/text/utf8.{hpp,cpp}` — test: `tests/text/test_utf8.cpp` — covers FR-2
+- [x] **T1.2** [P] glyph mapping — files: `core/src/text/glyphs.hpp` — test: `tests/text/test_glyphs.cpp` — covers FR-2
+- [x] **T1.3** layout: measure and glyph positions, lines, alignment, scale — files: `core/src/text/layout.{hpp,cpp}` — test: `tests/text/test_layout.cpp` — covers FR-3, FR-4
 
 ## Stage 2 — the font
 

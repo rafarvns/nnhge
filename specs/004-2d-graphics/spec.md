@@ -1,6 +1,6 @@
 # Spec 004: 2D graphics — textures, sprites, shapes, camera
 
-Status: approved (2026-11-18, maintainer; 3D readiness confirmed)
+Status: in progress (approved 2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002 — core foundation](../002-core-foundation/spec.md) (memory regions, platform
 contract, debug overlay) — implemented. Related: M3 (`assetc`, romfs) in [ROADMAP](../../docs/ROADMAP.md).

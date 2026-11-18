@@ -1,7 +1,8 @@
 # Rendering: 2D now, 3D later
 
-> Status: design for [spec 004](../../specs/004-2d-graphics/spec.md) (2D graphics, in progress). 3D
-> (M8) is not built yet; this page fixes the structure so it can be added without rewriting games.
+> Status: design for [spec 004](../../specs/004-2d-graphics/spec.md) (2D graphics, in progress: the draw
+> list exists, the draw calls and backends not yet). 3D (M8) is not built yet; this page fixes the
+> structure so it can be added without rewriting games.
 
 ## The frame, per screen
 

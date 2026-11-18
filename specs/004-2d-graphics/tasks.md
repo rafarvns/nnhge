@@ -1,16 +1,16 @@
 # Tasks 004: 2D graphics — textures, sprites, shapes, camera
 
-Status: approved (2026-11-18)
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — pure core logic
 
-- [ ] **T1.1** `Vec2`/`Rect`/`Region` — files: `nnh/math.hpp` — test: `tests/math/test_vec2.cpp` — covers FR-14
-- [ ] **T1.2** [P] texture size rule — files: `core/src/gfx/texture_rules.hpp` — test: `tests/gfx/test_texture_rules.cpp` — covers FR-3
-- [ ] **T1.3** [P] texture table (slots, generations, stale handles, generation base across init) — files: `core/src/gfx/texture_table.{hpp,cpp}` — test: `tests/gfx/test_texture_table.cpp` — covers FR-2
-- [ ] **T1.4** draw list: record, capacity and drop count, camera, pixel rounding, layer/call order, replayable passes — files: `core/src/gfx/draw_list.{hpp,cpp}` — test: `tests/gfx/test_draw_list.cpp` — covers FR-6, FR-7, FR-8, FR-13
+- [x] **T1.1** `Vec2`/`Rect`/`Region` — files: `nnh/math.hpp` — test: `tests/math/test_vec2.cpp` — covers FR-14
+- [x] **T1.2** [P] texture size rule — files: `core/src/gfx/texture_rules.hpp` — test: `tests/gfx/test_texture_rules.cpp` — covers FR-3
+- [x] **T1.3** [P] texture table (slots, generations, stale handles, generation base across init) — files: `core/src/gfx/texture_table.{hpp,cpp}` — test: `tests/gfx/test_texture_table.cpp` — covers FR-2
+- [x] **T1.4** draw list: record, capacity and drop count, camera, pixel rounding, layer/call order, replayable passes — files: `core/src/gfx/draw_list.{hpp,cpp}` — test: `tests/gfx/test_draw_list.cpp` — covers FR-6, FR-7, FR-8, FR-13
 
 ## Stage 2 — contract, fake, public API
 

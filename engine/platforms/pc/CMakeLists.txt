@@ -7,12 +7,14 @@ add_library(nnh_platform_pc STATIC
     src/crash_pc.cpp
     src/debug_text_pc.cpp
     src/devtools_pc.cpp
+    src/draw2d_pc.cpp
     src/gamepad_pc.cpp
     src/input_override_pc.cpp
     src/input_pc.cpp
     src/log_pc.cpp
     src/memory_pc.cpp
     src/system_pc.cpp
+    src/texture_pc.cpp
     src/time_pc.cpp
     src/touch_pc.cpp
     src/video_pc.cpp

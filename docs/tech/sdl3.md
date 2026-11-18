@@ -8,7 +8,9 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | File | Responsibility |
 |------|----------------|
 | `context_pc.hpp` | Shared state (window, renderer), screen rectangles, helpers |
-| `app_pc.cpp` | Init/shutdown, window, event polling, dev env vars |
+| `app_pc.cpp` | Init/shutdown, window, renderer (GPU device or fallback), event polling, dev env vars |
+| `texture_pc.cpp` | Textures: embedded PNG → `SDL_LoadPNG_IO` → `SDL_Texture` (nearest filtering) |
+| `draw2d_pc.cpp` | One 2D pass: sprites (`SDL_RenderTextureRotated` + color/alpha mod) and shapes, clipped per screen |
 | `video_pc.cpp` | Frame begin/end, 60 Hz pacing, screenshots |
 | `input_pc.cpp` | Keyboard → buttons and sticks; combines keyboard, gamepad and mouse into one sample |
 | `gamepad_pc.cpp` | First connected gamepad (hot-plug), buttons by position, sticks, triggers |
@@ -27,6 +29,23 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 - The game owns `main()`: the backend defines `SDL_MAIN_HANDLED`, includes `<SDL3/SDL_main.h>` and calls
   `SDL_SetMainReady()` before `SDL_Init`.
 
+## Renderer (2D now, 3D later)
+
+The renderer is created with `SDL_CreateGPURenderer(nullptr, window)` (SDL 3.4): SDL's 2D renderer on
+an `SDL_GPUDevice` (D3D12/Vulkan/Metal), the device the future 3D renderer will share
+([rendering.md](../architecture/rendering.md), D20). If no GPU device is available (headless runs, VMs,
+old drivers) it falls back to `SDL_CreateRenderer`. Both give byte-identical screenshots of the examples
+on the maintainer's PC (checked with `NNH_SIM_RENDERER=sdl`).
+
+Headless runs (`SDL_VIDEO_DRIVER=offscreen`) use whatever renderer the offscreen driver offers: on Linux
+the screenshots matched the windowed ones exactly; on Windows SDL's software renderer differs by ±1 in
+semi-transparent pixels and samples the edges of **rotated** sprites differently. Compare headless
+screenshots only with headless screenshots from the same system.
+
+Sprites: source rect = region, destination = position − pivot with the scaled size, rotation in degrees
+around the pivot, flips inside the destination rectangle, tint/opacity through the texture's color and
+alpha mod. Textures use `SDL_SCALEMODE_NEAREST` and alpha blending; SDL batches consecutive draws.
+
 ## Developer features
 
 | Variable | Effect |
@@ -34,6 +53,7 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `NNH_EXIT_AFTER_FRAMES=<n>` | quit after *n* frames |
 | `NNH_SCREENSHOT=<file.png>` | with the above, save the last frame (`SDL_RenderReadPixels` + `SDL_SavePNG`) |
 | `NNH_SIM_INPUT=<script>` | fixed input on every frame, for screenshots ([simulator.md](../api/simulator.md)) |
+| `NNH_SIM_RENDERER=sdl` | skip the GPU-device renderer and use SDL's default one (to compare) |
 | `SDL_VIDEO_DRIVER=offscreen` | run without a display (CI smoke test) |
 
 Use the screenshot to verify visual changes without a human: build, run with both variables, read the PNG.

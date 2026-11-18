@@ -17,6 +17,7 @@ inline constexpr int kLogicalHeight = 480;
 struct Context {
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
+    bool gpu_renderer = false;              // renderer runs on an SDL_GPUDevice (see app_pc.cpp)
     std::uint64_t frames = 0;               // frames ended since init
     std::uint64_t exit_after = 0;           // NNH_EXIT_AFTER_FRAMES (0 = never)
     const char* screenshot_path = nullptr;  // NNH_SCREENSHOT
@@ -34,6 +35,9 @@ struct Context {
 };
 
 Context& context();
+
+/// Sets platform::last_error() to "<what>: <SDL_GetError()>".
+void set_error(const char* what);
 
 /// Area of a 3DS screen inside the logical window: top at (0,0), bottom centered below it.
 inline SDL_FRect screen_rect(Screen screen) {

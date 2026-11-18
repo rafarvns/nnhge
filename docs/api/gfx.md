@@ -3,9 +3,9 @@
 Header: `<nnh/gfx.hpp>` · Design: [architecture/rendering.md](../architecture/rendering.md) · Textures:
 [texture.md](texture.md) · Types: [math.md](math.md)
 
-> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): the API below is complete and tested;
-> the PC simulator and the 3DS start drawing sprites and shapes in stages 4 and 5. Until then the calls
-> are recorded and submitted, but nothing appears on screen.
+> **In progress** ([spec 004](../../specs/004-2d-graphics/spec.md)): complete on the **PC simulator**; the
+> 3DS draws sprites and shapes from stage 5 (until then nothing appears on the console). Example:
+> [`examples/sprites`](../../examples/sprites/main.cpp).
 
 ## Screens
 
@@ -49,7 +49,7 @@ texture) so that its `pivot` lands on `position`. `DrawOptions`:
 | `pivot` | (0, 0) = top-left | point of the region placed at `position`; rotation and scale use it |
 | `rotation` | 0 | radians, clockwise on screen |
 | `scale` | (1, 1) | a negative scale mirrors, like `flip_x`/`flip_y` |
-| `flip_x`, `flip_y` | false | mirror |
+| `flip_x`, `flip_y` | false | mirror the image inside its rectangle (the pivot is a point of the unmirrored region, so a centered pivot keeps the sprite in place) |
 | `tint` | white | multiplies the texture's colors |
 | `opacity` | 1 | 0–1, multiplies the tint's alpha (PNG transparency is always kept) |
 | `layer` | 0 | 0–15, see below |

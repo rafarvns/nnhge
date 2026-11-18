@@ -103,6 +103,8 @@ error) to the arrays; games without `IMAGES` link an empty default from core. Ge
 `build/<preset>/<game dir>/nnh_images/<game>/`. The check script has its own `ctest` cases
 (`image_check_*`, fixtures in `tests/data/images/`).
 
+**Host tools** (`tools/`, PC presets only, never a dependency of games): `tools/nnh/CMakeLists.txt` builds the `nnh` program (spec 010) from `nnh_tool_lib` and its tests `nnh_tool_tests` (ctest `nnh_tool`). With MinGW they link the C++ runtime statically (`-static`): Git for Windows puts an older `libstdc++-6.dll` first on the PATH, which made the test program fail to start (exit code 127, no output) as soon as it used `std::filesystem`.
+
 **Add a test file**: list it in `tests/CMakeLists.txt`.
 
 **Add a dependency**: avoid it. If unavoidable: small, permissive license, fetched with a pinned URL and

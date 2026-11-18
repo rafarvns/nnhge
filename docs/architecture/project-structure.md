@@ -24,7 +24,7 @@ docs/
   api/<module>.md                            reference for each public module
   architecture/  process/  tech/  guides/
 specs/NNN-<slug>/                            spec.md, plan.md, tasks.md per feature
-tools/<tool>/                                nnh CLI, assetc (later)
+tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010); assetc later
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules
 cmake/                                       CMake helpers

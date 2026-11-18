@@ -42,9 +42,15 @@ function(nnh_add_game target)
     if(DEFINED G_CIA OR "CIA" IN_LIST G_KEYWORDS_MISSING_VALUES)
         set(_cia CIA ${G_CIA})
     endif()
+    # Optional values are passed only when given (an empty keyword value warns under CMake 4, CMP0174).
+    set(_optional "")
+    foreach(_key VERSION ICON)
+        if(G_${_key})
+            list(APPEND _optional ${_key} "${G_${_key}}")
+        endif()
+    endforeach()
     nnh_resolve_package(P TARGET ${target} SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" TITLE "${G_TITLE}"
-                        DESCRIPTION "${G_DESCRIPTION}" AUTHOR "${G_AUTHOR}" VERSION "${G_VERSION}"
-                        ICON "${G_ICON}" ${_cia})
+                        DESCRIPTION "${G_DESCRIPTION}" AUTHOR "${G_AUTHOR}" ${_optional} ${_cia})
 
     add_executable(${target} ${G_SOURCES})
     target_link_libraries(${target} PRIVATE nnh::engine)

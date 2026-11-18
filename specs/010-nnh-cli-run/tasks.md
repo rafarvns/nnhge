@@ -1,18 +1,18 @@
 # Tasks 010: The `nnh` tool and `nnh run`
 
-Status: draft
+Status: in progress (approved 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
 
 ## Stage 1 — the tool and its pure pieces
 
-- [ ] **T1.1** `tools/nnh` target in the PC presets + `nnh_tool_tests` with the in-house framework; `nnh help` — covers FR-1
-- [ ] **T1.2** `zlib_stored` (Adler-32, stored blocks) — test: `test_zlib_stored.cpp` — covers FR-3
-- [ ] **T1.3** [P] `netloader` framing (header, chunks ≤ 16 384, args) — test: `test_netloader.cpp` — covers FR-3
-- [ ] **T1.4** [P] `address` (parse, private/loopback) and `fbi` message — tests: `test_address.cpp`, `test_fbi.cpp` — covers FR-4, FR-6, FR-7
-- [ ] **T1.5** [P] `log_view` (parse, colour, pass-through) + mini-fuzz — test: `test_log_view.cpp` — covers FR-5
-- [ ] **T1.6** [P] `manifest`, `user_config`, `cli` — tests — covers FR-2, FR-4
+- [x] **T1.1** `tools/nnh` target in the PC presets + `nnh_tool_tests` with the in-house framework; `nnh help` — covers FR-1
+- [x] **T1.2** `zlib_stored` (Adler-32, stored blocks) — test: `test_zlib_stored.cpp` — covers FR-3
+- [x] **T1.3** [P] `netloader` framing (header, chunks ≤ 16 384, args) — test: `test_netloader.cpp` — covers FR-3
+- [x] **T1.4** [P] `address` (parse, private/loopback) and `fbi` message — tests: `test_address.cpp`, `test_fbi.cpp` — covers FR-4, FR-6, FR-7
+- [x] **T1.5** [P] `log_view` (parse, colour, pass-through) + mini-fuzz — test: `test_log_view.cpp` — covers FR-5
+- [x] **T1.6** [P] `manifest`, `user_config`, `cli` — tests — covers FR-2, FR-4
 
 ## Stage 2 — network
 

@@ -1,6 +1,6 @@
 # Tasks 005: Text — the built-in NNHGE font
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (2026-11-18); verified on PC and an Old 3DS XL
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -35,7 +35,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 - [x] **T6.1** `examples/text`: character set, Portuguese sentence, alignments, scales, shadow, a measured box; screenshots — covers AC-2 (done in stage 4)
 - [x] **T6.2** `examples/sprites` HUD box sized with `measure_text` — covers AC-3
-- [ ] **T6.3** run `examples/text` and `examples/sprites` on the 3DS, compare with the screenshots — maintainer — covers AC-3, FR-5
-- [ ] **T6.4** docs: new `docs/api/text.md`; `gfx.md`, `debug.md`, `rendering.md`, `platforms.md` (contract), `sdl3.md`, `devkitpro-3ds.md` (tiling), `simulator.md`; CLAUDE.md — covers AC-5
-- [ ] **T6.5** budgets, Release strings check, Linux gcc + clang ASan/UBSan, screenshot references — covers AC-4, AC-5
-- [ ] **T6.6** `docs/ROADMAP.md` checkbox; spec, plan and tasks status → implemented
+- [x] **T6.3** run `examples/text` and `examples/sprites` on the 3DS, compare with the screenshots — maintainer — covers AC-3, FR-5 (2026-11-18: identical to the PC after fixing the 3DS tile layout; HUD fits)
+- [x] **T6.4** docs: new `docs/api/text.md`; `gfx.md`, `debug.md`, `rendering.md`, `platforms.md` (contract), `sdl3.md`, `devkitpro-3ds.md` (tiling), `simulator.md`; CLAUDE.md — covers AC-5
+- [x] **T6.5** budgets, Release strings check, Linux gcc + clang ASan/UBSan, screenshot references — covers AC-4, AC-5 (simulator 1.2 s, `.3dsx` 2.4 s, clean 3DS 17.5 s; Release strings ok; Linux gcc + ASan/UBSan 325 tests)
+- [x] **T6.6** `docs/ROADMAP.md` checkbox; spec, plan and tasks status → implemented

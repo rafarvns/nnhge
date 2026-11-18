@@ -40,6 +40,11 @@ one image → `.3dsx` 2.7 s; clean 3DS configure + build (engine + 5 examples) 1
 (2 embedded images) 243,208 bytes. Old 3DS XL: about **1300 sprites of 16×16 at 60 Hz** (one texture,
 `examples/sprites` benchmark, Release); it starts dropping at 1400.
 
+After spec 005 (2026-11-18, same machine): edit one game `.cpp` → simulator 1.2 s, `.3dsx` 2.4 s; clean
+3DS configure + build (engine + 6 examples) 17.5 s. Release `hello.3dsx`: 224,768 → 237,380 bytes
+(+12.6 KB: built-in font, UTF-8 and layout, debug pass on the font; citro2d's text code no longer
+linked); `text.3dsx` 239,736 bytes.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -69,7 +74,8 @@ one image → `.3dsx` 2.7 s; clean 3DS configure + build (engine + 5 examples) 1
 
 ## M2 — 2D graphics
 - [x] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md): `<nnh/texture.hpp>` (`IMAGES` in `nnh_add_game`), `gfx::draw`/shapes/layers/`Camera2D`, draw list ready for 3D passes and stereo, `examples/sprites` — verified on PC and an Old 3DS XL (2026-11-18)
-- [ ] Text rendering (bitmap fonts first). First goal: text **identical on every system** — debug text too, which today uses the 3DS system font vs. an 8×8 font on PC, so widths differ and layouts break (found on the 3DS in spec 004) — [spec 005](../specs/005-text-and-builtin-font/spec.md) (in progress)
+- [x] Text with the built-in NNHGE font ([spec 005](../specs/005-text-and-builtin-font/spec.md)): `gfx::draw_text`/`measure_text`, UTF-8 + Latin-1, scale, alignment, shadow; debug text and overlay on the same font — pixel-identical on PC and an Old 3DS XL (2026-11-18), `examples/text`
+- [ ] Game fonts (the game's own bitmap fonts, like `IMAGES`) — follow-up spec
 - [ ] Simulator window: two screens layout, scale, 3D slider control
 
 ## M3 — Assets

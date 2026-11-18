@@ -100,7 +100,7 @@ void draw_bottom() {
 } // namespace
 
 int main() {
-    if (!nnh::init({.title = "NNHGE Audio"})) return 1;
+    if (!nnh::init()) return 1; // the window title comes from TITLE in CMakeLists.txt
     nnh::gfx::set_clear_color(Screen::Top, nnh::rgb(20, 24, 40));
     nnh::gfx::set_clear_color(Screen::Bottom, nnh::rgb(16, 16, 24));
     {

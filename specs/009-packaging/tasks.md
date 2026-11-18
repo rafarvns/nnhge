@@ -14,8 +14,8 @@ Each task: one or a few TDD loops (script tests first). `[P]` = can be done in p
 
 ## Stage 2 — metadata in nnh_add_game
 
-- [ ] **T2.1** `VERSION`, default icon + icon check on 3DS, `NNH_GAME_TITLE` → `AppConfig::title` default — files: `nnh_game.cmake`, `<nnh/app.hpp>` — test: examples build; `hello` screenshot title; unit test of the default — covers FR-1, FR-2
-- [ ] **T2.2** `CIA` option group parsed and checked at configure (no tools yet) — test: ctest configures `tests/data/package/game/` (a tiny game) with good and bad options — covers FR-1, FR-5
+- [x] **T2.1** `VERSION`, default icon + icon check on 3DS, `NNH_GAME_TITLE` → `AppConfig::title` default — files: `nnh_game.cmake`, `<nnh/app.hpp>` — test: examples build; compile checks `game_title_*` (static_assert on the default) — covers FR-1, FR-2
+- [x] **T2.2** `CIA` option group parsed and checked at configure (no tools yet) — test: ctest `package_resolve_*` runs `nnh_resolve_package()` (the function nnh_add_game calls) through `tests/data/package/resolve_package.cmake` with good and bad options — covers FR-1, FR-5
 
 ## Stage 3 — tools and the `.cia`
 

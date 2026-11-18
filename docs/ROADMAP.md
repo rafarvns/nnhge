@@ -62,7 +62,7 @@ sticks, touch, mirror); `input.3dsx` 213,912 bytes.
 
 ## M2 — 2D graphics
 - [ ] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md) (in progress)
-- [ ] Text rendering (bitmap fonts first)
+- [ ] Text rendering (bitmap fonts first). First goal: text **identical on every system** — debug text too, which today uses the 3DS system font vs. an 8×8 font on PC, so widths differ and layouts break (found on the 3DS in spec 004)
 - [ ] Simulator window: two screens layout, scale, 3D slider control
 
 ## M3 — Assets

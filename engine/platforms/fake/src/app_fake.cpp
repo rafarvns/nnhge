@@ -3,12 +3,15 @@
 #include "fake_internal.hpp"
 #include "nnh/platform/app.hpp"
 
-namespace nnh::platform {
 namespace {
 
 const char* g_last_error = "";
 
 } // namespace
+
+void nnh::platform_fake::detail::set_last_error(const char* message) { g_last_error = message; }
+
+namespace nnh::platform {
 
 using platform_fake::detail::controls;
 using platform_fake::detail::mutable_state;

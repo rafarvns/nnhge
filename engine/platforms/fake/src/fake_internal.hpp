@@ -30,10 +30,12 @@ struct Controls {
     std::uint32_t dev_requests = 0;
     FakeAsset assets[kMaxFakeAssets];
     int asset_count = 0;
+    bool audio_unavailable = false;
 };
 
 State& mutable_state();
 Controls& controls();
 void fs_reset(); // fs_fake.cpp
+void set_last_error(const char* message); // app_fake.cpp
 
 } // namespace nnh::platform_fake::detail

@@ -12,9 +12,15 @@ add_library(nnh_core STATIC
     src/crash/crash.cpp
     src/crash/report.cpp
     src/assets/asset_index.cpp
+    src/audio/audio.cpp
+    src/audio/mix.cpp
     src/audio/ogg_pages.cpp
     src/audio/ogg_reader.cpp
     src/audio/ogg_seek.cpp
+    src/audio/sound_decode.cpp
+    src/audio/sounds.cpp
+    src/audio/voice_api.cpp
+    src/audio/voice_table.cpp
     src/audio/wav_reader.cpp
     src/assets/asset_path.cpp
     src/assets/assets.cpp

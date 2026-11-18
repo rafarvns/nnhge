@@ -25,6 +25,14 @@ struct GfxConfig {
     int max_textures = 128;
 };
 
+/// Audio capacities (see <nnh/audio.hpp>), allocated once at init().
+struct AudioConfig {
+    /// Sounds that can play at the same time, 1 to 22 (the 3DS DSP has 24 channels; music uses 2).
+    int voices = 16;
+    /// Sounds loaded at the same time. About 40 bytes each. Minimum 1.
+    int max_sounds = 128;
+};
+
 /// Options for nnh::init(). Use designated initializers:
 /// @code
 /// nnh::init({.title = "My Game"});
@@ -42,6 +50,8 @@ struct AppConfig {
     EventsConfig events = {};
     /// 2D graphics capacities: `.gfx = {.max_draws = 4096}`.
     GfxConfig gfx = {};
+    /// Audio capacities: `.audio = {.voices = 8}`.
+    AudioConfig audio = {};
 };
 
 /// Initializes the engine (video, input). Call once, before anything else.

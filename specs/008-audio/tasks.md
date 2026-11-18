@@ -14,11 +14,11 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — contract, fake, effects and mixer
 
-- [ ] **T2.1** contract `audio.hpp` (+ `asset_open/read_at/close`); fake recorder; pc/3ds stubs returning "no audio" — test: conformance `audio_init_or_silent`, `asset_stream_reads_ranges` — covers FR-8, FR-10
-- [ ] **T2.2** `load_sound` (path + `.wav`/`.ogg`, decode to PCM16, `sample_create`, tag `audio`, `max_sounds`) — files: `core/src/audio/sounds.cpp` — test: `tests/audio/test_sounds.cpp` — covers FR-1, FR-2
-- [ ] **T2.3** voices: play/stop/pause/params, handles, stealing by priority then age — files: `core/src/audio/voices.{hpp,cpp}` — test: `test_voices.cpp` — covers FR-2, FR-5
-- [ ] **T2.4** mixer: groups, master, pan law, group pause, fades — files: `core/src/audio/mixer.{hpp,cpp}` — test: `test_mixer.cpp` — covers FR-4
-- [ ] **T2.5** frame hook, events, unavailable audio, shutdown — files: `core/src/audio/audio.cpp`, `app.cpp`, `<nnh/audio.hpp>` — test: `test_audio_events.cpp`, `test_audio_unavailable.cpp`, `test_audio_lifecycle.cpp` — covers FR-6, FR-7, FR-8
+- [x] **T2.1** contract `audio.hpp` (samples, voices); fake recorder; pc/3ds stubs returning "no audio" — test: conformance `audio_either_plays_voices_or_says_why_not` — covers FR-8, FR-10 (asset streams and audio streams moved to T3.1, where music uses them)
+- [x] **T2.2** `load_sound` (path + `.wav`/`.ogg`, decode to PCM16, `sample_create`, tag `audio`, `max_sounds`) — files: `core/src/audio/sounds.cpp` — test: `tests/audio/test_sounds.cpp` — covers FR-1, FR-2
+- [x] **T2.3** voices: play/stop/pause/params, handles, stealing by priority then age — files: `core/src/audio/voice_table.{hpp,cpp}`, `voice_api.cpp` — test: `test_voice_table.cpp`, `test_audio_play.cpp` — covers FR-2, FR-5
+- [x] **T2.4** mixer: groups, master, pan law (balance), group pause — files: `core/src/audio/mix.{hpp,cpp}`, `voice_api.cpp` — test: `test_mix.cpp`, `test_audio_play.cpp` — covers FR-4 (fades moved to T3.2: only music fades)
+- [x] **T2.5** frame hook, events, unavailable audio, shutdown — files: `core/src/audio/audio.cpp`, `app.cpp`, `<nnh/audio.hpp>` — test: `test_audio_play.cpp` (events), `test_audio_lifecycle.cpp` (no output, shutdown) — covers FR-6, FR-7, FR-8
 
 ## Stage 3 — music streaming
 

@@ -18,7 +18,12 @@ add_executable(nnh_tests
     assets/test_asset_path.cpp
     assets/test_asset_textures.cpp
     assets/test_assets.cpp
+    audio/test_audio_lifecycle.cpp
+    audio/test_audio_play.cpp
+    audio/test_mix.cpp
     audio/test_ogg_reader.cpp
+    audio/test_sounds.cpp
+    audio/test_voice_table.cpp
     audio/test_wav_reader.cpp
     build/test_flavor.cpp
     crash/test_assert.cpp

@@ -47,4 +47,5 @@ passes it. Up to 31 tags are counted separately; more share an "other" slot.
 - Memory allocated by libraries the engine uses (e.g. citro2d's internal buffers) isn't counted, except
   textures: the engine counts each one under the tag `textures` in `Linear` ([texture.md](texture.md)),
   so they show in stats, budgets and the leak report. The built-in font's texture (64 KB, created at
-  `init()`) is tag `font`; the 2D draw list is tag `gfx`, the event bus `events`.
+  `init()`) is tag `font`; the 2D draw list is tag `gfx`, the event bus `events`. Decoded sounds are
+  tag `audio` in `Linear`, as are the voice and sound tables on the heap ([audio.md](audio.md)).

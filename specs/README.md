@@ -13,6 +13,6 @@ To start a new spec, copy `_templates/` to `NNN-<slug>/` with the next free numb
 | 006 | [Simulator window](006-simulator-window/spec.md) (layouts, scale, fullscreen, remembered settings) | implemented |
 | 007 | [Assets and romfs](007-assets-and-romfs/spec.md) (assets folder, conversion, romfs/PC packaging, textures and data files by path) | implemented, verified on 3DS |
 | 008 | [Audio](008-audio/spec.md) (sound effects, streaming music with loop points and fades, mixer groups, silent fallback) | implemented, verified on 3DS |
-| 009 | [Packaging](009-packaging/spec.md) (icon, metadata, installable `.cia` with banner and jingle) | draft |
+| 009 | [Packaging](009-packaging/spec.md) (icon, metadata, installable `.cia` with banner and jingle) | approved |
 | 003 | [Full input](003-full-input/spec.md) (Circle Pad, C-Stick, touch; PC keyboard, mouse and gamepad) | implemented — New 3DS run pending |
 | 004 | [2D graphics](004-2d-graphics/spec.md) (textures, sprites, shapes, layers, camera; ready for 3D) | implemented, verified on 3DS |

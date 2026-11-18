@@ -1,6 +1,6 @@
 # Spec 009: Packaging — icon, metadata and installable `.cia`
 
-Status: draft
+Status: approved (2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (romfs), [spec 008](../008-audio/spec.md) (WAV checks).
 Implements ROADMAP M5.
@@ -81,18 +81,17 @@ installable `.cia` with a banner and a short jingle, both from the same code and
 
 ## Open questions
 
-Proposals from the maintainers, to confirm or change:
+Answered by the maintainer (2026-11-18): the proposals, all accepted.
 
-- [ ] **How to get the tools** — proposal: download the official prebuilt release binaries (makerom
+- [x] **How to get the tools** — proposal: download the official prebuilt release binaries (makerom
   v0.19.0 from 3DSGuy/Project_CTR; bannertool 1.2.3 from carstene1ns/3ds-bannertool, the maintained fork)
   pinned by SHA-256 into the build folder, only when a `.cia` is requested. Alternatives: build them from
   source at configure time (slower, needs their dependencies), or require them on `PATH`.
-- [ ] **Which builds make a `.cia`** — proposal: only games with `CIA UNIQUE_ID ...`, and only through
+- [x] **Which builds make a `.cia`** — proposal: only games with `CIA UNIQUE_ID ...`, and only through
   the `<game>_cia` target (not on every build), so day-to-day builds stay fast.
-- [ ] **Default banner and jingle** — proposal: an NNHGE banner (256×128, the engine's logo and the
-  game's title drawn at build time? or a fixed image) and a short original jingle; a game overrides them
-  with `BANNER`/`BANNER_AUDIO`. Simpler variant: a fixed banner without the title.
-- [ ] **New 3DS / memory mode** — proposal: an optional `CIA ... SYSTEM_MODE` (e.g. more app memory on
+- [x] **Default banner and jingle** — proposal: a fixed NNHGE banner (256×128, the engine's logo, no
+  title) and a short original jingle; a game overrides them with `BANNER`/`BANNER_AUDIO`.
+- [x] **New 3DS / memory mode** — proposal: an optional `CIA ... SYSTEM_MODE` (e.g. more app memory on
   Old 3DS, the New 3DS's 804 MHz/L2 cache) exposed later; the first version uses the defaults.
-- [ ] **`nnh package`** — proposal: not now. The CMake target plus `dist/` covers it; the CLI comes with
+- [x] **`nnh package`** — proposal: not now. The CMake target plus `dist/` covers it; the CLI comes with
   NNH Link (M6), which needs it anyway.

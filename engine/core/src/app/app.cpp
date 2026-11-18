@@ -7,6 +7,7 @@
 #include "crash/crash_internal.hpp"
 #include "debug/dev_tools.hpp"
 #include "events/events_internal.hpp"
+#include "scene/scenes_internal.hpp"
 #include "nnh/input.hpp"
 #include "nnh/platform/system.hpp"
 #include "nnh/time.hpp"
@@ -76,6 +77,7 @@ bool init(const AppConfig& config) {
 bool frame() {
     if (!g_initialized) return false;
     close_frame();
+    detail::scenes_apply_pending(); // changes requested during the frame that just ended
     if (!platform::poll_events()) return false;
     detail::time_frame_started(platform::ticks_ns());
     detail::input_update(platform::read_buttons());
@@ -94,6 +96,7 @@ void shutdown() {
     if (!g_initialized) return;
     close_frame();
     NNH_LOG_INFO(app, "shutdown after %llu frames", static_cast<unsigned long long>(g_frame_count));
+    detail::scenes_shutdown(); // on_exit() may still unsubscribe: before the bus goes away
     detail::events_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();

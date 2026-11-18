@@ -30,6 +30,8 @@ add_library(nnh_core STATIC
     src/log/log.cpp
     src/memory/memory.cpp
     src/result/error.cpp
+    src/scene/scene_stack.cpp
+    src/scene/scenes.cpp
     src/system/system.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp

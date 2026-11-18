@@ -33,6 +33,7 @@ int main() {
 - `frame()` returns false when the system asks the game to close: HOME Menu → Close on 3DS,
   window closed on PC. Always leave the loop and call `shutdown()`; never `exit()` from inside a frame.
 - `break` out of the loop to quit on your own (e.g. START). `shutdown()` presents the last frame.
+- Games organized in scenes can use `nnh::run(first_scene)` instead of the loop ([scene.md](scene.md)).
 
 ## Platform notes
 

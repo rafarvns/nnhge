@@ -1,6 +1,7 @@
 # Scenes
 
-> Status: **design**, specified in [specs/001-event-bus-and-scenes](../../specs/001-event-bus-and-scenes/spec.md).
+> Status: **implemented** ([spec 001](../../specs/001-event-bus-and-scenes/spec.md)). API reference:
+> [docs/api/scene.md](../api/scene.md).
 
 A game is a set of **scenes**: title screen, level, pause menu, game over. Each scene is one class with
 its own state and behaviour. This is the **State pattern**: the game's behaviour changes by switching
@@ -35,19 +36,24 @@ private:
 | `pop()` | Remove the top scene; the one below resumes | Close pause menu |
 | `replace(scene)` | Swap the top scene | Title → Level |
 
-Stack changes requested during a frame take effect **at the end of that frame**, so a scene never
-destroys itself in the middle of its own `update()`.
+Stack changes requested during a frame take effect **at the end of that frame** (the start of the next
+`nnh::frame()`), so a scene never leaves the stack in the middle of its own `update()`.
+
+The **game creates and owns** its scene objects; the stack only holds pointers. Destroying a scene that is
+still on the stack is caught at runtime ([api/scene.md](../api/scene.md#ownership-the-game-owns-its-scenes)).
 
 ## Frame flow with scenes
 
 ```
-frame():  input → dispatch events → top scene update() → draw scenes bottom-to-top → present
+frame():  present previous frame → apply scene changes → input → deliver events (input events last)
+game:     top scene update() → draw scenes bottom-to-top          (scenes::update_and_draw(), nnh::run())
 ```
 
 ## Rules
 
 - One scene per file pair (`level_scene.hpp/.cpp`), in the game's `scenes/` folder.
-- Scenes own their resources and subscriptions as members (RAII); `on_exit` only handles what RAII can't.
+- Scenes own their resources and subscriptions as members (RAII). Because the game keeps scene objects
+  alive after they leave the stack, subscribe in `on_enter` and reset in `on_exit`.
 - Shared game data (save data, settings) lives in plain structs passed to scenes, not in globals.
 
 ## Further reading

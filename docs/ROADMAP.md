@@ -47,7 +47,7 @@ source ~60 s.
 - [ ] CPU-fault crash screen on 3DS with Luma3DS "Set developer UNITINFO" — maintainer, later
 
 ## M1b — Events, scenes, input
-- [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — in progress: stages 1–3 of 5 done (building blocks, bus API `<nnh/events.hpp>`, input events)
+- [ ] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)) — in progress: stages 1–4 of 5 done (bus `<nnh/events.hpp>`, input events, scenes `<nnh/scene.hpp>`); next: example + 3DS check
 - [ ] Input: Circle Pad, C-Stick/ZL/ZR (New 3DS), touch; PC mapping (gamepad, mouse = touch)
 
 ## M2 — 2D graphics

@@ -83,7 +83,8 @@ linked); `text.3dsx` 239,736 bytes.
 - [ ] `assetc` tool (a C++ converter with an incremental cache) — only when conversion outgrows the CMake steps (texture formats, atlases, audio)
 
 ## M4 — Audio
-- [ ] Sound effects (WAV), streaming music (OGG), mixer channels — ndsp / SDL3 — [spec 008](../specs/008-audio/spec.md) (in progress)
+- [x] Audio ([spec 008](../specs/008-audio/spec.md)): `<nnh/audio.hpp>` — `load_sound` (WAV/Ogg Vorbis from assets), voices with volume/pan/pitch/priority, groups + master, streamed `music::play`/`crossfade` with loop points (`LOOPSTART`) and fades, `SoundFinished`/`MusicFinished`, silent fallback without output; 3DS DSP (ndsp) and PC (SDL 3 + software mixer); vendored stb_vorbis; `examples/audio` — verified on PC and an Old 3DS XL (2026-11-18). Cost: every `.3dsx` +8 KB (ndsp), +60 KB with Ogg; builds within budget (clean engine 8.6 s)
+- [ ] Later, if games need them: positional audio, effects (reverb, filters), more than one music track (layers), streaming on a thread for long loads
 
 ## M5 — Packaging
 - [ ] `.3dsx` with icon/metadata (SMDH)

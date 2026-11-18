@@ -5,7 +5,9 @@ Header: `<nnh/assets.hpp>` · Spec: [007](../../specs/007-assets-and-romfs/spec.
 
 Declare the folder in the game's build: `nnh_add_game(my_game SOURCES ... ASSETS assets)` — every file
 under `assets/` becomes an asset named by its relative path ([cmake.md](../tech/cmake.md#common-changes)).
-Example: [`examples/sprites`](../../examples/sprites/main.cpp) (textures and a level file).
+Example: [`examples/sprites`](../../examples/sprites/main.cpp) (textures and a level file). Sounds and music
+are assets too: `.wav`/`.ogg` files are checked by the build and loaded by path without extension
+([audio.md](audio.md), [`examples/audio`](../../examples/audio/main.cpp)).
 
 A game keeps its content — images, levels, dialogue, tables — in an **assets folder** next to its code.
 The build converts each file for the system and packs them with the game: into the **romfs** inside the

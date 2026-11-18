@@ -1,6 +1,6 @@
 # Spec 008: Audio — sound effects, streaming music, mixer
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved and implemented 2026-11-18)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (sounds are assets), [spec 002](../002-core-foundation/spec.md)
 (memory tags, `Result`, logs), [spec 001](../001-event-bus-and-scenes/spec.md) (events). Implements ROADMAP M4.

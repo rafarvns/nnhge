@@ -27,5 +27,5 @@ Each task: one or a few TDD loops (script tests first). `[P]` = can be done in p
 
 - [x] **T4.1** docs: new `docs/guides/packaging.md`; `cmake.md` (`nnh_add_game` reference), `devkitpro-3ds.md` (`.cia`), `REFERENCES.md`, decision D22, CLAUDE.md, getting-started — covers AC-5
 - [x] **T4.2** budgets without `CIA`: game `.cpp` edit 1.4 s PC / 2.6 s 3DS, 3DS reconfigure 2.4 s, no download, `hello.3dsx` 258 148 bytes (unchanged) — covers AC-4
-- [x] **T4.3** maintainer: `audio.cia` installed with FBI over the network and played on an Old 3DS XL (2026-11-18) — covers AC-2. Still to confirm: the default icon of `hello` in the Homebrew Launcher (AC-1)
+- [x] **T4.3** maintainer: `audio.cia` installed with FBI over the network and played on an Old 3DS XL (2026-11-18) — covers AC-2. the default NNHGE icon of `hello` seen in the Homebrew Launcher (AC-1, confirmed the same day)
 - [x] **T4.4** ROADMAP M5; spec, plan and tasks status → implemented

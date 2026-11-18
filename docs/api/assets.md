@@ -3,8 +3,9 @@
 Header: `<nnh/assets.hpp>` · Spec: [007](../../specs/007-assets-and-romfs/spec.md) · Textures:
 [texture.md](texture.md) · Saves and the game's data folder: [fs.md](fs.md)
 
-> **In progress** (spec 007): the API below works and is tested; declaring the folder in the build
-> (`nnh_add_game(... ASSETS assets)`) and the PC/3DS readers arrive in the next stages.
+Declare the folder in the game's build: `nnh_add_game(my_game SOURCES ... ASSETS assets)` — every file
+under `assets/` becomes an asset named by its relative path ([cmake.md](../tech/cmake.md#common-changes)).
+Example: [`examples/sprites`](../../examples/sprites/main.cpp) (textures and a level file).
 
 A game keeps its content — images, levels, dialogue, tables — in an **assets folder** next to its code.
 The build converts each file for the system and packs them with the game: into the **romfs** inside the

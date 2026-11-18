@@ -2,14 +2,16 @@
 
 Header: `<nnh/texture.hpp>` · Drawing: [gfx.md](gfx.md) · Design: [architecture/rendering.md](../architecture/rendering.md)
 
-A game declares its images in its build; they are checked, converted for each system and embedded in
-the executable (decision D19; romfs comes with M3). An image that breaks the size rule fails the
-**build**, naming the file ([cmake.md](../tech/cmake.md#common-changes)). At run time it loads them
-**by name**: the file name without folder or extension.
+A game keeps its images as PNGs in its **assets** folder ([assets.md](assets.md)); the build checks and
+converts them for each system and packs them with the game (romfs on 3DS). An image that breaks the
+size rule fails the **build**, naming the file ([cmake.md](../tech/cmake.md#common-changes)). At run time
+the game loads them **by path**, without the `.png`. Small games can instead embed images in the
+executable with `IMAGES` (decision D19) and load them by file name; `load_texture` looks in the assets
+first, then in `IMAGES`.
 
 ```cpp
-// CMakeLists.txt: nnh_add_game(my_game SOURCES ... IMAGES art/hero.png art/tiles.png)
-auto loaded = nnh::load_texture("hero");
+// CMakeLists.txt: nnh_add_game(my_game SOURCES ... ASSETS assets)   — assets/art/hero.png
+auto loaded = nnh::load_texture("art/hero");
 if (!loaded) {
     NNH_LOG_ERROR(game, "%s", loaded.error().message);
     return;

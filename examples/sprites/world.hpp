@@ -5,14 +5,16 @@
 #include <nnh/math.hpp>
 #include <nnh/texture.hpp>
 
+#include "level.hpp"
+
 struct Art {
-    nnh::Texture hero;  // 64x16: 4 walking frames of 16x16, facing right
-    nnh::Texture tiles; // 64x32: grass tile, dirt tile (32x32 each)
+    nnh::Texture hero;  // assets/art/hero.png, 64x16: 4 walking frames of 16x16, facing right
+    nnh::Texture tiles; // assets/art/tiles.png, 64x32: grass tile, dirt tile (32x32 each)
 };
 
 class World {
 public:
-    explicit World(const Art& art) : art_(art) {}
+    World(const Art& art, const Level& level) : art_(art), level_(level) {}
     void update();
     void draw() const;
 
@@ -23,6 +25,7 @@ private:
     void draw_minimap() const;
 
     const Art& art_;
+    const Level& level_;
     nnh::Vec2 hero_{120, 208}; // feet, in world pixels
     bool facing_left_ = false;
     bool walking_ = false;

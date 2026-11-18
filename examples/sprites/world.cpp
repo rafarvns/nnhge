@@ -83,10 +83,13 @@ void World::draw_ground() const {
     for (int i = first; i <= first + nnh::screen_width(Screen::Top) / kTile + 1; ++i) {
         const float x = static_cast<float>(i * kTile);
         nnh::gfx::draw(Screen::Top, art_.tiles, {x, kGroundY}, {.region = {0, 0, kTile, kTile}, .layer = 1});
-        // A floating platform every 512 pixels.
-        if (i % 16 >= 6 && i % 16 <= 8) {
-            nnh::gfx::draw(Screen::Top, art_.tiles, {x, 140}, {.region = {0, 0, kTile, kTile}, .layer = 1});
-            nnh::gfx::draw(Screen::Top, art_.tiles, {x, 172}, {.region = {kTile, 0, kTile, 16}, .layer = 1});
+        // Floating platforms from the level file (assets/levels/level1.txt), repeating every 16 tiles.
+        for (int p = 0; p < level_.count; ++p) {
+            const Platform& platform = level_.platforms[p];
+            if (i % 16 < platform.first || i % 16 > platform.last) continue;
+            nnh::gfx::draw(Screen::Top, art_.tiles, {x, platform.y}, {.region = {0, 0, kTile, kTile}, .layer = 1});
+            nnh::gfx::draw(Screen::Top, art_.tiles, {x, platform.y + kTile},
+                           {.region = {kTile, 0, kTile, 16}, .layer = 1});
         }
     }
 }

@@ -75,7 +75,10 @@ gamepad ([api/input.md](docs/api/input.md)). 2D graphics (spec 004, implemented;
 shapes, layers, `Camera2D`; recorded and submitted per screen so 3D can be added
 ([architecture/rendering.md](docs/architecture/rendering.md)). Text (spec 005, implemented; demo
 `examples/text`): `gfx::draw_text`/`measure_text` with the built-in NNHGE font, identical on every system;
-debug text uses it too ([api/text.md](docs/api/text.md)).
+debug text uses it too ([api/text.md](docs/api/text.md)). Assets (spec 007; demo `examples/sprites`):
+`nnh_add_game(... ASSETS assets)` packs a folder (romfs on 3DS, a folder next to the PC program);
+`<nnh/assets.hpp>` reads files by case-sensitive path, `load_texture("art/hero")` loads images
+([api/assets.md](docs/api/assets.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

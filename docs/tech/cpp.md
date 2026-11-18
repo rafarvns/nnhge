@@ -57,6 +57,9 @@ Public functions document: does it allocate? is it per-frame safe? what happens 
   [devkitpro-3ds.md](devkitpro-3ds.md)).
 - Allocate at load time, reuse during play. Containers like `std::vector` are fine at load time,
   not in per-frame code.
+- Watch what the C library pulls in: one `sscanf` added about **40 KB** to a 3DS `.3dsx` (the whole
+  `scanf` family); `strtol`/`strtof` or a small hand-written parser cost almost nothing. Check the
+  `.3dsx` size after adding parsing or formatting code.
 
 ## Compile-time hygiene (build speed)
 

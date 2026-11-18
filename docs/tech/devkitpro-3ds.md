@@ -101,6 +101,11 @@ What our backend (`input_3ds.cpp`) does:
 ## Files, romfs, audio
 
 - `romfsInit()` mounts the assets packed into the `.3dsx` as `romfs:/`. `sdmc:/` is the SD card.
+  Our backend (`assets_3ds.cpp`, spec 007): `assets_mount()` = `romfsInit()` (a `.3dsx` without romfs
+  fails it: the game has no assets), reads with `fopen("romfs:/<path>")`, `romfsExit()` at shutdown. The
+  build packs `build/<preset>/<game dir>/assets/` with `ctr_create_3dsx(... ROMFS <game>_assets)`; romfs
+  paths are case-sensitive, which core enforces on every system. Files are read from the SD card on
+  demand, not loaded with the program.
 - Audio uses `ndspInit()` (needs the DSP firmware dumped on the console: `sdmc:/3ds/dspfirm.cdc`);
   buffers must be in linear memory.
 

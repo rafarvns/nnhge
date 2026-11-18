@@ -1,6 +1,6 @@
 # Spec 007: Assets — build pipeline and romfs
 
-Status: draft
+Status: approved (2026-11-18, maintainer)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 002](../002-core-foundation/spec.md) (`nnh::fs`, memory, `Result`),
 [spec 004](../004-2d-graphics/spec.md) (textures, `IMAGES`). Implements ROADMAP M3 and decision D6.
@@ -81,15 +81,13 @@ files **by path, on demand**, with the same code on every system.
 
 ## Open questions
 
-- [ ] **Build tool** — keep the CMake-script pipeline grown from `IMAGES` (one build step per asset,
-  incremental by file timestamps, no new tool to compile; proposed for now), or write the C++ `assetc`
-  host tool of decision D10 now (content-hash cache, room for heavier conversions later)?
-- [ ] **`IMAGES` after this spec** — keep it as a small-games option (embedded, no romfs), or deprecate it
-  and convert the examples (proposed: keep it working, documented as "embedded images", and make
-  `ASSETS` the recommended way)?
-- [ ] **Texture names** — `load_texture` takes the asset path without extension (`"characters/hero"`,
-  proposed), with or without the extension, and should `IMAGES` names (file name only) stay valid?
-- [ ] **Data API** — `assets::read(path, buffer, capacity)` + `assets::size(path)` only (caller's memory),
-  or also `assets::load(path)` returning an RAII buffer from the `assets` memory tag (proposed: both)?
-- [ ] **PC packaging** — a plain folder next to the executable (proposed: easy to inspect and fast to
-  update) or one pack file like the romfs?
+Answered by the maintainer (2026-11-18): the proposed options, all accepted.
+
+- [x] **Build tool** — grow the CMake-script pipeline (one build step per asset, incremental by
+  timestamps); the C++ `assetc` (D10) waits for heavier conversions (audio, fonts, atlases).
+- [x] **`IMAGES`** — keeps working as "embedded images"; `ASSETS` is the recommended way.
+- [x] **Texture names** — the asset path without extension (`"characters/hero"`); `IMAGES` names (file
+  name only) stay valid.
+- [x] **Data API** — both: `assets::size`/`assets::read` into the caller's memory, and `assets::load`
+  returning an RAII buffer (memory tag `assets`).
+- [x] **PC packaging** — a plain folder next to the executable.

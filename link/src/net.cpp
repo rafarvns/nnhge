@@ -149,6 +149,10 @@ std::uint16_t Socket::local_port() const {
     return ntohs(sa.sin_port);
 }
 
+bool readable(const Socket& socket, int timeout_ms) {
+    return socket.valid() && wait_ready(native(socket.handle()), timeout_ms > 0 ? timeout_ms : 0, false);
+}
+
 Socket tcp_connect(Ipv4 address, std::uint16_t port, int timeout_ms) {
     if (!startup()) return {};
     Socket s(wrap(::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)));

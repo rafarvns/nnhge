@@ -56,6 +56,8 @@ std::vector<std::vector<std::uint8_t>> ServerHandshake::on_hello(const Hello& co
     if (known) {
         secret_ = known;
         out.push_back(encode_frame(Type::Proof, encode_digest(auth_proof(*known, Side::Server, console_, mine_))));
+    } else {
+        out.push_back(encode_frame(Type::NeedPairing, {}));
     }
     return out;
 }
@@ -92,6 +94,15 @@ ClientHandshake::Step ClientHandshake::on_hello(const Hello& server, const std::
     }
     secret_ = known;
     return known ? Step::Wait : Step::NeedCode; // a known server sends its proof next
+}
+
+ClientHandshake::Step ClientHandshake::on_pairing_needed() {
+    if (!hello_) {
+        failure_ = "unexpected pairing request";
+        return Step::Failed;
+    }
+    secret_.reset(); // the server forgot this console: the remembered secret is useless
+    return Step::NeedCode;
 }
 
 std::vector<std::uint8_t> ClientHandshake::pair(const std::string& code) {

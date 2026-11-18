@@ -1,6 +1,6 @@
 # Tasks 011: NNH Link — build and run from the console
 
-Status: in progress (stage 1 done 2026-11-18)
+Status: in progress (stages 1–2 done 2026-11-18)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -14,8 +14,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 2 — sessions
 
-- [ ] **T2.1** server session (list, build via an injected builder, file, launch) and client session — tests: loopback, fake builder — covers FR-1, FR-5
-- [ ] **T2.2** failures: server gone mid-file, build failed, timeouts, cancel — covers FR-5
+- [x] **T2.1** server session (list, build via an injected builder, file, launch) and client session — tests: loopback, fake builder — covers FR-1, FR-5 (`link/src/{connection,server_session,client_session}.cpp`, `link/tests/test_sessions.cpp`)
+- [x] **T2.2** failures: server gone mid-file, build failed, timeouts, cancel — covers FR-5 (`link/tests/test_session_failures.cpp`; also a damaged file, more data than announced, no SD space)
 
 ## Stage 3 — `nnh serve`
 

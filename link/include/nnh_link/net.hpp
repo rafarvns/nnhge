@@ -47,6 +47,9 @@ private:
     int recv_timeout_ms_ = 0;
 };
 
+/// Waits up to `timeout_ms` (0 = just look) until `socket` has data or was closed: true if so.
+bool readable(const Socket& socket, int timeout_ms);
+
 /// Connects within `timeout_ms`. Invalid socket on failure (refused, unreachable, timeout).
 Socket tcp_connect(Ipv4 address, std::uint16_t port, int timeout_ms);
 

@@ -97,6 +97,9 @@ Fixed at `nnh::init()` through `AppConfig::gfx` (allocated once, memory tag `gfx
 nnh::init({.title = "Bullet Hell", .gfx = {.max_draws = 8192}});
 ```
 
+How many sprites fit in a frame at 60 Hz: run the benchmark of [`examples/sprites`](../../examples/sprites/main.cpp)
+(SELECT on the console, `SPRITES_DEMO=bench` on PC; L/R and Y/X change the count).
+
 More draws than `max_draws` in a frame is a bug: Debug and Development **assert**; Release drops the
 extra draws and logs one warning per frame. `gfx::stats()` returns `draws_last_frame`, `max_draws`,
 `dropped_draws`, `textures`, `max_textures` and `texture_bytes`; the debug overlay shows them too.

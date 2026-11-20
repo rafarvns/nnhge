@@ -47,7 +47,10 @@ fake included). Sources are always listed explicitly.
 presets selecting it ([platforms.md](../architecture/platforms.md)).
 
 **Add an example**: `examples/<name>/CMakeLists.txt` with `nnh_add_game(...)`, then
-`add_subdirectory(<name>)` in `examples/CMakeLists.txt`.
+`add_subdirectory(<name>)` in `examples/CMakeLists.txt`. Apps that ship with NNHGE (`apps/nnh-link`, spec
+011) are added the same way under `apps/`, built in every preset even with `NNH_BUILD_EXAMPLES=OFF`;
+they may link more libraries after `nnh_add_game()` (`target_link_libraries(nnh-link PRIVATE nnh_link)`)
+and pick a platform file with `src/platform_link_${NNH_PLATFORM}.cpp`.
 
 ```cmake
 nnh_add_game(sprites

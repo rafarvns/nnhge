@@ -96,6 +96,7 @@ tests/framework/  tests/<module>/                in-house test framework, unit t
 tests/platform_conformance/                      contract tests run against every platform
 tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_tests; libFuzzer with NNH_BUILD_FUZZERS)
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
+apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
 tools/nnh/                                       the nnh command (spec 010): build, run on the console, install
 examples/<name>/                                 one small program per feature
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
@@ -122,6 +123,7 @@ scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3d
 build/pc-debug/tools/nnh/nnh run hello                         # build, send to the console (HBL → Y), show its log
 build/pc-debug/tools/nnh/nnh install audio                      # .cia over the network (FBI → Receive URLs)
 build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
+NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings

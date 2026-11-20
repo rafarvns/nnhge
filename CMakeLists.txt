@@ -49,6 +49,8 @@ if(NNH_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+add_subdirectory(apps) # NNH Link (spec 011); after tests: its test target uses the test framework
+
 # The nnh command-line tool (spec 010): a host program, so only in the PC presets.
 if(NNH_PLATFORM STREQUAL "pc")
     add_subdirectory(tools/nnh)

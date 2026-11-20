@@ -61,7 +61,9 @@ the last console used.
 ## Serving NNH Link: `nnh serve`
 
 `nnh serve [--release]` turns the PC into a build server for **NNH Link**, the console app of spec 011
-(the app itself comes in a later stage of that spec). Run it in the repository and leave it open:
+(`apps/nnh-link`, built with the others: `build/3ds-*/apps/nnh-link/nnh-link.3dsx`; copy it to
+`sdmc:/3ds/` and open it from the Homebrew Launcher; its guide comes with the end of spec 011). Run it in
+the repository and leave it open:
 
 ```text
 nnh: serving E:/RANDOM/nnhge as "RAFA" on port 17492 (Development builds); Ctrl+C stops

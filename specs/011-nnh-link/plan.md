@@ -76,13 +76,23 @@ the file; keeps a `LogListener` on 17491 for the game started by the console; Ct
 
 ### NNH Link (`apps/nnh-link/`, built with `nnh_add_game` in every preset)
 
+As built (stage 5, 2026-11-20; files in `apps/nnh-link/src/`):
+
 | File | Responsibility |
 |------|----------------|
-| `main.cpp` | init, scene stack, exit (and launch) |
-| `link_state.{hpp,cpp}` | the session logic: servers, pairing, games, build progress — pure over a `Connection` interface |
-| `scenes/{servers,pair,games,build}.cpp` | UI: lists with D-Pad/touch, a number pad for the code, progress, the last error lines |
-| `storage.{hpp,cpp}` | console id, paired servers, last server/game (`nnh::save`) |
-| `platform_link.hpp` + `platform_link_3ds.cpp` / `platform_link_pc.cpp` | network start, launch (3DS via the extension headers; PC: no launch) |
+| `main.cpp` | init (data folder `nnh`), the real ports or the demo, run, exit (the launch happens after `nnh::shutdown()`) |
+| `ports.hpp` | what the logic talks to: `Finder` (discovery), `Client` (a session), `Device` (where the game goes, launching) |
+| `link_state.{hpp,cpp}` | the screens (servers, address, connecting, code, games, building, done, message) and what each key does — pure over the ports, tested against fakes |
+| `storage.{hpp,cpp}` + `storage_file.{hpp,cpp}` | console id, paired servers (up to 16), last server/game: pure encoding + `nnh::save` (`link.sav`) |
+| `pad.{hpp,cpp}`, `layout.{hpp,cpp}` | the number pad (touch and D-Pad focus) and list rows / text fitting: pure, tested |
+| `net_client.{hpp,cpp}` | the real `Finder`/`Client` over `nnh_link` (UDP discovery, `ClientSession`) |
+| `device.{hpp,cpp}` | the real `Device`: streams the game to `<game>.3dsx.part` (renamed when verified), launch arguments |
+| `link_scene.{hpp,cpp}`, `view_*.cpp` | one scene: buttons and touches → `LinkState`; views draw each screen (one scene instead of one per screen: the screens share the session and the pad) |
+| `platform_link.hpp` + `platform_link_3ds.cpp` / `platform_link_pc.cpp` | network start, random bytes (PS service on 3DS), free space, launch (3DS via the extension headers; PC: none) |
+| `demo.{hpp,cpp}` | `NNH_LINK_DEMO=<screen>`: a made-up server, for screenshots |
+
+The game is streamed with stdio, not `nnh::fs`, which writes whole files only (constitution II forbids holding
+it in RAM); the path is Link's data folder + a valid game name.
 
 The game is saved to `sdmc:/3ds/nnh/<game>.3dsx` while it arrives (checked against the SHA-256 at the end),
 then launched with `argv = {path, "--nnh-return=sdmc:/3ds/nnh-link.3dsx", "<pc-ip-hex>_3DSLINK_"}` — the

@@ -1,6 +1,6 @@
 # Tasks 011: NNH Link — build and run from the console
 
-Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19, stage 4 2026-11-20)
+Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19, stages 4–5 2026-11-20)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -28,9 +28,9 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 5 — the NNH Link app
 
-- [ ] **T5.1** `link_state` + storage — tests with a fake connection — covers FR-2, FR-3, FR-5
-- [ ] **T5.2** scenes (servers, pairing pad, games, build) — simulator screenshots — covers FR-2, FR-6
-- [ ] **T5.3** platform files (3DS launch, PC none); 3DS build — covers FR-4, FR-6
+- [x] **T5.1** `link_state` + storage — tests with a fake connection — covers FR-2, FR-3, FR-5 (`apps/nnh-link/src/{link_state,storage,pad,layout,device}.cpp`, ports in `ports.hpp`; `nnh_link_app_tests`: 50 tests, 18 of 18 manual mutants killed)
+- [x] **T5.2** scenes (servers, pairing pad, games, build) — simulator screenshots — covers FR-2, FR-6 (one scene + `view_*.cpp`; `NNH_LINK_DEMO=<screen>` for screenshots of every screen; checked by hand against a real `nnh serve`: discovery, pairing, real 3DS builds received, a second run without a code)
+- [x] **T5.3** platform files (3DS launch, PC none); 3DS build — covers FR-4, FR-6 (`platform_link_{3ds,pc}.cpp`; `nnh-link.3dsx` builds in 3ds-dev and 3ds-release — it first exposed a link error in `link/src/net.cpp` (`gethostid` without `extern "C"`), fixed)
 
 ## Stage 6 — verification and docs
 

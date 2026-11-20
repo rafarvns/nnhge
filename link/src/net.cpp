@@ -17,8 +17,7 @@ using NativeSocket = SOCKET;
 #include <sys/socket.h>
 #include <unistd.h>
 #ifdef __3DS__ // libctru's BSD layer: no getifaddrs, no MSG_NOSIGNAL (no SIGPIPE either)
-#include <3ds/types.h>
-#include <3ds/services/soc.h> // gethostid
+#include <3ds.h> // gethostid (<3ds.h> declares libctru's C functions extern "C"; soc.h alone doesn't)
 #define NNH_SEND_FLAGS 0
 #else
 #include <ifaddrs.h>

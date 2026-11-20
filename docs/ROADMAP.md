@@ -92,7 +92,7 @@ linked); `text.3dsx` 239,736 bytes.
 
 ## M6 — NNH Link
 - [x] The `nnh` tool ([spec 010](../specs/010-nnh-cli-run/spec.md)): `nnh build`, `nnh run` (3dslink-compatible send with its own code, console found on every local network and remembered, coloured log saved in `build/logs/`, `--pc` for the simulator), `nnh install` (`.cia` through FBI) — guide [The nnh tool](guides/nnh-tool.md); verified with `hello` and `audio` on an Old 3DS XL (2026-11-18)
-- [ ] NNH Link app: discover dev server, list projects, request build, receive and launch — [spec 011](../specs/011-nnh-link/spec.md) (in progress: stages 1–4, the `link/` library, its sessions, `nnh serve` and the 3DS network and launch extensions)
+- [ ] NNH Link app: discover dev server, list projects, request build, receive and launch — [spec 011](../specs/011-nnh-link/spec.md) (in progress: stages 1–5 — the `link/` library, its sessions, `nnh serve`, the 3DS network and launch extensions and the app `apps/nnh-link`; left: the guide and the test on the console)
 - [ ] Pairing code for LAN safety — spec 011
 
 ## M7 — Game structure

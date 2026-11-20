@@ -66,6 +66,12 @@ least one valid file.
 - `nnh serve` (spec 011) accepts connections and answers discovery only from local-network addresses,
   keeps pairing secrets in `nnh-pairs.ini` (written owner-only, replaced in one rename) and prints only
   the first 8 hex digits of a console's id. Pairing codes are valid for 2 minutes and for one pairing.
+- NNH Link (`apps/nnh-link`) keeps its console id and pairing secrets in `sdmc:/3ds/nnh/link.sav`
+  (`nnh::save`: atomic, checksummed; decoding refuses anything malformed, tested per truncation) and
+  never shows them. The SD card has no access control: any homebrew can read that file, as with every
+  homebrew secret (D24 limit). A received game is streamed to `<game>.3dsx.part` with stdio (`nnh::fs`
+  writes whole files only), only for valid game names inside Link's data folder, after checking the free
+  space; it replaces the old game only once complete and verified (SHA-256), and is deleted otherwise.
 - Launching (`<nnh/3ds/launch.hpp>`, spec 011) only starts a `.3dsx` on the SD card (`sdmc:/...`, no
   `..` or empty segments, ≤ 255 characters) with arguments that fit the loader's 1 KB block; the same
   check applies to a game's `--nnh-return=<path>`. These rules are pure code tested on PC

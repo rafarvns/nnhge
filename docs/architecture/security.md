@@ -66,6 +66,10 @@ least one valid file.
 - `nnh serve` (spec 011) accepts connections and answers discovery only from local-network addresses,
   keeps pairing secrets in `nnh-pairs.ini` (written owner-only, replaced in one rename) and prints only
   the first 8 hex digits of a console's id. Pairing codes are valid for 2 minutes and for one pairing.
+- Launching (`<nnh/3ds/launch.hpp>`, spec 011) only starts a `.3dsx` on the SD card (`sdmc:/...`, no
+  `..` or empty segments, ≤ 255 characters) with arguments that fit the loader's 1 KB block; the same
+  check applies to a game's `--nnh-return=<path>`. These rules are pure code tested on PC
+  (`tests/platform_3ds/test_hbldr_args.cpp`).
 
 ## Supply chain and CI
 

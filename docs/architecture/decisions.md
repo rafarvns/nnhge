@@ -38,14 +38,15 @@ the table; never silently. New decisions get the next number.
  "build <project> <preset>"       ───>   cmake --build (incremental)
                                   <───   build log stream
                                   <───   .3dsx (+ romfs)
- save to sdmc:/3ds/nnh/, launch it (mechanism to be decided, see below)
+ save to sdmc:/3ds/nnh/, launch it (Luma3DS hb:ldr, see below)
  game stdout/stderr               ───>   shown in terminal (3dslink-style redirect)
 ```
 
-Open questions: how NNH Link launches a `.3dsx` — libctru has no 3dsx-to-3dsx chainload API
-(`aptSetChainloader` only targets installed titles), so options are Luma3DS's homebrew loader service,
-returning to the Homebrew Launcher with a target, or shipping Link as a `.cia`; auto-return to NNH Link after the game exits; installing `.cia` from Link (needs AM
-service access); LAN authentication (at least a pairing code).
+Being built in [spec 011](../../specs/011-nnh-link/plan.md). Answered there: launching goes through
+Luma3DS's homebrew loader service `hb:ldr`, as the Homebrew Launcher does (`<nnh/3ds/launch.hpp>`), and a
+game started with `--nnh-return=<path>` starts NNH Link again when it exits; pairing with a 6-digit code
+and HMAC challenge–response. Still open: installing `.cia` from Link (needs AM service access) and Link
+itself as a `.cia`.
 
 ## Future platforms
 

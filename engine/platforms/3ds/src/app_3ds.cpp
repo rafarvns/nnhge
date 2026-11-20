@@ -15,6 +15,7 @@
 #include <cstdio>
 
 #include "context_3ds.hpp"
+#include "nnh/3ds/network.hpp"
 #include "nnh/build.hpp"
 #include "nnh/platform/app.hpp"
 #include "stdio_fs.hpp"
@@ -23,22 +24,13 @@ namespace nnh::platform {
 namespace {
 
 constexpr std::size_t kDebugTextGlyphs = 4096; // core: kDebugPassCapacity
-constexpr std::size_t kSocAlign = 0x1000;
-constexpr std::size_t kSocBufferSize = 0x100000; // 1 MB, only in Debug/Development when 3dslink is used
 
 ctr::Context g_context;
 const char* g_last_error = "";
-u32* g_soc_buffer = nullptr;
+bool g_log_network = false; // the log redirect holds one network_start() (Debug/Development with 3dslink)
 int g_link_socket = -1;
 
 constexpr int kLinkTimeoutMs = 1000;
-
-void release_soc() {
-    if (g_soc_buffer == nullptr) return;
-    socExit();
-    free(g_soc_buffer);
-    g_soc_buffer = nullptr;
-}
 
 /// Connects to the PC that sent us with 3dslink, giving up after kLinkTimeoutMs. libctru's
 /// link3dsConnectToHost() uses a blocking connect(): when the PC isn't listening (`3dslink` without
@@ -74,16 +66,12 @@ int connect_to_3dslink_host() {
 void start_3dslink_stdio() {
     if constexpr (!build::kDevToolsEnabled) return;
     if (__3dslink_host.s_addr == 0) return;
-    g_soc_buffer = static_cast<u32*>(memalign(kSocAlign, kSocBufferSize));
-    if (g_soc_buffer == nullptr) return;
-    if (R_FAILED(socInit(g_soc_buffer, kSocBufferSize))) {
-        free(g_soc_buffer);
-        g_soc_buffer = nullptr;
-        return;
-    }
+    if (!n3ds::network_start()) return;
+    g_log_network = true;
     g_link_socket = connect_to_3dslink_host();
     if (g_link_socket < 0) {
-        release_soc();
+        n3ds::network_stop();
+        g_log_network = false;
         return;
     }
     dup2(g_link_socket, STDOUT_FILENO);
@@ -102,7 +90,8 @@ void stop_3dslink_stdio() {
         close(g_link_socket);
     }
     g_link_socket = -1;
-    release_soc();
+    if (g_log_network) n3ds::network_stop();
+    g_log_network = false;
 }
 
 } // namespace
@@ -142,6 +131,8 @@ bool init(const AppConfig& config) {
 
 void shutdown() {
     stop_3dslink_stdio();
+    ctr::network_release_all(); // sockets the game left open
+    ctr::return_if_asked();     // started by NNH Link: it starts again when we exit
     ctr::input_stop();
     g_context = {};
     C2D_Fini();

@@ -65,11 +65,14 @@ the file; keeps a `LogListener` on 17491 for the game started by the console; Ct
 
 - `<nnh/3ds/network.hpp>`: `bool network_start()` / `void network_stop()` — `socInit` with its own buffer,
   shared with the Development log redirect (reference-counted).
-- `<nnh/3ds/launch.hpp>`: `bool launch_after_exit(const char* path, args...)` — `hb:ldr`
-  `SetTarget`/`SetArgv` (the Homebrew Launcher's mechanism: Luma3DS Rosalina); the app then returns from
-  `main`. `bool can_launch()` reports whether `hb:ldr` exists.
+- `<nnh/3ds/launch.hpp>`: `bool launch_after_exit(const char* path, const char* const* args, int count)` —
+  `hb:ldr` `SetArgv`/`SetTarget` (the Homebrew Launcher's mechanism: Luma3DS Rosalina); the app then
+  returns from `main`. `bool can_launch()`: started by that loader (`RUNFLAG_APTCHAINLOAD`, which makes
+  libctru relaunch the title on exit) and the port answers. The argument block rules are pure code
+  (`src/hbldr_args.cpp`), unit-tested on PC; the facts are in `docs/tech/devkitpro-3ds.md`.
 - Return to Link: the 3DS platform, at `nnh::shutdown()`, if the game's arguments contain
-  `--nnh-return=<path>`, sets `hb:ldr`'s target to that path (games started otherwise are unaffected).
+  `--nnh-return=<path>` (a `.3dsx` on the SD card) and the game didn't call `launch_after_exit()` itself,
+  sets `hb:ldr`'s target to that path (games started otherwise are unaffected).
 
 ### NNH Link (`apps/nnh-link/`, built with `nnh_add_game` in every preset)
 
@@ -82,8 +85,9 @@ the file; keeps a `LogListener` on 17491 for the game started by the console; Ct
 | `platform_link.hpp` + `platform_link_3ds.cpp` / `platform_link_pc.cpp` | network start, launch (3DS via the extension headers; PC: no launch) |
 
 The game is saved to `sdmc:/3ds/nnh/<game>.3dsx` while it arrives (checked against the SHA-256 at the end),
-then launched with `argv = {path, "<pc-ip-hex>_3DSLINK_", "--nnh-return=sdmc:/3ds/nnh-link.3dsx"}` — the
-first extra argument makes the engine send its log to `nnh serve`, exactly as with the netloader.
+then launched with `argv = {path, "--nnh-return=sdmc:/3ds/nnh-link.3dsx", "<pc-ip-hex>_3DSLINK_"}` — the
+last argument (libctru reads the log host only there) makes the engine send its log to `nnh serve`,
+exactly as with the netloader.
 
 ## Test strategy
 

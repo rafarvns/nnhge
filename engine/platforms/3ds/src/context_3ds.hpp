@@ -33,4 +33,11 @@ void input_stop();
 /// Makes `screen` the target of the following citro2d draw calls (no-op if already current).
 void draw_on(Screen screen);
 
+/// Stops the socket service whatever its users (network_3ds.cpp; called by shutdown).
+void network_release_all();
+
+/// If the program was started with "--nnh-return=<path>" (by NNH Link) and didn't arrange its own launch,
+/// starts <path> after exit (launch_3ds.cpp; called by shutdown).
+void return_if_asked();
+
 } // namespace nnh::platform::ctr

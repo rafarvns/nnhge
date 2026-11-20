@@ -91,6 +91,10 @@ target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh:
 set(_pc_src ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
 target_sources(nnh_tests PRIVATE ${_pc_src}/audio_mixer_pc.cpp ${_pc_src}/sim_layout.cpp ${_pc_src}/sim_settings.cpp)
 target_include_directories(nnh_tests PRIVATE ${_pc_src})
+# The 3DS homebrew loader's argument block is pure code too (spec 011 FR-4).
+set(_3ds_src ${PROJECT_SOURCE_DIR}/engine/platforms/3ds/src)
+target_sources(nnh_tests PRIVATE platform_3ds/test_hbldr_args.cpp ${_3ds_src}/hbldr_args.cpp)
+target_include_directories(nnh_tests PRIVATE ${_3ds_src})
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.
@@ -121,6 +125,15 @@ if(NOT MSVC)
                 -I${PROJECT_SOURCE_DIR}/engine/platforms/3ds/include
                 ${CMAKE_CURRENT_SOURCE_DIR}/system/compile_fail_3ds_extension.cpp)
     set_tests_properties(extension_header_rejected_off_platform PROPERTIES WILL_FAIL TRUE)
+    # The same for the NNH Link headers (spec 011), checking the #error text (a missing file fails too).
+    foreach(_ext network launch)
+        add_test(NAME extension_${_ext}_rejected_off_platform
+            COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only
+                    -I${PROJECT_SOURCE_DIR}/engine/platforms/3ds/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/system/compile_fail_3ds_${_ext}.cpp)
+        set_tests_properties(extension_${_ext}_rejected_off_platform PROPERTIES
+            PASS_REGULAR_EXPRESSION "is only available when building for Nintendo 3DS")
+    endforeach()
 
     # Event handlers with captures larger than the inline storage must not compile (spec 001 FR-2).
     add_test(NAME large_handler_capture_rejected

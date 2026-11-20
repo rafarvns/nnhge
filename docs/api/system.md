@@ -37,3 +37,4 @@ bool fast_cpu = nnh::n3ds::is_new_3ds();
 ```
 
 Keep extension use in a few files of your game, behind your own interface, so the rest stays portable.
+All extension headers (console, network, launching another program): [3ds-extensions.md](3ds-extensions.md).

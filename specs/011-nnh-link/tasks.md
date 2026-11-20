@@ -1,6 +1,6 @@
 # Tasks 011: NNH Link — build and run from the console
 
-Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19, stages 4–5 2026-11-20)
+Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19, stages 4–5 and T6.1–T6.2 2026-11-20; waiting for the console test, T6.3)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -34,7 +34,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 6 — verification and docs
 
-- [ ] **T6.1** docs: new `docs/guides/nnh-link.md`; `nnh-tool.md` (serve), `security.md`, api pages of the extension headers, decision D24, CLAUDE.md, project-structure (`link/`, `apps/`) — covers AC-4
-- [ ] **T6.2** Linux + ASan/UBSan, fuzzing on VM 120 — covers AC-3
+- [x] **T6.1** docs: new `docs/guides/nnh-link.md`; `nnh-tool.md` (serve), `security.md`, api pages of the extension headers, decision D24, CLAUDE.md, project-structure (`link/`, `apps/`) — covers AC-4 (also README, getting-started, decisions' NNH Link flow)
+- [x] **T6.2** Linux + ASan/UBSan, fuzzing on VM 120 — covers AC-3 (2026-11-20: ctest 100/100 with gcc; engine, link, app and tool tests under clang ASan + UBSan; `fuzz_link_*` 60 s each, no crash)
 - [ ] **T6.3** maintainer: the whole loop from the console on the Old 3DS XL (AC-1)
 - [ ] **T6.4** ROADMAP M6; spec, plan and tasks status → implemented

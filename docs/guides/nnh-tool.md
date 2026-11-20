@@ -62,7 +62,7 @@ the last console used.
 
 `nnh serve [--release]` turns the PC into a build server for **NNH Link**, the console app of spec 011
 (`apps/nnh-link`, built with the others: `build/3ds-*/apps/nnh-link/nnh-link.3dsx`; copy it to
-`sdmc:/3ds/` and open it from the Homebrew Launcher; its guide comes with the end of spec 011). Run it in
+`sdmc:/3ds/` and open it from the Homebrew Launcher; guide: [NNH Link](nnh-link.md)). Run it in
 the repository and leave it open:
 
 ```text

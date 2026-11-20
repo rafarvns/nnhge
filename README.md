@@ -26,8 +26,10 @@ int main() {
 - **Small, well-documented API**: every public function documents cost, lifetime and platform notes.
 - **Fast builds**: editing a game file rebuilds in about a second, on PC and for 3DS.
 - **Simulator**: the game runs as a desktop app with both screens, enforcing 3DS limits.
-- **NNH Link** (planned): a console app that triggers builds on your PC and runs the result.
-- **Native artifacts**: `.3dsx` for the Homebrew Launcher and `.cia` for the HOME Menu (planned).
+- **NNH Link**: a console app that triggers builds on your PC and runs the result
+  ([guide](docs/guides/nnh-link.md)).
+- **Native artifacts**: `.3dsx` for the Homebrew Launcher and `.cia` for the HOME Menu
+  ([packaging](docs/guides/packaging.md)).
 
 ## Getting started
 

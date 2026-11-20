@@ -14,8 +14,9 @@ Three pillars:
    (event bus + scenes).
 2. **PC simulator** — the same game code builds as a native desktop app (SDL3; Windows first) that mimics
    the console (two screens, buttons, 60 Hz, 3DS limits). A host build, not an emulator.
-3. **NNH Link** (planned) — a console app that asks the PC to build, receives the result, runs it and
-   streams logs back. Compilation always happens on the PC.
+3. **NNH Link** (spec 011, `apps/nnh-link` + `nnh serve`) — a console app that asks the PC to build,
+   receives the result, runs it and streams logs back. Compilation always happens on the PC
+   ([guide](docs/guides/nnh-link.md)).
 
 Artifacts: 3DS → `.3dsx` (Homebrew Launcher) and `.cia` (HOME Menu, planned).
 

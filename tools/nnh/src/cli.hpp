@@ -1,5 +1,5 @@
 #pragma once
-// nnh's command line (spec 010 FR-1..FR-6): `nnh <command> [<game>] [options]`. Pure; unit tested in
+// nnh's command line (spec 010 FR-1..FR-6; serve and unpair: spec 011): `nnh <command> [<game>] [options]`. Pure; unit tested in
 // tools/nnh/tests/test_cli.cpp.
 
 #include <string>
@@ -7,7 +7,7 @@
 
 namespace nnh::tool {
 
-enum class Command { Help, Build, Run, Install };
+enum class Command { Help, Build, Run, Install, Serve, Unpair };
 
 struct Options {
     Command command = Command::Help;

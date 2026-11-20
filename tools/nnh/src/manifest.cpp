@@ -14,8 +14,10 @@ std::vector<GameEntry> parse_manifest(const std::string& text) {
         const std::size_t a = line.find('|');
         const std::size_t b = a == std::string::npos ? a : line.find('|', a + 1);
         if (b == std::string::npos) continue;
-        GameEntry g{line.substr(0, a), line.substr(a + 1, b - a - 1), false};
-        const std::string cia = line.substr(b + 1);
+        GameEntry g{line.substr(0, a), line.substr(a + 1, b - a - 1), false, ""};
+        const std::size_t c = line.find('|', b + 1); // the optional title: the rest of the line
+        const std::string cia = line.substr(b + 1, c == std::string::npos ? std::string::npos : c - b - 1);
+        g.title = c == std::string::npos || c + 1 == line.size() ? g.name : line.substr(c + 1);
         if (g.name.empty() || g.binary_dir.empty() || (cia != "0" && cia != "1")) continue;
         g.cia = cia == "1";
         for (GameEntry& existing : games) {

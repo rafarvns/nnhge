@@ -121,6 +121,7 @@ scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-r
 scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3ds-release/dist/<game>/ (.3dsx, .cia)
 build/pc-debug/tools/nnh/nnh run hello                         # build, send to the console (HBL → Y), show its log
 build/pc-debug/tools/nnh/nnh install audio                      # .cia over the network (FBI → Receive URLs)
+build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings

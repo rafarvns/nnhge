@@ -4,6 +4,7 @@
 // pure and unit tested in tools/nnh/tests/test_repo.cpp.
 
 #include <ctime>
+#include <functional>
 #include <string>
 
 namespace nnh::tool {
@@ -33,6 +34,12 @@ Shell host_shell(bool for_3ds);
 
 /// Runs a shell command, showing its output. @return its exit status.
 int run_shell(const std::string& command, const Shell& shell);
+
+/// Runs a shell command and gives each line of its output (stdout and stderr, '\r' removed) to `on_line`.
+/// When `on_line` returns false, nnh stops reading: the command fails on its next write and is waited for.
+/// @return its exit status, or -1 when stopped.
+int run_shell_lines(const std::string& command, const Shell& shell,
+                    const std::function<bool(const std::string&)>& on_line);
 
 /// "<root>/build/logs/<game>-YYYYMMDD-HHMMSS.txt" for local time `t`.
 std::string log_file_path(const std::string& root, const std::string& game, const std::tm& t);

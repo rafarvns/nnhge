@@ -25,6 +25,19 @@ NNH_TEST(cli_parses_commands_games_and_options) {
     CHECK(parse({"--help"}, o, e) && o.command == Command::Help);
 }
 
+NNH_TEST(cli_parses_serve_and_unpair) {
+    Options o;
+    std::string e;
+    CHECK(parse({"serve"}, o, e) && o.command == Command::Serve && o.game.empty() && !o.release);
+    CHECK(parse({"serve", "--release"}, o, e) && o.command == Command::Serve && o.release);
+    CHECK(parse({"unpair"}, o, e) && o.command == Command::Unpair);
+    CHECK(!parse({"serve", "hello"}, o, e) && e.find("serve") != std::string::npos); // the console picks games
+    CHECK(!parse({"serve", "--pc"}, o, e));
+    CHECK(!parse({"serve", "--console", "1.2.3.4"}, o, e));
+    CHECK(!parse({"unpair", "--release"}, o, e));
+    CHECK(std::string(help_text()).find("nnh serve") != std::string::npos);
+}
+
 NNH_TEST(cli_reports_mistakes) {
     Options o;
     std::string e;

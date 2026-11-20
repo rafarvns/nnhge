@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
     case Command::Build: return command_build(options);
     case Command::Run: return command_run(options);
     case Command::Install: return command_install(options);
+    case Command::Serve: return command_serve(options);
+    case Command::Unpair: return command_unpair();
     case Command::Help: break;
     }
     std::fputs(help_text(), stdout);

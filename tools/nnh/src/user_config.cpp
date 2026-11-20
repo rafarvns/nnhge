@@ -52,8 +52,10 @@ std::string settings_path(const std::string& appdata, const std::string& xdg_con
     return {};
 }
 
+std::string user_settings_path() { return settings_path(env("APPDATA"), env("XDG_CONFIG_HOME"), env("HOME")); }
+
 Settings load_user_settings() {
-    const std::string path = settings_path(env("APPDATA"), env("XDG_CONFIG_HOME"), env("HOME"));
+    const std::string path = user_settings_path();
     std::FILE* f = path.empty() ? nullptr : std::fopen(path.c_str(), "rb");
     if (f == nullptr) return {};
     std::string text;
@@ -65,7 +67,7 @@ Settings load_user_settings() {
 }
 
 bool save_user_settings(const Settings& settings) {
-    const std::string path = settings_path(env("APPDATA"), env("XDG_CONFIG_HOME"), env("HOME"));
+    const std::string path = user_settings_path();
     if (path.empty()) return false;
     std::error_code ec;
     std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);

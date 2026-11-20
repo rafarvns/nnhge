@@ -29,24 +29,25 @@ the table; never silently. New decisions get the next number.
 | D21 | **Audio: the platform plays voices, core owns the rules** (spec 008). The contract is samples + voices (gain per speaker, rate, loop, pause); priorities, groups, pan, pitch, fades, loop points and Ogg decoding (vendored stb_vorbis) are core logic. Without output, core runs the same rules silently, ending voices by the clock | The 3DS DSP mixes 24 channels in hardware for free; mixing in core would cost the Old 3DS CPU. Rules in core are the same everywhere and unit-tested on the fake platform. See [api/audio.md](../api/audio.md). |
 | D22 | **Packaging is a build step around devkitPro's** (spec 009): one identity in `nnh_add_game()` (title, author, version, icon) feeds the `.3dsx` SMDH, the `.cia` and the PC window; the `.cia` is made by makerom from the same ELF, SMDH and assets, with our own RSF and a bannertool banner; the tools are pinned prebuilt releases fetched by the first `.cia` build | A contributor needs nothing new until a game asks for a `.cia`, and the game behaves the same in both formats. See [guides/packaging.md](../guides/packaging.md). |
 | D23 | **`nnh` speaks the netloader and FBI protocols itself** (spec 010): its own small C++ code sends `.3dsx` files to the Homebrew Launcher (zlib stored blocks, chunks of at most 16 KB, argv[0] = `sdmc:/3ds/<name>`), receives the game's log on TCP 17491 and serves `.cia` files to FBI; discovery asks every local network's broadcast | No dependency on devkitPro's `3dslink` or Python, works on Linux and in CI, and NNH Link (spec 011) reuses the same code. D8 still holds: it is compatible with 3dslink. See [guides/nnh-tool.md](../guides/nnh-tool.md). |
+| D24 | **One link library, mutual authentication, no encryption** (spec 011): `link/` (`nnh_link`) is built for PC and 3DS and holds sockets, SHA-256/HMAC, the message codec, pairing and the sessions, so `nnh serve` and NNH Link run the same code. A 6-digit code pairs a console with a PC once; every connection then proves both sides with HMAC (the server first) and every message carries a MAC and a sequence number; nothing is encrypted. Launching uses Luma3DS's `hb:ldr`, like the Homebrew Launcher | Our own small code (no third-party crypto), tested with published vectors and fuzzed. A console runs programs only from the PC it paired with, a PC builds only for paired consoles. Known limit: someone recording the network *while pairing* could brute-force the code offline: pair on a network you trust. See [guides/nnh-link.md](../guides/nnh-link.md). |
 
-## NNH Link (planned flow, D7/D8)
+## NNH Link (D7, D8, D24)
 
 ```
- console (NNH Link)                      PC (`nnh serve`)
- discover server (UDP broadcast)  ───>   announce project(s)
- "build <project> <preset>"       ───>   cmake --build (incremental)
-                                  <───   build log stream
-                                  <───   .3dsx (+ romfs)
- save to sdmc:/3ds/nnh/, launch it (Luma3DS hb:ldr, see below)
- game stdout/stderr               ───>   shown in terminal (3dslink-style redirect)
+ console (NNH Link)                          PC (`nnh serve`)
+ discover servers (UDP 17492 broadcast) ───>  answers: id + name
+ pair once (6-digit code), then every
+ connection: mutual HMAC proofs         <──>  (TCP 17492, every message MAC'd)
+ list games                             ───>  the repository's games (nnh_add_game)
+ build <game> [release]                 ───>  cmake --build (incremental)
+                                        <───  build output lines, then the .3dsx (+ SHA-256)
+ save to sdmc:/3ds/nnh/, start it through Luma3DS's hb:ldr with --nnh-return=<Link>
+ game stdout/stderr                     ───>  shown in the terminal (TCP 17491, 3dslink-style)
+ the game exits → NNH Link starts again
 ```
 
-Being built in [spec 011](../../specs/011-nnh-link/plan.md). Answered there: launching goes through
-Luma3DS's homebrew loader service `hb:ldr`, as the Homebrew Launcher does (`<nnh/3ds/launch.hpp>`), and a
-game started with `--nnh-return=<path>` starts NNH Link again when it exits; pairing with a 6-digit code
-and HMAC challenge–response. Still open: installing `.cia` from Link (needs AM service access) and Link
-itself as a `.cia`.
+Built in [spec 011](../../specs/011-nnh-link/plan.md); guide: [guides/nnh-link.md](../guides/nnh-link.md).
+Still open: installing `.cia` files from Link (needs AM service access) and Link itself as a `.cia`.
 
 ## Future platforms
 

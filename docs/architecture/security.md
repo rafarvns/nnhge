@@ -15,7 +15,7 @@ card. Players trust that a game made with NNHGE won't. These rules make the engi
 | Corrupted save after power loss | battery dies mid-write | atomic saves with backup |
 | Crash or memory corruption from bad data | corrupted/modified save, asset or downloaded file | bounded parsers + fuzz tests |
 | Malicious code reaching users | compromised dependency or CI | pinned hashes, pinned actions, least privilege |
-| Code pushed to a console over the network | NNH Link | pairing + LAN only (NNH Link spec, later) |
+| Code pushed to a console over the network | NNH Link | pairing, mutual authentication, a MAC on every message, LAN only (spec 011, D24; [guide](../guides/nnh-link.md#safety)) |
 | Privacy | telemetry | none, ever |
 
 Out of scope: protecting a game against cheating or piracy, and protecting the console from its owner.
@@ -57,8 +57,11 @@ least one valid file.
   sealed channel, and discovery answers each have a target in `link/tests/fuzz/` with a round-trip check
   (a decoded message must encode and decode again). Mini-fuzz in `nnh_link_tests`; libFuzzer executables
   `fuzz_link_*`. First run (2026-11-18, 60 s each): messages cov 451, frames cov 271, discovery cov 169,
-  no crash. Pairing and authentication (mutual HMAC proofs, 5 wrong codes lock pairing) are unit tested
-  in `link/tests/test_handshake.cpp`; the threat model comes with the spec 011 guide.
+  no crash. Second run at the end of the spec (2026-11-20, 60 s each from an empty corpus, RelWithDebInfo):
+  messages cov 297 (4.5 M runs), frames cov 110 (1.9 M), discovery cov 138 (8.1 M), no crash; the same
+  day every test executable (engine, `nnh_link`, NNH Link, `nnh`) passed under ASan + UBSan (clang).
+  Pairing and authentication (mutual HMAC proofs, 5 wrong codes lock pairing) are unit tested
+  in `link/tests/test_handshake.cpp`; the threat model is in the [NNH Link guide](../guides/nnh-link.md#safety).
 - The sessions (`link/src/server_session.cpp`, `client_session.cpp`) are tested end to end on the
   loopback interface: an unpaired console can't start a build, the console refuses an impostor server
   and anything it sends, a received game is checked against its SHA-256 and announced size (a partial or

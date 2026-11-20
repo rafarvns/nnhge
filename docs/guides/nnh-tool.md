@@ -1,7 +1,8 @@
 # The `nnh` tool
 
 `nnh` builds a game, runs it on the console with its log on your screen, and installs `.cia` files —
-one command each (spec [010](../../specs/010-nnh-cli-run/spec.md)). It is built with the PC presets:
+one command each (spec [010](../../specs/010-nnh-cli-run/spec.md)). `nnh serve` lets the console drive
+instead, through the NNH Link app (spec [011](../../specs/011-nnh-link/spec.md), in progress). It is built with the PC presets:
 after `cmake --build --preset pc-debug` it is `build/pc-debug/tools/nnh/nnh(.exe)`. Run it from anywhere
 inside the repository.
 
@@ -10,6 +11,8 @@ nnh run hello                 # build for the 3DS, send to the console, show the
 nnh run hello --pc            # the same game in the simulator
 nnh build audio --release     # just build (Release)
 nnh install audio             # build the .cia and install it with FBI
+nnh serve                     # wait for NNH Link on the console (it picks, builds and starts games)
+nnh unpair                    # forget the consoles paired with nnh serve
 nnh help
 ```
 
@@ -42,7 +45,8 @@ nnh: hello closed
   the address is remembered per user (`%APPDATA%/nnhge/nnh.ini`, `~/.config/nnhge/nnh.ini`).
 - Ctrl+C stops waiting for the log; the game keeps running on the console.
 - The first time, **Windows Firewall** may ask about `nnh.exe`: allow it on private networks. The game's
-  log comes back on TCP port 17491 and the console's discovery answer on UDP 17491.
+  log comes back on TCP port 17491 and the console's discovery answer on UDP 17491 (`nnh serve` also uses
+  TCP and UDP 17492).
 
 ## Installing a `.cia`
 
@@ -54,16 +58,45 @@ nnh: hello closed
 when FBI is done. Accept the installation on the console. FBI has no discovery: `nnh` uses `--console` or
 the last console used.
 
+## Serving NNH Link: `nnh serve`
+
+`nnh serve [--release]` turns the PC into a build server for **NNH Link**, the console app of spec 011
+(the app itself comes in a later stage of that spec). Run it in the repository and leave it open:
+
+```text
+nnh: serving E:/RANDOM/nnhge as "RAFA" on port 17492 (Development builds); Ctrl+C stops
+nnh: pairing code 726717 (valid for 2 minutes; a new one appears when a new console connects)
+nnh: console 5c5c5c5c paired
+nnh: the console asked for the games (7)
+nnh: building hello_3dsx (3ds-dev)
+ninja: no work to do.
+nnh: sending hello.3dsx to the console
+nnh: the console is starting hello
+```
+
+- It answers NNH Link's search on the local network (UDP 17492), serves one console at a time (TCP
+  17492), and shows the log of the game the console starts, like `nnh run` (TCP 17491, saved in
+  `build/logs/`).
+- **Pairing**: a console's first connection needs the 6-digit code shown here. Codes last 2 minutes and
+  work once; when a console tries to pair with no valid code, `nnh serve` shows a new one to type. Five
+  wrong codes block pairing until `nnh serve` restarts. Paired consoles are kept in `nnh-pairs.ini` next
+  to `nnh.ini` (secrets: owner-only file; never shown in the terminal). `nnh unpair` forgets them all.
+- Builds stream their output to the console; if the build fails, the console shows its last 20 lines.
+  Cancelling on the console (B) stops reading the build, which then fails on its next output line.
+- The server's id is kept in `nnh.ini` (`server_id`), so the console recognises it after a restart.
+
 ## Safety
 
 `nnh` only talks to local network addresses (10.x, 172.16–31.x, 192.168.x, link-local) and refuses others.
-It listens only while a run or an install needs it, and its file server answers only the file it is
-installing.
+It listens only while a run, an install or `nnh serve` needs it, and its file server answers only the file
+it is installing. `nnh serve` builds and sends programs only to an authenticated, paired console, and the
+console accepts them only from the PC it paired with ([security.md](../architecture/security.md)).
 
 ## How it works
 
 `nnh` speaks the Homebrew Launcher netloader's protocol (the one devkitPro's `3dslink` uses) and FBI's
 URL protocol with its own small code: no compression library and no devkitPro tool on the PATH needed
-(decision D23). Details: [plan 010](../../specs/010-nnh-cli-run/plan.md); code: `tools/nnh/`. On Windows,
+(decision D23). `nnh serve` uses NNH Link's own protocol from the `link/` library (decision D24, [plan
+011](../../specs/011-nnh-link/plan.md)). Details: [plan 010](../../specs/010-nnh-cli-run/plan.md); code: `tools/nnh/`. On Windows,
 3DS builds run through devkitPro's MSYS2 shell (`DEVKITPRO_MSYS2` overrides its location), like
 `scripts/dkp.sh`.

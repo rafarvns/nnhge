@@ -13,6 +13,18 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
         out.command = Command::Run;
     } else if (command == "install") {
         out.command = Command::Install;
+    } else if (command == "serve" || command == "unpair") {
+        out.command = command == "serve" ? Command::Serve : Command::Unpair;
+        for (std::size_t i = 1; i < args.size(); ++i) {
+            if (command == "serve" && args[i] == "--release") {
+                out.release = true;
+            } else {
+                error = "nnh " + command + " takes no '" + args[i] + "'" +
+                        (command == "serve" ? " (the console picks the game; --release is the only option)" : "");
+                return false;
+            }
+        }
+        return true;
     } else {
         error = "unknown command '" + command + "' (nnh help lists them)";
         return false;
@@ -51,7 +63,7 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
 }
 
 const char* help_text() {
-    return "nnh — the NNHGE tool (spec 010)\n"
+    return "nnh — the NNHGE tool (specs 010, 011)\n"
            "\n"
            "  nnh build <game> [--release] [--pc]   build a game for the 3DS (Development) or the PC\n"
            "  nnh run <game> [--release] [--console <ip>] [--pc]\n"
@@ -59,6 +71,9 @@ const char* help_text() {
            "                                        console) and show the game's log; --pc runs the simulator\n"
            "  nnh install <game> [--console <ip>]   build the .cia and install it with FBI (Remote Install ->\n"
            "                                        Receive URLs over the network)\n"
+           "  nnh serve [--release]                 wait for NNH Link on the console: it lists the games,\n"
+           "                                        asks for builds and starts them (spec 011); Ctrl+C stops\n"
+           "  nnh unpair                            forget every console paired with nnh serve\n"
            "  nnh help                              this text\n"
            "\n"
            "<game> is the target name given to nnh_add_game(). The console is found on the local network\n"

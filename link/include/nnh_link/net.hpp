@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "nnh_link/address.hpp"
@@ -63,8 +64,13 @@ Socket tcp_accept(const Socket& listener, int timeout_ms, Ipv4* peer = nullptr);
 /// A UDP socket bound to `address`:`port` (0 = any), with broadcast enabled.
 Socket udp_open(Ipv4 address, std::uint16_t port);
 bool udp_send(const Socket& socket, Ipv4 to, std::uint16_t port, const void* data, std::size_t size);
-/// Waits up to `timeout_ms` for a datagram: its size, or -1 on timeout or error.
-long udp_receive(const Socket& socket, void* data, std::size_t size, int timeout_ms, Ipv4* from = nullptr);
+/// Waits up to `timeout_ms` for a datagram: its size, or -1 on timeout or error. `from` / `from_port`
+/// receive the sender.
+long udp_receive(const Socket& socket, void* data, std::size_t size, int timeout_ms, Ipv4* from = nullptr,
+                 std::uint16_t* from_port = nullptr);
+
+/// This computer's name ("" if unknown).
+std::string host_name();
 
 /// The broadcast address of every local-network IPv4 interface that is up (e.g. 192.168.10.255): a
 /// broadcast to 255.255.255.255 leaves through one interface only, often a VPN's.

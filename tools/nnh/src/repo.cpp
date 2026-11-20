@@ -5,6 +5,10 @@
 #include <cstdlib>
 #include <filesystem>
 
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
+
 namespace nnh::tool {
 
 namespace fs = std::filesystem;
@@ -72,6 +76,43 @@ int run_shell(const std::string& command, const Shell& shell) {
     // cmd.exe drops the first and last quote of a command that starts with one: wrap it once more.
     const std::string line = shell.windows ? "\"" + command + "\"" : command;
     return std::system(line.c_str());
+}
+
+int run_shell_lines(const std::string& command, const Shell& shell,
+                    const std::function<bool(const std::string&)>& on_line) {
+    std::fflush(stdout);
+    const std::string line = shell.windows ? "\"" + command + " 2>&1\"" : command + " 2>&1";
+#ifdef _WIN32
+    std::FILE* pipe = _popen(line.c_str(), "rb");
+#else
+    std::FILE* pipe = popen(line.c_str(), "r");
+#endif
+    if (pipe == nullptr) return -1;
+    std::string pending;
+    bool stopped = false;
+    char buffer[4096];
+    std::size_t n = 0;
+    while (!stopped && (n = std::fread(buffer, 1, sizeof buffer, pipe)) > 0) {
+        pending.append(buffer, n);
+        std::size_t start = 0;
+        for (std::size_t nl; !stopped && (nl = pending.find('\n', start)) != std::string::npos; start = nl + 1) {
+            std::string text = pending.substr(start, nl - start);
+            if (!text.empty() && text.back() == '\r') text.pop_back();
+            stopped = !on_line(text);
+        }
+        pending.erase(0, start);
+    }
+    if (!stopped && !pending.empty()) {
+        if (pending.back() == '\r') pending.pop_back();
+        stopped = !on_line(pending);
+    }
+#ifdef _WIN32
+    const int status = _pclose(pipe);
+#else
+    const int raw = pclose(pipe);
+    const int status = WIFEXITED(raw) ? WEXITSTATUS(raw) : -1;
+#endif
+    return stopped ? -1 : status;
 }
 
 std::string log_file_path(const std::string& root, const std::string& game, const std::tm& t) {

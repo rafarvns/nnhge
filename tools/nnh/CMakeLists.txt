@@ -1,4 +1,5 @@
-# nnh — the NNHGE command-line tool (spec 010): build, run on the console with readable logs, install.
+# nnh — the NNHGE command-line tool (spec 010): build, run on the console with readable logs, install;
+# serve for NNH Link (spec 011).
 # A host program built with the PC presets; never a dependency of games. Explicit source lists.
 
 add_library(nnh_tool_lib STATIC
@@ -6,14 +7,20 @@ add_library(nnh_tool_lib STATIC
     src/commands/build.cpp
     src/commands/install.cpp
     src/commands/run.cpp
+    src/commands/serve.cpp
     src/console_link.cpp
     src/fbi.cpp
     src/file_server.cpp
+    src/game_log.cpp
     src/log_listener.cpp
     src/log_view.cpp
     src/manifest.cpp
     src/netloader.cpp
     src/repo.cpp
+    src/serve/discovery_responder.cpp
+    src/serve/pairing_codes.cpp
+    src/serve/pairs_file.cpp
+    src/serve/serve_hooks.cpp
     src/terminal.cpp
     src/user_config.cpp
     src/zlib_stored.cpp
@@ -45,6 +52,7 @@ if(NNH_BUILD_TESTS)
         tests/test_manifest.cpp
         tests/test_netloader.cpp
         tests/test_repo.cpp
+        tests/test_serve.cpp
         tests/test_user_config.cpp
         tests/test_zlib_stored.cpp
     )

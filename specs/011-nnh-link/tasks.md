@@ -1,6 +1,6 @@
 # Tasks 011: NNH Link — build and run from the console
 
-Status: in progress (stages 1–2 done 2026-11-18)
+Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -19,7 +19,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 3 — `nnh serve`
 
-- [ ] **T3.1** server id, pairing store (`nnh-pairs.ini`), code display, discovery answer, real builds with streamed output, log listener — covers FR-1, FR-3
+- [x] **T3.1** server id, pairing store (`nnh-pairs.ini`), code display, discovery answer, real builds with streamed output, log listener — covers FR-1, FR-3 (`tools/nnh/src/serve/`, `commands/serve.cpp`, `nnh unpair`; tests `tools/nnh/tests/test_serve.cpp`; checked by hand against a throwaway client: pairing, re-pairing, real 3DS builds, a failed build). The games manifest gained the title (`name|dir|cia|title`) for the console's list
 
 ## Stage 4 — the engine's 3DS extensions
 

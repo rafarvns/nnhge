@@ -63,6 +63,9 @@ least one valid file.
   loopback interface: an unpaired console can't start a build, the console refuses an impostor server
   and anything it sends, a received game is checked against its SHA-256 and announced size (a partial or
   damaged file is dropped), and every wait has a timeout. Also run under ASan + UBSan on Linux.
+- `nnh serve` (spec 011) accepts connections and answers discovery only from local-network addresses,
+  keeps pairing secrets in `nnh-pairs.ini` (written owner-only, replaced in one rename) and prints only
+  the first 8 hex digits of a console's id. Pairing codes are valid for 2 minutes and for one pairing.
 
 ## Supply chain and CI
 

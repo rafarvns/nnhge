@@ -65,7 +65,7 @@ std::vector<std::vector<std::uint8_t>> ServerHandshake::on_hello(const Hello& co
 std::vector<std::vector<std::uint8_t>> ServerHandshake::on_pair(const Digest& proof, const std::string& code, PairingGuard& guard) {
     if (!hello_ || done_) return {encode_frame(Type::Refused, encode_text("unexpected pairing"))};
     if (!guard.allowed()) return {encode_frame(Type::Refused, encode_text("too many wrong codes: restart nnh serve"))};
-    if (code.empty()) return {encode_frame(Type::Refused, encode_text("no pairing code is shown: start nnh serve"))};
+    if (code.empty()) return {encode_frame(Type::Refused, encode_text("no pairing code was shown: enter the one nnh serve shows now"))};
     if (!same(proof, pair_proof(code, console_, mine_))) {
         guard.wrong();
         return {encode_frame(Type::Refused, encode_text("wrong code"))};

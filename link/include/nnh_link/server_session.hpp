@@ -25,7 +25,8 @@ public:
     virtual ~ServerHooks() = default;
     virtual std::optional<Digest> secret_of(const Id& console) = 0;
     virtual void remember(const Id& console, const Digest& secret) = 0;
-    /// The pairing code shown right now, "" if none.
+    /// The pairing code valid right now, "" if none (asked when a console tries to pair; nnh serve then shows
+    /// a new code for the next try).
     virtual std::string pairing_code() = 0;
     virtual std::vector<GameInfo> games() = 0;
     /// Builds a game. `line` receives each output line and returns false once the console has gone (cancel):

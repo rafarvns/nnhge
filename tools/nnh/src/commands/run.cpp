@@ -2,18 +2,15 @@
 // and save the game's log until it exits. --pc runs the simulator instead.
 
 #include <cstdio>
-#include <ctime>
-#include <filesystem>
 #include <vector>
 
 #include "commands.hpp"
 #include "console_link.hpp"
-#include "log_listener.hpp"
-#include "log_view.hpp"
+#include "game_log.hpp"
 #include "link_types.hpp"
+#include "log_listener.hpp"
 #include "netloader.hpp"
 #include "repo.hpp"
-#include "terminal.hpp"
 #include "user_config.hpp"
 
 namespace nnh::tool {
@@ -48,21 +45,6 @@ std::optional<Ipv4> choose_console(const Options& options, const Settings& setti
     }
     if (last) std::printf("nnh: no answer; trying the last console used, %s\n", to_string(*last).c_str());
     return last;
-}
-
-struct LogSink {
-    std::FILE* file = nullptr;
-    bool colour = false;
-};
-
-void show_line(const std::string& line, void* context) {
-    auto* sink = static_cast<LogSink*>(context);
-    std::printf("%s\n", render_log_line(line, sink->colour).c_str());
-    std::fflush(stdout);
-    if (sink->file != nullptr) {
-        std::fprintf(sink->file, "%s\n", line.c_str());
-        std::fflush(sink->file);
-    }
 }
 
 int run_on_pc(const Options& options) {
@@ -118,26 +100,10 @@ int command_run(const Options& options) {
     }
     settings["console"] = to_string(*console);
     save_user_settings(settings);
-    if (!listening || !logs.wait_for_game(10000)) {
+    if (!listening || !show_game_log(logs, built.root, options.game, 10000)) {
         std::printf("nnh: %s started; no log (Release builds don't send one%s)\n", options.game.c_str(),
                     listening ? "" : ", and port 17491 is busy here");
-        return 0;
     }
-    const std::time_t now = std::time(nullptr);
-    std::tm local{};
-#ifdef _WIN32
-    localtime_s(&local, &now);
-#else
-    localtime_r(&now, &local);
-#endif
-    const std::string log_path = log_file_path(built.root, options.game, local);
-    std::error_code ec;
-    std::filesystem::create_directories(std::filesystem::path(log_path).parent_path(), ec);
-    LogSink sink{std::fopen(log_path.c_str(), "wb"), enable_colour()};
-    std::printf("nnh: %s is running; its log follows (also in %s)\n", options.game.c_str(), log_path.c_str());
-    logs.read_lines(show_line, &sink);
-    if (sink.file != nullptr) std::fclose(sink.file);
-    std::printf("nnh: %s closed\n", options.game.c_str());
     return 0;
 }
 

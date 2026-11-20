@@ -227,7 +227,8 @@ bool udp_send(const Socket& socket, Ipv4 to, std::uint16_t port, const void* dat
     return static_cast<long long>(n) == static_cast<long long>(size);
 }
 
-long udp_receive(const Socket& socket, void* data, std::size_t size, int timeout_ms, Ipv4* from) {
+long udp_receive(const Socket& socket, void* data, std::size_t size, int timeout_ms, Ipv4* from,
+                 std::uint16_t* from_port) {
     if (!wait_ready(native(socket.handle()), timeout_ms, false)) return -1;
     sockaddr_in sa;
     socklen_t len = sizeof sa;
@@ -235,7 +236,19 @@ long udp_receive(const Socket& socket, void* data, std::size_t size, int timeout
                               reinterpret_cast<sockaddr*>(&sa), &len);
     if (n < 0) return -1;
     if (from != nullptr) *from = from_sockaddr(sa);
+    if (from_port != nullptr) *from_port = ntohs(sa.sin_port);
     return static_cast<long>(n);
+}
+
+std::string host_name() {
+#ifdef __3DS__
+    return "3DS";
+#else
+    if (!startup()) return {};
+    char name[256] = {};
+    if (gethostname(name, sizeof name - 1) != 0) return {};
+    return name;
+#endif
 }
 
 std::vector<Ipv4> local_broadcast_addresses() {

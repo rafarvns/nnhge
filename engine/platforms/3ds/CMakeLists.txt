@@ -7,9 +7,12 @@ add_library(nnh_platform_3ds STATIC
     src/console_3ds.cpp
     src/crash_3ds.cpp
     src/draw2d_3ds.cpp
+    src/hbldr_args.cpp
     src/input_3ds.cpp
+    src/launch_3ds.cpp
     src/log_3ds.cpp
     src/memory_3ds.cpp
+    src/network_3ds.cpp
     src/system_3ds.cpp
     src/texture_3ds.cpp
     src/time_3ds.cpp

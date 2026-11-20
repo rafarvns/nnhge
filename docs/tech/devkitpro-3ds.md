@@ -123,7 +123,8 @@ What our backend (`input_3ds.cpp`) does:
 - Send: Homebrew Launcher → **Y**, then `nnh run <game>` ([nnh tool](../guides/nnh-tool.md): its own netloader client,
   decision D23) or `3dslink <file>.3dsx -a <ip>` (`-a` takes only the IP).
 - **Logs on the PC** (implemented): in Debug/Development builds started by 3dslink (`__3dslink_host` set),
-  the platform library calls `socInit` (1 MB buffer), connects to the PC on port 17491
+  the platform library starts the socket service (`n3ds::network_start()`, `socInit` with a 1 MB buffer,
+  reference-counted with the game's own use; `src/network_3ds.cpp`), connects to the PC on port 17491
   (`LINK3DS_COMM_PORT`) and `dup2`s the socket onto stdout/stderr, so every log line reaches the PC.
   Launch with `3dslink -s ...` so the PC keeps listening. We don't use libctru's `link3dsStdio()`: its
   `connect` blocks with no timeout, and when the PC isn't listening and its firewall drops the attempt
@@ -134,7 +135,19 @@ What our backend (`input_3ds.cpp`) does:
   instead of returning to the Homebrew Launcher.
 - `.cia` (installable, spec 009): `nnh_add_game(... CIA UNIQUE_ID ...)` and the target `<game>_cia`; makerom (`-f cia -target t -exefslogo`, our RSF `cmake/3ds/nnhge.rsf`, the game's SMDH, a bannertool banner, the assets folder as romfs) and bannertool are fetched pinned on the first `.cia` build. Install with FBI over the network: `nnh install <game>` ([packaging guide](../guides/packaging.md)). romfs, saves on the SD card and exit to the HOME Menu work as in the `.3dsx`.
 - Launching another `.3dsx` from a homebrew app: libctru only offers `aptSetChainloader()` for installed
-  titles; there is no 3dsx-to-3dsx API (relevant for NNH Link, see [decisions](../architecture/decisions.md)).
+  titles; there is no 3dsx-to-3dsx API in libctru. The Homebrew Launcher uses Luma3DS's loader service
+  `hb:ldr` (Rosalina) directly, and so does `<nnh/3ds/launch.hpp>` (spec 011,
+  [api](../api/3ds-extensions.md)). Facts (Homebrew Launcher `source/loaders/rosalina.c`; Luma3DS
+  `sysmodules/loader/source/{hbldr,3dsx}.c`; libctru `initArgv.c`, `apt.c`):
+  - `svcConnectToPort("hb:ldr")`; command 2 SetTarget (`IPC_MakeHeader(2,0,2)`, static buffer 0 = the
+    path **without** `sdmc:`), command 3 SetArgv (`IPC_MakeHeader(3,0,2)`, static buffer 1 = a 0x400-byte
+    block: `u32` argc, then NUL-terminated strings, argv[0] the full `sdmc:/` path; the loader always
+    copies 0x400 bytes).
+  - The loader clears the target after each load (the next one is `/boot.3dsx`, the Homebrew Launcher);
+    argv stays. It sets `RUNFLAG_APTCHAINLOAD` in every `.3dsx` it loads, so libctru's `aptExit()`
+    relaunches the same title, which loads the current target: set the target, then return from `main`.
+  - libctru turns the **last** argument, if it is `XXXXXXXX_3DSLINK_` (17 characters, the log host's
+    `s_addr` in hex), into `__3dslink_host` and removes it from argv.
 
 ## Windows setup gotchas
 

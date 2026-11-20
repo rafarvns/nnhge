@@ -1,6 +1,6 @@
 # Tasks 011: NNH Link — build and run from the console
 
-Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19)
+Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19, stage 4 2026-11-20)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -23,8 +23,8 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 4 — the engine's 3DS extensions
 
-- [ ] **T4.1** `<nnh/3ds/network.hpp>` (soc, shared with the log redirect) — covers FR-2
-- [ ] **T4.2** `<nnh/3ds/launch.hpp>` (`hb:ldr`) and return-to-Link at shutdown — test: argv building — covers FR-4
+- [x] **T4.1** `<nnh/3ds/network.hpp>` (soc, shared with the log redirect) — covers FR-2 (`src/network_3ds.cpp`, reference-counted; `nnh::shutdown()` releases what the game left)
+- [x] **T4.2** `<nnh/3ds/launch.hpp>` (`hb:ldr`) and return-to-Link at shutdown — test: argv building — covers FR-4 (`src/launch_3ds.cpp`; pure rules `src/hbldr_args.cpp` + `tests/platform_3ds/test_hbldr_args.cpp`; headers refuse PC builds, tested; api page `docs/api/3ds-extensions.md`). On the console: with NNH Link (T6.3)
 
 ## Stage 5 — the NNH Link app
 

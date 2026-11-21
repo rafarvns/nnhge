@@ -43,7 +43,8 @@ least one valid file.
   file, and fails with a `Result` error instead of crashing.
 - Each parser has a fuzz target in `tests/fuzz/` (today: path validator, save-file validator, asset
   index, WAV reader, Ogg Vorbis reader — which drives the vendored stb_vorbis through open, decoding and
-  seeking). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+  seeking —, and the console remote's reader, schedule and input merge of spec 013, with a round-trip check
+  of its 16-byte messages; libFuzzer executable `fuzz_remote`, first run pending, stage 7). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
   for Ogg, where each run decodes) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
   build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built

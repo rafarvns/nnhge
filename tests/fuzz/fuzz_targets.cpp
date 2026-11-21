@@ -10,6 +10,10 @@
 #include "audio/wav_reader.hpp"
 #include "fs/save_format.hpp"
 #include "nnh/fs.hpp"
+#include "nnh/platform/input.hpp"
+#include "remote/remote_input.hpp"
+#include "remote/remote_reader.hpp"
+#include "remote/remote_schedule.hpp"
 
 namespace nnh::fuzz {
 
@@ -78,7 +82,65 @@ std::size_t read_fuzz_bytes(void* context, std::uint64_t offset, void* out, std:
     return count;
 }
 
+/// Every 16-byte window that decodes must encode back to exactly the same bytes (nothing is lost or invented).
+void check_remote_round_trips(const std::uint8_t* data, std::size_t size) {
+    using namespace detail::remote;
+    for (std::size_t i = 0; i + kMessageSize <= size; ++i) {
+        Message m;
+        if (decode_message(data + i, m) != Reject::None) continue;
+        std::uint8_t again[kMessageSize];
+        encode_message(m, again);
+        if (std::memcmp(again, data + i, kMessageSize) != 0) std::abort();
+    }
+}
+
+/// What the game would see after the merge stays within the platform contract.
+void check_remote_sample(const detail::remote::RemoteInput& input) {
+    platform::InputSample s;
+    input.merge_into(s);
+    const float axes[] = {s.circle_x, s.circle_y, s.cstick_x, s.cstick_y};
+    for (float a : axes) {
+        if (a < -1.0f || a > 1.0f) std::abort();
+    }
+    if ((s.buttons & ~detail::remote::kButtonMask) != 0) std::abort();
+    if (s.touching && (s.touch_x < 0 || s.touch_x > 319 || s.touch_y < 0 || s.touch_y > 239)) std::abort();
+}
+
 } // namespace
+
+int remote_target(const std::uint8_t* data, std::size_t size) {
+    using namespace detail::remote;
+    check_remote_round_trips(data, size);
+    RemoteReader reader;
+    RemoteSchedule schedule;
+    RemoteInput input;
+    ReadItem items[kScheduleCapacity];
+    std::uint32_t now = 1, last_applied = 0;
+    std::size_t pos = 0;
+    while (pos < size) {
+        const std::uint8_t control = data[pos++];
+        std::size_t n = reader.bytes_wanted(schedule.room());
+        if (n > (control & 0x3Fu)) n = control & 0x3Fu;
+        if (n > size - pos) n = size - pos;
+        const FeedResult fed = reader.feed(data + pos, n, now, items, schedule.room());
+        if (fed.consumed != n || fed.items > kScheduleCapacity) std::abort(); // bounded reads always fit
+        pos += n;
+        for (std::size_t i = 0; i < fed.items; ++i) {
+            if (items[i].reason != Reject::None || items[i].message.type == MessageType::Hello) continue;
+            if (items[i].message.frame == 0 || !schedule.push(items[i].message, now)) std::abort();
+        }
+        Message due;
+        while (schedule.pop_due(now, due)) {
+            if (due.frame > now || due.frame < last_applied) std::abort(); // never early, always in order
+            last_applied = due.frame;
+            if (due.type == MessageType::Bye) input.release_all();
+            input.apply(due);
+        }
+        check_remote_sample(input);
+        now += control >> 6; // 0-3 frames pass
+    }
+    return 0;
+}
 
 int ogg_target(const std::uint8_t* data, std::size_t size) {
     // Open, decode everything, seek to the middle and to the loop point: never out of bounds, never

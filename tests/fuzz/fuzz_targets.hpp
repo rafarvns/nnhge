@@ -13,5 +13,9 @@ int save_target(const std::uint8_t* data, std::size_t size);
 int asset_index_target(const std::uint8_t* data, std::size_t size);
 int wav_target(const std::uint8_t* data, std::size_t size);
 int ogg_target(const std::uint8_t* data, std::size_t size);
+/// Console remote (spec 013): every 16-byte window that decodes encodes back to the same bytes; then the
+/// input runs as a stream over simulated frames (reader → schedule → remote input). Each chunk starts with a
+/// control byte: bits 0-5 = bytes that arrive (capped by the queue's room), bits 6-7 = frames that pass after.
+int remote_target(const std::uint8_t* data, std::size_t size);
 
 } // namespace nnh::fuzz

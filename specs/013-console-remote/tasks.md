@@ -1,6 +1,6 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); next: stage 1
+Status: approved (2026-11-21); stage 1 done (2026-11-21); next: stage 2
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -10,22 +10,48 @@ something verifiable on PC (`ctest --preset pc-debug`, a script run in the simul
 
 ## Stage 1 — wire format and the console-side logic (pure)
 
-- [ ] **T1.1** wire constants, the 16-byte message (encode/decode, every validation rule: magic, type, ranges, button
+- [x] **T1.1** wire constants, the 16-byte message (encode/decode, every validation rule: magic, type, ranges, button
   mask, disjoint masks, reserved bytes), the record header (encode/decode, length caps), `static_assert` that the
   button mask matches `nnh::Button` (in a core file, not in the pure one) — files: `engine/core/src/remote/remote_wire.{hpp,cpp}`,
   `engine/core/CMakeLists.txt` — test: `tests/remote/test_remote_wire.cpp` — covers FR-8, FR-1
-- [ ] **T1.2** reader: bytes → messages across partial reads, `Hello` first, frame order, malformed counting, 8 in a
+  - Done (22 tests). A non-zero reserved byte and a `Hello` of another version or with flags are `Rejected` with
+    reason `range` (no new reason). `resolve_frame()` ("frame 0 = the frame now starting") lives here, shared by the
+    reader and the schedule. The `static_assert` is in `remote_input.cpp` (T1.4), the core file that merges into
+    `nnh::Button` bits. Payload encoders for the records come with the session (stage 2); only the header and the
+    payload sizes are here.
+- [x] **T1.2** reader: bytes → messages across partial reads, `Hello` first, frame order, malformed counting, 8 in a
   row → off, reads bounded by the room given — files: `remote/remote_reader.{hpp,cpp}` — test: `test_remote_reader.cpp`
   — covers FR-8
-- [ ] **T1.3** [P] schedule: 64-entry FIFO, due messages for a frame, frame 0 = next frame, late (wanted, applied),
+  - Done (18 tests). `bytes_wanted(room)` = room × 16 minus a partly read message; `feed()` writes at most
+    `capacity` items and stops before the byte that would complete one more. Rules: off → `too many` for anything;
+    `Hello` is accepted on arrival (attaches, its frame isn't ordered); data before `Hello` → `not attached`; order is
+    checked on the resolved frame and only accepted messages move it; `Bye` detaches the reader on arrival (when it
+    takes effect is the session's choice, stage 2). Every rejection, including before `Hello`, counts toward the 8.
+- [x] **T1.3** [P] schedule: 64-entry FIFO, due messages for a frame, frame 0 = next frame, late (wanted, applied),
   full → refused — files: `remote/remote_schedule.{hpp,cpp}` — test: `test_remote_schedule.cpp` — covers FR-1, FR-8
-- [ ] **T1.4** [P] remote input: apply `Buttons`/`Stick`/`Touch`, merge into an `InputSample` (OR, further-pushed stick,
+  - Done (10 tests). Frame 0 is due on the frame that queued it (the frame whose start reads it: it can still be
+    applied before that frame's input). `is_late(message, applied)` = wanted < applied; the message keeps its
+    wanted frame for the `Late` record.
+- [x] **T1.4** [P] remote input: apply `Buttons`/`Stick`/`Touch`, merge into an `InputSample` (OR, further-pushed stick,
   remote touch wins), release all — files: `remote/remote_input.{hpp,cpp}` — test: `test_remote_input.cpp` — covers FR-1
-- [ ] **T1.5** fuzz target `remote_target` (reader → schedule → input over simulated frames; a decoded message must
+  - Done (12 tests). Sticks compare squared lengths; a tie keeps the real stick. A remote release never hides a real
+    press (OR after the remote state is updated).
+- [x] **T1.5** fuzz target `remote_target` (reader → schedule → input over simulated frames; a decoded message must
   encode back to the same 16 bytes) — files: `tests/fuzz/fuzz_targets.{hpp,cpp}`, `test_fuzz_smoke.cpp`,
   `libfuzzer_remote.cpp`, `tests/CMakeLists.txt` — test: mini-fuzz in `nnh_tests` — covers FR-8, AC-3
+  - Done (`remote_target_survives_mutated_inputs`, seeded with a valid session). Input format: a control byte per
+    chunk (bits 0–5 bytes that arrive, capped by the queue's room; bits 6–7 frames that pass), then the bytes. Aborts
+    on: a round trip that changes bytes, a bounded read that doesn't fit, a message applied early or out of order, a
+    merged sample outside the contract. libFuzzer run on VM 120: T7.1.
+  - Mutation check (by hand, 2026-11-21; stage 7's T7.2 repeats it for the session and runner): 44 mutants of
+    `remote_wire`, `remote_reader`, `remote_schedule` and `remote_input` (validation rules, record caps, bad count and
+    its reset, order, frame 0, detach, bounded reads, due `>`/`>=`/`+1`, late `<`/`<=`, full, ring advance, stick
+    `>`/`>=`/`<`, OR, release, touch, C-Stick, scale) — 43 killed; the survivor (`down = a[0] == 1` → `!= 0`) is
+    equivalent, since the byte is validated to be 0 or 1.
 
-Verifiable: `nnh_tests remote` and `nnh_tests fuzz` green on PC.
+Verifiable: `nnh_tests remote` and `nnh_tests fuzz` green on PC. Done: 63 new tests, all green (`nnh_tests remote_`
+runs them all, the mini-fuzz included; the fuzz tests' names end in `_target_survives_mutated_inputs`, so the filter
+is `target`, not `fuzz`).
 
 ## Stage 2 — the session in core, over the fake platform
 

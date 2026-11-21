@@ -374,10 +374,14 @@ asked for is in.
 
 | Where | What | Size | When |
 |-------|------|------|------|
-| core (BSS, Development only) | schedule 64 × 16 B; read scratch 64 × 16 B; reader 16 B + counters; remote input ~24 B; session ~64 B | **≈ 2.2 KB** | always in Debug/Development; not linked in Release |
+| core (BSS, Development only) | schedule 64 × 32 B (decoded messages, see below); read scratch 64 × 16 B; reader 16 B + counters; remote input ~24 B; session ~64 B | **≈ 3.2 KB** | always in Debug/Development; not linked in Release |
 | 3DS `Linear` | read-back buffer `240 × 400 × 3` (top; reused for the bottom) | **288 000 B** | from the first screenshot until `Bye`, disconnect or shutdown |
 | PC heap | `SDL_Surface` per capture (RGBA8) | 384 000 B | during one capture |
 | Release | — | 0 | never |
+
+Changed in stage 1 (2026-11-21): the schedule keeps *decoded* messages (`remote::Message`, named fields, 32 bytes)
+rather than the 16 wire bytes, so nothing is decoded twice and the code reads by field name; +1 KB of BSS in
+Development builds only.
 
 **Per frame** (3DS estimates, measured in stage 5): not connected → one flag test; connected, not attached → one
 `recv(MSG_DONTWAIT)` (a SOC IPC, est. 20–100 µs); attached → + one 16-byte tick send every 4th frame and a stdout flush.

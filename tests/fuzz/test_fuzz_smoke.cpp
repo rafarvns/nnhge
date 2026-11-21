@@ -8,6 +8,7 @@
 #include "audio/wav_reader.hpp"
 #include "fs/save_format.hpp"
 #include "fuzz_targets.hpp"
+#include "remote/remote_wire.hpp"
 #include "test.hpp"
 
 namespace {
@@ -82,6 +83,44 @@ NNH_TEST(ogg_target_survives_mutated_inputs) {
         for (int k = 0; k < flips; ++k) buffer[next(state) % size] ^= static_cast<std::uint8_t>(1 + next(state) % 255);
         nnh::fuzz::ogg_target(buffer, n);
     }
+}
+
+NNH_TEST(remote_target_survives_mutated_inputs) {
+    // A valid session (control byte: 16 bytes arrive, then bits 6-7 frames pass) to mutate from.
+    using namespace nnh::detail::remote;
+    Message messages[7];
+    messages[0].type = MessageType::Hello;
+    messages[0].version = kVersion;
+    messages[1].type = MessageType::Buttons;
+    messages[1].frame = 2;
+    messages[1].press = 0x0101;
+    messages[2].type = MessageType::Stick;
+    messages[2].frame = 3;
+    messages[2].x = -700;
+    messages[2].y = 1000;
+    messages[3].type = MessageType::Touch;
+    messages[3].frame = 3;
+    messages[3].down = true;
+    messages[3].x = 319;
+    messages[3].y = 239;
+    messages[4].type = MessageType::Screenshot;
+    messages[4].frame = 0;
+    messages[4].screens = 3;
+    messages[5].type = MessageType::Buttons;
+    messages[5].frame = 9;
+    messages[5].release = 0x0001;
+    messages[6].type = MessageType::Bye;
+    messages[6].frame = 12;
+    std::uint8_t seed[7 * (1 + kMessageSize)];
+    std::size_t size = 0;
+    for (const Message& m : messages) {
+        seed[size++] = static_cast<std::uint8_t>(kMessageSize | (1u << 6));
+        encode_message(m, seed + size);
+        size += kMessageSize;
+    }
+    mutate_and_run(nnh::fuzz::remote_target, seed, size);
+    mutate_and_run(nnh::fuzz::remote_target, nullptr, 0);
+    CHECK(true);
 }
 
 NNH_TEST(save_target_survives_mutated_inputs) {

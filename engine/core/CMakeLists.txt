@@ -65,6 +65,10 @@ add_library(nnh_core STATIC
     src/result/error.cpp
     src/scene/scene_stack.cpp
     src/scene/scenes.cpp
+    src/remote/remote_input.cpp
+    src/remote/remote_reader.cpp
+    src/remote/remote_schedule.cpp
+    src/remote/remote_wire.cpp
     src/system/system.cpp
     src/text/builtin_font.cpp
     src/text/font_atlas.cpp

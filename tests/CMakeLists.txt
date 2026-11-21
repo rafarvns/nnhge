@@ -74,6 +74,10 @@ add_executable(nnh_tests
     log/test_ring.cpp
     math/test_vec2.cpp
     memory/test_memory.cpp
+    remote/test_remote_input.cpp
+    remote/test_remote_reader.cpp
+    remote/test_remote_schedule.cpp
+    remote/test_remote_wire.cpp
     result/test_result.cpp
     scene/test_run.cpp
     scene/test_scene_stack.cpp
@@ -321,7 +325,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg)
+    foreach(name path save asset_index wav ogg remote)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

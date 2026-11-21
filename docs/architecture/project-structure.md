@@ -30,7 +30,8 @@ link/                                        nnh_link (spec 011, D24): sockets, 
 apps/<app>/                                  apps made with NNHGE that ship with it, in every preset: apps/nnh-link
   src/  tests/                               (spec 011): pure logic (link_state, storage, pad, layout) tested
                                              against fakes; views and one scene; platform_link_<system>.cpp
-tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010); assetc later
+tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010); tools/assetc
+                                             (nnh-assetc, build-time conversions, planned in spec 012, D27)
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules
 cmake/                                       CMake helpers

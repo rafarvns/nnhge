@@ -22,6 +22,17 @@ end of frame (next nnh::frame() or shutdown())
 Today every layer is in the first 2D pass. When 3D arrives, a game marks where the world sits among the
 layers, and the core submits the 2D list in two slices around the 3D pass. The 2D calls don't change.
 
+## Tile layers (batches)
+
+> Status: design ([plan 012](../../specs/012-tilemaps-and-collision/plan.md), decision D26).
+
+A tilemap layer is recorded as **one command per (map layer, tileset)**, sorted with the sprites by layer and
+call order, so sprites can sit between map layers. When the sorted pass reaches it, core sends the sprites
+before it (`draw_2d`), expands only the cells the camera sees into compact quads (destination, source, flip
+bits) and calls the contract's `draw_tiles` once for the batch. Camera, parallax and offset are applied once
+per batch and the layer's origin is snapped to whole pixels once, so tiles never show seams. Tile quads per
+frame are capped by `AppConfig::gfx.max_tiles` on every system (the simulator drops what the 3DS would).
+
 ## Why record instead of drawing on the spot
 
 - **Order by layer** without making the game sort its calls.

@@ -107,7 +107,9 @@ error) to the arrays; games without `IMAGES` link an empty default from core. Ge
 `build/<preset>/<game dir>/nnh_images/<game>/`. The check script has its own `ctest` cases
 (`image_check_*`, fixtures in `tests/data/images/`).
 
-**Host tools** (`tools/`): `tools/nnh/CMakeLists.txt` builds the `nnh` program (spec 010; PC presets only, never a dependency of games) from `nnh_tool_lib` and its tests `nnh_tool_tests` (ctest `nnh_tool`). With MinGW they link the C++ runtime statically (`-static`): Git for Windows puts an older `libstdc++-6.dll` first on the PATH, which made the test program fail to start (exit code 127, no output) as soon as it used `std::filesystem`.
+**Host tools** (`tools/`): `tools/nnh/CMakeLists.txt` builds the `nnh` program (spec 010; PC presets only, never a dependency of games) from `nnh_tool_lib` and its tests `nnh_tool_tests` (ctest `nnh_tool`). `nnh_tool_lib` also compiles the pure core
+files `engine/core/src/remote/remote_wire.cpp` and `core/crc32.cpp` (spec 013: the console remote's wire format and
+the screenshots' PNG CRCs), with `engine/core/src` on its include path, so both ends share one implementation. With MinGW they link the C++ runtime statically (`-static`): Git for Windows puts an older `libstdc++-6.dll` first on the PATH, which made the test program fail to start (exit code 127, no output) as soon as it used `std::filesystem`.
 
 **nnh-assetc** (spec 012, decision D27): the asset converter the build runs on Tiled maps, so games with maps
 need it in **every** preset, including cross ones that have no host compiler of their own.

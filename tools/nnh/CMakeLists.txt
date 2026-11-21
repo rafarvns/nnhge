@@ -16,6 +16,16 @@ add_library(nnh_tool_lib STATIC
     src/log_view.cpp
     src/manifest.cpp
     src/netloader.cpp
+    src/remote/game_records.cpp
+    src/remote/game_stream.cpp
+    src/remote/log_match.cpp
+    src/remote/png_writer.cpp
+    src/remote/screen_image.cpp
+    src/remote/script_interactive.cpp
+    src/remote/script_parser.cpp
+    src/remote/script_runner.cpp
+    src/remote/script_timeline.cpp
+    src/remote/script_tokens.cpp
     src/repo.cpp
     src/serve/discovery_responder.cpp
     src/serve/pairing_codes.cpp
@@ -24,8 +34,11 @@ add_library(nnh_tool_lib STATIC
     src/terminal.cpp
     src/user_config.cpp
     src/zlib_stored.cpp
+    # pure core files (no engine includes), shared with the console (spec 013, D28)
+    ${PROJECT_SOURCE_DIR}/engine/core/src/core/crc32.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/remote/remote_wire.cpp
 )
-target_include_directories(nnh_tool_lib PUBLIC src)
+target_include_directories(nnh_tool_lib PUBLIC src ${PROJECT_SOURCE_DIR}/engine/core/src)
 nnh_engine_options(nnh_tool_lib)
 find_package(Threads REQUIRED) # the HTTP server runs on a thread
 target_link_libraries(nnh_tool_lib PUBLIC Threads::Threads nnh_link)
@@ -48,10 +61,19 @@ if(NNH_BUILD_TESTS)
         tests/test_cli.cpp
         tests/test_console_link.cpp
         tests/test_fbi.cpp
+        tests/test_fuzz_tool.cpp
+        tests/test_game_stream.cpp
+        tests/test_log_match.cpp
         tests/test_log_view.cpp
         tests/test_manifest.cpp
         tests/test_netloader.cpp
+        tests/test_png_writer.cpp
         tests/test_repo.cpp
+        tests/test_screen_image.cpp
+        tests/test_script_interactive.cpp
+        tests/test_script_parser.cpp
+        tests/test_script_runner.cpp
+        tests/test_script_timeline.cpp
         tests/test_serve.cpp
         tests/test_user_config.cpp
         tests/test_zlib_stored.cpp

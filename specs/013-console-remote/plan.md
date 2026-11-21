@@ -313,6 +313,34 @@ frame order and keeps at most 48 unapplied (frame > last tick) — the console q
 nothing after it is sent until it matches. `end` passes when a tick ≥ the final clock has arrived and every screenshot
 asked for is in.
 
+Settled in stage 3 (2026-11-21):
+
+- **The `expect` window starts at the segment's first frame**, not at the clock at the `expect`: frame 1, or the frame
+  after the previous `expect`'s matching line, up to the clock + N. The example above needs it: `tap A` moves the
+  clock 2 frames past the press, so "pressed A" is logged before "now". It times out at the first tick past the
+  window (every line of the window's frames has arrived by then). Lines of the matching frame that come after the
+  matching line don't count for the next `expect` (they are before its segment).
+- A level-F line fails at the line being waited on (the current `expect` or `end`). A failure or a pass sends `Bye`
+  (with `quit` for `--pc`) unless the game already closed. A `Hello` answer of another protocol version → exit 2.
+  The capability check looks at commands that name ZL/ZR (`press`/`release`/`hold`/`tap`) or `stick cstick`;
+  `release all` also centres the C-Stick but asks for nothing an Old 3DS lacks.
+- The runner converts screens (`screen_image`) and names the files; the session only encodes and writes the PNG.
+  Its notes are the `nnh:` lines without the prefix; `PASS (<lines> lines, frames 1-<n>)` uses an ASCII hyphen.
+- **Interactive**: a typed line starts at the last frame heard + 6, but never before a frame already sent (the console
+  refuses frames out of order), so a command typed during a long `hold` waits for its release. A typed `expect`
+  watches from the last frame heard to + N; `fail-on` reports (and never ends) from the last frame heard; `end` also
+  drops pending expects and fail-ons. Parser errors are notes `typed:<n>: …`; `help` lists the commands.
+- **Parser details**: `#` starts a comment anywhere outside quotes; in TEXT, `\"` and `\\` are unescaped and any
+  other `\x` is kept as written (so `\*`, `\?` reach the matcher, where `\\` is also a literal backslash); an empty
+  TEXT and a quoted non-TEXT argument are errors; stick values take at most 3 decimals; the late-input warning is
+  given once per `expect`; a missing `end` is placed at the last line.
+- **Stream**: every `\r` is removed; a line is cut at 1 MiB; a partial line is returned before a record (order); an
+  unfinished record at the end of the stream is shown as text.
+- Extra files, split by concept: `remote/game_records.*` (record payloads, used by the stream), `remote/script_tokens.*`
+  (words and values of a line, used by the parser), `remote/script_interactive.cpp` (the interactive half of the
+  runner); tests `fake_console.hpp` (the console side, frame by frame, through the PC's own stream splitter) and
+  `test_script_interactive.cpp`.
+
 ### Simulator and the platformer's automatic gate
 
 - **pc** (`remote_pc.cpp`): at init (Debug/Development), if `NNH_REMOTE=<ip>:<port>` names a loopback address

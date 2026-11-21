@@ -1,6 +1,6 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–2 done (2026-11-21); next: stage 3
+Status: approved (2026-11-21); stages 1–3 done (2026-11-21); next: stage 4
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -115,30 +115,63 @@ warnings, `examples/hello` in the simulator unchanged.
 
 ## Stage 3 — the tool's logic (pure)
 
-- [ ] **T3.1** stream splitter: log lines and records from arbitrary chunks, `\r` stripped, text fallback on bad
+- [x] **T3.1** stream splitter: log lines and records from arbitrary chunks, `\r` stripped, text fallback on bad
   headers, 1 MiB cap, a partial line before a record — files: `tools/nnh/src/remote/game_stream.{hpp,cpp}` (+ core's
   `remote_wire.cpp` in `tools/nnh/CMakeLists.txt`) — test: `tools/nnh/tests/test_game_stream.cpp` — covers FR-2, FR-8
-- [ ] **T3.2** [P] log matching: patterns (`*`, `?`, escapes, contains), frame and level from the `[f<n>` prefix, lines
+  - Done (13 tests). Record payloads are decoded by a file of their own, `remote/game_records.{hpp,cpp}` (the tests
+    build every record with core's encoders, so both ends agree). A false start (`0x1E` without a valid header) is
+    text and the 7 bytes after it are looked at again, so a real record right behind it is still found; an unfinished
+    record at the end of the stream is shown as text. `nnh_tool_lib` has `engine/core/src` on its include path.
+- [x] **T3.2** [P] log matching: patterns (`*`, `?`, escapes, contains), frame and level from the `[f<n>` prefix, lines
   without a prefix — files: `remote/log_match.{hpp,cpp}` — test: `test_log_match.cpp` — covers FR-3
-- [ ] **T3.3** script parser: every command and button, case, comments, blank lines, quotes and escapes, every error
+  - Done (7 tests). Frame and level come from engine lines only (log_view's `parse_log_line`); a frame over u32 or
+    any other text has none. `\\` is a literal backslash in a pattern too.
+- [x] **T3.3** script parser: every command and button, case, comments, blank lines, quotes and escapes, every error
   as `file:line: what` (all of them, limits, after `end`), the warning for input right after `expect` — files:
   `remote/script.hpp`, `remote/script_parser.cpp` — test: `test_script_parser.cpp` — covers FR-3
-- [ ] **T3.4** timeline: steps → frame-stamped messages (clock from frame 1; hold, tap = +2, drag one step per frame,
+  - Done (19 tests). Words and values are in `remote/script_tokens.{hpp,cpp}` (the parser stays at 212 lines).
+    `parse_script_line()` with a `ScriptParser` state is also what interactive mode uses. Details settled in the plan
+    ("Settled in stage 3").
+- [x] **T3.4** timeline: steps → frame-stamped messages (clock from frame 1; hold, tap = +2, drag one step per frame,
   release all, screenshots), split at `expect` barriers — files: `remote/script_timeline.{hpp,cpp}` — test:
   `test_script_timeline.cpp` — covers FR-1, FR-3
-- [ ] **T3.5** runner against a fake console: ≤ 48 unapplied, barrier, expect window and timeout (decided at the tick),
+  - Done (11 tests). Segments hold offsets from their first frame (the runner adds the base: 1, then the matching
+    line's frame + 1). `hold B N`: press at +0, release at +N; `tap`: +0/+1; `drag X Y N`: steps at +1…+N (the frame
+    of the touch itself keeps the starting point); `release all`: buttons, both sticks centred, touch up. `Timeline`
+    remembers the touch point across segments and typed lines (`take_open()` for interactive mode).
+- [x] **T3.5** runner against a fake console: ≤ 48 unapplied, barrier, expect window and timeout (decided at the tick),
   clock = line frame + 1, `fail-on`, level F, late/rejected/dropped → fail with the line, game closes early, missing
   capability before any input, `end` waits for ticks and screenshots, file names, verdict and exit codes; interactive
   mode (lazy `Hello`, now + 6, expect never ends the run, `end` detaches) — files: `remote/script_runner.{hpp,cpp}` —
   test: `test_script_runner.cpp` — covers FR-3, FR-5
-- [ ] **T3.6** [P] screen images and PNG: both layouts → RGB rows (known pattern), wrong sizes refused; RGB → PNG with
+  - Done (21 script-mode tests + 12 interactive in `test_script_interactive.cpp`). The interactive half is
+    `remote/script_interactive.cpp`. The fake console (`tests/fake_console.hpp`) plays the console frame by frame —
+    Hello answer, ticks every 4th frame, due messages with `Late`, screenshots at the end of the frame, a game that logs
+    "pressed <mask>" — and its records go through `GameStream`, as in a real run. Changed from the plan: the `expect`
+    window starts at the segment's first frame (the plan's own example needs it); see the plan, "Settled in stage 3".
+    `no_answer()` is the session's 3 s timeout (exit 2); a protocol version mismatch is exit 2 too.
+- [x] **T3.6** [P] screen images and PNG: both layouts → RGB rows (known pattern), wrong sizes refused; RGB → PNG with
   stored zlib and core's CRC-32, decoded back in the test — files: `remote/screen_image.{hpp,cpp}`,
   `remote/png_writer.{hpp,cpp}`, `tools/nnh/CMakeLists.txt` (`crc32.cpp`) — test: `test_screen_image.cpp`,
   `test_png_writer.cpp` — covers FR-2
-- [ ] **T3.7** [P] tool mini-fuzz: stream splitter and parser on mutated inputs — files: `tools/nnh/tests/test_fuzz_tool.cpp`
+  - Done (4 + 3 tests). A screen must be the console's (top 400×240, bottom 320×240), in layout 1 or 2, with exactly
+    w × h × bpp bytes. The PNG test checks IEND against its well-known CRC (`AE426082`), independent of `crc32.cpp`.
+    Layout 2's orientation and colour order are confirmed on the console in T5.3.
+- [x] **T3.7** [P] tool mini-fuzz: stream splitter and parser on mutated inputs — files: `tools/nnh/tests/test_fuzz_tool.cpp`
   — covers FR-8, AC-3
+  - Done (`stream_target_survives_mutated_inputs`: 4000 mutated streams, the result doesn't depend on how the bytes
+    are chunked and nothing is invented; `script_target_survives_mutated_inputs`: 6000 mutated scripts, every error is
+    `file:line:`, every accepted value within its limits, timeline offsets never go back).
 
-Verifiable: `nnh_tool_tests` green.
+Mutation check (by hand, 2026-11-21): 75 mutants of the stream, records, matcher, tokens, parser, timeline, runner
+(both modes), screen image and PNG writer. First pass: 65 killed. Of the 10 survivors, 2 were redundant code, now
+removed (a decimal-count check that `parse_whole` already makes; the parser advancing its "since expect" clock on
+inputs, which only `wait` can affect); the other 8 got tests (a 12-character flavor, a comment right after a closing
+quote, the send window exactly 48 after a tick, an unasked-for `Hello` in interactive mode, a typed `expect`'s window
+end, its timeout tick and that a match ends it, a wrong screen height). Final: 73 of 73 killed.
+
+Verifiable: `nnh_tool_tests` green. Done: 92 new tests (138 in `nnh_tool_tests`), `nnh_tests` 816/816, ctest 102/102,
+`pc-release` builds without warnings, `3ds-release` unchanged.
 
 ## Stage 4 — the simulator end to end
 

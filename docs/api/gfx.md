@@ -114,4 +114,5 @@ the message. Each tile batch (one per map layer and tileset) also takes one of `
 `texture_bytes` (the game's textures: the built-in font has its own slot and memory tag), plus
 `tiles_last_frame`, `max_tiles` and `dropped_tiles` (since `init()`); the debug overlay shows them too (the
 tiles line only when `max_tiles > 0`). How many tile layers fit at 60 Hz: the benchmark of
-[`examples/platformer`](../../examples/platformer/main.cpp) (SELECT on the console, `PLATFORMER_DEMO=bench` on PC).
+[`examples/platformer`](../../examples/platformer/main.cpp) (SELECT on the console, `PLATFORMER_DEMO=bench` on PC); A there runs its automatic gate, which finds the limits
+by itself (`PLATFORMER_DEMO=gate`, or the script `examples/platformer/tests/gate.nnhs` with `nnh run`).

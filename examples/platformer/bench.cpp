@@ -77,13 +77,38 @@ void Bench::set_counts(int layers, int sprites) {
     frames_ = missed_ = 0;
 }
 
-void Bench::update() {
+void Bench::start_gate() {
+    gate_.start();
+    show_verdict_ = false;
+    set_counts(gate_.counts().layers, gate_.counts().sprites);
+}
+
+void Bench::manual_controls() {
     using nnh::Button;
     namespace input = nnh::input;
-    if (input::pressed(Button::R)) set_counts(layer_count_ + 1, sprite_count_);
-    if (input::pressed(Button::L)) set_counts(layer_count_ - 1, sprite_count_);
-    if (input::pressed(Button::X)) set_counts(layer_count_, sprite_count_ + 100);
-    if (input::pressed(Button::Y)) set_counts(layer_count_, sprite_count_ - 100);
+    if (input::pressed(Button::A)) {
+        start_gate();
+        return;
+    }
+    const int layers =
+        layer_count_ + (input::pressed(Button::R) ? 1 : 0) - (input::pressed(Button::L) ? 1 : 0);
+    const int sprites =
+        sprite_count_ + (input::pressed(Button::X) ? 100 : 0) - (input::pressed(Button::Y) ? 100 : 0);
+    if (layers != layer_count_ || sprites != sprite_count_) {
+        set_counts(layers, sprites);
+        show_verdict_ = false;
+    }
+}
+
+void Bench::update() {
+    const double ms = nnh::time::delta().seconds() * 1000.0;
+    if (gate_.running()) {
+        const GateCounts c = gate_.frame(ms);
+        if (!gate_.running()) show_verdict_ = true; // finished this frame: back to the manual bench
+        if (c.layers != layer_count_ || c.sprites != sprite_count_) set_counts(c.layers, c.sprites);
+    } else {
+        manual_controls();
+    }
     // The camera wanders over the map at sub-pixel speeds: layers are almost never cell-aligned (worst case).
     bounce(camera_.x, camera_speed_.x, 16, kMapW * 16 - 400 - 80);
     bounce(camera_.y, camera_speed_.y, 16, kMapH * 16 - 240 - 48);
@@ -92,7 +117,6 @@ void Bench::update() {
         bounce(sprites_[i].x, sprites_[i].vx, 0, kScreenW);
         bounce(sprites_[i].y, sprites_[i].vy, 0, kScreenH);
     }
-    const double ms = nnh::time::delta().seconds() * 1000.0;
     if (++frames_ > 1) { // the first frame after a change still carries the previous load
         average_ms_ = average_ms_ == 0 ? ms : average_ms_ * 0.95 + ms * 0.05;
         if (ms > worst_ms_) worst_ms_ = ms;
@@ -110,6 +134,15 @@ void Bench::draw() const {
         gfx::draw(top, art_.player, {sprites_[i].x, sprites_[i].y},
                   {.region = {(i % 4) * 16, 0, 16, 16}, .layer = 1, .ignore_camera = true});
     }
+    if (show_verdict_) gate_.draw_banner();
+    if (gate_.running() || show_verdict_)
+        gate_.draw_panel();
+    else
+        draw_stats();
+}
+
+void Bench::draw_stats() const {
+    namespace gfx = nnh::gfx;
     const nnh::Screen bottom = nnh::Screen::Bottom;
     const int line = nnh::debug::line_height();
     const gfx::Stats s = gfx::stats();
@@ -126,5 +159,10 @@ void Bench::draw() const {
     nnh::debug::printf(bottom, 12, 12 + 10 * line, "draws   %d / %d", s.draws_last_frame, s.max_draws);
     nnh::debug::print(bottom, 12, 12 + 12 * line, "Counts reset the frame stats.");
     nnh::debug::print(bottom, 12, 12 + 13 * line, "60 Hz = missed stays 0 for 10 s.");
-    nnh::debug::print(bottom, 12, 12 + 15 * line, "SELECT: next demo   START: exit");
+    if (gate_.finished())
+        nnh::debug::printf(bottom, 12, 12 + 15 * line, "A: automatic gate (last: %s)",
+                           gate_.passed() ? "PASS" : "FAIL");
+    else
+        nnh::debug::print(bottom, 12, 12 + 15 * line, "A: automatic gate (about 2 min)");
+    nnh::debug::print(bottom, 12, 12 + 16 * line, "SELECT: next demo   START: exit");
 }

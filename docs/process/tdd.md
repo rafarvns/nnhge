@@ -48,6 +48,7 @@ NNH_TEST(press_is_reported_only_on_first_frame) {
 | Engine logic in `engine/core/src/<module>/` (event bus, input edges, scene stack, math, parsers) | Unit tests, written first |
 | Platform backends (`engine/platforms/<target>/`) | Example program + simulator screenshot (`NNH_SCREENSHOT`) + run on 3DS |
 | Public API wiring | Unit tests against the **fake** platform backend |
+| An example's pure logic (no engine calls, e.g. `examples/platformer/gate_run.cpp`) | Unit tests in `tests/<example>/`, compiled from the example folder |
 
 Design for testability: put decisions in plain logic that takes data in and gives data out (like
 `InputState::update(mask)`), and keep the platform call at the edge (`platform::read_input()`).

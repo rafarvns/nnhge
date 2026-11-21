@@ -1,6 +1,7 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL)
+Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL); stage 6 T6.1–T6.2 done (PC), T6.3
+(console) next
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -317,12 +318,38 @@ Verifiable on PC: everything above still green; the console results recorded her
 
 ## Stage 6 — the platformer's automatic gate (spec 012 T3.9)
 
-- [ ] **T6.1** gate mode: A in the benchmark or `PLATFORMER_DEMO=gate`; trials (skip 30, measure 600 / 300 frames,
+- [x] **T6.1** gate mode: A in the benchmark or `PLATFORMER_DEMO=gate`; trials (skip 30, measure 600 / 300 frames,
   pass = no missed frame), the limit searches, the log lines of the plan (≤ 160 bytes), back to the manual bench at
   the end — files: `examples/platformer/gate.{hpp,cpp}`, `bench.{hpp,cpp}`, `main.cpp`, `CMakeLists.txt` — test:
   `PLATFORMER_DEMO=gate` in the simulator logs trials, limits and `bench: PASS ...` — covers FR-6
-- [ ] **T6.2** `examples/platformer/tests/gate.nnhs` (bonus → flips → bench → gate → result, screenshots of each,
+  - Done. The trials and searches are pure (`examples/platformer/gate_run.{hpp,cpp}`), tested first in `nnh_tests`
+    (`tests/platformer/test_gate_run.cpp`, 16 tests: target length and skip, average/worst/missed, the threshold is
+    "slower than", searches up to the first failure or the maximum, down to the first pass when the target failed,
+    no limits, verdict = the target only, frames ignored once done). Hand mutants (`>` → `>=` on the threshold, the
+    sprite maximum off by one): both killed. `gate.{hpp,cpp}` logs and draws, `bench.cpp` feeds it. Choices beyond
+    the plan (downward searches on a FAIL, extra log lines, the on-screen verdict, SELECT stops a run) are in the
+    plan, "Settled in stage 6".
+  - `PLATFORMER_DEMO=gate NNH_EXIT_AFTER_FRAMES=9100` (pc-debug, a window at 60 Hz): target `ok, avg 16.7 ms, worst
+    17.2 ms, missed 0/600`; layers up to `limit 12 layers (the most it has) with 300 sprites`; sprites 400, 500 ok,
+    600 `MISSED ... worst 73.2 ms, missed 19/300` (a Windows hiccup, not the load); `bench: PASS 4 layers + 300
+    sprites, avg 16.7 ms, worst 17.2 ms, missed 0 of 600 frames` at frame 4260 (71 s). Screenshot read: the top shows
+    a large green `GATE: PASS` over the benchmark, the bottom the verdict, the target's numbers and both limits.
+  - **The PC is not a stable 60 Hz**: one script run failed with a single 29 ms frame in the target trial (the FAIL
+    path then worked as designed: down to `limit 3 layers`, `limit 200 sprites`, `W ... bench: FAIL ...`, `nnh: FAIL`
+    at the `fail-on` line, exit 1). The criterion stays "no missed frame" (the console is what it is for); on PC a
+    rerun with nothing else running passes.
+- [x] **T6.2** `examples/platformer/tests/gate.nnhs` (bonus → flips → bench → gate → result, screenshots of each,
   `fail-on "bench: FAIL"`, `expect "bench: PASS" 12000`); passes with `--pc` — covers AC-1, AC-2, FR-4, FR-6
+  - Done. `NNH_PRESET=pc-debug nnh run platformer --pc --no-build --script examples/platformer/tests/gate.nnhs` →
+    `nnh: PASS (41 lines, frames 1-9149)`, exit 0, 152 s (every PC trial passes, so both searches run to the
+    benchmark's maximum: 26 trials). Gate started on frame 252, `bench: PASS 4 layers + 300 sprites, avg 16.7 ms,
+    worst 17.0 ms, missed 0 of 600 frames` on frame 9132. Screenshots read: `bonus` (frame 101) the player in mid-jump
+    under the brick row; `flips` (146) the 8 map orientations, the 4 sprite flips and the wall; `bench` (221) the
+    4 layers + 300 sprites, bottom `missed 0`, `tiles 1566 / 4992`; `gate-result` (9148) the green `GATE: PASS`
+    banner on top and the verdict with `limit 12 layers (the most it has)` and `limit 2000 sprites (the most it
+    has)` below. The bonus screenshot is 8 frames after the jump (at 20 the player had already landed).
+  - On the Old 3DS the searches stop at the first failing count, so the run is shorter (estimate below 1 min of
+    gate when the limits are near the target; the most is ~9000 frames, inside the 12 000 of the `expect`).
 - [ ] **T6.3** **3DS** (maintainer: press Y on an Old 3DS): `nnh run platformer --script
   examples/platformer/tests/gate.nnhs`; record PASS/FAIL, the trial and limit lines, the flips screenshot against the
   PC's; write the result into spec 012's T3.9 and replace its "How to run it" with this command — covers AC-1, AC-2

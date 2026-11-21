@@ -1,0 +1,41 @@
+# The spec 012 stage-3 gate, automatic (spec 013 FR-6): the bonus level, the flip test, then the tile benchmark's
+# automatic gate (4 full layers + 300 sprites at 60 Hz, then the layer and sprite limits).
+# PC:      nnh run platformer --pc --script examples/platformer/tests/gate.nnhs
+# Console: nnh run platformer --script examples/platformer/tests/gate.nnhs   (Homebrew Launcher open, press Y)
+# The verdict is the log line "bench: PASS ..." or "bench: FAIL ..." and is shown on both screens too.
+# Screenshots are taken outside the measured trials (a screenshot frame is slow on the console).
+fail-on "] E "
+
+# Bonus level: run right, jump.
+wait 30
+press RIGHT
+wait 60
+tap A
+wait 8
+screenshot bonus
+release RIGHT
+
+# Flip test (SELECT twice: bonus -> benchmark -> flips), before the benchmark so its screenshot exists even
+# when the gate fails.
+tap SELECT
+wait 10
+tap SELECT
+wait 30
+screenshot flips
+
+# Back to the benchmark (flips -> bonus -> benchmark), at 4 layers + 300 sprites.
+tap SELECT
+wait 10
+tap SELECT
+wait 60
+screenshot bench
+wait 30
+
+# The automatic gate: about 9000 frames when every trial passes, fewer when a limit is found early.
+fail-on "bench: FAIL"
+tap A
+expect "bench: gate started" 10
+expect "bench: PASS" 12000
+wait 15
+screenshot gate-result
+end

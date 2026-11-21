@@ -7,6 +7,9 @@
 //   NNH_SIM_INPUT="buttons=Right" NNH_EXIT_AFTER_FRAMES=120 NNH_SCREENSHOT=build/platformer.png \
 //   build/pc-debug/examples/platformer/platformer.exe
 //   PLATFORMER_DEMO=bench (4 full layers + 300 sprites, the gate) or PLATFORMER_DEMO=flips.
+//   PLATFORMER_DEMO=gate starts the benchmark's automatic gate at once (A in the benchmark does too); it logs
+//   each trial and ends with `bench: PASS ...` or `bench: FAIL ...` (about 9000 frames when every trial
+//   passes). Console test: nnh run platformer --script examples/platformer/tests/gate.nnhs
 
 #include "art.hpp"
 #include "bench.hpp"
@@ -29,10 +32,14 @@ namespace {
 
 enum class Demo { Bonus, Bench, Flips };
 
-Demo demo_from_env() {
+bool env_is(const char* value) {
     const char* demo = std::getenv("PLATFORMER_DEMO");
-    if (demo != nullptr && std::strcmp(demo, "bench") == 0) return Demo::Bench;
-    if (demo != nullptr && std::strcmp(demo, "flips") == 0) return Demo::Flips;
+    return demo != nullptr && std::strcmp(demo, value) == 0;
+}
+
+Demo demo_from_env() {
+    if (env_is("bench") || env_is("gate")) return Demo::Bench;
+    if (env_is("flips")) return Demo::Flips;
     return Demo::Bonus;
 }
 
@@ -84,13 +91,17 @@ int main() {
         if (error == nullptr && (!demos.bench.ready() || !demos.flips.ready()))
             error = "out of memory for the demos";
         Demo demo = demo_from_env();
+        if (error == nullptr && env_is("gate")) demos.bench.start_gate();
         while (nnh::frame()) {
             if (nnh::input::pressed(nnh::Button::Start)) break;
             if (error != nullptr) {
                 nnh::debug::print(nnh::Screen::Top, 8, 8, error, nnh::colors::red);
                 continue;
             }
-            if (nnh::input::pressed(nnh::Button::Select)) demo = next(demo);
+            if (nnh::input::pressed(nnh::Button::Select)) {
+                if (demo == Demo::Bench) demos.bench.leave();
+                demo = next(demo);
+            }
             switch (demo) {
             case Demo::Bonus:
                 demos.bonus.update();

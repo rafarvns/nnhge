@@ -127,6 +127,9 @@ target_include_directories(nnh_tests PRIVATE ${_pc_src})
 set(_3ds_src ${PROJECT_SOURCE_DIR}/engine/platforms/3ds/src)
 target_sources(nnh_tests PRIVATE platform_3ds/test_hbldr_args.cpp ${_3ds_src}/hbldr_args.cpp)
 target_include_directories(nnh_tests PRIVATE ${_3ds_src})
+# The platformer's automatic gate keeps its bookkeeping in a pure file (spec 013 FR-6), tested like core logic.
+target_sources(nnh_tests PRIVATE platformer/test_gate_run.cpp ${PROJECT_SOURCE_DIR}/examples/platformer/gate_run.cpp)
+target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.

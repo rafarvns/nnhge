@@ -423,6 +423,26 @@ Settled in stage 5 (2026-11-21):
   `expect "bench: PASS" 12000` → screenshot of the result → `end`. Flips come *before* the benchmark so their
   screenshot exists even when the gate fails. Screenshots are taken outside the measured trials.
 
+#### Settled in stage 6
+
+- **Pure bookkeeping, unit-tested**: the trials and the searches live in `examples/platformer/gate_run.{hpp,cpp}`
+  (no engine calls), compiled into `nnh_tests` from the example folder (`tests/platformer/test_gate_run.cpp`). An
+  example file in the unit tests is new; the alternative (a core module for a benchmark) was not worth it.
+  `gate.{hpp,cpp}` logs and draws; `bench.cpp` feeds it the frame time and applies its counts.
+- **When the target fails, the searches go down** (layers 3, 2, 1 with 300 sprites; sprites 200, 100, 0 with 4
+  layers) and stop at the first trial that passes, so a FAIL still says how far off the console is. Limits that
+  were never reached read `none (even 1 layer missed)` / `none (even 0 sprites missed)`; a search that reaches the
+  benchmark's maximum (12 layers, 2000 sprites) says `(the most it has)`.
+- **Log lines** (channel `platformer`): `bench: gate started: 4 layers + 300 sprites for 600 frames, then the
+  limits`; one `bench: trial ... : ok|MISSED, avg, worst, missed n/N` per trial; the two `bench: limit ...` lines; then
+  `bench: PASS ...` (Info) or `bench: FAIL ...` (Warn, so it stays visible and in Release logs). SELECT during a run
+  stops it with `bench: gate stopped after n trials (left the benchmark): no verdict`.
+- **On screen**: while running, the bottom screen shows `GATE RUNNING`, the trial, its frame and the last result;
+  at the end a large `GATE: PASS` (green) or `GATE: FAIL` (red) banner on the top screen and the verdict, the target's
+  numbers and both limits on the bottom one, until a count is changed by hand. The bench returns to 4 + 300.
+- **Script**: also `fail-on "] E "` and `expect "bench: gate started" 10`; `wait 30` between the bench screenshot
+  and A, and `wait 15` before the result's screenshot (the parser's "late after expect" rule).
+
 ### Files
 
 | File | New/changed | Responsibility |

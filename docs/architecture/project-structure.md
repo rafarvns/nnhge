@@ -20,7 +20,10 @@ tests/
   framework/                                 the tiny test framework
   <module>/test_<concept>.cpp                mirrors engine/core/src/<module>/
   platform_conformance/                      contract tests, linked against every platform
+  <example>/test_<concept>.cpp               an example's pure logic, compiled from examples/<example>/
+                                             (tests/platformer: the benchmark's automatic gate)
 examples/<name>/                             one small program per feature (main.cpp + CMakeLists.txt)
+  tests/*.nnhs                               console test scripts (spec 013): nnh run <name> --script ...
 docs/
   api/<module>.md                            reference for each public module
   architecture/  process/  tech/  guides/

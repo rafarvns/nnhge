@@ -1,5 +1,5 @@
 nnh_add_game(platformer
-    SOURCES main.cpp bench.cpp bonus.cpp bonus_level.cpp flips.cpp player.cpp
+    SOURCES main.cpp bench.cpp bonus.cpp gate.cpp gate_run.cpp bonus_level.cpp flips.cpp player.cpp
     ASSETS assets
     TITLE "NNHGE Platformer"
     DESCRIPTION "Tilemaps, collision and a tile benchmark"

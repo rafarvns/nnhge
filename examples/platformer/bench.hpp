@@ -1,9 +1,11 @@
 #pragma once
 // Benchmark for the spec 012 gate (decision D26): N full layers of 16x16 tiles scrolling diagonally on the
 // top screen (every cell drawn: up to 26 x 16 = 416 tiles per layer) plus M sprites. L/R change N, Y/X change
-// M. The bottom screen shows the frame time and the frames that missed 60 Hz since the last change.
+// M. The bottom screen shows the frame time and the frames that missed 60 Hz since the last change. A starts
+// the automatic gate (gate.hpp): the target and the limit searches, logged, with the verdict on screen.
 
 #include "art.hpp"
+#include "gate.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -21,6 +23,10 @@ class Bench {
     bool ready() const { return map_.valid() && sprites_ != nullptr; }
     void update();
     void draw() const;
+    /// Starts the automatic gate (A in the benchmark; PLATFORMER_DEMO=gate).
+    void start_gate();
+    /// Leaving the benchmark: a running gate stops without a verdict.
+    void leave() { gate_.stop(); }
 
   private:
     struct Sprite {
@@ -28,6 +34,8 @@ class Bench {
     };
 
     void set_counts(int layers, int sprites);
+    void manual_controls();
+    void draw_stats() const;
 
     const Art& art_;
     nnh::Tilemap map_;
@@ -41,4 +49,6 @@ class Bench {
     double worst_ms_ = 0;
     int frames_ = 0;
     int missed_ = 0; ///< frames that took longer than 1.5 x 16.7 ms
+    Gate gate_;
+    bool show_verdict_ = false; ///< the last gate's verdict stays on screen until a count is changed by hand
 };

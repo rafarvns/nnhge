@@ -136,7 +136,8 @@ NNH_PRESET=pc-debug build/pc-debug/tools/nnh/nnh run input --pc --no-build --scr
 build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
 NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
-PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png build/pc-debug/examples/platformer/platformer.exe   # tiles: bench|flips
+PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png build/pc-debug/examples/platformer/platformer.exe   # tiles: bench|flips|gate
+build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs   # tile gate on the console (Development, HBL → Y): bench: PASS/FAIL
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

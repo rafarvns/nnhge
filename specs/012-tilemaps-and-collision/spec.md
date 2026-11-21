@@ -1,6 +1,7 @@
 # Spec 012: Tilemaps and collision
 
-Status: approved (2026-11-21, with every proposed answer below)
+Status: approved (2026-11-21, with every proposed answer below; amended the same day: code first, Tiled optional —
+NNHGE has no editor, so everything works through the C++ API)
 Author: NNHGE maintainers · Date: 2026-11-21
 Depends on: [spec 004](../004-2d-graphics/spec.md) (textures, draws, layers, cameras),
 [spec 007](../007-assets-and-romfs/spec.md) (assets and build-time conversion), [spec 002](../002-core-foundation/spec.md)
@@ -11,16 +12,19 @@ scene transitions are later specs).
 
 Today a game can draw sprites but has no notion of a level: every platformer or top-down game must invent its own
 map format, draw thousands of tiles by hand and write its own collision code, which is where most homebrew games
-spend (and lose) their time. After this spec a game draws its levels in a common map editor, puts the files in its
-assets folder, loads a level with one call, draws it scrolling with the camera at 60 Hz on an Old 3DS, reads the
+spend (and lose) their time. After this spec a game builds a level **in code** — size, tilesets, layers, tiles,
+solid and one-way tiles, objects — or, optionally, draws it in a common map editor and loads the file with one call;
+either way it draws it scrolling with the camera at 60 Hz on an Old 3DS, reads the
 objects placed in it (spawn points, coins, doors), and moves its characters against the solid tiles and against each
 other with a few calls that never let them pass through walls. The same code behaves identically in the simulator and
 on the 3DS.
 
 ## User stories
 
-- As a game developer, I want to draw my levels in a map editor I already know and drop the files into my assets
-  folder, so that I don't have to write a level editor or a file format.
+- As a game developer, I want to build a level entirely from code (generated, hand-written arrays, my own format),
+  because NNHGE has no editor and I may not want one.
+- As a game developer, I want, optionally, to draw my levels in a map editor I already know and drop the files into
+  my assets folder, so that I don't have to write a level editor or a file format.
 - As a game developer, I want to load a level and draw it, with several layers (background, ground, foreground) and
   the camera following my player, without thinking about which tiles are on screen.
 - As a game developer, I want to place spawn points, enemies and items in the editor and read them in my game, with
@@ -34,8 +38,12 @@ on the 3DS.
 
 ## Functional requirements
 
-- **FR-1 Maps from a map editor.** A map is a file in the game's assets folder, made with **Tiled** (the common free
-  map editor; see open questions for the exact format). The build checks and converts it, like images (spec 007): a
+- **FR-0 Maps built in code (the base).** Every part of a map — tile size, size in tiles, tilesets (a texture and its
+  tile size), tile layers and their cells, tile flips, solid and one-way tiles, object layers, objects and properties
+  — can be created and filled through the C++ API alone, with no file and no tool. A map from a file (FR-1) is the same
+  object, so everything below works on both, and a game can load a map and then change it in code.
+- **FR-1 Maps from a map editor (optional).** A map can also be a file in the game's assets folder, made with
+  **Tiled** (the common free map editor; see open questions for the exact format). The build checks and converts it, like images (spec 007): a
   broken map, a missing tileset image or an unsupported feature fails the **build**, naming the file and the reason.
   The game loads it by path: `load_tilemap("levels/level1")`. A map that cannot be loaded at run time returns a
   `Result` error, never a crash.
@@ -74,9 +82,9 @@ on the 3DS.
 
 - **AC-1** An example game (`examples/platformer`, original art made for the engine) with a map made in Tiled: two or
   more tile layers with a parallax background, a player that runs and jumps on floors, walls and one-way platforms,
-  coins placed as objects, a camera that follows the player. Runs on PC and on an Old 3DS at a steady 60 Hz while
+  coins placed as objects, a camera that follows the player; plus a small bonus level built entirely in code (FR-0). Runs on PC and on an Old 3DS at a steady 60 Hz while
   scrolling (the debug overlay shows no dropped frames).
-- **AC-2** Unit tests: map reading (layers, tilesets, flips, objects, properties), coordinate conversions, tile
+- **AC-2** Unit tests: a map built in code (every FR-0 part) behaves like the same map read from a file; map reading (layers, tilesets, flips, objects, properties), coordinate conversions, tile
   changes, visible-tile range for a camera with parallax, box-against-map movement (slide, corners, one-way platforms,
   speed larger than a tile, touching sides), box and point overlaps.
 - **AC-3** A broken or unsupported map fails the build with a message naming the file and the problem (test of the

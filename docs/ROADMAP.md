@@ -101,36 +101,40 @@ linked); `text.3dsx` 239,736 bytes.
 
 ### Features in the spirit of Godot and Unity
 
-What makes those engines productive, adapted to NNHGE's rules: data checked and converted at build time, no
-RTTI or exceptions, no allocation while playing, the same on PC and 3DS. Each item becomes its own spec; the
-order below is a proposal.
+What makes those engines productive, adapted to NNHGE's rules: no RTTI or exceptions, no allocation while
+playing, the same on PC and 3DS. **NNHGE has no editor or frontend**: every feature is a C++ API a game can use on
+its own, and where data belongs in a file (data assets, maps, animations) the file is plain text written by hand
+or comes from a common external tool (Tiled, Aseprite), checked and converted at build time. Each item becomes its
+own spec; the order below is a proposal.
 
-- [ ] **Data assets** (Unity's ScriptableObjects, Godot's Resources): typed game data (an enemy's stats, an item, a
-  level's settings) written in files in the assets folder, checked against a C++ struct at build time and loaded
-  by path; designers tweak values without touching code
+- [ ] **Data assets** (Unity's ScriptableObjects, Godot's Resources): typed, shared game data (an enemy's stats, an
+  item, a level's settings) in their own files in the assets folder — a readable text format written by hand —
+  whose shape is a C++ struct the game declares; the build checks every file against it, the game loads them by
+  path or name, values change without recompiling, and they can reference each other (an enemy's drop is an item)
+  and textures or sounds
 - [ ] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
   every one with a tag, cheap to compare (hashed at build time)
 - [ ] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets
   ignore their shooter, coins only the player), on top of spec 012's collision
-- [ ] **Prefabs** (Unity prefabs, Godot packed scenes): entity templates in data (components and values),
-  instantiated many times and overridden per copy; objects placed in Tiled can name one
+- [ ] **Prefabs** (Unity prefabs, Godot packed scenes): entity templates registered in code by name (a function or a
+  set of components and values), spawned many times and overridden per copy; a Tiled object can name one
 - [ ] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
   that follow the parent (a gun on a ship, a hat on a head)
-- [ ] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): frames and timings from Aseprite/sprite sheets
-  converted at build time, named clips, events on frames (a footstep sound), and a simple state machine (idle,
-  run, jump)
+- [ ] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): named clips declared in code (frames of a
+  sprite sheet, timings, loop), events on frames (a footstep sound), and a simple state machine (idle, run, jump);
+  optionally read from Aseprite files
 - [ ] **Tweens and timers** (Godot Tween and Timer, DOTween): animate any value with easing, sequences and
   delays; timers and "wait then do" without hand-written counters
 - [ ] **Input actions** (Godot InputMap, Unity Input System): named actions (`jump`, `attack`) mapped to buttons,
   remappable by the player and saved, instead of fixed buttons in game code
 - [ ] **Camera helpers** (Godot Camera2D, Cinemachine): follow with smoothing and a dead zone, map limits, shake,
   zoom, the two screens as one tall world or two views
-- [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels, layout boxes, focus
-  moved with the D-Pad and touch on the bottom screen; menus without drawing rectangles by hand
-- [ ] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System): emitters described in data
-  (rate, life, speed, color over time), pooled, within the draw budget
-- [ ] **Localization** (Godot `tr()`, Unity Localization): text tables per language in the assets, the system
-  language picked by default, the built-in font already covers Latin-1
+- [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels and layout boxes built
+  in code, focus moved with the D-Pad and touch on the bottom screen; menus without drawing rectangles by hand
+- [ ] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System): emitters configured by a C++
+  struct (rate, life, speed, color over time), pooled, within the draw budget
+- [ ] **Localization** (Godot `tr()`, Unity Localization): text by key per language, registered in code or read
+  from a table in the assets, the system language picked by default; the built-in font covers Latin-1
 - [ ] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves
 - [ ] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
@@ -139,8 +143,8 @@ order below is a proposal.
   this point", against tiles and boxes, filtered by layers
 - [ ] **Object pools** (Unity ObjectPool): fixed-size pools for bullets, particles and enemies, with handles that
   detect stale use
-- [ ] **Live inspector in the simulator** (Unity Inspector, Godot remote scene tree): see entities and their values
-  while the game runs, change them, pause and step one frame
+- [ ] **Live values in the simulator** (in place of Unity's Inspector, without an editor): an API to watch and tweak
+  a game's values on the debug overlay (`watch`, sliders driven by buttons), pause and step one frame
 - [ ] **Hot reload of assets in the simulator** (both engines): a changed image, map or data file reloads in the
   running game; with "hot reload of game code" below, the fastest edit loop
 

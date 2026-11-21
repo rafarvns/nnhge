@@ -122,4 +122,18 @@ std::string log_file_path(const std::string& root, const std::string& game, cons
     return root + "/build/logs/" + game + "-" + stamp + ".txt";
 }
 
+std::string preset_for(bool pc, bool release, const char* override) {
+    const std::string wanted = override != nullptr ? override : "";
+    const std::string system = pc ? "pc-" : "3ds-";
+    bool ok = wanted.size() > system.size() && wanted.compare(0, system.size(), system) == 0;
+    for (const char c : wanted) ok = ok && (std::isalnum(static_cast<unsigned char>(c)) || c == '-');
+    return ok ? wanted : preset_name(pc, release);
+}
+
+std::string screenshot_dir(const std::string& log_path) {
+    const std::string ext = ".txt";
+    const bool txt = log_path.size() > ext.size() && log_path.compare(log_path.size() - ext.size(), ext.size(), ext) == 0;
+    return txt ? log_path.substr(0, log_path.size() - ext.size()) : log_path + ".shots";
+}
+
 } // namespace nnh::tool

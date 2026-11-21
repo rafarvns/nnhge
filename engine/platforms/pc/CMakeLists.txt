@@ -17,6 +17,8 @@ add_library(nnh_platform_pc STATIC
     src/input_pc.cpp
     src/log_pc.cpp
     src/memory_pc.cpp
+    src/remote_address_pc.cpp
+    src/remote_capture_pc.cpp
     src/remote_pc.cpp
     src/sim_layout.cpp
     src/sim_settings.cpp
@@ -32,6 +34,11 @@ add_library(nnh::platform_pc ALIAS nnh_platform_pc)
 target_include_directories(nnh_platform_pc PRIVATE ../shared)
 target_link_libraries(nnh_platform_pc PRIVATE nnh::core_contract SDL3::SDL3)
 nnh_engine_options(nnh_platform_pc)
+
+if(WIN32)
+    # The console remote's loopback connection to nnh (remote_pc.cpp, spec 013): Winsock.
+    target_link_libraries(nnh_platform_pc PRIVATE ws2_32)
+endif()
 
 if(MINGW)
     # Games should run without the MinGW runtime DLLs on PATH.

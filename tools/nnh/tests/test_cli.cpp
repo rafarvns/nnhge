@@ -38,6 +38,39 @@ NNH_TEST(cli_parses_serve_and_unpair) {
     CHECK(std::string(help_text()).find("nnh serve") != std::string::npos);
 }
 
+NNH_TEST(cli_parses_scripts_and_no_build_for_run) {
+    Options o;
+    std::string e;
+    CHECK(parse({"run", "input", "--pc", "--script", "examples/input/tests/remote.nnhs", "--no-build"}, o, e));
+    CHECK(o.command == Command::Run && o.game == "input" && o.pc && o.no_build);
+    CHECK(o.script == "examples/input/tests/remote.nnhs");
+    CHECK(parse({"run", "input"}, o, e) && o.script.empty() && !o.no_build);
+    CHECK(parse({"run", "--no-build", "input"}, o, e) && o.no_build && o.script.empty());
+    const std::string help = help_text();
+    CHECK(help.find("--script <file.nnhs>") != std::string::npos && help.find("--no-build") != std::string::npos);
+}
+
+NNH_TEST(only_a_script_in_the_simulator_closes_the_game_at_its_end) {
+    Options o;
+    std::string e;
+    CHECK(parse({"run", "input", "--pc", "--script", "a.nnhs"}, o, e) && closes_game_at_end(o));
+    CHECK(parse({"run", "input", "--pc"}, o, e) && !closes_game_at_end(o)); // typed `end` only detaches
+    CHECK(parse({"run", "input", "--script", "a.nnhs"}, o, e) && !closes_game_at_end(o)); // the console keeps it
+}
+
+NNH_TEST(cli_refuses_scripts_where_they_cannot_run) {
+    Options o;
+    std::string e;
+    CHECK(!parse({"run", "input", "--script"}, o, e) && e.find("--script") != std::string::npos);
+    CHECK(!parse({"run", "input", "--script", "a.nnhs", "--release"}, o, e));
+    CHECK(e.find("Release builds have no remote control") != std::string::npos);
+    CHECK(!parse({"run", "input", "--release", "--script", "a.nnhs"}, o, e)); // in either order
+    CHECK(!parse({"build", "input", "--script", "a.nnhs"}, o, e) && e.find("--script") != std::string::npos);
+    CHECK(!parse({"install", "input", "--no-build"}, o, e) && e.find("--no-build") != std::string::npos);
+    CHECK(!parse({"build", "input", "--no-build"}, o, e));
+    CHECK(parse({"run", "input", "--release", "--no-build"}, o, e)); // a plain run of a Release build is fine
+}
+
 NNH_TEST(cli_reports_mistakes) {
     Options o;
     std::string e;

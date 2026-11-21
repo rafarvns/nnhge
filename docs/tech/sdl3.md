@@ -22,6 +22,8 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `sim_layout.cpp`, `sim_settings.cpp` | Window layouts and remembered settings (spec 006): pure, SDL-free, unit tested in `tests/simulator/` |
 | `window_pc.cpp` | The window view: current layout, composition of the two screen targets (spec 006) |
 | `input_override_pc.cpp` | `NNH_SIM_INPUT` scripted input (Debug/Development) |
+| `remote_pc.cpp`, `remote_address_pc.cpp` | Console remote (spec 013, Debug/Development): loopback TCP connection to `nnh run --pc` from `NNH_REMOTE` (Winsock/BSD sockets, not SDL), non-blocking reads, the log through it while connected (`log_pc.cpp`); the address parser is pure, tested in `tests/simulator/` |
+| `remote_capture_pc.cpp` | Screenshots for the remote: `SDL_RenderReadPixels` of a screen's render target after `end_frame()` → RGBA8 rows |
 | `debug_text_pc.cpp` | SDL's 8×8 debug font, for the crash screen only (it must work when the engine is broken); game and debug text use the engine's built-in font |
 | `texture_pc.cpp` (also) | `texture_create_rgba`: `SDL_CreateTexture` + `SDL_UpdateTexture` (the built-in font) |
 
@@ -82,6 +84,7 @@ color per pixel and reads every pixel back (headless, software renderer).
 | `NNH_SCREENSHOT=<file.png>` | with the above, save the last frame (`SDL_RenderReadPixels` + `SDL_SavePNG`) |
 | `NNH_SIM_INPUT=<script>` | fixed input on every frame, for screenshots ([simulator.md](../api/simulator.md)) |
 | `NNH_SIM_RENDERER=sdl` | skip the GPU-device renderer and use SDL's default one (to compare) |
+| `NNH_REMOTE=127.0.0.1:<port>` | set by `nnh run --pc`: connect back to it (log, remote input, screenshots; [simulator.md](../api/simulator.md)) |
 | `SDL_VIDEO_DRIVER=offscreen` | run without a display (CI smoke test) |
 | `SDL_AUDIO_DRIVER=dummy` | run without sound (scripted runs and screenshots stay quiet; music still advances) |
 

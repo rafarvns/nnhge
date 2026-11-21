@@ -2,6 +2,8 @@
 
 #include <nnh/debug.hpp>
 
+#include "press_log.hpp"
+
 TouchLog::TouchLog()
     : started_sub_(nnh::events::subscribe<&TouchLog::on_started>(this)),
       ended_sub_(nnh::events::subscribe<&TouchLog::on_ended>(this)) {}
@@ -9,9 +11,13 @@ TouchLog::TouchLog()
 void TouchLog::on_started(const nnh::TouchStarted& e) {
     ++touches_;
     last_start_ = e.position;
+    NNH_LOG_INFO(demo, "touch started at %d, %d", e.position.x, e.position.y);
 }
 
-void TouchLog::on_ended(const nnh::TouchEnded& e) { last_end_ = e.position; }
+void TouchLog::on_ended(const nnh::TouchEnded& e) {
+    last_end_ = e.position;
+    NNH_LOG_INFO(demo, "touch ended at %d, %d", e.position.x, e.position.y);
+}
 
 void TouchLog::draw() const {
     const int line = nnh::debug::line_height();

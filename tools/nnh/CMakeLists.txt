@@ -7,6 +7,7 @@ add_library(nnh_tool_lib STATIC
     src/commands/build.cpp
     src/commands/install.cpp
     src/commands/run.cpp
+    src/commands/run_pc.cpp
     src/commands/serve.cpp
     src/console_link.cpp
     src/fbi.cpp
@@ -17,6 +18,7 @@ add_library(nnh_tool_lib STATIC
     src/manifest.cpp
     src/netloader.cpp
     src/remote/game_records.cpp
+    src/remote/game_session.cpp
     src/remote/game_stream.cpp
     src/remote/log_match.cpp
     src/remote/png_writer.cpp
@@ -26,6 +28,7 @@ add_library(nnh_tool_lib STATIC
     src/remote/script_runner.cpp
     src/remote/script_timeline.cpp
     src/remote/script_tokens.cpp
+    src/remote/stdin_lines.cpp
     src/repo.cpp
     src/serve/discovery_responder.cpp
     src/serve/pairing_codes.cpp
@@ -62,6 +65,7 @@ if(NNH_BUILD_TESTS)
         tests/test_console_link.cpp
         tests/test_fbi.cpp
         tests/test_fuzz_tool.cpp
+        tests/test_game_session.cpp
         tests/test_game_stream.cpp
         tests/test_log_match.cpp
         tests/test_log_view.cpp
@@ -75,6 +79,7 @@ if(NNH_BUILD_TESTS)
         tests/test_script_runner.cpp
         tests/test_script_timeline.cpp
         tests/test_serve.cpp
+        tests/test_stdin_lines.cpp
         tests/test_user_config.cpp
         tests/test_zlib_stored.cpp
     )
@@ -84,4 +89,17 @@ if(NNH_BUILD_TESTS)
     nnh_engine_options(nnh_tool_tests)
     _nnh_tool_static_runtime(nnh_tool_tests)
     add_test(NAME nnh_tool COMMAND nnh_tool_tests)
+
+    # The console remote end to end in the simulator (spec 013 FR-4): nnh runs examples/input's test script
+    # against this preset's build (NNH_PRESET = this build folder's name), headless. Release builds have no
+    # remote control, so there is nothing to run there.
+    if(TARGET input AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+        get_filename_component(_nnh_preset "${PROJECT_BINARY_DIR}" NAME)
+        add_test(NAME nnh_script_pc_smoke
+                 COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+                         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/script_pc_smoke.cmake)
+        set_tests_properties(nnh_script_pc_smoke PROPERTIES
+            ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_nnh_preset}"
+            TIMEOUT 180)
+    endif()
 endif()

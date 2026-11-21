@@ -132,6 +132,7 @@ scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-r
 scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3ds-release/dist/<game>/ (.3dsx, .cia)
 build/pc-debug/tools/nnh/nnh run hello                         # build, send to the console (HBL → Y), show its log
 build/pc-debug/tools/nnh/nnh install audio                      # .cia over the network (FBI → Receive URLs)
+NNH_PRESET=pc-debug build/pc-debug/tools/nnh/nnh run input --pc --no-build --script examples/input/tests/remote.nnhs   # test script (spec 013): nnh: PASS, exit 0
 build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
 NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe

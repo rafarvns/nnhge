@@ -13,6 +13,8 @@ forbidden='shutdown after %llu frames|started "%s" \(%s build\)'
 # names of its hooks and platform functions (found when the binary keeps symbols: the .elf, MinGW .exe).
 forbidden="$forbidden"'|remote control on|remote input off|its time is not representative|could not be read back'
 forbidden="$forbidden"'|remote_frame_start|remote_frame_ended|remote_receive|remote_send|remote_capture|screenshots_send'
+# The simulator's end (spec 013 stage 4): NNH_REMOTE is read, and the log redirected, only in Debug/Development.
+forbidden="$forbidden"'|NNH_REMOTE|remote_open|remote_log_line|parse_remote_address'
 
 if grep -aEq "$forbidden" "$binary"; then
     echo "FAIL: $binary contains debug-only strings:"

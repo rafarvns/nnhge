@@ -13,6 +13,7 @@ using NativeSocket = SOCKET;
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -172,6 +173,12 @@ long Socket::recv_some(void* data, std::size_t size) {
 bool Socket::set_recv_timeout(int ms) {
     recv_timeout_ms_ = ms > 0 ? ms : 0;
     return valid();
+}
+
+bool Socket::set_no_delay() {
+    if (!valid()) return false;
+    const int yes = 1;
+    return setsockopt(native(handle_), IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&yes), sizeof yes) == 0;
 }
 
 std::uint16_t Socket::local_port() const {

@@ -1,0 +1,24 @@
+# Smoke test of the console remote (spec 013): buttons, stick, touch and screenshots.
+# PC:      nnh run input --pc --script examples/input/tests/remote.nnhs
+# Console: nnh run input --script examples/input/tests/remote.nnhs   (Homebrew Launcher open, press Y)
+#
+# Commands on the same frame all apply at its start, and a screenshot shows the end of that frame: so
+# `wait 1` after a screenshot, before changing what it should show.
+fail-on "] E "
+wait 30
+tap A
+expect "pressed A" 10
+wait 10
+hold L+R 20
+stick circle 1 0
+wait 15
+screenshot stick-right
+wait 1
+stick circle 0 0
+touch 40 40
+drag 280 200 30
+screenshot dragged
+wait 1
+untouch
+expect "touch ended at 280, 200" 5
+end

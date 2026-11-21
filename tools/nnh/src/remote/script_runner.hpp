@@ -83,6 +83,7 @@ public:
     /// True while a Hello was answered and no Bye was sent (the session may wait for the Hello answer).
     bool attached() const { return attached_; }
     bool hello_sent() const { return hello_sent_; }
+    bool interactive() const { return options_.interactive; }
 
 private:
     struct Sent {

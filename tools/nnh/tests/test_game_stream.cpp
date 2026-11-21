@@ -161,8 +161,8 @@ NNH_TEST(stream_shows_an_unfinished_record_as_text_at_the_end) {
 }
 
 NNH_TEST(stream_cuts_a_line_at_the_cap) {
-    Bytes in(kMaxLine + 3, 'q');
-    in.push_back('\n');
+    Bytes in(kMaxLine + 4, 'q');
+    in.back() = '\n'; // (not push_back: GCC 16 -O2 warns falsely about the reallocation)
     const auto items = split(in, 65536);
     CHECK(items.size() == 2 && items[0].line.size() == kMaxLine && items[1].line == "qqq");
 }

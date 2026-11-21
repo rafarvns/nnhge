@@ -2,6 +2,7 @@
 // nnh serve (spec 011) uses the same steps with the output captured line by line.
 
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 
 #include "commands.hpp"
@@ -69,7 +70,7 @@ bool build_target(const Options& options, const std::string& target_suffix, bool
         report.say("nnh: run it inside the NNHGE repository (no CMakePresets.json above here)", true);
         return false;
     }
-    out.preset = preset_name(options.pc, release);
+    out.preset = preset_for(options.pc, release, std::getenv("NNH_PRESET"));
     const Shell shell = host_shell(!options.pc);
     std::vector<GameEntry> games;
     if (!configure_and_list(out.root, out.preset, !options.pc, games, output)) return false;
@@ -93,6 +94,10 @@ bool build_target(const Options& options, const std::string& target_suffix, bool
         return false;
     }
     const std::string target = options.game + target_suffix;
+    if (options.no_build) {
+        report.say("nnh: not building " + target + " (--no-build): running what " + out.preset + " has", false);
+        return report.alive;
+    }
     report.say("nnh: building " + target + " (" + out.preset + ")", false);
     if (report.run(cmake_command(out.root, "--build --preset " + out.preset + " --target " + target, shell), shell) != 0) {
         report.say("nnh: the build failed", true);

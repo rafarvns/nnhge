@@ -74,13 +74,10 @@ add_executable(nnh_tests
     log/test_ring.cpp
     math/test_vec2.cpp
     memory/test_memory.cpp
-    remote/test_remote_frames.cpp
     remote/test_remote_input.cpp
     remote/test_remote_reader.cpp
     remote/test_remote_records.cpp
     remote/test_remote_schedule.cpp
-    remote/test_remote_screenshot.cpp
-    remote/test_remote_session.cpp
     remote/test_remote_wire.cpp
     result/test_result.cpp
     scene/test_run.cpp
@@ -98,6 +95,7 @@ add_executable(nnh_tests
     tilemap/test_tilemap_alloc.cpp
     tilemap/test_visible_range.cpp
     simulator/test_audio_mixer_pc.cpp
+    simulator/test_remote_address.cpp
     simulator/test_sim_layout.cpp
     simulator/test_sim_settings.cpp
     text/test_draw_text.cpp
@@ -111,12 +109,19 @@ add_executable(nnh_tests
     time/test_fixed_step.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
+# The remote session in the frame (spec 013) exists only in Debug and Development builds; Release compiles it out,
+# so its behaviour tests are left out there (the wire, reader, schedule and merge stay: they are pure).
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_sources(nnh_tests PRIVATE remote/test_remote_frames.cpp remote/test_remote_screenshot.cpp
+                                     remote/test_remote_session.cpp)
+endif()
 # Sound fixtures (tests/data/sounds, made by make_sounds.py) are read from the source tree.
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
 # The PC simulator's window layout and settings are pure (SDL-free) and tested here (spec 006).
 set(_pc_src ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
-target_sources(nnh_tests PRIVATE ${_pc_src}/audio_mixer_pc.cpp ${_pc_src}/sim_layout.cpp ${_pc_src}/sim_settings.cpp)
+target_sources(nnh_tests PRIVATE ${_pc_src}/audio_mixer_pc.cpp ${_pc_src}/remote_address_pc.cpp
+                                 ${_pc_src}/sim_layout.cpp ${_pc_src}/sim_settings.cpp)
 target_include_directories(nnh_tests PRIVATE ${_pc_src})
 # The 3DS homebrew loader's argument block is pure code too (spec 011 FR-4).
 set(_3ds_src ${PROJECT_SOURCE_DIR}/engine/platforms/3ds/src)
@@ -147,6 +152,10 @@ include(nnh_sdl3)
 target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_draw_tiles_pc.cpp)
 target_include_directories(nnh_conformance_pc PRIVATE ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
 target_link_libraries(nnh_conformance_pc PRIVATE SDL3::SDL3)
+# PC only: the console remote's loopback transport and screen read-back (spec 013); the test plays nnh with
+# nnh_link's sockets.
+target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_remote_pc.cpp)
+target_link_libraries(nnh_conformance_pc PRIVATE nnh_link)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 # Headless and quiet: no display, no sound card needed (the dummy audio driver still runs the backend).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;SDL_AUDIO_DRIVER=dummy")

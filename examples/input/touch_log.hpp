@@ -1,6 +1,7 @@
 #pragma once
-// Reacts to TouchStarted / TouchEnded events: counts touches and remembers where the last one began
-// and ended. The live position comes from the input::touch_position() query instead (no event for moves).
+// Reacts to TouchStarted / TouchEnded events: counts touches, remembers where the last one began and ended,
+// and logs both ("touch started at x, y", "touch ended at x, y") for test scripts. The live position comes
+// from the input::touch_position() query instead (no event for moves).
 
 #include <nnh/events.hpp>
 #include <nnh/input.hpp>

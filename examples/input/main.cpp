@@ -5,6 +5,8 @@
 // or a gamepad. Headless screenshot with scripted input (Debug/Development builds):
 //   NNH_SIM_INPUT="circle=0.7,0.7;cstick=-1,0;touch=200,150;buttons=A+R" NNH_EXIT_AFTER_FRAMES=30 \
 //   NNH_SCREENSHOT=build/input.png build/pc-debug/examples/input/input.exe
+// Presses, releases and touches are logged; tests/remote.nnhs drives it from the PC (spec 013):
+//   nnh run input --pc --script examples/input/tests/remote.nnhs
 
 #include <cstring>
 
@@ -14,23 +16,11 @@
 #include <nnh/input.hpp>
 #include <nnh/system.hpp>
 
+#include "press_log.hpp"
 #include "stick_view.hpp"
 #include "touch_log.hpp"
 
 namespace {
-
-struct NamedButton {
-    nnh::Button button;
-    const char* name;
-};
-
-constexpr NamedButton kButtons[] = {
-    {nnh::Button::A, "A"},          {nnh::Button::B, "B"},       {nnh::Button::X, "X"},
-    {nnh::Button::Y, "Y"},          {nnh::Button::L, "L"},       {nnh::Button::R, "R"},
-    {nnh::Button::ZL, "ZL"},        {nnh::Button::ZR, "ZR"},     {nnh::Button::Start, "START"},
-    {nnh::Button::Select, "SELECT"}, {nnh::Button::Up, "UP"},    {nnh::Button::Down, "DOWN"},
-    {nnh::Button::Left, "LEFT"},    {nnh::Button::Right, "RIGHT"},
-};
 
 /// Button names in two rows; held ones in green.
 void draw_buttons(int y) {
@@ -57,6 +47,7 @@ int main() {
     const bool has_c_stick = nnh::system::has(nnh::Capability::CStick);
     {
         TouchLog touch_log; // subscriptions end before shutdown()
+        PressLog press_log; // "pressed A" / "released A" in the log, for test scripts
         while (nnh::frame()) {
             if (nnh::input::pressed(nnh::Button::Start)) break;
             if (nnh::input::pressed(nnh::Button::Select)) {

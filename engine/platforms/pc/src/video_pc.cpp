@@ -35,6 +35,7 @@ void pc::reset_frame_pacing() { g_next_frame_ns = SDL_GetTicksNS(); }
 
 void begin_frame(Color top_clear, Color bottom_clear) {
     SDL_Renderer* renderer = pc::context().renderer;
+    pc::context().frame_open = true;
     // Each screen is drawn into its own target at native size; end_frame composes them (spec 006).
     pc::draw_on(Screen::Top);
     pc::set_draw_color(top_clear);
@@ -48,6 +49,7 @@ void begin_frame(Color top_clear, Color bottom_clear) {
 void end_frame() {
     pc::Context& ctx = pc::context();
     pc::compose_screens();
+    ctx.frame_open = false;
     ++ctx.frames;
     if (ctx.screenshot_path != nullptr && ctx.exit_after != 0 && ctx.frames == ctx.exit_after) {
         save_screenshot(ctx.screenshot_path);

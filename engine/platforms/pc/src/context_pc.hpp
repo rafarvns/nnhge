@@ -31,6 +31,7 @@ struct Context {
     int window_w = 0;
     int window_h = 0;
     std::uint64_t frames = 0;               // frames ended since init
+    bool frame_open = false;                // between begin_frame and end_frame (no remote read-back then)
     std::uint64_t exit_after = 0;           // NNH_EXIT_AFTER_FRAMES (0 = never)
     const char* screenshot_path = nullptr;  // NNH_SCREENSHOT
     // Developer controls (devtools_pc.cpp)

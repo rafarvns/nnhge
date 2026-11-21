@@ -1,6 +1,6 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–3 done (2026-11-21); next: stage 4
+Status: approved (2026-11-21); stages 1–4 done (2026-11-21); next: stage 5
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -175,29 +175,96 @@ Verifiable: `nnh_tool_tests` green. Done: 92 new tests (138 in `nnh_tool_tests`)
 
 ## Stage 4 — the simulator end to end
 
-- [ ] **T4.1** PC transport: `NNH_REMOTE` (loopback only, ignored otherwise and in Release), connect with a 1 s timeout,
+- [x] **T4.1** PC transport: `NNH_REMOTE` (loopback only, ignored otherwise and in Release), connect with a 1 s timeout,
   non-blocking receive, send; the log goes to the socket while connected — files:
   `engine/platforms/pc/src/remote_pc.cpp`, `log_pc.cpp`, `app_pc.cpp`, `context_pc.hpp`, `CMakeLists.txt` (`ws2_32`)
   — test: conformance on pc (non-loopback ignored, −1 without a connection) — covers FR-4, FR-7
-- [ ] **T4.2** [P] PC read-back of the screen targets (RGBA rows) — files: `engine/platforms/pc/src/remote_capture_pc.cpp`
+  - Done. Extra files: `remote_pc.hpp` (Winsock stays out of SDL's headers) and the pure parser
+    `remote_address_pc.{hpp,cpp}` (3 tests in `nnh_tests`, `tests/simulator/test_remote_address.cpp`). PC-only
+    conformance in `tests/platform_conformance/test_remote_pc.cpp` (the test plays nnh with `nnh_link` sockets):
+    an address off this computer is ignored; connected → receive 0 without data, bounded reads, bytes both ways,
+    the log line through the socket in order and uncoloured (and not on stdout), a 1 MiB send arrives whole, −1 and
+    no send after nnh closes; the connection closes at shutdown; nobody listening → no connection. In `pc-release` the same test expects no connection.
+    `TCP_NODELAY` on both ends (`net::Socket::set_no_delay()` added to `link/`, 1 test). Details in the plan,
+    "Settled in stage 4".
+- [x] **T4.2** [P] PC read-back of the screen targets (RGBA rows) — files: `engine/platforms/pc/src/remote_capture_pc.cpp`
   — test: a pc conformance test reads back a cleared colour — covers FR-2, FR-4
-- [ ] **T4.3** the session loop: socket + stream + runner + stdin thread, lines printed and saved, `nnh:` progress
+  - Done (`pc_remote_capture_reads_each_screen_back_as_the_frame_drew_it`: both cleared colours, sizes, layout 1,
+    and a 4×3 mark at (10, 20) found where it was drawn, so rows are top-down and not mirrored). The existing
+    "no capture while a frame is open" conformance test now runs against a real check (`frame_open`).
+- [x] **T4.3** the session loop: socket + stream + runner + stdin thread, lines printed and saved, `nnh:` progress
   lines in the log file, PNGs in `build/logs/<game>-<stamp>/`; `show_game_log` (also used by `nnh serve`) on top of it,
   without stdin for serve — files: `tools/nnh/src/remote/game_session.{hpp,cpp}`, `stdin_lines.{hpp,cpp}`,
   `game_log.*`, `log_listener.*`, `repo.*` — test: `test_repo.cpp` (screenshot folder), the loop by T4.5 — covers
   FR-2, FR-3, FR-5
-- [ ] **T4.4** CLI and commands: `--script`, `--no-build`, `--script` + `--release` refused, parse before building,
+  - Done. The loop also has tests of its own over loopback, against a fake game that speaks the real bytes
+    (`tools/nnh/tests/fake_game.hpp`, `test_game_session.cpp`, 7 tests: plain log shown and saved; a script to
+    PASS with its PNGs, notes in the log file, files noted before the verdict and the log after it; no Hello answer
+    → 2; the game closing early → 1; typed commands; a typed command nobody answers leaves the log running;
+    nothing typed → no Hello and no timeout).
+    `test_stdin_lines.cpp` (3), `test_repo.cpp` (+2: screenshot folder, `NNH_PRESET`). `LogListener::read_lines`
+    became `take_game()` (its test in `test_console_link.cpp` changed with it).
+- [x] **T4.4** CLI and commands: `--script`, `--no-build`, `--script` + `--release` refused, parse before building,
   console path (`Hello`, 3 s answer, `Bye`), `--pc` path (listen on loopback, `NNH_REMOTE`, simulator on a thread,
   `Bye{quit}`, join), help text — files: `tools/nnh/src/cli.{hpp,cpp}`, `commands/run.cpp`, `commands/run_pc.cpp` —
   test: `test_cli.cpp` — covers FR-3, FR-4
-- [ ] **T4.5** `examples/input` logs presses, releases and touches; `examples/input/tests/remote.nnhs`; ctest
+  - Done (+3 tests: options, where scripts are refused, `closes_game_at_end()`). Only a script with `--pc` sends
+    `Bye{quit}`; first written as "any `--pc` run", which closed the simulator at a typed `end` — found by T4.6.
+    `NNH_PRESET` is new (plan, "Settled in stage 4"). Not run on a console yet: the console path is stage 5's T5.3.
+- [x] **T4.5** `examples/input` logs presses, releases and touches; `examples/input/tests/remote.nnhs`; ctest
   `nnh_script_pc_smoke` (`SDL_VIDEO_DRIVER=offscreen`, `--no-build`, exit 0, four PNGs of the right sizes; read them) —
   files: `examples/input/*.cpp`, `examples/input/tests/remote.nnhs`, `tools/nnh/CMakeLists.txt` — covers FR-1, FR-2,
   FR-3, FR-4
-- [ ] **T4.6** [P] interactive by hand on PC: `nnh run input --pc`, type `tap A`, `screenshot x`, `expect "pressed" 30`,
+  - Done. New `examples/input/press_log.{hpp,cpp}` ("pressed A", "released A"; also the button names and the `demo`
+    channel), `touch_log.cpp` logs "touch started at x, y" / "touch ended at x, y". The smoke test is
+    `tools/nnh/tests/script_pc_smoke.cmake` (exit 0, `PASS`, four PNG headers 400×240 / 320×240), ~3 s.
+  - Result: `nnh: PASS (24 lines, frames 1-110)`, exit 0. Screenshots read: `stick-right` (frame 77) top shows the
+    Circle Pad at x +1.00, bottom "not touching"; `dragged` (frame 108) bottom shows "touching at 280, 200" with the
+    cursor there, top the sticks centred. Same colours, orientation and text as an `NNH_SCREENSHOT` of the example
+    with `NNH_SIM_INPUT="circle=1,0"`.
+  - **Open question (timeline semantics)**: the plan's example script, run as written, also passes, but its
+    screenshots were wrong: `stick-right` showed the stick centred and `dragged` showed "not touching", and the touch
+    ended at 272, 194. Commands on the same clock all apply at the start of that frame, and the screenshot shows its
+    end, so the commands *after* a screenshot on the same clock are already in it; the last `drag` step shares its
+    frame with what follows. The script now has `wait 1` after each screenshot (and expects "touch ended at 280,
+    200"). Changing the timeline instead (stage 3's behaviour) is the maintainer's call.
+- [x] **T4.6** [P] interactive by hand on PC: `nnh run input --pc`, type `tap A`, `screenshot x`, `expect "pressed" 30`,
   `end`; the result written in this file — covers FR-5
+  - Done by an agent, so the lines were **piped into stdin, not typed** (`NNH_PRESET=pc-debug`, `--no-build`,
+    headless, `NNH_EXIT_AFTER_FRAMES` so the simulator closes by itself):
+    - Paced like typing (`sleep 5`, the first three lines, `sleep 2`, `end`): `Hello` on the first command (frame
+      168), `pressed A` on frame 175, `nnh: line 3: expect "pressed" matched at frame 175`, both PNGs of `x` saved
+      (frame 176, A released), `nnh: detached: …` at `end`, then the log until the game closed at frame 600, exit 0.
+    - All four lines at once (or before the game is up, which takes ~2 s here): every line waits for the `Hello`
+      answer, then `end` drops the tap, screenshot and expect not sent yet (stage 3's rule), so only the detach
+      happens. Expected for typed use; a person types after the game shows up.
+    - The first run found a bug: `end` closed the simulator (`Bye{quit}`). Fixed (T4.4).
+    - Still to do by hand on a real terminal (and with a gamepad: `SDL_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT` if the
+      stick drifts): typing while the log scrolls.
+
+Mutation check (by hand, 2026-11-21): 69 mutants of the session loop (`game_session.cpp`: loop and linger ends,
+exit code, log file, note prefix, Hello timeout and its condition, close, stream end, records, lines and their colour,
+sends, screenshot/notes order, folder, path, write result, first flush), `stdin_lines.cpp` (`\r`, last line, partial
+reads, end, pop, EOF), the CLI and repo helpers (`--script`/`--no-build` placement and values, Release refusal,
+`closes_game_at_end`, `NNH_PRESET` checks, screenshot folder), `net::Socket::set_no_delay`, and the PC transport
+(address parser, receive poll/close/bound, log line, connect check, blocking mode, `TCP_NODELAY`, read-back frame
+check/layout/size/screen/format/target restore, the `app_pc`/`log_pc`/`video_pc` hooks). First pass: 59 killed. Of the
+10 survivors, 6 got tests (a 6-digit port, a 1 MiB send that needs the blocking socket, a log line that must not also
+reach stdout, an interactive session with nothing typed must not report "didn't answer", the screenshot notes before
+the verdict — the fake game now ticks before sending screens, as the console does — and `set_no_delay`, whose test was
+in `nnh_link_tests`, not in the group run). Final: 65 of 69 killed; the 4 left change nothing observable: the
+simulator's `TCP_NODELAY` (latency only), restoring the render target after a read-back (the next `begin_frame` sets
+it), closing the socket on a failed send (the line still falls back to the terminal), and the flush right after
+`start()` (the Hello goes out on the next loop pass, ≤ 20 ms later).
 
 Verifiable: `nnh run input --pc --script examples/input/tests/remote.nnhs` → `nnh: PASS`, exit 0; ctest green.
+Done: `nnh_tests` 819 (+3), `nnh_tool_tests` 153 (+15), `nnh_link_tests` 55 (+1), `nnh_conformance_pc` 23 (+6), ctest
+103/103 on `pc-debug` (+1, `nnh_script_pc_smoke`); `pc-dev`, `pc-release`, `3ds-release` and `3ds-dev` build without
+warnings (a GCC 16 `-O2` false positive in stage 3's `test_game_stream.cpp` fixed); the release strings check (now
+also `NNH_REMOTE` and the simulator's remote function names) passes on `pc-release` and `3ds-release` `hello` and
+`input`. Found and fixed (from stage 2): in a **Release** build of `nnh_tests` the session, frames and screenshot tests
+crashed or failed (they test code Release compiles out); `tests/CMakeLists.txt` now builds them only outside
+Release, and `ctest --preset pc-release` passes 102/102.
 
 ## Stage 5 — the 3DS
 

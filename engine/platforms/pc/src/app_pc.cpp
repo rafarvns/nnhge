@@ -6,6 +6,7 @@
 //   NNH_SIM_INPUT=<script>      scripted input, Debug/Development only (input_override_pc.cpp)
 //   NNH_SIM_RENDERER=sdl        skip the GPU-device renderer (use SDL's default renderer)
 //   NNH_SIM_LAYOUT=<id>, NNH_SIM_SCALE=<1..6|fit>   window view for screenshots (window_pc.cpp)
+//   NNH_REMOTE=127.0.0.1:<port>  set by `nnh run --pc`: connect back to it, Debug/Development only (remote_pc.cpp)
 
 #include <SDL3/SDL.h>
 // The game owns main(); SDL must not replace it.
@@ -19,6 +20,7 @@
 #include "context_pc.hpp"
 #include "nnh/build.hpp"
 #include "nnh/platform/app.hpp"
+#include "remote_pc.hpp"
 #include "stdio_fs.hpp"
 
 namespace nnh::platform {
@@ -131,10 +133,12 @@ bool init(const AppConfig& config) {
     set_data_root(config);
     g_context.frames = 0;
     pc::reset_frame_pacing();
+    if constexpr (build::kDevToolsEnabled) pc::remote_open(); // NNH_REMOTE: nnh run --pc (spec 013)
     return true;
 }
 
 void shutdown() {
+    if constexpr (build::kDevToolsEnabled) pc::remote_close();
     pc::gamepad_close();
     pc::view_save();
     destroy_window();

@@ -78,8 +78,6 @@ void fake_netloader(net::Socket& listener, Received& r, std::int32_t first_statu
     r.ok = true;
 }
 
-void collect(const std::string& line, void* context) { static_cast<std::vector<std::string>*>(context)->push_back(line); }
-
 std::string temp_file(const char* name, const std::vector<std::uint8_t>& bytes) {
     const std::string path = std::string(NNH_TOOL_TEST_TMP) + "/" + name;
     std::FILE* f = std::fopen(path.c_str(), "wb");
@@ -168,20 +166,22 @@ NNH_TEST(no_netloader_is_reported) {
     CHECK(send_3dsx(kLoopback, port, "hello.3dsx", {1}, {}, 300).find("netloader") != std::string::npos);
 }
 
-NNH_TEST(the_game_log_arrives_line_by_line) {
+NNH_TEST(the_game_connects_once_and_its_connection_is_handed_over) {
+    // Its lines are then read by the session (test_game_session.cpp).
     LogListener logs;
     CHECK(logs.open(kLoopback, 0));
+    const std::uint16_t port = logs.port();
     std::thread game([&] {
-        net::Socket s = net::tcp_connect(kLoopback, logs.port(), 2000);
-        const char text[] = "[f0        0.000s] I app    started\r\nsecond\n\nlast without newline";
-        s.send_all(text, sizeof text - 1);
+        net::Socket s = net::tcp_connect(kLoopback, port, 2000);
+        s.send_all("line\n", 5);
     });
     CHECK(logs.wait_for_game(2000));
-    std::vector<std::string> lines;
-    logs.read_lines(collect, &lines);
+    net::Socket connection = logs.take_game();
+    char text[5] = {};
+    CHECK(connection.valid() && connection.recv_all(text, 5) && std::string(text, 5) == "line\n");
     game.join();
-    CHECK(lines.size() == 4 && lines[0] == "[f0        0.000s] I app    started" && lines[1] == "second");
-    CHECK(lines[2].empty() && lines[3] == "last without newline");
+    CHECK(!logs.take_game().valid()); // handed over once
+    CHECK(!net::tcp_connect(kLoopback, port, 300).valid()); // one game per run: no longer listening
 }
 
 NNH_TEST(no_game_connection_times_out) {

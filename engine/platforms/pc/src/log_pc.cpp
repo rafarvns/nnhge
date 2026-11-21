@@ -1,8 +1,11 @@
-// PC platform: log lines to the terminal, colored by level (contract nnh/platform/log.hpp).
+// PC platform: log lines to the terminal, colored by level (contract nnh/platform/log.hpp); to nnh instead
+// while `nnh run --pc` is connected (remote_pc.cpp).
 
 #include <cstdio>
 
+#include "nnh/build.hpp"
 #include "nnh/platform/log.hpp"
+#include "remote_pc.hpp"
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -44,6 +47,10 @@ const char* color_for(LogLevel level) {
 } // namespace
 
 void log_console(LogLevel level, const char* line) {
+    // Started by `nnh run --pc`: the line goes to nnh, which shows and saves it like a console's (spec 013).
+    if constexpr (build::kDevToolsEnabled) {
+        if (pc::remote_log_line(line)) return;
+    }
     if (!g_checked) {
         g_colors = detect_colors();
         g_checked = true;

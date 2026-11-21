@@ -32,6 +32,13 @@ NNH_TEST(tcp_round_trip_on_loopback) {
     CHECK(s.recv_some(back, 5) == 0); // the other side closed
 }
 
+NNH_TEST(small_writes_can_skip_nagle_on_a_connected_socket) {
+    net::Socket listener = net::tcp_listen(kLoopback, 0);
+    net::Socket s = net::tcp_connect(kLoopback, listener.local_port(), 5000);
+    CHECK(s.valid() && s.set_no_delay());
+    CHECK(!net::Socket{}.set_no_delay()); // no socket: nothing to set
+}
+
 NNH_TEST(tcp_connect_to_a_closed_port_fails) {
     net::Socket probe = net::tcp_listen(kLoopback, 0);
     const std::uint16_t port = probe.local_port();

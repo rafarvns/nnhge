@@ -341,6 +341,39 @@ Settled in stage 3 (2026-11-21):
   runner); tests `fake_console.hpp` (the console side, frame by frame, through the PC's own stream splitter) and
   `test_script_interactive.cpp`.
 
+Settled in stage 4 (2026-11-21, the simulator end to end):
+
+- **Files**: the PC socket code is `remote_pc.cpp` with its own small header `remote_pc.hpp` (`remote_open`,
+  `remote_close`, `remote_log_line`), not `context_pc.hpp`, so Winsock never meets SDL's headers; the `NNH_REMOTE`
+  parser is pure, `remote_address_pc.{hpp,cpp}` (exactly `a.b.c.d:port`, `a` = 127, port 1–65535; tested in
+  `tests/simulator/test_remote_address.cpp`). `context_pc.hpp` only gains `frame_open` (set by `begin_frame`,
+  cleared by `end_frame`; the read-back refuses while it is set). The socket stays blocking: a receive polls it first
+  (`select`/`poll` with 0 ms) and returns 0 when nothing is there. The simulator connects at the end of `init()` and
+  closes at the start of `shutdown()`; a failed send closes it, and the log goes back to the terminal.
+- **`TCP_NODELAY` on both ends**: 16-byte messages and ticks must not wait for the peer's acknowledgement (Nagle).
+  The simulator sets it in `remote_pc.cpp`; `nnh` through a new `net::Socket::set_no_delay()` in `link/` (one test
+  in `link/tests/test_net.cpp`). `nnh` also writes everything the runner hands out in one send.
+- **Tool**: `LogListener::read_lines` gave way to `take_game()`; `game_log.cpp` has `follow_game()` (paths, the
+  session) and `show_game_log()` stays for `nnh serve` (no runner, no stdin). The console path and `--pc` path are
+  `commands/run.cpp` and `commands/run_pc.cpp`; `ScriptRunner` gained the `interactive()` query. Progress notes
+  use an ASCII arrow: `nnh: line 15 screenshot stick-right -> <path>`. After a verdict the log is still shown until
+  the game closes, at most 1 s on the console and 10 s with `--pc` (where `Bye{quit}` closes the simulator).
+- **Only a script with `--pc` sends `Bye{quit}`** (`closes_game_at_end()` in `cli.cpp`): a typed `end` in the
+  simulator only detaches, as on the console.
+- **`NNH_PRESET=<preset>`** (beyond the plan): `nnh` builds and runs from another preset of the same system (`pc-…`
+  or `3ds-…`; letters, digits and `-` only, anything else is ignored). The ctest `nnh_script_pc_smoke` needs it to
+  run the build of its own preset (`pc-debug`) instead of `pc-dev`; it is registered in Debug/Development presets
+  only (Release has no remote) and is a CMake script (`tools/nnh/tests/script_pc_smoke.cmake`) that checks the exit
+  code, the `PASS` line and the four PNG headers (400×240, 320×240).
+- **Exit codes**: with `--script`, everything that stops the run before a verdict is 2 (build failed, nothing built
+  with `--no-build`, no console, no log connection within 10 s, a simulator that closes without connecting).
+- **Same-frame commands and screenshots** (found with the example script): commands on the same clock all apply at
+  the start of that frame, and a `screenshot` shows the end of it. So `screenshot X` followed by `stick circle 0 0`
+  shows the stick already centred, and the last step of `drag … N` lands on the same frame as a following `untouch`
+  (the game sees the touch end one step short). The example script puts `wait 1` after each screenshot and before
+  `untouch`; whether the timeline should do it (a screenshot taking the frame before the clock, or a drag ending one
+  frame earlier) is an open question for the maintainer, see tasks T4.5.
+
 ### Simulator and the platformer's automatic gate
 
 - **pc** (`remote_pc.cpp`): at init (Debug/Development), if `NNH_REMOTE=<ip>:<port>` names a loopback address

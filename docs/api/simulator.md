@@ -63,6 +63,7 @@ so reference images don't depend on anyone's preferences. To capture another lay
 | `NNH_SIM_SCALE=<n>` | Scale for this run: `1`–`6`, or `fit`. Disables the remembered settings. |
 | `NNH_SIM_RENDERER=sdl` | Use SDL's default renderer instead of the GPU-device one (see [sdl3.md](../tech/sdl3.md#renderer-2d-now-3d-later)). |
 | `NNH_SIM_INPUT=<script>` | Debug/Development: replaces keyboard, mouse and gamepad on every frame with fixed input, e.g. `circle=0.7,0.5;cstick=-1,0;touch=160,120;buttons=A+R+Start`. Every part is optional; sticks in [-1, 1] (y up, before the dead zone), touch in bottom-screen pixels, buttons by `nnh::Button` name joined with `+`. |
+| `NNH_REMOTE=127.0.0.1:<port>` | Debug/Development, set by `nnh run --pc` (spec 013): the simulator connects back to that `nnh` (1 s timeout; loopback addresses only, anything else is ignored), sends its log there instead of the terminal, and takes remote input and screenshot requests like a console ([nnh tool](../guides/nnh-tool.md#driving-the-game-from-the-pc)). Without a connection it runs as before. |
 
 ```sh
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=shot.png build/pc-debug/examples/hello/hello.exe

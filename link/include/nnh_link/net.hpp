@@ -40,6 +40,9 @@ public:
     long recv_some(void* data, std::size_t size);
     /// Receive timeout for later recv calls (0 = none).
     bool set_recv_timeout(int ms);
+    /// Sends small writes at once instead of waiting for the peer's acknowledgement (TCP_NODELAY): the
+    /// console remote's 16-byte messages are due on a frame (spec 013). @return false if it can't.
+    bool set_no_delay();
     /// The local port it is bound to (0 if unknown).
     std::uint16_t local_port() const;
 

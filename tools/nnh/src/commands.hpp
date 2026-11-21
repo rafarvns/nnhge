@@ -34,6 +34,12 @@ bool build_target(const Options& options, const std::string& target_suffix, bool
 bool configure_and_list(const std::string& root, const std::string& preset, bool for_3ds, std::vector<GameEntry>& games,
                         const OutputFn* output = nullptr);
 
+struct GameRun;
+/// nnh run --pc (commands/run_pc.cpp, spec 013): builds (unless --no-build), starts the simulator with
+/// NNH_REMOTE pointing back at nnh and follows it with `run`. @return the script's exit code, or the
+/// simulator's without a script.
+int run_on_pc(const Options& options, const GameRun& run);
+
 int command_serve(const Options& options);
 int command_unpair();
 

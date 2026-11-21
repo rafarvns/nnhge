@@ -9,6 +9,7 @@ inside the repository.
 ```sh
 nnh run hello                 # build for the 3DS, send to the console, show the log
 nnh run hello --pc            # the same game in the simulator
+nnh run input --pc --script examples/input/tests/remote.nnhs   # a test script: PASS/FAIL, screenshots
 nnh build audio --release     # just build (Release)
 nnh install audio             # build the .cia and install it with FBI
 nnh serve                     # wait for NNH Link on the console (it picks, builds and starts games)
@@ -43,10 +44,40 @@ nnh: hello closed
 - **Finding the console**: `nnh` asks the last console used, every local network's broadcast address and
   the global broadcast. If nothing answers it tries the last console anyway. `--console <ip>` sets it;
   the address is remembered per user (`%APPDATA%/nnhge/nnh.ini`, `~/.config/nnhge/nnh.ini`).
-- Ctrl+C stops waiting for the log; the game keeps running on the console.
+- Ctrl+C stops waiting for the log; the game keeps running on the console (any control `nnh` was holding
+  is released).
 - The first time, **Windows Firewall** may ask about `nnh.exe`: allow it on private networks. The game's
   log comes back on TCP port 17491 and the console's discovery answer on UDP 17491 (`nnh serve` also uses
   TCP and UDP 17492).
+- `--pc` runs the simulator instead. A Debug/Development simulator connects back to `nnh` on the loopback
+  interface (`NNH_REMOTE`, set by `nnh`), so its log is shown and saved by `nnh` too, exactly like the
+  console's.
+
+## Driving the game from the PC
+
+> Status: in progress (spec [013](../../specs/013-console-remote/spec.md): the simulator works; the 3DS side
+> comes next). The full guide to the script format comes with the spec's last stage; until then the
+> commands are in [plan 013](../../specs/013-console-remote/plan.md#script-language-nnhs).
+
+```text
+nnh run <game> [--console <ip>] [--pc] [--script <file.nnhs>] [--no-build]
+```
+
+- **`--script <file.nnhs>`** runs a test script: wait, press, hold, tap, sticks, touch and drag,
+  screenshots, `expect` a log line, `fail-on`. The script is checked before anything is built (every
+  error as `file:line: what`); `nnh` prints its progress as `nnh:` lines and ends with
+  `nnh: PASS (<lines> lines, frames 1-<n>)` or `nnh: FAIL at <file>:<line>: <why>`. Exit code: **0** pass,
+  **1** fail, **2** could not run (script error, build failed, no console, no answer from the game). With
+  `--pc` the simulator is closed at the end; on the console the game keeps running. Release builds have
+  no remote control: `--script` with `--release` is refused. Example: `examples/input/tests/remote.nnhs`.
+- **Without `--script`**, every line you type while the game runs is one script command, run as soon as
+  it is typed (`help` lists them; `expect` reports and never ends the run; `end` gives the game its
+  controls back). Nothing is sent to the game before the first command.
+- **Screenshots** go to `build/logs/<game>-<date>-<time>/frame-<n>-<name>-{top,bottom}.png`, next to the
+  log; `<n>` is the frame, six digits.
+- **`--no-build`** runs what is already built. **`NNH_PRESET=<preset>`** makes `nnh` build and run from
+  another preset of the same system (for example `pc-debug` instead of `pc-dev`); the ctest
+  `nnh_script_pc_smoke` uses both.
 
 ## Installing a `.cia`
 

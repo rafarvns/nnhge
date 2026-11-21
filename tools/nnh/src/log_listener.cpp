@@ -13,26 +13,6 @@ bool LogListener::wait_for_game(int timeout_ms) {
     return game_.valid();
 }
 
-void LogListener::read_lines(void (*on_line)(const std::string& line, void* context), void* context) {
-    std::string pending;
-    char buffer[4096];
-    auto emit = [&](std::string line) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        on_line(line, context);
-    };
-    for (;;) {
-        const long n = game_.recv_some(buffer, sizeof buffer);
-        if (n <= 0) break;
-        pending.append(buffer, static_cast<std::size_t>(n));
-        std::size_t start = 0;
-        for (std::size_t nl = pending.find('\n'); nl != std::string::npos; nl = pending.find('\n', start)) {
-            emit(pending.substr(start, nl - start));
-            start = nl + 1;
-        }
-        pending.erase(0, start);
-    }
-    if (!pending.empty()) emit(pending);
-    game_.close();
-}
+net::Socket LogListener::take_game() { return static_cast<net::Socket&&>(game_); }
 
 } // namespace nnh::tool

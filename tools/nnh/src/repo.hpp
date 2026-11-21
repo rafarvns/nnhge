@@ -15,6 +15,10 @@ std::string find_repo_root(const std::string& start);
 /// "3ds-dev", "3ds-release", "pc-dev" or "pc-release".
 std::string preset_name(bool pc, bool release);
 
+/// The preset to use: `override` (NNH_PRESET) when it names a preset of the same system ("pc-…" for the PC,
+/// "3ds-…" for the 3DS; letters, digits and '-' only), else preset_name(pc, release).
+std::string preset_for(bool pc, bool release, const char* override);
+
 /// "/e/x/y" (MSYS, written by devkitPro's CMake on Windows) -> "E:/x/y"; other paths unchanged.
 std::string native_path(const std::string& path);
 /// "E:/x/y" or "E:\x\y" -> "/e/x/y".
@@ -43,5 +47,8 @@ int run_shell_lines(const std::string& command, const Shell& shell,
 
 /// "<root>/build/logs/<game>-YYYYMMDD-HHMMSS.txt" for local time `t`.
 std::string log_file_path(const std::string& root, const std::string& game, const std::tm& t);
+
+/// The folder for a run's screenshots (spec 013): the log file's path without ".txt", next to it.
+std::string screenshot_dir(const std::string& log_path);
 
 } // namespace nnh::tool

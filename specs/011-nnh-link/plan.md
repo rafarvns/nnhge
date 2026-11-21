@@ -1,6 +1,6 @@
 # Plan 011: NNH Link — build and run from the console
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved 2026-11-18, done 2026-11-21)
 Spec: [spec.md](spec.md) · Decision D24 (below) · Builds on D7, D8, D23
 
 ## Constitution Check (before design)

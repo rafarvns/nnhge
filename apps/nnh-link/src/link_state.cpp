@@ -8,6 +8,16 @@ void LinkState::start() {
     servers_.clear();
     selected_ = 0;
     user_moved_ = false;
+    frames_on_screen_ = 0;
+    // The last PC is listed by its address until it answers: if the search fails (broadcasts blocked,
+    // answers lost), it can still be picked without typing the address again.
+    if (const auto& last = storage_.last_server()) {
+        servers_.push_back({Server{last->address, last->id, nnh::link::to_string(last->address)}, false});
+    }
+    ask();
+}
+
+void LinkState::ask() {
     Ipv4 also{};
     if (storage_.last_server()) also = storage_.last_server()->address;
     finder_.ask(also);
@@ -62,6 +72,7 @@ void LinkState::tick() {
 }
 
 void LinkState::tick_servers() {
+    if (frames_on_screen_ > 0 && frames_on_screen_ % kSearchEveryFrames == 0) ask();
     Server found;
     while (finder_.next(found)) {
         bool known = false;

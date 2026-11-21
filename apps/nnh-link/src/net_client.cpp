@@ -18,6 +18,9 @@ const std::vector<std::string> kNoLines;
 } // namespace
 
 void NetFinder::ask(Ipv4 also) {
+    // A fixed port first, like the Homebrew Launcher's netloader: on the console, answers to a socket bound
+    // to port 0 never arrived. Any port when it is busy (nnh serve on the same PC as the simulator).
+    if (!socket_.valid()) socket_ = net::udp_open(Ipv4{}, nnh::link::kLinkPort);
     if (!socket_.valid()) socket_ = net::udp_open(Ipv4{}, 0);
     if (!socket_.valid()) return;
     const std::size_t size = sizeof nnh::link::kDiscoveryQuestion - 1;

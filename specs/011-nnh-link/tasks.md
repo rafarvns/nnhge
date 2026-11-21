@@ -1,6 +1,6 @@
 # Tasks 011: NNH Link — build and run from the console
 
-Status: in progress (stages 1–2 done 2026-11-18, stage 3 2026-11-19, stages 4–5 and T6.1–T6.2 2026-11-20; waiting for the console test, T6.3)
+Status: implemented (stages 1–2 done 2026-11-18, stage 3 2026-11-19, stages 4–5 and T6.1–T6.2 2026-11-20, T6.3–T6.4 2026-11-21)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task.
@@ -28,7 +28,7 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 ## Stage 5 — the NNH Link app
 
-- [x] **T5.1** `link_state` + storage — tests with a fake connection — covers FR-2, FR-3, FR-5 (`apps/nnh-link/src/{link_state,storage,pad,layout,device}.cpp`, ports in `ports.hpp`; `nnh_link_app_tests`: 50 tests, 18 of 18 manual mutants killed)
+- [x] **T5.1** `link_state` + storage — tests with a fake connection — covers FR-2, FR-3, FR-5 (`apps/nnh-link/src/{link_state,storage,pad,layout,device}.cpp`, ports in `ports.hpp`; `nnh_link_app_tests`: 52 tests, 18 of 18 manual mutants killed. After the first console tries: the servers screen searches again every 2 s (Link opened before `nnh serve`), the last PC is always listed by its address (the search found nothing on the console), and the search socket binds UDP 17492 on the console, falling back to any port)
 - [x] **T5.2** scenes (servers, pairing pad, games, build) — simulator screenshots — covers FR-2, FR-6 (one scene + `view_*.cpp`; `NNH_LINK_DEMO=<screen>` for screenshots of every screen; checked by hand against a real `nnh serve`: discovery, pairing, real 3DS builds received, a second run without a code)
 - [x] **T5.3** platform files (3DS launch, PC none); 3DS build — covers FR-4, FR-6 (`platform_link_{3ds,pc}.cpp`; `nnh-link.3dsx` builds in 3ds-dev and 3ds-release — it first exposed a link error in `link/src/net.cpp` (`gethostid` without `extern "C"`), fixed)
 
@@ -36,5 +36,5 @@ Each task: one or a few TDD loops. `[P]` = can be done in parallel with the prev
 
 - [x] **T6.1** docs: new `docs/guides/nnh-link.md`; `nnh-tool.md` (serve), `security.md`, api pages of the extension headers, decision D24, CLAUDE.md, project-structure (`link/`, `apps/`) — covers AC-4 (also README, getting-started, decisions' NNH Link flow)
 - [x] **T6.2** Linux + ASan/UBSan, fuzzing on VM 120 — covers AC-3 (2026-11-20: ctest 100/100 with gcc; engine, link, app and tool tests under clang ASan + UBSan; `fuzz_link_*` 60 s each, no crash)
-- [ ] **T6.3** maintainer: the whole loop from the console on the Old 3DS XL (AC-1)
-- [ ] **T6.4** ROADMAP M6; spec, plan and tasks status → implemented
+- [x] **T6.3** maintainer: the whole loop from the console on the Old 3DS XL (AC-1) (2026-11-21: found "RAFA" by discovery, paired, built and received audio, its log in `nnh serve`, back to NNH Link with START, a second run without a code. The first tries fixed the 3DS connect check (`poll` instead of `SO_ERROR`, in `link/src/net.cpp`), the search socket's port and the last-PC row; ctest 100/100 on Linux after them)
+- [x] **T6.4** ROADMAP M6; spec, plan and tasks status → implemented

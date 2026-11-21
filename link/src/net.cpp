@@ -13,6 +13,7 @@ using NativeSocket = SOCKET;
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -58,12 +59,44 @@ Ipv4 from_sockaddr(const sockaddr_in& sa) {
 
 /// Waits until `s` is readable (or writable). @return true if ready before `timeout_ms`.
 bool wait_ready(NativeSocket s, int timeout_ms, bool write) {
+#ifdef _WIN32
     fd_set set;
     FD_ZERO(&set);
     FD_SET(s, &set);
     timeval tv{timeout_ms / 1000, (timeout_ms % 1000) * 1000};
     const int n = select(static_cast<int>(s) + 1, write ? nullptr : &set, write ? &set : nullptr, nullptr, &tv);
     return n > 0;
+#else
+    // poll, as the engine's 3DS log redirect does (app_3ds.cpp); a hang-up or error counts as readable
+    // (the read then reports it).
+    pollfd p{s, static_cast<short>(write ? POLLOUT : POLLIN), 0};
+    return poll(&p, 1, timeout_ms) > 0;
+#endif
+}
+
+/// A non-blocking connect() finished well within `timeout_ms`.
+bool connected_within(NativeSocket s, int timeout_ms) {
+#ifdef _WIN32
+    // Windows reports a failed connect in the exception set, not the write set: wait for both.
+    fd_set write_set;
+    fd_set error_set;
+    FD_ZERO(&write_set);
+    FD_ZERO(&error_set);
+    FD_SET(s, &write_set);
+    FD_SET(s, &error_set);
+    timeval tv{timeout_ms / 1000, (timeout_ms % 1000) * 1000};
+    const int ready = select(static_cast<int>(s) + 1, nullptr, &write_set, &error_set, &tv);
+    if (ready <= 0 || FD_ISSET(s, &error_set)) return false;
+    int error = 0;
+    int len = sizeof error;
+    getsockopt(s, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &len);
+    return error == 0;
+#else
+    // Connected = writable without an error or hang-up. Not getsockopt(SO_ERROR): on 3DS hardware it
+    // reports a failure for a good connection (found with NNH Link; the engine's log redirect knew it).
+    pollfd p{s, POLLOUT, 0};
+    return poll(&p, 1, timeout_ms) > 0 && (p.revents & POLLOUT) != 0 && (p.revents & (POLLERR | POLLHUP)) == 0;
+#endif
 }
 
 void set_blocking(NativeSocket s, bool blocking) {
@@ -159,20 +192,7 @@ Socket tcp_connect(Ipv4 address, std::uint16_t port, int timeout_ms) {
     const sockaddr_in sa = to_sockaddr(address, port);
     set_blocking(native(s.handle()), false);
     ::connect(native(s.handle()), reinterpret_cast<const sockaddr*>(&sa), sizeof sa);
-    // Windows reports a failed connect in the exception set, not the write set: wait for both.
-    fd_set write_set;
-    fd_set error_set;
-    FD_ZERO(&write_set);
-    FD_ZERO(&error_set);
-    FD_SET(native(s.handle()), &write_set);
-    FD_SET(native(s.handle()), &error_set);
-    timeval tv{timeout_ms / 1000, (timeout_ms % 1000) * 1000};
-    const int ready = select(static_cast<int>(native(s.handle())) + 1, nullptr, &write_set, &error_set, &tv);
-    if (ready <= 0 || FD_ISSET(native(s.handle()), &error_set)) return {};
-    int error = 0;
-    socklen_t len = sizeof error;
-    getsockopt(native(s.handle()), SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &len);
-    if (error != 0) return {};
+    if (!connected_within(native(s.handle()), timeout_ms)) return {};
     set_blocking(native(s.handle()), true);
     return s;
 }

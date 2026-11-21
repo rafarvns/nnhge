@@ -27,6 +27,8 @@ class LinkState {
 public:
     static constexpr std::size_t kCodeLength = 6;
     static constexpr std::size_t kMaxAddress = 15;
+    /// The servers screen asks the network again this often (2 s), keeping the list.
+    static constexpr int kSearchEveryFrames = 120;
 
     LinkState(Finder& finder, Client& client, Device& device, Storage& storage)
         : finder_(finder), client_(client), device_(device), storage_(storage) {}
@@ -65,6 +67,7 @@ public:
 
 private:
     void go(Screen screen);
+    void ask(); ///< discovery, plus the last server's address directly
     void show_message(const std::string& text, Screen back, const std::vector<std::string>& lines = {});
     void connect_to(const Server& server);
     void leave_session(); ///< closes the connection, back to the servers

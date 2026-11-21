@@ -68,6 +68,21 @@ NNH_TEST(link_lists_the_servers_that_answer_and_marks_the_paired_ones) {
     CHECK(f.link.servers()[1].paired);
 }
 
+NNH_TEST(link_searches_again_every_two_seconds_on_the_servers) {
+    Fixture f; // e.g. NNH Link opened before nnh serve: it must show up without pressing anything
+    f.link.start();
+    f.ticks(LinkState::kSearchEveryFrames);
+    CHECK(f.finder.asks == 1);
+    f.link.tick();
+    CHECK(f.finder.asks == 2);
+    f.finder.answers = {server(7, "RAFA")};
+    f.link.tick();
+    CHECK(f.link.servers().size() == 1);
+    f.ticks(LinkState::kSearchEveryFrames);
+    CHECK(f.finder.asks == 3);
+    CHECK(f.link.servers().size() == 1); // the list is kept between searches
+}
+
 NNH_TEST(link_keeps_one_row_per_server_when_it_answers_again) {
     Fixture f;
     f.finder.answers = {server(1, "A"), server(1, "A"), Server{Ipv4{{10, 0, 0, 9}}, id_of(1), "A2"}};
@@ -85,7 +100,24 @@ NNH_TEST(link_asks_the_last_server_directly_and_selects_it) {
     f.link.start();
     f.link.tick();
     CHECK(f.finder.last_also == (Ipv4{{192, 168, 0, 2}}));
-    CHECK(f.link.selected() == 1);
+    CHECK(f.link.servers().size() == 2);
+    CHECK(f.link.servers()[static_cast<std::size_t>(f.link.selected())].server.id == id_of(2));
+}
+
+NNH_TEST(link_lists_the_last_server_even_when_it_doesnt_answer) {
+    Fixture f; // the search can fail (broadcasts blocked): the last PC must not need typing again
+    f.storage.remember(id_of(2), {});
+    f.storage.set_last_server(id_of(2), Ipv4{{192, 168, 0, 2}});
+    f.link.start();
+    f.link.tick();
+    CHECK(f.link.servers().size() == 1);
+    CHECK(f.link.servers()[0].server.name == "192.168.0.2");
+    CHECK(f.link.servers()[0].paired);
+    CHECK(f.link.selected() == 0);
+    f.finder.answers = {server(2, "RAFA")};
+    f.link.tick();
+    CHECK(f.link.servers().size() == 1);
+    CHECK(f.link.servers()[0].server.name == "RAFA");
 }
 
 NNH_TEST(link_selection_moves_and_wraps_over_the_address_row) {

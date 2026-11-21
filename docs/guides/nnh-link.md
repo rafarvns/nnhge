@@ -28,7 +28,10 @@ NNH Link. You don't touch the PC between tries (spec [011](../../specs/011-nnh-l
 1. On the PC, in the repository: `build/pc-debug/tools/nnh/nnh serve` (leave it open). The first time,
    **Windows Firewall** asks about `nnh.exe`: allow it on private networks (TCP/UDP 17492, and 17491 for
    the log).
-2. On the console: Homebrew Launcher → **NNH Link**. Your PC appears in the list by its name.
+2. On the console: Homebrew Launcher → **NNH Link**. Your PC appears in the list by its name (NNH Link
+   asks the network again every 2 seconds, so the order of these two steps doesn't matter). The last PC
+   you used is always listed, by its address until it answers with its name, so it can be picked even
+   when the search finds nothing.
 3. Pick it (**A**). The first time, NNH Link asks for the **6-digit code** that `nnh serve` shows: type
    it with the touch screen (or the D-Pad and **A**). Both sides remember the pairing; next time there
    is no code.
@@ -54,7 +57,7 @@ NNH Link shows every failure with a message, and nothing waits forever.
 
 | You see | What to do |
 |---------|------------|
-| No servers in the list | Is `nnh serve` running? Allow it in the firewall. Some routers block broadcasts between Wi-Fi and cable: use the last row, **Enter an address**, with the PC's IP. |
+| No servers in the list | Is `nnh serve` running? Allow it in the firewall. Some routers block broadcasts between Wi-Fi and cable: use the last row, **Enter an address**, with the PC's IP (once only: from then on that PC is listed by its address). |
 | `can't reach …: is nnh serve running there?` | Same as above; check the address. |
 | `the PC refused: …` (code) | Wrong code or more than 2 minutes old: `nnh serve` shows a new one; try again. After 5 wrong codes, pairing is blocked until `nnh serve` restarts. |
 | It asks for a code again | The PC forgot the console (`nnh unpair`, or a new user account), or you pressed **Y**: pair again with the code `nnh serve` shows. |

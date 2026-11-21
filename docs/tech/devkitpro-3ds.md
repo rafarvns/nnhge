@@ -130,9 +130,13 @@ What our backend (`input_3ds.cpp`) does:
   `connect` blocks with no timeout, and when the PC isn't listening and its firewall drops the attempt
   the console hangs on a black screen. Our connect is non-blocking with a 1 s limit (`poll`; connected =
   `POLLOUT` without `POLLERR`/`POLLHUP` — `getsockopt(SO_ERROR)` reported a failure for a good
-  connection on hardware); without a listening PC the game starts without logs. At shutdown, flush and `close()` fds 1 and 2 as well as the
+  connection on hardware; `link/src/net.cpp` does the same since NNH Link's first console try failed
+  every connection with it); without a listening PC the game starts without logs. At shutdown, flush and `close()` fds 1 and 2 as well as the
   socket **before** `socExit()`, or newlib's exit-time stdio cleanup hangs the console on a black screen
   instead of returning to the Homebrew Launcher.
+- UDP on the console: answers to a socket bound to port 0 ("any") never arrived on hardware (NNH Link's
+  search, 2026-11-21); bind a fixed port, as the Homebrew Launcher's netloader does (NNH Link binds 17492,
+  `apps/nnh-link/src/net_client.cpp`). Sending broadcasts with `SO_BROADCAST` works.
 - `.cia` (installable, spec 009): `nnh_add_game(... CIA UNIQUE_ID ...)` and the target `<game>_cia`; makerom (`-f cia -target t -exefslogo`, our RSF `cmake/3ds/nnhge.rsf`, the game's SMDH, a bannertool banner, the assets folder as romfs) and bannertool are fetched pinned on the first `.cia` build. Install with FBI over the network: `nnh install <game>` ([packaging guide](../guides/packaging.md)). romfs, saves on the SD card and exit to the HOME Menu work as in the `.3dsx`.
 - Launching another `.3dsx` from a homebrew app: libctru only offers `aptSetChainloader()` for installed
   titles; there is no 3dsx-to-3dsx API in libctru. The Homebrew Launcher uses Luma3DS's loader service

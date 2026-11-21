@@ -1,6 +1,6 @@
 # Spec 011: NNH Link — build and run from the console
 
-Status: in progress (approved 2026-11-18)
+Status: implemented (approved 2026-11-18, done 2026-11-21)
 Author: NNHGE maintainers · Date: 2026-11-18
 Depends on: [spec 010](../010-nnh-cli-run/spec.md) (the `nnh` tool, its netloader/log code, decision D23).
 Second half of ROADMAP M6 (decisions D7, D8: builds always happen on the PC).

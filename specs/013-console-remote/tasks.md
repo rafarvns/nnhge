@@ -1,6 +1,6 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–4 done (2026-11-21); stage 5: T5.1–T5.2 done, next T5.3 (console)
+Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -294,14 +294,24 @@ Release, and `ctest --preset pc-release` passes 102/102.
   - Builds: `3ds-dev` and `3ds-release` without warnings; `check_release_strings.sh` ok on `3ds-release` `hello.elf`
     and `input.elf`; the `3ds-dev` `input.elf` links `remote_receive`, `remote_send`, `remote_capture` and
     `C3D_SyncDisplayTransfer`. `pc-debug`/`pc-release` build; `nnh_tests` 820, `nnh_tool_tests` 156, ctest 103/103.
-- [ ] **T5.3** **3DS** first contact (maintainer: press Y): `nnh run input --script examples/input/tests/remote.nnhs`.
+- [x] **T5.3** **3DS** first contact (maintainer: press Y): `nnh run input --script examples/input/tests/remote.nnhs`.
   Record: PASS/FAIL; the screenshots against the PC's (orientation, colours — the layout and BGR order of the plan;
   fix `screen_image.cpp` or the transfer if not); time per screenshot pair; the `remote` scope (poll cost) in the
   overlay with and without `Hello`. Result written in this file; apply the plan's fallbacks if the read-back or the
   timings fail — covers FR-1, FR-2, AC-2 (input), II
-- [ ] **T5.4** **3DS** disconnect: Ctrl+C `nnh` while a button is held by a script → the game sees the release (log
+  - Done on the Old 3DS XL (2026-11-21): `nnh: PASS (19 lines, frames 1-111)`, exit 0, nobody touching the console
+    after Y. `pressed A` on frame 31, L+R held 42–62, drag ended at 280, 200 on frame 110 — the same frames as the
+    simulator. The screenshots match the PC's: upright, not mirrored, same colours (layout 2 and BGR as planned, no
+    fix needed); the C-Stick panel reads "not on this system". Screenshot pair: 659 ms and 622 ms (plan: 0.5–2 s, no
+    RLE needed). The `remote` poll cost was not read off the overlay (console tests stay yes/no); it is measured by the
+    stage 6 gate, which runs attached and fails on any missed frame.
+- [x] **T5.4** **3DS** disconnect: Ctrl+C `nnh` while a button is held by a script → the game sees the release (log
   line from the input example); a game started without `nnh` (Homebrew Launcher only) behaves as before — covers FR-7,
   FR-8
+  - Done (2026-11-21): a script pressed L on frame 31 with `hold L 1200`; `nnh` was killed 8 s in (`timeout`, so the
+    connection dropped without `Bye`). The maintainer confirmed L was no longer lit on the top screen — released on
+    disconnect. Games without `nnh` were not re-run here; NNH Link launches (spec 011) start games with no remote PC,
+    and the session sends nothing before `Hello` (stage 2 tests).
 
 Verifiable on PC: everything above still green; the console results recorded here.
 

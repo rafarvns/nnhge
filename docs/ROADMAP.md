@@ -101,7 +101,7 @@ folder: 9.0 s the first time (Windows), 0.8 s (Linux VM).
 - [x] Pairing code for LAN safety — spec 011
 
 ## M7 — Game structure
-- [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md))
+- [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md); stage 2 done: maps built in code, `<nnh/tilemap.hpp>`, [api/tilemap.md](api/tilemap.md))
 - [ ] Entities/components, tweens, scene transitions (scenes and saves: done)
 
 ### Features in the spirit of Godot and Unity

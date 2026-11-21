@@ -291,7 +291,7 @@ in code are literally the same data and every query is shared.
 
 | Section | Entry | Size |
 |---------|-------|------|
-| header | magic `NNHM`, version, file size, CRC-32 of the rest, map w/h, tile w/h, parallax origin, counts, section offsets | 96 B |
+| header | magic `NNHM`, version, file size, CRC-32 of the rest, map w/h, tile w/h, parallax origin, map property range, counts **and capacities**, section offsets, runtime collision-layer mask (stage 2) | 128 B |
 | tilesets | first id, tile count, tile w/h, margin, spacing, columns, image size, image asset name (string) | 24 B each |
 | tile table | per tile id: source x/y in its tileset (u16 ×2, so no divide at draw: the ARM11 has none) + flags byte (collision 2 bits, animated, has properties) | 5 B per tile + 1 |
 | tile properties | sparse: tile id → property range | 6 B per tile with properties |
@@ -311,7 +311,7 @@ the memory note below. Tileset images obey the texture rules (power of two, 8–
 **Memory of a map** (heap, tag `tilemap`; tileset textures are separate, `Linear`, tag `textures`):
 
 ```
-bytes ≈ 96 + 24·tilesets + 5·(tile_ids + 1) + 6·tiles_with_properties + 8·animations + 4·animation_frames
+bytes ≈ 128 + 24·tilesets + 5·(tile_ids + 1) + 6·tiles_with_properties + 8·animations + 4·animation_frames
       + Σ_tile_layers (40 + 2·width·height) + 12·object_layers + 36·objects + 12·properties + string_bytes
 ```
 
@@ -330,6 +330,26 @@ Tileset textures usually cost more than the map: a 256×256 RGBA8 sheet is 256 K
 quad scratch of 1600 × 12 B = 19 KB (`gfx`; the worst visible layer is 1581 quads of 8×8, and quads are consumed
 synchronously by the platform, so one batch at a time suffices); on 3DS citro2d's vertex buffer grows by
 `max_tiles` quads (~192 B each: 2048 tiles ≈ 384 KB `Linear`, to be measured).
+
+#### Stage 2 refinements (2026-11-21, implemented)
+
+Found while building maps in code; the exact layout is `engine/core/src/tilemap/map_format.hpp` and the exact memory
+formula is in [tilemap.md](../../docs/api/tilemap.md#memory).
+
+- **Header 128 B, not 96**: a map edited in place needs each section's *capacity* next to its count (files write
+  capacity = count; the loader adds `LoadTilemapOptions` extras), plus the section offsets (from the capacities,
+  checked by the validator) and a runtime bit mask of layers that can collide (recomputed on load).
+- **Tileset entry**: no tile size of its own (tiles use the map's; the converter refuses others), and it carries
+  the texture's handle {slot, generation} at run time, so a destroyed texture is detected (stale = skipped).
+- **Tile table**: two arrays (4 B source per id, then 1 B flags per id) to keep entries aligned; still 5 B per id.
+- **Objects carry their object layer**; object layer entries keep a count but no `first`: objects stay in creation
+  order, so the index `add_object` returns never changes.
+- **Properties**: each owner's range is kept contiguous by inserting (shifting later entries and ranges). The
+  tile-property table's capacity is `min(max_properties, max_tile_ids)`.
+- **API additions** (all additive): `TilemapDesc::max_tile_ids` (256; the tile table must be sized at creation),
+  `ObjectDesc::id` (0 = automatic; Tiled ids must survive for the code-vs-file test), `PropertyOwner::map()`,
+  `tile_layer(i)`, `object_layer(i)`, `tile(id)`, `object(i)`, `Tilemap::tile_id_count()`, the layer getters the
+  sketch called "+ matching getters" (`layer_offset` … `layer_collision`), `Tile::operator==`.
 
 ### Files
 

@@ -1,0 +1,243 @@
+#pragma once
+/// @file nnh/tilemap.hpp
+/// Tilemaps: a grid of tiles in layers, drawn from tilesets (textures), with objects, properties and a
+/// collision grid for <nnh/collision.hpp>. Every part can be built in code; maps converted from the Tiled
+/// editor load into the same object (later stage of spec 012). See docs/api/tilemap.md.
+///
+/// A map is one block of memory (tag "tilemap", Heap) allocated by create() with fixed capacities:
+/// nothing grows while playing, queries and edits never allocate. Coordinates: the map's cell (0, 0)
+/// starts at world (0, 0); cell (x, y) covers [x·tile_width, (x+1)·tile_width) × [y·tile_height, ...).
+///
+/// @code
+/// auto made = nnh::Tilemap::create({.width = 40, .height = 15});
+/// nnh::Tilemap map = std::move(made.value());
+/// const int first = map.add_tileset({.texture = &tiles}).value();   // tile ids first, first + 1, ...
+/// const int ground = map.add_tile_layer({.name = "ground", .collision = true}).value();
+/// map.fill(ground, 0, 14, 40, 1, {.id = static_cast<std::uint16_t>(first)});
+/// const auto moved = nnh::collision::move(map.collision_grid(), player, velocity);
+/// @endcode
+
+#include <cstdint>
+
+#include "nnh/collision.hpp"
+#include "nnh/math.hpp"
+#include "nnh/result.hpp"
+
+namespace nnh {
+
+class Texture;
+
+/// Highest tile id of a map (ids count across all its tilesets; 0 is the empty cell).
+inline constexpr int kMaxTileId = 8191;
+
+/// One cell of a tile layer: a tile id (0 = empty) and Tiled's flips (diagonal is applied first).
+struct Tile {
+    std::uint16_t id = 0;
+    bool flip_x = false;
+    bool flip_y = false;
+    bool flip_diagonal = false; ///< swap x and y; only on maps with square tiles
+    bool empty() const { return id == 0; }
+    friend bool operator==(const Tile&, const Tile&) = default;
+};
+
+enum class PropertyType : std::uint8_t { None, Bool, Int, Float, String };
+
+/// A read-only view of the properties of one owner (the map, a layer, a tile, an object). Valid while the
+/// map lives and until properties are set again on that map (setting may move them: get a new view).
+/// Getters return `fallback` when the name is missing or holds another type; get_float also reads ints.
+class Properties {
+public:
+    bool has(const char* name) const;
+    PropertyType type(const char* name) const; ///< None if missing
+    bool get_bool(const char* name, bool fallback = false) const;
+    int get_int(const char* name, int fallback = 0) const;
+    float get_float(const char* name, float fallback = 0) const;
+    const char* get_string(const char* name, const char* fallback = "") const;
+    int count() const { return count_; }
+    const char* name(int index) const; ///< "" outside 0..count()-1
+
+private:
+    friend struct TilemapAccess;
+    const std::uint8_t* block_ = nullptr;
+    int first_ = 0;
+    int count_ = 0;
+};
+
+/// Where a property lives.
+struct PropertyOwner {
+    enum class Kind : std::uint8_t { Map, TileLayer, ObjectLayer, Tile, Object } kind = Kind::Map;
+    int index = 0; ///< tile layer index, object layer index, tile id or object index (unused for Map)
+
+    static constexpr PropertyOwner map() { return {}; }
+    static constexpr PropertyOwner tile_layer(int layer) { return {Kind::TileLayer, layer}; }
+    static constexpr PropertyOwner object_layer(int layer) { return {Kind::ObjectLayer, layer}; }
+    static constexpr PropertyOwner tile(int tile_id) { return {Kind::Tile, tile_id}; }
+    static constexpr PropertyOwner object(int index) { return {Kind::Object, index}; }
+};
+
+enum class ObjectShape : std::uint8_t { Rect, Point };
+
+/// An object of an object layer (a view: its strings and properties live in the map).
+struct MapObject {
+    int id = 0;            ///< Tiled's object id, or the one given in code (0 = no such object)
+    const char* name = "";
+    const char* type = ""; ///< Tiled's class
+    ObjectShape shape = ObjectShape::Rect;
+    Rect bounds{};         ///< world pixels; a Point has w = h = 0
+    int object_layer = -1;
+    Properties properties{};
+};
+
+/// Capacities of a map, fixed at creation (nothing grows later). See docs/api/tilemap.md for the memory
+/// each one costs and the limits.
+struct TilemapDesc {
+    int width = 0, height = 0;            ///< cells, 1..1024 each
+    int tile_width = 16, tile_height = 16; ///< pixels, 8..64 each (square or not)
+    int max_tile_layers = 4;   ///< ≤ 16; and width·height·max_tile_layers ≤ 4 Mi cells
+    int max_tilesets = 2;      ///< ≤ 8
+    int max_tile_ids = 256;    ///< tiles over all tilesets, ≤ 8191
+    int max_object_layers = 1; ///< ≤ 16
+    int max_objects = 64;      ///< ≤ 4096
+    int max_properties = 64;   ///< ≤ 16384, over all owners
+    int string_bytes = 2048;   ///< names and string values (each ≤ 255 bytes + NUL), ≤ 64 KiB; 1 byte is ""
+};
+
+/// A tileset: a texture cut into tiles of the map's tile size, left to right, top to bottom.
+struct TilesetDesc {
+    const Texture* texture = nullptr; ///< borrowed: keep the texture alive while the map is drawn
+    int margin = 0;                   ///< pixels around the tiles
+    int spacing = 0;                  ///< pixels between tiles
+    int tile_count = 0;               ///< 0 = every tile that fits
+    const char* name = "";
+};
+
+struct TileLayerDesc {
+    const char* name = "";
+    Vec2 offset{};          ///< drawing only (stage 3): collision and coordinates ignore it
+    Vec2 parallax{1, 1};    ///< drawing only (stage 3)
+    float opacity = 1;      ///< 0..1, drawing only (stage 3)
+    bool visible = true;
+    bool collision = false; ///< every non-empty tile of this layer is solid
+};
+
+struct ObjectDesc {
+    const char* name = "";
+    const char* type = "";
+    ObjectShape shape = ObjectShape::Rect;
+    Rect bounds{}; ///< a Point keeps x, y and gets w = h = 0
+    int id = 0;    ///< 0 = automatic (highest id so far + 1)
+};
+
+/// A tilemap. Move-only; owns one block of memory (tag "tilemap"), freed by the destructor or reset().
+/// Queries and edits are cheap, never allocate and are safe per frame. Calling them on an empty map is
+/// harmless: queries return empty values, edits do nothing.
+class Tilemap {
+public:
+    /// Allocates a map with `desc`'s capacities: tile layers start empty (every cell id 0), no tilesets.
+    /// Load or build time only (one allocation). Errors: InvalidArgument (size < 1, tile size outside 8..64,
+    /// negative capacities), LimitReached (over a limit), OutOfMemory.
+    static Result<Tilemap> create(const TilemapDesc& desc);
+
+    Tilemap() = default;
+    ~Tilemap() { reset(); }
+    Tilemap(Tilemap&& other) noexcept;
+    Tilemap& operator=(Tilemap&& other) noexcept;
+    Tilemap(const Tilemap&) = delete;
+    Tilemap& operator=(const Tilemap&) = delete;
+
+    /// Frees the map now; it becomes empty. Views (Properties, MapObject strings) and grids taken from it
+    /// become invalid.
+    void reset();
+    bool valid() const { return block_ != nullptr; }
+
+    int width() const;       ///< cells
+    int height() const;      ///< cells
+    int tile_width() const;  ///< pixels
+    int tile_height() const; ///< pixels
+
+    /// The world rectangle of cell (x, y) (any x, y, also outside the map).
+    Rect cell_rect(int x, int y) const;
+    /// The cell containing `world` (floor of world / tile size) in `x`, `y`, set even outside the map
+    /// (clamped to ±2^30; 0 for NaN). Returns true when the cell is inside the map.
+    bool world_to_cell(Vec2 world, int& x, int& y) const;
+
+    /// Adds a tileset cut from `desc.texture` (valid, at least one tile) and returns the id of its first
+    /// tile; its tiles get the next `tile count` ids. Build time only. Errors: InvalidArgument (no or empty
+    /// texture, nothing fits, tile_count more than fits, negative margin/spacing, name over 255 bytes),
+    /// LimitReached (max_tilesets, max_tile_ids or string_bytes full).
+    Result<int> add_tileset(const TilesetDesc& desc);
+    int tileset_count() const;
+    int tile_id_count() const; ///< tile ids in use: 1..tile_id_count()
+
+    /// Adds an empty tile layer on top of the others and returns its index.
+    /// Errors: InvalidArgument (name over 255 bytes), LimitReached (max_tile_layers or string_bytes full).
+    Result<int> add_tile_layer(const TileLayerDesc& desc);
+    int tile_layer_count() const;
+    int find_tile_layer(const char* name) const; ///< first layer with that name, or -1
+    const char* tile_layer_name(int layer) const; ///< "" for an invalid layer
+
+    /// The tile at a cell; empty outside the map or for an invalid layer.
+    Tile tile(int layer, int x, int y) const;
+    /// The tile under a world position; empty outside the map.
+    Tile tile_at(int layer, Vec2 world) const;
+    /// Changes one cell; seen by the next draw and collision query. Cells outside the map are ignored.
+    /// Asserts (and does nothing in Release) on an invalid layer, an unknown tile id or a diagonal flip on
+    /// a map with non-square tiles.
+    void set_tile(int layer, int x, int y, Tile tile);
+    /// set_tile over a w × h block of cells, clipped to the map.
+    void fill(int layer, int x, int y, int w, int h, Tile tile);
+
+    void set_layer_offset(int layer, Vec2 offset);
+    void set_layer_parallax(int layer, Vec2 factor);
+    void set_layer_opacity(int layer, float opacity); ///< clamped to 0..1
+    void set_layer_visible(int layer, bool visible);
+    void set_layer_collision(int layer, bool collision);
+    Vec2 layer_offset(int layer) const;
+    Vec2 layer_parallax(int layer) const;
+    float layer_opacity(int layer) const;
+    bool layer_visible(int layer) const;
+    bool layer_collision(int layer) const;
+
+    /// Marks a tile id solid or one-way (Tiled: tile property `solid` / `one_way`). If tiles were already
+    /// placed, layers using its tileset are scanned once: call it while building. Asserts on unknown ids.
+    void set_tile_collision(int tile_id, collision::Cell kind);
+    collision::Cell tile_collision(int tile_id) const; ///< Empty for unknown ids
+    /// What cell (x, y) is to collision: Solid if a `collision` layer has a tile there or a tile there is
+    /// solid; else OneWay if a tile there is one-way; else Empty (also outside the map).
+    collision::Cell collision_at(int x, int y) const;
+    /// A grid for collision::move and friends over this map (origin 0, tile-sized cells, outside Empty: set
+    /// `outside` to wall the level in). Reads the map live, so edits are seen at once. Valid while the map
+    /// lives (moving the Tilemap object is fine). Empty map: a grid of size 0.
+    collision::Grid collision_grid() const;
+
+    /// Adds an object layer and returns its index. Errors: InvalidArgument (name over 255 bytes),
+    /// LimitReached (max_object_layers or string_bytes full).
+    Result<int> add_object_layer(const char* name);
+    int object_layer_count() const;
+    const char* object_layer_name(int index) const; ///< "" for an invalid index
+
+    /// Adds an object to an object layer and returns its index (creation order, stable).
+    /// Errors: InvalidArgument (unknown object layer, negative size, names over 255 bytes),
+    /// LimitReached (max_objects or string_bytes full).
+    Result<int> add_object(int object_layer, const ObjectDesc& desc);
+    int object_count() const;
+    MapObject object(int index) const;                                   ///< id 0 for an invalid index
+    int find_object(const char* name) const;                             ///< first index with that name, or -1
+    int find_objects(const char* type, int* indices, int capacity) const; ///< writes ≤ capacity, returns total
+
+    /// The properties of an owner (empty for an unknown owner).
+    Properties properties(PropertyOwner owner = {}) const;
+    /// Sets (adds or replaces) a property. Names and string values: ≤ 255 bytes, stored once in the map's
+    /// strings (equal strings are shared). Errors: InvalidArgument (unknown owner, empty or long name),
+    /// LimitReached (max_properties or string_bytes full). Never allocates.
+    Result<void> set_bool(PropertyOwner owner, const char* name, bool value);
+    Result<void> set_int(PropertyOwner owner, const char* name, int value);
+    Result<void> set_float(PropertyOwner owner, const char* name, float value);
+    Result<void> set_string(PropertyOwner owner, const char* name, const char* value);
+
+private:
+    friend struct TilemapAccess;
+    std::uint8_t* block_ = nullptr;
+};
+
+} // namespace nnh

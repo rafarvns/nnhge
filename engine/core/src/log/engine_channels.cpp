@@ -11,5 +11,6 @@ NNH_LOG_CHANNEL(events);
 NNH_LOG_CHANNEL(gfx);
 NNH_LOG_CHANNEL(input);
 NNH_LOG_CHANNEL(memory);
+NNH_LOG_CHANNEL(tilemap);
 
 } // namespace nnh

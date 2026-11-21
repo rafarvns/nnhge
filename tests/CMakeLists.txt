@@ -77,6 +77,12 @@ add_executable(nnh_tests
     scene/test_scene_stack.cpp
     system/test_system.cpp
     text/test_builtin_font.cpp
+    tilemap/test_map_build.cpp
+    tilemap/test_map_collision.cpp
+    tilemap/test_map_layout.cpp
+    tilemap/test_map_objects.cpp
+    tilemap/test_map_properties.cpp
+    tilemap/test_map_tiles.cpp
     simulator/test_audio_mixer_pc.cpp
     simulator/test_sim_layout.cpp
     simulator/test_sim_settings.cpp

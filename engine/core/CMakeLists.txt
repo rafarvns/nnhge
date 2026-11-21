@@ -70,6 +70,15 @@ add_library(nnh_core STATIC
     src/text/font_texture.cpp
     src/text/layout.cpp
     src/text/utf8.cpp
+    src/tilemap/map_build.cpp
+    src/tilemap/map_collision.cpp
+    src/tilemap/map_layout.cpp
+    src/tilemap/map_objects.cpp
+    src/tilemap/map_properties.cpp
+    src/tilemap/map_property_table.cpp
+    src/tilemap/map_strings.cpp
+    src/tilemap/map_tiles.cpp
+    src/tilemap/tilemap.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )

@@ -87,7 +87,10 @@ vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS v
 `<nnh/math.hpp>`): `<nnh/collision.hpp>` — `overlaps`/`contains`/`intersection`/`separation` on boxes;
 `collision::move` sweeps a box through a `Grid` the game describes (`grid_view` over its own `Cell` array, or a
 callback), x then y, solid and one-way cells, no tunnelling; `contacts`, `cells_touching`
-([api/collision.md](docs/api/collision.md)).
+([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stage 2: built in code; drawing and loading come in
+later stages): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
+tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`
+([api/tilemap.md](docs/api/tilemap.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

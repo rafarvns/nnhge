@@ -1,6 +1,6 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0 and 1 done (2026-11-21); next: stage 2
+Status: approved (2026-11-21); stages 0, 1 and 2 done (2026-11-21); next: stage 3
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -79,22 +79,45 @@ Verifiable: `nnh_tests collision` green on PC.
 
 ## Stage 2 — tilemaps built in code
 
-- [ ] **T2.1** binary format constants, limits and cell bits; layout from capacities with the memory formula —
+- [x] **T2.1** binary format constants, limits and cell bits; layout from capacities with the memory formula —
   files: `tilemap/map_format.hpp`, `tilemap/map_layout.{hpp,cpp}` — test: `tests/tilemap/test_map_layout.cpp`
   (offsets aligned, sizes = formula) — covers FR-11
-- [ ] **T2.2** `Tilemap::create`, move, `reset`, memory tag `tilemap`, `LimitReached`/`InvalidArgument` — files:
+- [x] **T2.2** `Tilemap::create`, move, `reset`, memory tag `tilemap`, `LimitReached`/`InvalidArgument` — files:
   `include/nnh/tilemap.hpp`, `tilemap/tilemap.cpp` — test: `test_map_build.cpp` — covers FR-0, FR-11
-- [ ] **T2.3** `add_tileset` (margin, spacing, tile count, first ids, source table), `add_tile_layer`, layer
+- [x] **T2.3** `add_tileset` (margin, spacing, tile count, first ids, source table), `add_tile_layer`, layer
   settings — files: `tilemap/map_build.cpp` — test: `test_map_build.cpp` — covers FR-0, FR-2, FR-3
-- [ ] **T2.4** tiles and coordinates: `tile`, `tile_at`, `set_tile`, `fill`, `cell_rect`, `world_to_cell`,
+- [x] **T2.4** tiles and coordinates: `tile`, `tile_at`, `set_tile`, `fill`, `cell_rect`, `world_to_cell`,
   flips encode/decode — files: `tilemap/map_tiles.cpp` — test: `test_map_tiles.cpp` — covers FR-2, FR-4
-- [ ] **T2.5** [P] properties: string pool, `Properties` view, setters for map/layer/tile/object — files:
+- [x] **T2.5** [P] properties: string pool, `Properties` view, setters for map/layer/tile/object — files:
   `tilemap/map_properties.cpp` — test: `test_map_properties.cpp` — covers FR-0, FR-6
-- [ ] **T2.6** [P] object layers and objects: add, list, find by name/type — files: `tilemap/map_objects.cpp`,
+- [x] **T2.6** [P] object layers and objects: add, list, find by name/type — files: `tilemap/map_objects.cpp`,
   `map_build.cpp` — test: `test_map_objects.cpp` — covers FR-0, FR-5
-- [ ] **T2.7** collision: tile flags, `collision` layers, contributing-layer mask, `collision_at`,
+- [x] **T2.7** collision: tile flags, `collision` layers, contributing-layer mask, `collision_at`,
   `collision_grid` → `collision::move` on a map — files: `tilemap/map_collision.cpp` — test:
   `test_map_collision.cpp` — covers FR-4, FR-7, FR-8
+
+  **Result (2026-11-21):** 94 tests in `tests/tilemap/` (layout 12, build 25, tiles 16, properties 13, objects 12,
+  collision 16; helper `map_fixture.hpp`); 653/653 unit tests, ctest 102/102; PC and `3ds-release` build clean. API
+  page [tilemap.md](../../docs/api/tilemap.md). Files: `map_format.hpp`, `map_layout.*`, `map_strings.*` (string
+  pool, equal strings shared), `map_property_table.*` (ranges + tile-property table, pure), `tilemap.cpp`,
+  `map_build.cpp`, `map_tiles.cpp`, `map_properties.cpp`, `map_objects.cpp`, `map_collision.cpp`,
+  `tilemap_internal.hpp`; log channel `tilemap`.
+  - **Format/API refinements** (written into [plan.md](plan.md), "Stage 2 refinements"): header 128 B (counts *and*
+    capacities, section offsets, the runtime collision-layer mask), tileset entry without its own tile size (tiles
+    use the map's), tile table as two arrays (4 B sources + 1 B flags), objects carry their layer (no per-layer
+    ranges), `TilemapDesc::max_tile_ids` (256), `ObjectDesc::id`, `PropertyOwner::map()/tile_layer()/…`,
+    `tile_id_count()`, layer getters; tile-property table capacity = min(max_properties, max_tile_ids).
+  - Property ranges stay contiguous whatever the order: inserting shifts later entries and every later range.
+  - Collision-layer mask: set by `set_tile`/`fill` with a marked tile, by `collision` layers; `set_tile_collision`
+    scans only layers that use the tile's tileset and are not in the mask yet; never cleared by `set_tile` (wider
+    mask = extra reads, never a wrong answer). The grid's context is the block, so it survives moving the object.
+  - Stale texture: the tileset keeps the texture's {slot, generation}; `detail::tileset_texture_alive` is false
+    once it is destroyed, even if the slot is reused (stage 3 skips such tilesets); queries and collision unaffected.
+  - Mutation check (34 hand mutants: layout padding/sizes/overlap, cell bits (flip swap, id mask, diagonal bit),
+    total-cells cap, fill clipping both edges, tile bounds, last id, diagonal check, masks, floor vs truncation,
+    inside test, collision rule (layer flag, solid, one-way, early one-way, mask), set_tile_collision scan,
+    set_layer_collision recount, property insert position/shift/sort, int→float, string dedup, tileset id cap,
+    margin, spacing, auto id, move-assign leak): **34 killed**.
 
 Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided against in a test.
 

@@ -5,8 +5,9 @@ Header: `<nnh/collision.hpp>` · Types: [math.md](math.md) · Spec: [012](../../
 
 Plain functions on values: overlap queries between boxes, and moving a box through a grid of solid cells **the game
 describes**. Collision depends only on `<nnh/math.hpp>`: it needs no tilemap, no `nnh::init()`, keeps no state and
-never allocates, so every function is safe to call any number of times per frame. Tilemaps (spec 012, later stages)
-will hand out a `collision::Grid` of their own; until then (and always, if you prefer) a game passes its own array.
+never allocates, so every function is safe to call any number of times per frame. A tilemap hands out a
+`collision::Grid` of its own (`Tilemap::collision_grid()`, [tilemap.md](tilemap.md)); a game can always pass its own
+array instead.
 
 ## Rules that hold everywhere
 

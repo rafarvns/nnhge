@@ -104,8 +104,10 @@ linked); `text.3dsx` 239,736 bytes.
 What makes those engines productive, adapted to NNHGE's rules: no RTTI or exceptions, no allocation while
 playing, the same on PC and 3DS. **NNHGE has no editor or frontend**: every feature is a C++ API a game can use on
 its own, and where data belongs in a file (data assets, maps, animations) the file is plain text written by hand
-or comes from a common external tool (Tiled, Aseprite), checked and converted at build time. Each item becomes its
-own spec; the order below is a proposal.
+or comes from a common external tool (Tiled, Aseprite), checked and converted at build time. **Everything here is
+optional** (constitution XI, decision D25): a game uses what it wants, mixes it with its own code or ignores it all
+and writes plain C++ on the core APIs; no item requires another the game didn't choose. Each item becomes its own
+spec; the order below is a proposal.
 
 - [ ] **Data assets** (Unity's ScriptableObjects, Godot's Resources): typed, shared game data (an enemy's stats, an
   item, a level's settings) in their own files in the assets folder — a readable text format written by hand —

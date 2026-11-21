@@ -51,3 +51,10 @@ Homebrew has no sandbox, so the engine is careful for the player: file writes on
 folder, saves written atomically, every parser of external data bounded and fuzz-tested, no telemetry,
 dependencies and CI actions pinned. Bugs are caught loudly (asserts, crash report), never silently.
 See [security.md](../architecture/security.md) and [errors.md](../architecture/errors.md).
+
+## XI. Opt-in, never in the way
+Every feature above the foundation (tilemaps, tags, data assets, prefabs, animation, UI, …) is optional: a game uses
+it, ignores it, or mixes it with its own code. No feature requires another one the game didn't ask for (collision
+works without tilemaps, tilemaps without tags, entities without prefabs), the engine never forces a way to structure a
+game, and plain C++ with the core APIs (draw, input, sound, files) is always a supported way to write one. There is no
+editor: every feature works through the C++ API; files are hand-written or come from common external tools.

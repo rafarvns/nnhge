@@ -16,6 +16,8 @@ Spec: [spec.md](spec.md)
 | VII Small files | ✅ | |
 | VIII Documented API | ✅ | |
 | IX Clean and legal | ✅ | |
+| X Safe by default | ✅ | |
+| XI Opt-in, never in the way | ✅ | |
 
 ## Design
 

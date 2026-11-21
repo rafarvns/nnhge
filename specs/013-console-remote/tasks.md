@@ -1,7 +1,7 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL); stage 6 done (2026-11-21; the gate passed
-on the Old 3DS XL); next: stage 7
+Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL); stages 6–7 done (2026-11-21; the gate passed
+on the Old 3DS XL; Linux, sanitizers, fuzzing); next: stage 8
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -363,11 +363,21 @@ Verifiable: the gate script passes in the simulator; the console result recorded
 
 ## Stage 7 — hardening
 
-- [ ] **T7.1** Linux on VM 120: gcc build + ctest (incl. `nnh_script_pc_smoke` with the offscreen driver); clang
+- [x] **T7.1** Linux on VM 120: gcc build + ctest (incl. `nnh_script_pc_smoke` with the offscreen driver); clang
   ASan/UBSan for `nnh_tests` and `nnh_tool_tests`; `fuzz_remote` 60 s without a crash (record `cov:`) — covers AC-3,
   FR-4, FR-8
-- [ ] **T7.2** [P] mutation check by hand on the reader, schedule, merge and runner (record killed/survived here) —
+  - Done on VM 120 (2026-11-21). gcc `pc-debug`: builds (the only warnings are SDL's own Wayland XML), ctest 103/103
+    with `SDL_VIDEO_DRIVER=offscreen`, including `nnh_script_pc_smoke`. clang 18 with
+    `-fsanitize=address,undefined -fno-sanitize-recover=undefined`: `nnh_tool_tests` 156/156 clean; `nnh_tests` found
+    one **stack-use-after-scope** in two stage-2 tests (`sent().find(...)` kept a pointer into a temporary `Sent`),
+    fixed in `tests/remote/test_remote_session.cpp` (the engine code was right), then 836/836 clean.
+    `fuzz_remote` (libFuzzer + ASan, empty seed corpus) 60 s: 922 651 runs, `cov: 132`, `ft: 782`, no crash.
+- [x] **T7.2** [P] mutation check by hand on the reader, schedule, merge and runner (record killed/survived here) —
   covers VI
+  - Done stage by stage rather than once at the end (2026-11-21), every result recorded above: reader, schedule,
+    merge and wire 43/44 (the survivor equivalent); session, screenshots and hooks 38/38; stream, parser, timeline,
+    runner and PNG 73/73, plus the screenshot/drag timing change 7/7; session loop, typed lines, CLI and PC transport
+    65/69 (the 4 change only latency or cleanup, nothing observable); gate logic 2/2.
 
 ## Stage 8 — verification and docs
 

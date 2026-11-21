@@ -130,7 +130,8 @@ NNH_TEST(remote_session_answers_an_invalid_message_with_rejected_and_a_warning) 
     RemoteLines warn(LogLevel::Warn);
     send_garbage(0x0405);
     at(2);
-    const Record* r = sent().find(RecordType::Rejected);
+    const Sent s = sent();
+    const Record* r = s.find(RecordType::Rejected);
     CHECK(r != nullptr && le16(r->payload) == 0x0405 && r->payload[2] == static_cast<std::uint8_t>(wire::Reject::Magic));
     CHECK(warn.count == 1);
 }
@@ -182,7 +183,8 @@ NNH_TEST(remote_session_reports_dropped_when_the_queue_is_full) {
     CHECK(sent().count_of(RecordType::Dropped) == 0);
     at(3); // still reads one message, which finds no room
     CHECK(fake::state().remote_last_read == wire::kMessageSize);
-    const Record* d = sent().find(RecordType::Dropped);
+    const Sent s = sent();
+    const Record* d = s.find(RecordType::Dropped);
     CHECK(d != nullptr && le16(d->payload) == 10 + 64);
 }
 

@@ -25,6 +25,7 @@
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
+#include "remote/remote_internal.hpp"
 #include "time/time_internal.hpp"
 
 namespace nnh {
@@ -42,6 +43,7 @@ void close_frame() {
         detail::overlay_draw();     // recorded after the game's debug text, so it covers it
         detail::debug_text_flush(); // the debug pass
         platform::end_frame();
+        if constexpr (build::kDevToolsEnabled) detail::remote_frame_ended(g_frame_count); // screenshots
         g_frame_open = false;
         detail::gfx_after_frame(); // textures released during the frame are no longer in use
     }
@@ -89,6 +91,7 @@ bool init(const AppConfig& config) {
     detail::overlay_reset();
     detail::debug_text_clear();
     detail::crash_install();
+    if constexpr (build::kDevToolsEnabled) detail::remote_reset();
     detail::log_file_start();
     NNH_LOG_INFO(app, "started \"%s\" (%s build), data in %s", config.title, build::flavor_name(),
                  platform::fs_root());
@@ -103,6 +106,10 @@ bool frame() {
     detail::time_frame_started(platform::ticks_ns());
     platform::InputSample input_sample;
     platform::read_input(input_sample);
+    if constexpr (build::kDevToolsEnabled) {
+        // The PC's input enters before the frame's input is read (spec 013): queries and events see it.
+        if (!detail::remote_frame_start(g_frame_count + 1, input_sample)) return false;
+    }
     detail::input_update(input_sample);
     detail::profile_frame_boundary();
     detail::overlay_update(time::delta(), input::held_mask(), detail::input_pressed_mask(),
@@ -127,6 +134,7 @@ void shutdown() {
     detail::assets_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();
+    if constexpr (build::kDevToolsEnabled) detail::remote_shutdown(); // before the platform closes the socket
     platform::shutdown();
     g_initialized = false;
 }

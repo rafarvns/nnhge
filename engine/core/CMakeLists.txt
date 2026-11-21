@@ -68,6 +68,8 @@ add_library(nnh_core STATIC
     src/remote/remote_input.cpp
     src/remote/remote_reader.cpp
     src/remote/remote_schedule.cpp
+    src/remote/remote_screenshot.cpp
+    src/remote/remote_session.cpp
     src/remote/remote_wire.cpp
     src/system/system.cpp
     src/text/builtin_font.cpp

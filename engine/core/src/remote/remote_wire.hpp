@@ -108,4 +108,32 @@ void encode_record_header(RecordType type, std::uint32_t length, std::uint8_t ou
 /// kScreenFixed…kMaxRecordPayload for Screen). @return false if these bytes are not a record (text).
 bool decode_record_header(const std::uint8_t in[kRecordHeaderSize], RecordHeader& out);
 
+// ---- console → PC: whole records (header + payload), written by the console's session ---------------------
+
+/// Bytes the largest fixed record takes (Hello), header included: the size of every encoder's `out`.
+inline constexpr std::size_t kMaxFixedRecord = kRecordHeaderSize + kHelloPayload;
+
+/// The fixed part of a Screen record; `width × height × bpp` pixel bytes follow it.
+struct ScreenHeader {
+    std::uint16_t id = 0;
+    std::uint8_t screen = 0; ///< 0 top, 1 bottom
+    std::uint8_t layout = 0; ///< platform::PixelLayout: 1 RGBA8 rows, 2 BGR8 columns bottom-up
+    std::uint32_t frame = 0;
+    std::uint16_t width = 0;
+    std::uint16_t height = 0;
+};
+
+/// Each writes one record into `out` (kMaxFixedRecord bytes) and returns its size. Never allocate.
+/// Hello: version kVersion, flags 0, the frame now, capabilities, flavor NUL-padded (cut) to 12 bytes.
+std::size_t encode_hello_record(std::uint32_t frame, std::uint32_t capabilities, const char* flavor,
+                                std::uint8_t* out);
+std::size_t encode_tick_record(std::uint32_t frame, std::uint8_t* out);
+std::size_t encode_late_record(std::uint16_t seq, std::uint32_t wanted, std::uint32_t applied, std::uint8_t* out);
+std::size_t encode_rejected_record(std::uint16_t seq, Reject reason, std::uint8_t* out);
+std::size_t encode_dropped_record(std::uint16_t seq, std::uint8_t* out);
+/// The header and fixed part of a Screen record whose `pixel_bytes` are sent right after it.
+std::size_t encode_screen_record(const ScreenHeader& header, std::uint32_t pixel_bytes, std::uint8_t* out);
+std::size_t encode_screen_failed_record(std::uint16_t id, std::uint8_t screen, std::uint32_t frame,
+                                        std::uint8_t* out);
+
 } // namespace nnh::detail::remote

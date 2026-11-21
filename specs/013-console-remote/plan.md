@@ -132,6 +132,14 @@ messages; the console reads only as many bytes per frame as the queue has room f
 waits; a message that finds the queue full is answered `Dropped{seq}` (the runner keeps ≤ 48 unapplied, so this means
 a bug).
 
+Settled in stage 2 (2026-11-21), where the paragraph above and "only between `Hello` and `Bye`" below disagreed:
+records win. Before `Hello` an invalid message is only logged (a PC that never says `Hello` must see plain text, D8).
+At the 8th invalid message in a row the console sends that `Rejected`, then detaches like a `Bye` (controls released,
+queue cleared, no more ticks or records); later messages are logged as `too many`, which so never reaches the wire.
+The read is bounded by the queue's room but is at least one message, so a full queue answers `Dropped` and a closed
+connection is still noticed. The record payload encoders live in the pure `remote_wire.*` (tested in
+`test_remote_records.cpp`), so the tool decodes the same layouts.
+
 **Console → PC**: records `0x1E 'N' 'R' type u32-length payload`, only between `Hello` and `Bye`.
 
 | Type | Payload |

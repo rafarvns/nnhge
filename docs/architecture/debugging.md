@@ -42,8 +42,9 @@ Full step-by-step guide: [debugging-on-3ds.md](../guides/debugging-on-3ds.md).
 
 ## Driving a game from the PC
 
-> Status: design — [spec 013](../../specs/013-console-remote/spec.md), [plan 013](../../specs/013-console-remote/plan.md)
-> (draft), decision D28 (proposed).
+> Status: in progress — [spec 013](../../specs/013-console-remote/spec.md), [plan 013](../../specs/013-console-remote/plan.md),
+> decision D28. The console side is in core (`engine/core/src/remote/`, tested on the fake platform); the PC and 3DS
+> transports and the `nnh` side are not written yet, so nothing can drive a game today.
 
 `nnh run <game> --script <file.nnhs>` will press buttons, touch the screen, take screenshots of both screens and check
 the log of a Debug/Development game, on the console or in the simulator (`--pc`), over the connection the game already

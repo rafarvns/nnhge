@@ -139,4 +139,69 @@ bool decode_record_header(const std::uint8_t in[kRecordHeaderSize], RecordHeader
     return true;
 }
 
+std::size_t encode_hello_record(std::uint32_t frame, std::uint32_t capabilities, const char* flavor,
+                                std::uint8_t* out) {
+    encode_record_header(RecordType::Hello, kHelloPayload, out);
+    std::uint8_t* p = out + kRecordHeaderSize;
+    put16(p, kVersion);
+    put16(p + 2, 0);
+    put32(p + 4, frame);
+    put32(p + 8, capabilities);
+    bool ended = false;
+    for (int i = 0; i < 12; ++i) {
+        ended = ended || flavor[i] == '\0';
+        p[12 + i] = ended ? 0 : static_cast<std::uint8_t>(flavor[i]);
+    }
+    return kRecordHeaderSize + kHelloPayload;
+}
+
+std::size_t encode_tick_record(std::uint32_t frame, std::uint8_t* out) {
+    encode_record_header(RecordType::Tick, kTickPayload, out);
+    put32(out + kRecordHeaderSize, frame);
+    return kRecordHeaderSize + kTickPayload;
+}
+
+std::size_t encode_late_record(std::uint16_t seq, std::uint32_t wanted, std::uint32_t applied, std::uint8_t* out) {
+    encode_record_header(RecordType::Late, kLatePayload, out);
+    put16(out + kRecordHeaderSize, seq);
+    put32(out + kRecordHeaderSize + 2, wanted);
+    put32(out + kRecordHeaderSize + 6, applied);
+    return kRecordHeaderSize + kLatePayload;
+}
+
+std::size_t encode_rejected_record(std::uint16_t seq, Reject reason, std::uint8_t* out) {
+    encode_record_header(RecordType::Rejected, kRejectedPayload, out);
+    put16(out + kRecordHeaderSize, seq);
+    out[kRecordHeaderSize + 2] = static_cast<std::uint8_t>(reason);
+    return kRecordHeaderSize + kRejectedPayload;
+}
+
+std::size_t encode_dropped_record(std::uint16_t seq, std::uint8_t* out) {
+    encode_record_header(RecordType::Dropped, kDroppedPayload, out);
+    put16(out + kRecordHeaderSize, seq);
+    return kRecordHeaderSize + kDroppedPayload;
+}
+
+std::size_t encode_screen_record(const ScreenHeader& h, std::uint32_t pixel_bytes, std::uint8_t* out) {
+    encode_record_header(RecordType::Screen, kScreenFixed + pixel_bytes, out);
+    std::uint8_t* p = out + kRecordHeaderSize;
+    put16(p, h.id);
+    p[2] = h.screen;
+    p[3] = h.layout;
+    put32(p + 4, h.frame);
+    put16(p + 8, h.width);
+    put16(p + 10, h.height);
+    return kRecordHeaderSize + kScreenFixed;
+}
+
+std::size_t encode_screen_failed_record(std::uint16_t id, std::uint8_t screen, std::uint32_t frame,
+                                        std::uint8_t* out) {
+    encode_record_header(RecordType::ScreenFailed, kScreenFailedPayload, out);
+    std::uint8_t* p = out + kRecordHeaderSize;
+    put16(p, id);
+    p[2] = screen;
+    put32(p + 3, frame);
+    return kRecordHeaderSize + kScreenFailedPayload;
+}
+
 } // namespace nnh::detail::remote

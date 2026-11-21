@@ -23,7 +23,7 @@ NNHGE is a **portable core** plus **one library per system** that plugs into it.
 - **`nnh::core`**: everything portable — loop, events, scenes, logging, memory accounting, file rules,
   math. It never includes a system SDK header.
 - **Platform contract**: small headers (`nnh/platform/video.hpp`, `input.hpp`, `time.hpp`, `fs.hpp`,
-  `log_sink.hpp`, `crash.hpp`, `system.hpp`, ...) declaring the functions a system library must provide,
+  `log_sink.hpp`, `crash.hpp`, `system.hpp`, `remote.hpp` (spec 013, Debug/Development only), ...) declaring the functions a system library must provide,
   each documented with its exact behaviour.
 - **`nnh::platform_<system>`**: a static library implementing the whole contract for one system, with its
   own folder, CMake target, README, extension headers and notes.

@@ -74,9 +74,13 @@ add_executable(nnh_tests
     log/test_ring.cpp
     math/test_vec2.cpp
     memory/test_memory.cpp
+    remote/test_remote_frames.cpp
     remote/test_remote_input.cpp
     remote/test_remote_reader.cpp
+    remote/test_remote_records.cpp
     remote/test_remote_schedule.cpp
+    remote/test_remote_screenshot.cpp
+    remote/test_remote_session.cpp
     remote/test_remote_wire.cpp
     result/test_result.cpp
     scene/test_run.cpp

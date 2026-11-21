@@ -98,6 +98,12 @@ struct State {
     FakeVoice voices[kMaxFakeVoices];
     FakeStream streams[platform::kStreams];
     int open_asset_streams = 0; ///< asset_open() minus asset_close()
+    // Console remote (spec 013)
+    int remote_receive_calls = 0;          ///< remote_receive() calls (connected or not)
+    std::size_t remote_last_read = 0;      ///< the `size` of the last remote_receive() call
+    int remote_captures = 0;               ///< remote_capture() calls that succeeded
+    bool remote_capture_held = false;      ///< a capture buffer is held (until remote_capture_release())
+    int remote_capture_releases = 0;       ///< remote_capture_release() calls that freed a held buffer
 };
 
 const State& state();
@@ -162,6 +168,30 @@ void set_capabilities(std::initializer_list<Capability> capabilities);
 
 /// Makes the next poll_dev_requests() ask to toggle the debug overlay (like F1 on PC).
 void request_overlay_toggle();
+
+// ---- Console remote (spec 013): an in-memory PC ----------------------------------------------------------
+
+/// A PC is connected: remote_receive() returns the bytes given to remote_push() (0 when none is pending) and
+/// remote_send() records. Without it (after reset()) remote_receive() returns -1 like a game started alone.
+void remote_connect();
+
+/// Bytes the PC sends, read by remote_receive() in order, in pieces as large as core asks for.
+void remote_push(const void* data, std::size_t size);
+
+/// The PC closes the connection: remote_receive() still returns the bytes already pushed, then -1;
+/// remote_send() fails from now on.
+void remote_disconnect();
+
+/// Everything core sent with remote_send() since reset() or remote_clear_sent(), in order.
+const std::uint8_t* remote_sent(std::size_t& size);
+void remote_clear_sent();
+
+/// When true, remote_capture() fails (with last_error()).
+void set_remote_capture_fails(bool fails);
+
+/// The synthetic picture remote_capture() returns (RGBA8 rows, screen-sized): pixel (x, y) is
+/// {x & 0xFF, y, 0x40 on the top screen / 0x80 on the bottom one, 0xFF}.
+void remote_capture_pixel(Screen screen, int x, int y, std::uint8_t rgba[4]);
 
 /// The last crash screen requested through crash_show().
 struct Crash {

@@ -36,6 +36,7 @@ struct Controls {
 State& mutable_state();
 Controls& controls();
 void fs_reset(); // fs_fake.cpp
+void remote_reset(); // remote_fake.cpp
 void set_last_error(const char* message); // app_fake.cpp
 
 } // namespace nnh::platform_fake::detail

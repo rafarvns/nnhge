@@ -17,6 +17,7 @@ add_library(nnh_platform_pc STATIC
     src/input_pc.cpp
     src/log_pc.cpp
     src/memory_pc.cpp
+    src/remote_pc.cpp
     src/sim_layout.cpp
     src/sim_settings.cpp
     src/system_pc.cpp

@@ -1,6 +1,6 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stage 1 done (2026-11-21); next: stage 2
+Status: approved (2026-11-21); stages 1–2 done (2026-11-21); next: stage 3
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -55,28 +55,63 @@ is `target`, not `fuzz`).
 
 ## Stage 2 — the session in core, over the fake platform
 
-- [ ] **T2.1** contract `nnh/platform/remote.hpp`; fake implementation (connect, push bytes, disconnect, recorded
+- [x] **T2.1** contract `nnh/platform/remote.hpp`; fake implementation (connect, push bytes, disconnect, recorded
   sends, synthetic captures, capture failure); conformance: `remote_receive` is −1 without a connection — files:
   `engine/core/contract/nnh/platform/remote.hpp`, `engine/platforms/fake/src/remote_fake.cpp`, `fake_internal.hpp`,
   `include/nnh/platform_fake.hpp`, `CMakeLists.txt`, `README.md`, `tests/platform_conformance/test_contract.cpp` —
   covers FR-7, FR-8
-- [ ] **T2.2** session hooks: attach on `Hello` (reply with frame, capabilities, flavor), ticks (after `Hello`, then
+  - Done (2 conformance tests, fake and pc). Fake controls: `remote_connect()`, `remote_push()`, `remote_disconnect()`
+    (pushed bytes are still read, then −1), `remote_sent()`/`remote_clear_sent()`, `set_remote_capture_fails()`,
+    `remote_capture_pixel()` (the synthetic pattern); `state()` counts receive calls, the last read size and the held
+    capture buffer. The fake refuses a capture while a frame is open (the contract reads "the frame that just ended"),
+    checked by a second conformance test. pc and 3ds got "not available" stubs (`remote_pc.cpp`, `remote_3ds.cpp`:
+    receive −1, send false, capture fails) until stages 4 and 5.
+- [x] **T2.2** session hooks: attach on `Hello` (reply with frame, capabilities, flavor), ticks (after `Hello`, then
   every 4th frame), apply due messages, `Late`/`Rejected`/`Dropped` records, warnings rate-limited (channel `remote`),
   disconnect → release all and stop polling, `Bye` (and `quit`) — files: `remote/remote_session.cpp`,
   `remote/remote_internal.hpp`, `log/engine_channels.*` — test: `test_remote_session.cpp` (incl. no `Hello` → nothing
   sent) — covers FR-1, FR-7, FR-8
-- [ ] **T2.3** wire into the frame loop (`if constexpr (build::kDevToolsEnabled)`): `remote_frame_start` between
+  - Done (14 session tests + 9 record tests). The record payload encoders went into the pure `remote_wire.*` (the tool
+    decodes the same layouts in stage 3), tested byte by byte in `test_remote_records.cpp`. Rules settled here (plan
+    updated): records go out only while attached (Hello → Bye, off or disconnect), so a message before `Hello` is only
+    a warning on the console, and after 8 bad messages in a row the console sends that 8th `Rejected`, releases every
+    remote control and goes quiet (`too many` appears in the log, not on the wire); each frame reads at least one
+    message even with a full queue, so `Dropped` is reachable and a closed connection is still noticed. Warnings: one
+    line per 60 frames with "(N more since the last warning)"; "remote input off" always.
+- [x] **T2.3** wire into the frame loop (`if constexpr (build::kDevToolsEnabled)`): `remote_frame_start` between
   `read_input` and `input_update`, `remote_frame_ended` after `end_frame`, quit makes `frame()` return false, reset and
   shutdown — files: `engine/core/src/app/app.cpp` — test: `test_remote_frames.cpp` (press stamped for frame 10 seen by
   `pressed()` and `ButtonPressed` on frame 10 only; hold; real + remote; D-Pad mirror from a remote stick; touch
   events; disconnect publishes `ButtonReleased`) — covers FR-1, FR-8
-- [ ] **T2.4** screenshots: due at the end of their frame, only the screens asked, `Screen` records (layout, size,
+  - Done (9 tests). `remote_frame_start(frame_count() + 1, …)` right after `read_input`; `remote_frame_ended` inside
+    `close_frame()` right after `platform::end_frame()` (so the last frame's screenshots also go out at shutdown);
+    `remote_reset()` in `init()`, `remote_shutdown()` before `platform::shutdown()`. A quit returns false before
+    `input_update`, like `poll_events()`.
+- [x] **T2.4** screenshots: due at the end of their frame, only the screens asked, `Screen` records (layout, size,
   frame), `ScreenFailed`, the "time is not representative" log line, buffer released at `Bye`/disconnect/shutdown —
   files: `remote/remote_screenshot.cpp` — test: `test_remote_screenshot.cpp` — covers FR-2
-- [ ] **T2.5** Release check, first pass: `pc-release` builds; add the remote strings and symbol names to
+  - Done (9 tests). The platform's answer is checked (`size == width × height × bpp`, a known layout, fits a record)
+    before sending, else `ScreenFailed` and a warning. A late `Screenshot` is taken at the end of the frame it arrives
+    on, and its `Screen` record carries that frame. The log line is logged in the screenshot's own frame (`[f<n>`).
+- [x] **T2.5** Release check, first pass: `pc-release` builds; add the remote strings and symbol names to
   `scripts/check_release_strings.sh` and run it on `build/pc-release/examples/hello/hello.exe` — covers FR-7, AC-4
+  - Done. Forbidden now: the remote's log texts and `remote_frame_start|remote_frame_ended|remote_receive|remote_send|
+    remote_capture|screenshots_send`. `ok` on `pc-release` `hello.exe` (276 599 bytes; it keeps symbols, so the names
+    count) and on `3ds-release` `hello.elf`; the same check on `pc-debug` `hello.exe` fails listing every one (control).
+    The Release build first warned "unused variable `ms`" (the Info log compiles out): fixed with `[[maybe_unused]]`.
 
-Verifiable: `nnh_tests` green; the release strings check passes on `pc-release`.
+Mutation check (by hand, 2026-11-21): 38 mutants of `remote_session.cpp`, `remote_screenshot.cpp`, the hooks in
+`app.cpp` and the record encoders (hook order both ways, frame number ±1, no reset/shutdown, quit ignored, tick
+cadence `4→3`/`>=→>`/no Hello tick, no `Late`/wanted = applied, no `Rejected`, warning limit `<→<=`/never limited/no
+count, off without release, no `Dropped`, reads not bounded / none when full, disconnect without release or still
+polling, `Bye` without quit/release, no merge, records before `Hello`, capabilities 0, screenshot frame +1 / no log
+line / always top / screens swapped / no release / pending `>=` / pixels never ok / no `ScreenFailed` / no pixels,
+`Late` fields swapped, `Screen` length without its fixed part) — 38 killed. The one that first survived (`remote_frame_ended`
+before `end_frame`) led to the fake's "no capture while a frame is open" rule above.
+
+Verifiable: `nnh_tests` green; the release strings check passes on `pc-release`. Done: 41 new tests (816 in
+`nnh_tests`, 16 in each conformance run), ctest 102/102, `pc-release`, `3ds-release` and `3ds-dev` build without
+warnings, `examples/hello` in the simulator unchanged.
 
 ## Stage 3 — the tool's logic (pure)
 

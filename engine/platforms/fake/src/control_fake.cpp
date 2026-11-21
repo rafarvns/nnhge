@@ -19,6 +19,7 @@ void reset() {
     g_state = {};
     g_controls = {};
     detail::fs_reset();
+    detail::remote_reset();
 }
 
 void set_held_buttons(std::uint32_t mask) { g_controls.input.buttons = mask; }

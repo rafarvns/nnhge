@@ -7,6 +7,7 @@
 #include "nnh/platform/audio.hpp"
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/log.hpp"
+#include "nnh/platform/remote.hpp"
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
 #include "test.hpp"
@@ -218,6 +219,29 @@ NNH_TEST(console_accepts_lines_of_every_level) {
     for (int l = 0; l <= static_cast<int>(nnh::LogLevel::Fatal); ++l) {
         platform::log_console(static_cast<nnh::LogLevel>(l), "[f0        0.000s] I test   conformance line");
     }
+}
+
+NNH_TEST(remote_without_a_connection_reads_nothing_and_sends_nothing) {
+    // Conformance runs without nnh: no connection, so the remote never reads, sends or keeps a buffer.
+    CHECK(platform::init(config()));
+    unsigned char buffer[16];
+    CHECK(platform::remote_receive(buffer, sizeof buffer) == -1);
+    CHECK(!platform::remote_send(buffer, sizeof buffer));
+    platform::remote_capture_release(); // nothing to release: safe
+    platform::shutdown();
+}
+
+NNH_TEST(remote_capture_is_refused_while_a_frame_is_being_drawn) {
+    // A screenshot is "what the frame that just ended drew": core asks only after end_frame().
+    CHECK(platform::init(config()));
+    CHECK(platform::poll_events());
+    platform::begin_frame(nnh::colors::black, nnh::colors::black);
+    platform::ScreenPixels pixels;
+    CHECK(!platform::remote_capture(nnh::Screen::Top, pixels));
+    CHECK(platform::last_error()[0] != '\0');
+    platform::end_frame();
+    platform::remote_capture_release();
+    platform::shutdown();
 }
 
 NNH_TEST(last_error_is_never_null) {

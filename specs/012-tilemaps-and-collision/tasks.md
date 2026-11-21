@@ -1,6 +1,6 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); next: stage 0
+Status: approved (2026-11-21); stage 0 done (2026-11-21); next: stage 1
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -9,14 +9,36 @@ by the maintainer.
 
 ## Stage 0 — groundwork
 
-- [ ] **T0.1** spike: a minimal `tools/assetc` (prints its version) built by `cmake/nnh_host_tools.cmake` — a
+- [x] **T0.1** spike: a minimal `tools/assetc` (prints its version) built by `cmake/nnh_host_tools.cmake` — a
   target in `pc-debug`, an `ExternalProject` with `NNH_HOST_CXX` in `3ds-release` through `scripts/dkp.sh` on
   Windows and on VM 120 (and `-DNNH_ASSETC=<path>` override); measure the 3DS no-op build before/after — files:
   `tools/assetc/CMakeLists.txt`, `tools/assetc/src/main.cpp`, `cmake/nnh_host_tools.cmake`, `scripts/dkp.sh`,
   `CMakeLists.txt` — test: both presets build it; result written in this file — covers FR-1 (risk: host compiler)
-- [ ] **T0.2** [P] CRC-32 out of `fs/save_format.cpp` into pure `core/crc32.{hpp,cpp}` (no engine includes) —
+
+  **Result (2026-11-21): the host build works everywhere tried; the risk is closed.** `nnh-assetc --version` →
+  `nnh-assetc 0.1.0 (crc32 CBF43926)` (it compiles core's pure `crc32.cpp`). Target `nnh_assetc` in every preset;
+  `nnh_assetc_command()` is the hook for the asset step (stage 7). Details in
+  [cmake.md](../../docs/tech/cmake.md) ("nnh-assetc").
+  - Windows `pc-debug` (WinLibs GCC 16): normal target, ctest `assetc_version`/`assetc_usage`, static runtime.
+    102/102 tests from a clean folder.
+  - Windows `3ds-release` through `dkp.sh`: ExternalProject with WinLibs `g++.exe`, MSYS's CMake and Ninja
+    driving the native compiler; header changes tracked; the program is static (only UCRT imports). Two findings:
+    **Git Bash's environment does not reach devkitPro's MSYS2** (the child starts with ~7 variables), so
+    `dkp.sh` passes the compiler as an argument; and **MSYS's CMake misreads `C:/...`** ("CMAKE_CXX_COMPILER: C"),
+    so it is converted inside with `cygpath -u`. First build 9.0 s (compiler detection), check 0.7 s.
+  - Linux VM 120 (GCC 13.3, CMake 3.28): `pc-debug` clean + 102/102 tests; `3ds-release` with `/usr/bin/c++`
+    found on the PATH, first build 0.76 s, check 0.15 s.
+  - `-DNNH_ASSETC=<PC build's nnh-assetc>` in a 3DS folder: used as is, nothing built. Without any host compiler:
+    3DS configures and `hello` builds; only `nnh_assetc` fails, saying to set `NNH_HOST_CXX` or `NNH_ASSETC`.
+  - Budgets (Windows): 3DS no-op 1.69 s with and without the host-tools setup (A/B, 5 runs each: no cost; the
+    tool is `EXCLUDE_FROM_ALL`); edit `hello` → `.3dsx` 2.7 → 2.85 s (noise range), simulator 1.4 → 1.38 s; clean
+    3DS configure + build 12.1 + 19.3 s (ccache warm), the tool +9.0 s only when needed.
+  - Not tried: the `devkitpro/devkitarm` CI image (CI is manual). Its job does not build `nnh_assetc`, so it is
+    unaffected; whether the image has a host `c++` is checked when a CI game has maps (fallback: `NNH_ASSETC`).
+- [x] **T0.2** [P] CRC-32 out of `fs/save_format.cpp` into pure `core/crc32.{hpp,cpp}` (no engine includes) —
   test: existing save tests + `tests/core/test_crc32.cpp` (known vectors) — covers FR-1, FR-11 (shared by map
-  reader and converter)
+  reader and converter). Done: `nnh::detail::crc32` keeps its name; `save_format.hpp` includes it; vectors
+  ("123456789", empty/null, "a", the fox sentence, 32×0x00, 32×0xFF) checked against zlib.
 
 ## Stage 1 — collision (pure, no tilemap)
 

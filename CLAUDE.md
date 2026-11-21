@@ -99,6 +99,7 @@ tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
 apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
 tools/nnh/                                       the nnh command (spec 010): build, run on the console, install
+tools/assetc/                                    nnh-assetc (spec 012): asset converter; host-built in 3DS presets (NNH_HOST_CXX)
 examples/<name>/                                 one small program per feature
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
 docs/                                            architecture/, process/, tech/, api/, guides/

@@ -28,6 +28,7 @@ add_executable(nnh_tests
     audio/test_voice_table.cpp
     audio/test_wav_reader.cpp
     build/test_flavor.cpp
+    core/test_crc32.cpp
     crash/test_assert.cpp
     crash/test_report.cpp
     debug/test_debug_list.cpp

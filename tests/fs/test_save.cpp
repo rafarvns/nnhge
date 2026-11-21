@@ -27,10 +27,6 @@ void fresh() {
 
 } // namespace
 
-NNH_TEST(crc32_matches_the_standard_check_value) {
-    CHECK(nnh::detail::crc32("123456789", 9) == 0xCBF43926u);
-}
-
 NNH_TEST(saves_round_trip_with_their_version) {
     fresh();
     const Progress in{7, 1234};

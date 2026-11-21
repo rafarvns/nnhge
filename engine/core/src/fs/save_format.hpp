@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "core/crc32.hpp" // the payload checksum, detail::crc32()
 #include "nnh/result.hpp"
 
 namespace nnh::detail {
@@ -14,8 +15,6 @@ namespace nnh::detail {
 inline constexpr std::size_t kSaveHeaderSize = 16;
 inline constexpr std::uint32_t kSaveMagic = 0x53484E4Eu; // bytes "NNHS"
 inline constexpr std::uint32_t kMaxSavePayload = 16u * 1024 * 1024;
-
-std::uint32_t crc32(const void* data, std::size_t size);
 
 /// Writes the header into `out` (kSaveHeaderSize bytes). @return kSaveHeaderSize.
 std::size_t build_save_header(std::uint8_t* out, std::uint32_t payload_size, std::uint16_t version,

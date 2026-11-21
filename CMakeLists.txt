@@ -55,3 +55,7 @@ add_subdirectory(apps) # NNH Link (spec 011); after tests: its test target uses 
 if(NNH_PLATFORM STREQUAL "pc")
     add_subdirectory(tools/nnh)
 endif()
+
+# nnh-assetc (spec 012, D27): built in PC presets, built for the host on demand in cross presets.
+include(nnh_host_tools)
+nnh_host_tools_setup()

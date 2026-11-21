@@ -34,6 +34,7 @@ Build folders: `build/<preset>/`. Personal presets go in `CMakeUserPresets.json`
 | `cmake/nnh_assets.cmake` | `nnh_add_assets()` (the `ASSETS` folder of `nnh_add_game`), with `nnh_asset_index.cmake` (the index and its name checks) |
 | `cmake/nnh_images.cmake` | `nnh_add_images()` (the `IMAGES` of `nnh_add_game`), with the build-time scripts `nnh_check_image.cmake` and `nnh_embed.cmake` |
 | `cmake/nnh_sdl3.cmake` | Provides `SDL3::SDL3` for the PC platform |
+| `cmake/nnh_host_tools.cmake` | Target `nnh_assetc` in every preset and `nnh_assetc_command()` (host tools, below) |
 | `examples/CMakeLists.txt` | One `add_subdirectory` per example |
 | `tests/CMakeLists.txt` | `nnh_tests` (core + fake), `nnh_conformance_<platform>` (PC only) |
 
@@ -106,7 +107,40 @@ error) to the arrays; games without `IMAGES` link an empty default from core. Ge
 `build/<preset>/<game dir>/nnh_images/<game>/`. The check script has its own `ctest` cases
 (`image_check_*`, fixtures in `tests/data/images/`).
 
-**Host tools** (`tools/`, PC presets only, never a dependency of games): `tools/nnh/CMakeLists.txt` builds the `nnh` program (spec 010) from `nnh_tool_lib` and its tests `nnh_tool_tests` (ctest `nnh_tool`). With MinGW they link the C++ runtime statically (`-static`): Git for Windows puts an older `libstdc++-6.dll` first on the PATH, which made the test program fail to start (exit code 127, no output) as soon as it used `std::filesystem`.
+**Host tools** (`tools/`): `tools/nnh/CMakeLists.txt` builds the `nnh` program (spec 010; PC presets only, never a dependency of games) from `nnh_tool_lib` and its tests `nnh_tool_tests` (ctest `nnh_tool`). With MinGW they link the C++ runtime statically (`-static`): Git for Windows puts an older `libstdc++-6.dll` first on the PATH, which made the test program fail to start (exit code 127, no output) as soon as it used `std::filesystem`.
+
+**nnh-assetc** (spec 012, decision D27): the asset converter the build runs on Tiled maps, so games with maps
+need it in **every** preset, including cross ones that have no host compiler of their own.
+`cmake/nnh_host_tools.cmake` declares the target `nnh_assetc` everywhere, and `nnh_assetc_command(<cmd> <deps>)`
+gives an asset step the program to run and what to depend on:
+
+| Preset | `nnh_assetc` is | Built |
+|--------|-----------------|-------|
+| PC | the executable of `tools/assetc/` (`build/<preset>/tools/assetc/nnh-assetc`), ctest `assetc_*` | with everything |
+| 3DS | an `ExternalProject` configuring `tools/assetc/` as its own project with the host compiler `NNH_HOST_CXX`, in Release, into `build/<preset>/_host/assetc/` | only when a step needs it or you build the target (`EXCLUDE_FROM_ALL`); a 3DS build without maps never pays for it |
+| 3DS with `-DNNH_ASSETC=<path>` | a prebuilt `nnh-assetc` (e.g. `build/pc-debug/tools/assetc/nnh-assetc.exe`), like `NNH_MAKEROM`; the target just prints its version | never |
+
+`tools/assetc/CMakeLists.txt` is therefore standalone-capable (its own `project()`, includes
+`nnh_engine_options.cmake` itself) and compiles pure core files (`engine/core/src/core/crc32.cpp`, later the map
+format and validator) directly, so the console and the converter share one implementation. It links the C++
+runtime statically when the compiler is MinGW (checked with `CMAKE_CXX_PLATFORM_ID`, because inside devkitPro's
+MSYS2 the host CMake is MSYS's while the compiler is MinGW).
+
+`NNH_HOST_CXX` (cache variable) defaults to the environment variable of the same name, else `c++`/`g++`/`clang++`
+on the PATH (Linux: the system compiler). With none, 3DS presets still configure and build; only `nnh_assetc` (and,
+later, games with maps) fail, saying to set `NNH_HOST_CXX` or `NNH_ASSETC`. **On Windows** devkitPro's MSYS2 has no
+host compiler and starts with an almost empty environment (Git Bash's variables don't reach it), so
+`scripts/dkp.sh` finds `g++` (else `c++`, `clang++`) on Git Bash's PATH — or takes your `NNH_HOST_CXX` — and hands
+it over as an argument; inside it is exported in MSYS form (`/c/...`, or `/home/...` for `C:/Users`), because
+MSYS's CMake misreads `C:/...` as a list. Paths given with `-D` inside `dkp.sh` must use that form too
+(`-DNNH_ASSETC=/e/.../nnh-assetc.exe`). The first build of the tool takes about 9 s on Windows (host compiler
+detection; under 1 s on Linux), then a check of its sources about 0.7 s on Windows / 0.15 s on Linux
+(`BUILD_ALWAYS`: the sub-build's own Ninja decides what is stale, header changes included).
+
+```sh
+scripts/dkp.sh cmake --build --preset 3ds-release --target nnh_assetc   # build it for the host explicitly
+build/3ds-release/_host/assetc/nnh-assetc --version                       # nnh-assetc 0.1.0 (crc32 CBF43926)
+```
 
 **Shared link library** (`link/`, every preset, spec 011): `nnh_link` holds the network code `nnh` and the
 NNH Link console app share (sockets, SHA-256/HMAC, message codec, pairing). It never depends on

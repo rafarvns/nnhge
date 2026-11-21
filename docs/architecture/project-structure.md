@@ -9,7 +9,8 @@ examples and tests.
 engine/
   core/include/nnh/<module>.hpp              public API, one header per module (what games include)
   core/src/<module>/<concept>.cpp|.hpp       core implementation, internal headers
-  core/src/core/                             engine-wide internal state shared by modules
+  core/src/core/                             engine-wide internal state shared by modules; pure helpers with no
+                                             engine includes that host tools compile too (crc32)
   core/contract/nnh/platform/<area>.hpp      platform contract (what each platform library implements)
   platforms/<system>/CMakeLists.txt          nnh::platform_<system> (pc, 3ds, fake)
   platforms/<system>/src/<area>_<system>.cpp one file per contract area per system
@@ -31,7 +32,8 @@ apps/<app>/                                  apps made with NNHGE that ship with
   src/  tests/                               (spec 011): pure logic (link_state, storage, pad, layout) tested
                                              against fakes; views and one scene; platform_link_<system>.cpp
 tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010); tools/assetc
-                                             (nnh-assetc, build-time conversions, planned in spec 012, D27)
+                                             (nnh-assetc, build-time conversions, spec 012, D27; built by
+                                             cmake/nnh_host_tools.cmake, standalone-capable CMakeLists.txt)
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules
 cmake/                                       CMake helpers

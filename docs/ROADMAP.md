@@ -45,6 +45,11 @@ After spec 005 (2026-11-18, same machine): edit one game `.cpp` → simulator 1.
 (+12.6 KB: built-in font, UTF-8 and layout, debug pass on the font; citro2d's text code no longer
 linked); `text.3dsx` 239,736 bytes.
 
+Spec 012 stage 0 (2026-11-21, same machine; host tool `nnh-assetc`): 3DS no-op build 1.69 s with and without
+it (the tool is built only on demand); edit one game `.cpp` → simulator 1.4 s, `.3dsx` 2.85 s; clean 3DS
+configure + build (engine + 7 examples + NNH Link) 12.1 + 19.3 s; building `nnh-assetc` for the host in a 3DS
+folder: 9.0 s the first time (Windows), 0.8 s (Linux VM).
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -80,7 +85,7 @@ linked); `text.3dsx` 239,736 bytes.
 
 ## M3 — Assets
 - [x] Assets folder and romfs ([spec 007](../specs/007-assets-and-romfs/spec.md)): `nnh_add_game(... ASSETS <folder>)` checks and converts each file in the build (one step per file, rerun only when it changes), writes a sorted case-sensitive index and packs the folder into the romfs on 3DS / next to the program on PC; `<nnh/assets.hpp>` (`exists`/`size`/`read`/`load` by path); `load_texture("art/hero")` from assets, `IMAGES` kept for embedded images; `examples/sprites` loads its textures and a level file — verified on PC, Linux and an Old 3DS XL (2026-11-18). Cost: `hello.3dsx` +10.5 KB (romfs support)
-- [ ] `assetc` tool (a C++ converter with an incremental cache) — only when conversion outgrows the CMake steps (texture formats, atlases, audio)
+- [ ] `assetc` tool (a C++ converter with an incremental cache) — only when conversion outgrows the CMake steps (texture formats, atlases, audio). Started by spec 012 (D27): `nnh-assetc`, built for the host in every preset (stage 0), converts Tiled maps (stage 7)
 
 ## M4 — Audio
 - [x] Audio ([spec 008](../specs/008-audio/spec.md)): `<nnh/audio.hpp>` — `load_sound` (WAV/Ogg Vorbis from assets), voices with volume/pan/pitch/priority, groups + master, streamed `music::play`/`crossfade` with loop points (`LOOPSTART`) and fades, `SoundFinished`/`MusicFinished`, silent fallback without output; 3DS DSP (ndsp) and PC (SDL 3 + software mixer); vendored stb_vorbis; `examples/audio` — verified on PC and an Old 3DS XL (2026-11-18). Cost: every `.3dsx` +8 KB (ndsp), +60 KB with Ogg; builds within budget (clean engine 8.6 s)

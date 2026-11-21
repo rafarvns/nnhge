@@ -28,6 +28,11 @@ struct GfxConfig {
     int max_draws = 2048;
     /// Textures loaded at the same time. About 32 bytes each. Minimum 4.
     int max_textures = 128;
+    /// Tile quads per frame (both screens) drawn by gfx::draw_tilemap (<nnh/tilemap.hpp>); more are dropped.
+    /// 0 (default) = no tilemap drawing and no memory for it. Up to 65535. Costs ~22 KB once when > 0, and on
+    /// 3DS one citro2d quad (~192 bytes, Linear) each: a full 16x16 layer of the top screen is up to 416
+    /// tiles.
+    int max_tiles = 0;
 };
 
 /// Audio capacities (see <nnh/audio.hpp>), allocated once at init().

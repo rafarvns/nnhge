@@ -3,8 +3,10 @@
 
 #include "core/engine_state.hpp"
 #include "gfx/gfx_state.hpp"
+#include "log/engine_channels.hpp"
 #include "nnh/assert.hpp"
 #include "nnh/gfx.hpp"
+#include "nnh/log.hpp"
 #include "text/font_texture.hpp"
 
 namespace nnh {
@@ -39,6 +41,39 @@ void detail::gfx_record(const DrawCommand& command) {
         // Release: dropped and logged once per frame (gfx_submit).
         NNH_ASSERT(false, "more than %d 2D draws in a frame: raise AppConfig::gfx.max_draws", g.max_draws);
     }
+}
+
+bool detail::gfx_tiles_enabled() {
+    GfxState& g = gfx_state();
+    if (g.max_tiles > 0) return true;
+    if (!g.warned_tiles_off) NNH_LOG_WARN(gfx, "draw_tilemap ignored: AppConfig::gfx.max_tiles is 0");
+    g.warned_tiles_off = true;
+    NNH_ASSERT(false, "draw_tilemap needs AppConfig::gfx.max_tiles > 0, e.g. .gfx = {.max_tiles = 2048}");
+    return false;
+}
+
+void detail::gfx_record_tiles(Screen screen, int layer, const TileBatchRecord& batch) {
+    GfxState& g = gfx_state();
+    if (!gfx_tiles_enabled()) return;
+    TileBatchRecord stored = batch;
+    stored.layer = clamp_layer(layer);
+    const int index = g.tiles.add(stored);
+    if (index < 0) {
+        // Release: dropped (a whole layer goes missing, so it is logged every time).
+        NNH_LOG_WARN(gfx, "more than %d tile batches in a frame: one dropped", kMaxTileBatches);
+        NNH_ASSERT(false, "more than %d tile batches in a frame (one per map layer and tileset)",
+                   kMaxTileBatches);
+        return;
+    }
+    DrawCommand c;
+    c.screen = screen;
+    c.layer = stored.layer;
+    c.tile_batch = static_cast<std::int16_t>(index);
+    record(c);
+}
+
+void detail::gfx_forget_tiles(const void* source) {
+    gfx_state().tiles.forget(source);
 }
 
 std::uint8_t detail::gfx_clamp_layer(int layer) {
@@ -95,6 +130,9 @@ gfx::Stats gfx::stats() {
     s.textures = g.textures.active_count() - font;
     s.max_textures = g.textures.capacity() > 0 ? g.textures.capacity() - 1 : 0;
     s.texture_bytes = g.textures.total_bytes() - detail::font_texture_bytes();
+    s.tiles_last_frame = g.tiles_last_frame;
+    s.max_tiles = g.max_tiles;
+    s.dropped_tiles = g.dropped_tiles_total;
     return s;
 }
 

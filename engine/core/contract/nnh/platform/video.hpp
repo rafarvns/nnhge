@@ -61,6 +61,38 @@ void texture_destroy(TextureHandle handle);
 /// possibly several times per screen (passes). Draws are clipped to the screen. Must not allocate.
 void draw_2d(Screen screen, const DrawItem2D* items, int count);
 
+/// TileQuad2D::orient bits: Tiled's flips. The diagonal flip (swap x and y, square tiles only) is applied
+/// first, then the x and y mirrors. The values are a cell's bits 13..15 (core shifts them down once).
+inline constexpr std::uint8_t kTileOrientDiagonal = 1;
+inline constexpr std::uint8_t kTileOrientFlipY = 2;
+inline constexpr std::uint8_t kTileOrientFlipX = 4;
+
+/// One tile of a batch: a tile_w x tile_h square of the texture drawn unscaled at a whole-pixel position.
+struct TileQuad2D {
+    std::int16_t x = 0; ///< destination top-left, screen pixels
+    std::int16_t y = 0;
+    std::uint16_t src_x = 0; ///< source top-left in the texture, pixels
+    std::uint16_t src_y = 0;
+    std::uint8_t orient = 0; ///< kTileOrient* bits
+};
+
+/// Same-size tiles of one texture, from one map layer (spec 012, decision D26).
+struct TileBatch2D {
+    TextureHandle texture = 0;
+    int tile_w = 0; ///< pixels, 8..64
+    int tile_h = 0;
+    Color color{};          ///< tint for every tile (white = unchanged), alpha = opacity
+    std::uint8_t layer = 0; ///< 0..15, as DrawItem2D
+    const TileQuad2D* quads = nullptr;
+    int count = 0;
+};
+
+/// Draws the quads of `batch` on `screen`, in order, clipped to it; nearest sampling, so whole-pixel
+/// positions and exact source rectangles give seamless tiles. Called by core between draw_2d() calls of a
+/// screen (draw order = call order). Must not allocate, and must be done with `batch.quads` when it returns
+/// (core reuses the buffer).
+void draw_tiles(Screen screen, const TileBatch2D& batch);
+
 /// Starts a frame with both screens cleared to the given colors. Called once per nnh::frame(), after
 /// poll_events() returned true. Drawing functions are valid until end_frame(). Must not allocate.
 void begin_frame(Color top_clear, Color bottom_clear);
@@ -71,5 +103,7 @@ void end_frame();
 
 // Text (game and debug) is drawn by core with the built-in font through texture_create_rgba() and
 // draw_2d() (spec 005): a platform implements no text or font functions.
+
+static_assert(sizeof(TileQuad2D) <= 12, "tile quads stay compact (core's scratch holds 1600)");
 
 } // namespace nnh::platform

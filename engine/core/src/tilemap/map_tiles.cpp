@@ -85,6 +85,19 @@ bool Tilemap::layer_collision(int layer) const {
     return e && (e->flags & kLayerCollision) != 0;
 }
 
+void Tilemap::set_parallax_origin(Vec2 origin) {
+    if (block_ == nullptr) return;
+    Header& h = detail::map_view(*this).header();
+    h.parallax_origin_x = origin.x;
+    h.parallax_origin_y = origin.y;
+}
+
+Vec2 Tilemap::parallax_origin() const {
+    if (block_ == nullptr) return {};
+    const Header& h = detail::map_view(*this).header();
+    return {h.parallax_origin_x, h.parallax_origin_y};
+}
+
 namespace {
 
 constexpr float kCellClamp = 1073741824.0f; // 2^30, like collision's cell ranges

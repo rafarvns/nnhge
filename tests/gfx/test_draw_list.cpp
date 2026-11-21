@@ -216,6 +216,54 @@ NNH_TEST(a_sprite_of_a_destroyed_texture_is_skipped_and_counted) {
     CHECK(g_items[0].kind == Kind::FillRect);
 }
 
+namespace {
+
+DrawCommand tiles(int batch, int layer = 0, Screen screen = Screen::Top) {
+    DrawCommand c;
+    c.screen = screen;
+    c.layer = static_cast<std::uint8_t>(layer);
+    c.tile_batch = static_cast<std::int16_t>(batch);
+    return c;
+}
+
+nnh::detail::TileSplit g_splits[4];
+
+} // namespace
+
+NNH_TEST(a_tile_batch_is_a_split_point_among_the_items_by_layer_then_call) {
+    Fixture f;
+    f.list.record(f.fill({1, 0}, {1, 1}, 2)); // above the map
+    f.list.record(tiles(7, 1));               // the map
+    f.list.record(f.fill({2, 0}, {1, 1}, 0)); // below
+    f.list.record(tiles(3, 2));               // same layer as the first fill, recorded later
+    f.list.record(f.fill({3, 0}, {1, 1}, 1)); // same layer as the map, recorded later
+    const auto r = f.list.build(Screen::Top, {}, f.textures, g_items, kCapacity, g_splits, 4);
+    CHECK(r.items == 3 && r.splits == 2);
+    CHECK(g_items[0].x == 2 && g_items[1].x == 3 && g_items[2].x == 1); // tile commands make no item
+    CHECK(g_splits[0].at == 1 && g_splits[0].batch == 7); // after the layer-0 fill, before the layer-1 fill
+    CHECK(g_splits[1].at == 3 && g_splits[1].batch == 3); // after everything
+}
+
+NNH_TEST(tile_splits_belong_to_their_screen) {
+    Fixture f;
+    f.list.record(tiles(1, 0, Screen::Bottom));
+    f.list.record(tiles(2, 0, Screen::Top));
+    const auto top = f.list.build(Screen::Top, {}, f.textures, g_items, kCapacity, g_splits, 4);
+    CHECK(top.splits == 1 && g_splits[0].batch == 2 && g_splits[0].at == 0);
+    const auto bottom = f.list.build(Screen::Bottom, {}, f.textures, g_items, kCapacity, g_splits, 4);
+    CHECK(bottom.splits == 1 && g_splits[0].batch == 1);
+}
+
+NNH_TEST(tile_commands_without_split_storage_draw_nothing) {
+    Fixture f;
+    f.list.record(tiles(0));
+    f.list.record(f.fill({1, 0}, {1, 1}));
+    const auto r = f.build();
+    CHECK(r.items == 1 && r.splits == 0 && g_items[0].kind == Kind::FillRect);
+    const auto one = f.list.build(Screen::Top, {}, f.textures, g_items, kCapacity, g_splits, 0);
+    CHECK(one.splits == 0);
+}
+
 NNH_TEST(a_pass_can_be_built_again_with_the_same_result) {
     Fixture f;
     f.list.record(f.fill({3, 0}, {1, 1}, 2));

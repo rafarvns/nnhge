@@ -24,7 +24,8 @@ layers, and the core submits the 2D list in two slices around the 3D pass. The 2
 
 ## Tile layers (batches)
 
-> Status: design ([plan 012](../../specs/012-tilemaps-and-collision/plan.md), decision D26).
+> Status: **implemented** on PC, 3DS and the fake platform (spec 012 stage 3, decision D26); the Old 3DS
+> benchmark gate (how many full layers at 60 Hz) is pending.
 
 A tilemap layer is recorded as **one command per (map layer, tileset)**, sorted with the sprites by layer and
 call order, so sprites can sit between map layers. When the sorted pass reaches it, core sends the sprites
@@ -32,6 +33,22 @@ before it (`draw_2d`), expands only the cells the camera sees into compact quads
 bits) and calls the contract's `draw_tiles` once for the batch. Camera, parallax and offset are applied once
 per batch and the layer's origin is snapped to whole pixels once, so tiles never show seams. Tile quads per
 frame are capped by `AppConfig::gfx.max_tiles` on every system (the simulator drops what the 3DS would).
+
+How it is built (`engine/core/src/gfx/`, `engine/core/src/tilemap/`):
+
+- `gfx` sees a batch only as `{expand function, source}` plus its texture, tile size, tint and draw layer
+  (`gfx/tile_batches.hpp`, at most 64 per frame): it never includes the tilemap module. `DrawList::build()`
+  turns each tile command into a **split point** (`{items before it, batch}`) instead of a 2D item, and
+  `gfx_frame.cpp` alternates `draw_2d` slices and `draw_tiles` calls.
+- At submit the batch's function (`tilemap/map_draw.cpp`) reads the map *then* — camera at the end of the frame,
+  tiles changed by `set_tile` after the draw call — computes the layer's snapped origin and visible cells
+  (`tilemap/visible_range.cpp`, Tiled's centre-based parallax) and writes quads (`tilemap/tile_expand.cpp`:
+  one id test, one table read, one 10-byte write per cell) into one shared scratch of 1600 quads, within the
+  frame's remaining `max_tiles`.
+- A map destroyed after its draw call forgets its batches (`Tilemap::reset`); a tileset whose texture is gone
+  is skipped with an assert, like sprites.
+- Memory: nothing when `max_tiles` is 0 (the default); otherwise ~20 KB once (64 batch records and the
+  scratch), and on 3DS one citro2d quad (~192 B, `Linear`) per `max_tiles`.
 
 ## Why record instead of drawing on the spot
 
@@ -71,7 +88,7 @@ SDL's default renderer, which is enough for 2D (3D will need a GPU device).
 - Texture memory is accounted in the `Linear` region under the `textures` tag on every system.
 - No drawing outside a frame; calls outside one are ignored (as for debug text).
 - Text, game and debug alike, is engine sprites of the built-in font ([text.md](../api/text.md)); a
-  platform has no text functions, only `texture_create_rgba` and `draw_2d`.
+  platform has no text functions, only `texture_create_rgba` and `draw_2d` (and `draw_tiles` for tilemaps).
 
 See also: [decisions D5, D19, D20](decisions.md), [platforms.md](platforms.md),
 [devkitpro-3ds.md](../tech/devkitpro-3ds.md), [sdl3.md](../tech/sdl3.md).

@@ -67,7 +67,8 @@ Shapes take `ShapeOptions{layer, ignore_camera}`.
 ## Order: layers
 
 Everything drawn on a screen in a frame is **recorded** and drawn when the frame ends: layer 0 first,
-layer 15 last; within a layer, in call order. Debug text and the debug overlay always draw on top.
+layer 15 last; within a layer, in call order. Tilemap layers (`gfx::draw_tilemap`, [tilemap.md](tilemap.md#drawing))
+follow the same order, so a sprite can sit between a background and a foreground layer. Debug text and the debug overlay always draw on top.
 Calls outside a frame (before the first `frame()`, after the loop) are ignored.
 
 ## Cameras
@@ -94,15 +95,23 @@ Fixed at `nnh::init()` through `AppConfig::gfx` (allocated once, memory tag `gfx
 |-------|---------|-------|------|
 | `max_draws` | 2048 | 16–65535 | draws per frame, both screens; about 136 bytes each (~280 KB by default) |
 | `max_textures` | 128 | ≥ 4 | textures loaded at once; about 32 bytes each |
+| `max_tiles` | 0 | 0–65535 | tile quads per frame, both screens, drawn by `gfx::draw_tilemap` ([tilemap.md](tilemap.md#drawing)). 0 = no tilemap drawing and no memory for it; otherwise ~20 KB once, and on 3DS ~192 bytes of `Linear` per tile (citro2d's buffer). A full layer of 16×16 tiles on the top screen is up to 26 × 16 = 416 |
 
 ```cpp
 nnh::init({.title = "Bullet Hell", .gfx = {.max_draws = 8192}});
+nnh::init({.title = "Platformer", .gfx = {.max_tiles = 2048}});   // ~4 full 16x16 layers on both screens
 ```
 
 How many sprites fit in a frame at 60 Hz (an Old 3DS XL: about 1300 of 16×16 from one texture): run the benchmark of [`examples/sprites`](../../examples/sprites/main.cpp)
 (SELECT on the console, `SPRITES_DEMO=bench` on PC; L/R and Y/X change the count).
 
 More draws than `max_draws` in a frame is a bug: Debug and Development **assert**; Release drops the
-extra draws and logs one warning per frame. `gfx::stats()` returns `draws_last_frame`, `max_draws`,
-`dropped_draws`, `textures`, `max_textures` and `texture_bytes` (the game's textures: the built-in font
-has its own slot and memory tag); the debug overlay shows them too.
+extra draws and logs one warning per frame. The same holds for tile quads over `max_tiles` (the simulator
+counts and drops exactly what the 3DS would), and `draw_tilemap` with `max_tiles = 0` asserts with the fix in
+the message. Each tile batch (one per map layer and tileset) also takes one of `max_draws`.
+
+`gfx::stats()` returns `draws_last_frame`, `max_draws`, `dropped_draws`, `textures`, `max_textures` and
+`texture_bytes` (the game's textures: the built-in font has its own slot and memory tag), plus
+`tiles_last_frame`, `max_tiles` and `dropped_tiles` (since `init()`); the debug overlay shows them too (the
+tiles line only when `max_tiles > 0`). How many tile layers fit at 60 Hz: the benchmark of
+[`examples/platformer`](../../examples/platformer/main.cpp) (SELECT on the console, `PLATFORMER_DEMO=bench` on PC).

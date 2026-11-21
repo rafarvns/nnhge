@@ -73,7 +73,8 @@ bool DrawList::record(const DrawCommand& command) {
 }
 
 DrawList::BuildResult DrawList::build(Screen screen, Vec2 camera, const TextureTable& textures,
-                                      platform::DrawItem2D* out, int out_capacity) const {
+                                      platform::DrawItem2D* out, int out_capacity, TileSplit* splits,
+                                      int split_capacity) const {
     // Stable counting sort by layer of this screen's commands (O(n), no allocation).
     int starts[kLayerCount + 1] = {};
     for (int i = 0; i < count_; ++i) {
@@ -88,6 +89,10 @@ DrawList::BuildResult DrawList::build(Screen screen, Vec2 camera, const TextureT
     BuildResult result;
     for (int n = 0; n < total && result.items < out_capacity; ++n) {
         const DrawCommand& c = storage_[order_[n]];
+        if (c.tile_batch >= 0) {
+            if (result.splits < split_capacity) splits[result.splits++] = {result.items, c.tile_batch};
+            continue;
+        }
         const Vec2 cam = c.ignore_camera ? Vec2{} : camera;
         const Vec2 at = c.position - cam;
         Item item;

@@ -87,10 +87,11 @@ vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS v
 `<nnh/math.hpp>`): `<nnh/collision.hpp>` — `overlaps`/`contains`/`intersection`/`separation` on boxes;
 `collision::move` sweeps a box through a `Grid` the game describes (`grid_view` over its own `Cell` array, or a
 callback), x then y, solid and one-way cells, no tunnelling; `contacts`, `cells_touching`
-([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stage 2: built in code; drawing and loading come in
-later stages): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
-tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`
-([api/tilemap.md](docs/api/tilemap.md)).
+([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–3: built in code and drawn; loading Tiled
+maps comes later): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
+tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`;
+`gfx::draw_tilemap` draws tile batches (D26: contract `draw_tiles`, only visible cells, Tiled parallax and flips,
+needs `AppConfig::gfx.max_tiles`, 0 by default); demo `examples/platformer` ([api/tilemap.md](docs/api/tilemap.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)
@@ -134,6 +135,7 @@ build/pc-debug/tools/nnh/nnh install audio                      # .cia over the 
 build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
 NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
+PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png build/pc-debug/examples/platformer/platformer.exe   # tiles: bench|flips
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

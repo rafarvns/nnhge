@@ -16,6 +16,6 @@ To start a new spec, copy `_templates/` to `NNN-<slug>/` with the next free numb
 | 009 | [Packaging](009-packaging/spec.md) (icon, metadata, installable `.cia` with banner and jingle) | implemented, verified on 3DS |
 | 010 | [The `nnh` tool and `nnh run`](010-nnh-cli-run/spec.md) (build, send to the console, readable saved logs, install `.cia`; first half of NNH Link) | implemented, verified on 3DS |
 | 011 | [NNH Link](011-nnh-link/spec.md) (build and run from the console: `nnh serve`, the console app, pairing, launch and return) | implemented |
-| 012 | [Tilemaps and collision](012-tilemaps-and-collision/spec.md) (Tiled maps converted at build time, layers with parallax, objects and properties, moving boxes against solid and one-way tiles, overlaps) | in progress (stages 0–2 done) |
+| 012 | [Tilemaps and collision](012-tilemaps-and-collision/spec.md) (Tiled maps converted at build time, layers with parallax, objects and properties, moving boxes against solid and one-way tiles, overlaps) | in progress (stages 0–3 done; stage-3 gate on the Old 3DS pending) |
 | 003 | [Full input](003-full-input/spec.md) (Circle Pad, C-Stick, touch; PC keyboard, mouse and gamepad) | implemented — New 3DS run pending |
 | 004 | [2D graphics](004-2d-graphics/spec.md) (textures, sprites, shapes, layers, camera; ready for 3D) | implemented, verified on 3DS |

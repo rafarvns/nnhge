@@ -1,8 +1,8 @@
 #pragma once
 /// @file nnh/tilemap.hpp
-/// Tilemaps: a grid of tiles in layers, drawn from tilesets (textures), with objects, properties and a
-/// collision grid for <nnh/collision.hpp>. Every part can be built in code; maps converted from the Tiled
-/// editor load into the same object (later stage of spec 012). See docs/api/tilemap.md.
+/// Tilemaps: a grid of tiles in layers, drawn from tilesets (textures) by gfx::draw_tilemap, with objects,
+/// properties and a collision grid for <nnh/collision.hpp>. Every part can be built in code; maps converted
+/// from the Tiled editor load into the same object (later stage of spec 012). See docs/api/tilemap.md.
 ///
 /// A map is one block of memory (tag "tilemap", Heap) allocated by create() with fixed capacities:
 /// nothing grows while playing, queries and edits never allocate. Coordinates: the map's cell (0, 0)
@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "nnh/collision.hpp"
+#include "nnh/gfx.hpp"
 #include "nnh/math.hpp"
 #include "nnh/result.hpp"
 
@@ -198,6 +199,11 @@ public:
     bool layer_visible(int layer) const;
     bool layer_collision(int layer) const;
 
+    /// The world point where parallax layers line up with the map when the view's centre is on it (Tiled's
+    /// map "parallax origin"; default (0, 0)). Drawing only.
+    void set_parallax_origin(Vec2 origin);
+    Vec2 parallax_origin() const;
+
     /// Marks a tile id solid or one-way (Tiled: tile property `solid` / `one_way`). If tiles were already
     /// placed, layers using its tileset are scanned once: call it while building. Asserts on unknown ids.
     void set_tile_collision(int tile_id, collision::Cell kind);
@@ -239,5 +245,32 @@ private:
     friend struct TilemapAccess;
     std::uint8_t* block_ = nullptr;
 };
+
+namespace gfx {
+
+/// How gfx::draw_tilemap() draws. Every field is optional:
+/// @code
+/// nnh::gfx::draw_tilemap(nnh::Screen::Top, map, {.map_layer = ground, .layer = 2});
+/// @endcode
+struct TilemapDrawOptions {
+    int map_layer = -1;         ///< one tile layer, or -1 = every visible tile layer, in map order
+    int layer = 0;              ///< draw layer 0..15, as sprites: same layer = call order
+    float opacity = 1;          ///< 0..1, times each map layer's opacity
+    Vec2 offset{};              ///< added to each map layer's offset
+    bool ignore_camera = false; ///< draw in screen pixels (parallax then uses camera (0, 0))
+};
+
+/// Draws a map's tile layers on `screen`, at the end of the frame like sprites (ordered by `layer`, then
+/// call), so a sprite can sit between two map layers. Records one tile batch per (map layer, tileset): only
+/// the cells the camera sees are expanded, at the end of the frame, with the camera, tiles and layer settings
+/// of that moment (a set_tile() after this call is drawn). Layer offset and parallax follow Tiled; the
+/// layer's position is rounded to whole pixels once, so tiles never show seams. Hidden layers, empty layers
+/// and opacity 0 draw nothing. Needs AppConfig::gfx.max_tiles > 0 (asserts otherwise); tiles past it are
+/// dropped (assert in Debug/Development). Each batch also takes one of AppConfig::gfx.max_draws. Only inside
+/// a frame. No allocation. Asserts on an unknown `map_layer` and on a tileset whose texture was destroyed
+/// (that tileset is skipped).
+void draw_tilemap(Screen screen, const Tilemap& map, const TilemapDrawOptions& options = {});
+
+} // namespace gfx
 
 } // namespace nnh

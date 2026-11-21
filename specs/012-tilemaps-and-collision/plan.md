@@ -351,6 +351,34 @@ formula is in [tilemap.md](../../docs/api/tilemap.md#memory).
   `tile_layer(i)`, `object_layer(i)`, `tile(id)`, `object(i)`, `Tilemap::tile_id_count()`, the layer getters the
   sketch called "+ matching getters" (`layer_offset` … `layer_collision`), `Tile::operator==`.
 
+#### Stage 3 refinements (2026-11-21, implemented)
+
+Found while building the drawing path; the exact code is `engine/core/src/gfx/tile_batches.*`,
+`engine/core/src/tilemap/{visible_range,tile_expand,map_draw}.*` and the contract `nnh/platform/video.hpp`.
+
+- **`TileQuad2D::orient` bit order**: diagonal = 1, flip y = 2, flip x = 4 (`kTileOrient*`), so the orientation is
+  the cell's bits 13–15 shifted down once (`cell >> 13`, checked by `static_assert`) instead of three tests per
+  tile. The quad is **10 bytes** (no padding needed; `static_assert(sizeof <= 12)`): the scratch is 16 KB.
+- **Public API additions** (additive): `Tilemap::set_parallax_origin(Vec2)` / `parallax_origin()` — the formula uses
+  the map's parallax origin, and a map built in code needs a way to set what Tiled maps carry (FR-0).
+  `TilemapDrawOptions` has no `animation_time` yet: stage 6 adds it with animated tiles.
+- **Visibility**: a hidden map layer draws nothing even when named by `map_layer`; opacity 0 records nothing.
+- **Batches per frame**: 64 (`kMaxTileBatches`); past it the batch is dropped with an assert. Each batch also takes
+  one draw-list command (it keeps its place among the sprites), so it counts in `max_draws`.
+- **Split points**: `DrawCommand` gained `tile_batch` (an `int16` in existing padding: the command's size is
+  unchanged); `DrawList::build()` writes `TileSplit{items before it, batch}` instead of an item.
+- **Memory**: records and scratch are allocated only when `max_tiles > 0` (≈ 20 KB on PC, less on 3DS).
+- **Asserts inside the frame's submit** (tiles over `max_tiles`) happen after the frame's lists are cleared: the
+  crash leaves the frame open and `shutdown()` submits it again, which must not assert twice.
+- **Stats**: `dropped_tiles` counts since `init()` like `dropped_draws`; the overlay's tiles line appears only when
+  `max_tiles > 0` (XI).
+- **PC read-back test** lives in its own PC-only file `tests/platform_conformance/test_draw_tiles_pc.cpp` (linked
+  into `nnh_conformance_pc` with SDL3): `test_contract.cpp` uses only the contract, which cannot read pixels.
+- **Example**: besides the files listed in tasks, `art.hpp` (tile ids), `bonus.cpp` (play loop: camera, coins,
+  HUD), `player.cpp` and `flips.cpp`; SELECT cycles bonus → bench → flips. The bench goes up to 12 full layers and
+  2000 sprites (`max_tiles` = 12 × 416) and prints frame time, worst frame and missed frames since the last change
+  on the bottom screen (debug text, so it works in Release, where the overlay is off).
+
 ### Files
 
 | File | New/changed | Responsibility |

@@ -60,6 +60,8 @@ add_executable(nnh_tests
     gfx/test_draw_list.cpp
     gfx/test_texture_rules.cpp
     gfx/test_texture_table.cpp
+    gfx/test_tile_batches.cpp
+    gfx/test_tile_submit.cpp
     gfx/test_textures.cpp
     gfx/test_images.cpp
     input/test_dpad_mirror.cpp
@@ -79,10 +81,14 @@ add_executable(nnh_tests
     text/test_builtin_font.cpp
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
+    tilemap/test_map_draw.cpp
     tilemap/test_map_layout.cpp
     tilemap/test_map_objects.cpp
     tilemap/test_map_properties.cpp
     tilemap/test_map_tiles.cpp
+    tilemap/test_tile_expand.cpp
+    tilemap/test_tilemap_alloc.cpp
+    tilemap/test_visible_range.cpp
     simulator/test_audio_mixer_pc.cpp
     simulator/test_sim_layout.cpp
     simulator/test_sim_settings.cpp
@@ -127,6 +133,12 @@ endfunction()
 
 nnh_add_conformance(fake)
 nnh_add_conformance(pc)
+# PC only: tiles read back pixel by pixel from the screen's render target (spec 012). SDL3::SDL3 is imported per
+# directory, so it is found again here (the download is reused).
+include(nnh_sdl3)
+target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_draw_tiles_pc.cpp)
+target_include_directories(nnh_conformance_pc PRIVATE ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
+target_link_libraries(nnh_conformance_pc PRIVATE SDL3::SDL3)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 # Headless and quiet: no display, no sound card needed (the dummy audio driver still runs the backend).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;SDL_AUDIO_DRIVER=dummy")

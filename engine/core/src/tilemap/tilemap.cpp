@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "gfx/gfx_state.hpp"
 #include "log/engine_channels.hpp"
 #include "nnh/log.hpp"
 #include "tilemap/tilemap_internal.hpp"
@@ -64,6 +65,7 @@ Tilemap& Tilemap::operator=(Tilemap&& other) noexcept {
 }
 
 void Tilemap::reset() {
+    if (block_ != nullptr) detail::gfx_forget_tiles(block_); // batches drawn this frame must not read it
     mem::free(block_);
     block_ = nullptr;
 }

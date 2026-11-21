@@ -1,4 +1,5 @@
-// Debug overlay on the bottom screen: FPS, frame-time graph, memory per region, slowest profile scopes.
+// Debug overlay on the bottom screen: FPS, frame-time graph, memory per region, 2D draws and tiles, slowest
+// profile scopes.
 // Recorded into the debug pass (debug_pass.cpp), so it draws with the built-in font on every system.
 // Compiled in Debug/Development; set_overlay_visible() has no effect in Release.
 
@@ -81,6 +82,13 @@ void draw_memory(int& y, int line) {
                   static_cast<double>(g.texture_bytes) / 1048576.0);
     detail::debug_record_text(Screen::Bottom, 4, y, text, colors::white);
     y += line;
+    if (g.max_tiles > 0) { // games without tilemaps don't see the line
+        std::snprintf(text, sizeof text, "tiles %d/%d  dropped %d", g.tiles_last_frame, g.max_tiles,
+                      g.dropped_tiles);
+        detail::debug_record_text(Screen::Bottom, 4, y, text,
+                                  g.dropped_tiles > 0 ? colors::red : colors::white);
+        y += line;
+    }
 }
 
 void draw_scopes(int& y, int line) {

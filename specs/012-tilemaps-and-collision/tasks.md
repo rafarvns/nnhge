@@ -1,6 +1,7 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0, 1 and 2 done (2026-11-21); next: stage 3
+Status: approved (2026-11-21); stages 0, 1, 2 and 3 (T3.1–T3.8) done (2026-11-21); next: the stage-3 gate on an
+Old 3DS (T3.9, maintainer), then stage 4
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -123,32 +124,77 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
 
 ## Stage 3 — drawing (the gate)
 
-- [ ] **T3.1** contract `TileQuad2D`, `TileBatch2D`, `draw_tiles`; fake records batches, quads and call order —
+- [x] **T3.1** contract `TileQuad2D`, `TileBatch2D`, `draw_tiles`; fake records batches, quads and call order —
   files: `contract/nnh/platform/video.hpp`, `platforms/fake/src/video_fake.cpp`, `fake_internal.hpp`,
   `platform_fake.hpp` — test: `tests/platform_conformance/test_contract.cpp` (fake) — covers FR-3
-- [ ] **T3.2** visible range and parallax (Tiled's centre-based formula, snapped origin) — files:
+- [x] **T3.2** visible range and parallax (Tiled's centre-based formula, snapped origin) — files:
   `tilemap/visible_range.{hpp,cpp}` — test: `test_visible_range.cpp` — covers FR-3, AC-2
-- [ ] **T3.3** tile expansion: cells → quads, source from the table, flip bits, empty skipped, per-tileset pass —
+- [x] **T3.3** tile expansion: cells → quads, source from the table, flip bits, empty skipped, per-tileset pass —
   files: `tilemap/tile_expand.{hpp,cpp}` — test: `test_tile_expand.cpp` — covers FR-2, FR-3
-- [ ] **T3.4** gfx tile batches: command kind, `build()` split points, records with `{expand fn, source}`,
+- [x] **T3.4** gfx tile batches: command kind, `build()` split points, records with `{expand fn, source}`,
   scratch of 1600 quads, `max_tiles` (+ `AppConfig`, `Stats`, overlay), drops, forget-by-source on map
   destruction — files: `gfx/tile_batches.{hpp,cpp}`, `gfx/draw_list.*`, `gfx/gfx_frame.cpp`, `gfx/gfx_state.hpp`,
   `include/nnh/app.hpp`, `include/nnh/gfx.hpp`, `debug/overlay.cpp` — test: `tests/gfx/test_tile_batches.cpp`,
   `test_draw_list.cpp` — covers FR-3, FR-4, FR-11
-- [ ] **T3.5** `gfx::draw_tilemap` (one map layer or all, draw layer, opacity, offset, ignore_camera) — files:
+- [x] **T3.5** `gfx::draw_tilemap` (one map layer or all, draw layer, opacity, offset, ignore_camera) — files:
   `tilemap/map_draw.cpp` — test: `test_map_draw.cpp` (fake: batches interleaved with sprites, `set_tile` after
   draw is seen, no allocation over 100 frames in `test_tilemap_alloc.cpp`) — covers FR-3, FR-4, FR-11
-- [ ] **T3.6** PC backend — files: `platforms/pc/src/draw_tiles_pc.cpp` — test: conformance pc (render the 8
+- [x] **T3.6** PC backend — files: `platforms/pc/src/draw_tiles_pc.cpp` — test: conformance pc (render the 8
   orientations of an asymmetric 8×8 texture offscreen, read pixels back) — covers FR-2, FR-3
-- [ ] **T3.7** [P] 3DS backend + `C2D_Init` with `max_tiles` — files: `platforms/3ds/src/draw_tiles_3ds.cpp`,
+- [x] **T3.7** [P] 3DS backend + `C2D_Init` with `max_tiles` — files: `platforms/3ds/src/draw_tiles_3ds.cpp`,
   `app_3ds.cpp` — test: `3ds-release` builds — covers FR-3
-- [ ] **T3.8** `examples/platformer` skeleton: art script (tileset, player, backdrops), the **bonus level built in
+- [x] **T3.8** `examples/platformer` skeleton: art script (tileset, player, backdrops), the **bonus level built in
   code**, camera follow, `PLATFORMER_DEMO=bench` and `=flips` — files: `examples/platformer/{CMakeLists.txt,
   main.cpp, bonus_level.cpp, bench.cpp, art/make_art.py, assets/...}`, `examples/CMakeLists.txt` — test: PC
   screenshots (bonus, bench, flips) read back — covers FR-0, FR-3, AC-1 (part), AC-4
+
+  **Result (2026-11-21, T3.1–T3.8):** 59 new unit tests (712/712: visible range 14, tile expansion 9, tile batches
+  8, tile submit through the frame 8, draw-list splits 3, `draw_tilemap` 16, no allocation over 100 frames 1) and 2
+  conformance tests (`draw_tiles` on fake and pc; PC read-back of the 8 orientations of an 8×8 texture, pixel
+  exact); ctest 102/102; PC and `3ds-release` build clean (`platformer.3dsx` 296 KB, no debug strings in Release).
+  Refinements (bit order of `orient`, `set_parallax_origin`, 64 batches per frame, …) are in
+  [plan.md](plan.md) ("Stage 3 refinements"); API in [tilemap.md](../../docs/api/tilemap.md#drawing),
+  [gfx.md](../../docs/api/gfx.md#capacities), design in [rendering.md](../../docs/architecture/rendering.md).
+  - Screenshots read back (PC): bonus level (parallax clouds and hills, solid and one-way tiles, player between the
+    ground and the front layer, camera following), bench (4 full layers + 300 sprites: ~1566 tiles, 304 draws, no
+    drops), flips (all 8 orientations as Tiled; sprites agree; no seams under a 0.37 px/frame camera).
+    `examples/sprites` screenshots unchanged (`DrawCommand` keeps its size: `tile_batch` fills padding).
+  - Mutation check (42 hand mutants of visible range, expansion, batches, splits, submit, `draw_tilemap`, forget,
+    stats): **41 killed** (3 survivors of the first run got tests: far-camera guard, non-square row step, items
+    drawn twice around a split). The survivor "unknown `map_layer` drawn anyway" is equivalent in Debug: the
+    assert fires first (it is the Release fallback). PC backend mutant (diagonal flip mapping swapped): killed by
+    the read-back test.
+  - On this PC `conformance_pc`'s `idle_input_is_zero` fails while a gamepad with stick drift is connected
+    (unrelated to tiles); with `SDL_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT=0x0001/0x0001` it passes.
 - [ ] **T3.9** **3DS gate** (maintainer): bench on an Old 3DS — how many full 16×16 layers + 300 sprites at 60 Hz;
   the flip row matches the PC screenshot. Target ≥ 4 layers; below it, apply the D26 fallbacks before stage 4 —
   covers AC-4, FR-10 (drawing)
+
+  **How to run it** (Old 3DS, Release build — the numbers are for Release):
+  1. On the 3DS: open the **Homebrew Launcher** and press **Y** (netloader).
+  2. On the PC: `build/pc-debug/tools/nnh/nnh run platformer --release` (builds `3ds-release`, sends
+     `platformer.3dsx`). The game starts in the **bonus level**: check it scrolls smoothly (run right with the D-Pad,
+     jump with A, Down + A drops through the wooden planks); clouds and hills move slower than the ground.
+  3. Press **SELECT** once → **tile benchmark**. It starts at **4 layers + 300 sprites** (the target). The bottom
+     screen shows `layers`, `sprites`, `frame` (average ms and FPS), `worst` (slowest frame), `missed N of M frames`
+     (frames over 25 ms since the last change), `tiles` (quads drawn last frame / `max_tiles`, dropped) and `draws`.
+     Changing a count resets the frame stats.
+  4. Wait ~10 s at 4 layers + 300 sprites: **pass = `missed` stays 0** (frame ≈ 16.7 ms, 60 FPS).
+  5. Find the limit: **R** adds a layer (**L** removes one), up to 12; **X** adds 100 sprites (**Y** removes 100).
+     With 300 sprites, raise layers until `missed` starts counting within ~10 s; the last count that stayed at 0 is
+     the result. Then, at 4 layers, raise sprites the same way.
+  6. Press **SELECT** again → **flip test**. Compare the top screen with the PC screenshot
+     (`PLATFORMER_DEMO=flips NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/platformer_flips.png
+     build/pc-debug/examples/platformer/platformer.exe`): in the top row, `-` arrow right + dot top-left, `x` left +
+     top-right, `y` right + bottom-left, `xy` left + bottom-right, `d` **down** + top-left, `dx` **down** +
+     top-right, `dy` **up** + bottom-left, `dxy` **up** + bottom-right; the middle row (sprites) equals the first
+     four; the brick wall scrolls slowly with no gaps or lines between tiles. START exits.
+
+  **Report back:** (a) the most full layers with 300 sprites and `missed` = 0, with its `frame`/`worst` ms and the
+  `tiles` number; (b) the most sprites with 4 layers and `missed` = 0; (c) `frame`/`worst` at exactly 4 layers +
+  300 sprites; (d) whether the flip row matches (a photo of any tile that differs) and whether any seam showed;
+  (e) whether the bonus level scrolled at a steady 60 Hz. Pass: (a) ≥ 4 and (d) all 8 match. Below 4: the D26
+  fallbacks (own vertex loop in `draw_tiles_3ds.cpp`, then cached chunks for static layers) before stage 4.
 
 ## Stage 4 — loading converted maps
 

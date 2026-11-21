@@ -24,6 +24,7 @@ struct DrawCommand {
     bool ignore_camera = false;
     bool flip_x = false;
     bool flip_y = false;
+    std::int16_t tile_batch = -1; ///< >= 0: a tile batch (gfx/tile_batches.hpp), not a 2D item
     int texture_slot = -1; ///< Sprite: texture handle
     std::uint32_t texture_generation = 0;
     Region region{};      ///< Sprite: empty = whole texture
@@ -35,11 +36,18 @@ struct DrawCommand {
     Color color{};        ///< tint (alpha already includes the opacity) or shape color
 };
 
+/// Where a tile batch sits in a pass: draw items [0, at) before it, then the batch.
+struct TileSplit {
+    int at = 0;
+    int batch = 0;
+};
+
 class DrawList {
 public:
     struct BuildResult {
-        int items = 0; ///< written to `out`
-        int stale = 0; ///< sprites skipped because their texture was destroyed
+        int items = 0;  ///< written to `out`
+        int stale = 0;  ///< sprites skipped because their texture was destroyed
+        int splits = 0; ///< tile batches written to `splits`, in drawing order
     };
 
     /// Uses `storage` and `order` (both `capacity` long, capacity <= 65535) and clears the list.
@@ -55,9 +63,10 @@ public:
     int dropped() const { return dropped_; }
     int capacity() const { return capacity_; }
 
-    /// Writes the pass for `screen` to `out` (at least capacity() long).
+    /// Writes the pass for `screen` to `out` (at least capacity() long). Tile batch commands make no item: each
+    /// becomes a split point in `splits` (at most `split_capacity`; without storage they are skipped).
     BuildResult build(Screen screen, Vec2 camera, const TextureTable& textures, platform::DrawItem2D* out,
-                      int out_capacity) const;
+                      int out_capacity, TileSplit* splits = nullptr, int split_capacity = 0) const;
 
 private:
     DrawCommand* storage_ = nullptr;

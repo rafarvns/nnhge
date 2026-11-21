@@ -7,6 +7,7 @@ add_library(nnh_platform_3ds STATIC
     src/console_3ds.cpp
     src/crash_3ds.cpp
     src/draw2d_3ds.cpp
+    src/draw_tiles_3ds.cpp
     src/hbldr_args.cpp
     src/input_3ds.cpp
     src/launch_3ds.cpp

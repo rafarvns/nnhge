@@ -3,10 +3,11 @@
 Header: `<nnh/tilemap.hpp>` · Uses: [collision.md](collision.md), [texture.md](texture.md), [result.md](result.md),
 [memory.md](memory.md) · Spec: [012](../../specs/012-tilemaps-and-collision/spec.md) (FR-0, FR-2, FR-4…FR-7, FR-11)
 
-> Status: spec 012 **stage 2** — maps are **built in code** and queried, edited and collided against.
-> Drawing (`gfx::draw_tilemap`, stage 3), loading maps converted from Tiled (`load_tilemap`, stage 4) and animated
-> tiles (stage 6) come later; they will use the same `Tilemap` object, so code written against this page keeps
-> working.
+> Status: spec 012 **stage 3** — maps are **built in code**, queried, edited, collided against and **drawn**
+> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS benchmark gate is pending). Loading maps converted from Tiled
+> (`load_tilemap`, stage 4) and animated tiles (stage 6) come later; they will use the same `Tilemap` object, so
+> code written against this page keeps working. Example: [`examples/platformer`](../../examples/platformer/main.cpp)
+> (a level built in code, a tile benchmark, a flip test).
 
 A `Tilemap` is a grid of cells in **tile layers**, cut from **tilesets** (textures), plus **object layers**
 (rectangles and points with a name and a type) and **properties** (named bool/int/float/string values on the map,
@@ -72,8 +73,8 @@ fits (`(size − 2·margin + spacing) / (tile + spacing)` per side). The map sto
 drawing needs no division.
 
 The texture is **borrowed**: keep it alive while the map is drawn. The map remembers the texture's handle, not the
-object; if the texture is destroyed, tiles, collision and properties keep working and drawing (stage 3) will skip
-that tileset (and assert). A texture loaded later into the same slot is not mistaken for it.
+object; if the texture is destroyed, tiles, collision and properties keep working and drawing skips that tileset
+(and asserts). A texture loaded later into the same slot is not mistaken for it.
 
 Errors: `InvalidArgument` (no or unloaded texture, nothing fits, `tile_count` more than fits, negative numbers, name
 over 255 bytes), `LimitReached` (`max_tilesets`, `max_tile_ids` or `string_bytes`).
@@ -82,7 +83,9 @@ over 255 bytes), `LimitReached` (`max_tilesets`, `max_tile_ids` or `string_bytes
 
 `add_tile_layer({.name, .offset, .parallax, .opacity, .visible, .collision})` adds an empty layer on top and returns
 its index. Settings change later with `set_layer_offset/parallax/opacity/visible/collision` and are read with
-`layer_offset()` … `layer_collision()`; `find_tile_layer(name)` (−1 if none), `tile_layer_name(i)`.
+`layer_offset()` … `layer_collision()`; `find_tile_layer(name)` (−1 if none), `tile_layer_name(i)`. Offset,
+parallax, opacity and visibility affect [drawing](#drawing) only; `set_parallax_origin(Vec2)` /
+`parallax_origin()` set the map's parallax origin (Tiled's map property of the same name).
 
 ## Tiles
 
@@ -98,6 +101,47 @@ its index. Settings change later with `set_layer_offset/parallax/opacity/visible
 `Tile{id, flip_x, flip_y, flip_diagonal}`: id 0 is empty (its flips are dropped); flips follow Tiled (diagonal swaps
 x and y and is applied first) and need square tiles for the diagonal one. In memory a cell is 16 bits: id in bits
 0–12, diagonal 13, flip y 14, flip x 15.
+
+## Drawing
+
+```cpp
+nnh::init({.title = "My Game", .gfx = {.max_tiles = 2048}});        // 0 by default: no tile drawing
+...
+nnh::gfx::set_camera(nnh::Screen::Top, {{camera_x, 0}});
+nnh::gfx::draw_tilemap(nnh::Screen::Top, map, {.map_layer = back});                 // draw layer 0
+nnh::gfx::draw(nnh::Screen::Top, hero, hero_pos, {.layer = 1});                     // the player
+nnh::gfx::draw_tilemap(nnh::Screen::Top, map, {.map_layer = front, .layer = 2});    // over the player
+```
+
+`gfx::draw_tilemap(screen, map, options)` draws tile layers at the end of the frame, sorted with sprites by draw
+layer and then call order (as [gfx.md](gfx.md#order-layers)), so sprites can sit between map layers.
+
+| `TilemapDrawOptions` field | Default | Meaning |
+|----------------------------|---------|---------|
+| `map_layer` | −1 | one tile layer, or −1 = every visible tile layer, in map order (an unknown index asserts) |
+| `layer` | 0 | draw layer 0–15, like sprites |
+| `opacity` | 1 | 0–1, times each map layer's opacity |
+| `offset` | (0, 0) | added to each map layer's offset (pixels) |
+| `ignore_camera` | false | screen pixels (HUD maps); parallax then uses camera (0, 0) |
+
+- **When it reads the map.** The call records one batch per (map layer, tileset that layer uses); the cells are read
+  when the frame ends, with the camera of that moment. A `set_tile` after the call is drawn in the same frame; a
+  map destroyed after the call draws nothing (moving the `Tilemap` object is fine).
+- **Only what the camera sees** is expanded: a layer of 16×16 tiles costs at most 26 × 16 = 416 tiles on the top
+  screen, whatever the map's size. Empty cells, hidden layers, empty layers and opacity 0 cost nothing.
+- **Parallax** follows Tiled's preview, which scrolls around the view's centre: a layer's position on screen is
+  `offset + (camera + screen_size / 2 − parallax_origin) · (1 − parallax) − camera`. Parallax 1 scrolls with the
+  camera, 0 stays fixed on screen, 0.5 moves at half speed; at the parallax origin every factor lines up with the
+  map (set it to the view centre of your first screen, e.g. `(200, 120)` on the top screen with camera (0, 0)).
+- **No seams.** The layer's position is rounded to whole pixels once (halves up, like sprites) and every tile is an
+  exact multiple of the tile size from it, with nearest sampling: PC and 3DS show the same pixels.
+- **Flips** follow Tiled (diagonal first, then x and y); the PC backend is checked pixel by pixel, and the
+  platformer example's flip test shows all 8.
+- **Costs and limits.** `AppConfig::gfx.max_tiles` caps tiles per frame on every system ([gfx.md](gfx.md#capacities)):
+  past it tiles are dropped (assert in Debug/Development, a warning per frame in Release), and `max_tiles = 0`
+  asserts with the fix. Each batch also takes one of `max_draws`; at most 64 batches per frame. No allocation.
+  A tileset whose texture was destroyed is skipped (assert). `gfx::stats()` has `tiles_last_frame`, `max_tiles`,
+  `dropped_tiles`.
 
 ## Collision
 
@@ -179,4 +223,8 @@ Tileset textures are separate (tag `textures`, `Linear`): a 256×256 RGBA8 sheet
   while playing.
 - `set_tile` with a tile id that no tileset has yet is a bug (assert): add tilesets first.
 - A `collision` layer makes **every** non-empty tile solid, including decorative ones; mark individual tiles with
-  `set_tile_collision` instead when only some should block.
+  `set_tile_collision` instead when only some should block (a one-way plank on a `collision` layer is solid).
+- `draw_tilemap` needs `AppConfig::gfx.max_tiles` sized for every layer you draw on both screens (≈ 416 per full
+  16×16 top-screen layer, 336 on the bottom screen); check `gfx::stats().tiles_last_frame` or the debug overlay.
+- A parallax layer with the default parallax origin (0, 0) is shifted at camera (0, 0) (Tiled does the same): set
+  the origin to your first view's centre so layers line up where the level starts.

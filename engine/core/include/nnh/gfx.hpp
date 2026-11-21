@@ -155,6 +155,9 @@ struct Stats {
     int textures = 0;             ///< textures loaded now
     int max_textures = 0;         ///< AppConfig::gfx.max_textures
     std::size_t texture_bytes = 0; ///< GPU memory of the loaded textures
+    int tiles_last_frame = 0;      ///< tile quads drawn by the last finished frame (gfx::draw_tilemap)
+    int max_tiles = 0;             ///< AppConfig::gfx.max_tiles
+    int dropped_tiles = 0;         ///< tile quads dropped since init() because the frame was over max_tiles
 };
 Stats stats();
 

@@ -14,7 +14,7 @@ Header: `<nnh/app.hpp>`
 data folder for saves and logs; default derived from the title, see [fs.md](fs.md)) and `events`
 (event bus capacities: `.events = {.queue_bytes = 32 * 1024, .max_subscribers = 512}`, see
 [events.md](events.md#capacities)) and `gfx` (2D capacities: `.gfx = {.max_draws = 4096, .max_textures = 256}`,
-see [gfx.md](gfx.md#capacities)) and `audio` (`.audio = {.voices = 16, .max_sounds = 128}`, see
+and `.max_tiles` for tilemaps, 0 by default; see [gfx.md](gfx.md#capacities)) and `audio` (`.audio = {.voices = 16, .max_sounds = 128}`, see
 [audio.md](audio.md#capacities-and-errors)).
 
 ## The loop

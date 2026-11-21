@@ -52,6 +52,7 @@ add_library(nnh_core STATIC
     src/gfx/gfx_frame.cpp
     src/gfx/image_registry_default.cpp
     src/gfx/texture_table.cpp
+    src/gfx/tile_batches.cpp
     src/gfx/textures.cpp
     src/input/dpad_mirror.cpp
     src/input/input.cpp
@@ -72,13 +73,16 @@ add_library(nnh_core STATIC
     src/text/utf8.cpp
     src/tilemap/map_build.cpp
     src/tilemap/map_collision.cpp
+    src/tilemap/map_draw.cpp
     src/tilemap/map_layout.cpp
     src/tilemap/map_objects.cpp
     src/tilemap/map_properties.cpp
     src/tilemap/map_property_table.cpp
     src/tilemap/map_strings.cpp
     src/tilemap/map_tiles.cpp
+    src/tilemap/tile_expand.cpp
     src/tilemap/tilemap.cpp
+    src/tilemap/visible_range.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )

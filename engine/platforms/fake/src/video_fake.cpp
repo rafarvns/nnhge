@@ -1,4 +1,5 @@
-// Fake platform: frames and drawing are recorded, nothing is shown (contract nnh/platform/video.hpp).
+// Fake platform: frames and drawing (2D passes and tile batches) are recorded, nothing is shown (contract
+// nnh/platform/video.hpp).
 
 #include <cstring>
 
@@ -32,6 +33,8 @@ void begin_frame(Color top_clear, Color bottom_clear) {
     s.bottom_clear = bottom_clear;
     s.item_count = 0;
     s.calls[0] = '\0';
+    s.tiles.batch_count = 0;
+    s.tiles.quad_count = 0;
 }
 
 void end_frame() {
@@ -41,6 +44,7 @@ void end_frame() {
     s.last_frame_item_count = s.item_count;
     std::memcpy(s.last_frame_items, s.items, sizeof s.items);
     std::memcpy(s.last_frame_calls, s.calls, sizeof s.calls);
+    s.last_frame_tiles = s.tiles;
 }
 
 // Test image format: "FAKE", width, height (16-bit little endian).
@@ -80,6 +84,24 @@ void draw_2d(Screen screen, const DrawItem2D* items, int count) {
     for (int i = 0; i < count; ++i) {
         if (s.item_count < platform_fake::kMaxRecordedItems) s.items[s.item_count] = items[i];
         ++s.item_count;
+    }
+}
+
+void draw_tiles(Screen screen, const TileBatch2D& batch) {
+    platform_fake::State& s = mutable_state();
+    platform_fake::FakeTiles& t = s.tiles;
+    log_call(screen == Screen::Top ? 't' : 'b');
+    if (t.batch_count < platform_fake::kMaxRecordedTileBatches) {
+        platform_fake::FakeTileBatch& recorded = t.batches[t.batch_count];
+        recorded.screen = screen;
+        recorded.batch = batch;
+        recorded.batch.quads = nullptr; // core reuses the buffer
+        recorded.first_quad = t.quad_count;
+    }
+    ++t.batch_count;
+    for (int i = 0; i < batch.count; ++i) {
+        if (t.quad_count < platform_fake::kMaxRecordedTileQuads) t.quads[t.quad_count] = batch.quads[i];
+        ++t.quad_count;
     }
 }
 

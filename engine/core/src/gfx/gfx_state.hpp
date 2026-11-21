@@ -5,6 +5,7 @@
 
 #include "gfx/draw_list.hpp"
 #include "gfx/texture_table.hpp"
+#include "gfx/tile_batches.hpp"
 #include "nnh/gfx.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/video.hpp"
@@ -50,6 +51,13 @@ struct GfxState {
     Camera2D cameras[2];
     int draws_last_frame = 0;
     int dropped_total = 0;
+    // Tile batches (spec 012): storage only when max_tiles > 0.
+    TileBatches tiles;
+    TileSplit splits[kMaxTileBatches]; // one screen's split points, reused per pass
+    int max_tiles = 0;
+    int tiles_last_frame = 0;
+    int dropped_tiles_total = 0;
+    bool warned_tiles_off = false; // Release: "max_tiles is 0" logged once
 };
 
 GfxState& gfx_state();
@@ -59,6 +67,18 @@ bool gfx_drawing();
 
 /// Records a 2D draw; on overflow asserts (Debug/Development) or drops it (Release).
 void gfx_record(const DrawCommand& command);
+
+/// True when AppConfig::gfx.max_tiles > 0; otherwise asserts with the fix (Release: logs once) and returns
+/// false.
+bool gfx_tiles_enabled();
+
+/// Records a tile batch on `screen` at draw `layer` (gfx::draw_tilemap): it keeps its place among the 2D
+/// draws and is expanded at submit. Asserts (and records nothing in Release) when max_tiles is 0 or the frame
+/// already has kMaxTileBatches batches. Only inside a frame.
+void gfx_record_tiles(Screen screen, int layer, const TileBatchRecord& record);
+
+/// Forgets this frame's tile batches of `source` (a tilemap being destroyed).
+void gfx_forget_tiles(const void* source);
 
 /// Clamps a layer to 0..15.
 std::uint8_t gfx_clamp_layer(int layer);

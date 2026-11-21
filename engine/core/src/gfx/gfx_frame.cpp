@@ -19,6 +19,8 @@ detail::GfxState g_state;
 detail::DrawCommand* g_commands = nullptr;
 std::uint16_t* g_order = nullptr;
 detail::TextureSlot* g_slots = nullptr;
+detail::TileBatchRecord* g_tile_records = nullptr; // only when max_tiles > 0
+platform::TileQuad2D* g_tile_scratch = nullptr;
 std::uint32_t g_next_generation = 1; // texture handles from a previous init() stay stale
 
 template <typename T>
@@ -34,18 +36,66 @@ void free_all() {
     mem::free(g_slots);
     mem::free(g_state.pending);
     mem::free(g_state.debug_items);
+    mem::free(g_tile_records);
+    mem::free(g_tile_scratch);
     g_commands = nullptr;
     g_order = nullptr;
     g_slots = nullptr;
+    g_tile_records = nullptr;
+    g_tile_scratch = nullptr;
     g_state = detail::GfxState{};
 }
 
+/// Expands tile batch `index` and sends it. @return 1 if its texture is gone (skipped), else 0.
+int submit_tiles(Screen screen, int index, Vec2 camera) {
+    detail::GfxState& g = g_state;
+    const detail::TileBatchRecord* r = g.tiles.get(index);
+    if (r == nullptr) return 0; // its map was destroyed during the frame
+    const detail::TextureData* texture = g.textures.get(r->texture_slot, r->texture_generation);
+    if (texture == nullptr) return 1;
+    const detail::TileBatches::Quads quads = g.tiles.expand(index, screen, camera);
+    if (quads.count == 0) return 0;
+    platform::TileBatch2D batch;
+    batch.texture = texture->platform;
+    batch.tile_w = r->tile_w;
+    batch.tile_h = r->tile_h;
+    batch.color = r->color;
+    batch.layer = r->layer;
+    batch.quads = quads.quads;
+    batch.count = quads.count;
+    platform::draw_tiles(screen, batch);
+    return 0;
+}
+
+/// The screen's 2D pass: the sorted items, cut by tile batches where they sit among them.
 void submit_screen(Screen screen) {
     detail::GfxState& g = g_state;
-    const auto result = g.draws.build(screen, g.cameras[screen == Screen::Top ? 0 : 1].position, g.textures, g.pass,
-                                      g.max_draws);
+    const Vec2 camera = g.cameras[screen == Screen::Top ? 0 : 1].position;
+    const auto result =
+        g.draws.build(screen, camera, g.textures, g.pass, g.max_draws, g.splits, detail::kMaxTileBatches);
+    int stale_tiles = 0;
+    int from = 0;
+    for (int i = 0; i < result.splits; ++i) {
+        const detail::TileSplit split = g.splits[i];
+        if (split.at > from) platform::draw_2d(screen, g.pass + from, split.at - from);
+        from = split.at;
+        stale_tiles += submit_tiles(screen, split.batch, camera);
+    }
+    if (result.items > from) platform::draw_2d(screen, g.pass + from, result.items - from);
     NNH_ASSERT(result.stale == 0, "%d sprites drawn with a texture destroyed earlier", result.stale);
-    if (result.items > 0) platform::draw_2d(screen, g.pass, result.items);
+    NNH_ASSERT(stale_tiles == 0, "%d tile batches drawn with a tileset texture destroyed earlier", stale_tiles);
+}
+
+/// Allocates the tile batch records and quad scratch (nothing when max_tiles is 0). @return false if out of memory.
+bool tiles_init(int max_tiles) {
+    g_state.max_tiles = max_tiles < 0 ? 0 : (max_tiles > 65535 ? 65535 : max_tiles);
+    if (g_state.max_tiles == 0) return true;
+    const int scratch = g_state.max_tiles < detail::kTileScratchQuads ? g_state.max_tiles : detail::kTileScratchQuads;
+    g_tile_records = allocate<detail::TileBatchRecord>(detail::kMaxTileBatches);
+    g_tile_scratch = allocate<platform::TileQuad2D>(scratch);
+    if (g_tile_records == nullptr || g_tile_scratch == nullptr) return false;
+    g_state.tiles.reset(g_tile_records, detail::kMaxTileBatches, g_tile_scratch, scratch, g_state.max_tiles);
+    return true;
 }
 
 } // namespace
@@ -65,9 +115,9 @@ bool detail::gfx_init(const GfxConfig& config) {
     g_state.pending = allocate<PendingDestroy>(max_textures);
     g_state.debug_items = allocate<platform::DrawItem2D>(kDebugPassCapacity);
     if (g_commands == nullptr || g_order == nullptr || g_state.pass == nullptr || g_slots == nullptr ||
-        g_state.pending == nullptr || g_state.debug_items == nullptr) {
-        NNH_LOG_ERROR(gfx, "not enough memory for %d draws and %d textures (AppConfig::gfx)", max_draws,
-                      max_textures - 1);
+        g_state.pending == nullptr || g_state.debug_items == nullptr || !tiles_init(config.max_tiles)) {
+        NNH_LOG_ERROR(gfx, "not enough memory for %d draws, %d textures and %d tiles (AppConfig::gfx)", max_draws,
+                      max_textures - 1, config.max_tiles);
         free_all();
         return false;
     }
@@ -99,11 +149,22 @@ void detail::gfx_submit() {
     submit_screen(Screen::Top);
     submit_screen(Screen::Bottom);
     g_state.draws_last_frame = g_state.draws.count();
-    if (const int dropped = g_state.draws.dropped(); dropped > 0) {
+    g_state.tiles_last_frame = g_state.tiles.tiles();
+    const int dropped = g_state.draws.dropped();
+    const int dropped_tiles = g_state.tiles.dropped();
+    // Cleared before asserting: a crash here leaves the frame open, and shutdown() submits it again.
+    g_state.draws.clear();
+    g_state.tiles.clear();
+    if (dropped > 0) {
         g_state.dropped_total += dropped;
         NNH_LOG_WARN(gfx, "%d draws dropped this frame (AppConfig::gfx.max_draws = %d)", dropped, g_state.max_draws);
     }
-    g_state.draws.clear();
+    if (dropped_tiles > 0) {
+        g_state.dropped_tiles_total += dropped_tiles;
+        NNH_LOG_WARN(gfx, "%d tile quads dropped this frame (AppConfig::gfx.max_tiles = %d)", dropped_tiles,
+                     g_state.max_tiles);
+        NNH_ASSERT(false, "more than %d tile quads in a frame: raise AppConfig::gfx.max_tiles", g_state.max_tiles);
+    }
 }
 
 void detail::gfx_after_frame() {

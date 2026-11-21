@@ -108,10 +108,13 @@ bool init(const AppConfig& config) {
         gfxExit();
         return false;
     }
-    // One citro2d object per sprite or shape (outlines take 4), plus the debug pass (debug text glyphs
-    // and overlay rectangles, core's kDebugPassCapacity = 4096) and some headroom.
+    // One citro2d object per sprite or shape (outlines take 4), one per tile quad (core caps them at
+    // max_tiles per frame, spec 012), plus the debug pass (debug text glyphs and overlay rectangles, core's
+    // kDebugPassCapacity = 4096) and some headroom.
     const int max_draws = config.gfx.max_draws > 0 ? config.gfx.max_draws : 0;
-    const std::size_t max_objects = static_cast<std::size_t>(max_draws) + kDebugTextGlyphs + 256;
+    const int max_tiles = config.gfx.max_tiles > 0 ? config.gfx.max_tiles : 0;
+    const std::size_t max_objects =
+        static_cast<std::size_t>(max_draws) + static_cast<std::size_t>(max_tiles) + kDebugTextGlyphs + 256;
     if (!C2D_Init(max_objects > C2D_DEFAULT_MAX_OBJECTS ? max_objects : C2D_DEFAULT_MAX_OBJECTS)) {
         g_last_error = "C2D_Init failed";
         C3D_Fini();

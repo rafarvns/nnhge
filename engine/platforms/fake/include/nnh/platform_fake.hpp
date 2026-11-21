@@ -19,6 +19,23 @@ namespace nnh::platform_fake {
 
 inline constexpr int kMaxRecordedItems = 64;
 inline constexpr int kMaxRecordedCalls = 32;
+inline constexpr int kMaxRecordedTileBatches = 16;
+inline constexpr int kMaxRecordedTileQuads = 512;
+
+/// A draw_tiles() call: the batch (its `quads` pointer cleared) and where its quads were recorded.
+struct FakeTileBatch {
+    Screen screen = Screen::Top;
+    platform::TileBatch2D batch{}; ///< batch.quads is nullptr; batch.count = quads it had
+    int first_quad = 0; ///< index in tile_quads of its first quad (only the first kMaxRecordedTileQuads kept)
+};
+
+/// What draw_tiles() received in one frame (spec 012).
+struct FakeTiles {
+    int batch_count = 0; ///< draw_tiles() calls (first kMaxRecordedTileBatches kept)
+    FakeTileBatch batches[kMaxRecordedTileBatches];
+    int quad_count = 0; ///< quads over all calls (first kMaxRecordedTileQuads kept)
+    platform::TileQuad2D quads[kMaxRecordedTileQuads];
+};
 inline constexpr int kMaxFakeVoices = 24;
 
 /// What a voice of the fake audio output is doing (spec 008).
@@ -66,10 +83,13 @@ struct State {
     int asset_reads = 0;        ///< asset_size() + asset_read() calls (invalid paths must not add any)
     int item_count = 0;         ///< draw_2d() items in the current frame (first kMaxRecordedItems kept)
     platform::DrawItem2D items[kMaxRecordedItems];
-    char calls[kMaxRecordedCalls] = {}; ///< current frame: 'T'/'B' = draw_2d() on the top/bottom screen
-    int last_frame_item_count = 0;      ///< the same, for the frame that ended last
+    /// Current frame: 'T'/'B' = draw_2d() on the top/bottom screen, 't'/'b' = draw_tiles() (spec 012).
+    char calls[kMaxRecordedCalls] = {};
+    int last_frame_item_count = 0; ///< the same, for the frame that ended last
     platform::DrawItem2D last_frame_items[kMaxRecordedItems];
     char last_frame_calls[kMaxRecordedCalls] = {};
+    FakeTiles tiles;            ///< draw_tiles() calls of the current frame
+    FakeTiles last_frame_tiles; ///< the same, for the frame that ended last
     // Audio (spec 008)
     bool audio_initialized = false;
     int audio_voices = 0;    ///< voices asked for by audio_init()

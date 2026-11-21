@@ -95,6 +95,36 @@ NNH_TEST(draw_2d_accepts_empty_and_shape_passes) {
     platform::shutdown();
 }
 
+NNH_TEST(draw_tiles_accepts_empty_and_every_orientation_between_2d_passes) {
+    CHECK(platform::init(config()));
+    static unsigned char pixels[16 * 16 * 4];
+    for (unsigned i = 0; i < sizeof pixels; ++i)
+        pixels[i] = static_cast<unsigned char>(i * 7);
+    platform::TextureInfo info;
+    CHECK(platform::texture_create_rgba(pixels, 16, 16, info));
+    CHECK(platform::poll_events());
+    platform::begin_frame(nnh::colors::black, nnh::colors::black);
+    platform::TileBatch2D batch;
+    batch.texture = info.handle;
+    batch.tile_w = 8;
+    batch.tile_h = 8;
+    platform::draw_tiles(nnh::Screen::Top, batch); // no quads
+    platform::TileQuad2D quads[9];
+    for (int i = 0; i < 8; ++i) {
+        quads[i] = {static_cast<std::int16_t>(i * 8), 0, 8, 8, static_cast<std::uint8_t>(i)};
+    }
+    quads[8] = {-4, 236, 0, 0, 0}; // partly outside the screen: clipped
+    batch.quads = quads;
+    batch.count = 9;
+    batch.color = nnh::rgba(255, 255, 255, 128);
+    platform::draw_2d(nnh::Screen::Bottom, nullptr, 0);
+    platform::draw_tiles(nnh::Screen::Bottom, batch);
+    platform::draw_tiles(nnh::Screen::Top, batch);
+    platform::end_frame();
+    platform::texture_destroy(info.handle);
+    platform::shutdown();
+}
+
 NNH_TEST(a_missing_asset_cannot_be_read_and_unmount_is_safe) {
     CHECK(platform::init(config()));
     const bool mounted = platform::assets_mount(); // the tests have no assets folder: usually false

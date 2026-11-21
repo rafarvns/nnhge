@@ -14,6 +14,7 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `audio_mixer_pc.cpp` | The software stand-in for the 3DS DSP: voices and streams resampled (linear) to 48 kHz, gains ramped per block; SDL-free, unit tested in `tests/simulator/` |
 | `texture_pc.cpp` | Textures: embedded PNG → `SDL_LoadPNG_IO` → `SDL_Texture` (nearest filtering) |
 | `draw2d_pc.cpp` | One 2D pass: sprites (`SDL_RenderTextureRotated` + color/alpha mod) and shapes, clipped per screen |
+| `draw_tiles_pc.cpp` | Tile batches (spec 012, D26): one `SDL_RenderTexture` per quad, `SDL_RenderTextureRotated` for flips; one color/alpha mod per batch |
 | `video_pc.cpp` | Frame begin/end, 60 Hz pacing, screenshots |
 | `input_pc.cpp` | Keyboard → buttons and sticks; combines keyboard, gamepad and mouse into one sample |
 | `gamepad_pc.cpp` | First connected gamepad (hot-plug), buttons by position, sticks, triggers |
@@ -56,6 +57,22 @@ screenshots only with headless screenshots from the same system.
 Sprites: source rect = region, destination = position − pivot with the scaled size, rotation in degrees
 around the pivot, flips inside the destination rectangle, tint/opacity through the texture's color and
 alpha mod. Textures use `SDL_SCALEMODE_NEAREST` and alpha blending; SDL batches consecutive draws.
+
+Tiles (`draw_tiles`, spec 012): quads arrive at whole pixels with the tile's exact source rectangle, so they
+never show seams. Tiled applies the diagonal flip (swap x and y) first, then the x and y mirrors; SDL mirrors a
+copy first and then rotates it around its centre. With texture pixel `(u, v)` around the tile's centre and a 90°
+clockwise turn `R(u, v) = (−v, u)`, Tiled's result `F·T` equals `R·S` for the SDL mirror `S = R⁻¹·F·T`:
+
+| Tiled flips | `F·T (u, v)` | SDL mirror before the 90° turn |
+|-------------|--------------|--------------------------------|
+| diagonal | `(v, u)` | vertical |
+| diagonal + x | `(−v, u)` | none (a plain clockwise turn) |
+| diagonal + y | `(v, −u)` | horizontal + vertical |
+| diagonal + x + y | `(−v, −u)` | horizontal |
+
+That is: horizontal = `flip_y`, vertical = `!flip_x` (square tiles only, so the turn stays in place).
+`tests/platform_conformance/test_draw_tiles_pc.cpp` draws the 8 orientations of an 8×8 texture with a different
+color per pixel and reads every pixel back (headless, software renderer).
 
 ## Developer features
 

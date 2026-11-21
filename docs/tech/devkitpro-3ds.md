@@ -21,7 +21,7 @@ The 3DS backend (`engine/platforms/3ds/`) is built with devkitPro's open toolcha
 ```cpp
 gfxInitDefault();                       // framebuffers
 C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);      // GPU command buffer (0x40000)
-C2D_Init(max_draws + 4096 + 256);       // 2D objects per frame: draws + debug glyphs + overlay (≥ 4096)
+C2D_Init(max_draws + max_tiles + 4096 + 256); // 2D objects per frame: draws + tile quads + debug glyphs + overlay
 C2D_Prepare();
 top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
 while (aptMainLoop()) {                 // false when the user closes the app from the HOME Menu
@@ -55,7 +55,8 @@ Always leave through `aptMainLoop()` returning false or the game's own exit; nev
 
 ## 2D drawing (what our backend does)
 
-Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`, `draw2d_3ds.cpp`.
+Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`, `draw2d_3ds.cpp`,
+`draw_tiles_3ds.cpp` (spec 012).
 
 - **Textures**: the build converts each PNG with `tex3ds -f rgba8888 -z auto` into a `.t3x` embedded
   in the executable; `Tex3DS_TextureImport(data, size, &tex, nullptr, false)` decompresses it into a
@@ -70,8 +71,19 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
   draws pass no tint. The mode is set back to `C2D_TintSolid` after the pass (debug text).
 - **Shapes**: `C2D_DrawRectSolid`; outlines as four 1-pixel rectangles inside the rectangle; lines with
   `C2D_DrawLine` through pixel centers, 1 pixel thick.
-- **Capacity**: citro2d's object buffer is sized at `C2D_Init` from `AppConfig::gfx.max_draws` plus the
-  debug pass (core's 4096 debug glyphs and overlay rectangles); an outline costs 4 objects.
+- **Capacity**: citro2d's object buffer is sized at `C2D_Init` from `AppConfig::gfx.max_draws` plus
+  `AppConfig::gfx.max_tiles` (core never sends more tile quads per frame) plus the debug pass (core's 4096
+  debug glyphs and overlay rectangles); an outline costs 4 objects. Each object reserves about 192 bytes of
+  `Linear` memory (6 vertices).
+- **Tiles** (`draw_tiles_3ds.cpp`, spec 012, D26): one `C2D_DrawImage` per quad with angle 0 and no pivot;
+  `1/width` and `1/height` of the texture are computed once per batch and one `C2D_ImageTint` is shared
+  (none when the batch is white and opaque). Mirrors are a negative `pos.w`/`pos.h`, as for sprites (citro2d
+  swaps the corner texcoords). Tiled's **diagonal flip** uses tex3ds' rotated sub-texture rule: when
+  `top < bottom`, a corner reads `(u, v) = (top|bottom, left|right)`, so `left = v` of the tile's top row,
+  `right = v` of its bottom row, `top = u` of its left column and `bottom = u` of its right column shows the
+  tile transposed; the mirrors then apply to that, as Tiled does. **Not yet confirmed on hardware**: the
+  stage-3 gate compares `examples/platformer`'s flip test on the console with the PC screenshot (the PC side
+  is verified pixel by pixel).
 - **Textures from pixels** (`texture_create_rgba`, used for the built-in font): `C3D_TexInit(w, h,
   GPU_RGBA8)` in linear memory, then the CPU writes the GPU layout itself: 8×8 tiles left to right, rows
   of tiles from the **top** of the image, Morton (Z) order inside a tile with rows top-down too, each

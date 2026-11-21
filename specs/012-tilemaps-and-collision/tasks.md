@@ -1,7 +1,7 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0, 1, 2 and 3 (T3.1–T3.8) done (2026-11-21); next: the stage-3 gate on an
-Old 3DS (T3.9, maintainer), then stage 4
+Status: approved (2026-11-21); stages 0, 1, 2 and 3 done (2026-11-21; T3.9 passed on the Old 3DS XL); next:
+stage 4
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -166,35 +166,21 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
     the read-back test.
   - On this PC `conformance_pc`'s `idle_input_is_zero` fails while a gamepad with stick drift is connected
     (unrelated to tiles); with `SDL_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT=0x0001/0x0001` it passes.
-- [ ] **T3.9** **3DS gate** (maintainer): bench on an Old 3DS — how many full 16×16 layers + 300 sprites at 60 Hz;
+- [x] **T3.9** **3DS gate** (maintainer): bench on an Old 3DS — how many full 16×16 layers + 300 sprites at 60 Hz;
   the flip row matches the PC screenshot. Target ≥ 4 layers; below it, apply the D26 fallbacks before stage 4 —
   covers AC-4, FR-10 (drawing)
+  - **Passed on the Old 3DS XL (2026-11-21)**, run by the PC through spec 013's remote (the maintainer only pressed
+    Y), Development build: `bench: PASS 4 layers + 300 sprites, avg 16.7 ms, worst 17.4 ms, missed 0 of 600 frames`.
+    Limits (300-frame trials, a frame over 25 ms = missed): **6 layers** with 300 sprites (7 layers: 31 missed, worst
+    27.8 ms); **600 sprites** with 4 layers (700: 9 missed, worst 29.0 ms). The flips screenshot matches
+    the PC's by eye (all 8 map orientations and 4 sprite flips, wall without seams); the bonus-level screenshot is right.
+    Release would be the same or faster. No D26 fallback needed.
 
-  **How to run it** (Old 3DS, Release build — the numbers are for Release):
-  1. On the 3DS: open the **Homebrew Launcher** and press **Y** (netloader).
-  2. On the PC: `build/pc-debug/tools/nnh/nnh run platformer --release` (builds `3ds-release`, sends
-     `platformer.3dsx`). The game starts in the **bonus level**: check it scrolls smoothly (run right with the D-Pad,
-     jump with A, Down + A drops through the wooden planks); clouds and hills move slower than the ground.
-  3. Press **SELECT** once → **tile benchmark**. It starts at **4 layers + 300 sprites** (the target). The bottom
-     screen shows `layers`, `sprites`, `frame` (average ms and FPS), `worst` (slowest frame), `missed N of M frames`
-     (frames over 25 ms since the last change), `tiles` (quads drawn last frame / `max_tiles`, dropped) and `draws`.
-     Changing a count resets the frame stats.
-  4. Wait ~10 s at 4 layers + 300 sprites: **pass = `missed` stays 0** (frame ≈ 16.7 ms, 60 FPS).
-  5. Find the limit: **R** adds a layer (**L** removes one), up to 12; **X** adds 100 sprites (**Y** removes 100).
-     With 300 sprites, raise layers until `missed` starts counting within ~10 s; the last count that stayed at 0 is
-     the result. Then, at 4 layers, raise sprites the same way.
-  6. Press **SELECT** again → **flip test**. Compare the top screen with the PC screenshot
-     (`PLATFORMER_DEMO=flips NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/platformer_flips.png
-     build/pc-debug/examples/platformer/platformer.exe`): in the top row, `-` arrow right + dot top-left, `x` left +
-     top-right, `y` right + bottom-left, `xy` left + bottom-right, `d` **down** + top-left, `dx` **down** +
-     top-right, `dy` **up** + bottom-left, `dxy` **up** + bottom-right; the middle row (sprites) equals the first
-     four; the brick wall scrolls slowly with no gaps or lines between tiles. START exits.
-
-  **Report back:** (a) the most full layers with 300 sprites and `missed` = 0, with its `frame`/`worst` ms and the
-  `tiles` number; (b) the most sprites with 4 layers and `missed` = 0; (c) `frame`/`worst` at exactly 4 layers +
-  300 sprites; (d) whether the flip row matches (a photo of any tile that differs) and whether any seam showed;
-  (e) whether the bonus level scrolled at a steady 60 Hz. Pass: (a) ≥ 4 and (d) all 8 match. Below 4: the D26
-  fallbacks (own vertex loop in `draw_tiles_3ds.cpp`, then cached chunks for static layers) before stage 4.
+  **How to run it** (spec 013 stage 6): on the 3DS open the Homebrew Launcher and press **Y**; on the PC
+  `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (builds `3ds-dev`). It
+  plays the bonus level, shows the flips and the benchmark, runs the gate (target trial, then the layer and sprite
+  limit searches), saves screenshots of each in `build/logs/platformer-<stamp>/` and ends with `nnh: PASS` or
+  `nnh: FAIL`; the console shows a large `GATE: PASS`/`GATE: FAIL` banner. About 1 minute.
 
 ## Stage 4 — loading converted maps
 

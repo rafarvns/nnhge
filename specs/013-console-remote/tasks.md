@@ -1,7 +1,7 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL); stage 6 T6.1–T6.2 done (PC), T6.3
-(console) next
+Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL); stage 6 done (2026-11-21; the gate passed
+on the Old 3DS XL); next: stage 7
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -350,9 +350,14 @@ Verifiable on PC: everything above still green; the console results recorded her
     has)` below. The bonus screenshot is 8 frames after the jump (at 20 the player had already landed).
   - On the Old 3DS the searches stop at the first failing count, so the run is shorter (estimate below 1 min of
     gate when the limits are near the target; the most is ~9000 frames, inside the 12 000 of the `expect`).
-- [ ] **T6.3** **3DS** (maintainer: press Y on an Old 3DS): `nnh run platformer --script
+- [x] **T6.3** **3DS** (maintainer: press Y on an Old 3DS): `nnh run platformer --script
   examples/platformer/tests/gate.nnhs`; record PASS/FAIL, the trial and limit lines, the flips screenshot against the
   PC's; write the result into spec 012's T3.9 and replace its "How to run it" with this command — covers AC-1, AC-2
+  - Done on the Old 3DS XL (2026-11-21, `3ds-dev`, nobody touching the console after Y): `nnh: PASS (41 lines,
+    frames 1-3209)`, exit 0, about 1 minute. Target `ok, avg 16.7 ms, worst 17.4 ms, missed 0/600`; limits 6 layers
+    with 300 sprites (7: 31 missed) and 600 sprites with 4 layers (700: 9 missed). Screenshot pairs 659–775 ms. The
+    flips, bonus, bench and `GATE: PASS` screenshots are right; flips match the PC's. Recorded in spec 012's T3.9.
+    AC-1 met. The remote's poll cost is inside these trials: no missed frame at the target while attached.
 
 Verifiable: the gate script passes in the simulator; the console result recorded here and in spec 012.
 

@@ -1,9 +1,12 @@
 // Console remote through nnh::frame() (spec 013 FR-1, FR-8): remote input enters before the frame's input is
 // read, so queries and events see it on exactly the frame it was stamped for, like real input.
 
+#include <cstring>
+
 #include "nnh/app.hpp"
 #include "nnh/events.hpp"
 #include "nnh/input.hpp"
+#include "nnh/profile.hpp"
 #include "remote_fixture.hpp"
 
 using namespace remote_test;
@@ -165,5 +168,35 @@ NNH_TEST(remote_frames_hello_is_answered_with_the_frame_it_arrives_on) {
     const Sent s = sent();
     const Record* r = s.find(wire::RecordType::Hello);
     CHECK(r != nullptr && le32(r->payload + 4) == 3 && nnh::frame_count() == 3);
+    nnh::shutdown();
+}
+
+namespace {
+
+/// Calls of the "remote" profile scope in the previous frame.
+int remote_scope_calls() {
+    nnh::profile::ScopeStats top[nnh::profile::kMaxScopes];
+    const int n = nnh::profile::slowest(top, nnh::profile::kMaxScopes);
+    for (int i = 0; i < n; ++i) {
+        if (std::strcmp(top[i].name, "remote") == 0) return top[i].calls;
+    }
+    return 0;
+}
+
+} // namespace
+
+NNH_TEST(remote_frames_time_the_poll_as_remote_in_the_profiler) {
+    nnh::shutdown();
+    fake::reset();
+    fake::remote_connect();
+    CHECK(nnh::init());
+    CHECK(nnh::frame());
+    CHECK(nnh::frame()); // the previous frame's scopes are published at the start of this one
+    CHECK(remote_scope_calls() == 1);
+    fake::remote_disconnect();
+    CHECK(nnh::frame()); // sees the closed connection and stops polling
+    CHECK(nnh::frame());
+    CHECK(nnh::frame());
+    CHECK(remote_scope_calls() == 0);
     nnh::shutdown();
 }

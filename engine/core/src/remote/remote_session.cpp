@@ -7,6 +7,7 @@
 #include "nnh/build.hpp"
 #include "nnh/platform/remote.hpp"
 #include "nnh/platform/system.hpp"
+#include "nnh/profile.hpp"
 #include "remote/remote_input.hpp"
 #include "remote/remote_reader.hpp"
 #include "remote/remote_schedule.hpp"
@@ -110,6 +111,7 @@ void accept(const Message& message, std::uint32_t frame) {
 /// Reads what arrived (bounded by the queue's room, at least one message so a full queue answers Dropped).
 /// @return false when the connection is gone.
 bool read_messages(std::uint32_t frame) {
+    NNH_PROFILE_SCOPE("remote"); // the per-frame poll's cost (a socket call on the console), in the overlay
     const std::size_t room = g_schedule.room() > 0 ? g_schedule.room() : 1;
     const long got = platform::remote_receive(g_scratch, g_reader.bytes_wanted(room));
     if (got < 0) return false;

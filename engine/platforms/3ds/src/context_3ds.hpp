@@ -13,6 +13,9 @@ struct Context {
     C3D_RenderTarget* targets[2] = {nullptr, nullptr}; // [0] top, [1] bottom
     C3D_RenderTarget* current_target = nullptr;        // scene currently begun this frame
     bool c_stick_ready = false;                        // irrst started (New 3DS)
+    bool frame_open = false;     // between begin_frame and end_frame (the read-back refuses then)
+    bool remote_closed = false;  // a remote read or send found the log socket gone (remote_3ds.cpp)
+    bool remote_no_delay = false; // TCP_NODELAY set on the log socket at the first remote send
 };
 
 Context& context();
@@ -32,6 +35,10 @@ void input_stop();
 
 /// Makes `screen` the target of the following citro2d draw calls (no-op if already current).
 void draw_on(Screen screen);
+
+/// The socket connected to the 3dslink host that stdout/stderr go to (app_3ds.cpp), or -1: Release builds,
+/// not launched by 3dslink, or nobody listening. The console remote reads and writes it (remote_3ds.cpp).
+int link_socket();
 
 /// Stops the socket service whatever its users (network_3ds.cpp; called by shutdown).
 void network_release_all();

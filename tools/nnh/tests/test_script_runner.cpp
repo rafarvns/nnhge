@@ -248,13 +248,26 @@ NNH_TEST(runner_waits_for_both_screens_and_names_the_files) {
     CHECK(c.screens[0].image.width == 400 && c.screens[1].image.width == 320);
 }
 
+NNH_TEST(runner_sends_what_follows_a_screenshot_for_the_next_frame) {
+    ScriptRunner r = runner_for("wait 10\nscreenshot s\ntap A\n");
+    FakeConsole c(r);
+    r.start();
+    c.run_until_finished(100);
+    CHECK(r.verdict() == Verdict::Pass);
+    const auto shots = c.of_type(wire::MessageType::Screenshot);
+    const auto presses = c.of_type(wire::MessageType::Buttons);
+    CHECK(shots.size() == 1 && shots[0].frame == 11);
+    CHECK(presses.size() == 2 && presses[0].frame == 12); // not in frame 11's picture
+}
+
 NNH_TEST(runner_end_waits_for_a_screenshot_still_on_its_way) {
     ScriptRunner r = runner_for("wait 4\nscreenshot s\n");
     FakeConsole c(r);
     r.start();
     c.run(4);
     std::uint8_t out[wire::kMaxFixedRecord];
-    c.to_pc(out, wire::encode_tick_record(5, out)); // the final clock, before the screens of frame 5
+    c.to_pc(out, wire::encode_tick_record(6, out)); // the final clock (5 + the screenshot's frame), before
+                                                    // the screens of frame 5
     CHECK(r.verdict() == Verdict::Running);
     c.run(1);
     CHECK(r.verdict() == Verdict::Pass);

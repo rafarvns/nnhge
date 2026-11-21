@@ -65,14 +65,21 @@ NNH_TEST(timeline_sets_sticks) {
 }
 
 NNH_TEST(timeline_drag_moves_one_step_per_frame_after_the_touch) {
-    const auto s = timeline("touch 0 10\ndrag 30 40 3\nuntouch\n");
-    CHECK(s.size() == 1 && s[0].events.size() == 5 && s[0].length == 3);
-    if (s.size() != 1 || s[0].events.size() != 5) return;
+    const auto s = timeline("touch 0 10\ndrag 30 40 3\n");
+    CHECK(s.size() == 1 && s[0].events.size() == 4);
+    if (s.size() != 1 || s[0].events.size() != 4) return;
     CHECK(is_touch(s[0].events[0], 0, true, 0, 10));
     CHECK(is_touch(s[0].events[1], 1, true, 10, 20));
     CHECK(is_touch(s[0].events[2], 2, true, 20, 30));
     CHECK(is_touch(s[0].events[3], 3, true, 30, 40));
-    CHECK(is_touch(s[0].events[4], 3, false, 30, 40) && s[0].events[4].line == 3);
+}
+
+NNH_TEST(timeline_drag_holds_its_target_one_frame_before_what_follows) {
+    const auto s = timeline("touch 0 10\ndrag 30 40 3\nuntouch\n");
+    CHECK(s.size() == 1 && s[0].events.size() == 5 && s[0].length == 4);
+    if (s.size() != 1 || s[0].events.size() != 5) return;
+    CHECK(is_touch(s[0].events[3], 3, true, 30, 40));
+    CHECK(is_touch(s[0].events[4], 4, false, 30, 40) && s[0].events[4].line == 3);
 }
 
 NNH_TEST(timeline_drag_ends_exactly_on_its_target) {
@@ -80,7 +87,7 @@ NNH_TEST(timeline_drag_ends_exactly_on_its_target) {
     CHECK(s.size() == 1 && s[0].events.size() == 5);
     if (s.size() != 1 || s[0].events.size() != 5) return;
     CHECK(is_touch(s[0].events[3], 3, true, 10, 7));
-    CHECK(is_touch(s[0].events[4], 4, true, 10, 0)); // the next drag starts where the last one ended
+    CHECK(is_touch(s[0].events[4], 5, true, 10, 0)); // the next drag starts where the last one ended
 }
 
 NNH_TEST(timeline_release_all_lets_every_control_go) {
@@ -102,6 +109,14 @@ NNH_TEST(timeline_screenshot_asks_for_both_screens_with_its_name) {
     const TimedEvent& e = s[0].events[0];
     CHECK(e.message.type == wire::MessageType::Screenshot && e.offset == 7 && e.text == "dragged");
     CHECK(e.message.screens == (wire::kScreenTop | wire::kScreenBottom) && e.line == 2);
+}
+
+NNH_TEST(timeline_screenshot_takes_a_frame_so_what_follows_is_not_in_it) {
+    const auto s = timeline("wait 7\nscreenshot a\nstick circle 0 0\nscreenshot b\nscreenshot c\n");
+    CHECK(s.size() == 1 && s[0].events.size() == 4 && s[0].length == 10);
+    if (s.size() != 1 || s[0].events.size() != 4) return;
+    CHECK(s[0].events[0].offset == 7 && s[0].events[1].offset == 8); // the stick moves after frame 7's capture
+    CHECK(s[0].events[2].offset == 8 && s[0].events[3].offset == 9);
 }
 
 NNH_TEST(timeline_fail_on_is_an_event_at_the_clock) {
@@ -139,7 +154,7 @@ NNH_TEST(timeline_hands_out_what_was_typed_since_the_last_take) {
     drag.y = 50;
     t.add(drag);
     const Segment second = t.take_open();
-    CHECK(second.events.size() == 2 && second.length == 2);
+    CHECK(second.events.size() == 2 && second.length == 3);
     CHECK(second.events.size() == 2 && is_touch(second.events[0], 1, true, 105, 50));
     CHECK(t.take_open().events.empty());
 }

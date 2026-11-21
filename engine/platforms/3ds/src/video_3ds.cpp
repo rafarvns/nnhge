@@ -26,10 +26,13 @@ void begin_frame(Color top_clear, Color bottom_clear) {
     ctx.current_target = nullptr;
     ctr::draw_on(Screen::Bottom);
     ctr::draw_on(Screen::Top);
+    ctx.frame_open = true;
 }
 
-void end_frame() { C3D_FrameEnd(0); }
-
+void end_frame() {
+    C3D_FrameEnd(0);
+    ctr::context().frame_open = false;
+}
 
 } // namespace nnh::platform
 

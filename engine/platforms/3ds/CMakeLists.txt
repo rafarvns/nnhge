@@ -15,6 +15,7 @@ add_library(nnh_platform_3ds STATIC
     src/memory_3ds.cpp
     src/network_3ds.cpp
     src/remote_3ds.cpp
+    src/remote_capture_3ds.cpp
     src/system_3ds.cpp
     src/texture_3ds.cpp
     src/time_3ds.cpp

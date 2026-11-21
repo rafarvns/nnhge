@@ -1,6 +1,6 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–4 done (2026-11-21); next: stage 5
+Status: approved (2026-11-21); stages 1–4 done (2026-11-21); stage 5: T5.1–T5.2 done, next T5.3 (console)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -138,7 +138,8 @@ warnings, `examples/hello` in the simulator unchanged.
   - Done (11 tests). Segments hold offsets from their first frame (the runner adds the base: 1, then the matching
     line's frame + 1). `hold B N`: press at +0, release at +N; `tap`: +0/+1; `drag X Y N`: steps at +1…+N (the frame
     of the touch itself keeps the starting point); `release all`: buttons, both sticks centred, touch up. `Timeline`
-    remembers the touch point across segments and typed lines (`take_open()` for interactive mode).
+    remembers the touch point across segments and typed lines (`take_open()` for interactive mode). Changed in
+    stage 5 (maintainer, 2026-11-21): `screenshot` moves the clock +1 and `drag` +N+1 (plan, "Settled in stage 5").
 - [x] **T3.5** runner against a fake console: ≤ 48 unapplied, barrier, expect window and timeout (decided at the tick),
   clock = line frame + 1, `fail-on`, level F, late/rejected/dropped → fail with the line, game closes early, missing
   capability before any input, `end` waits for ticks and screenshots, file names, verdict and exit codes; interactive
@@ -228,6 +229,13 @@ Verifiable: `nnh_tool_tests` green. Done: 92 new tests (138 in `nnh_tool_tests`)
     end, so the commands *after* a screenshot on the same clock are already in it; the last `drag` step shares its
     frame with what follows. The script now has `wait 1` after each screenshot (and expects "touch ended at 280,
     200"). Changing the timeline instead (stage 3's behaviour) is the maintainer's call.
+  - **Resolved in stage 5** (maintainer, 2026-11-21): the timeline changed (a `screenshot` takes a frame, a `drag`
+    holds its target one frame) and the `wait 1` lines are gone. The script as in the plan: `nnh: PASS (19 lines,
+    frames 1-111)`; `stick-right` (frame 77) top shows x +1.00, `dragged` (frame 109) bottom "touching at 280, 200";
+    "touch ended at 280, 200" on frame 110. Tests: `timeline_screenshot_takes_a_frame_so_what_follows_is_not_in_it`,
+    `timeline_drag_holds_its_target_one_frame_before_what_follows`, `runner_sends_what_follows_a_screenshot_for_the_next_frame`
+    (+ four timeline/runner tests adjusted to the new offsets). Mutation check by hand: 7 mutants of the change
+    (no advance, +2, capture on the next frame, drag +N, drag +N+2, drag steps a frame late, `wait` +1) — 7 killed.
 - [x] **T4.6** [P] interactive by hand on PC: `nnh run input --pc`, type `tap A`, `screenshot x`, `expect "pressed" 30`,
   `end`; the result written in this file — covers FR-5
   - Done by an agent, so the lines were **piped into stdin, not typed** (`NNH_PRESET=pc-debug`, `--no-build`,
@@ -268,12 +276,24 @@ Release, and `ctest --preset pc-release` passes 102/102.
 
 ## Stage 5 — the 3DS
 
-- [ ] **T5.1** 3DS transport: `ctr::link_socket()`, `recv(MSG_DONTWAIT)`, flushed sends in 16 KB pieces; profile
+- [x] **T5.1** 3DS transport: `ctr::link_socket()`, `recv(MSG_DONTWAIT)`, flushed sends in 16 KB pieces; profile
   scope `remote` around the poll — files: `engine/platforms/3ds/src/remote_3ds.cpp`, `app_3ds.cpp`, `context_3ds.hpp`,
   `CMakeLists.txt` — test: `3ds-dev` builds clean — covers FR-1, FR-7, FR-8
-- [ ] **T5.2** 3DS read-back: `linearAlloc` on the first capture, `C3D_SyncDisplayTransfer` from each target with its
+  - Done (built, not yet run on a console). `recv` 0 bytes or an error → −1 (closed, remembered in `ctr::Context`);
+    `EAGAIN`/`EWOULDBLOCK`/`EINTR` → 0. `TCP_NODELAY` at the first remote send (after `Hello` only). The profile
+    scope is in core, `remote_session.cpp` (platforms never call core), with a test:
+    `remote_frames_time_the_poll_as_remote_in_the_profiler` (seen failing without the scope). Every function returns
+    at once unless `kDevToolsEnabled`; Release has no log socket anyway.
+- [x] **T5.2** 3DS read-back: `linearAlloc` on the first capture, `C3D_SyncDisplayTransfer` from each target with its
   `transferFlags`, `gfxGetScreenFormat` checked, release — files: `engine/platforms/3ds/src/remote_capture_3ds.cpp` —
   test: `3ds-dev` builds clean — covers FR-2
+  - Done (built, not yet run on a console). Also `video_3ds.cpp`: `ctr::Context::frame_open` (the read-back refuses
+    during a frame, as on PC). Checks before the transfer: the target is 240 × 400/320, its `transferFlags` give
+    linear RGB8, the screen is `GSP_BGR8_OES`; `GSPGPU_InvalidateDataCache` after it. Sends layout 2, 400/320 × 240,
+    pixel (x, y) at `(x × 240 + 239 − y) × 3` as B, G, R (what `screen_image.cpp` reads; plan, "Settled in stage 5").
+  - Builds: `3ds-dev` and `3ds-release` without warnings; `check_release_strings.sh` ok on `3ds-release` `hello.elf`
+    and `input.elf`; the `3ds-dev` `input.elf` links `remote_receive`, `remote_send`, `remote_capture` and
+    `C3D_SyncDisplayTransfer`. `pc-debug`/`pc-release` build; `nnh_tests` 820, `nnh_tool_tests` 156, ctest 103/103.
 - [ ] **T5.3** **3DS** first contact (maintainer: press Y): `nnh run input --script examples/input/tests/remote.nnhs`.
   Record: PASS/FAIL; the screenshots against the PC's (orientation, colours — the layout and BGR order of the plan;
   fix `screen_image.cpp` or the transfer if not); time per screenshot pair; the `remote` scope (poll cost) in the

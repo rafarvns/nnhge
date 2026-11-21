@@ -84,7 +84,7 @@ void Timeline::add(const Step& step) {
         }
         touch_x_ = step.x;
         touch_y_ = step.y;
-        open_.length += step.frames;
+        open_.length += step.frames + 1; // the target is held for a frame before what follows
         break;
     case Command::Untouch: send(touch(false, touch_x_, touch_y_), now, line); break;
     case Command::Screenshot: {
@@ -92,6 +92,7 @@ void Timeline::add(const Step& step) {
         m.type = wire::MessageType::Screenshot;
         m.screens = wire::kScreenTop | wire::kScreenBottom;
         send(m, now, line, step.text);
+        open_.length += 1; // what follows lands after the captured frame, so it isn't in the picture
         break;
     }
     case Command::FailOn:

@@ -240,9 +240,9 @@ text arguments are in double quotes (`\"` and `\\` escapes). The script clock st
 | `tap B[+B…]` | press now, release on the next frame (two taps in a row are two presses) | +2 |
 | `stick circle\|cstick X Y` | set a stick, −1…1 each, y up; `0 0` centres it | — |
 | `touch X Y` | touch the bottom screen at X 0–319, Y 0–239 (or move the touch there) | — |
-| `drag X Y N` | move the touch from where it is to X Y, one step per frame (needs a touch down) | +N |
+| `drag X Y N` | move the touch from where it is to X Y, one step per frame (needs a touch down); X Y is held one more frame | +N+1 |
 | `untouch` | lift the touch | — |
-| `screenshot NAME` | both screens of the current frame → `frame-<n>-NAME-{top,bottom}.png` (NAME: `[A-Za-z0-9_-]`, 1–32) | — |
+| `screenshot NAME` | both screens of the current frame → `frame-<n>-NAME-{top,bottom}.png` (NAME: `[A-Za-z0-9_-]`, 1–32); what follows is on the next frame | +1 |
 | `expect "TEXT" N` | wait for a log line matching TEXT from now to N frames later; then the clock = the line's frame + 1 | → match |
 | `fail-on "TEXT"` | from here to the end, a line matching TEXT fails the script | — |
 | `end` | the script passed once everything before it is done (inputs applied, screenshots received); nothing may follow | — |
@@ -370,9 +370,30 @@ Settled in stage 4 (2026-11-21, the simulator end to end):
 - **Same-frame commands and screenshots** (found with the example script): commands on the same clock all apply at
   the start of that frame, and a `screenshot` shows the end of it. So `screenshot X` followed by `stick circle 0 0`
   shows the stick already centred, and the last step of `drag … N` lands on the same frame as a following `untouch`
-  (the game sees the touch end one step short). The example script puts `wait 1` after each screenshot and before
-  `untouch`; whether the timeline should do it (a screenshot taking the frame before the clock, or a drag ending one
-  frame earlier) is an open question for the maintainer, see tasks T4.5.
+  (the game sees the touch end one step short). The example script put `wait 1` after each screenshot and before
+  `untouch`; the timeline now does it instead, see "Settled in stage 5".
+
+Settled in stage 5 (2026-11-21):
+
+- **A `screenshot` takes one frame of the script clock, and so does the end of a `drag`** (maintainer's decision on
+  stage 4's open question). `screenshot NAME` captures the end of the current frame and moves the clock +1, so the
+  commands after it land on the next frame and are not in the picture. `drag X Y N` moves the clock +N+1: its steps
+  are at +1…+N and the next command lands one frame after the touch reached X Y, so a `screenshot` right after a
+  drag shows the touch held at X Y and an `untouch` ends it there (the script table above is updated). The example
+  script above runs as written (no `wait 1`), its screenshots show the stick right and
+  the dragged touch, and the touch ends at 280, 200.
+- **Profile scope `remote`** is in core (`remote_session.cpp`, around the per-frame read), not in `remote_3ds.cpp`:
+  platform libraries never call core. It shows on every system, so the poll's cost is visible in the overlay.
+- **3DS transport**: the remote's state (`remote_closed`, `remote_no_delay`) and a `frame_open` flag (set by
+  `begin_frame`, cleared by `end_frame`; the read-back refuses while it is set, as on PC) live in
+  `ctr::Context`. `TCP_NODELAY` is set on the log socket at the first remote send (only after `Hello`, so a
+  log-only connection is unchanged), as stage 4 did on both PC ends. A receive of 0 bytes from `recv` is a closed
+  connection (−1); `EAGAIN`/`EWOULDBLOCK`/`EINTR` are "nothing yet".
+- **3DS read-back**: before the transfer, the target is checked (240 × 400/320, `transferFlags` giving linear
+  `GX_TRANSFER_FMT_RGB8`, `gfxGetScreenFormat()` = `GSP_BGR8_OES`), else `ScreenFailed` with the reason; after it,
+  `GSPGPU_InvalidateDataCache` (the GPU wrote the buffer the CPU then sends). Layout sent: 2, width 400/320, height
+  240, `width × 240 × 3` bytes, pixel (x, y) at `(x × 240 + 239 − y) × 3` as B, G, R — what `screen_image.cpp`
+  reads. Not yet confirmed on a console (T5.3).
 
 ### Simulator and the platformer's automatic gate
 

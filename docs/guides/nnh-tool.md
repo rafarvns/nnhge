@@ -74,7 +74,10 @@ nnh run <game> [--console <ip>] [--pc] [--script <file.nnhs>] [--no-build]
   it is typed (`help` lists them; `expect` reports and never ends the run; `end` gives the game its
   controls back). Nothing is sent to the game before the first command.
 - **Screenshots** go to `build/logs/<game>-<date>-<time>/frame-<n>-<name>-{top,bottom}.png`, next to the
-  log; `<n>` is the frame, six digits.
+  log; `<n>` is the frame, six digits. A `screenshot` captures the end of the current frame and moves the
+  script clock one frame, so the commands after it are not in the picture; `drag X Y N` also takes one
+  frame more than its N steps, holding the touch at X Y, so a `screenshot` or `untouch` right after it sees
+  the touch at X Y.
 - **`--no-build`** runs what is already built. **`NNH_PRESET=<preset>`** makes `nnh` build and run from
   another preset of the same system (for example `pc-debug` instead of `pc-dev`); the ctest
   `nnh_script_pc_smoke` uses both.

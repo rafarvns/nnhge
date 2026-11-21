@@ -98,6 +98,7 @@ void stop_3dslink_stdio() {
 
 ctr::Context& ctr::context() { return g_context; }
 void ctr::set_error(const char* what) { g_last_error = what; }
+int ctr::link_socket() { return g_link_socket; }
 
 bool init(const AppConfig& config) {
     // The window title and icon come from the SMDH on 3DS; config gives the data folder.

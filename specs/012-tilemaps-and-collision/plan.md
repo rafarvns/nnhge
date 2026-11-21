@@ -120,6 +120,7 @@ struct Grid {
     float cell_w = 16, cell_h = 16;
     int width = 0, height = 0;              // cells
     Cell outside = Cell::Empty;             // beyond the edges (Solid walls the level in)
+    const Cell* cells = nullptr;            // row-major width * height, used when set (added in stage 1)
     Cell (*cell)(const void* context, int x, int y) = nullptr;   // called only inside the grid
     const void* context = nullptr;
 };

@@ -1,6 +1,6 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stage 0 done (2026-11-21); next: stage 1
+Status: approved (2026-11-21); stages 0 and 1 done (2026-11-21); next: stage 2
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -42,15 +42,38 @@ by the maintainer.
 
 ## Stage 1 — collision (pure, no tilemap)
 
-- [ ] **T1.1** `<nnh/collision.hpp>` skeleton; `overlaps`, `contains`, `intersection`, `separation` — files:
+- [x] **T1.1** `<nnh/collision.hpp>` skeleton; `overlaps`, `contains`, `intersection`, `separation` — files:
   `collision/aabb.cpp` — test: `tests/collision/test_aabb.cpp` — covers FR-9
-- [ ] **T1.2** `Grid`, `grid_view`, cell lookup with `outside`, cell range of a box (half-open edges) — files:
+- [x] **T1.2** `Grid`, `grid_view`, cell lookup with `outside`, cell range of a box (half-open edges) — files:
   `collision/grid.cpp` — test: `test_grid.cpp` — covers FR-8, FR-9
-- [ ] **T1.3** `move`: x then y sweep, slide, touching sides, start-overlapping rule, huge deltas, non-zero origin,
+- [x] **T1.3** `move`: x then y sweep, slide, touching sides, start-overlapping rule, huge deltas, non-zero origin,
   non-square cells, NaN/inf delta asserts — files: `collision/grid_move.cpp` — test: `test_grid_move.cpp` — covers FR-8
-- [ ] **T1.4** one-way cells and `drop_through` — test: `test_one_way.cpp` — covers FR-7, FR-8
-- [ ] **T1.5** [P] `contacts`, `cells_touching` — files: `collision/grid_query.cpp` — test: `test_contacts.cpp`,
+- [x] **T1.4** one-way cells and `drop_through` — test: `test_one_way.cpp` — covers FR-7, FR-8
+- [x] **T1.5** [P] `contacts`, `cells_touching` — files: `collision/grid_query.cpp` — test: `test_contacts.cpp`,
   `test_cells_touching.cpp` — covers FR-8, FR-9
+
+  **Result (2026-11-21):** 78 tests in `tests/collision/` (aabb 14, grid 10, move 29, one-way 9, contacts 9,
+  cells_touching 7), helper `ascii_grid.hpp` (levels drawn as text); PC and 3DS build clean; API page
+  [collision.md](../../docs/api/collision.md).
+  - **One API addition to the sketch:** `Grid::cells` (`const Cell*`, row-major, used when set; otherwise the
+    `cell` callback). The sketch's callback gets only `(context, x, y)`, so `grid_view` over a bare array would
+    have nowhere to keep the row width; the array field also saves a function-pointer call per cell. The callback
+    is unchanged for tilemaps.
+  - Internals: `collision/grid_internal.hpp` (`first_cell`/`last_cell` saturating at ±2^30, `cell_range`,
+    `cell_at`, the one-axis `sweep` shared by `move` and `contacts`). Runs of `outside` cells that cannot block are
+    skipped, so a 10^7 px delta is cheap.
+  - **Float rounding:** after a stop the position is nudged (doubling ulp steps) until the blocking line is out of
+    the box's cell range, and clamped between start and target; without it `wall − w + w` can round past the
+    wall and the next frame would ignore that wall (falls through). Three regression tests use inputs found by a
+    float32 search.
+  - `contacts` = a 1/64 px probe `sweep` on each side; `cells_touching` = overlapped (area > 0) non-empty cells,
+    visiting only the grid when `outside` is Empty.
+  - Mutation check (17 hand mutants of `move`/sweep/one-way: `>=`→`>` on the one-way top, rule removed,
+    `drop_through` ignored, scan includes overlapped lines (both directions), scan one short, y before x, both
+    rounding nudges removed, start clamp removed, perpendicular range one short, outside one-way ignored,
+    sides swapped, `moved` = delta when blocked, NaN assert removed, wrong outside skip): **16 killed**; the
+    survivor ("one-way also checked on upward moves") is equivalent — a row entered upward never has its top
+    at or below the box's starting bottom.
 
 Verifiable: `nnh_tests collision` green on PC.
 

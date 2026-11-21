@@ -28,6 +28,12 @@ add_executable(nnh_tests
     audio/test_voice_table.cpp
     audio/test_wav_reader.cpp
     build/test_flavor.cpp
+    collision/test_aabb.cpp
+    collision/test_cells_touching.cpp
+    collision/test_contacts.cpp
+    collision/test_grid.cpp
+    collision/test_grid_move.cpp
+    collision/test_one_way.cpp
     core/test_crc32.cpp
     crash/test_assert.cpp
     crash/test_report.cpp

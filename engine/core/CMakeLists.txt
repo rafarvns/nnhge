@@ -9,6 +9,10 @@ target_include_directories(nnh_core_contract INTERFACE contract include)
 add_library(nnh_core STATIC
     src/app/app.cpp
     src/app/data_folder.cpp
+    src/collision/aabb.cpp
+    src/collision/grid.cpp
+    src/collision/grid_move.cpp
+    src/collision/grid_query.cpp
     src/core/crc32.cpp
     src/crash/crash.cpp
     src/crash/report.cpp

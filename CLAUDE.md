@@ -83,7 +83,11 @@ debug text uses it too ([api/text.md](docs/api/text.md)). Assets (spec 007; demo
 assets), `audio::play` voices with volume/pan/pitch/priority, groups and master, `SoundFinished`; streamed
 `music::play`/`crossfade` with loop points and fades, `MusicFinished`; Ogg via
 vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS via ndsp; demo
-`examples/audio` ([api/audio.md](docs/api/audio.md)).
+`examples/audio` ([api/audio.md](docs/api/audio.md)). Collision (spec 012 stage 1, pure; depends only on
+`<nnh/math.hpp>`): `<nnh/collision.hpp>` — `overlaps`/`contains`/`intersection`/`separation` on boxes;
+`collision::move` sweeps a box through a `Grid` the game describes (`grid_view` over its own `Cell` array, or a
+callback), x then y, solid and one-way cells, no tunnelling; `contacts`, `cells_touching`
+([api/collision.md](docs/api/collision.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

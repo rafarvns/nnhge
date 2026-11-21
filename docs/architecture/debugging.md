@@ -40,6 +40,15 @@ Visual Studio, CLion, gdb). On Windows, asserts break into an attached debugger.
 
 Full step-by-step guide: [debugging-on-3ds.md](../guides/debugging-on-3ds.md).
 
+## Driving a game from the PC
+
+> Status: design — [spec 013](../../specs/013-console-remote/spec.md), [plan 013](../../specs/013-console-remote/plan.md)
+> (draft), decision D28 (proposed).
+
+`nnh run <game> --script <file.nnhs>` will press buttons, touch the screen, take screenshots of both screens and check
+the log of a Debug/Development game, on the console or in the simulator (`--pc`), over the connection the game already
+opens for its log. Without a script, commands typed in `nnh`'s terminal do the same by hand.
+
 ## Choosing a tool
 
 | Symptom | First tool |

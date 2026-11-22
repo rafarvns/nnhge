@@ -16,7 +16,7 @@ struct Finished {};
 /// A scene with a bound set; on_enter starts a 60-frame tween of `x` (and, optionally, a callback and an
 /// event).
 class Animated : public nnh::Scene {
-  public:
+public:
     void on_enter() override {
         tweens.to(&x, 60.0f, Frames{60}, {.on_finish = [this] { ++finishes; }, .publish = Finished{}});
     }

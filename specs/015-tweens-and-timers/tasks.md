@@ -1,6 +1,6 @@
 # Tasks 015: Tweens and timers
 
-Status: approved (2026-11-22, maintainer pre-approved); in progress (stages 0–5 done on Windows; the VM 120 runs of T0.2, T1.4 and the stage ends are pending)
+Status: implemented (console T7.2 pending; the VM 120 runs of T0.2, T1.4 and the stage ends are pending too) · approved 2026-11-22 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops. `[P]` means the task can be done in parallel with the previous one. Every
@@ -129,13 +129,13 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 6: the example `examples/tweens` (PC)
 
-- [ ] **T6.1** The self-check script as pure code: a fixed script of tweens, sequences, loops, yoyos, timers and
+- [x] **T6.1** The self-check script as pure code: a fixed script of tweens, sequences, loops, yoyos, timers and
   `Timer` values over 600 frames; an FNV-1a checksum of every target's bits and of the callback order, logged every
   60 frames; the rounding probe (`1 + 1.5·2⁻²⁴`); the verdict `tweens: PASS <checksum>` / `tweens: FAIL ...`
   against a golden constant recorded from the simulator. Files: `examples/tweens/self_check.{hpp,cpp}`. Test:
   `tests/tweens/test_self_check.cpp` (compiled from the example, like `tests/platformer`, on PC and VM 120).
   Covers AC-5, FR-3, FR-16.
-- [ ] **T6.2** The showcase scene. Top screen: the easing gallery, 19 cells, each with its curve plotted from
+- [x] **T6.2** The showcase scene. Top screen: the easing gallery, 19 cells, each with its curve plotted from
   `ease()` and a marker looping along it. Bottom screen: the intro sequence (a panel slides in with `BackOut` while
   a colour fades, a title pops, then "READY" after a timer), a blink driven by `nnh::Timer`, and buttons for
   pause/resume (A), complete (B), restart (Y) and push the overlay (X). The overlay scene has its own bound set,
@@ -143,13 +143,13 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
   `showcase_scene.{hpp,cpp}`, `easing_gallery.{hpp,cpp}`, `intro.{hpp,cpp}`, `overlay_scene.{hpp,cpp}`,
   `CMakeLists.txt`, `examples/CMakeLists.txt`. Test: PC screenshots read from the PNG
   (`NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/tweens.png`, plus `TWEENS_DEMO=overlay`). Covers AC-6.
-- [ ] **T6.3** [P] The self-check and bench scenes. Selected by `TWEENS_DEMO=check|bench` or from the showcase
+- [x] **T6.3** [P] The self-check and bench scenes. Selected by `TWEENS_DEMO=check|bench` or from the showcase
   (SELECT cycles: showcase → self-check → bench). The bench runs 256 mixed tweens (all kinds and curves, elastic
   included) in an unbound set and measures `update()` with `time::now()` over 600 frames (average and worst). It
   logs `tweens bench: 256 tweens avg X.XX ms worst Y.YY ms (target < 1 ms) PASS|OVER` and shows the slot size and
   the set's bytes. Files: `self_check_scene.{hpp,cpp}`, `bench_scene.{hpp,cpp}`. Test: PC runs of both modes.
   Covers AC-5, AC-7.
-- [ ] **T6.4** The console script. With the game started, it presses SELECT to reach the self-check, waits for
+- [x] **T6.4** The console script. With the game started, it presses SELECT to reach the self-check, waits for
   `tweens: PASS` (`fail-on "tweens: FAIL"`, `fail-on "] E "`), then SELECT to the bench and waits for its line, with
   screenshots. Files: `examples/tweens/tests/check.nnhs`. Test: `nnh run tweens --pc --script
   examples/tweens/tests/check.nnhs` passes. Covers AC-5.
@@ -158,7 +158,7 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 7: console check (the only step on the 3DS)
 
-- [ ] **T7.1** Build and size check: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development build
+- [x] **T7.1** Build and size check: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development build
   that `nnh run` uses; log the 32-bit slot size from the example at start. Files: plan.md. Covers II.
 - [ ] **T7.2** On the Old 3DS: the maintainer opens the Homebrew Launcher and presses Y, then runs
   `nnh run tweens --script examples/tweens/tests/check.nnhs`. Pass when the saved log in `build/logs/` has
@@ -168,17 +168,17 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 8: docs, roadmap, status
 
-- [ ] **T8.1** `docs/api/tween.md`: easings with a picture of the curves (rendered by the example or a script into
+- [x] **T8.1** `docs/api/tween.md`: easings with a picture of the curves (rendered by the example or a script into
   `docs/`), tweens, targets and the lifetime rule, sequences, callbacks vs events, timers and `Timer`, scene binding,
   the frame clock and determinism (approximation bounds, the subnormal limit), capacities, sizes and the measured
   cost. Also the header comments in `tween.hpp`, links from `docs/api/scene.md` and `docs/api/time.md`, and
   `docs/architecture/scenes.md` (attachments, D30). Covers AC-9, VIII.
-- [ ] **T8.2** [P] `docs/REFERENCES.md` (Godot Tween/Timer, DOTween, Penner), the CLAUDE.md layout paragraph (module
+- [x] **T8.2** [P] `docs/REFERENCES.md` (Godot Tween/Timer, DOTween, Penner), the CLAUDE.md layout paragraph (module
   and example), `docs/architecture/project-structure.md` if the examples list changes, and the example's README
   comment block. Covers AC-9.
-- [ ] **T8.3** Final measurements: `hello` sizes and build times against T0.1, the compile cost of
+- [x] **T8.3** Final measurements: `hello` sizes and build times against T0.1, the compile cost of
   `<nnh/tween.hpp>`, the `tweens` sizes; record them in plan.md and the ROADMAP baseline table if it changed.
   Covers III, AC-8.
-- [ ] **T8.4** `docs/ROADMAP.md`: tick "Tweens and timers" (and "tweens" in the M7 line). Covers AC-9.
-- [ ] **T8.5** Status → implemented in spec.md, plan.md, tasks.md and `specs/README.md`; D30's change-log note
+- [x] **T8.4** `docs/ROADMAP.md`: tick "Tweens and timers" (and "tweens" in the M7 line). Covers AC-9.
+- [x] **T8.5** Status → implemented in spec.md, plan.md, tasks.md and `specs/README.md`; D30's change-log note
   "implemented"; `python -I scripts/docs_tool.py check` reports 0 broken links.

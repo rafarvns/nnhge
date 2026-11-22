@@ -135,7 +135,7 @@ build for the converter's check, and its `.3dsx` edit (≈ 4 s) is the closest t
 
 ## M7 — Game structure
 - [x] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (implemented 2026-11-22): pure `<nnh/collision.hpp>` (box queries, `collision::move` through any grid, one-way cells, no tunnelling; [api/collision.md](api/collision.md)); `<nnh/tilemap.hpp>` — maps built in code or drawn in Tiled (`.tmj` assets converted by `nnh-assetc` at build time, D27, and loaded with `load_tilemap`; bounded and fuzzed readers), objects, properties, animated tiles, a collision grid ([api/tilemap.md](api/tilemap.md), guide [Levels in Tiled](guides/levels.md)); `gfx::draw_tilemap` as tile batches (D26). **Old 3DS XL: 4 full 16×16 layers + 300 sprites at 60 Hz (avg 16.7 ms, worst 17.4 ms, 0 missed of 600); limits 6 layers / 600 sprites.** `examples/platformer`: level 1 from Tiled, the bonus level in code, a replay checked against `tests/level.nnhs`. Still with the maintainer: T7.4 (`tests/level.nnhs` on the Old 3DS); Linux, ASan/UBSan and the three libFuzzer targets ran clean on the build VM
-- [ ] Entities/components, tweens, scene transitions (scenes and saves: done)
+- [ ] Entities/components, scene transitions (scenes, saves and tweens: done; tweens' console check pending)
 
 ### Features in the spirit of Godot and Unity
 
@@ -163,11 +163,15 @@ spec; the order below is a proposal.
 - [ ] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): named clips declared in code (frames of a
   sprite sheet, timings, loop), events on frames (a footstep sound), and a simple state machine (idle, run, jump);
   optionally read from Aseprite files
-- [ ] **Tweens and timers** (Godot Tween and Timer, DOTween): animate any value with easing, sequences and
-  delays; timers and "wait then do" without hand-written counters. In progress
-  ([spec 015](../specs/015-tweens-and-timers/spec.md), stages 0–5 done: the frame clock in `<nnh/time.hpp>`,
-  easings, `nnh::Timer`, tween sets with handles, loops, yoyo, callbacks, finish events, timers, sequences and
-  scene-bound sets (D30); the example, the console check and `docs/api/tween.md` to come)
+- [x] **Tweens and timers** (Godot Tween and Timer, DOTween): animate any value with easing, sequences and
+  delays; timers and "wait then do" without hand-written counters —
+  [spec 015](../specs/015-tweens-and-timers/spec.md) (implemented 2026-11-22, **console check pending**, T7.2):
+  `<nnh/tween.hpp>` — 19 libm-free easings with the same bits everywhere, `nnh::Timer`, tween sets (float, Vec2,
+  Color by pointer or setter; delay, loops, yoyo, speed, handles, callbacks or your own finish events, `after`/
+  `every`, sequences with joins, waits and calls) on the deterministic frame clock (`Frames`/`FrameTime` in
+  `<nnh/time.hpp>`), no allocation while playing, sets bound to a scene updated and cleared by it (D30)
+  ([api/tween.md](api/tween.md)). `examples/tweens`: easing gallery, an intro sequence, an overlay scene, a
+  self-check with a golden checksum (`tests/check.nnhs`) and a 256-tween bench (PC: 0.06 ms per update)
 - [ ] **Input actions** (Godot InputMap, Unity Input System): named actions (`jump`, `attack`) mapped to buttons,
   remappable by the player and saved, instead of fixed buttons in game code
 - [ ] **Camera helpers** (Godot Camera2D, Cinemachine): follow with smoothing and a dead zone, map limits, shake,

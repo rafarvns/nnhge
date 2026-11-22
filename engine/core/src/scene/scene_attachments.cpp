@@ -9,8 +9,7 @@ void scene_attach(Scene& scene, SceneAttachment& node) {
     node.next = nullptr;
     node.epoch = g_scene_pass.running ? g_scene_pass.number : 0;
     SceneAttachment** link = &SceneAccess::head(scene);
-    while (*link != nullptr)
-        link = &(*link)->next;
+    while (*link != nullptr) link = &(*link)->next;
     *link = &node;
 }
 

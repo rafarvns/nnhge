@@ -1,6 +1,6 @@
 # Plan 015: Tweens and timers
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: implemented (console T7.2 pending) · approved 2026-11-22 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D30 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (event bus, scene stack), spec 002 (`Duration`, memory tags, asserts, logs, profiler), spec 013 (console
 test scripts)
@@ -568,7 +568,7 @@ Determinism probe (T0.2, scratch `probe.cpp` with draft `sin_quarter`, `exp2_neg
   |-------|---------|-----|--------|
   | 3ds-release `hello.elf` | 216 084 | 216 260 | **+176** (budget 256) |
   | 3ds-dev `hello.elf` | 232 464 | 232 928 | +464 (assert strings of Development) |
-  | pc-release `hello.exe` | 129 080 | 129 376 | +296 (x64 code; 40 B over the 256 target) |
+  | pc-release `hello.exe` | 129 080 | 129 376 | +296 (x64 code; 40 B over the 256 target: **accepted by the maintainer** 2026-11-22, the 3DS is within budget) |
   | pc-debug `hello.exe` | 196 572 | 197 288 | +716 (unoptimized) |
 
   `hello.3dsx` (3ds-release) went from 261 460 to 261 640 B. `Scene` grew by one pointer (4 B on 3DS, 8 B on PC).
@@ -593,6 +593,51 @@ Determinism probe (T0.2, scratch `probe.cpp` with draft `sin_quarter`, `exp2_neg
   One was equivalent: marking a sequence's children Dead when it ends was dead code (nothing reads a child's state;
   freeing the sequence frees them), so `sequence_kill_children` was removed. Result: 39/39 non-equivalent mutants
   killed.
+
+#### Stage 6 refinements and results (2026-11-22, implemented on PC)
+
+- `examples/tweens` as planned, with one file fewer: the scene switcher is a plain `Demos` struct of scene pointers
+  (`demos.hpp`), and each scene handles SELECT/START itself. The intro (`intro.{hpp,cpp}`) shows the sequence, a
+  timer started from a call step ("READY") and an `nnh::Timer` blink; the overlay has its own bound set.
+- The self-check (`self_check.{hpp,cpp}`, pure) plays a fixed script for 600 frames: tweens of the three kinds
+  (elastic yoyo loops with `on_loop`, `by` with a delay, an infinite yoyo Color with `BackOut` overshoot, a looping
+  setter), a yoyo sequence with a join, a wait, a call and `BackInOut`, `after`/`every`, `nnh::Timer` values, speed
+  changes (0.5 at frame 150, 1.5 at 300, 1 at 450), a kill and a `complete()` of an unstarted sequence. FNV-1a over
+  every value's bits, each callback's letter and `active()`, every frame. Golden checksum **`B44CA3F6`** (pc-debug
+  and pc-release give the same). It also runs as `tests/tweens/test_self_check.cpp` (in `nnh_tests`) and as the
+  ctest `tweens_self_check_pc` (the simulator, `TWEENS_DEMO=check`, Debug/Development).
+- **`check.nnhs`**: the verdict line comes in the same frame as frame 600's checksum line, and `expect` matches only
+  later frames, so the script waits for `tweens: PASS B44CA3F6` (which carries the same sum) instead of the 600
+  line. `NNH_PRESET=pc-debug nnh run tweens --pc --no-build --script examples/tweens/tests/check.nnhs` passes (44
+  lines, 1441 frames); its screenshots (showcase, overlay, self-check, bench) were read.
+- PC bench (pc-debug): 256 tweens, average 0.06 ms, worst 0.23 ms per `update()`; the set's block is 57 440 B
+  (224 B per slot on x64).
+- Hand mutation testing of the self-check's logic (verdict, checkpoint cadence, end, rounding probe, mixing, the
+  callback record, the FAIL text): 9/9 killed.
+
+#### Stage 7 (prepared; the console run needs the maintainer)
+
+- T7.1 done on Windows: `tweens.3dsx` builds in 3ds-release (291 612 B; `tweens.elf` text 245 700) and in 3ds-dev,
+  the flavor `nnh run` uses (315 832 B; text 265 188), without warnings. The bench logs the set's block size on
+  start (`tweens bench: started, 256 tweens, set block N bytes`): on the 3DS N is 256 × 184 + 68 = 47 172 B (plus
+  alignment), which checks the 32-bit slot size on the console itself.
+- T7.2, on the Old 3DS: open the Homebrew Launcher and press Y, then run
+  `build/pc-debug/tools/nnh/nnh run tweens --script examples/tweens/tests/check.nnhs`. Expected in the saved log
+  (`build/logs/tweens-*/`): `tweens: self-check started, rounding probe ok`, the nine checksum lines
+  `tweens: 60 sum 7332AADE` … `tweens: 540 sum 65BFE3A6`, then `tweens: PASS B44CA3F6`, then
+  `tweens bench: 256 tweens avg X.XX ms worst Y.YY ms (target < 1 ms) PASS` and `nnh: PASS`. Then a look at the
+  showcase at 60 Hz with the debug overlay.
+
+#### Final measurements (T8.3, 2026-11-22; Windows, 3 runs)
+
+| Measure | Stage 0 | Now |
+|---------|---------|-----|
+| one-line TU: preprocessed lines · `-fsyntax-only` | `<nnh/events.hpp>` 7 633 · 0.38–0.45 s | `<nnh/tween.hpp>` 8 413 · 0.42–0.51 s |
+| edit `examples/hello/main.cpp` → simulator (pc-debug) | 1.47 / 1.61 s | 1.45 / 1.35 / 1.37 s |
+| edit `examples/hello/main.cpp` → `.3dsx` (3ds-release) | 2.59 / 2.92 s | 2.80 / 2.61 / 2.58 s |
+| clean `nnh_core` (pc-debug, Ninja) | 3.2–3.4 s | 3.6–3.8 s (+14 tween/scene files) |
+| `hello` text | see stage 0 | see the stage 5 table (+176 B on 3ds-release) |
+| `tweens` | — | 3ds-release `.3dsx` 291 612 B, pc-release `tweens.exe` text 254 568 |
 
 ## Test strategy
 

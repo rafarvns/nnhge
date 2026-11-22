@@ -49,6 +49,29 @@ frame():  present previous frame → apply scene changes → input → deliver e
 game:     top scene update() → draw scenes bottom-to-top          (scenes::update_and_draw(), nnh::run())
 ```
 
+## Scene attachments (D30)
+
+Some engine objects belong to a scene and must follow its life: a **tween set bound to a scene**
+([api/tween.md](../api/tween.md#scene-bound-sets)) is updated right before that scene's `update()`, only while the
+scene is on top, and cleared right after its `on_exit()`. The scene module offers a generic, allocation-free hook
+for this ([decision D30](decisions.md)), so scenes never depend on the modules that use it:
+
+- `Scene` holds one private pointer, the head of an intrusive list of `detail::SceneAttachment` nodes. A node is
+  `{next, notify function pointer, epoch}` and lives inside the attaching object (for a bound `TweenSet`, inside
+  its heap block, so the set itself can move).
+- The scene stack notifies the top scene's nodes `BeforeUpdate` just before its `update()`, and a scene's nodes
+  `AfterExit` just after its `on_exit()` — on `pop`, `replace`, the end of `run()` and `shutdown()`, which all go
+  through the same exit path. Clearing after `on_exit()` also discards what `on_exit()` itself started.
+- Nodes run in attach order. A node attached during a pass waits for the next pass (its epoch is that pass);
+  detaching during a pass is safe (the pass keeps a cursor). One pass runs at a time.
+- The `Scene` destructor checks that nothing is still attached (a bound set must not outlive its scene: make it a
+  member of the scene).
+
+Internal API: `engine/core/src/scene/scene_attachments.hpp` (`scene_attach`, `scene_detach`, `scene_notify`).
+Cost for a scene with nothing attached: one pointer and a null check per frame and per exit; a game with scenes but
+no bound set links only `scene_notify()` (+176 bytes of code on the 3DS, measured in
+[plan 015](../../specs/015-tweens-and-timers/plan.md)).
+
 ## Rules
 
 - One scene per file pair (`level_scene.hpp/.cpp`), in the game's `scenes/` folder.

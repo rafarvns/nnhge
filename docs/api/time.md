@@ -36,8 +36,8 @@ nnh::FrameTime b = nnh::Frames{12};             // 12 frames
 | `FrameTime::from_ticks(t)` | a raw tick count |
 | `nnh::kMaxFrameTime` | 1 hour (884 736 000 ticks). Negative or longer times become the invalid marker (`ticks == FrameTime::kInvalid`), which functions taking a `FrameTime` reject |
 
-Plain values: no state, `constexpr`, no allocation. `<nnh/tween.hpp>` (in progress) uses them for durations,
-delays and periods.
+Plain values: no state, `constexpr`, no allocation. [Tweens and timers](tween.md) (`<nnh/tween.hpp>`) take them
+for durations, delays and periods; `nnh::Timer` is a plain timer value on the same clock.
 
 ## Clock
 

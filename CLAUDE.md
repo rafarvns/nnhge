@@ -92,6 +92,11 @@ through a `Grid` the game describes (its own `Cell` array or a callback; solid a
 (`nnh-assetc`, D27; refusals print `file: reason`; fixtures in `tests/data/maps/`); `gfx::draw_tilemap` draws tile
 batches (D26, needs `AppConfig::gfx.max_tiles`, 0 by default; Old 3DS: 4 full layers + 300 sprites at 60 Hz)
 ([api/tilemap.md](docs/api/tilemap.md), guide [levels.md](docs/guides/levels.md)).
+Tweens and timers (spec 015, implemented, console check pending; demo `examples/tweens`): `<nnh/tween.hpp>` — 19
+libm-free easings (same bits everywhere), `nnh::Timer`, `TweenSet` (float/Vec2/Color by pointer or setter, loops,
+yoyo, sequences, `after`/`every`, callbacks or your own finish events) on the frame clock (`Frames`/`FrameTime` in
+`<nnh/time.hpp>`); a set built with `{*this, ...}` in a scene is updated and cleared by it (D30, scene attachments)
+([api/tween.md](docs/api/tween.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in

@@ -37,6 +37,14 @@ Projects to study (learn from them; check licenses before reusing any code). Res
 - **Tridingine-3DSlib** — C++ library targeting PC and 3DS from one codebase (2026).
 - **Godot 3DS port** (abandoned, Godot 2.1) — what a full engine port costs: https://www.gamebrew.org/wiki/Godot_Engine_3DS
 - **SDL3** — official 3DS platform (`SDL_PLATFORM_3DS`); we use SDL3 on PC: https://wiki.libsdl.org/SDL3/SDL_PLATFORM_3DS
+- **Godot Tween and Timer** — tweens bound to a node, start values captured when a tweener starts, chained and
+  parallel steps, intervals and callbacks; our scene-bound tween sets follow them (spec 015):
+  https://docs.godotengine.org/en/stable/classes/class_tween.html ·
+  https://docs.godotengine.org/en/stable/classes/class_timer.html
+- **DOTween** (Unity) — getter/setter targets, `Sequence` with Append/Join/AppendInterval/AppendCallback,
+  Restart/Yoyo loops, `SetLink` to tie a tween's life to an object: https://dotween.demigiant.com/documentation.php
+- **Robert Penner's easing equations** (BSD licence) — the standard curves and their constants, which our 19
+  easings re-derive without libm: http://robertpenner.com/easing/
 
 ## Real-world 3DS engine write-ups
 - Silent Hill 2 → 3DS (C engine on libctru + citro3d, offline asset packer, linear-memory budgeting):

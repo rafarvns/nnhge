@@ -8,6 +8,10 @@ namespace nnh::detail {
 void tween_advance_slot(TweenBlock& b, int index, std::int32_t ticks) {
     SlotHot& s = b.hot[index];
     if ((s.flags & slot_flag::kPaused) != 0) return;
+    if (s.kind == TweenKind::Sequence) {
+        sequence_advance(b, index, ticks);
+        return;
+    }
     if ((s.flags & slot_flag::kStarted) == 0) {
         if (ticks < s.delay) {
             s.delay -= ticks;

@@ -73,8 +73,10 @@ void TweenSet::complete(TweenHandle h) {
         s.delay = 0;
         detail::tween_begin(s);
     }
+    const bool backwards = detail::ends_backwards(s);
     detail::tween_enter(*block_); // callbacks may run: kills only mark slots until the outermost leave
-    detail::tween_finish(*block_, i, detail::ends_backwards(s));
+    if (s.kind == detail::TweenKind::Sequence) detail::sequence_jump_to_end(*block_, i, backwards);
+    detail::tween_finish(*block_, i, backwards);
     detail::tween_leave(*block_);
 }
 
@@ -94,7 +96,9 @@ void TweenSet::kill_all() {
 void TweenSet::kill_target(const void* target) {
     if (target == nullptr) return;
     detail::for_each_active(block_, [target](detail::TweenBlock& b, int i) {
-        if (b.hot[i].target == target) detail::tween_kill_slot(b, i);
+        const bool hit = b.hot[i].target == target ||
+                         (b.hot[i].kind == detail::TweenKind::Sequence && detail::sequence_has_target(b, i, target));
+        if (hit) detail::tween_kill_slot(b, i); // a whole sequence: half of one never keeps running
     });
 }
 

@@ -19,7 +19,14 @@ inline constexpr std::uint8_t kBackwards = 4; ///< yoyo: the current loop plays 
 inline constexpr std::uint8_t kYoyo = 8;
 inline constexpr std::uint8_t kRelative = 16; ///< `by`: to[] holds the delta until the start
 inline constexpr std::uint8_t kHasFrom = 32;  ///< `from_to`: nothing to capture
+inline constexpr std::uint8_t kFresh = 64;    ///< sequence: the start of the current loop is not played yet
 } // namespace slot_flag
+
+/// Step::flags.
+namespace step_flag {
+inline constexpr std::uint8_t kJoin = 1; ///< plays together with the previous step (same group)
+inline constexpr std::uint8_t kCall = 2; ///< a call step: runs in both directions
+} // namespace step_flag
 
 struct SlotHot {
     std::uint32_t generation = 1; ///< bumped when the tween ends: its handles go stale at once
@@ -29,7 +36,8 @@ struct SlotHot {
     Ease ease = Ease::Linear;
     std::int16_t prev = -1; ///< start-order list (Active and Dead slots); free list uses `next` only
     std::int16_t next = -1;
-    std::int32_t delay = 0;      ///< ticks left before the start
+    std::int16_t first_step = -1; ///< sequence: its first step record. Its steps' children are off the list
+    std::int32_t delay = 0;       ///< ticks left before the start
     std::int32_t duration = 0;   ///< ticks of one loop
     std::int32_t elapsed = 0;    ///< ticks into the current loop
     std::int32_t loops_left = 1; ///< including the current loop; kForever
@@ -46,13 +54,12 @@ struct SlotCold {
     FinishEvent publish{};
 };
 
-/// A sequence step record (spec 015 FR-10, stage 4).
+/// A sequence step record (spec 015 FR-10): its child slot (a tween, a wait or a call) and the next step.
 struct Step {
     std::int16_t child = -1;
-    std::int16_t next = -1;
+    std::int16_t next = -1; ///< next step of the sequence, or of the free list
     std::uint8_t flags = 0;
-    std::uint8_t kind = 0;
-    std::uint16_t reserved = 0;
+    std::uint8_t reserved[3] = {};
 };
 
 static_assert(sizeof(SlotHot) + sizeof(SlotCold) <= (sizeof(void*) == 4 ? 192u : 256u),
@@ -72,6 +79,7 @@ struct TweenBlock {
     std::int16_t head = -1;
     std::int16_t tail = -1;
     std::int16_t free_head = -1;
+    std::int16_t step_free_head = -1;
     std::uint16_t serial = 0;
     std::uint8_t busy = 0;           ///< > 0 inside an update or a completion: kills only mark slots dead
     std::uint8_t callback_depth = 0; ///< callbacks running on the stack (FR-12)

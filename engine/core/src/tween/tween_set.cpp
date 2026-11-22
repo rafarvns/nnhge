@@ -57,6 +57,8 @@ TweenBlock* create_block(const TweenSetConfig& c) {
         b->hot[i].next = static_cast<std::int16_t>(i + 1 < c.tweens ? i + 1 : -1);
     }
     b->free_head = 0;
+    for (int i = 0; i < c.steps; ++i) b->steps[i].next = static_cast<std::int16_t>(i + 1 < c.steps ? i + 1 : -1);
+    b->step_free_head = static_cast<std::int16_t>(c.steps > 0 ? 0 : -1);
     return b;
 }
 

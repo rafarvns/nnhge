@@ -103,6 +103,9 @@ add_library(nnh_core STATIC
 set(_nnh_tween_sources
     src/tween/ease.cpp
     src/tween/ease_math.cpp
+    src/tween/sequence_advance.cpp
+    src/tween/sequence_build.cpp
+    src/tween/sequence_steps.cpp
     src/tween/timer.cpp
     src/tween/tween_advance.cpp
     src/tween/tween_commands.cpp

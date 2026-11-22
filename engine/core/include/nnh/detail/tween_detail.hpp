@@ -21,7 +21,7 @@ struct Color; // <nnh/gfx.hpp>; only needed complete by games that animate a col
 namespace nnh::detail {
 
 /// What a slot animates. Timer: no value (after/every, sequence waits).
-enum class TweenKind : std::uint8_t { Float, Vec2, Color, Timer };
+enum class TweenKind : std::uint8_t { Float, Vec2, Color, Timer, Sequence };
 
 template <typename T>
 inline constexpr bool is_tween_value =

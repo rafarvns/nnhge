@@ -32,6 +32,7 @@ int tween_components(TweenKind kind) {
     case TweenKind::Color:
         return 4;
     case TweenKind::Timer:
+    case TweenKind::Sequence:
         break;
     }
     return 0;
@@ -57,6 +58,7 @@ void tween_pack(TweenKind kind, const void* value, float out[4]) {
         break;
     }
     case TweenKind::Timer:
+    case TweenKind::Sequence:
         break;
     }
 }
@@ -65,41 +67,27 @@ void tween_write(const SlotHot& s, const float v[4]) {
     float f = v[0];
     Vec2 p{v[0], v[1]};
     Color c{to_channel(v[0]), to_channel(v[1]), to_channel(v[2]), to_channel(v[3])};
-    void* value = nullptr;
     switch (s.kind) {
     case TweenKind::Float:
-        value = &f;
+        if (s.target != nullptr) *static_cast<float*>(s.target) = f;
+        else if (s.setter) s.setter(&f);
         break;
     case TweenKind::Vec2:
-        value = &p;
+        if (s.target != nullptr) *static_cast<Vec2*>(s.target) = p;
+        else if (s.setter) s.setter(&p);
         break;
     case TweenKind::Color:
-        value = &c;
+        if (s.target != nullptr) *static_cast<Color*>(s.target) = c;
+        else if (s.setter) s.setter(&c);
         break;
     case TweenKind::Timer:
-        return;
-    }
-    if (s.target != nullptr) {
-        switch (s.kind) {
-        case TweenKind::Float:
-            *static_cast<float*>(s.target) = f;
-            break;
-        case TweenKind::Vec2:
-            *static_cast<Vec2*>(s.target) = p;
-            break;
-        case TweenKind::Color:
-            *static_cast<Color*>(s.target) = c;
-            break;
-        case TweenKind::Timer:
-            break;
-        }
-    } else if (s.setter) {
-        s.setter(value);
+    case TweenKind::Sequence:
+        break;
     }
 }
 
 void tween_write_current(const SlotHot& s) {
-    if (s.kind == TweenKind::Timer) return;
+    if (tween_components(s.kind) == 0) return; // timers and sequences have no value
     const float p = slot_progress(s);
     const float e = s.custom != nullptr ? s.custom(p) : ease(s.ease, p);
     float v[4] = {};

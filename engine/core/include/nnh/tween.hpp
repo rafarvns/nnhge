@@ -133,6 +133,18 @@ struct TweenOptions {
     FinishEvent publish{};               ///< a game event queued on the bus when it finishes
 };
 
+/// Options of a whole sequence: its delay, loops (Yoyo plays the steps backwards in reverse order) and completion.
+struct SequenceOptions {
+    FrameTime delay{};
+    int loops = 1; ///< n ≥ 1, or kForever
+    LoopMode loop_mode = LoopMode::Restart;
+    TweenCallback on_finish{};
+    TweenCallback on_loop{};
+    FinishEvent publish{};
+};
+
+class SequenceBuilder;
+
 /// Capacities of a set, required (no hidden default).
 struct TweenSetConfig {
     int tweens = 0; ///< 1..kMaxTweens: tweens, timers (and, later, sequences and their steps) alive at once
@@ -218,6 +230,20 @@ public:
     /// counts, even several in one update; complete() calls it once more and stops.
     TweenHandle every(FrameTime period, TweenCallback fn, int times = kForever);
 
+    // Sequences (FR-10).
+
+    /// Starts building a sequence: steps appended to the returned builder play one after another (`join()` makes
+    /// the next step play with the previous one). The sequence counts from the next update. Each step uses one
+    /// tween slot and one step record (TweenSetConfig::steps). Building allocates nothing.
+    /// @code
+    /// nnh::TweenHandle intro = tweens_.sequence({.publish = IntroFinished{}})
+    ///     .to(&panel_y_, 40.0f, Duration::from_ms(400), {.ease = nnh::Ease::BackOut})
+    ///     .join().to(&tint_, nnh::rgb(255, 255, 255), Duration::from_ms(400))
+    ///     .wait(Duration::from_ms(200))
+    ///     .call([this] { ready_ = true; });
+    /// @endcode
+    SequenceBuilder sequence(const SequenceOptions& options = {});
+
     // Handles (FR-8). Stale or empty handles answer "not running" and are ignored.
     bool running(TweenHandle h) const;   ///< alive: waiting for its delay, playing or paused
     bool paused(TweenHandle h) const;
@@ -247,6 +273,54 @@ private:
     TweenHandle start(const detail::TweenSpec& spec, FrameTime time, const TweenOptions& options);
 
     detail::TweenBlock* block_ = nullptr;
+};
+
+/// Appends the steps of a sequence in place (no allocation). Returned by TweenSet::sequence(); converts to the
+/// sequence's handle. Steps take the same targets and options as single tweens (their loops must be finite);
+/// their start values are captured when the sequence reaches them. If a step can't be added (the set is full,
+/// more than kMaxSequenceSteps steps, an invalid step), the whole sequence is removed and the handle is empty
+/// (asserts in Debug/Development). Append all steps before the sequence starts playing.
+class SequenceBuilder {
+public:
+    template <TweenValue T>
+    SequenceBuilder& to(T* target, std::type_identity_t<T> end, FrameTime time, const TweenOptions& options = {}) {
+        return append({detail::tween_kind_of<T>, detail::TweenMode::To, target, nullptr, nullptr, &end}, time,
+                      options);
+    }
+    template <TweenValue T>
+    SequenceBuilder& by(T* target, std::type_identity_t<T> delta, FrameTime time, const TweenOptions& options = {}) {
+        return append({detail::tween_kind_of<T>, detail::TweenMode::By, target, nullptr, nullptr, &delta}, time,
+                      options);
+    }
+    template <TweenValue T>
+    SequenceBuilder& from_to(T* target, std::type_identity_t<T> from, std::type_identity_t<T> end, FrameTime time,
+                             const TweenOptions& options = {}) {
+        return append({detail::tween_kind_of<T>, detail::TweenMode::FromTo, target, nullptr, &from, &end}, time,
+                      options);
+    }
+    template <TweenValue T>
+    SequenceBuilder& from_to(Setter<T> target, std::type_identity_t<T> from, std::type_identity_t<T> end,
+                             FrameTime time, const TweenOptions& options = {}) {
+        return append({detail::tween_kind_of<T>, detail::TweenMode::FromTo, nullptr, &target.fn_, &from, &end},
+                      time, options);
+    }
+
+    SequenceBuilder& join();                  ///< the next step plays together with the previous one
+    SequenceBuilder& wait(FrameTime time);    ///< a pause
+    SequenceBuilder& call(TweenCallback fn);  ///< runs `fn` each time the sequence passes here (both directions)
+
+    TweenHandle handle() const { return handle_; }
+    operator TweenHandle() const { return handle_; } // NOLINT(google-explicit-constructor)
+
+private:
+    friend class TweenSet;
+    SequenceBuilder(detail::TweenBlock* block, TweenHandle handle) : block_(block), handle_(handle) {}
+    SequenceBuilder& append(const detail::TweenSpec& spec, FrameTime time, const TweenOptions& options,
+                            bool call = false);
+
+    detail::TweenBlock* block_ = nullptr;
+    TweenHandle handle_{};
+    bool join_next_ = false;
 };
 
 } // namespace nnh

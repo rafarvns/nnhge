@@ -8,25 +8,35 @@ namespace nnh {
 namespace detail {
 namespace {
 
-bool reject(const char* why) {
+std::uint8_t mode_flags(const TweenSpec& spec, const TweenOptions& o) {
+    std::uint8_t flags = 0;
+    if (o.loop_mode == LoopMode::Yoyo) flags |= slot_flag::kYoyo;
+    if (spec.mode == TweenMode::By) flags |= slot_flag::kRelative;
+    if (spec.mode == TweenMode::FromTo) flags |= slot_flag::kHasFrom;
+    return flags;
+}
+
+} // namespace
+
+bool tween_reject(const char* why) {
     NNH_LOG_ERROR(tween, "TweenSet: %s (not started)", why);
     NNH_ASSERT(false, "nnh::TweenSet: %s", why);
     return false;
 }
 
-bool valid_request(const TweenSpec& spec, FrameTime time, const TweenOptions& o) {
-    if (!time.valid()) return reject("the time is negative or over 1 hour");
-    if (!o.delay.valid()) return reject("the delay is negative or over 1 hour");
-    if (o.loops < 1 && o.loops != kForever) return reject("loops must be at least 1 or nnh::kForever");
-    if (o.loops == kForever && time.ticks == 0) return reject("an infinite loop of length 0");
+bool tween_valid_request(const TweenSpec& spec, FrameTime time, const TweenOptions& o) {
+    if (!time.valid()) return tween_reject("the time is negative or over 1 hour");
+    if (!o.delay.valid()) return tween_reject("the delay is negative or over 1 hour");
+    if (o.loops < 1 && o.loops != kForever) return tween_reject("loops must be at least 1 or nnh::kForever");
+    if (o.loops == kForever && time.ticks == 0) return tween_reject("an infinite loop of length 0");
     if (spec.kind != TweenKind::Timer && spec.target == nullptr &&
         (spec.setter == nullptr || !*spec.setter)) {
-        return reject("the target is null");
+        return tween_reject("the target is null");
     }
     return true;
 }
 
-int take_free_slot(TweenBlock* b) {
+int tween_take_slot(TweenBlock* b) {
     if (b == nullptr || b->free_head < 0) {
         const int capacity = b != nullptr ? static_cast<int>(b->capacity) : 0;
         NNH_LOG_ERROR(tween, "TweenSet full (capacity %d): raise TweenSetConfig::tweens", capacity);
@@ -38,7 +48,7 @@ int take_free_slot(TweenBlock* b) {
     return index;
 }
 
-void append(TweenBlock& b, int index) {
+void tween_append(TweenBlock& b, int index) {
     SlotHot& s = b.hot[index];
     s.prev = b.tail;
     s.next = -1;
@@ -51,15 +61,7 @@ void append(TweenBlock& b, int index) {
     ++b.active;
 }
 
-std::uint8_t mode_flags(const TweenSpec& spec, const TweenOptions& o) {
-    std::uint8_t flags = 0;
-    if (o.loop_mode == LoopMode::Yoyo) flags |= slot_flag::kYoyo;
-    if (spec.mode == TweenMode::By) flags |= slot_flag::kRelative;
-    if (spec.mode == TweenMode::FromTo) flags |= slot_flag::kHasFrom;
-    return flags;
-}
-
-void fill(SlotHot& s, SlotCold& c, const TweenSpec& spec, FrameTime time, const TweenOptions& o) {
+void tween_fill(SlotHot& s, SlotCold& c, const TweenSpec& spec, FrameTime time, const TweenOptions& o) {
     s.state = SlotState::Active;
     s.kind = spec.kind;
     s.flags = mode_flags(spec, o);
@@ -70,6 +72,7 @@ void fill(SlotHot& s, SlotCold& c, const TweenSpec& spec, FrameTime time, const 
     s.elapsed = 0;
     s.loops_left = o.loops;
     s.target = spec.target;
+    s.first_step = -1;
     s.setter = spec.setter != nullptr && spec.target == nullptr ? *spec.setter : SetterFn{};
     for (float& v : s.from) {
         v = 0.0f;
@@ -84,17 +87,16 @@ void fill(SlotHot& s, SlotCold& c, const TweenSpec& spec, FrameTime time, const 
     c.publish = o.publish;
 }
 
-} // namespace
 } // namespace detail
 
 TweenHandle TweenSet::start(const detail::TweenSpec& spec, FrameTime time, const TweenOptions& options) {
     using namespace detail;
-    if (!valid_request(spec, time, options)) return {};
-    const int index = take_free_slot(block_);
+    if (!tween_valid_request(spec, time, options)) return {};
+    const int index = tween_take_slot(block_);
     if (index < 0) return {};
     SlotHot& s = block_->hot[index];
-    fill(s, block_->cold[index], spec, time, options);
-    append(*block_, index);
+    tween_fill(s, block_->cold[index], spec, time, options);
+    tween_append(*block_, index);
     if ((s.flags & slot_flag::kHasFrom) != 0 && s.delay == 0) {
         s.flags |= slot_flag::kStarted; // nothing to capture: the first drawn frame already shows `from`
         tween_write(s, s.from);
@@ -112,7 +114,7 @@ TweenHandle TweenSet::after(FrameTime time, FinishEvent event) {
 
 TweenHandle TweenSet::every(FrameTime period, TweenCallback fn, int times) {
     if (period.valid() && period.ticks == 0) {
-        detail::reject("every(): the period must be at least 1 tick");
+        detail::tween_reject("every(): the period must be at least 1 tick");
         return {};
     }
     // Each loop end but the last calls on_loop, the last calls on_finish: the same function both times.

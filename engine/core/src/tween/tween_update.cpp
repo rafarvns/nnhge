@@ -12,6 +12,7 @@ namespace {
 
 void unlink_and_free(TweenBlock& b, int index) {
     SlotHot& s = b.hot[index];
+    if (s.kind == TweenKind::Sequence) sequence_release(b, index);
     if (s.prev >= 0) {
         b.hot[s.prev].next = s.next;
     } else {
@@ -60,8 +61,8 @@ void tween_enter(TweenBlock& b) {
 void tween_leave(TweenBlock& b) {
     if (--b.busy != 0) return;
     if (b.doomed) {
-        mem::free(
-            &b); // its set was destroyed from a callback (misuse, logged): nothing touches it after this
+        // Its set was destroyed from a callback (misuse, logged): nothing touches the block after this.
+        mem::free(&b);
         return;
     }
     b.depth_logged = false;
@@ -71,6 +72,7 @@ void tween_leave(TweenBlock& b) {
 void tween_kill_slot(TweenBlock& b, int index) {
     SlotHot& s = b.hot[index];
     if (++s.generation == 0) s.generation = 1; // handles go stale now
+    if (s.kind == TweenKind::Sequence) sequence_kill_children(b, index);
     --b.active;
     if (b.busy > 0) {
         s.state = SlotState::Dead;

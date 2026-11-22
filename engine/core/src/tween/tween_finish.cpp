@@ -26,6 +26,10 @@ void tween_finish(TweenBlock& b, int index, bool backwards_end) {
     SlotHot& s = b.hot[index];
     tween_write(s, backwards_end ? s.from : s.to);
     tween_kill_slot(b, index); // the block is busy: the slot (and its cold data) stays until the sweep
+    tween_run_completion(b, index);
+}
+
+void tween_run_completion(TweenBlock& b, int index) {
     const SlotCold& c = b.cold[index];
     if ((!c.on_finish && !c.publish) || !callbacks_allowed(b)) return;
     if (c.on_finish) {

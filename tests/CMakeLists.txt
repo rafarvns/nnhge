@@ -1,7 +1,7 @@
 # Tests (docs/process/tdd.md). Layout mirrors engine/core/src: tests/<module>/test_<concept>.cpp.
 # List new files here (explicit lists, no file(GLOB)).
 
-add_library(nnh_test_framework STATIC framework/test_main.cpp)
+add_library(nnh_test_framework STATIC framework/test_main.cpp framework/alloc_counter.cpp)
 target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
@@ -121,7 +121,10 @@ add_executable(nnh_tests
     tween/test_ease_golden.cpp
     tween/test_ease_math.cpp
     tween/test_frame_clock.cpp
+    tween/test_sequence.cpp
+    tween/test_sequence_loops.cpp
     tween/test_timer.cpp
+    tween/test_tween_alloc.cpp
     tween/test_tween_finish.cpp
     tween/test_tween_group.cpp
     tween/test_tween_handles.cpp

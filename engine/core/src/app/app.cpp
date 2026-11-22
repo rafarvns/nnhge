@@ -6,6 +6,7 @@
 #include "assets/assets_internal.hpp"
 #include "audio/audio_internal.hpp"
 #include "core/engine_state.hpp"
+#include "core/input_hooks.hpp"
 #include "core/shutdown_hooks.hpp"
 #include "crash/crash_internal.hpp"
 #include "debug/dev_tools.hpp"
@@ -51,6 +52,8 @@ void close_frame() {
 }
 
 } // namespace
+
+void (*detail::g_run_input_hooks)() = nullptr; // D32: one pointer, set while a module has after-input hooks
 
 bool detail::frame_open() { return g_frame_open; }
 bool detail::engine_initialized() { return g_initialized; }
@@ -119,6 +122,7 @@ bool frame() {
     g_frame_open = true;
     ++g_frame_count;
     detail::input_publish_events();
+    if (detail::g_run_input_hooks != nullptr) detail::g_run_input_hooks(); // D32: input actions, before dispatch
     detail::audio_frame(time::delta()); // ended voices -> SoundFinished
     detail::events_dispatch(); // after input, before the game's update
     return true;

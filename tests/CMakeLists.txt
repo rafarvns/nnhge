@@ -17,16 +17,20 @@ add_executable(nnh_tests
     actions/test_action_combine.cpp
     actions/test_action_contexts.cpp
     actions/test_action_declare.cpp
+    actions/test_action_events.cpp
     actions/test_action_fallback.cpp
+    actions/test_action_hook.cpp
     actions/test_action_kinds.cpp
     actions/test_action_queries.cpp
     actions/test_action_repeat.cpp
+    actions/test_action_scenes.cpp
     actions/test_action_set.cpp
     actions/test_input_view.cpp
     actions/test_source_eval.cpp
     actions/test_source_names.cpp
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
+    app/test_input_hooks.cpp
     assets/test_asset_index.cpp
     assets/test_asset_path.cpp
     assets/test_asset_textures.cpp
@@ -178,7 +182,7 @@ target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/s
 # so its behaviour tests are left out there (the wire, reader, schedule and merge stay: they are pure).
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     target_sources(nnh_tests PRIVATE remote/test_remote_frames.cpp remote/test_remote_screenshot.cpp
-                                     remote/test_remote_session.cpp)
+                                     remote/test_remote_session.cpp actions/test_action_input_paths.cpp)
     # Shutdown hooks run before the leak report, which Release doesn't have (spec 014 T3.3).
     target_sources(nnh_tests PRIVATE app/test_shutdown_hooks.cpp)
 endif()

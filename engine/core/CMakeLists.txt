@@ -15,6 +15,7 @@ add_library(nnh_core STATIC
     src/collision/grid_query.cpp
     src/core/crc32.cpp
     src/core/crc32_update.cpp
+    src/core/input_hooks.cpp
     src/core/shutdown_hooks.cpp
     src/crash/crash.cpp
     src/crash/report.cpp
@@ -144,6 +145,7 @@ set(_nnh_actions_sources
     src/actions/action_contexts.cpp
     src/actions/action_declare.cpp
     src/actions/action_eval.cpp
+    src/actions/action_events.cpp
     src/actions/action_hook.cpp
     src/actions/action_listen.cpp
     src/actions/action_queries.cpp

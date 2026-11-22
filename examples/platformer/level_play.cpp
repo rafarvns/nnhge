@@ -72,6 +72,8 @@ void LevelPlay::restart() {
 
 void LevelPlay::update(const PlayerInput& input, bool doors) {
     player_.update(grid_, input);
+    sprite_.update({.on_ground = player_.on_ground(), .velocity = player_.velocity(),
+                    .facing_left = player_.facing_left()});
     const nnh::Vec2 world{static_cast<float>(map_.width() * map_.tile_width()),
                           static_cast<float>(map_.height() * map_.tile_height())};
     const nnh::Rect box = player_.box();
@@ -119,7 +121,7 @@ void LevelPlay::draw() const {
                   {.region = tile::region(tile::Coin), .layer = kThings});
     }
     draw_doors();
-    player_.draw(kTop, art_.player, kPlayer);
+    sprite_.draw(kTop, art_.player, player_.feet(), kPlayer);
 }
 
 void LevelPlay::draw_doors() const {

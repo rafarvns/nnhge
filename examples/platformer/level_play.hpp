@@ -11,6 +11,7 @@
 #include "coin_book.hpp"
 #include "game_events.hpp"
 #include "player.hpp"
+#include "player_sprite.hpp"
 #include "replay_run.hpp"
 
 #include <nnh/tilemap.hpp>
@@ -49,6 +50,7 @@ class LevelPlay {
     const nnh::Tilemap& map_;
     nnh::collision::Grid grid_{};
     Player player_;
+    PlayerSprite sprite_; ///< drawing only: an animator chooses the frames (spec 016)
     nnh::Vec2 spawn_{};
     nnh::Vec2 camera_{};
     CoinBook coins_;

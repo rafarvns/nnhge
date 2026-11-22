@@ -1,7 +1,6 @@
 #include "player.hpp"
 
 #include <nnh/input.hpp>
-#include <nnh/texture.hpp>
 
 namespace {
 
@@ -30,14 +29,12 @@ void Player::spawn(nnh::Vec2 feet) {
     velocity_ = {};
     touching_ = {};
     on_ground_ = false;
-    walk_frames_ = 0;
 }
 
 void Player::update(const nnh::collision::Grid& grid, const PlayerInput& input) {
     const float run = static_cast<float>(input.run);
     velocity_.x = run * kRunSpeed;
     if (input.run != 0) facing_left_ = input.run < 0;
-    walk_frames_ = input.run != 0 && on_ground_ ? walk_frames_ + 1 : 0;
 
     const bool drop = input.jump && input.down && on_ground_; // through a one-way plank
     if (input.jump && on_ground_ && !drop) velocity_.y = -kJumpSpeed;
@@ -49,15 +46,4 @@ void Player::update(const nnh::collision::Grid& grid, const PlayerInput& input) 
     touching_ = moved.touching;
     on_ground_ = moved.touching.floor;
     if (moved.touching.floor || moved.touching.ceiling) velocity_.y = 0;
-}
-
-void Player::draw(nnh::Screen screen, const nnh::Texture& sheet, int layer) const {
-    int frame = 0;
-    if (!on_ground_) {
-        frame = 3;
-    } else if (walk_frames_ > 0) {
-        frame = 1 + (walk_frames_ / 8) % 2;
-    }
-    nnh::gfx::draw(screen, sheet, {box_.x - 3, box_.y - 2},
-                   {.region = {frame * 16, 0, 16, 16}, .flip_x = facing_left_, .layer = layer});
 }

@@ -213,6 +213,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_frame_meter.cpp
     platformer/test_gate_run.cpp
     platformer/test_player.cpp
+    platformer/test_player_sprite.cpp
     platformer/test_replay_run.cpp
     platformer/test_replay_script.cpp
     ${_platformer}/camera_follow.cpp
@@ -220,6 +221,7 @@ target_sources(nnh_tests PRIVATE
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp
     ${_platformer}/player.cpp
+    ${_platformer}/player_sprite.cpp
     ${_platformer}/replay_run.cpp
     ${_platformer}/replay_script.cpp)
 # The replay played twice gives the same log (spec 012 T7.3, FR-10): the simulator's checksum lines must be the ones

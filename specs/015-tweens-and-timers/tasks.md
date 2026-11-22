@@ -1,6 +1,6 @@
 # Tasks 015: Tweens and timers
 
-Status: implemented (console T7.2 pending; the VM 120 runs of T0.2, T1.4 and the stage ends are pending too) · approved 2026-11-22 (maintainer pre-approved)
+Status: implemented (console T7.2 pending) · approved 2026-11-22 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops. `[P]` means the task can be done in parallel with the previous one. Every
@@ -9,6 +9,10 @@ console step is T7.2, a scripted check where the maintainer only starts the game
 Deviations found while building go into plan.md as "Stage N refinements", as in plan 012.
 
 ## Stage 0: baseline and toolchain probe
+
+VM 120 results (2026-11-22, after the merge into main): GCC 13, GCC 14 and clang 18 each ran `nnh_tests` 1367/1367;
+the easing goldens (T1.4) and the self-check checksum are identical on all three. ASan/UBSan found one leak, in a
+misuse test (a `TweenSet` local to a call that asserts and jumps out); fixed in `8d52baa`, then clean.
 
 - [x] **T0.1** Baseline numbers (Windows, 3 runs each). Measure: the `hello.exe` and `hello.3dsx`/`.elf` sizes
   (`size`); edit `examples/hello/main.cpp` → simulator and `.3dsx` build times; clean engine build; the

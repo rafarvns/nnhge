@@ -458,8 +458,8 @@ Determinism probe (T0.2, scratch `probe.cpp` with draft `sin_quarter`, `exp2_neg
   multiply and add; GCC does not treat them as contraction. No `vfma` (VFPv2 has none).
 - **libctru**: `objdump -d libctru.a` shows `mov r1, #0x3000000; vmsr fpscr, r1` in both `__system_initSyscalls` and
   `initThreadVars`: round to nearest, flush-to-zero, default NaN, as the plan states.
-- **Pending (lead):** the same probe and ctest with GCC 13/14 and clang 18 on VM 120; the 3DS bits come with the
-  example's self-check (T7.2).
+- **VM 120 (2026-11-22):** ctest with GCC 13/14 and clang 18 green; the golden bit patterns and the self-check
+  checksum match WinLibs GCC. The 3DS bits come with the example's self-check (T7.2).
 
 #### Stage 1–2 refinements (2026-11-22, implemented)
 

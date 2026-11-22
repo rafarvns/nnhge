@@ -22,7 +22,8 @@ tests/
   <module>/test_<concept>.cpp                mirrors engine/core/src/<module>/
   platform_conformance/                      contract tests, linked against every platform
   <example>/test_<concept>.cpp               an example's pure logic, compiled from examples/<example>/
-                                             (tests/platformer: the benchmark's automatic gate)
+                                             (tests/platformer: the benchmark's gate, camera, coins, player,
+                                             replay; replay_matches_script.cmake checks tests/level.nnhs)
 examples/<name>/                             one small program per feature (main.cpp + CMakeLists.txt)
   tests/*.nnhs                               test scripts (spec 013): nnh run <name> [--pc] --script ...
                                              (guide: guides/testing-on-the-console.md)

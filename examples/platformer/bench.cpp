@@ -124,7 +124,7 @@ void Bench::update() {
     }
 }
 
-void Bench::draw() const {
+void Bench::draw() {
     namespace gfx = nnh::gfx;
     const nnh::Screen top = nnh::Screen::Top;
     // Map layers behind the sprites, the last one in front of them (like a level's foreground).

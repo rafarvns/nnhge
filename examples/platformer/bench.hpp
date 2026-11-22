@@ -9,9 +9,10 @@
 
 #include <cstdint>
 #include <memory>
+#include <nnh/scene.hpp>
 #include <nnh/tilemap.hpp>
 
-class Bench {
+class Bench final : public nnh::Scene {
   public:
     static constexpr int kMaxLayers = 12;
     static constexpr int kMaxSprites = 2000;
@@ -21,14 +22,15 @@ class Bench {
     /// gate).
     explicit Bench(const Art& art);
     bool ready() const { return map_.valid() && sprites_ != nullptr; }
-    void update();
-    void draw() const;
     /// Starts the automatic gate (A in the benchmark; PLATFORMER_DEMO=gate).
     void start_gate();
-    /// Leaving the benchmark: a running gate stops without a verdict.
-    void leave() { gate_.stop(); }
 
   private:
+    void update() override;
+    void draw() override;
+    /// Leaving the benchmark: a running gate stops without a verdict.
+    void on_exit() override { gate_.stop(); }
+
     struct Sprite {
         float x, y, vx, vy;
     };

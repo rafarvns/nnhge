@@ -1,6 +1,7 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0–6 done (2026-11-21; T3.9 passed on the Old 3DS XL); next: stage 7
+Status: approved (2026-11-21); stages 0–6 done (2026-11-21; T3.9 passed on the Old 3DS XL); stage 7 T7.1–T7.3 done
+(2026-11-22), T7.4 prepared; next: T7.4 on the console, then stage 8
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -299,17 +300,53 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
 
 ## Stage 7 — the example
 
-- [ ] **T7.1** Tiled level: `assets/levels/level1.tmj`, `assets/tiles/world.tsj` from the art script (parallax
+- [x] **T7.1** Tiled level: `assets/levels/level1.tmj`, `assets/tiles/world.tsj` from the art script (parallax
   background, ground with `collision`, foreground, one-way planks, water animation, coins, spawn, `music` property)
   — files: `examples/platformer/art/make_art.py`, `assets/` — test: the build converts it; it opens in Tiled
   (maintainer, once) — covers AC-1, FR-1
-- [ ] **T7.2** player and level scene: run, jump, drop through planks, coins by `overlaps` + `CoinCollected`,
+- [x] **T7.2** player and level scene: run, jump, drop through planks, coins by `overlaps` + `CoinCollected`,
   camera follow clamped to the map, HUD; switch to the bonus level — files: `examples/platformer/*.cpp` — test:
   PC screenshots of level 1 read back — covers AC-1, FR-3, FR-5, FR-6, FR-8, FR-9
-- [ ] **T7.3** `PLATFORMER_DEMO=replay`: scripted input, checksum log every 60 frames — files:
+- [x] **T7.3** `PLATFORMER_DEMO=replay`: scripted input, checksum log every 60 frames — files:
   `examples/platformer/replay.cpp` — test: two PC runs give the same log — covers FR-10
+
+  **Result (2026-11-22, T7.1–T7.3):** `examples/platformer` plays level 1 made in Tiled and the bonus level built in
+  code, as scenes that talk through events, with a replay checked against the console script. Deviations in
+  [plan.md](plan.md) ("Stage 7 refinements"): scenes + a `Demos` switcher on events, level 1 first, the level written
+  by `art/make_level.py`, a door object, a 900-frame replay over both levels started by X, an in-game 60 Hz verdict.
+  - **T7.1**: `art/make_level.py` (called by `make_art.py`; the PNGs come out byte-identical) writes
+    `assets/tiles/world.tsj` and `assets/levels/level1.tmj` (128×20, Tiled 1.10 JSON: `clouds` parallax 0.25 × 0.5,
+    `hills` 0.5 × 1, `ground` with `collision`, `platforms` with planks marked `one_way` in the tileset, `things`
+    with a `spawn` point, 47 `coin`s (`value`) and a `door` (`to`), `front` at 0.85 with the animated water and
+    flipped tufts; properties `title`, `music`). The build converts it (28 KB `levels/level1.nnhmap`) on PC and 3DS;
+    `load_tilemap("levels/level1")` loads it with its own tileset texture. **Not opened in Tiled yet** (maintainer).
+  - **T7.2**: `level_play.*` (player through `collision_grid()` with `outside = Solid`, `follow_camera` clamped to
+    the map on both axes, coins by `collision::overlaps` → `CoinCollected`, back to the spawn after the water →
+    `LevelRestarted`, doors → `ShowDemo`), `level_scene.*` (buttons, or the replay), `hud.*` (score and coins from the
+    events; title and music from the map's properties), `demos.*` (SELECT / START / `ShowDemo`), `main.cpp`
+    (`nnh::run`). Screenshots read back: level 1 at the start, scrolled (hills and clouds behind at their parallax),
+    on the bridge with the stone steps; the bonus level; flips; HUD on the bottom screen.
+  - **T7.3**: `replay_run.*` (pure: steps, checkpoints every 60 frames, FNV-1a checksum, per-level meters),
+    `replay_script.*` (the inputs: level 1 600 frames — plank, two pits, under the bricks, the bridge, Down + A
+    through it, the stone steps; bonus 300 — a jump into the bricks' underside, a pit), `replay.*` (log, `ShowDemo`
+    between levels, panel and banner). Two PC runs: the 15 checksum lines are identical (only the times in the
+    verdict differ); ctest `platformer_replay_matches_script` replays it on every test run against the lines of
+    `tests/level.nnhs` (a changed checksum in the script makes it fail: checked).
+  - Tests: 48 new in `nnh_tests` (1002/1002): camera 5 (`test_camera_follow.cpp`), coins 10 (`test_coin_book.cpp`),
+    60 Hz meter 6 (`test_frame_meter.cpp`), player physics 8 (`test_player.cpp`), replay 16 (`test_replay_run.cpp`),
+    replay script 3 (`test_replay_script.cpp`); each seen failing first (stubs, or the old `Player::update`
+    signature). ctest 151/151 in pc-debug.
 - [ ] **T7.4** **3DS** (maintainer): level 1 and the bonus level at a steady 60 Hz while scrolling (overlay), replay
   checksums equal to the PC's, flips and parallax as on PC; benchmark number for the docs — covers AC-1, AC-4, FR-10
+
+  **Prepared (2026-11-22), not run yet.** Everything is automatic: on the 3DS open the Homebrew Launcher and press
+  **Y**; on the PC `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs`
+  (builds `3ds-dev`). It plays level 1 with the buttons (screenshots `level1-start`, `level1-parallax`,
+  `level1-bridge`), the bonus level (`bonus`) and the flip test (`flips`), then presses X: the replay must log the
+  PC's 15 checksum lines exactly and end with `replay: done 900 frames sum 26B21D57: 60 Hz PASS (...)` (a frame over
+  25 ms = missed; the verdict is on both screens too, screenshot `replay-result`). `nnh: PASS` or `nnh: FAIL`; about
+  40 s. In the simulator: `nnh: PASS (73 lines, frames 1-1553)`. The benchmark number for the docs is the T3.9 gate's
+  (`tests/gate.nnhs`, still valid with the new demo order).
 
 ## Stage 8 — verification and docs
 

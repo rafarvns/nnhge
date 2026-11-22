@@ -7,9 +7,13 @@ tiles.png  128x64: a 16x16 tileset, 8 tiles per row (tile ids in the game are in
     row 2: 16 dark bricks, 17 lattice, 18 star, 19 grass tuft (the rest is empty)
 player.png  64x16: a small robot, 4 frames of 16x16 facing right: stand, walk 1, walk 2, jump.
 
+Then make_level.py writes the Tiled level on this tileset: ../assets/tiles/world.tsj and
+../assets/levels/level1.tmj (spec 012 stage 7).
+
 Pure Python (zlib + struct), no image library needed; deterministic, so the PNGs are reproducible.
 """
 
+import importlib.util
 import struct
 import sys
 import zlib
@@ -270,6 +274,12 @@ def main():
         w, h, px = make()
         write_png(out / name, w, h, px)
         print(f"wrote {name} {w}x{h}")
+    # The level, by path: `python -I` leaves this folder off the import path.
+    here = Path(__file__).resolve().parent
+    spec = importlib.util.spec_from_file_location("make_level", here / "make_level.py")
+    level = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(level)
+    level.write(here.parent / "assets")
     return 0
 
 

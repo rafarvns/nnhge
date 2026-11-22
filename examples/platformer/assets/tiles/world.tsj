@@ -1,0 +1,80 @@
+{
+ "columns": 8,
+ "image": "../art/tiles.png",
+ "imageheight": 64,
+ "imagewidth": 128,
+ "margin": 0,
+ "name": "world",
+ "spacing": 0,
+ "tilecount": 32,
+ "tiledversion": "1.10.2",
+ "tileheight": 16,
+ "tiles": [
+  {
+   "id": 0,
+   "properties": [
+    {
+     "name": "solid",
+     "type": "bool",
+     "value": true
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "properties": [
+    {
+     "name": "solid",
+     "type": "bool",
+     "value": true
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "properties": [
+    {
+     "name": "solid",
+     "type": "bool",
+     "value": true
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "properties": [
+    {
+     "name": "one_way",
+     "type": "bool",
+     "value": true
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "animation": [
+    {
+     "duration": 400,
+     "tileid": 5
+    },
+    {
+     "duration": 400,
+     "tileid": 6
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "properties": [
+    {
+     "name": "solid",
+     "type": "bool",
+     "value": true
+    }
+   ]
+  }
+ ],
+ "tilewidth": 16,
+ "type": "tileset",
+ "version": "1.10"
+}

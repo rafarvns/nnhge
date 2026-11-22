@@ -6,7 +6,9 @@
 # Screenshots are taken outside the measured trials (a screenshot frame is slow on the console).
 fail-on "] E "
 
-# Bonus level: run right, jump.
+# Bonus level (SELECT: the game starts in level 1): run right, jump.
+wait 30
+tap SELECT
 wait 30
 press RIGHT
 wait 60
@@ -23,7 +25,9 @@ tap SELECT
 wait 30
 screenshot flips
 
-# Back to the benchmark (flips -> bonus -> benchmark), at 4 layers + 300 sprites.
+# Back to the benchmark (flips -> level 1 -> bonus -> benchmark), at 4 layers + 300 sprites.
+tap SELECT
+wait 10
 tap SELECT
 wait 10
 tap SELECT

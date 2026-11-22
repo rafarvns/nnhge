@@ -123,7 +123,8 @@ nnh::Result<nnh::Tilemap> build_bonus_level(const nnh::Texture& tiles) {
     for (int id : {tile::Grass, tile::Dirt, tile::Bricks, tile::Stone})
         map.set_tile_collision(id, nnh::collision::Cell::Solid);
     map.set_tile_collision(tile::Plank, nnh::collision::Cell::OneWay);
-    // The water in the pits ripples: every Water cell shows Water and Water2 in turn (Tiled: a tile animation).
+    // The water in the pits ripples: every Water cell shows Water and Water2 in turn (Tiled: a tile
+    // animation).
     const nnh::Tilemap::AnimationFrame ripple[] = {{.tile_id = tile::Water, .ms = 400},
                                                    {.tile_id = tile::Water2, .ms = 400}};
     if (auto animated = map.set_tile_animation(tile::Water, ripple, 2); !animated) return animated.error();
@@ -136,5 +137,14 @@ nnh::Result<nnh::Tilemap> build_bonus_level(const nnh::Texture& tiles) {
                                 {.name = "spawn", .shape = nnh::ObjectShape::Point, .bounds = {40, 192}});
     if (!spawn) return spawn.error();
     if (auto coins = add_coins(map, things.value()); !coins) return coins.error();
+    // A door back to level 1 at the far end, and the level's title: objects and properties, as Tiled has
+    // them.
+    auto door = map.add_object(things.value(),
+                               {.name = "door", .type = "door", .bounds = {97 * 16.0f, 10 * 16.0f, 16, 32}});
+    if (!door) return door.error();
+    if (auto to = map.set_string(nnh::PropertyOwner::object(door.value()), "to", "level1"); !to)
+        return to.error();
+    if (auto title = map.set_string(nnh::PropertyOwner::map(), "title", "BONUS LEVEL"); !title)
+        return title.error();
     return map;
 }

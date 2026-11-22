@@ -137,8 +137,9 @@ void update_player(float dt) {
 }
 ```
 
-Check the [input reference](input.md) for the exact button queries. `examples/platformer` (spec 012, later stage)
-does the same against a tilemap's grid.
+Check the [input reference](input.md) for the exact button queries. `examples/platformer` does the same against a
+tilemap's grid (`player.cpp`, tested in `tests/platformer/test_player.cpp`) and picks up coins with `overlaps`
+(`coin_book.cpp`).
 
 ## Limits and costs
 

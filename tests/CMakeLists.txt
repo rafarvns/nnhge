@@ -136,8 +136,34 @@ target_include_directories(nnh_tests PRIVATE ${_pc_src})
 set(_3ds_src ${PROJECT_SOURCE_DIR}/engine/platforms/3ds/src)
 target_sources(nnh_tests PRIVATE platform_3ds/test_hbldr_args.cpp ${_3ds_src}/hbldr_args.cpp)
 target_include_directories(nnh_tests PRIVATE ${_3ds_src})
-# The platformer's automatic gate keeps its bookkeeping in a pure file (spec 013 FR-6), tested like core logic.
-target_sources(nnh_tests PRIVATE platformer/test_gate_run.cpp ${PROJECT_SOURCE_DIR}/examples/platformer/gate_run.cpp)
+# The platformer's automatic gate (spec 013 FR-6) and its level logic (spec 012 stage 7: camera, coins, replay,
+# 60 Hz meter, player physics) are pure files of the example, tested like core logic.
+set(_platformer ${PROJECT_SOURCE_DIR}/examples/platformer)
+target_sources(nnh_tests PRIVATE
+    platformer/test_camera_follow.cpp
+    platformer/test_coin_book.cpp
+    platformer/test_frame_meter.cpp
+    platformer/test_gate_run.cpp
+    platformer/test_player.cpp
+    platformer/test_replay_run.cpp
+    platformer/test_replay_script.cpp
+    ${_platformer}/camera_follow.cpp
+    ${_platformer}/coin_book.cpp
+    ${_platformer}/frame_meter.cpp
+    ${_platformer}/gate_run.cpp
+    ${_platformer}/player.cpp
+    ${_platformer}/replay_run.cpp
+    ${_platformer}/replay_script.cpp)
+# The replay played twice gives the same log (spec 012 T7.3, FR-10): the simulator's checksum lines must be the ones
+# the console script expects (written from an earlier PC run). Release logs no info lines, so Debug/Development only.
+if(TARGET platformer AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME platformer_replay_matches_script
+             COMMAND ${CMAKE_COMMAND} -DGAME=$<TARGET_FILE:platformer> -DSCRIPT=${_platformer}/tests/level.nnhs
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/platformer/replay_matches_script.cmake)
+    set_tests_properties(platformer_replay_matches_script PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PLATFORMER_DEMO=replay;NNH_EXIT_AFTER_FRAMES=920"
+        TIMEOUT 120)
+endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 add_test(NAME unit COMMAND nnh_tests)
 

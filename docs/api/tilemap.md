@@ -4,11 +4,14 @@ Header: `<nnh/tilemap.hpp>` · Uses: [collision.md](collision.md), [texture.md](
 [memory.md](memory.md), [assets.md](assets.md) · Spec: [012](../../specs/012-tilemaps-and-collision/spec.md)
 (FR-0…FR-7, FR-11)
 
-> Status: spec 012 **stage 6** — maps are **built in code**, queried, edited, collided against and **drawn**
+> Status: spec 012 **stage 7** — maps are **built in code**, queried, edited, collided against and **drawn**
 > (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS gate passed), with **animated tiles**, and **made in Tiled**: the
-> build converts `.tmj` files into `.nnhmap` assets (`nnh-assetc`) that `load_tilemap` loads. The Tiled level of the
-> example comes in stage 7. Example: [`examples/platformer`](../../examples/platformer/main.cpp) (a level built in
-> code with animated water, a tile benchmark, a flip test).
+> build converts `.tmj` files into `.nnhmap` assets (`nnh-assetc`) that `load_tilemap` loads. Example:
+> [`examples/platformer`](../../examples/platformer/main.cpp): level 1 made in Tiled
+> (`assets/levels/level1.tmj` + `assets/tiles/world.tsj`, written by `art/make_level.py`; parallax backdrops, a
+> `collision` layer, one-way planks, animated water, coins, a spawn point and a door as objects, `title`/`music`
+> properties), a bonus level built in code, a replay that checks PC and console play the same frames, a tile
+> benchmark and a flip test.
 
 A `Tilemap` is a grid of cells in **tile layers**, cut from **tilesets** (textures), plus **object layers**
 (rectangles and points with a name and a type) and **properties** (named bool/int/float/string values on the map,

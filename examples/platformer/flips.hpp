@@ -5,16 +5,18 @@
 
 #include "art.hpp"
 
+#include <nnh/scene.hpp>
 #include <nnh/tilemap.hpp>
 
-class Flips {
+class Flips final : public nnh::Scene {
   public:
     explicit Flips(const Art& art);
     bool ready() const { return map_.valid(); }
-    void update();
-    void draw() const;
 
   private:
+    void update() override;
+    void draw() override;
+
     const Art& art_;
     nnh::Tilemap map_;
     int arrows_ = -1, wall_ = -1;

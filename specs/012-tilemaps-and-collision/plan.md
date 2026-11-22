@@ -492,6 +492,49 @@ Found while adding animated tiles; the exact code is `engine/core/src/tilemap/{t
 - **Example**: the bonus level's water is animated (`Water` ↔ `Water2`, 400 ms each); screenshots at frames 20 and
   30 differ only in the water.
 
+#### Stage 7 refinements (2026-11-22, implemented on PC; T7.4 prepared)
+
+Found while building the example's level and replay; the exact code is `examples/platformer/` and
+`tests/platformer/`.
+
+- **Scenes and events** (architecture docs): the example is now four scenes run by `nnh::run()` — two `LevelScene`
+  objects (level 1 from Tiled, the bonus level from code), `Bench` and `Flips` (now `nnh::Scene`s; the bench's
+  `leave()` became `on_exit`). A `Demos` object switches them and only listens to events: `ButtonPressed` (SELECT
+  next, START quit) and the example's request `ShowDemo` (a level's door, the replay). Levels publish
+  `CoinCollected` and `LevelRestarted`, which the HUD counts. The old `bonus.{hpp,cpp}` became `level_play.*`
+  (player, camera, coins, doors, drawing; the same code for both maps), `level_scene.*` and `hud.*`.
+- **Demo order**: level 1 is the default and comes first (level 1 → bonus → bench → flips); `PLATFORMER_DEMO` gains
+  `level1`, `bonus` and `replay`. `tests/gate.nnhs` presses SELECT once more at the start and on the way back.
+- **The level** is written by `art/make_level.py` (called by `make_art.py`; `--show` prints it as text), Tiled 1.10
+  JSON with Tiled's key order and indents, so it opens and edits in Tiled (not yet opened there: the maintainer,
+  once). 128×20 tiles (the plan's memory example said 240×30), one tileset `tiles/world.tsj` on `../art/tiles.png`
+  (`tilecount` 32: the whole sheet; ids 21–32 are empty), layers `clouds` (parallax 0.25 × 0.5), `hills` (0.5 × 1),
+  `ground` (`collision`), `platforms` (one-way planks, flowers, the door's arch), object layer `things`, `front`
+  (opacity 0.85: bushes, flipped tufts, animated water). Objects: point `spawn`, 47 `coin` rectangles (`value` 1) and
+  a `door` (`to` = `bonus`; not in the plan: it shows a string property and switches level). Map properties
+  `title` and `music` (shown by the HUD; the example has no music files). Converted map: 28 KB. The bonus level
+  gained a `door` back (`to` = `level1`) and a `title` property, both set in code.
+- **Draw layers from the map**: parallax layers draw behind, a layer named `front` over the player, the rest as
+  ground; no per-map list of layer names.
+- **Replay**: 900 frames — level 1 for 600, then the bonus level for 300 (the plan said one 600-frame input), so both
+  levels are checked. Started by **X** in a level or `PLATFORMER_DEMO=replay` (a console script can't set
+  environment variables). The scripted input is a list of `{frames, PlayerInput}` steps; `Player::update` now takes a
+  `PlayerInput` (`read_player_input()` reads the buttons), so the replay plays exactly like the buttons. Checksum:
+  FNV-1a over the player's x/y and the camera's x/y as float bits, the touched sides and the coins taken (the plan
+  said positions and sides). Lines show whole pixels and the checksum (`replay: 60 level1 x 121 y 242 coins 1 sum
+  0CF7E4CE`): text that prints the same on every C library.
+- **In-game 60 Hz verdict** (for T7.4): each segment has a `FrameMeter` (a frame over 25 ms missed, as the gate);
+  the first frame of a segment (the switch to it) is not measured. The last line holds the final checksum and the
+  verdict, `replay: done 900 frames sum 26B21D57: 60 Hz PASS (level1 worst … ms, missed 0/599; bonus …)` (`FAIL` as a
+  warning): a script can `expect` only one line per frame, and the last checkpoint, the checksum and the verdict
+  all fall on the replay's last frame, so that frame logs this one line instead of a checkpoint.
+- **Pure parts tested first** in `nnh_tests` (like the gate): `camera_follow`, `coin_book`, `frame_meter`,
+  `replay_run` (segments, checkpoints, meters, checksum), `replay_script` (segment lengths), and the player's physics
+  (`player.cpp`, which only draws and moves through `collision::move`).
+- **Determinism check** as a ctest, `platformer_replay_matches_script` (Debug/Development PC presets): it plays the
+  replay headless and compares its checksum lines with the ones `tests/level.nnhs` expects (written from an earlier
+  PC run), so two PC runs are compared on every test run and the console script can't go stale.
+
 ### Files
 
 | File | New/changed | Responsibility |

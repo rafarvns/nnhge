@@ -86,7 +86,8 @@ and real input are merged).
 
 A script is a plain text file, by convention `<game folder>/tests/<name>.nnhs`. Examples:
 `examples/input/tests/remote.nnhs` (buttons, stick, touch, screenshots) and
-`examples/platformer/tests/gate.nnhs` (a benchmark that reports PASS or FAIL).
+`examples/platformer/tests/gate.nnhs` (a benchmark that reports PASS or FAIL) and
+`examples/platformer/tests/level.nnhs` (levels, then a replay whose checksums must be the PC's).
 
 ```text
 # Comments start with # (anywhere outside quotes). Blank lines are fine.

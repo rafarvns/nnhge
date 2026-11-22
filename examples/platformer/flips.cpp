@@ -45,7 +45,7 @@ void Flips::update() {
     nnh::gfx::set_camera(kTop, {{scroll_, 0}});
 }
 
-void Flips::draw() const {
+void Flips::draw() {
     namespace gfx = nnh::gfx;
     gfx::draw_tilemap(kTop, map_, {.map_layer = arrows_, .ignore_camera = true});
     gfx::draw_tilemap(kTop, map_, {.map_layer = wall_});

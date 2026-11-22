@@ -160,6 +160,28 @@ end
 On an Old 3DS XL this ran for about a minute with nobody touching the console and passed (spec 012's
 tile gate, 2026-11-21). Tips: keep result lines short (log lines are at most 159 characters), put the
 numbers in them so the log is the report, and show the verdict on screen too, so a screenshot shows it.
+A script can `expect` only one line per frame (the next window starts after the matched line), so put a
+final checksum and a verdict logged on the same frame in one line.
+
+## Checking that the console plays like the PC
+
+Frame-based logic repeats exactly, so a game can prove it: play a scripted input **inside the game** (no
+buttons), log a checksum of its state every so often, and let the script `expect` the exact lines the PC
+printed. `examples/platformer` does this with its replay (X in a level; `replay.hpp`): level 1 then the
+bonus level, a checksum of the player and the camera every 60 frames, and an in-game 60 Hz verdict on the
+last line. `examples/platformer/tests/level.nnhs` ends with:
+
+```text
+tap X
+expect "replay: started" 10
+expect "replay: 60 level1 x 121 y 242 coins 1 sum 0CF7E4CE" 120
+...
+expect "replay: 840 bonus x 437 y 162 coins 0 sum C3E8734D" 120
+expect "replay: done 900 frames sum 26B21D57: 60 Hz PASS" 120
+```
+
+The lines come from a PC run, and the ctest `platformer_replay_matches_script` replays it in the simulator
+on every test run and fails if they no longer match, so the script never goes stale.
 
 ## Screenshots
 

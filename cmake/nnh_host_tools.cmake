@@ -1,9 +1,10 @@
 # Host tools: programs the build runs on the developer's machine (spec 012, decision D27). Today: nnh-assetc.
 #
-#   nnh_assetc_command(<out_command> <out_depends>)
+#   nnh_assetc_command(<out_command> <out_depends> [<what the game has>])
 #       Sets <out_command> to the nnh-assetc program to put in a custom command's COMMAND, and <out_depends>
 #       to what that custom command must DEPEND on (empty for a prebuilt program). Fails at configure time,
-#       with what to do, when the program can't be had. For the asset step of games with Tiled maps.
+#       with what to do, when the program can't be had, naming what the game has ("Tiled maps" by default). For the
+#       asset steps of games with Tiled maps or Aseprite exports (spec 016).
 #
 # The target nnh_assetc exists in every preset and is never part of a normal build of a cross preset:
 #   - PC presets: the executable of tools/assetc (added by the top-level CMakeLists.txt, with its tests).
@@ -93,8 +94,12 @@ function(nnh_assetc_command out_command out_depends)
         return()
     endif()
     get_property(_why GLOBAL PROPERTY NNH_ASSETC_MISSING)
+    set(_what "Tiled maps")
+    if(ARGC GREATER 2)
+        set(_what "${ARGV2}")
+    endif()
     if(_why)
-        message(FATAL_ERROR "This game has Tiled maps, which need nnh-assetc: ${_why} (docs/tech/cmake.md)")
+        message(FATAL_ERROR "This game has ${_what}, which need nnh-assetc: ${_why} (docs/tech/cmake.md)")
     endif()
     get_property(_exe GLOBAL PROPERTY NNH_ASSETC_PROGRAM)
     # The file (rebuilt -> maps reconverted) and the target (builds it first).

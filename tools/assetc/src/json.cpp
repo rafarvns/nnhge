@@ -15,6 +15,8 @@ std::string_view Ref::string() const {
     return std::string_view(doc_->pool_).substr(node().a, node().b);
 }
 
+int Ref::line() const { return doc_ ? static_cast<int>(node().line) : 0; }
+
 int Ref::size() const { return is_array() || is_object() ? static_cast<int>(node().b) : 0; }
 
 Ref Ref::first() const { return size() > 0 ? Ref{doc_, node().a} : Ref{}; }

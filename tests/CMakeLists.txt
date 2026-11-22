@@ -23,6 +23,7 @@ add_executable(nnh_tests
     animation/test_animator_states.cpp
     animation/sprite_file.cpp
     animation/test_sprite_alloc.cpp
+    animation/test_sprite_aseprite.cpp
     animation/test_sprite_clips.cpp
     animation/test_sprite_frames.cpp
     animation/test_sprite_layout.cpp
@@ -552,6 +553,47 @@ add_custom_command(OUTPUT ${_maps_out}/good.nnhmap
 add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap)
 add_dependencies(nnh_tests nnh_test_maps)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_MAPS_DIR="${_maps_out}")
+
+# Aseprite converter (spec 016 T7.5, AC-4): nnh-assetc sprite on the fixtures of data/aseprite (make_fixtures.py).
+# Each bad export must fail AND say `file:line: reason`.
+set(_ase ${CMAKE_CURRENT_SOURCE_DIR}/data/aseprite)
+set(_ase_out ${CMAKE_CURRENT_BINARY_DIR}/aseprite)
+file(MAKE_DIRECTORY ${_ase_out})
+foreach(good good good_array)
+    add_test(NAME sprite_convert_accepts_${good}
+        COMMAND nnh_assetc sprite ${_ase}/${good}.ase.json ${_ase_out}/${good}_check.nnhsprite --assets ${_ase})
+endforeach()
+foreach(case "rotated|bad_rotated.ase.json:24: frame 1 .* rotated frames aren't supported"
+             "direction|bad_direction.ase.json:99: frame tag .run.: unknown direction .sideways."
+             "range|bad_range.ase.json:99: frame tag .run.: .to. must be a whole number from 0 to 3"
+             "duplicate|bad_duplicate.ase.json:106: frame tag .run.: two clips have this name"
+             "duration|bad_duration.ase.json:3: frame 0 .*: .duration. must be a whole number from 1 to 65535"
+             "image|bad_image.ase.json:91: .meta.: .image. is .hero.png.: it must be bad_image.png"
+             "size|bad_size.ase.json:93: .meta.: .size. is 128x16 but bad_size.png is 64x16"
+             "marker|bad_marker.ase.json:99: marker tag .@hit=lots.: the value after '=' must be a whole number"
+             "repeat|bad_repeat.ase.json:99: frame tag .run.: .repeat. must be a whole number"
+             "missing_png|bad_missing_png.ase.json: bad_missing_png.png not found"
+             "broken_json|bad_broken_json.ase.json: line 3, column 20: expected a key")
+    string(REPLACE "|" ";" case "${case}")
+    list(GET case 0 name)
+    list(GET case 1 expected)
+    set(_convert nnh_assetc sprite ${_ase}/bad_${name}.ase.json ${_ase_out}/bad_${name}.nnhsprite --assets ${_ase})
+    add_test(NAME sprite_convert_rejects_${name} COMMAND ${_convert})
+    set_tests_properties(sprite_convert_rejects_${name} PROPERTIES WILL_FAIL TRUE)
+    add_test(NAME sprite_convert_explains_${name} COMMAND ${_convert})
+    set_tests_properties(sprite_convert_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+endforeach()
+# The good export converted at build time, read back by nnh_tests (tests/animation/test_sprite_aseprite.cpp).
+add_custom_command(OUTPUT ${_ase_out}/good.nnhsprite
+    COMMAND nnh_assetc sprite ${_ase}/good.ase.json ${_ase_out}/good.nnhsprite --assets ${_ase}
+            --depfile ${_ase_out}/good.nnhsprite.d
+    DEPENDS ${_ase}/good.ase.json nnh_assetc
+    DEPFILE ${_ase_out}/good.nnhsprite.d
+    COMMENT "Sprite tests/data/aseprite/good.ase.json"
+    VERBATIM)
+add_custom_target(nnh_test_sprites DEPENDS ${_ase_out}/good.nnhsprite)
+add_dependencies(nnh_tests nnh_test_sprites)
+target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
 
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60

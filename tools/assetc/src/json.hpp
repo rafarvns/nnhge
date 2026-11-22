@@ -32,6 +32,7 @@ struct Node {
     std::uint32_t a = 0, b = 0;         ///< string: offset, length in the text pool; array/object: first, count
     std::uint32_t key = 0, key_length = 0; ///< member of an object: its key in the text pool
     std::uint32_t next = 0;             ///< next sibling + 1 (0 = last)
+    std::uint32_t line = 0;             ///< line of the document where the value starts (1-based)
     Type type = Type::Null;
     bool boolean = false;
 };
@@ -61,6 +62,7 @@ public:
     Ref next() const;                   ///< next member of the same array/object, or missing
     std::string_view key() const;       ///< this member's key when it is in an object, else ""
     Ref get(std::string_view key) const; ///< the first member called `key` of an object, or missing
+    int line() const;                   ///< line where the value starts (1-based), 0 when missing
 
 private:
     friend class Document;

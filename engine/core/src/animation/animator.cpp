@@ -19,26 +19,13 @@ bool Access::misuse(const char* what) {
     return false;
 }
 
-SpriteView Access::library(const SpriteAnimator& a, const char* command) {
+SpriteView Access::library_misuse(const SpriteAnimator& a, const char* command) {
     if (a.block_ == nullptr) {
         if (command != nullptr) misuse("command on an animator without a library");
-        return SpriteView{nullptr};
-    }
-    if (!sprite_serial_live(a.serial_)) {
+    } else {
         misuse("its SpriteLibrary was destroyed (a library must outlive its animators)");
-        return SpriteView{nullptr};
     }
-    return sprite_view(a.block_);
-}
-
-const ClipEntry& Access::clip(const SpriteAnimator& a) {
-    return sprite_view(a.block_).clips()[a.clip_];
-}
-
-const ClipFrameEntry& Access::clip_frame(const SpriteAnimator& a) {
-    const ClipEntry& c = clip(a);
-    const int index = sprite_clip_index(c.length, c.mode, c.direction, a.step_);
-    return sprite_view(a.block_).clip_frames()[c.first + index];
+    return SpriteView{nullptr};
 }
 
 void Access::start_command(SpriteAnimator& a, int clip, int step) {

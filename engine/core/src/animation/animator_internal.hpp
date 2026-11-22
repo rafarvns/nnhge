@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "animation/sprite_library_internal.hpp"
+#include "animation/sprite_sequence.hpp"
 
 namespace nnh {
 
@@ -27,7 +28,10 @@ struct NoticeScratch {
     int count = 0;
     int callbacks_running = 0; ///< > 0 while a callback runs: update()/advance() then is misuse
 };
-NoticeScratch& notice_scratch();
+extern NoticeScratch g_notice_scratch; // animator_notices.cpp
+inline NoticeScratch& notice_scratch() {
+    return g_notice_scratch;
+}
 
 /// State of one pass of an update over its animator.
 struct AnimPass {
@@ -48,10 +52,22 @@ struct SpriteAnimatorAccess {
     // Library access and misuse checks (animator.cpp).
     /// The animator's library, or a null view (with an assert/log when `command` and there is none, or when the
     /// library was destroyed: Debug/Development).
-    static detail::SpriteView library(const SpriteAnimator& a, const char* command);
+    /// Inline (every command and update checks): the misuse cases go to library_misuse().
+    static detail::SpriteView library(const SpriteAnimator& a, const char* command) {
+        if (a.block_ != nullptr && detail::sprite_serial_live(a.serial_)) return detail::sprite_view(a.block_);
+        return library_misuse(a, command);
+    }
+    static detail::SpriteView library_misuse(const SpriteAnimator& a, const char* command);
     static bool misuse(const char* what); ///< logs and asserts `what`; returns false
-    static const detail::spritefmt::ClipEntry& clip(const SpriteAnimator& a);
-    static const detail::spritefmt::ClipFrameEntry& clip_frame(const SpriteAnimator& a);
+    static const detail::spritefmt::ClipEntry& clip(const SpriteAnimator& a) {
+        return detail::sprite_view(a.block_).clips()[a.clip_];
+    }
+    /// The clip frame shown (inline: every update reads its duration).
+    static const detail::spritefmt::ClipFrameEntry& clip_frame(const SpriteAnimator& a) {
+        const detail::SpriteView v = detail::sprite_view(a.block_);
+        const detail::spritefmt::ClipEntry& c = v.clips()[a.clip_];
+        return v.clip_frames()[c.first + detail::sprite_clip_index(c.length, c.mode, c.direction, a.step_)];
+    }
     /// Starts `clip` at cycle position `step` as a command (entry fires at the next update).
     static void start_command(SpriteAnimator& a, int clip, int step);
     /// Leaves the state machine (play, queue).

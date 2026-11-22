@@ -7,6 +7,8 @@
 
 #include <cstdint>
 
+#include "animation/sprite_format.hpp"
+
 namespace nnh::detail {
 
 struct SpriteSequenceEnd {
@@ -15,11 +17,18 @@ struct SpriteSequenceEnd {
     std::uint16_t end_cycle = 0; ///< the cycle it is in
 };
 
-/// Positions in one cycle.
-int sprite_cycle_length(int frames, std::uint8_t mode);
+/// Positions in one cycle. Inline: the animator asks on every update.
+inline int sprite_cycle_length(int frames, std::uint8_t mode) {
+    if (mode == spritefmt::kPingPong && frames >= 2) return 2 * frames - 2;
+    return frames;
+}
 
-/// The clip index shown at position `step` of the cycle.
-int sprite_clip_index(int frames, std::uint8_t mode, std::uint8_t direction, int step);
+/// The clip index shown at position `step` of the cycle. Inline: the animator asks on every update.
+inline int sprite_clip_index(int frames, std::uint8_t mode, std::uint8_t direction, int step) {
+    int index = step;
+    if (mode == spritefmt::kPingPong && step >= frames) index = 2 * frames - 2 - step;
+    return direction == spritefmt::kReverse ? frames - 1 - index : index;
+}
 
 /// Where a clip ends. `count`: Once 1, Repeat plays, PingPong passes (0 = forever), Loop 0.
 SpriteSequenceEnd sprite_sequence_end(int frames, std::uint8_t mode, int count);

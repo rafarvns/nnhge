@@ -27,14 +27,14 @@ static_assert(kSpriteMaxFrames == detail::spritefmt::kMaxFrames && kSpriteMaxCli
 static_assert(sizeof(SpriteNotice) == 16);
 
 namespace detail {
+
+#if !defined(NNH_FLAVOR_RELEASE)
+std::uint16_t g_sprite_live[kSpriteLiveSlots] = {}; // serial of the live library in slot serial & 1023, 0 = free
+#endif
+
 namespace {
 
 std::uint16_t g_last_serial = 0;
-
-#if !defined(NNH_FLAVOR_RELEASE)
-constexpr int kLiveSlots = 1024;
-std::uint16_t g_live[kLiveSlots] = {}; // serial of the live library in slot serial & 1023, 0 = free
-#endif
 
 std::uint16_t next_serial() {
     if (++g_last_serial == 0) g_last_serial = 1;
@@ -51,8 +51,8 @@ std::uint16_t sprite_take_serial() {
 #if !defined(NNH_FLAVOR_RELEASE)
     for (int tries = 0; tries < 0x10000; ++tries) {
         const std::uint16_t s = next_serial();
-        if (g_live[s & (kLiveSlots - 1)] == 0) {
-            g_live[s & (kLiveSlots - 1)] = s;
+        if (g_sprite_live[s & (kSpriteLiveSlots - 1)] == 0) {
+            g_sprite_live[s & (kSpriteLiveSlots - 1)] = s;
             return s;
         }
     }
@@ -64,18 +64,10 @@ std::uint16_t sprite_take_serial() {
 
 void sprite_release_serial(std::uint16_t serial) {
 #if !defined(NNH_FLAVOR_RELEASE)
-    if (g_live[serial & (kLiveSlots - 1)] == serial) g_live[serial & (kLiveSlots - 1)] = 0;
+    std::uint16_t& slot = g_sprite_live[serial & (kSpriteLiveSlots - 1)];
+    if (slot == serial) slot = 0;
 #else
     (void)serial;
-#endif
-}
-
-bool sprite_serial_live(std::uint16_t serial) {
-#if !defined(NNH_FLAVOR_RELEASE)
-    return serial != 0 && g_live[serial & (kLiveSlots - 1)] == serial;
-#else
-    (void)serial;
-    return true;
 #endif
 }
 

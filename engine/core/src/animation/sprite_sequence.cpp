@@ -8,17 +8,6 @@ namespace nnh::detail {
 
 using namespace spritefmt;
 
-int sprite_cycle_length(int frames, std::uint8_t mode) {
-    if (mode == kPingPong && frames >= 2) return 2 * frames - 2;
-    return frames;
-}
-
-int sprite_clip_index(int frames, std::uint8_t mode, std::uint8_t direction, int step) {
-    int index = step;
-    if (mode == kPingPong && step >= frames) index = 2 * frames - 2 - step;
-    return direction == kReverse ? frames - 1 - index : index;
-}
-
 SpriteSequenceEnd sprite_sequence_end(int frames, std::uint8_t mode, int count) {
     SpriteSequenceEnd end;
     if (mode == kLoop || count <= 0) return end;

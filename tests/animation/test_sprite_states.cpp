@@ -60,3 +60,14 @@ NNH_TEST(the_most_specific_rule_wins) {
     const TransitionEntry any_to_first[] = {{kAnyState, 2, kNever, 0}, {kAnyState, kAnyState, kAtEnd, 0}};
     CHECK(nnh::detail::sprite_resolve_rule(any_to_first, 2, 0, 2).when == kNever); // any→to beats any→any
 }
+
+NNH_TEST(of_two_rules_of_the_same_shape_the_first_wins) {
+    const TransitionEntry rules[] = {
+        {3, 4, kNever, 0}, // other states: never matches
+        {1, kAnyState, kAtEnd, 0},
+        {1, kAnyState, kNever, 0},
+        {kAnyState, kAnyState, kNow, 1},
+    };
+    CHECK(nnh::detail::sprite_resolve_rule(rules, 4, 1, 2).when == kAtEnd);
+    CHECK(nnh::detail::sprite_resolve_rule(rules, 4, 0, 2).keep_time == 1);
+}

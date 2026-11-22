@@ -57,8 +57,22 @@ MemTag& animation_memory_tag();
 std::uint16_t sprite_take_serial();
 /// Marks a serial dead (the library was destroyed).
 void sprite_release_serial(std::uint16_t serial);
-/// Debug/Development: false when the library of `serial` was destroyed. Release: always true.
-bool sprite_serial_live(std::uint16_t serial);
+#if !defined(NNH_FLAVOR_RELEASE)
+inline constexpr int kSpriteLiveSlots = 1024;
+/// Debug/Development: the serial of the live library in slot `serial & 1023`, 0 = free (sprite_library.cpp).
+extern std::uint16_t g_sprite_live[kSpriteLiveSlots];
+#endif
+
+/// Debug/Development: false when the library of `serial` was destroyed. Release: always true. Inline: every animator
+/// command and update makes this check.
+inline bool sprite_serial_live(std::uint16_t serial) {
+#if !defined(NNH_FLAVOR_RELEASE)
+    return serial != 0 && g_sprite_live[serial & (kSpriteLiveSlots - 1)] == serial;
+#else
+    (void)serial;
+    return true;
+#endif
+}
 
 /// A name for a clip or a state: 1..31 bytes of valid UTF-8. nullptr when fine, else the reason.
 const char* sprite_name_problem(const char* name);

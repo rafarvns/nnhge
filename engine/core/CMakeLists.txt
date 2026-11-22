@@ -174,6 +174,7 @@ set(_nnh_actions_sources
     src/actions/bindings_format.cpp
     src/actions/bindings_io.cpp
     src/actions/input_view.cpp
+    src/actions/read_slots.cpp
     src/actions/source_eval.cpp
     src/actions/source_names.cpp
 )

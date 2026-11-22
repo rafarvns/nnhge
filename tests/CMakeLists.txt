@@ -23,6 +23,7 @@ add_executable(nnh_tests
     actions/test_action_declare.cpp
     actions/test_action_determinism.cpp
     actions/test_action_edit.cpp
+    actions/test_action_eval_golden.cpp
     actions/test_action_events.cpp
     actions/test_action_fallback.cpp
     actions/test_action_hook.cpp
@@ -325,6 +326,11 @@ target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR
 target_sources(nnh_tests PRIVATE animation_example/test_self_check.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/animation/libraries.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/animation/self_check.cpp)
+# PC microbenchmark of an action set's evaluation (spec 017 console bench refinement): not a test, run by hand
+# (build/pc-release/tests/nnh_actions_bench) for relative gains.
+add_executable(nnh_actions_bench EXCLUDE_FROM_ALL actions/bench_actions.cpp)
+target_include_directories(nnh_actions_bench PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
+target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)

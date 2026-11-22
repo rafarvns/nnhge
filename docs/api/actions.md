@@ -201,7 +201,8 @@ names it. The PC simulator has every control: check the Old 3DS path with the fa
 |--|--|
 | Memory | one block per set, tag `actions`: ≈ 0.5 KB header + 160 B per action + a 3088-byte file buffer (16 actions ≈ 6 KB, 64 ≈ 14 KB) |
 | Per frame | proportional to enabled actions × active slots; no allocation, no `virtual`, no logging; profile scope `actions` |
-| Measured | `examples/actions` bench, 64 actions × 4 mixed slots plus the game's set: PC simulator (Debug) avg 0.026 ms, worst 0.055 ms; Old 3DS: pending the console run (target < 0.1 ms) |
+| Measured | `examples/actions` bench, 64 actions × 4 mixed slots plus the game's set: PC simulator (Debug) avg 0.026 ms, worst 0.055 ms; Old 3DS (Development) avg 0.224 ms, worst 0.317 ms before the console bench refinement (plan 017), re-run pending (target < 0.1 ms) |
+| Per slot at rest | buttons, touch areas, composites and sticks not moved are skipped with a few integer tests (no float compare, no divide); a moved stick with an extra dead zone costs two divisions |
 | Allocation | only the set's block at construction; evaluating, listening, remapping, resetting, saving and loading allocate nothing |
 | `hello` | 16 bytes of code in `nnh::frame()` on the 3DS (one load, compare, indirect call), 14 on PC; no action code linked |
 

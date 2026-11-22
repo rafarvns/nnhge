@@ -192,8 +192,9 @@ record and the frame's markers. Measured with the example's bench (512 animators
 a state machine with a request every frame): **0.12 ms** per frame in a pc-debug build, 0.04 ms in pc-dev. On an Old 3DS
 (Development) the first console run measured 0.892 ms avg, 1.389 ms worst; the update path was then made call-free in
 the common case and the fields it touches moved into the animator's first 32 bytes (one ARM11 cache line when the
-animator is 32-byte aligned), and the new console number is pending ([plan 016](../../specs/016-sprite-animation/plan.md),
-"Console bench refinement"). Module statics:
+animator is 32-byte aligned): **0.626 ms** avg, 1.309 ms worst ([plan 016](../../specs/016-sprite-animation/plan.md),
+"Console bench refinement"). The console budget is < 0.8 ms for those 512 animators (about 1.2 µs each); a game with
+50 animators spends about 0.06 ms. Module statics:
 520 bytes of notice buffer, plus a 2 KB table of live library serials in Debug/Development.
 
 ## Limits and pitfalls

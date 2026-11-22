@@ -2,7 +2,7 @@
 // The cost of 512 animators (spec 016 AC-7): half on the gallery library (every clip mode, markers), half on the
 // knight's state machine with a request every frame; updated inside NNH_PROFILE_SCOPE("animation bench") and timed
 // with time::now() over 600 frames, then "animation bench: 512 animators avg X.XXX ms worst Y.YYY ms (target
-// < 0.5 ms) PASS|OVER" is logged. SELECT: back to the showcase.
+// < 0.8 ms) PASS|OVER" is logged. SELECT: back to the showcase.
 
 #include "demos.hpp"
 #include "libraries.hpp"

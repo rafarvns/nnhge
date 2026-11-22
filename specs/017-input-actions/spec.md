@@ -1,7 +1,7 @@
 # Spec 017: Input actions
 
-Status: implemented (console check pending) — approved 2026-11-22 (maintainer pre-approved recommendations: every
-open question below is answered with the recommended answer); implemented 2026-11-22 except the console run (T7.2)
+Status: implemented (T7.2 passed on the Old 3DS XL, 2026-11-22) — approved 2026-11-22 (maintainer pre-approved recommendations: every
+open question below is answered with the recommended answer); implemented 2026-11-22; the console run (T7.2) passed the same day
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 001](../001-event-bus-and-scenes/spec.md) (event bus, scenes; scene attachments of
 [D30](../../docs/architecture/decisions.md)), [spec 002](../002-core-foundation/spec.md) (memory tags, asserts,
@@ -251,8 +251,10 @@ stay exact. A game that reads buttons directly ignores all of it and pays nothin
   an Old 3DS the maintainer only starts the game (Homebrew Launcher → Y); the verdict is in the saved log, and the
   `aim` fallback line says which path the console took. The same script passes with `--pc`.
 - **AC-9 Cost on the console.** Measured on an Old 3DS with the profiler in the example's bench mode: evaluating a set
-  of 64 actions × 4 slots (mixed kinds and sources) stays under 0.1 ms per frame (target; the plan confirms it); the
-  number goes in the docs.
+  of 64 actions × 4 slots (mixed kinds and sources) stays under 0.2 ms per frame; the
+  number goes in the docs. (The first target, 0.1 ms, was set before any console measurement; the Old 3DS measured
+  0.224 ms, then 0.142 ms after the evaluation was optimized, and the maintainer chose on 2026-11-22 to optimize and
+  then set the budget from the measurement, with margin.)
 - **AC-10 Opt-in.** `examples/hello` builds with the same executable size as before on PC and 3DS; `examples/input`,
   `examples/scenes` and `examples/platformer` keep working untouched; spec 003's input tests pass unchanged.
 - **AC-11 Docs.** `docs/api/actions.md` (kinds, declaring, bindings and sources, combining, contexts and scenes, the

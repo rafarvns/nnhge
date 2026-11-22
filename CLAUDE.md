@@ -104,12 +104,12 @@ checked by the build (`nnh-assetc data`/`data-index`, `file:line: reason`, fixtu
 converted; `data::load("enemies/goblin", e)`, `count<T>`/`name<T>`, `Ref<T>`/`TextureRef` + `data::path(ref)`;
 allocation-free once the index `.nnh_data` is loaded. Schema sources compile for the host too: declarations only
 ([api/data.md](docs/api/data.md)).
-Sprite animation (spec 016, implemented, console check pending; demo `examples/animation`): `<nnh/animation.hpp>` —
+Sprite animation (spec 016, implemented; demo `examples/animation`): `<nnh/animation.hpp>` —
 `SpriteLibrary` (one block, tag `animation`: frames, clips, markers, a state machine), a 64-byte `SpriteAnimator` per
 sprite (`update()` on the frame clock, notices by callback or returned view, `draw_options()`); `<name>.ase.json`
 Aseprite exports → `nnh-assetc sprite` → `load_sprite_library("<name>")` (D31; fixtures in `tests/data/aseprite/`)
 ([api/animation.md](docs/api/animation.md)).
-Input actions (spec 017, implemented, console check pending; demo `examples/actions`): `<nnh/actions.hpp>` —
+Input actions (spec 017, implemented; demo `examples/actions`): `<nnh/actions.hpp>` —
 `ActionSet` of button/axis/vector actions with up to 4 bindings each (buttons, stick directions, sticks, composites,
 touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
 frame (D32 after-input hook), listen/conflicts/reset for a controls screen, `NNHB` overrides saved with `nnh::save`

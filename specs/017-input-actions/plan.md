@@ -1,6 +1,6 @@
 # Plan 017: Input actions
 
-Status: implemented (console check pending) — approved 2026-11-22 (maintainer pre-approved); see the stage results at
+Status: implemented (T7.2 passed on the Old 3DS XL, 2026-11-22) — approved 2026-11-22 (maintainer pre-approved); see the stage results at
 the end
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D32 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (event bus, scene stack; D30 scene attachments from spec 015), spec 002 (memory tags, asserts, logs,
@@ -725,3 +725,10 @@ nnh: PASS (77 lines, ...)
 
 Pass = the saved log (`build/logs/actions-<date>-<time>.txt`) ends with `actions: PASS 7/7`; record the bench
 avg/worst and the aim line here.
+
+### Console result and new budget (2026-11-22)
+
+Old 3DS XL, Development, after the changes above: functional script unchanged (`saved 40 bytes sum AAB4AA36`, reload
+the same), bench **0.142 ms** avg, 0.228 ms worst (was 0.224 / 0.317). The maintainer chose to optimize, then set the
+budget from the measurement with margin: AC-9's budget is now **< 0.2 ms** (the example's self-check and bench line
+use it). Splitting `ActionRec` into hot and cold parts stays open.

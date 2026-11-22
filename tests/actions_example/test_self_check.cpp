@@ -70,15 +70,18 @@ NNH_TEST(the_self_check_fails_when_the_reload_differs) {
 }
 
 NNH_TEST(the_bench_budget_applies_on_the_console_only) {
-    ActionsSelfCheck pc, console, unmeasured;
+    ActionsSelfCheck pc, console, fast_console, unmeasured;
     play_script(pc);
     play_script(console);
+    play_script(fast_console);
     play_script(unmeasured);
     pc.bench(0.5f, false);
-    console.bench(0.5f, true);
+    console.bench(0.2f, true);         // the Old 3DS budget is < 0.2 ms (measured 0.142 ms, 2026-11-22)
+    fast_console.bench(0.19f, true);
     unmeasured.bench(-1.0f, false);
     CHECK(pc.passed());
     CHECK(!console.passed() && says(console, "actions: FAIL bench"));
+    CHECK(fast_console.passed());
     CHECK(!unmeasured.passed());
 }
 

@@ -107,8 +107,8 @@ void BenchScene::report() {
     const double avg = measured_ ? total_.seconds() * 1000.0 / (kFrames - 1) : -1.0;
     const bool console = std::strcmp(nnh::system::info().name, "PC simulator") != 0;
     if (measured_) {
-        std::snprintf(result_, sizeof result_, "actions: bench avg %.3f ms worst %.3f ms (target < 0.1 ms) %s", avg,
-                      worst_.seconds() * 1000.0, avg < 0.1 ? "PASS" : "OVER");
+        std::snprintf(result_, sizeof result_, "actions: bench avg %.3f ms worst %.3f ms (target < 0.2 ms) %s", avg,
+                      worst_.seconds() * 1000.0, avg < 0.2 ? "PASS" : "OVER");
         std::snprintf(shown_, sizeof shown_, "avg %.3f ms  worst %.3f ms", avg, worst_.seconds() * 1000.0);
     } else {
         std::snprintf(result_, sizeof result_, "actions: bench not measured (no profiler in Release)");

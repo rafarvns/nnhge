@@ -9,6 +9,7 @@
 # self_check.hpp.
 fail-on "] E "
 fail-on "animation: FAIL"
+fail-on "ms) OVER"
 
 # The showcase: the gallery and the knight (loaded from the Aseprite export).
 wait 120
@@ -30,7 +31,7 @@ expect "animation: PASS 512F027F" 120
 wait 10
 screenshot self-check
 
-# The bench (SELECT): 600 measured frames; the line says PASS (average under 0.5 ms) or OVER.
+# The bench (SELECT): 600 measured frames; the line says PASS (average under 0.8 ms) or OVER, which fails the run.
 tap SELECT
 expect "animation bench: started, 512 animators" 20
 expect "animation bench: 512 animators avg" 700

@@ -189,8 +189,8 @@ spec; the order below is a proposal.
   that follow the parent (a gun on a ship, a hat on a head)
 - [x] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): named clips declared in code (frames of a
   sprite sheet, timings, loop), events on frames (a footstep sound), and a simple state machine (idle, run, jump);
-  optionally read from Aseprite files — [spec 016](../specs/016-sprite-animation/spec.md) (implemented 2026-11-22,
-  **console check pending**, T10.2): `<nnh/animation.hpp>` — sprite libraries in one block (grid or trimmed frames,
+  optionally read from Aseprite files — [spec 016](../specs/016-sprite-animation/spec.md) (implemented 2026-11-22;
+  Old 3DS check passed, 512 animators 0.626 ms): `<nnh/animation.hpp>` — sprite libraries in one block (grid or trimmed frames,
   clips in loop/once/repeat/ping-pong forward or reverse, frame markers, a state machine with now/at-end/never rules,
   keep-time and next-on-finish), a 64-byte `SpriteAnimator` on the frame clock with queue, speed, flips, notices by
   callback or returned view, no allocation while playing; Aseprite exports (`<name>.ase.json`, D31) converted by
@@ -207,7 +207,7 @@ spec; the order below is a proposal.
   `<nnh/time.hpp>`), no allocation while playing, sets bound to a scene updated and cleared by it (D30)
   ([api/tween.md](api/tween.md)). `examples/tweens`: easing gallery, an intro sequence, an overlay scene, a
   self-check with a golden checksum (`tests/check.nnhs`) and a 256-tween bench (PC: 0.06 ms per update)
-- [x] **Input actions** (Godot InputMap, Unity Input System) — spec 017, implemented (console check pending):
+- [x] **Input actions** (Godot InputMap, Unity Input System) — spec 017, implemented (Old 3DS check passed, 64 actions × 4 slots 0.142 ms):
   `<nnh/actions.hpp>`, button/axis/vector actions with several bindings (buttons, stick directions, sticks,
   composites, touch areas), contexts bound to scenes with no leaking presses, queries and `ActionPressed` events in the
   same frame (D32 after-input hook: 16 bytes in `hello` on the 3DS), listen/conflicts/reset for a controls screen,

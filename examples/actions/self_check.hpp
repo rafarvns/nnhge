@@ -18,7 +18,7 @@ public:
     void pressed(const char* action);
     /// The bindings were loaded again from the file.
     void reloaded(std::uint32_t sum, int applied, int skipped);
-    /// The bench ended: average ms per frame (negative: not measured). On the console it must be under 0.1 ms.
+    /// The bench ended: average ms per frame (negative: not measured). On the console it must be under 0.2 ms.
     void bench(float avg_ms, bool console);
 
     bool done() const { return done_; }

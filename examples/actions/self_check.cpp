@@ -35,7 +35,7 @@ void ActionsSelfCheck::reloaded(std::uint32_t sum, int applied, int skipped) {
 
 void ActionsSelfCheck::bench(float avg_ms, bool console) {
     done_ = true;
-    if (avg_ms >= 0.0f && (!console || avg_ms < 0.1f)) steps_ |= kBench;
+    if (avg_ms >= 0.0f && (!console || avg_ms < 0.2f)) steps_ |= kBench;
 }
 
 void ActionsSelfCheck::verdict(char* out, std::size_t size) const {
@@ -49,7 +49,7 @@ void ActionsSelfCheck::verdict(char* out, std::size_t size) const {
                                       {kJump, "no jump on the new button"},
                                       {kAttack, "no attack on A"},
                                       {kReload, "reload differs"},
-                                      {kBench, "bench over 0.1 ms or not measured"}};
+                                      {kBench, "bench over 0.2 ms or not measured"}};
     for (const Step& s : kSteps) {
         if ((steps_ & s.bit) == 0) {
             std::snprintf(out, size, "actions: FAIL %s", s.missing);

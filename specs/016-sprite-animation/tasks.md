@@ -1,6 +1,6 @@
 # Tasks 016: Sprite animation
 
-Status: implemented (console check pending: T10.2) — approved (2026-11-22, maintainer pre-approved)
+Status: implemented (T10.2 passed on the Old 3DS XL, 2026-11-22) — approved (2026-11-22, maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 VM 120 results (2026-11-22, on the branch before the merge): GCC 13 and 14 build and pass ctest (the only failures
@@ -216,11 +216,16 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 - [x] **T10.1** Build the Development flavour that `nnh run` uses and the Release `.3dsx`; the example logs
   `sizeof(SpriteAnimator)` (64) at start. Files: plan.md. Covers II.
-- [ ] **T10.2** On the Old 3DS: the maintainer opens the Homebrew Launcher and presses Y, then runs
+- [x] **T10.2** On the Old 3DS: the maintainer opens the Homebrew Launcher and presses Y, then runs
   `nnh run animation --script examples/animation/tests/check.nnhs`. It passes when the saved log in `build/logs/` has
   `animation: PASS <checksum>` with the PC's checksum and the bench line for 512 animators (target < 0.5 ms). Then
   `nnh run platformer --script examples/platformer/tests/level.nnhs` and `gate.nnhs` still pass. The bench number
   goes into plan.md and the docs. Covers AC-5, AC-6, AC-7, AC-8, FR-14.
+
+  **Result (2026-11-22, Old 3DS XL, Development):** `animation: PASS 512F027F` (the PC's) every run. Bench: 0.892 ms
+  avg on the first run, over the 0.5 ms target; after the update path was optimized (plan "Console bench
+  refinement") **0.626 ms** avg, 1.309 ms worst, and the budget became < 0.8 ms (maintainer's choice). `level.nnhs`
+  passed once the log file sink was fixed (spec 012 T7.4) and `gate.nnhs` passed.
 
 ## Stage 11: docs, roadmap, status
 

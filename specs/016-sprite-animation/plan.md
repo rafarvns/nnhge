@@ -1,6 +1,6 @@
 # Plan 016: Sprite animation
 
-Status: implemented (console check pending, T10.2) — approved (2026-11-22, maintainer pre-approved)
+Status: implemented (T10.2 passed on the Old 3DS XL, 2026-11-22) — approved (2026-11-22, maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D31 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`Duration`, memory tags, asserts, logs, `Result`, profiler), spec 004 (`Region`, `DrawOptions`), spec 007
 (assets by path), spec 012 (`nnh-assetc`, D27), spec 013 (console test scripts), and the frame clock of spec 015, which
@@ -699,3 +699,10 @@ examples/animation/tests/check.nnhs`, the "animation bench:" line); the target i
 8-byte aligned `new[]` puts the hot half across two lines in 3 cases out of 4): `alignas(32)` on `SpriteAnimator`
 would guarantee it but pads every entity that embeds one, so it's left to the maintainer. Caching the current frame's
 duration in the animator would save the clip and clip-frame reads but has no room in the 32 hot bytes.
+
+### Console result and new budget (2026-11-22)
+
+Old 3DS XL, Development, after the changes above: `animation: PASS 512F027F` (unchanged), bench **0.626 ms** avg,
+1.309 ms worst (was 0.892 / 1.389). The maintainer chose to optimize, then set the budget from the measurement with
+margin: AC-7's budget is now **< 0.8 ms**, and `check.nnhs` fails on an `OVER` bench line. The `alignas(32)` option
+stays open.

@@ -71,9 +71,9 @@ void BenchScene::update() {
 
 void BenchScene::report() {
     const double avg = total_.seconds() * 1000.0 / kFrames, worst = worst_.seconds() * 1000.0;
-    const char* verdict = avg < 0.5 ? "PASS" : "OVER";
+    const char* verdict = avg < 0.8 ? "PASS" : "OVER";
     std::snprintf(result_, sizeof result_,
-                  "animation bench: %d animators avg %.3f ms worst %.3f ms (target < 0.5 ms) %s", kAnimators, avg,
+                  "animation bench: %d animators avg %.3f ms worst %.3f ms (target < 0.8 ms) %s", kAnimators, avg,
                   worst, verdict);
     NNH_LOG_INFO(anim, "%s", result_);
     std::snprintf(shown_, sizeof shown_, "avg %.3f ms  worst %.3f ms  %s", avg, worst, verdict);

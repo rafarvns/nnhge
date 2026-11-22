@@ -1,7 +1,7 @@
 # Tasks 017: Input actions
 
-Status: implemented (console check pending): every task done except T7.2 (the console run) and the Linux VM / libFuzzer
-parts of T2.7, T5.3, T5.5 and the timings of T0.1/T8.4
+Status: implemented: T7.2 passed on the Old 3DS XL and the Linux VM / libFuzzer parts ran on VM 120 (2026-11-22);
+only the timings of T0.1/T8.4 were not measured
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 VM 120 results (2026-11-22, on the branch before the merge): GCC 13 and 14 failed to compile
@@ -171,10 +171,15 @@ into plan.md as "Stage N refinements", as in plans 012 and 015.
 - [x] **T7.1** Build and size check: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development build of
   `examples/actions`; `hello.elf` size against T0.1 recorded; `scripts/check_release_strings.sh` on the Release
   `actions.elf` (no debug-view strings). Covers AC-10, FR-24.
-- [ ] **T7.2** On the Old 3DS: the maintainer opens the Homebrew Launcher and presses Y; then `nnh run actions
+- [x] **T7.2** On the Old 3DS: the maintainer opens the Homebrew Launcher and presses Y; then `nnh run actions
   --script examples/actions/tests/check.nnhs` runs with nobody touching the console. Pass = the saved log ends with
   `actions: PASS` (with the `aim` fallback line saying which path the console took and the bench number < 0.1 ms).
   Files: plan.md ("Stage 7 results": verdict, bench avg/worst, log path). Covers AC-8, AC-9. Prepared: command and expected lines in plan.md "Stage 7: console run (prepared)".
+
+  **Result (2026-11-22, Old 3DS XL, Development):** every functional line as on the PC (`aim uses L/R (no C-Stick)`,
+  rebind/swap/reset, `saved 40 bytes sum AAB4AA36`, the same sum after the reload). Bench 0.224 ms on the first run,
+  over the 0.1 ms target; after the evaluation was optimized (plan "Console bench refinement") **0.142 ms** avg,
+  0.230 ms worst, the budget became < 0.2 ms (maintainer's choice), and the run ends `actions: PASS 7/7`, `nnh: PASS`.
 
 ## Stage 8: docs, roadmap, status
 

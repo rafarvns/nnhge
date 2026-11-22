@@ -1,7 +1,7 @@
 #pragma once
 // The actions bench (spec 017 AC-9): a second set of 64 actions x 4 mixed slots, evaluated by every frame for 600
 // frames; the profiler's `actions` scope (both sets) gives the average and the worst frame. On the console the
-// average must stay under 0.1 ms. Then the self-check verdict is logged and shown (B goes back). Development builds
+// average must stay under 0.2 ms. Then the self-check verdict is logged and shown (B goes back). Development builds
 // (the profiler is compiled out of Release).
 
 #include "shared.hpp"

@@ -1,6 +1,6 @@
 # Spec 016: Sprite animation
 
-Status: implemented (console check pending, T10.2) — approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with
+Status: implemented (T10.2 passed on the Old 3DS XL, 2026-11-22) — approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with
 the recommended answer)
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 002](../002-core-foundation/spec.md) (`Duration`, memory tags, asserts, logs, `Result`, profiling),
@@ -248,8 +248,10 @@ own counters ignores all of it and pays nothing.
   the Homebrew Launcher and presses Y; `nnh run animation --script <file>` (spec 013) waits for the PASS line and
   fails on a FAIL line; the same script passes with `--pc`. The verdict is in the saved log.
 - **AC-7 Cost on the console.** Measured on an Old 3DS with the profiler in the example's bench mode: updating 512
-  animators (mixed clips, markers and state machines) stays under 0.5 ms per frame (target; the plan confirms it); the
-  number goes in the docs.
+  animators (mixed clips, markers and state machines) stays under 0.8 ms per frame; the
+  number goes in the docs. (The first target, 0.5 ms, was set before any console measurement; the Old 3DS measured
+  0.892 ms, then 0.626 ms after the update path was optimized, and the maintainer chose on 2026-11-22 to optimize and
+  then set the budget from the measurement, with margin.)
 - **AC-8 The platformer uses it.** `examples/platformer`'s player draws through an animator with idle, run, jump and
   fall clips chosen by a state machine (replacing its hand-written frame choice), with a footstep marker; its unit
   tests, its replay test (`platformer_replay_matches_script`), `gate.nnhs` and `level.nnhs` pass unchanged (animation

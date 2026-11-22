@@ -30,27 +30,27 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 1: the rig, following and limits (pure)
 
-- [ ] **T1.1** Public header (settings, enums, `CameraRig` declarations), the rig's storage and size, construction,
+- [x] **T1.1** Public header (settings, enums, `CameraRig` declarations), the rig's storage and size, construction,
   `set`/`settings`, copy; `static_assert(sizeof(CameraRig) <= 128)`. Files: `engine/core/include/nnh/camera.hpp`,
   `engine/core/src/camera/camera_internal.hpp`, `camera_rig.cpp`, `engine/core/CMakeLists.txt` (sources,
   `-ffp-contract=off` on `src/camera/*`). Test: `tests/camera/test_camera_value.cpp` (size, trivially copyable, copies
   independent, no `init()`). Covers FR-1, FR-15.
-- [ ] **T1.2** Target and desired position: point and box centre (`x + w / 2`), offset, per-axis follow off, the
+- [x] **T1.2** Target and desired position: point and box centre (`x + w / 2`), offset, per-axis follow off, the
   point zone (`c − half − dz.x / zoom`), dead zone edges against the previous desired position, overshoot, asymmetric
   zone, zone larger than the view clamped + logged once. Files: `camera/camera_follow.cpp`. Test:
   `tests/camera/test_camera_follow.cpp`, `test_camera_dead_zone.cpp`. Covers FR-2, FR-3.
-- [ ] **T1.3** Limits: clamp with `lo`/`hi`, Start/Center/End on small worlds, `set_limits`/`clear_limits`, the final
+- [x] **T1.3** Limits: clamp with `lo`/`hi`, Start/Center/End on small worlds, `set_limits`/`clear_limits`, the final
   clamp rule (followed's own range, not on small-world axes). Files: `camera/camera_limits.cpp`. Test:
   `tests/camera/test_camera_limits.cpp` (part 1: no smoothing). Covers FR-6.
-- [ ] **T1.4** Smoothing and the update order (steps 1–4, 7 of the plan; no shake yet), fraction 1 as an assignment,
+- [x] **T1.4** Smoothing and the update order (steps 1–4, 7 of the plan; no shake yet), fraction 1 as an assignment,
   the 1/64 snap, still target settles bit-exactly, limits changed at run time (glide / cut), `snap()` (centred,
   limits kept), not calling `update` freezes. Files: `camera/camera_update.cpp`, `camera_follow.cpp`. Test:
   `tests/camera/test_camera_smoothing.cpp`, `test_camera_snap.cpp`, `test_camera_limits.cpp` (part 2),
   `test_camera_update.cpp`. Covers FR-4, FR-5, FR-6, FR-12.
-- [ ] **T1.5** [P] Zoom in the rig: view size, `set_zoom`/`set` keep the centre, dead zone in screen pixels at
+- [x] **T1.5** [P] Zoom in the rig: view size, `set_zoom`/`set` keep the centre, dead zone in screen pixels at
   zooms 0.5–4, limits with the zoomed view. Files: `camera_rig.cpp`, `camera_internal.hpp`. Test:
   `tests/camera/test_camera_zoom.cpp`. Covers FR-3, FR-9.
-- [ ] **T1.6** Stage end: `ctest --preset pc-debug`. Covers VI.
+- [x] **T1.6** Stage end: `ctest --preset pc-debug`. Covers VI.
 
 ## Stage 2: shake, layouts, conversions, misuse (pure)
 

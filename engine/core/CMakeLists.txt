@@ -182,6 +182,20 @@ target_sources(nnh_core PRIVATE ${_nnh_actions_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_actions_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Camera helpers (spec 018): every float operation of the rig lives in these files; no fused multiply-add, so the
+# followed and shaken positions have the same bits on every compiler and on the 3DS (FR-12).
+set(_nnh_camera_sources
+    src/camera/camera_follow.cpp
+    src/camera/camera_layout.cpp
+    src/camera/camera_limits.cpp
+    src/camera/camera_rig.cpp
+    src/camera/camera_shake.cpp
+    src/camera/camera_update.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_camera_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_camera_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

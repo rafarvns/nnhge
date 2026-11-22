@@ -2,7 +2,8 @@
 
 > Status: **implemented** (spec 002 stages 1–8): layout, CMake targets, contract areas (app, video,
 > input, time, log, crash, memory, fs, system; later assets (spec 007) and audio (spec 008, decision
-> D21: voices, samples and streams; the mixing rules stay in core; assets also open as streams)), the fake platform, conformance tests, capabilities
+> D21: voices, samples and streams; the mixing rules stay in core; assets also open as streams) and remote (spec 013,
+> D28: Debug/Development only); video gained `draw_tiles` (spec 012, D26)), the fake platform, conformance tests, capabilities
 > ([docs/api/system.md](../api/system.md)) and the first extension header (`<nnh/3ds/console.hpp>`; spec 011 adds `network.hpp` and `launch.hpp`:
 > [api/3ds-extensions.md](../api/3ds-extensions.md)).
 
@@ -23,7 +24,8 @@ NNHGE is a **portable core** plus **one library per system** that plugs into it.
 - **`nnh::core`**: everything portable — loop, events, scenes, logging, memory accounting, file rules,
   math. It never includes a system SDK header.
 - **Platform contract**: small headers (`nnh/platform/video.hpp`, `input.hpp`, `time.hpp`, `fs.hpp`,
-  `log_sink.hpp`, `crash.hpp`, `system.hpp`, `remote.hpp` (spec 013, Debug/Development only), ...) declaring the functions a system library must provide,
+  `log.hpp`, `crash.hpp`, `system.hpp`, `remote.hpp` (spec 013, Debug/Development only: bytes to and from the PC
+  that started the game, and reading the screens back), ...) declaring the functions a system library must provide,
   each documented with its exact behaviour.
 - **`nnh::platform_<system>`**: a static library implementing the whole contract for one system, with its
   own folder, CMake target, README, extension headers and notes.
@@ -67,7 +69,7 @@ Games link one target, `nnh::engine`, which is `nnh::core` + the selected platfo
 
 ```
 engine/core/include/nnh/<module>.hpp           public portable API
-engine/core/include/nnh/platform/<area>.hpp    the platform contract
+engine/core/contract/nnh/platform/<area>.hpp   the platform contract
 engine/core/src/<module>/...                   core implementation
 engine/platforms/<system>/CMakeLists.txt       nnh::platform_<system>
 engine/platforms/<system>/src/<area>_<system>.cpp

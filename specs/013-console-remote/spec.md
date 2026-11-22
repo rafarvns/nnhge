@@ -1,6 +1,6 @@
 # Spec 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21, with every proposed answer below)
+Status: implemented (2026-11-21; approved the same day with every proposed answer below; verified on an Old 3DS XL)
 Author: NNHGE maintainers · Date: 2026-11-21
 Depends on: [spec 010](../010-nnh-cli-run/spec.md) (`nnh run`, the game's log on TCP 17491), [spec 003](../003-full-input/spec.md)
 (input), [spec 002](../002-core-foundation/spec.md) (logs, debug tools). Comes from the spec 012 console gate: checking

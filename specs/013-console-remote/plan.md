@@ -1,7 +1,7 @@
 # Plan 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21, with every proposed answer)
-Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D28 ([decisions.md](../../docs/architecture/decisions.md), proposed)
+Status: implemented (2026-11-21; approved the same day with every proposed answer)
+Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D28 ([decisions.md](../../docs/architecture/decisions.md), approved)
 Uses spec 002 (logs with frame numbers, build flavors), spec 003 (input sample, queries, events), spec 010 (`nnh run`, the
 game's log on TCP 17491, D23), spec 012 (the platformer benchmark whose console gate this runs)
 
@@ -297,8 +297,7 @@ nnh run <game> [--console <ip>] [--pc] [--script <file.nnhs>] [--no-build]
   it is typed (the first one sends `Hello`; until then nothing changes on the console). `expect` waits and prints the
   result but never ends the run; `end` detaches and goes back to the plain log; `help` lists the commands. Not
   repeatable: each line starts at the last frame heard + 6.
-- `--no-build`: run what is already built (agents re-running a script; the ctest smoke test). Proposed addition, see
-  questions.
+- `--no-build`: run what is already built (agents re-running a script; the ctest smoke test). Approved (question 3).
 - **`--pc`**: listens on `127.0.0.1:<free port>`, sets `NNH_REMOTE` in its own environment (inherited by the child),
   starts the simulator on a thread (`run_shell`), and runs the same session. The simulator's log now also goes through
   `nnh` (coloured and saved in `build/logs/` like the console's).
@@ -393,7 +392,7 @@ Settled in stage 5 (2026-11-21):
   `GX_TRANSFER_FMT_RGB8`, `gfxGetScreenFormat()` = `GSP_BGR8_OES`), else `ScreenFailed` with the reason; after it,
   `GSPGPU_InvalidateDataCache` (the GPU wrote the buffer the CPU then sends). Layout sent: 2, width 400/320, height
   240, `width × 240 × 3` bytes, pixel (x, y) at `(x × 240 + 239 − y) × 3` as B, G, R — what `screen_image.cpp`
-  reads. Not yet confirmed on a console (T5.3).
+  reads. Confirmed on an Old 3DS XL in T5.3: upright, not mirrored, the simulator's colours.
 
 ### Simulator and the platformer's automatic gate
 
@@ -566,7 +565,7 @@ recorded sends, synthetic captures, conformance).
 | Article | OK? | Note |
 |---------|-----|------|
 | I | ✅ | Merge in core; one contract area with pc, 3ds and fake implementations; same scripts on both (FR-4) |
-| II | ✅ (measured) | ≈ 2.2 KB BSS and 288 000 B `Linear` only while screenshots are used, Development only; per-frame cost measured in stage 5 with fallbacks |
+| II | ✅ (measured) | ≈ 3.2 KB BSS and 288 000 B `Linear` only while screenshots are used, Development only; per-frame cost measured in stage 5 with fallbacks |
 | III | ✅ | Small core module, contract header private to core; tool code in `tools/nnh`; measured (T8.6) |
 | IV | ✅ | No new events; existing input events for remote input |
 | V | ✅ | Fixed capacities, bounded non-blocking reads; the only blocking send is the screenshot frame, logged as such |

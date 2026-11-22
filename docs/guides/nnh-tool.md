@@ -1,15 +1,18 @@
 # The `nnh` tool
 
 `nnh` builds a game, runs it on the console with its log on your screen, and installs `.cia` files —
-one command each (spec [010](../../specs/010-nnh-cli-run/spec.md)). `nnh serve` lets the console drive
-instead, through the NNH Link app (spec [011](../../specs/011-nnh-link/spec.md), in progress). It is built with the PC presets:
+one command each (spec [010](../../specs/010-nnh-cli-run/spec.md)). It can also drive a running game and
+run test scripts on it ([below](#driving-the-game-from-the-pc), spec [013](../../specs/013-console-remote/spec.md);
+tutorial: [Testing on the console](testing-on-the-console.md)). `nnh serve` lets the console drive
+instead, through the NNH Link app (spec [011](../../specs/011-nnh-link/spec.md)). It is built with the PC presets:
 after `cmake --build --preset pc-debug` it is `build/pc-debug/tools/nnh/nnh(.exe)`. Run it from anywhere
 inside the repository.
 
 ```sh
 nnh run hello                 # build for the 3DS, send to the console, show the log
 nnh run hello --pc            # the same game in the simulator
-nnh run input --pc --script examples/input/tests/remote.nnhs   # a test script: PASS/FAIL, screenshots
+nnh run input --pc --script examples/input/tests/remote.nnhs   # a test script in the simulator: PASS/FAIL
+nnh run input --script examples/input/tests/remote.nnhs        # the same script on the console
 nnh build audio --release     # just build (Release)
 nnh install audio             # build the .cia and install it with FBI
 nnh serve                     # wait for NNH Link on the console (it picks, builds and starts games)
@@ -55,32 +58,181 @@ nnh: hello closed
 
 ## Driving the game from the PC
 
-> Status: in progress (spec [013](../../specs/013-console-remote/spec.md): the simulator works; the 3DS side
-> comes next). The full guide to the script format comes with the spec's last stage; until then the
-> commands are in [plan 013](../../specs/013-console-remote/plan.md#script-language-nnhs).
+`nnh run` can also press buttons, move the sticks, touch the screen and take screenshots of a running
+game, and run **test scripts** that do this and check the game's log (spec
+[013](../../specs/013-console-remote/spec.md)). It works with Debug and Development builds, on the console
+and in the simulator, and the game needs no change. A Release build has no code for it. For a step-by-step
+introduction, read [Testing on the console](testing-on-the-console.md); this section is the reference.
 
 ```text
 nnh run <game> [--console <ip>] [--pc] [--script <file.nnhs>] [--no-build]
 ```
 
-- **`--script <file.nnhs>`** runs a test script: wait, press, hold, tap, sticks, touch and drag,
-  screenshots, `expect` a log line, `fail-on`. The script is checked before anything is built (every
-  error as `file:line: what`); `nnh` prints its progress as `nnh:` lines and ends with
-  `nnh: PASS (<lines> lines, frames 1-<n>)` or `nnh: FAIL at <file>:<line>: <why>`. Exit code: **0** pass,
-  **1** fail, **2** could not run (script error, build failed, no console, no answer from the game). With
-  `--pc` the simulator is closed at the end; on the console the game keeps running. Release builds have
-  no remote control: `--script` with `--release` is refused. Example: `examples/input/tests/remote.nnhs`.
-- **Without `--script`**, every line you type while the game runs is one script command, run as soon as
-  it is typed (`help` lists them; `expect` reports and never ends the run; `end` gives the game its
-  controls back). Nothing is sent to the game before the first command.
-- **Screenshots** go to `build/logs/<game>-<date>-<time>/frame-<n>-<name>-{top,bottom}.png`, next to the
-  log; `<n>` is the frame, six digits. A `screenshot` captures the end of the current frame and moves the
-  script clock one frame, so the commands after it are not in the picture; `drag X Y N` also takes one
-  frame more than its N steps, holding the touch at X Y, so a `screenshot` or `untouch` right after it sees
-  the touch at X Y.
-- **`--no-build`** runs what is already built. **`NNH_PRESET=<preset>`** makes `nnh` build and run from
-  another preset of the same system (for example `pc-debug` instead of `pc-dev`); the ctest
-  `nnh_script_pc_smoke` uses both.
+| Option | Effect |
+|--------|--------|
+| `--script <file.nnhs>` | Run a test script and end with PASS or FAIL. The script is checked **before anything is built**: every error is printed as `file:line: what` and `nnh` exits with 2. Refused with `--release` |
+| `--pc` | Use the simulator. `nnh` listens on `127.0.0.1` and starts the simulator with `NNH_REMOTE=127.0.0.1:<port>`, so a Debug/Development simulator connects back: its log goes through `nnh` (shown and saved like the console's) and scripts drive it the same way. At the end of a script, `nnh` closes the simulator |
+| `--no-build` | Run what is already built (for agents and ctest). If nothing is built, `nnh` stops (exit 2 with a script, 1 without) |
+| `NNH_PRESET=<preset>` (environment) | Build and run from another preset of the same system, e.g. `pc-debug` instead of `pc-dev`, `3ds-debug` instead of `3ds-dev`. Letters, digits and `-` only; anything else is ignored |
+
+The game is driven over the connection it already opens for its log (port 17491 on the console,
+loopback with `--pc`), so only the PC that started it can drive it. `nnh` says `Hello` first; a game that
+doesn't answer within 3 s is a Release build or one built before this feature. When `nnh` stops (end of
+the script, `end`, Ctrl+C) the game gets every control back: remote buttons are released, sticks centred,
+the touch lifted. On the console the game keeps running; real buttons keep working the whole time (remote
+and real input are merged).
+
+### Script format
+
+A script is a plain text file, by convention `<game folder>/tests/<name>.nnhs`. Examples:
+`examples/input/tests/remote.nnhs` (buttons, stick, touch, screenshots) and
+`examples/platformer/tests/gate.nnhs` (a benchmark that reports PASS or FAIL).
+
+```text
+# Comments start with # (anywhere outside quotes). Blank lines are fine.
+fail-on "] E "                 # any error line fails the script
+wait 30                        # let 30 frames pass
+tap A
+expect "pressed A" 10          # a log line containing "pressed A", at the latest 10 frames from here
+wait 10
+hold L+R 20
+screenshot both-held
+end
+```
+
+- One command per line. Commands and button names are case-insensitive.
+- TEXT arguments are in double quotes. Inside them, `\"` is a quote and `\\` a backslash; any other `\x`
+  is kept as written (so `\*` and `\?` reach the pattern).
+- Buttons: `A B X Y L R ZL ZR START SELECT UP DOWN LEFT RIGHT`; join several with `+` (`L+R`).
+
+| Command | Meaning | Clock |
+|---------|---------|-------|
+| `wait N` | let N frames pass | +N |
+| `press B[+B...]` | hold the buttons down from now on | — |
+| `release B[+B...]` | let them go | — |
+| `release all` | let every remote control go: buttons up, both sticks centred, touch lifted | — |
+| `hold B[+B...] N` | press now, release N frames later | +N |
+| `tap B[+B...]` | press now, release on the next frame | +2 |
+| `stick circle X Y`, `stick cstick X Y` | set the Circle Pad or the C-Stick; X and Y from -1 to 1 (at most 3 decimals), y up; `0 0` centres it | — |
+| `touch X Y` | touch the bottom screen at X 0–319, Y 0–239, or move the touch there | — |
+| `drag X Y N` | move the touch from where it is to X Y, one step per frame; needs a touch down | +N+1 |
+| `untouch` | lift the touch | — |
+| `screenshot NAME` | save both screens at the end of the current frame; NAME is 1–32 of `A-Z a-z 0-9 _ -` | +1 |
+| `expect "TEXT" N` | wait for a log line that matches TEXT, at the latest N frames from now | the line's frame + 1 |
+| `fail-on "TEXT"` | from here on, a log line that matches TEXT fails the script | — |
+| `end` | the script passes once everything before it is done; nothing may follow. Optional: the end of the file is the same | — |
+
+N is a whole number of frames, 1 to 216 000 (one hour at 60 Hz).
+
+**Limits**: a script is at most 64 KB and 4096 lines, a line at most 256 characters, a TEXT at most 128.
+Parser errors: unknown command or button, wrong number of arguments, a value out of range, `drag` without
+a touch down, a bad NAME, an unterminated quote, TEXT without quotes (or quotes around anything else), an
+empty TEXT, anything after `end`.
+
+### Timing rules
+
+Scripts count **frames**, not milliseconds, so a run is repeatable.
+
+- The script clock starts at **frame 1**, the game's first frame. Each command happens at the current
+  clock; only the commands with a "Clock" entry above move it.
+- Everything on the same clock applies **at the start of that frame, before the game reads its input**, so
+  the game sees remote input exactly like real input: `pressed()`, `ButtonPressed`, `TouchStarted`, ... on
+  that frame.
+- `tap A` presses on frame *t* and releases on *t*+1; the next command is on *t*+2, so two taps in a row
+  are two presses.
+- `hold A N` presses on *t* and releases on *t*+N; the next command is on *t*+N too.
+- `screenshot` shows the **end** of frame *t* and moves the clock one frame, so the commands after it are
+  not in the picture.
+- `drag X Y N` moves the touch on frames *t*+1 to *t*+N (the last step is exactly X Y) and holds it there
+  one more frame; a `screenshot` or `untouch` right after it sees the touch at X Y.
+- `expect` is a **barrier**: nothing after it is sent until a matching line arrives. Its window starts at
+  the first frame of its part of the script (frame 1, or the frame after the previous `expect`'s line),
+  because a line can come before "now" (`tap A` moves the clock past the press). It ends N frames after the
+  clock at the `expect`. After a match, the clock is **the matching line's frame + 1**.
+- **Late input fails the script.** `nnh` sends each command ahead of its frame, but after an `expect` it
+  can only send once the line has arrived, and the message needs time to reach the console (over Wi-Fi,
+  a few frames). A message that reaches the console after its frame is applied at once and reported, and
+  the script fails with "late" and the line number instead of silently shifting time. So put `wait 10` or
+  more between an `expect` and the next input or screenshot; the parser warns
+  (`file:line: warning: input N frames after the expect on line M ...`) when there is less.
+- A control the console doesn't have (ZL, ZR or the C-Stick on an Old 3DS) fails the script before any
+  input is sent. The simulator has them all.
+
+### Matching log lines
+
+TEXT is a pattern matched anywhere in the whole line as received, frame prefix included:
+
+```text
+[f1234    20.571s] I demo   pressed A
+```
+
+`*` matches any run of characters, `?` exactly one character; `\*`, `\?` and `\\` are those characters.
+Plain text therefore means "contains". Useful patterns: `"] E "` matches every error line, `"] W "` every
+warning. A line at level **F** (failed assert, panic, crash) always fails a script. The frame of a line
+comes from its `[f<n>` prefix; text without one (a raw `printf`) counts as the last frame the console
+reported.
+
+### Output and exit codes
+
+`nnh` prints the game's log as usual plus its own `nnh:` lines, which are also saved in the log file
+(here `examples/input/tests/remote.nnhs` in the simulator, shortened):
+
+```text
+nnh: input is running; its log follows (also in E:/nnhge/build/logs/input-20261121-212121.txt)
+[f0        0.002s] I remote PC attached: remote control on
+[f31       0.492s] I demo   pressed A
+nnh: line 7: expect "pressed A" matched at frame 31
+nnh: line 12 screenshot stick-right -> E:/nnhge/build/logs/input-20261121-212121/frame-000077-stick-right-top.png
+nnh: line 12 screenshot stick-right -> E:/nnhge/build/logs/input-20261121-212121/frame-000077-stick-right-bottom.png
+[f77       1.302s] I remote frame 77 sent a screenshot in 27 ms; its time is not representative
+[f110      1.826s] I demo   touch ended at 280, 200
+nnh: line 18: expect "touch ended at 280, 200" matched at frame 110
+nnh: PASS (19 lines, frames 1-111)
+```
+
+A failure names the script line and the reason, e.g. `nnh: FAIL at tests/smoke.nnhs:7: expect "pressed A":
+no matching line in frames 1-42`. After the verdict, `nnh` still shows the log for up to 1 s (console) or
+10 s (simulator, until it closes).
+
+| Exit code (with `--script`) | Meaning |
+|-----------------------------|---------|
+| 0 | PASS |
+| 1 | FAIL: an `expect` timed out, a `fail-on` matched, a level-F line, an input that arrived late, a message the console rejected or dropped, a screenshot that failed, a control the console doesn't have, or the game closed before `end` |
+| 2 | could not run: a bad command line or script, `--release`, the build failed, nothing built (`--no-build`), no console found, no log connection within 10 s, a simulator that closed without connecting, no answer to `Hello` within 3 s (a Release or older build), another protocol version |
+
+Without `--script`, `nnh run` exits as before: 0 when the game ran (on the console) or the simulator's own
+exit code (`--pc`), 1 when it couldn't build or send the game, 2 for a bad command line.
+
+### Screenshots
+
+Each `screenshot NAME` saves two PNG files, top (400×240) and bottom (320×240), the same size on the
+console and in the simulator:
+
+```text
+build/logs/<game>-<date>-<time>.txt                                 the log
+build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-top.png            the screenshots of that run
+build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-bottom.png
+```
+
+`<n>` is the captured frame, six digits, so the folder sorts by time. On the console a screenshot pair
+takes about 0.6–0.8 s over Wi-Fi (Old 3DS XL): that frame is slow, and the game logs
+`remote: frame <n> sent a screenshot in <ms> ms; its time is not representative`. Take screenshots
+outside anything you measure.
+
+### Typed commands (interactive mode)
+
+Without `--script`, every line you type in `nnh`'s terminal while the game runs is one script command, run
+as soon as you press Enter. Nothing is sent to the game before the first command, so a plain `nnh run`
+behaves as before until you type.
+
+- `help` lists the commands. Mistakes are reported as `nnh: typed:<n>: ...`.
+- A typed command starts about 6 frames (100 ms) after the last frame `nnh` heard, or after the commands
+  still waiting (a command typed during a long `hold` waits for its release). Typed timing is not
+  repeatable: use a script for that.
+- `expect "TEXT" N` reports `matched at frame <n>` or `no matching line in frames ...` and never ends the
+  run; `fail-on` reports matches.
+- `end` gives the game its controls back (the next command attaches again). In the simulator it doesn't
+  close the game.
 
 ## Installing a `.cia`
 
@@ -127,12 +279,16 @@ nnh: the console is starting hello
 It listens only while a run, an install or `nnh serve` needs it, and its file server answers only the file
 it is installing. `nnh serve` builds and sends programs only to an authenticated, paired console, and the
 console accepts them only from the PC it paired with ([security.md](../architecture/security.md)).
+Scripts and typed commands reach only the Debug/Development game that opened its log connection to this
+`nnh` (the simulator only on the loopback interface); the game checks every message and ignores bad ones.
 
 ## How it works
 
 `nnh` speaks the Homebrew Launcher netloader's protocol (the one devkitPro's `3dslink` uses) and FBI's
 URL protocol with its own small code: no compression library and no devkitPro tool on the PATH needed
 (decision D23). `nnh serve` uses NNH Link's own protocol from the `link/` library (decision D24, [plan
-011](../../specs/011-nnh-link/plan.md)). Details: [plan 010](../../specs/010-nnh-cli-run/plan.md); code: `tools/nnh/`. On Windows,
+011](../../specs/011-nnh-link/plan.md)). Scripts and typed commands use the game's log connection (decision
+D28, [plan 013](../../specs/013-console-remote/plan.md); code: `tools/nnh/src/remote/`). Details: [plan
+010](../../specs/010-nnh-cli-run/plan.md); code: `tools/nnh/`. On Windows,
 3DS builds run through devkitPro's MSYS2 shell (`DEVKITPRO_MSYS2` overrides its location), like
 `scripts/dkp.sh`.

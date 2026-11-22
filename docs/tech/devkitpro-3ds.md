@@ -146,15 +146,30 @@ What our backend (`input_3ds.cpp`) does:
   every connection with it); without a listening PC the game starts without logs. At shutdown, flush and `close()` fds 1 and 2 as well as the
   socket **before** `socExit()`, or newlib's exit-time stdio cleanup hangs the console on a black screen
   instead of returning to the Homebrew Launcher.
-- **Console remote** (spec 013, Debug/Development; built, not yet run on a console): `nnh run --script`
-  drives the game over that same log socket (`ctr::link_socket()`). `src/remote_3ds.cpp` reads it with
-  `recv(..., MSG_DONTWAIT)` once per frame and sends records after `fflush(stdout)`/`fflush(stderr)` (stdout
-  is fully buffered on the socket), in 16 KB pieces, setting `TCP_NODELAY` at the first send.
-  `src/remote_capture_3ds.cpp` reads a screen back with `C3D_SyncDisplayTransfer` from its citro2d render
-  target (`frameBuf.colorBuf`, `GX_BUFFER_DIM(240, 400|320)`, the target's own `transferFlags`, which must
-  give linear `GX_TRANSFER_FMT_RGB8`, with `gfxGetScreenFormat()` = `GSP_BGR8_OES`) into one 288 000-byte
-  `linearAlloc` buffer (from the first screenshot until the PC leaves), then `GSPGPU_InvalidateDataCache`.
-  The result is the framebuffer's layout: bytes B, G, R; screen columns left to right, each bottom to top.
+- **Console remote** (spec 013, Debug/Development; verified on an Old 3DS XL, 2026-11-21): `nnh run --script`
+  and typed commands drive the game over that same log socket (`ctr::link_socket()`;
+  [guide](../guides/testing-on-the-console.md)).
+  - **Socket reads**: `src/remote_3ds.cpp` reads with `recv(..., MSG_DONTWAIT)` once per frame (inside the
+    profile scope `remote`), at most what the 64-message queue has room for. `EAGAIN`/`EWOULDBLOCK`/`EINTR`
+    mean "nothing yet"; `recv` returning 0 (the PC closed) or another error ends the remote for this run.
+  - **Sends**: records go out after `fflush(stdout)`/`fflush(stderr)` (stdout is fully buffered on the
+    socket, so earlier log lines stay first), in 16 KB pieces, blocking until written. `TCP_NODELAY` is set
+    at the first remote send, so a log-only connection (`3dslink -s`, `nnh serve`) is unchanged.
+  - **Read-back**: `src/remote_capture_3ds.cpp` copies a screen with `C3D_SyncDisplayTransfer` from its
+    citro2d render target (`frameBuf.colorBuf`, `GX_BUFFER_DIM(240, 400|320)`, the target's own
+    `transferFlags`, which must give linear `GX_TRANSFER_FMT_RGB8`, with `gfxGetScreenFormat()` =
+    `GSP_BGR8_OES`) into one 288 000-byte `linearAlloc` buffer (from the first screenshot until the PC
+    leaves or the game shuts down), then `GSPGPU_InvalidateDataCache`. The result is the framebuffer's
+    layout: bytes B, G, R; screen columns left to right, each bottom to top. Confirmed on hardware: upright,
+    not mirrored, the same colours as the simulator's screenshot; no fallback was needed. The read-back is
+    refused while a frame is open (`ctr::Context::frame_open`): it must run after `end_frame()`.
+  - **Measured costs** (Old 3DS XL, Development build, over Wi-Fi): a screenshot pair (top + bottom,
+    ≈ 518 KB) takes **0.62–0.78 s**, during which the game doesn't run; that frame is logged as not
+    representative. The per-frame poll (and a 12-byte tick every 4th frame) is too small to show: the tile
+    gate ran attached to `nnh` with 4 layers + 300 sprites at avg 16.7 ms, worst 17.4 ms, 0 missed frames of
+    600, and found limits of 6 layers / 600 sprites (spec 012 T3.9). Release builds have none of this code.
+  - **Disconnect**: when `nnh` goes away (even killed without `Bye`), the next `recv` reports it and every
+    remote control is released (checked on hardware with a held L).
 - UDP on the console: answers to a socket bound to port 0 ("any") never arrived on hardware (NNH Link's
   search, 2026-11-21); bind a fixed port, as the Homebrew Launcher's netloader does (NNH Link binds 17492,
   `apps/nnh-link/src/net_client.cpp`). Sending broadcasts with `SO_BROADCAST` works.

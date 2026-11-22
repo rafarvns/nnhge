@@ -1,0 +1,207 @@
+# Testing on the console
+
+A **test script** lets the PC play your game for you: it presses buttons, moves the sticks, touches the
+screen, takes screenshots of both screens and checks the game's log, then says PASS or FAIL. The same
+script runs in the simulator and on a 3DS. On the console, the only thing a person does is start the game
+(Homebrew Launcher → **Y**); nobody needs to hold the console, read numbers or report them.
+
+This guide walks through it. The full list of commands and rules is in the
+[nnh tool guide](nnh-tool.md#driving-the-game-from-the-pc). The design is in
+[spec 013](../../specs/013-console-remote/spec.md).
+
+## What you need
+
+- A **Debug or Development** build. `nnh run` builds Development by default; Release builds have no remote
+  control at all.
+- For the console: a 3DS with the Homebrew Launcher, on the same local network as the PC (see
+  [Getting started](getting-started.md#4-run-on-a-3ds)).
+- Your game needs no change. Remote input reaches it exactly like real input: `nnh::input::pressed()`,
+  `ButtonPressed`, `TouchStarted` and so on, on the frame the script says.
+
+## 1. Make the game say what happened
+
+Scripts check the game through its **log**. Log what a test needs to see with `NNH_LOG_*`
+([logging](../architecture/logging.md)). For example, `examples/input` logs every press and touch
+(`press_log.cpp`, `touch_log.cpp`):
+
+```cpp
+void PressLog::on_pressed(const nnh::ButtonPressed& e) { NNH_LOG_INFO(demo, "pressed %s", button_name(e.button)); }
+```
+
+Every log line starts with its frame and level, so a script knows *when* it happened:
+
+```text
+[f31       0.492s] I demo   pressed A
+```
+
+## 2. Write a script
+
+Put it next to the game, in `tests/<name>.nnhs`. This is `examples/input/tests/remote.nnhs`:
+
+```text
+fail-on "] E "                     # any error line fails the test
+wait 30                            # the game's first 30 frames
+tap A
+expect "pressed A" 10              # the game must log it
+wait 10                            # give the next input time to travel (see "Timing")
+hold L+R 20
+stick circle 1 0
+wait 15
+screenshot stick-right             # both screens, saved as PNG
+stick circle 0 0
+touch 40 40
+drag 280 200 30                    # 30 frames to get there
+screenshot dragged
+untouch
+expect "touch ended at 280, 200" 5
+end
+```
+
+`nnh` checks the whole script before it builds anything and lists every mistake as `file:line: what`.
+
+## 3. Run it in the simulator
+
+```sh
+build/pc-debug/tools/nnh/nnh run input --pc --script examples/input/tests/remote.nnhs
+```
+
+The simulator opens, the script plays, and `nnh` prints the game's log with its own `nnh:` lines:
+
+```text
+nnh: line 7: expect "pressed A" matched at frame 31
+nnh: line 12 screenshot stick-right -> E:/nnhge/build/logs/input-20261121-212121/frame-000077-stick-right-top.png
+...
+nnh: PASS (19 lines, frames 1-111)
+```
+
+At the end `nnh` closes the simulator. Exit code: **0** PASS, **1** FAIL, **2** could not run (a script
+error, a failed build, no answer from the game, ...). Write and fix scripts here first: it is fast and the
+results are the same as on the console.
+
+## 4. Run it on the console
+
+1. On the 3DS: open the **Homebrew Launcher** and press **Y**.
+2. On the PC:
+
+   ```sh
+   build/pc-debug/tools/nnh/nnh run input --script examples/input/tests/remote.nnhs
+   ```
+
+`nnh` builds the `.3dsx` (Development), sends it, waits for the game to connect and runs the script. Don't
+touch the console: real input is merged with the script's. When the script ends, the game gets its
+controls back and keeps running; close it as usual.
+
+If the game doesn't answer (`nnh: the game didn't answer: a Release build, or one older than nnh`), it is a
+Release build or was built before this feature. If nothing connects at all, see the firewall note in the
+[nnh tool guide](nnh-tool.md#running-on-the-console).
+
+## Timing: frames, not seconds
+
+A script counts **frames** of the game. The clock starts at frame 1 and only `wait`, `hold`, `tap`, `drag`,
+`screenshot` and `expect` move it. `nnh` stamps every input with its frame, and the game applies it at the
+start of that frame, before reading input. Network delay therefore doesn't change *when* an input happens,
+so the same script gives the same frames every time, on the PC and on the console.
+
+The one thing to remember: **after an `expect`, wait before the next input.** `nnh` can only send what
+follows an `expect` once the matching line has arrived, and the input needs a few frames to reach the
+console over Wi-Fi. If it arrives after its frame, the script **fails** with "late" and the line number
+(it never shifts time silently). Use `wait 10` or more; the parser warns when there is less.
+
+Other rules worth knowing:
+
+- An `expect` window starts at the frame after the previous `expect`'s line (or frame 1), so a line logged
+  during the commands before the `expect` counts. After a match, the clock continues from the line's
+  frame + 1.
+- `tap` takes 2 frames (press, release); `hold B N` takes N.
+- A `screenshot` shows the end of its frame and takes one frame: what follows is not in the picture.
+- A `drag X Y N` takes N + 1 frames: it holds the touch at X Y for one frame before what follows.
+
+All the rules: [nnh tool guide, timing rules](nnh-tool.md#timing-rules).
+
+## What is repeatable
+
+Inputs land on the same frames every run. The game's response is the same when its logic is the same for
+the same inputs on the same frames:
+
+- **Frame-based logic** (move 2 pixels per frame, count frames) repeats exactly, on the PC and on the
+  console.
+- Logic that uses **`nnh::time::delta()`** or the clock can differ slightly between runs and between the
+  PC and the console, because frame times differ.
+- **Random numbers** repeat only with a fixed seed.
+- **Screenshots** cost time on the console (next section), and a measured frame time is never exactly the
+  same twice: test thresholds ("no frame over 16.7 ms"), not exact times.
+- A script can't press ZL, ZR or move the C-Stick on an Old 3DS: such a script fails before any input is
+  sent. The simulator has every control.
+
+## Reporting a result from the game
+
+Some checks are easier inside the game: a benchmark, a self-test, a long sequence. Let the game decide and
+**log the verdict** as one line; the script waits for it and fails on the opposite. `examples/platformer`
+does this for its tile benchmark ([gfx](../api/gfx.md), `examples/platformer/gate.cpp`): A in the benchmark
+starts the automatic gate, which logs one line per trial and ends with
+
+```text
+I platformer bench: PASS 4 layers + 300 sprites, avg 16.7 ms, worst 17.4 ms, missed 0 of 600 frames
+```
+
+or `bench: FAIL ...` (a warning, so it is also kept in Release logs). Its script,
+`examples/platformer/tests/gate.nnhs`, ends with:
+
+```text
+fail-on "bench: FAIL"
+tap A
+expect "bench: gate started" 10
+expect "bench: PASS" 12000
+wait 15
+screenshot gate-result
+end
+```
+
+On an Old 3DS XL this ran for about a minute with nobody touching the console and passed (spec 012's
+tile gate, 2026-11-21). Tips: keep result lines short (log lines are at most 159 characters), put the
+numbers in them so the log is the report, and show the verdict on screen too, so a screenshot shows it.
+
+## Screenshots
+
+`screenshot NAME` saves both screens as PNG in a folder named like the run's log:
+
+```text
+build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-top.png       400×240
+build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-bottom.png    320×240
+```
+
+They show exactly what the screens show, at the console's own size, on the PC and on the console. Agents
+can read the PNG files to check a result without a person.
+
+On the console, a screenshot pair takes about **0.6–0.8 s** over Wi-Fi (Old 3DS XL): the game stops for
+that time, and its log says `remote: frame <n> sent a screenshot in <ms> ms; its time is not
+representative`. Take screenshots outside anything you measure; in the simulator they cost a few
+milliseconds.
+
+## Trying commands by hand
+
+Without `--script`, type commands in `nnh`'s terminal while the game runs: `tap A`, `touch 160 120`,
+`screenshot here`, `expect "pressed" 30`, `help` for the list, `end` to give the game its controls back.
+Handy for reproducing a bug step by step; for anything you want to repeat, write a script.
+
+## For agents and CI
+
+- `--no-build` runs what is already built; `NNH_PRESET=<preset>` picks another preset of the same system:
+
+  ```sh
+  NNH_PRESET=pc-debug build/pc-debug/tools/nnh/nnh run input --pc --no-build --script examples/input/tests/remote.nnhs
+  ```
+
+- In the simulator without a display, set `SDL_VIDEO_DRIVER=offscreen`. The ctest `nnh_script_pc_smoke`
+  (`tools/nnh/tests/script_pc_smoke.cmake`) runs the input script this way in every Debug/Development PC
+  preset and checks the exit code and the four PNG files.
+- On the console, an agent runs the same command as a person; the maintainer only opens the Homebrew
+  Launcher and presses Y. The log and the screenshots in `build/logs/` are the report.
+
+## How it works
+
+`nnh` uses the connection the game already opens for its log: it sends small fixed-size messages
+stamped with a frame, and the game answers inside its log stream (decision D28,
+[debugging](../architecture/debugging.md#driving-a-game-from-the-pc)). Only the PC the game connected to
+can drive it, and only Debug/Development builds have the code
+([security](../architecture/security.md)).

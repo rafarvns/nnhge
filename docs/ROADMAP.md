@@ -50,6 +50,13 @@ it (the tool is built only on demand); edit one game `.cpp` → simulator 1.4 s,
 configure + build (engine + 7 examples + NNH Link) 12.1 + 19.3 s; building `nnh-assetc` for the host in a 3DS
 folder: 9.0 s the first time (Windows), 0.8 s (Linux VM).
 
+Spec 013 (2026-11-21, same machine; before = commit `82f6e91`, the approved plan without remote code, after = the
+finished spec; separate build folders, 3DS without ccache, PC with ccache but every edit a miss; three edits each):
+edit `examples/hello/main.cpp` → simulator 1.66–2.07 s before, 1.77–2.04 s after; → `.3dsx` 2.97–3.05 s before,
+2.93–2.97 s after. Clean 3DS engine (`nnh_core` + `nnh_platform_3ds`) 10.2 → 11.7 s; the rest (examples, NNH Link,
+host tool) 12.7 → 13.1 s; no-op build 2.0 → 1.9 s. Release `hello.3dsx` 261,112 → 261,260 bytes (+148: the remote
+is compiled out). All within budget; the simulator edit is close to its 2 s limit both before and after.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -100,9 +107,8 @@ folder: 9.0 s the first time (Windows), 0.8 s (Linux VM).
 - [x] NNH Link app: discover dev server, list projects, request build, receive and launch — [spec 011](../specs/011-nnh-link/spec.md) (built: the `link/` library, `nnh serve`, the 3DS network and launch extensions and the app `apps/nnh-link`, guide [NNH Link](guides/nnh-link.md); tested on the Old 3DS XL 2026-11-21)
 - [x] Pairing code for LAN safety — spec 011
 
-- [ ] Console remote: input, screenshots and test scripts from the PC — [spec 013](../specs/013-console-remote/spec.md) (approved; before finishing spec 012, whose console gate it runs; stages 1–7 done: wire format, reader, schedule and input merge in `engine/core/src/remote/`, pure and fuzzed; the session in core (Hello, ticks, remote input in `nnh::frame()`, screenshots, disconnect) over the fake platform, Release free of it; the tool's pure logic in `tools/nnh/src/remote/` — stream splitter, `.nnhs` script parser, timeline, runner (script and interactive), log matching, screenshots to PNG — tested against a fake console; the simulator end to end: `nnh run <game> --pc --script <file.nnhs>` (and typed commands) with the simulator's loopback connection (`NNH_REMOTE`), its screen read-back, the session loop in `nnh`, and the ctest `nnh_script_pc_smoke`; the 3DS transport and read-back, passed on the Old 3DS XL with nobody touching it after Y; stage 6: the platformer's automatic gate
-(`PLATFORMER_DEMO=gate`, A in the benchmark) and `examples/platformer/tests/gate.nnhs`, passing in the simulator and
-on the Old 3DS XL (spec 012's T3.9); stage 7: Linux build, ASan/UBSan and `fuzz_remote` clean; next: the docs)
+- [x] Console remote: input, screenshots and test scripts from the PC — [spec 013](../specs/013-console-remote/spec.md) (decision D28): `nnh run <game> [--pc] --script <file.nnhs>` presses buttons, moves the sticks, touches, takes PNG screenshots of both screens and checks the log of a Debug/Development game, then exits 0 PASS / 1 FAIL / 2 could not run; without a script, commands typed in `nnh`'s terminal; frame-stamped inputs over the game's own log connection (simulator: loopback, `NNH_REMOTE`), merged in core before input is read; Release has none of it (checked); the reader fuzzed, ASan/UBSan clean on Linux; `examples/input/tests/remote.nnhs` and the platformer's automatic gate (`examples/platformer/tests/gate.nnhs`) pass in the simulator and on an Old 3DS XL with nobody touching it after Y (2026-11-21); screenshot pair 0.6–0.8 s on the console — guides [Testing on the console](guides/testing-on-the-console.md), [the nnh tool](guides/nnh-tool.md#driving-the-game-from-the-pc)
+- [ ] Later (spec 013 non-goals): drive games started by NNH Link; record and replay a player's session
 
 ## M7 — Game structure
 - [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md); stage 2 done: maps built in code, `<nnh/tilemap.hpp>`, [api/tilemap.md](api/tilemap.md); stage 3 done on PC and 3DS builds: `gfx::draw_tilemap` as tile batches (D26), `AppConfig::gfx.max_tiles`, `examples/platformer` skeleton with a tile benchmark; the Old 3DS gate passed: 4 layers + 300 sprites with no missed frame, limits 6 layers / 600 sprites; next: stage 4, loading converted maps)

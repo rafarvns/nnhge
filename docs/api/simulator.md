@@ -65,6 +65,13 @@ so reference images don't depend on anyone's preferences. To capture another lay
 | `NNH_SIM_INPUT=<script>` | Debug/Development: replaces keyboard, mouse and gamepad on every frame with fixed input, e.g. `circle=0.7,0.5;cstick=-1,0;touch=160,120;buttons=A+R+Start`. Every part is optional; sticks in [-1, 1] (y up, before the dead zone), touch in bottom-screen pixels, buttons by `nnh::Button` name joined with `+`. |
 | `NNH_REMOTE=127.0.0.1:<port>` | Debug/Development, set by `nnh run --pc` (spec 013): the simulator connects back to that `nnh` (1 s timeout; loopback addresses only, anything else is ignored), sends its log there instead of the terminal, and takes remote input and screenshot requests like a console ([nnh tool](../guides/nnh-tool.md#driving-the-game-from-the-pc)). Without a connection it runs as before. |
 
+You don't set `NNH_REMOTE` yourself: `nnh run <game> --pc` does. Then the simulator's log appears in `nnh`'s
+terminal (coloured by `nnh`) and is saved in `build/logs/<game>-<date>-<time>.txt`, like a console's, and test
+scripts or typed commands drive it exactly as they drive a console: same frames, same screenshot sizes
+(400×240 and 320×240, read back from each screen's render target). At the end of a script `nnh` closes the
+simulator. Headless runs (CI, agents) add `SDL_VIDEO_DRIVER=offscreen`. Guide:
+[Testing on the console](../guides/testing-on-the-console.md).
+
 ```sh
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=shot.png build/pc-debug/examples/hello/hello.exe
 NNH_SIM_LAYOUT=side NNH_SIM_SCALE=2 NNH_EXIT_AFTER_FRAMES=60 NNH_SCREENSHOT=side.png \

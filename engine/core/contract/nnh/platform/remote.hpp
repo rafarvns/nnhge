@@ -4,6 +4,13 @@
 /// (`nnh run`), and reading the screens back for screenshots. Implemented by every platform library, called
 /// only by nnh::core, and only in Debug/Development builds (core never calls it in Release, so the linker
 /// leaves these functions out). Not for games. See specs/013-console-remote/plan.md.
+///
+/// Implementations: pc `remote_pc.cpp` (a loopback socket to the `nnh run --pc` named by NNH_REMOTE; the log goes
+/// through it too) and `remote_capture_pc.cpp` (SDL_RenderReadPixels, layout Rgba8Rows); 3ds `remote_3ds.cpp` (the
+/// 3dslink log socket) and `remote_capture_3ds.cpp` (C3D_SyncDisplayTransfer into 288 000 bytes of linear memory,
+/// layout Bgr8ColumnsBottomUp; a screenshot pair costs 0.6–0.8 s over Wi-Fi on an Old 3DS); fake `remote_fake.cpp`
+/// (scriptable bytes, recorded sends, a synthetic pattern). Conformance: tests/platform_conformance/. Users' guide:
+/// docs/guides/testing-on-the-console.md.
 
 #include <cstddef>
 #include <cstdint>

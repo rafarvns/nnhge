@@ -1,7 +1,8 @@
 #pragma once
 // Console remote session (spec 013, D28): the hooks nnh::frame() calls, and what the session and the
 // screenshots share. Called from app.cpp only when build::kDevToolsEnabled, so Release links none of it.
-// Protocol and timing: specs/013-console-remote/plan.md. Tests: tests/remote/test_remote_{session,frames,screenshot}.cpp.
+// Protocol and timing: specs/013-console-remote/plan.md; overview in docs/architecture/debugging.md ("Driving a
+// game from the PC"). Tests: tests/remote/test_remote_{session,frames,screenshot}.cpp.
 
 #include <cstddef>
 #include <cstdint>

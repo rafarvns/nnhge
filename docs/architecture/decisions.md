@@ -68,4 +68,6 @@ never through `#ifdef` in game code.
 - 2026-11-21: D25 (opt-in game features), D26 (tile batches) and D27 (`nnh-assetc` host tool), the last two from
   plan 012, approved by the maintainer. D27 replaces D6's "content-hash cache" with per-file steps and
   depfiles.
-- 2026-11-21: D28 (console remote over the log connection), from plan 013, approved by the maintainer.
+- 2026-11-21: D28 (console remote over the log connection), from plan 013, approved by the maintainer; implemented
+  the same day (spec 013) and verified on an Old 3DS XL. Changed while building it, within D28: a `screenshot` and
+  the end of a `drag` each take a frame of the script clock (plan 013, "Settled in stage 5").

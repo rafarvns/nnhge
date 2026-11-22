@@ -4,7 +4,8 @@ Homebrew runs **without a sandbox**: a bug in a game can delete or corrupt any f
 card. Players trust that a game made with NNHGE won't. These rules make the engine safe by default
 (constitution article X).
 
-> Status: **implemented** (spec 002): confined files, atomic saves, bounded parsers, fuzzing, CI hardening.
+> Status: **implemented** (spec 002): confined files, atomic saves, bounded parsers, fuzzing, CI hardening;
+> NNH Link (spec 011) and the console remote (spec 013) below.
 > API: [docs/api/fs.md](../api/fs.md).
 
 ## Threat model (what we protect against)
@@ -16,6 +17,7 @@ card. Players trust that a game made with NNHGE won't. These rules make the engi
 | Crash or memory corruption from bad data | corrupted/modified save, asset or downloaded file | bounded parsers + fuzz tests |
 | Malicious code reaching users | compromised dependency or CI | pinned hashes, pinned actions, least privilege |
 | Code pushed to a console over the network | NNH Link | pairing, mutual authentication, a MAC on every message, LAN only (spec 011, D24; [guide](../guides/nnh-link.md#safety)) |
+| A game reading commands from the network | the console remote (`nnh run --script`, spec 013, D28) | Debug/Development only (no code in Release, checked); the game opens the connection to the PC that started it (simulator: loopback only); fixed-size messages, every field checked, bounded reads; fuzzed ([below](#console-remote-spec-013)) |
 | Privacy | telemetry | none, ever |
 
 Out of scope: protecting a game against cheating or piracy, and protecting the console from its owner.
@@ -80,6 +82,32 @@ least one valid file.
   `..` or empty segments, ≤ 255 characters) with arguments that fit the loader's 1 KB block; the same
   check applies to a game's `--nnh-return=<path>`. These rules are pure code tested on PC
   (`tests/platform_3ds/test_hbldr_args.cpp`).
+
+## Console remote (spec 013)
+
+The console remote is the first time a **game** reads from the network: `nnh run` sends it input and
+screenshot requests (decision D28, [debugging](debugging.md#driving-a-game-from-the-pc)). The rules:
+
+- **Development only.** Every core call is under `if constexpr (build::kDevToolsEnabled)`, so a Release build
+  links none of it. `scripts/check_release_strings.sh` fails if a Release binary contains the remote's log
+  texts, `NNH_REMOTE` or its function names (`remote_frame_start`, `remote_receive`, `remote_send`,
+  `remote_capture`, `screenshots_send`, ...). Last checked 2026-11-21 on `3ds-release` and `pc-release`
+  `hello`, `input` and `platformer`.
+- **Only the PC that started the game.** The game opens the connection itself: on the 3DS, its log
+  connection to the 3dslink host (`nnh run`); in the simulator, `NNH_REMOTE`, accepted only for a loopback
+  address (127.0.0.0/8, tested). Nothing listens on the console. Without `Hello`, the game sends nothing
+  new and behaves as before.
+- **Bounded and checked.** Messages are exactly 16 bytes; every field is range-checked (magic, type, the 14
+  button bits, disjoint masks, stick and touch ranges, reserved bytes zero, frames in order, `Hello` first).
+  A bad message is dropped and reported; 8 bad messages in a row turn the remote off until the PC reconnects.
+  Each frame reads at most what the 64-message queue has room for, never waits and never allocates.
+  Disconnecting releases every remote control.
+- **Fuzzed on both ends.** The console's reader, schedule and input merge are fuzz target `remote_target`
+  (mini-fuzz in `nnh_tests`, libFuzzer `fuzz_remote`: 2026-11-21, 60 s, 922 651 runs, cov 132, no crash),
+  with a round-trip check of every decoded message. `nnh` treats the game's stream as untrusted too: records
+  over 1 MiB, unknown types and bad headers fall back to text, screen sizes must match exactly; its stream
+  splitter and script parser have mini-fuzz tests in `nnh_tool_tests`. `nnh_tests` and `nnh_tool_tests`
+  passed under ASan + UBSan (clang 18, Linux) the same day.
 
 ## Supply chain and CI
 

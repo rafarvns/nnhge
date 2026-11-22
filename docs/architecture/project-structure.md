@@ -8,7 +8,8 @@ examples and tests.
 ```
 engine/
   core/include/nnh/<module>.hpp              public API, one header per module (what games include)
-  core/src/<module>/<concept>.cpp|.hpp       core implementation, internal headers
+  core/src/<module>/<concept>.cpp|.hpp       core implementation, internal headers (a pure file there may be
+                                             shared with a host tool, e.g. remote/remote_wire.cpp with tools/nnh)
   core/src/core/                             engine-wide internal state shared by modules; pure helpers with no
                                              engine includes that host tools compile too (crc32)
   core/contract/nnh/platform/<area>.hpp      platform contract (what each platform library implements)
@@ -23,7 +24,8 @@ tests/
   <example>/test_<concept>.cpp               an example's pure logic, compiled from examples/<example>/
                                              (tests/platformer: the benchmark's automatic gate)
 examples/<name>/                             one small program per feature (main.cpp + CMakeLists.txt)
-  tests/*.nnhs                               console test scripts (spec 013): nnh run <name> --script ...
+  tests/*.nnhs                               test scripts (spec 013): nnh run <name> [--pc] --script ...
+                                             (guide: guides/testing-on-the-console.md)
 docs/
   api/<module>.md                            reference for each public module
   architecture/  process/  tech/  guides/
@@ -34,7 +36,8 @@ link/                                        nnh_link (spec 011, D24): sockets, 
 apps/<app>/                                  apps made with NNHGE that ship with it, in every preset: apps/nnh-link
   src/  tests/                               (spec 011): pure logic (link_state, storage, pad, layout) tested
                                              against fakes; views and one scene; platform_link_<system>.cpp
-tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010); tools/assetc
+tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010; src/remote/: test
+                                             scripts and the console remote's PC side, spec 013); tools/assetc
                                              (nnh-assetc, build-time conversions, spec 012, D27; built by
                                              cmake/nnh_host_tools.cmake, standalone-capable CMakeLists.txt)
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,

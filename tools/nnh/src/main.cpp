@@ -1,4 +1,5 @@
-// nnh — the NNHGE command-line tool (spec 010): build, run on the console with readable logs, install.
+// nnh — the NNHGE command-line tool: build, run on the console with readable logs, install (spec 010); serve
+// NNH Link (spec 011); drive a Development game with test scripts or typed commands (spec 013).
 
 #include <cstdio>
 #include <string>

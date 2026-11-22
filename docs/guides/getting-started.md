@@ -56,7 +56,8 @@ The console needs custom firmware with the Homebrew Launcher.
   build/pc-debug/tools/nnh/nnh run hello             # build, send, show the game's log
   ```
   `nnh` finds the console and remembers it; `--console <ip>` sets it ([the nnh tool](nnh-tool.md)).
-  devkitPro's `3dslink <file>.3dsx -a <console-ip>` works too.
+  devkitPro's `3dslink <file>.3dsx -a <console-ip>` works too. To let the PC press buttons, take
+  screenshots and check the log for you, see [Testing on the console](testing-on-the-console.md).
 - **From the console**: with **NNH Link** on the console and `nnh serve` on the PC, pick a game on the
   console; the PC builds it and the console runs it ([NNH Link](nnh-link.md)).
 - **By SD card**: copy the `.3dsx` to `sdmc:/3ds/` and open it from the Homebrew Launcher.

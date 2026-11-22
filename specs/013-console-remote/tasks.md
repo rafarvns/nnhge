@@ -1,7 +1,7 @@
 # Tasks 013: Console remote — input, screenshots and test scripts from the PC
 
-Status: approved (2026-11-21); stages 1–5 done (2026-11-21, on the Old 3DS XL); stages 6–7 done (2026-11-21; the gate passed
-on the Old 3DS XL; Linux, sanitizers, fuzzing); next: stage 8
+Status: implemented (2026-11-21): stages 1–5 done on the Old 3DS XL; stages 6–7 (the gate passed on the Old 3DS XL;
+Linux, sanitizers, fuzzing); stage 8 (verification and docs)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -381,23 +381,49 @@ Verifiable: the gate script passes in the simulator; the console result recorded
 
 ## Stage 8 — verification and docs
 
-- [ ] **T8.1** `nnh help` and the header comments of the contract and internal hooks — covers AC-5
-- [ ] **T8.2** [P] `docs/api/simulator.md` (`NNH_REMOTE`, the log through `nnh`), `engine/platforms/pc/README.md`,
+- [x] **T8.1** `nnh help` and the header comments of the contract and internal hooks — covers AC-5
+  - Done. `nnh help`: typed commands (`help`, `end`), `--script` is Debug/Development only, the log and screenshot
+    paths, a pointer to the new guide (`tools/nnh/src/cli.cpp`; `test_cli.cpp`'s help checks still pass);
+    `tools/nnh/src/main.cpp`'s header names specs 010, 011 and 013. `nnh/platform/remote.hpp` lists the
+    implementations, their costs and the guide; `remote_internal.hpp` points to the architecture overview.
+- [x] **T8.2** [P] `docs/api/simulator.md` (`NNH_REMOTE`, the log through `nnh`), `engine/platforms/pc/README.md`,
   `docs/tech/devkitpro-3ds.md` (read-back, socket reads, measured costs), `engine/platforms/3ds` notes — covers AC-5
-- [ ] **T8.3** release check, final: `scripts/check_release_strings.sh` on `build/3ds-release/examples/platformer/platformer.elf`
+  - Done. `devkitpro-3ds.md` has the socket reads, sends, read-back (confirmed on hardware), the measured costs
+    (screenshot pair 0.62–0.78 s; the gate attached with no missed frame) and the disconnect. Also fixed stale
+    lines found on the way: the PC README's capabilities (the simulator has touch, both sticks and ZL/ZR), the 3DS
+    README's capabilities note and `.cia` "planned".
+- [x] **T8.3** release check, final: `scripts/check_release_strings.sh` on `build/3ds-release/examples/platformer/platformer.elf`
   and `build/pc-release/examples/platformer/platformer.exe` — covers FR-7, AC-4
-- [ ] **T8.4** guide `docs/guides/nnh-tool.md`: `--script`, `--no-build`, interactive mode, the script format and
+  - Done (2026-11-21, from this tree): `ok` on `3ds-release` `platformer.elf` (3 199 176 bytes) and `pc-release`
+    `platformer.exe` (503 592 bytes), and again on `hello` and `input` of both; the `pc-debug` `platformer.exe`
+    fails it, listing the remote's names (control).
+- [x] **T8.4** guide `docs/guides/nnh-tool.md`: `--script`, `--no-build`, interactive mode, the script format and
   every command, exit codes, where screenshots go — covers AC-5, FR-3, FR-5
-- [ ] **T8.5** [P] new guide `docs/guides/testing-on-the-console.md`: write a script, run it in the simulator, then on
+  - Done: options (with `NNH_PRESET`), the format, every command with its clock, limits and parser errors, timing
+    rules (frame 1, same-frame commands, tap/hold, screenshot +1, drag +N+1, the `expect` window and barrier,
+    late = fail), matching, output with a real run's lines, exit codes 0/1/2 in detail, screenshots, typed commands.
+- [x] **T8.5** [P] new guide `docs/guides/testing-on-the-console.md`: write a script, run it in the simulator, then on
   the console with one press of Y; timing rules (frame 1, `expect` + wait, late = fail), what is repeatable, reporting
   results from a game (FR-6), screenshots; linked from the nnh tool guide, `getting-started.md` and the README's docs
   list (and the wiki sidebar through `scripts/docs_tool.py` if guides need registering) — covers AC-5
-- [ ] **T8.6** [P] build budgets (edit one game `.cpp` → simulator and `.3dsx`; clean engine), before/after; ROADMAP
+  - Done. Also linked from `debugging-on-3ds.md` (new section 2), the simulator page, the architecture pages and
+    CLAUDE.md. The wiki needs nothing: `docs/guides` is already a section of `scripts/docs_tool.py`.
+- [x] **T8.6** [P] build budgets (edit one game `.cpp` → simulator and `.3dsx`; clean engine), before/after; ROADMAP
   baseline table — covers III
-- [ ] **T8.7** [P] `docs/guides/debugging-on-3ds.md` and `docs/architecture/debugging.md` (remote section from design
+  - Done (before = `82f6e91`, after = this tree, separate build folders, three edits of `examples/hello/main.cpp`):
+    simulator 1.66–2.07 → 1.77–2.04 s, `.3dsx` 2.97–3.05 → 2.93–2.97 s, clean 3DS engine 10.2 → 11.7 s, the rest of
+    the 3DS tree 12.7 → 13.1 s; Release `hello.3dsx` +148 bytes. Recorded in the ROADMAP.
+- [x] **T8.7** [P] `docs/guides/debugging-on-3ds.md` and `docs/architecture/debugging.md` (remote section from design
   to implemented), `security.md` (the console's new reader, fuzz numbers), `platforms.md` (contract area `remote`),
   `logging.md` (records in the stream), `project-structure.md` (`examples/<name>/tests/*.nnhs`,
   `tools/nnh/src/remote/`), `decisions.md` (D28 approved), `CLAUDE.md` (commands: `nnh run --script`, `--pc
   --script`; layout) — covers AC-5
-- [ ] **T8.8** `docs/ROADMAP.md` checkbox; spec, plan, tasks status → implemented; `specs/README.md`; README status;
+  - Done. Fixed on the way in `platforms.md`: the contract folder (`engine/core/contract/`, not `include/`) and the
+    log contract header's name (`log.hpp`).
+- [x] **T8.8** `docs/ROADMAP.md` checkbox; spec, plan, tasks status → implemented; `specs/README.md`; README status;
   `python -I scripts/docs_tool.py check` → 0 broken links — covers AC-5
+  - Done (the plan's stale bits too: D28 "proposed", `--no-build` "proposed", the read-back "not yet confirmed",
+    2.2 → 3.2 KB in the closing check).
+
+Verifiable: `ctest --preset pc-debug` 103/103 (after the help change); `nnh run input --pc --script
+examples/input/tests/remote.nnhs` → `nnh: PASS (19 lines, frames 1-111)`, exit 0; release check ok; 0 broken links.

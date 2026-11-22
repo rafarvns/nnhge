@@ -53,10 +53,27 @@ A sink receives each formatted line. Several sinks run at once.
 | Console (colored by level) | PC | all flavors |
 | File (`<data dir>/log.txt`, previous run in `log.prev.txt`) | PC, 3DS | all flavors (Release: warn and above) |
 | Ring buffer (last 64 lines, in memory) | all | all (feeds the crash screen) |
-| 3dslink stdio → PC terminal (`3dslink -s`) | 3DS | Debug, Development, when launched via 3dslink |
+| 3dslink stdio → PC terminal (`nnh run`, `3dslink -s`) | 3DS | Debug, Development, when launched via 3dslink |
 | Debugger (`svcOutputDebugString`) | 3DS | Debug |
 
 Games can add sinks (e.g. an in-game log viewer) through `nnh::log::add_sink`.
+
+In the simulator started by `nnh run --pc` (Debug/Development, `NNH_REMOTE` set), the console sink sends each
+line to `nnh` over the loopback connection instead of the terminal, so `nnh` shows and saves it like a
+console's log (`build/logs/<game>-<date>-<time>.txt`). If that connection fails, lines go back to the terminal.
+
+## Records in the log stream
+
+While `nnh run` drives a game (spec 013, decision D28; [debugging](debugging.md#driving-a-game-from-the-pc)), the
+game also writes small binary **records** into the same stream as its log lines: the answer to `nnh`'s `Hello`,
+a `Tick` every 4th frame, `Late`/`Rejected`/`Dropped` for messages, and `Screen`/`ScreenFailed` for screenshots.
+A record starts with `0x1E 'N' 'R'` (ASCII record separator + magic), then a type byte and a 32-bit length, so
+it can't be mistaken for a log line (formatted lines are printable text); `nnh` treats anything that doesn't
+parse as a record as text. Records go out only after `nnh` said `Hello` and before it says `Bye`, so a PC that
+never says `Hello` (`3dslink -s`, `nnh serve`, a plain `nnh run`) sees exactly the plain-text log. On the 3DS,
+stdout and stderr are flushed before each record: one ordered stream, so once the tick of frame *f* arrives, a script
+knows every line of the frames before *f* has arrived. The remote logs on channel `remote` (attach, detach,
+rejected messages at most once per 60 frames, the screenshot frame's cost).
 
 ## Platform libraries never log
 

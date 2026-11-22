@@ -3,8 +3,10 @@
 Open-source C++ game engine that builds **native games for homebrew-enabled Nintendo consoles**,
 starting with the **Nintendo 3DS**, and runs the same code in a **desktop simulator** (Windows first).
 
-> Early development. What works today: the engine loop, buttons, debug text and both screens,
-> on the PC simulator and on 3DS (`.3dsx`). See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Early development. What works today, on the PC simulator and on 3DS: the engine loop, events and
+> scenes, full input, 2D graphics and text, assets, audio, collision and tilemaps (being finished),
+> `.3dsx` and `.cia` packaging, the `nnh` tool, NNH Link, and test scripts that drive a game on the
+> console from the PC. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ```cpp
 #include <nnh/app.hpp>
@@ -26,6 +28,8 @@ int main() {
 - **Small, well-documented API**: every public function documents cost, lifetime and platform notes.
 - **Fast builds**: editing a game file rebuilds in about a second, on PC and for 3DS.
 - **Simulator**: the game runs as a desktop app with both screens, enforcing 3DS limits.
+- **Tests on the console**: scripts press buttons, touch, take screenshots and check the log, the same in
+  the simulator and on a 3DS ([guide](docs/guides/testing-on-the-console.md)).
 - **NNH Link**: a console app that triggers builds on your PC and runs the result
   ([guide](docs/guides/nnh-link.md)).
 - **Native artifacts**: `.3dsx` for the Homebrew Launcher and `.cia` for the HOME Menu
@@ -37,6 +41,9 @@ See [docs/guides/getting-started.md](docs/guides/getting-started.md).
 
 ## Documentation
 
+- Guides: [getting started](docs/guides/getting-started.md), [the nnh tool](docs/guides/nnh-tool.md),
+  [testing on the console](docs/guides/testing-on-the-console.md), [debugging on the 3DS](docs/guides/debugging-on-3ds.md),
+  [NNH Link](docs/guides/nnh-link.md), [distributing your game](docs/guides/packaging.md)
 - API reference: [docs/api/](docs/api/)
 - Architecture (event bus + scenes, patterns, structure, decisions): [docs/architecture/](docs/architecture/)
 - How we work (Spec-Driven Development, TDD, SOLID, constitution): [docs/process/](docs/process/)

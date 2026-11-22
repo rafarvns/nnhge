@@ -92,6 +92,10 @@ maps comes later): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `ti
 tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`;
 `gfx::draw_tilemap` draws tile batches (D26: contract `draw_tiles`, only visible cells, Tiled parallax and flips,
 needs `AppConfig::gfx.max_tiles`, 0 by default); demo `examples/platformer` ([api/tilemap.md](docs/api/tilemap.md)).
+Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
+Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
+core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
+`examples/<name>/tests/*.nnhs` ([guides/testing-on-the-console.md](docs/guides/testing-on-the-console.md)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)
@@ -106,9 +110,9 @@ tests/platform_conformance/                      contract tests run against ever
 tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_tests; libFuzzer with NNH_BUILD_FUZZERS)
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
 apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
-tools/nnh/                                       the nnh command (spec 010): build, run on the console, install
+tools/nnh/                                       the nnh command (spec 010): build, run on the console, install; test scripts (013)
 tools/assetc/                                    nnh-assetc (spec 012): asset converter; host-built in 3DS presets (NNH_HOST_CXX)
-examples/<name>/                                 one small program per feature
+examples/<name>/                                 one small program per feature (tests/*.nnhs: its test scripts)
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
 docs/                                            architecture/, process/, tech/, api/, guides/
 cmake/  scripts/                                 nnh_add_game(), engine options, SDL3 fetch, dkp.sh, docs tool
@@ -132,7 +136,8 @@ scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-r
 scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3ds-release/dist/<game>/ (.3dsx, .cia)
 build/pc-debug/tools/nnh/nnh run hello                         # build, send to the console (HBL → Y), show its log
 build/pc-debug/tools/nnh/nnh install audio                      # .cia over the network (FBI → Receive URLs)
-NNH_PRESET=pc-debug build/pc-debug/tools/nnh/nnh run input --pc --no-build --script examples/input/tests/remote.nnhs   # test script (spec 013): nnh: PASS, exit 0
+NNH_PRESET=pc-debug build/pc-debug/tools/nnh/nnh run input --pc --no-build --script examples/input/tests/remote.nnhs   # test script in the simulator: nnh: PASS, exit 0
+build/pc-debug/tools/nnh/nnh run input --script examples/input/tests/remote.nnhs   # the same on the console (HBL → Y); PNGs in build/logs/
 build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
 NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
@@ -161,6 +166,8 @@ ssh homelab 'sudo qm shutdown 120'                                              
   log, saves it in `build/logs/`; [guide](docs/guides/nnh-tool.md)). devkitPro's 3dslink still works:
   `/c/devkitPro/tools/bin/3dslink.exe -s <file>.3dsx -a <ip>`
   (`-s` keeps the PC listening, so logs of Debug/Development builds appear in the terminal).
+- Console checks: write a `.nnhs` script and run it with `nnh run <game> --script ...`; the maintainer only presses Y,
+  and the verdict, log and screenshots come back to the PC (keep console tests yes/no or fully scripted).
 - Platform libraries never call core (no logging there): return errors / set `platform::last_error()`.
 - Build budgets: edit one game `.cpp` → simulator < 2 s, `.3dsx` < 5 s; clean engine < 30 s. Measure
   build changes before/after ([docs/tech/cmake.md](docs/tech/cmake.md)).

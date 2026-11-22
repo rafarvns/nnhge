@@ -89,9 +89,10 @@ const char* help_text() {
            "                                        build, send to the Homebrew Launcher (press Y on the\n"
            "                                        console) and show the game's log; --pc runs the simulator.\n"
            "                                        While it runs, type script commands to drive the game\n"
-           "                                        (help lists them). --script runs a test script: exit 0\n"
-           "                                        pass, 1 fail, 2 could not run. --no-build runs what is\n"
-           "                                        already built\n"
+           "                                        (type help to list them; end gives the controls back).\n"
+           "                                        --script runs a test script (Debug/Development builds\n"
+           "                                        only): exit 0 pass, 1 fail, 2 could not run. --no-build\n"
+           "                                        runs what is already built\n"
            "  nnh install <game> [--console <ip>]   build the .cia and install it with FBI (Remote Install ->\n"
            "                                        Receive URLs over the network)\n"
            "  nnh serve [--release]                 wait for NNH Link on the console: it lists the games,\n"
@@ -100,8 +101,9 @@ const char* help_text() {
            "  nnh help                              this text\n"
            "\n"
            "<game> is the target name given to nnh_add_game(). The console is found on the local network\n"
-           "and remembered; --console sets it. Logs are saved in build/logs/, screenshots next to them.\n"
-           "NNH_PRESET=<preset> builds and runs from another preset of the same system (e.g. pc-debug).\n";
+           "and remembered; --console sets it. Logs are saved in build/logs/<game>-<date>-<time>.txt and\n"
+           "screenshots in the folder of the same name. NNH_PRESET=<preset> builds and runs from another\n"
+           "preset of the same system (e.g. pc-debug). Scripts: docs/guides/testing-on-the-console.md.\n";
 }
 
 } // namespace nnh::tool

@@ -30,5 +30,13 @@ int data_target(const std::uint8_t* data, std::size_t size);
 bool data_fixed_accepted(const std::uint8_t* data, std::size_t size);
 /// A valid file of data_target's schema with every field set, written to `out`; its size (0 if `capacity` is short).
 std::size_t data_seed(std::uint8_t* out, std::size_t capacity);
+/// The data index `.nnh_data` (spec 014, fuzz_data_index.cpp): validated as given, then with the header's size and CRC
+/// fixed; on an accepted index every lookup runs and must agree with the others (types by key and entry, entries
+/// by group and hash, paths and their hashes).
+int data_index_target(const std::uint8_t* data, std::size_t size);
+/// For the mini-fuzz: whether `data`, with its size and CRC fixed as data_index_target does, is accepted.
+bool data_index_fixed_accepted(const std::uint8_t* data, std::size_t size);
+/// A valid index (two types, every group used) written to `out`; its size (0 if `capacity` is short).
+std::size_t data_index_seed(std::uint8_t* out, std::size_t capacity);
 
 } // namespace nnh::fuzz

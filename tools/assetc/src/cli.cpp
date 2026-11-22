@@ -8,9 +8,11 @@
 #include <system_error>
 #include <vector>
 
+#include "cli_internal.hpp"
 #include "convert.hpp"
 #include "core/crc32.hpp" // shared with core (pure file): the version line proves which CRC the maps get
 #include "depfile.hpp"
+#include "files.hpp"
 #include "paths.hpp"
 
 #ifndef NNH_ASSETC_VERSION
@@ -40,13 +42,6 @@ bool parse_map_args(int argc, const char* const* argv, MapArgs& a) {
         else return false;
     }
     return !a.assets.empty();
-}
-
-bool write_file(const std::string& path, const void* data, std::size_t size) {
-    std::FILE* file = std::fopen(path.c_str(), "wb");
-    if (file == nullptr) return false;
-    const bool ok = std::fwrite(data, 1, size, file) == size;
-    return std::fclose(file) == 0 && ok;
 }
 
 /// Depfile paths are relative to the working directory, where CMake reads them from: devkitPro's MSYS CMake
@@ -99,6 +94,10 @@ int run_cli(int argc, const char* const* argv, std::FILE* out, std::FILE* err) {
     }
     MapArgs args;
     if (argc >= 2 && std::strcmp(argv[1], "map") == 0 && parse_map_args(argc, argv, args)) return run_map(args, err);
+    if (argc >= 2 && std::strcmp(argv[1], "data") == 0) {
+        const int code = run_data(argc, argv, err);
+        if (code != 2) return code;
+    }
     std::fputs(kUsage, err);
     return 2;
 }

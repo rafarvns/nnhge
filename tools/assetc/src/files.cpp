@@ -26,6 +26,13 @@ bool DiskFiles::read(const std::string& path, std::size_t max_bytes, std::string
     return ok;
 }
 
+bool write_file(const std::string& path, const void* data, std::size_t size) {
+    std::FILE* file = std::fopen(path.c_str(), "wb");
+    if (file == nullptr) return false;
+    const bool ok = std::fwrite(data, 1, size, file) == size;
+    return std::fclose(file) == 0 && ok;
+}
+
 bool MemoryFiles::read(const std::string& path, std::size_t max_bytes, std::string& out) {
     const auto found = files_.find(path);
     if (found == files_.end()) {

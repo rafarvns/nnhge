@@ -10,7 +10,8 @@ engine/
   core/include/nnh/<module>.hpp              public API, one header per module (what games include)
   core/src/<module>/<concept>.cpp|.hpp       core implementation, internal headers (a pure file there may be
                                              shared with a host tool, e.g. remote/remote_wire.cpp with tools/nnh,
-                                             tilemap/map_format.hpp, map_layout, map_validate* with tools/assetc)
+                                             tilemap/map_format.hpp, map_layout, map_validate* and the pure data/
+                                             files — schema, fingerprint, validators — with tools/assetc)
   core/src/core/                             engine-wide internal state shared by modules; pure helpers with no
                                              engine includes that host tools compile too (crc32)
   core/contract/nnh/platform/<area>.hpp      platform contract (what each platform library implements)
@@ -19,7 +20,8 @@ engine/
   platforms/<system>/include/nnh/<system>/   extension headers (optional, system-only features)
   platforms/<system>/README.md               requirements, limits, capabilities
 tests/
-  framework/                                 the tiny test framework
+  framework/                                 the tiny test framework; alloc_counter.* (counting operator new,
+                                             linked into nnh_tests only)
   <module>/test_<concept>.cpp                mirrors engine/core/src/<module>/
   platform_conformance/                      contract tests, linked against every platform
   data/<kind>/                               test inputs (images, sounds, asset lists, package; maps: Tiled
@@ -43,7 +45,8 @@ apps/<app>/                                  apps made with NNHGE that ship with
 tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010; src/remote/: test
                                              scripts and the console remote's PC side, spec 013); tools/assetc
                                              (nnh-assetc, build-time conversions, spec 012, D27: Tiled maps; src/
-                                             json*, tiled_*, map_writer; tests/ with the fuzz targets; built by
+                                             json*, tiled_*, map_writer; spec 014: toml*, schema_read, data_*;
+                                             tests/ with the fuzz targets; built by
                                              cmake/nnh_host_tools.cmake, standalone-capable CMakeLists.txt)
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules

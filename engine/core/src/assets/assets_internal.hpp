@@ -9,7 +9,7 @@ namespace nnh::detail {
 
 /// The file the build writes next to the assets: one asset path per line (spec 007).
 inline constexpr const char* kAssetIndexFile = ".nnh_assets";
-inline constexpr std::size_t kMaxAssetIndexBytes = 64 * 1024;
+inline constexpr std::size_t kMaxAssetIndexBytes = 256 * 1024; // 4096 data assets' names (spec 014)
 
 /// Mounts the platform's assets and reads the index (nnh::init()). A game without assets, or with an
 /// unreadable index, simply has none (logged); never fails init.

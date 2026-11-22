@@ -1,6 +1,6 @@
 # Plan 014: Data assets
 
-Status: approved (2026-11-22, maintainer pre-approved); in progress, stages 0–2 done (see the "Stage N refinements")
+Status: approved (2026-11-22, maintainer pre-approved); in progress, stages 0–5 done (see the "Stage N refinements")
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D29 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`Result`, memory tags, logs), spec 007 (assets, per-file build steps, the asset index), spec 012 /
 D27 (`nnh-assetc`, host tools in cross presets, shared pure validators), spec 013 (console test scripts)
@@ -299,6 +299,55 @@ Errors (FR-9): `<path relative to the game folder>:<line>: <reason>`, sorted by 
 suggest the closest name (edit distance ≤ max(1, length/3)): `assets/enemies/goblin.enemy:7: unknown field 'damgae'
 (did you mean 'damage'?)`.
 
+#### Stage 4 refinements (2026-11-22, implemented)
+
+The code is `tools/assetc/src/toml.{hpp,cpp}` (the document and its tree), `toml_parse.cpp` (the driver),
+`toml_value.cpp` and the internal `toml_cursor.hpp` / `toml_builder.hpp` (no `toml_value.hpp`); tests
+`tools/assetc/tests/test_toml{,_tables,_values}.cpp`; fuzz target `toml_target` (`fuzz_assetc_toml`).
+
+- **The text is checked line by line before it is read**: length, a lone CR, control characters (all but tab;
+  DEL too — TOML forbids them even in comments), UTF-8 (core's `utf8_valid`), a byte order mark after the start.
+- **Floats go straight to `std::from_chars<float>`** (correctly rounded; tests pin halfway cases such as
+  `16777217.0` and `1.000000059604644775390625`). A float outside float's finite range (underflow included) and an
+  integer outside 64 bits are kept with `out_of_range` set, so the converter reports them with the field's name.
+- A bare word gets `text without quotes: strings are written "Fire"`; `inf`, `nan`, dates, hexadecimal numbers and
+  literal strings have their own messages; `\u0000` and surrogates are refused.
+- The reader stops at the first problem, structural ones (a key or a table set twice, a header through a value)
+  included.
+
+#### Stage 5 refinements (2026-11-22, implemented)
+
+The code is `tools/assetc/src/{schema_read,suggest,diagnostics,data_convert,data_writer,data_refs}.*`,
+`data_encode.hpp`, `data_tables.cpp`, `data_values.cpp`, `cli_data.cpp`; tests `test_schema_read.cpp`,
+`test_suggest.cpp`, `test_diagnostics.cpp`, `test_data_convert{,_tables}.cpp`, `test_data_writer.cpp`,
+`test_cli_data.cpp`; fuzz target `data_target` (`fuzz_assetc_data`). nnh-assetc is version 0.2.0.
+
+- **Schema reader**: a type's id is the address of its own record; an enum's values are its indices (the converted
+  format stores indices); blank lines are skipped; at most 1 MiB. After reading: references resolved, then
+  `check_schema`, then each fingerprint recomputed and compared with the description's (the error names both).
+- **`nnh_assetc_tests` compiles the engine tests' schema** (`tests/data_assets/test_types.cpp`) and core's
+  `data_apply.cpp`: compiled tables → description → reader → converter → the engine's validator → apply into the
+  compiled struct, a code-vs-file round trip ahead of T7.5 (`List` items are read with `begin()[i]` there:
+  `operator[]` asserts through the engine, which the tool doesn't link).
+- **Suggestions** use the optimal-string-alignment distance (a swap of neighbours is one edit), so `Fier` → `Fire`
+  and `damgae` → `damage` are found within max(1, length / 3).
+- **Messages** name the field by path — `stats.hp`, `drops[1].chance`, `flags[0]` — and unknown fields by section
+  (`unknown field 'hpp' in [stats]`, `in [[drops]]`); a missing required field is reported at its section's header
+  line (`[stats]: missing required field 'hp'`; the root's at line 1); lists and arrays of structs count blocks
+  (`drops: 5 blocks, at most 4`, `pair: 1 block, exactly 2`).
+- An integer is accepted for a float field whenever a float holds it exactly (not only up to 2^24). A reference
+  whose path hashes to 0 is refused by the converter already ("rename the asset"), since it writes the hash.
+- **CLI**: `--name <asset name>` (required) gives the sidecar the asset's name (the tool can't derive it from the
+  input path); `--show` is optional (the input path by default). Sidecar format version 1, in `data_refs.hpp`:
+  `asset <key> <size> <name>` and `ref <line> <kind> <target key|-> <field> <path>` (names last: paths may hold
+  spaces). Other files are copied with a sidecar holding only the version line. On failure both outputs are
+  removed. Usage errors exit with 2.
+- **Fuzzing** `data_target`: a data file of a fixed schema with every kind (declared in the fuzz file like a game's,
+  read back through its own description); an accepted one must pass the engine's validator and load within its
+  rules; after a NUL byte the input carries a schema description of its own for the reader.
+- New source files were formatted with the repository's `.clang-format` (clang-format 23), then their include
+  blocks put back in the repository's order (own header, standard headers, project headers).
+
 ### Converted file format `NNHD` (version 1)
 
 Little-endian, no alignment (read with `memcpy`), ≤ 64 KiB.
@@ -381,6 +430,51 @@ without data link no data code (XI).
 
 Spec 007's `kMaxAssetIndexBytes` (64 KiB) is smaller than 4096 data assets' names: raised to 256 KiB (allocated at
 its real size, so no cost to games).
+
+#### Stage 3 refinements (2026-11-22, implemented)
+
+The code is `engine/core/src/data/{index_format.hpp,index_validate.*,data_index.*,data_load.cpp,data_list.cpp}`,
+`engine/core/src/core/shutdown_hooks.*`, `<nnh/detail/name_hash.hpp>` and `<nnh/detail/data_access.hpp>`; tests in
+`tests/data_assets/test_{index_validate,index_lookup,data_index,data_load,data_list,data_alloc}.cpp`,
+`tests/core/test_name_hash.cpp`, `tests/app/test_shutdown_hooks.cpp`, with the test-only index writer
+`tests/data_assets/index_file.cpp` and the fixture `data_fixture.*`.
+
+- **Path hash = D31's `detail::fnv1a32`** (constexpr, in the public detail header `nnh/detail/name_hash.hpp`, with
+  a `(text, size)` overload for a path inside a longer name); no `core/path_hash.{hpp,cpp}`. Its test is plan
+  016's `tests/core/test_name_hash.cpp` (published vectors, `""`, a `case` label), so plan 016's T0.3 is done.
+- **`NNHX` header**: magic, u16 version, u16 flags, u32 size, u32 CRC (of everything after the header), u16 type
+  count, four u16 group counts (data, texture, sound, music), u16 0, u32 largest data asset — 32 bytes. The section
+  offsets are **derived from the counts**, not stored (fewer fields to trust), so groups are not a section of their
+  own. The types table lists **every keyed type of the build's schema, even one without assets**, so a compiled
+  type missing from the index means its source isn't in `DATA_SCHEMA` (the warning) rather than "no assets".
+- **The validator checks more than the plan listed**: each path is a valid asset path whose FNV-1a hash equals its
+  entry's (non-zero) hash — one hash per entry at load —, paths are strictly increasing within each type and media
+  group, type keys are well formed (`[a-z][a-z0-9_]*`, NUL-padded) and unique, the types' entries tile the data
+  group, the strings end with a NUL, and the lookup is strictly increasing by (group, hash), which also makes it a
+  permutation and hashes unique per group. Type lookups are linear (≤ 64), entry lookups binary.
+- **One block for the index and the scratch**: the header is read first through `platform::asset_open` /
+  `asset_read_at` (`assets::read` can't read a prefix) to size the block; `memory_used()` = the tag's bytes = file
+  size + largest = the plan's formula (a test checks the formula).
+- **Shutdown hooks run in Debug and Development only** (`if constexpr (build::kDevToolsEnabled)` in
+  `nnh::shutdown()`). A plain call made Release `hello.exe` 1,027 bytes and `hello.3dsx` 124 bytes larger, which AC-6
+  forbids; Release has no leak report, so the hook's only job there would be freeing memory the process is about to
+  give back. Consequence (documented in `data.md`): in Release the index stays until `data::release()` or the end
+  of the program; a re-init keeps the same index, which is right because a program's assets can't change. Tests
+  that swap the fake assets call `data::release()` (the fixture's `stop()`); the hook tests are compiled for
+  Debug/Development only.
+- The log channel `data` and the memory tag `data` are defined in `data_index.cpp`, not with the engine's channels in
+  `log/engine_channels.cpp` (which every game links). Each compiled keyed type's fingerprint is computed once per
+  index load (a fixed table of 64 entries).
+- **Errors** settled: an empty reference or an unknown hash → `NotFound`; a T registered but missing from the index
+  → `NotFound` ("the type isn't in the build's schema", plus the load-time warning); an asset larger than the index's
+  largest → `Corrupted`; the stale message is `data for another version of Enemy: rebuild the assets` (the 63-byte
+  error text), the log line names the asset. `path(Ref<T>)` looks in the data group without checking T; `find<T>`
+  checks it.
+- **Allocation test**: the counting `operator new` is `tests/framework/alloc_counter.{hpp,cpp}` (created here,
+  shared with plans 015 and 016; listed as an `nnh_tests` source so one binary owns the replacement). Errors log a
+  warning, and the fake platform's in-memory log file grows `std::` containers, so the error path is checked
+  against engine memory only.
+- `kMaxAssetIndexBytes` is 256 KiB; spec 007's oversized-index test now uses 262 KiB.
 
 ### Limits (FR-14), checked at build and at load
 

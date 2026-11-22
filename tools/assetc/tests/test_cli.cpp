@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "cli.hpp"
+#include "cli_fixture.hpp"
 #include "files.hpp"
 #include "paths.hpp"
 #include "test.hpp"
@@ -18,37 +18,9 @@ namespace {
 const std::string kDir = NNH_ASSETC_TEST_TMP "/cli";
 const std::string kAssets = kDir + "/assets";
 
-struct Run {
-    int code = 0;
-    std::string out, err;
-};
-
-std::string read_back(std::FILE* f) {
-    std::string text;
-    std::rewind(f);
-    char buffer[512];
-    std::size_t got = 0;
-    while ((got = std::fread(buffer, 1, sizeof buffer, f)) > 0) text.append(buffer, got);
-    std::fclose(f);
-    return text;
-}
-
-Run run(std::vector<std::string> args) {
-    std::vector<const char*> argv{"nnh-assetc"};
-    for (const std::string& a : args) argv.push_back(a.c_str());
-    std::FILE* out = std::tmpfile();
-    std::FILE* err = std::tmpfile();
-    Run r;
-    r.code = nnh::assetc::run_cli(static_cast<int>(argv.size()), argv.data(), out, err);
-    r.out = read_back(out);
-    r.err = read_back(err);
-    return r;
-}
-
-bool exists(const std::string& path) {
-    std::string bytes;
-    return nnh::assetc::DiskFiles{}.read(path, 1, bytes);
-}
+using cli_test::exists;
+using cli_test::run;
+using cli_test::Run;
 
 /// assets/levels/a.tmj (uses ../tiles/w.tsj), assets/tiles/w.tsj, assets/tiles/w.png; `map` replaces a.tmj.
 void make_files(const std::string& map = "") {

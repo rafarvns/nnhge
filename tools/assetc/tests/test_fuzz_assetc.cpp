@@ -6,10 +6,12 @@
 #include <string>
 
 #include "convert.hpp"
+#include "data/schema_write.hpp"
 #include "files.hpp"
 #include "fuzz_assetc.hpp"
 #include "json.hpp"
 #include "test.hpp"
+#include "toml.hpp"
 
 namespace {
 
@@ -56,6 +58,28 @@ const char kSetSeed[] = R"({"image":"set.png","imagewidth":64,"imageheight":64,"
 {"id":2,"properties":[{"name":"one_way","type":"bool","value":true},{"name":"k","value":"x"}]},
 {"id":9,"animation":[{"tileid":15,"duration":7}]}]})";
 
+// Data files (spec 014): every form the TOML-subset reader accepts.
+const char kTomlSeed[] = "\xEF\xBB\xBF# a goblin\r\nname = \"Gob\\u00E7lin \\\"g\\\"\\n\"\r\nhp = 1_000\n"
+                         "speed = -2.5e-1 # fast\nflags = [true, false,\n  true, ] \npath = [[1, 2], [3.5, -4]]\n"
+                         "[stats]\nattack = +3\n[stats.extra]\nx = 0\n[[drops]]\nitem = \"items/potion\"\n"
+                         "chance = 0.25\n[[drops]]\n[drops.more]\ny = 1\n";
+
+/// 1-6 edits, inserting TOML-significant characters as well.
+void mutate_toml(std::string& s, Rng& rng) {
+    static const char kSignificant[] = "[]\"'=#.,{}_+-eE0123456789\\u \t\r\n";
+    const int edits = 1 + static_cast<int>(rng.next() % 6);
+    for (int e = 0; e < edits; ++e) {
+        const std::uint32_t r = rng.next();
+        const std::size_t at = s.empty() ? 0 : (r >> 8) % s.size();
+        switch (r % 4) {
+        case 0: if (!s.empty()) s[at] = static_cast<char>(rng.next() >> 16); break;
+        case 1: if (!s.empty()) s.erase(at, 1); break;
+        case 2: s.insert(at, 1, static_cast<char>(rng.next() >> 16)); break;
+        default: s.insert(at, 1, kSignificant[(rng.next() >> 8) % (sizeof kSignificant - 1)]); break;
+        }
+    }
+}
+
 bool converts(const std::string& map, const std::string& set) {
     nnh::assetc::MemoryFiles files;
     files.add("/g/assets/levels/map.tmj", map);
@@ -100,4 +124,56 @@ NNH_TEST(assetc_map_target_survives_mutated_maps_and_tilesets) {
     }
     CHECK(accepted > 100);  // the deep path (writer + validator) runs
     CHECK(accepted < 5500); // and refusals too
+}
+
+NNH_TEST(assetc_toml_target_seed_parses) {
+    nnh::assetc::toml::Document d;
+    CHECK(d.parse(kTomlSeed));
+    CHECK(d.root().find("drops") != nullptr && d.root().find("drops")->elements.size() == 2);
+}
+
+NNH_TEST(assetc_toml_target_survives_mutated_documents) {
+    Rng rng{2024};
+    int accepted = 0;
+    for (int i = 0; i < 8000; ++i) {
+        std::string doc = kTomlSeed;
+        mutate_toml(doc, rng);
+        nnh::assetc::fuzz::toml_target(reinterpret_cast<const std::uint8_t*>(doc.data()), doc.size());
+        nnh::assetc::toml::Document d;
+        accepted += d.parse(doc) ? 1 : 0;
+    }
+    CHECK(accepted > 200);  // many mutants stay valid, so the walk runs
+    CHECK(accepted < 7600); // and refusals too
+    std::string big(70 * 1024, '#');
+    nnh::assetc::fuzz::toml_target(reinterpret_cast<const std::uint8_t*>(big.data()), big.size());
+}
+
+NNH_TEST(assetc_data_target_seed_converts) {
+    // Every field set: the deep path (validator + apply) runs on the seed itself.
+    const std::string seed = nnh::assetc::fuzz::data_seed();
+    nnh::assetc::fuzz::data_target(reinterpret_cast<const std::uint8_t*>(seed.data()), seed.size());
+    CHECK(nnh::assetc::fuzz::data_converts(seed.data(), seed.size()));
+}
+
+NNH_TEST(assetc_data_target_survives_mutated_files_and_schemas) {
+    Rng rng{99};
+    std::string description;
+    nnh::detail::write_schema(
+        nnh::detail::data_registry(),
+        [](void* c, const char* t, std::size_t n) { static_cast<std::string*>(c)->append(t, n); }, &description);
+    const std::string enemy = "name = \"Gob\"\nlevel = 3\nspawn = [1, 2]\n[stats]\nhp = 4\n[[drops]]\nitem = \"i/p\"\n";
+    int accepted = 0;
+    for (int i = 0; i < 6000; ++i) {
+        std::string doc = nnh::assetc::fuzz::data_seed();
+        mutate_toml(doc, rng);
+        accepted += nnh::assetc::fuzz::data_converts(doc.data(), doc.size()) ? 1 : 0;
+        if (i % 4 == 0) {
+            std::string schema = description; // the tests' schema, with the enemy as the data file
+            if (i % 8 == 0) mutate_toml(schema, rng);
+            doc = enemy + std::string(1, '\0') + schema;
+        }
+        nnh::assetc::fuzz::data_target(reinterpret_cast<const std::uint8_t*>(doc.data()), doc.size());
+    }
+    CHECK(accepted > 300);  // the deep path (writer, engine validator, apply) runs
+    CHECK(accepted < 5700); // and refusals too
 }

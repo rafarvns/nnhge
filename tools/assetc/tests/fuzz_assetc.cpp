@@ -10,6 +10,7 @@
 #include "files.hpp"
 #include "json.hpp"
 #include "tilemap/map_validate.hpp"
+#include "toml.hpp"
 
 namespace nnh::assetc::fuzz {
 
@@ -26,7 +27,41 @@ std::size_t walk(json::Ref v, int depth) {
     return seen;
 }
 
+std::size_t walk_value(const toml::Value& v, int depth) {
+    if (depth > toml::kMaxArrayDepth) std::abort(); // arrays nest at most 2 deep
+    std::size_t seen = 1 + v.text.size();
+    for (const toml::Value& item : v.items) seen += walk_value(item, depth + 1);
+    return seen;
+}
+
+/// Every table is reached once from the root (through tables and arrays of tables), and each lookup by key finds
+/// its own entry.
+std::size_t walk_table(const toml::Document& doc, const toml::Table& t, int depth) {
+    if (depth > toml::kMaxHeaderParts) std::abort();
+    std::size_t seen = 1;
+    for (const toml::Entry& e : t.entries) {
+        if (t.find(e.key) != &e || e.line < 1) std::abort();
+        if (e.kind == toml::EntryKind::Value) seen += walk_value(e.value, 0);
+        else if (e.kind == toml::EntryKind::Table) seen += walk_table(doc, doc.table(e.table), depth + 1);
+        else {
+            for (int element : e.elements) seen += walk_table(doc, doc.table(element), depth + 1);
+        }
+    }
+    return seen;
+}
+
 } // namespace
+
+int toml_target(const std::uint8_t* data, std::size_t size) {
+    toml::Document doc;
+    const std::string_view text(reinterpret_cast<const char*>(data), size);
+    if (doc.parse(text)) {
+        if (walk_table(doc, doc.root(), 0) > 2 * size + 2) std::abort(); // linear in the text
+    } else if (doc.problem().line < 1 || doc.problem().message.empty()) {
+        std::abort(); // every refusal says where and why
+    }
+    return 0;
+}
 
 int json_target(const std::uint8_t* data, std::size_t size) {
     json::Document doc;

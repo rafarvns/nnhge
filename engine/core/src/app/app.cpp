@@ -6,6 +6,7 @@
 #include "assets/assets_internal.hpp"
 #include "audio/audio_internal.hpp"
 #include "core/engine_state.hpp"
+#include "core/shutdown_hooks.hpp"
 #include "crash/crash_internal.hpp"
 #include "debug/dev_tools.hpp"
 #include "events/events_internal.hpp"
@@ -131,6 +132,9 @@ void shutdown() {
     detail::events_shutdown();
     detail::gfx_shutdown(); // after scenes: on_exit() may still release textures
     detail::audio_shutdown(); // after scenes too (sounds); before assets
+    // Optional modules (data assets) free what they keep, before the leak report. Release has no leak report and
+    // skips this, so games that don't use those modules stay byte-for-byte the same (spec 014 AC-6).
+    if constexpr (build::kDevToolsEnabled) detail::run_shutdown_hooks();
     detail::assets_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();

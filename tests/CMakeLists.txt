@@ -6,12 +6,13 @@ target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
 # Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
-add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
+add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
 target_include_directories(nnh_fuzz_targets PUBLIC fuzz PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 
 # Unit tests: nnh::core driven through the fake platform.
 add_executable(nnh_tests
+    framework/alloc_counter.cpp
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
     assets/test_asset_index.cpp
@@ -35,13 +36,22 @@ add_executable(nnh_tests
     collision/test_grid_move.cpp
     collision/test_one_way.cpp
     core/test_crc32.cpp
+    core/test_name_hash.cpp
     crash/test_assert.cpp
     data_assets/data_file.cpp
+    data_assets/data_fixture.cpp
+    data_assets/index_file.cpp
+    data_assets/test_data_alloc.cpp
     data_assets/test_data_apply.cpp
+    data_assets/test_data_index.cpp
     data_assets/test_data_layout.cpp
+    data_assets/test_data_list.cpp
+    data_assets/test_data_load.cpp
     data_assets/test_data_validate.cpp
     data_assets/test_enum_names.cpp
     data_assets/test_fingerprint.cpp
+    data_assets/test_index_lookup.cpp
+    data_assets/test_index_validate.cpp
     data_assets/test_refs.cpp
     data_assets/test_schema_check.cpp
     data_assets/test_schema_declare.cpp
@@ -136,6 +146,8 @@ target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/s
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     target_sources(nnh_tests PRIVATE remote/test_remote_frames.cpp remote/test_remote_screenshot.cpp
                                      remote/test_remote_session.cpp)
+    # Shutdown hooks run before the leak report, which Release doesn't have (spec 014 T3.3).
+    target_sources(nnh_tests PRIVATE app/test_shutdown_hooks.cpp)
 endif()
 # Sound fixtures (tests/data/sounds, made by make_sounds.py) are read from the source tree.
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
@@ -479,7 +491,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg remote tilemap data)
+    foreach(name path save asset_index wav ogg remote tilemap data data_index)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

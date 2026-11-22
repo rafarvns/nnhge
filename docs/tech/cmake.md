@@ -128,8 +128,11 @@ gives an asset step the program to run and what to depend on:
 
 `tools/assetc/CMakeLists.txt` is therefore standalone-capable (its own `project()`, includes
 `nnh_engine_options.cmake` itself; standalone it builds only the program, no tests) and compiles pure core files
-(`core/crc32.cpp`, `tilemap/map_layout.cpp`, `map_strings.cpp`, `map_property_table.cpp`, `map_validate*.cpp`)
-into `nnh_assetc_lib`, so the console and the converter share one implementation. It links the C++ runtime
+(`core/crc32.cpp`, `tilemap/map_layout.cpp`, `map_strings.cpp`, `map_property_table.cpp`, `map_validate*.cpp`;
+for data assets, spec 014: `core/crc32_update.cpp`, `text/utf8_valid.cpp`, `assets/asset_path.cpp` and the pure
+`data/` files — registry, schema check, fingerprint, description writer, `data_validate.cpp`, `index_validate.cpp`)
+into `nnh_assetc_lib`, so the console and the converter share one implementation; it also needs
+`engine/core/include` (`<nnh/data.hpp>`'s tables, `<nnh/detail/name_hash.hpp>`). It links the C++ runtime
 statically when the compiler is MinGW (checked with `CMAKE_CXX_PLATFORM_ID`, because inside devkitPro's MSYS2 the
 host CMake is MSYS's while the compiler is MinGW). The top-level `CMakeLists.txt` sets it up (and calls
 `enable_testing()`) **before** `examples/`, so a game's asset step can ask for the program.
@@ -138,16 +141,21 @@ The command the asset step runs (one per map, from the game's build folder):
 
 ```sh
 nnh-assetc map <in.tmj> <out.nnhmap> --assets <assets folder> --depfile <out.d>   # exit 1 + "file: reason" on error
+nnh-assetc data <in> <out> --schema <schema.nnhschema> --refs <out.refs> --name <asset name> [--show <path>]
 nnh-assetc --version                                                               # another command line: usage, exit 2
 ```
 
 On failure it prints `file: reason` (the file the problem is in: the map, a tileset or an image) and removes any
-old output. **Depfile paths are relative to the working directory**: CMake reads them from there, and devkitPro's
+old output. `data` (spec 014, stage 5; the build runs it from stage 7) converts a data file whose extension is a key
+of the game's schema description into a converted data asset and writes its references sidecar (format in
+`tools/assetc/src/data_refs.hpp`); any other file is copied unchanged with an empty sidecar. On failure it prints
+every problem as `<shown path>:<line>: reason` (at most 20) and removes both outputs ([data.md](../api/data.md)). **Depfile paths are relative to the working directory**: CMake reads them from there, and devkitPro's
 MSYS CMake took the native program's absolute `E:/...` paths for relative ones (prefixing the build folder), so every
 map reconverted on every build. Converter fixtures are in `tests/data/maps/` (PNGs by `make_fixtures.py`); the
 `map_convert_rejects_*` / `map_convert_explains_*` ctests run it on each bad map, and `nnh_tests` loads
 `good.tmj` converted at build time (`tests/CMakeLists.txt`). With `-DNNH_BUILD_FUZZERS=ON` and clang,
-`fuzz_assetc_json` and `fuzz_assetc_map` are built in `build/<preset>/tools/assetc/`.
+`fuzz_assetc_json`, `fuzz_assetc_map`, `fuzz_assetc_toml` and `fuzz_assetc_data` are built in
+`build/<preset>/tools/assetc/`.
 
 `NNH_HOST_CXX` (cache variable) defaults to the environment variable of the same name, else `c++`/`g++`/`clang++`
 on the PATH (Linux: the system compiler). With none, 3DS presets still configure and build; only `nnh_assetc` (and
@@ -165,7 +173,7 @@ plus the romfs and `.3dsx` (3.2–3.3 s in all). Numbers in the [ROADMAP](../ROA
 
 ```sh
 scripts/dkp.sh cmake --build --preset 3ds-release --target nnh_assetc   # build it for the host explicitly
-build/3ds-release/_host/assetc/nnh-assetc --version                       # nnh-assetc 0.1.0 (crc32 CBF43926)
+build/3ds-release/_host/assetc/nnh-assetc --version                       # nnh-assetc 0.2.0 (crc32 CBF43926)
 ```
 
 **Shared link library** (`link/`, every preset, spec 011): `nnh_link` holds the network code `nnh` and the

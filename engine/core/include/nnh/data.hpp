@@ -173,4 +173,95 @@ struct FieldOptions {
 } // namespace data
 } // namespace nnh
 
+#include "nnh/detail/data_access.hpp"
 #include "nnh/detail/data_schema.hpp"
+
+namespace nnh::data {
+
+// ---- Loading and listing (load time: call them in on_enter or a loading scene, not every frame) ---------
+//
+// The first call loads the game's data index (`.nnh_data`, written by the build: every data asset's path and
+// type, and the media data assets reference) into engine memory under the tag "data", with a scratch buffer
+// the size of the largest data asset; preload() does it on purpose. After that, none of these calls
+// allocates. The index stays until release(), or until nnh::shutdown() in Debug and Development builds
+// (Release keeps it until the program ends: its assets can't change while it runs).
+
+/// Loads the data asset `path` ("enemies/goblin": its path in the assets folder without the extension) into
+/// `out`: `out` becomes T{} (the defaults compiled into the game), then gets the values the file sets. T
+/// needs NNH_DATA_TYPE. Errors, which leave `out` unchanged (and are logged): Unsupported (before
+/// nnh::init(); a file of a newer format), InvalidArgument (bad path; the asset is of another type; T has no
+/// NNH_DATA_TYPE), NotFound (no data asset of that name; the game has no data index; T's schema source isn't
+/// in DATA_SCHEMA), Corrupted (a damaged file, or one converted for another version of T: rebuild the
+/// assets), OutOfMemory (the index), IoError.
+/// @code
+/// Enemy goblin;
+/// if (auto r = nnh::data::load("enemies/goblin", goblin); !r) NNH_LOG_WARN(game, "%s", r.error().message);
+/// @endcode
+template <class T> Result<void> load(const char* path, T& out) {
+    return detail::data_load(detail::type_id<T>(), path, &out);
+}
+
+/// Follows a reference: loads the data asset `ref` names, as load() by path. NotFound for an empty reference.
+/// @code
+/// Item drop;
+/// if (!enemy.drop.empty() && nnh::data::load(enemy.drop, drop)) shop.add(drop);
+/// @endcode
+template <class T> Result<void> load(Ref<T> ref, T& out) {
+    return detail::data_load_ref(detail::type_id<T>(), ref.id, &out);
+}
+
+/// How many data assets of type T the game has (0 on error, logged). With name(i) / ref(i), i in [0, count),
+/// they list them in path order — stable from build to build.
+/// @code
+/// for (int i = 0; i < nnh::data::count<Item>(); ++i) shop.add(nnh::data::name<Item>(i));
+/// @endcode
+template <class T> int count() {
+    return detail::data_count(detail::type_id<T>());
+}
+
+/// The path of the i-th data asset of type T ("items/potion"), or "" out of range. Valid until release().
+template <class T> const char* name(int index) {
+    return detail::data_name(detail::type_id<T>(), index);
+}
+
+/// A reference to the i-th data asset of type T, or an empty one out of range.
+template <class T> Ref<T> ref(int index) {
+    return Ref<T>{detail::data_ref(detail::type_id<T>(), index)};
+}
+
+/// A reference to the data asset `path` if it is of type T, else an empty one.
+template <class T> Ref<T> find(const char* path) {
+    return Ref<T>{detail::data_find(detail::type_id<T>(), path)};
+}
+
+/// The path a reference names ("items/potion", "art/goblin"), or "" when it is empty or unknown. For media,
+/// it is what load_texture() / load_sound() / music::play() take. Valid until release().
+/// @code
+/// auto sprite = nnh::load_texture(nnh::data::path(enemy.sprite));
+/// @endcode
+template <class T> const char* path(Ref<T> ref) {
+    return detail::data_path(detail::DataRefKind::Data, ref.id);
+}
+inline const char* path(TextureRef ref) {
+    return detail::data_path(detail::DataRefKind::Texture, ref.id);
+}
+inline const char* path(SoundRef ref) {
+    return detail::data_path(detail::DataRefKind::Sound, ref.id);
+}
+inline const char* path(MusicRef ref) {
+    return detail::data_path(detail::DataRefKind::Music, ref.id);
+}
+
+/// Loads the data index now (a loading scene), so later calls allocate nothing. Errors as load()'s that
+/// concern the index (Unsupported, NotFound, Corrupted, OutOfMemory, IoError). Does nothing if it is loaded.
+Result<void> preload();
+
+/// Frees the data index and its scratch buffer (reloaded by the next call). Paths returned earlier become
+/// invalid. Does nothing if it isn't loaded.
+void release();
+
+/// Engine memory kept for data assets (tag "data"): the index file plus the largest data asset's size; 0 when
+/// released. The index costs 32 bytes + 28 per type + 10 per entry + each path's length + 1.
+std::size_t memory_used();
+
+} // namespace nnh::data

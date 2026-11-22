@@ -1,6 +1,6 @@
 # Tasks 014: Data assets
 
-Status: approved (2026-11-22, maintainer pre-approved); in progress — stages 0–2 done
+Status: approved (2026-11-22, maintainer pre-approved); in progress — stages 0–5 done
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -113,54 +113,78 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
 
 ## Stage 3 — the index and the loading API (fake platform)
 
-- [ ] **T3.1** `core/path_hash` (FNV-1a; vectors) and the `NNHX` validator + lookups (by group and hash, by type
+- [x] **T3.1** `core/path_hash` (FNV-1a; vectors) and the `NNHX` validator + lookups (by group and hash, by type
   and position) — files: `engine/core/src/core/path_hash.{hpp,cpp}`, `data/index_validate.{hpp,cpp}`,
   `data_file.*` (index writer) — test: `tests/core/test_path_hash.cpp`, `test_index_validate.cpp` — covers FR-12,
   FR-14
-- [ ] **T3.2** [P] fuzz target `data_index_target` — files: `tests/fuzz/fuzz_data.cpp`,
+- [x] **T3.2** [P] fuzz target `data_index_target` — files: `tests/fuzz/fuzz_data.cpp`,
   `libfuzzer_data_index.cpp`, `fuzz_targets.*` — test: mini-fuzz — covers AC-5, X
-- [ ] **T3.3** shutdown hooks in core; index load/release with the scratch (tag `data`), missing-type warning;
+- [x] **T3.3** shutdown hooks in core; index load/release with the scratch (tag `data`), missing-type warning;
   `kMaxAssetIndexBytes` → 256 KiB — files: `core/shutdown_hooks.{hpp,cpp}`, `app/app.cpp`,
   `data/data_index.{hpp,cpp}`, `assets/assets_internal.hpp` — test: `test_data_index.cpp` (`tests/data_assets/`),
   `tests/app/` hook test — covers FR-13
-- [ ] **T3.4** `load<T>` by path and by reference: errors, `out` unchanged, in-place `T{}`, stale fingerprint
+- [x] **T3.4** `load<T>` by path and by reference: errors, `out` unchanged, in-place `T{}`, stale fingerprint
   message — files: `data/data_load.cpp`, `data.hpp` — test: `test_data_load.cpp` — covers FR-11, FR-8
-- [ ] **T3.5** `count`/`name`/`ref`/`find`/`path`/`preload`/`release`/`memory_used` — files: `data/data_list.cpp`
+- [x] **T3.5** `count`/`name`/`ref`/`find`/`path`/`preload`/`release`/`memory_used` — files: `data/data_list.cpp`
   — test: `test_data_list.cpp`, `test_data_alloc.cpp` (formula = tag stats; no allocation over 100 calls after
   `preload`; shutdown frees all) — covers FR-12, FR-13, AC-7
+
+  **Result (2026-11-22):** `tests/core/test_name_hash.cpp` 4 (plan 016's T0.3 file), `tests/app/test_shutdown_hooks.cpp`
+  5 (Debug/Development), `tests/data_assets/test_index_validate.cpp` 15, `test_index_lookup.cpp` 7,
+  `test_data_index.cpp` 11, `test_data_load.cpp` 13, `test_data_list.cpp` 8, `test_data_alloc.cpp` 3, mini-fuzz
+  `data_index_target_survives_mutated_inputs` (6 000 mutants of a two-type index with every group; libFuzzer
+  `fuzz_data_index` wired, not run: T9.1); `tests/framework/alloc_counter.*` created (shared with plans 015 and 016).
+  `nnh_tests` 1184/1184 (Debug), 1146/1146 (Release). `hello` links no data code: Release `hello.exe` 276,599 bytes
+  and `hello.3dsx` 261,284, both equal to T0.1, and `nm` finds no data or shutdown-hook symbol in either — which
+  needed the shutdown hooks to run in Debug/Development only (a plain call cost 1,027 / 124 bytes). Refinements:
+  plan.md "Stage 3 refinements".
 
   Stage end: ctest green; `hello` links no `nnh::data` symbol (`nm`) — the opt-in check starts early.
 
 ## Stage 4 — the TOML-subset reader (`nnh-assetc`)
 
-- [ ] **T4.1** document model and lexer/parser: lines, comments, keys, headers `[a.b]`/`[[a.b]]`, key or table set
+- [x] **T4.1** document model and lexer/parser: lines, comments, keys, headers `[a.b]`/`[[a.b]]`, key or table set
   twice, BOM, CRLF/lone CR, UTF-8, file and line limits, errors with lines — files:
   `tools/assetc/src/toml.{hpp,cpp}`, `toml_parse.cpp` — test: `tools/assetc/tests/test_toml.cpp`,
   `test_toml_tables.cpp` — covers FR-5, FR-6, FR-14
-- [ ] **T4.2** values: bools, integers (`_`, sign, leading zeros), floats via `from_chars` (hard decimal cases),
+- [x] **T4.2** values: bools, integers (`_`, sign, leading zeros), floats via `from_chars` (hard decimal cases),
   basic strings and escapes, inline arrays (multi-line, trailing comma, depth 2); each refused TOML feature with
   its message — files: `toml_value.{hpp,cpp}` — test: `test_toml_values.cpp` — covers FR-5, FR-16
-- [ ] **T4.3** [P] fuzzing: mini-fuzz of the reader + `fuzz_assetc_toml` — files: `tools/assetc/tests/fuzz_assetc.*`,
+- [x] **T4.3** [P] fuzzing: mini-fuzz of the reader + `fuzz_assetc_toml` — files: `tools/assetc/tests/fuzz_assetc.*`,
   `libfuzzer_assetc_toml.cpp`, `tools/assetc/CMakeLists.txt` — test: `test_fuzz_assetc.cpp` — covers AC-5, X
+
+  **Result (2026-11-22):** `tools/assetc/tests/test_toml.cpp` 11, `test_toml_tables.cpp` 7, `test_toml_values.cpp` 16
+  (hard decimal cases pinned bit for bit), mini-fuzz `assetc_toml_target_*` 2 (8 000 mutated documents, > 200
+  accepted and walked); libFuzzer `fuzz_assetc_toml` wired, not run (T9.1). Refinements: plan.md "Stage 4
+  refinements".
 
 ## Stage 5 — `nnh-assetc data`: one file against the schema
 
-- [ ] **T5.1** description reader → registry nodes (bounded; version) — files: `tools/assetc/src/schema_read.{hpp,cpp}`
+- [x] **T5.1** description reader → registry nodes (bounded; version) — files: `tools/assetc/src/schema_read.{hpp,cpp}`
   (the library also compiles core's `schema_registry`, `schema_check`, `enum_names`, `schema_fingerprint`,
   `schema_write`, `data_validate`, `path_hash`) — test: `test_schema_read.cpp` (round trip with `schema_write`: same
   fingerprint as the compiled tests' schema) — covers FR-3
-- [ ] **T5.2** document × schema: header paths, fields, kinds, ranges, strings, enums, arrays, lists, nested,
+- [x] **T5.2** document × schema: header paths, fields, kinds, ranges, strings, enums, arrays, lists, nested,
   required, references collected with lines; suggestions; diagnostics (line order, 20 cap, shown path) — files:
   `data_convert.{hpp,cpp}`, `data_tables.cpp`, `data_values.cpp`, `suggest.*`, `diagnostics.*` — test:
   `test_data_convert.cpp`, `test_data_convert_tables.cpp`, `test_suggest.cpp`, `test_diagnostics.cpp` — covers
   FR-6, FR-7, FR-9, FR-14
-- [ ] **T5.3** writer (then `data_validate` on its own output) and references sidecar (lines, kinds, targets,
+- [x] **T5.3** writer (then `data_validate` on its own output) and references sidecar (lines, kinds, targets,
   converted size) — files: `data_writer.*`, `data_refs.*` — test: `test_data_writer.cpp` — covers FR-10
-- [ ] **T5.4** CLI `data <in> <out> --schema --refs --show`: converts declared keys, copies other files and writes an
+- [x] **T5.4** CLI `data <in> <out> --schema --refs --show`: converts declared keys, copies other files and writes an
   empty sidecar; exit codes; version 0.2.0 — files: `cli.cpp`, `main.cpp` — test: `test_cli.cpp`, ctest
   `assetc_version` updated — covers FR-4, FR-9
-- [ ] **T5.5** [P] fuzzing: whole conversion from memory against a fixed schema + `fuzz_assetc_data` — files:
+- [x] **T5.5** [P] fuzzing: whole conversion from memory against a fixed schema + `fuzz_assetc_data` — files:
   `fuzz_assetc.*`, `libfuzzer_assetc_data.cpp` — covers AC-5, X
+
+  **Result (2026-11-22):** `test_schema_read.cpp` 10 (the engine tests' schema round trip: same fingerprints and the
+  same text), `test_suggest.cpp` 4, `test_diagnostics.cpp` 4, `test_data_convert.cpp` 15 and
+  `test_data_convert_tables.cpp` 8 (every converted file passes the engine's validator and loads into the compiled
+  struct), `test_data_writer.cpp` 5, `test_cli_data.cpp` 7, mini-fuzz `assetc_data_target_*` 2 (6 000 mutants, > 300
+  accepted and loaded; mutated schema descriptions too); libFuzzer `fuzz_assetc_data` wired, not run (T9.1).
+  `nnh_assetc_tests` 192/192; ctest `assetc_version` expects 0.2.0. ctest 176/176; `pc-debug` (clean), `pc-release`
+  (clean), `3ds-dev` and `3ds-release` (clean) without warnings. Hand mutation testing of the index validator and lookups, the index, `load` and listing, shutdown hooks, the hash, the TOML reader, the schema reader and the converter (values and tables, writer, suggestions, diagnostics, CLI): 196 mutants, **190 killed** (2 by a compile error: the hash's `static_assert` test); the first run left 29 survivors, and tests were added for the 23 real ones (exactly 4096 data assets, sections a few bytes short, an empty key, types that stop short, a path offset just past the strings, exact reasons for order, lookup range, flags and string limits, an index shorter than its header, two names with one hash (load and find), a lone CR at the end, UTF-8 length boundaries of escapes, a bad fingerprint token, a long field name, a colour without `#`, a max-only bound, a suggestion just out of reach, the old sidecar removed on failure, the line of a section implied before it is defined); the 6 left are equivalent (the media-entry guard of `type_of`, the index's own init check behind `load`'s, the top byte of a scratch size the validator refuses anyway, `id == 0` before a lookup that never finds 0, the converter's depth guard behind the schema check, a dot in a folder name that can't form a key). Refinements: plan.md "Stage 5
+  refinements".
 
 ## Stage 6 — `nnh-assetc data-index`: references, names, index
 

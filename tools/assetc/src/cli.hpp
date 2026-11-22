@@ -3,9 +3,13 @@
 //
 //   nnh-assetc --version
 //   nnh-assetc map <in.tmj> <out.nnhmap> --assets <assets folder> [--depfile <out.d>]
+//   nnh-assetc data <in> <out> --schema <schema.nnhschema> --refs <out.refs> --name <asset name> [--show <path>]
 //
 // `map` converts a Tiled map; on failure it prints `file: reason` (the file the problem is in: the map, a tileset or
-// an image), removes any old output and exits with 1. Usage errors exit with 2.
+// an image), removes any old output and exits with 1. `data` (spec 014) converts a data file whose extension is a
+// key of the schema description and copies any other asset unchanged, writing a references sidecar either way; on
+// failure it prints `<shown path>:<line>: reason` (up to 20), removes any old outputs and exits with 1. Usage
+// errors exit with 2.
 
 #include <cstdio>
 

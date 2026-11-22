@@ -111,7 +111,7 @@ tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
 apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
 tools/nnh/                                       the nnh command (spec 010): build, run on the console, install; test scripts (013)
-tools/assetc/                                    nnh-assetc (spec 012): Tiled .tmj → .nnhmap converter; host-built in 3DS presets (NNH_HOST_CXX)
+tools/assetc/                                    nnh-assetc (specs 012, 014): Tiled .tmj → .nnhmap, data files → NNHD; host-built in 3DS presets (NNH_HOST_CXX)
 examples/<name>/                                 one small program per feature (tests/*.nnhs: its test scripts)
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
 docs/                                            architecture/, process/, tech/, api/, guides/

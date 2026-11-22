@@ -22,6 +22,9 @@ public:
     bool read(const std::string& path, std::size_t max_bytes, std::string& out) override;
 };
 
+/// Writes `size` bytes to the file `path` (replacing it). False when it can't be written whole.
+bool write_file(const std::string& path, const void* data, std::size_t size);
+
 /// Files held in memory, by exact path.
 class MemoryFiles final : public FileSource {
 public:

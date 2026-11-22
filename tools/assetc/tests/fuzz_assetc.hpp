@@ -16,4 +16,18 @@ int json_target(const std::uint8_t* data, std::size_t size);
 /// accepted by the run-time validator too.
 int map_target(const std::uint8_t* data, std::size_t size);
 
+/// The TOML-subset reader of data files (spec 014): parse, then walk every table, entry and value; a refusal must
+/// name a line (>= 1) and a reason.
+int toml_target(const std::uint8_t* data, std::size_t size);
+
+/// `nnh-assetc data` from memory (spec 014, fuzz_assetc_data.cpp): the input, up to a NUL byte, is a data file of a
+/// fixed schema with every field kind; an accepted one must pass the engine's validator and load into the compiled
+/// struct within its rules, and its references must be usable paths. After the NUL, if any, comes a schema
+/// description of its own: read with bounds, and when accepted the text is converted against its first keyed type.
+int data_target(const std::uint8_t* data, std::size_t size);
+/// A data file of data_target's schema setting every field (a seed).
+const char* data_seed();
+/// For the mini-fuzz: whether data_target's fixed schema accepts `text` as a data file.
+bool data_converts(const char* text, std::size_t size);
+
 } // namespace nnh::assetc::fuzz

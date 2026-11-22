@@ -186,6 +186,32 @@ NNH_TEST(data_target_survives_mutated_inputs) {
     mutate_and_run(nnh::fuzz::data_target, nullptr, 0);
 }
 
+NNH_TEST(data_index_target_survives_mutated_inputs) {
+    // An index with two types and every group, with 1-4 bytes changed and sometimes cut or grown. The target fixes
+    // the size and CRC itself, so mutants reach the sections; the accepted ones run every lookup (counted here).
+    std::uint8_t seed[512];
+    const std::size_t size = nnh::fuzz::data_index_seed(seed, sizeof seed);
+    CHECK(size > 100);
+    CHECK(nnh::fuzz::data_index_fixed_accepted(seed, size));
+    std::uint32_t state = 4321;
+    int accepted = 0;
+    std::uint8_t buffer[sizeof seed];
+    for (int i = 0; i < 6000; ++i) {
+        std::size_t n = size;
+        std::memcpy(buffer, seed, size);
+        if (i % 8 == 0) n = next(state) % (size + 1);
+        if (i % 8 == 1) n = size + next(state) % 8;
+        const int flips = 1 + static_cast<int>(next(state) % 4);
+        for (int k = 0; k < flips && n > 0; ++k) {
+            buffer[next(state) % n] ^= static_cast<std::uint8_t>(1 + next(state) % 255);
+        }
+        nnh::fuzz::data_index_target(buffer, n);
+        accepted += nnh::fuzz::data_index_fixed_accepted(buffer, n) ? 1 : 0;
+    }
+    CHECK(accepted > 20);
+    mutate_and_run(nnh::fuzz::data_index_target, nullptr, 0);
+}
+
 NNH_TEST(save_target_survives_mutated_inputs) {
     std::uint8_t file[64] = {};
     const char payload[] = "seed payload";

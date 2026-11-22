@@ -134,8 +134,8 @@ NNH_TEST(a_game_without_assets_finds_nothing) {
 NNH_TEST(an_oversized_index_is_ignored_with_a_warning) {
     nnh::shutdown();
     fake::reset();
-    // 35 000 valid lines (70 KB): only the size limit can refuse it.
-    static char huge[70 * 1024];
+    // 131 000 valid lines (262 KB, over the 256 KiB cap): only the size limit can refuse it.
+    static char huge[262 * 1024];
     for (std::size_t i = 0; i + 1 < sizeof huge; i += 2) {
         huge[i] = 'a';
         huge[i + 1] = '_';

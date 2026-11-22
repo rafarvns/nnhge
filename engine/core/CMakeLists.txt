@@ -15,11 +15,16 @@ add_library(nnh_core STATIC
     src/collision/grid_query.cpp
     src/core/crc32.cpp
     src/core/crc32_update.cpp
+    src/core/shutdown_hooks.cpp
     src/crash/crash.cpp
     src/crash/report.cpp
     src/data/data_apply.cpp
+    src/data/data_index.cpp
+    src/data/data_list.cpp
+    src/data/data_load.cpp
     src/data/data_validate.cpp
     src/data/enum_names.cpp
+    src/data/index_validate.cpp
     src/data/schema_check.cpp
     src/data/schema_fingerprint.cpp
     src/data/schema_registry.cpp

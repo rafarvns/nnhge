@@ -1,8 +1,8 @@
 # Tasks 012: Tilemaps and collision
 
 Status: implemented (2026-11-22): stages 0–6 done (T3.9 passed on the Old 3DS XL), stage 7 T7.1–T7.3 and stage 8
-T8.2–T8.7 done. **Still pending with the maintainer:** T7.4 (prepared, not run: `level.nnhs` on the Old 3DS); T8.1 (Linux,
-sanitizers, fuzzing) done on VM 120
+T8.2–T8.7 done; T7.4 passed on the Old 3DS XL (2026-11-22, after a log-file fix); T8.1 (Linux, sanitizers, fuzzing)
+done on VM 120
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -337,10 +337,17 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
     60 Hz meter 6 (`test_frame_meter.cpp`), player physics 8 (`test_player.cpp`), replay 16 (`test_replay_run.cpp`),
     replay script 3 (`test_replay_script.cpp`); each seen failing first (stubs, or the old `Player::update`
     signature). ctest 151/151 in pc-debug.
-- [ ] **T7.4** **3DS** (maintainer): level 1 and the bonus level at a steady 60 Hz while scrolling (overlay), replay
+- [x] **T7.4** **3DS** (maintainer): level 1 and the bonus level at a steady 60 Hz while scrolling (overlay), replay
   checksums equal to the PC's, flips and parallax as on PC; benchmark number for the docs — covers AC-1, AC-4, FR-10
 
-  **Prepared (2026-11-22), not run yet.** Everything is automatic: on the 3DS open the Homebrew Launcher and press
+  **Result (2026-11-22, Old 3DS XL, Development):** `nnh: PASS (73 lines)`. The 15 replay checksums and the final
+  `26B21D57` equal the PC's; `60 Hz PASS (level1 worst 18.5 ms, missed 0/599; bonus worst 17.8 ms, missed 0/299)`; the
+  parallax and flip screenshots match the PC's pixel for pixel by eye. The first run failed 60 Hz (9 + 4 missed, worst
+  41 ms) on every frame after a log line: the log file sink appended each line to `log.txt` on the SD card, ~20 ms per
+  append (proved by logging the slow frames, then by a run with the sink off). The sink now batches lines (4 KB; a
+  warning, shutdown or a crash writes them out), see [logging](../../docs/architecture/logging.md#sinks).
+
+  **Prepared (2026-11-22).** Everything is automatic: on the 3DS open the Homebrew Launcher and press
   **Y**; on the PC `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs`
   (builds `3ds-dev`). It plays level 1 with the buttons (screenshots `level1-start`, `level1-parallax`,
   `level1-bridge`), the bonus level (`bonus`) and the flip test (`flips`), then presses X: the replay must log the

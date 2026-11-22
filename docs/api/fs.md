@@ -59,7 +59,7 @@ Parent folders are created as needed. File functions need `nnh::init()` (else `U
 
 | File | When |
 |------|------|
-| `log.txt` | every log line of this run (Release: warnings and errors); the previous run is kept as `log.prev.txt` |
+| `log.txt` | every log line of this run (Release: warnings and errors), info/debug lines in 4 KB batches (a warning, the end of the run or a crash writes them out); the previous run is kept as `log.prev.txt` |
 | `crash.txt` | full crash report (message, location, registers, last 64 log lines); the previous one is `crash.prev.txt` |
 
 ## Limits

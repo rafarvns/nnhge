@@ -56,6 +56,11 @@ A sink receives each formatted line. Several sinks run at once.
 | 3dslink stdio → PC terminal (`nnh run`, `3dslink -s`) | 3DS | Debug, Development, when launched via 3dslink |
 | Debugger (`svcOutputDebugString`) | 3DS | Debug |
 
+The file sink batches lines in a 4 KB static buffer: one append to the 3DS SD card costs ~20 ms, so writing each line
+made every logged frame miss 60 Hz (found by the platformer's replay on an Old 3DS, 2026-11-22). A warning or worse
+writes the batch out at once with the lines before it, in order; so do a full batch and shutdown, and a crash (it logs a
+fatal line first). Info lines of the last moments before a power-off can be lost; the crash report keeps the last 64.
+
 Games can add sinks (e.g. an in-game log viewer) through `nnh::log::add_sink`.
 
 In the simulator started by `nnh run --pc` (Debug/Development, `NNH_REMOTE` set), the console sink sends each

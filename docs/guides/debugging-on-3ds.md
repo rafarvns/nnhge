@@ -10,7 +10,8 @@ Tools from the simplest to the most powerful. Use a Development build (`nnh run`
    every `NNH_LOG_*` line, coloured, until the game exits; the session is saved in
    `build/logs/<game>-<date>-<time>.txt`.
 3. On the console, the same lines are written to `sdmc:/3ds/<data folder>/log.txt` (the previous run:
-   `log.prev.txt`).
+   `log.prev.txt`). Info and debug lines reach the file in 4 KB batches (each SD write costs ~20 ms, a missed
+   frame); a warning or worse writes everything before it at once, and so do the end of the run and a crash.
 
 Without `nnh`, devkitPro's 3dslink works too: `3dslink -s <game>.3dsx -a <console-ip>` (`-s` keeps it
 listening for the log; in PowerShell use `C:\devkitPro\tools\bin\3dslink.exe`).

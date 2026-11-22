@@ -11,7 +11,9 @@ std::int64_t ceil_div(std::int64_t a, std::int64_t b) {
     return (a % b != 0 && a > 0) ? q + 1 : q;
 }
 
-int clamp_cells(std::int64_t v, int cells) { return v < 0 ? 0 : (v > cells ? cells : static_cast<int>(v)); }
+int clamp_cells(std::int64_t v, int cells) {
+    return v < 0 ? 0 : (v > cells ? cells : static_cast<int>(v));
+}
 
 } // namespace
 
@@ -27,7 +29,8 @@ void zoom_axis_range(int origin, int tile, int zq, int screen, int cells, int& f
 }
 
 void zoom_edges(int origin, int tile, int zq, int first, int count, std::int16_t* out) {
-    for (int k = 0; k <= count; ++k) out[k] = static_cast<std::int16_t>(origin + zoom_edge(first + k, tile, zq));
+    for (int k = 0; k <= count; ++k)
+        out[k] = static_cast<std::int16_t>(origin + zoom_edge(first + k, tile, zq));
 }
 
 } // namespace nnh::detail

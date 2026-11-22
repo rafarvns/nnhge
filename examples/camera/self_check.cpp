@@ -25,8 +25,9 @@ CameraSelfCheck::CameraSelfCheck() : rig_(start_settings()), sum_(kFnvStart) {
 }
 
 nnh::Vec2 CameraSelfCheck::target() const {
-    // Runs right with small steps, stops, jumps (teleports) at 200, walks back up and left, stops again. Every
-    // factor is a short binary fraction, so the path itself is exact (no rounding the compiler could fuse).
+    // Runs right with small steps, stops, jumps (teleports) at 200, walks back up and left, stops again.
+    // Every factor is a short binary fraction, so the path itself is exact (no rounding the compiler could
+    // fuse).
     const float t = static_cast<float>(frame_);
     if (frame_ < 120) return {300 + t * 3.25f, 200 + (frame_ % 40 < 20 ? 0.5f : -0.5f) * t};
     if (frame_ < 160) return {690, 260}; // stop
@@ -38,26 +39,54 @@ nnh::Vec2 CameraSelfCheck::target() const {
 
 void CameraSelfCheck::script_frame() {
     switch (frame_) {
-    case 60: rig_.add_trauma(0.6f); break;
-    case 140: rig_.set_zoom(2); break;
-    case 200: rig_.snap(target()); break; // the jump: no glide
-    case 230: rig_.set_limits({0, 0, 640, 384}); break; // a smaller room: the camera glides into it
-    case 260: rig_.add_trauma(1); break;
-    case 300: rig_.set_layout(nnh::CameraLayout::TallWorld); break;
-    case 320: rig_.set_zoom(0.5f); break;
-    case 360: rig_.set_offset({24, -8}); break;
-    case 400: rig_.set_limits({0, 0, 1280, 768}); break;
-    case 450: rig_.set_zoom(1.5f); break;
-    case 470: rig_.add_trauma(0.45f); break;
-    case 520: rig_.set_layout(nnh::CameraLayout::Single, nnh::Screen::Bottom); break;
-    case 560: rig_.clear_limits(); break;
-    default: break;
+    case 60:
+        rig_.add_trauma(0.6f);
+        break;
+    case 140:
+        rig_.set_zoom(2);
+        break;
+    case 200:
+        rig_.snap(target());
+        break; // the jump: no glide
+    case 230:
+        rig_.set_limits({0, 0, 640, 384});
+        break; // a smaller room: the camera glides into it
+    case 260:
+        rig_.add_trauma(1);
+        break;
+    case 300:
+        rig_.set_layout(nnh::CameraLayout::TallWorld);
+        break;
+    case 320:
+        rig_.set_zoom(0.5f);
+        break;
+    case 360:
+        rig_.set_offset({24, -8});
+        break;
+    case 400:
+        rig_.set_limits({0, 0, 1280, 768});
+        break;
+    case 450:
+        rig_.set_zoom(1.5f);
+        break;
+    case 470:
+        rig_.add_trauma(0.45f);
+        break;
+    case 520:
+        rig_.set_layout(nnh::CameraLayout::Single, nnh::Screen::Bottom);
+        break;
+    case 560:
+        rig_.clear_limits();
+        break;
+    default:
+        break;
     }
 }
 
 void CameraSelfCheck::mix(float value) {
     const std::uint32_t word = std::bit_cast<std::uint32_t>(value);
-    for (int k = 0; k < 4; ++k) sum_ = (sum_ ^ ((word >> (8 * k)) & 0xFFu)) * kFnvPrime;
+    for (int k = 0; k < 4; ++k)
+        sum_ = (sum_ ^ ((word >> (8 * k)) & 0xFFu)) * kFnvPrime;
 }
 
 bool CameraSelfCheck::update() {

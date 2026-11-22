@@ -1,5 +1,5 @@
-// Zoomed tile edges (tilemap/zoom_edges.hpp; spec 018 FR-9, decision D33): edge(i) = origin + round(i × tile × zoom)
-// in 16.16 fixed point; steps are floor(tile × zoom) or one more; integer zooms give exact multiples.
+// Zoomed tile edges (tilemap/zoom_edges.hpp; spec 018 FR-9, decision D33): edge(i) = origin + round(i × tile
+// × zoom) in 16.16 fixed point; steps are floor(tile × zoom) or one more; integer zooms give exact multiples.
 
 #include "test.hpp"
 #include "tilemap/zoom_edges.hpp"
@@ -18,17 +18,19 @@ NNH_TEST(zoom_q_is_the_zoom_in_16_16_fixed_point) {
 }
 
 NNH_TEST(zoomed_size_is_the_floor_of_tile_times_zoom) {
-    CHECK(zoomed_size(16, zoom_q(1)) == 16 && zoomed_size(8, zoom_q(1)) == 8 && zoomed_size(64, zoom_q(1)) == 64);
+    CHECK(zoomed_size(16, zoom_q(1)) == 16 && zoomed_size(8, zoom_q(1)) == 8 &&
+          zoomed_size(64, zoom_q(1)) == 64);
     CHECK(zoomed_size(16, zoom_q(2)) == 32 && zoomed_size(16, zoom_q(0.5f)) == 8);
     CHECK(zoomed_size(16, zoom_q(1.5f)) == 24 && zoomed_size(10, zoom_q(1.5f)) == 15);
-    CHECK(zoomed_size(8, zoom_q(1.3f)) == 10 && zoomed_size(9, zoom_q(0.5f)) == 4 && zoomed_size(16, zoom_q(4)) == 64);
+    CHECK(zoomed_size(8, zoom_q(1.3f)) == 10 && zoomed_size(9, zoom_q(0.5f)) == 4 &&
+          zoomed_size(16, zoom_q(4)) == 64);
     CHECK(zoomed_size(8, zoom_q(0.75f)) == 6);
 }
 
 NNH_TEST(zoom_edges_are_rounded_multiples_of_tile_times_zoom) {
     CHECK(zoom_edge(0, 16, zoom_q(1.5f)) == 0 && zoom_edge(1, 16, zoom_q(1.5f)) == 24);
     CHECK(zoom_edge(3, 10, zoom_q(0.75f)) == 23); // 22.5 rounds up
-    CHECK(zoom_edge(5, 16, zoom_q(1.3f)) == 104);  // 5 × 20.8 = 104.0003
+    CHECK(zoom_edge(5, 16, zoom_q(1.3f)) == 104); // 5 × 20.8 = 104.0003
     CHECK(zoom_edge(7, 8, zoom_q(0.5f)) == 28);
 }
 
@@ -49,7 +51,8 @@ NNH_TEST(every_step_is_floor_of_tile_times_zoom_or_one_more) {
 
 NNH_TEST(integer_zooms_make_exact_multiples) {
     for (int z = 1; z <= 4; ++z) {
-        for (int i = 0; i < 1025; i += 7) CHECK(zoom_edge(i, 16, zoom_q(static_cast<float>(z))) == i * 16 * z);
+        for (int i = 0; i < 1025; i += 7)
+            CHECK(zoom_edge(i, 16, zoom_q(static_cast<float>(z))) == i * 16 * z);
     }
 }
 
@@ -61,7 +64,8 @@ NNH_TEST(edge_tables_start_at_the_first_cell) {
 
 NNH_TEST(the_visible_cells_are_those_whose_span_meets_the_screen) {
     int first = 0, last = 0;
-    // 24-pixel cells from −30: cell 1 spans [−6, 18), the first visible; cell 17 starts at 378 < 400, cell 18 at 402.
+    // 24-pixel cells from −30: cell 1 spans [−6, 18), the first visible; cell 17 starts at 378 < 400, cell 18
+    // at 402.
     zoom_axis_range(-30, 16, zoom_q(1.5f), 400, 100, first, last);
     CHECK(first == 1 && last == 18);
     // A cell ending exactly at 0 is not visible; one starting exactly at the screen's edge is not either.

@@ -1,5 +1,5 @@
-// Zoom in the rig (spec 018 FR-9, FR-3): the view is screen size / zoom, a zoom change keeps the view's centre,
-// the dead zone is in screen pixels, the limits use the zoomed view.
+// Zoom in the rig (spec 018 FR-9, FR-3): the view is screen size / zoom, a zoom change keeps the view's
+// centre, the dead zone is in screen pixels, the limits use the zoomed view.
 
 #include "camera/camera_internal.hpp"
 #include "camera_fixture.hpp"

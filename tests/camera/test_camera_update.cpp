@@ -1,4 +1,5 @@
-// update() advances exactly one 60 Hz frame (spec 018 FR-12): never by wall time; not calling it freezes the rig.
+// update() advances exactly one 60 Hz frame (spec 018 FR-12): never by wall time; not calling it freezes the
+// rig.
 
 #include "camera_fixture.hpp"
 #include "nnh/profile.hpp"
@@ -39,7 +40,8 @@ NNH_TEST(update_is_a_profile_scope_named_camera) {
     cam_test::restart();
     CameraRig rig;
     CHECK(nnh::frame());
-    for (int i = 0; i < 3; ++i) rig.update(Vec2{1, 2});
+    for (int i = 0; i < 3; ++i)
+        rig.update(Vec2{1, 2});
     CHECK(nnh::frame());
     nnh::profile::ScopeStats stats[nnh::profile::kMaxScopes];
     const int n = nnh::profile::slowest(stats, nnh::profile::kMaxScopes);

@@ -54,7 +54,8 @@ bool World::build() {
     const auto things = map.add_tile_layer({.name = "things"});
     if (!ground || !things) return false;
     for (int ry = 0; ry < 2; ++ry)
-        for (int rx = 0; rx < 2; ++rx) build_room(map, ground.value(), things.value(), rx, ry);
+        for (int rx = 0; rx < 2; ++rx)
+            build_room(map, ground.value(), things.value(), rx, ry);
     return true;
 }
 

@@ -1,18 +1,19 @@
 // camera: camera helpers (spec 018). Three scenes (SELECT: the next one):
-//   playground  a CameraRig follows the square you move through four rooms (dead zone in yellow, limits in red);
-//               A shakes, X zooms (1, 1.5, 2, 3, 0.5), Y toggles smoothing, R switches single view (HUD below),
-//               tall world (the bottom screen continues the top one) and two views (the bottom screen follows a
-//               second, automatic target), L toggles a 24-pixel gap between the screens in tall world; a touch on
-//               the bottom screen puts a marker on the world point under the finger;
+//   playground  a CameraRig follows the square you move through four rooms (yellow: dead zone, red: limits);
+//               A shakes, X zooms (1, 1.5, 2, 3, 0.5), Y toggles smoothing, R switches single view (HUD
+//               below), tall world (the bottom screen continues the top one) and two views (the bottom screen
+//               follows a second, automatic target), L toggles a 24-pixel gap between the screens in tall
+//               world; a touch on the bottom screen puts a marker on the world point under the finger;
 //   self-check  a fixed 600-update script on a real rig: "camera: <frame> sum ..." every 60 frames, then
 //               "camera: PASS <sum>" when the bits are the simulator's (the console must match);
 //   bench       two rigs (tall world + bottom screen) updated and applied 16 times per frame:
 //               "camera: bench avg X ms worst Y ms per pair (target < 0.05 ms) PASS|FAIL".
 // START quits.
 //
-// CAMERA_DEMO picks the first scene and the playground's state: zoom1 (default), zoom2, zoom05, tall, two, check,
-// bench. Screenshots (Debug/Development):
-//   CAMERA_DEMO=tall NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/camera.png build/pc-debug/examples/camera/camera.exe
+// CAMERA_DEMO picks the first scene and the playground's state: zoom1 (default), zoom2, zoom05, tall, two,
+// check, bench. Screenshots (Debug/Development):
+//   CAMERA_DEMO=tall NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/camera.png
+//       build/pc-debug/examples/camera/camera.exe
 // Console test (spec 013): nnh run camera --script examples/camera/tests/check.nnhs
 
 #include "bench_scene.hpp"

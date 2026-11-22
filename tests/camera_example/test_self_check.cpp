@@ -1,5 +1,5 @@
-// The camera example's self-check (examples/camera/self_check.hpp, spec 018 T6.2, AC-2): the script reaches the
-// golden checksum on this host, twice the same, with a checkpoint every 60 frames, and the lines
+// The camera example's self-check (examples/camera/self_check.hpp, spec 018 T6.2, AC-2): the script reaches
+// the golden checksum on this host, twice the same, with a checkpoint every 60 frames, and the lines
 // examples/camera/tests/check.nnhs expects.
 
 #include "camera/self_check.hpp"
@@ -37,7 +37,8 @@ NNH_TEST(the_camera_self_check_has_a_checkpoint_every_60_frames_and_stops) {
     run_to_end(&checkpoints);
     CHECK(checkpoints == CameraSelfCheck::kFrames / CameraSelfCheck::kCheckpointEvery);
     CameraSelfCheck check;
-    while (!check.done()) check.update();
+    while (!check.done())
+        check.update();
     const std::uint32_t sum = check.checksum();
     CHECK(!check.update() && check.checksum() == sum && check.frame() == CameraSelfCheck::kFrames);
 }

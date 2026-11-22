@@ -1,6 +1,7 @@
 #pragma once
-// The camera example's world: a map built in code (2 × 2 rooms of 40 × 24 tiles, 1280 × 768 pixels: more than four
-// top screens), the square the player moves and a second square that moves by itself. Art: art/make_art.py.
+// The camera example's world: a map built in code (2 × 2 rooms of 40 × 24 tiles, 1280 × 768 pixels: more than
+// four top screens), the square the player moves and a second square that moves by itself. Art:
+// art/make_art.py.
 
 #include <nnh/math.hpp>
 #include <nnh/texture.hpp>

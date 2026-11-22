@@ -4,7 +4,9 @@
 
 namespace nnh::detail::cam {
 
-Vec2 box_centre(Rect r) { return {r.x + r.w / 2, r.y + r.h / 2}; }
+Vec2 box_centre(Rect r) {
+    return {r.x + r.w / 2, r.y + r.h / 2};
+}
 
 Zone zone_axis(float zone_pos, float zone_size, float zoom, float half, bool& clamped) {
     Zone z{zone_pos / zoom, zone_size / zoom};

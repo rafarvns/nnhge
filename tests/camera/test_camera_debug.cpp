@@ -30,7 +30,8 @@ int count(nnh::Color color, Kind kind) {
 
 const nnh::platform::DrawItem2D* first(nnh::Color color) {
     for (int i = 0; i < fake::state().last_frame_item_count; ++i) {
-        if (same_color(fake::state().last_frame_items[i].color, color)) return &fake::state().last_frame_items[i];
+        if (same_color(fake::state().last_frame_items[i].color, color))
+            return &fake::state().last_frame_items[i];
     }
     return nullptr;
 }
@@ -57,7 +58,8 @@ NNH_TEST(debug_draw_shows_the_dead_zone_limits_and_target_on_the_top_layer) {
     const auto* zone = first(nnh::colors::yellow);
     CHECK(zone != nullptr && zone->x == 200 - 32 && zone->y == 120 - 24 && zone->w == 64 && zone->h == 48);
     const auto* limits = first(nnh::colors::red);
-    CHECK(limits != nullptr && limits->x == -100 && limits->y == -80); // in screen pixels, ignoring the camera
+    CHECK(limits != nullptr && limits->x == -100 &&
+          limits->y == -80); // in screen pixels, ignoring the camera
     nnh::shutdown();
 }
 

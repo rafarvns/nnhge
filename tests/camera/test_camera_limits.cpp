@@ -1,5 +1,6 @@
-// Limits (spec 018 FR-6): the view stays inside a world rectangle; alignment where the world is smaller; clamping
-// before smoothing (no easing into a wall) and after the shake; limits changed at run time (glide or cut).
+// Limits (spec 018 FR-6): the view stays inside a world rectangle; alignment where the world is smaller;
+// clamping before smoothing (no easing into a wall) and after the shake; limits changed at run time (glide or
+// cut).
 
 #include "camera/camera_internal.hpp"
 #include "camera_fixture.hpp"
@@ -81,8 +82,9 @@ NNH_TEST(clamp_axis_is_exactly_at_the_edge_when_the_target_is_centred_on_it) {
 NNH_TEST(final_clamp_keeps_the_followed_range_and_skips_small_axes) {
     CHECK(cam::final_clamp_axis(-3, 0, 0, 2048, 400) == 0);
     CHECK(cam::final_clamp_axis(1650, 1640, 0, 2048, 400) == 1648);
-    CHECK(cam::final_clamp_axis(1700, 1690, 0, 2048, 400) == 1690); // gliding in from outside: kept at followed
-    CHECK(cam::final_clamp_axis(-30, -20, 0, 200, 240) == -30);     // small axis: unclamped
+    CHECK(cam::final_clamp_axis(1700, 1690, 0, 2048, 400) ==
+          1690);                                                // gliding in from outside: kept at followed
+    CHECK(cam::final_clamp_axis(-30, -20, 0, 200, 240) == -30); // small axis: unclamped
 }
 
 // Part 2: smoothing.

@@ -1,5 +1,6 @@
-// Zoomed expansion (tilemap/tile_expand.hpp; spec 018 FR-9, decision D33): quads on the zoomed edges, widen/taller
-// bits where a step is one pixel more, row chunks when the scratch fills, drops when the budget is spent.
+// Zoomed expansion (tilemap/tile_expand.hpp; spec 018 FR-9, decision D33): quads on the zoomed edges,
+// widen/taller bits where a step is one pixel more, row chunks when the scratch fills, drops when the budget
+// is spent.
 
 #include "nnh/platform/video.hpp"
 #include "test.hpp"
@@ -30,15 +31,30 @@ struct Layer {
     TileQuad2D out[64] = {};
 
     Layer() {
-        for (std::uint16_t& c : cells) c = fmt::encode_cell(1, false, false, false);
+        for (std::uint16_t& c : cells)
+            c = fmt::encode_cell(1, false, false, false);
         sources[1] = {10, 0};
         sources[2] = {20, 0};
     }
-    ExpandResult expand(float zoom, int capacity = 64, int first_row = 0, bool chunk = false, int origin = 0) {
-        LayerView v{.origin_x = origin, .origin_y = origin, .x0 = 0, .y0 = 0, .x1 = kW, .y1 = kH,
+    ExpandResult expand(float zoom, int capacity = 64, int first_row = 0, bool chunk = false,
+                        int origin = 0) {
+        LayerView v{.origin_x = origin,
+                    .origin_y = origin,
+                    .x0 = 0,
+                    .y0 = 0,
+                    .x1 = kW,
+                    .y1 = kH,
                     .zoom_q = zoom_q(zoom)};
-        const ExpandInput in{.cells = cells, .map_width = kW, .sources = sources, .first_id = 1, .tile_count = 2,
-                             .view = v, .tile_w = 10, .tile_h = 10, .first_row = first_row, .chunk = chunk};
+        const ExpandInput in{.cells = cells,
+                             .map_width = kW,
+                             .sources = sources,
+                             .first_id = 1,
+                             .tile_count = 2,
+                             .view = v,
+                             .tile_w = 10,
+                             .tile_h = 10,
+                             .first_row = first_row,
+                             .chunk = chunk};
         return expand_tiles(in, out, capacity);
     }
 };
@@ -58,11 +74,12 @@ NNH_TEST(integer_zooms_place_quads_on_exact_multiples_without_bits) {
 NNH_TEST(fractional_zooms_mark_the_wider_and_taller_tiles) {
     Layer l;
     l.cells[1] = fmt::encode_cell(2, true, false, true); // flips are kept beside the new bits
-    const ExpandResult r = l.expand(1.25f);               // 12.5-pixel steps: 13, 12, 13, 12, ... (edges 0, 13, 25, 38)
+    const ExpandResult r = l.expand(1.25f); // 12.5-pixel steps: 13, 12, 13, 12, ... (edges 0, 13, 25, 38)
     CHECK(r.written == kW * kH);
     CHECK(l.out[0].x == 0 && l.out[1].x == 13 && l.out[2].x == 25 && l.out[3].x == 38);
     CHECK(l.out[0].orient == (platform::kTileOrientWiden | platform::kTileOrientTaller));
-    CHECK(l.out[1].orient == (platform::kTileOrientFlipX | platform::kTileOrientDiagonal | platform::kTileOrientTaller));
+    CHECK(l.out[1].orient ==
+          (platform::kTileOrientFlipX | platform::kTileOrientDiagonal | platform::kTileOrientTaller));
     CHECK(l.out[1].src_x == 20);
     CHECK(l.out[kW].y == 13 && l.out[kW].orient == platform::kTileOrientWiden); // row 1 is 12 tall
 }

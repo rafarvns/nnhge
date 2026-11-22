@@ -1,6 +1,6 @@
-// Zoom in the 2D pass (spec 018 FR-9, decision D33): camera-relative sprites, glyphs, rectangles and lines land at
-// (world − position) × zoom with sizes and pivots × zoom; outlines and lines stay one pixel thick; ignore_camera
-// draws and the debug pass are never zoomed.
+// Zoom in the 2D pass (spec 018 FR-9, decision D33): camera-relative sprites, glyphs, rectangles and lines
+// land at (world − position) × zoom with sizes and pivots × zoom; outlines and lines stay one pixel thick;
+// ignore_camera draws and the debug pass are never zoomed.
 
 #include "gfx_fixture.hpp"
 #include "nnh/debug.hpp"
@@ -29,8 +29,12 @@ struct Zoomed {
     }
 };
 
-const Item& item(int i) { return fake::state().last_frame_items[i]; }
-int items() { return fake::state().last_frame_item_count; }
+const Item& item(int i) {
+    return fake::state().last_frame_items[i];
+}
+int items() {
+    return fake::state().last_frame_item_count;
+}
 
 } // namespace
 
@@ -43,8 +47,8 @@ NNH_TEST(zoom_2_doubles_a_sprites_position_size_and_pivot) {
     CHECK(nnh::frame());
     CHECK(items() == 1);
     const Item& s = item(0);
-    CHECK(s.x == 21 && s.y == 21);   // snap(10.25 × 2) = snap(20.5), snap(10.5 × 2)
-    CHECK(s.w == 48 && s.h == 32);   // 16 × 1.5 × 2, 8 × 2 × 2
+    CHECK(s.x == 21 && s.y == 21); // snap(10.25 × 2) = snap(20.5), snap(10.5 × 2)
+    CHECK(s.w == 48 && s.h == 32); // 16 × 1.5 × 2, 8 × 2 × 2
     CHECK(s.pivot_x == 12 && s.pivot_y == 8);
     CHECK(s.rotation == 0.5f && s.flip_x && !s.flip_y);
 }
@@ -59,7 +63,8 @@ NNH_TEST(zoom_half_halves_positions_and_sizes) {
     CHECK(items() == 2);
     CHECK(item(0).x == 50 && item(0).y == 50 && item(0).w == 32 && item(0).h == 16);
     CHECK(item(0).pivot_x == 4 && item(0).pivot_y == 2);
-    // Both corners snapped: x = snap(10) = 10, right = snap(61 × 0.5) = snap(30.5) = 31 → w 21; y 0, bottom snap(10.5).
+    // Both corners snapped: x = snap(10) = 10, right = snap(61 × 0.5) = snap(30.5) = 31 → w 21; y 0, bottom
+    // snap(10.5).
     CHECK(item(1).x == 10 && item(1).w == 21 && item(1).y == 0 && item(1).h == 11);
 }
 
@@ -74,7 +79,8 @@ NNH_TEST(integer_zooms_put_shapes_on_exact_multiples) {
         gfx::draw_line(Screen::Top, {11, 22}, {17, 29}, nnh::colors::green);
         CHECK(nnh::frame());
         CHECK(items() == 3);
-        CHECK(item(0).x == 3 * zoom && item(0).y == 5 * zoom && item(0).w == 7 * zoom && item(0).h == 3 * zoom);
+        CHECK(item(0).x == 3 * zoom && item(0).y == 5 * zoom && item(0).w == 7 * zoom &&
+              item(0).h == 3 * zoom);
         CHECK(item(1).kind == Kind::RectOutline && item(1).x == 4 * zoom && item(1).w == 2 * zoom);
         CHECK(item(2).kind == Kind::Line && item(2).x == 1 * zoom && item(2).y == 2 * zoom);
         CHECK(item(2).w == 7 * zoom && item(2).h == 9 * zoom); // the line's end point

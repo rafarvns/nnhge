@@ -37,8 +37,9 @@ void SelfCheckScene::draw() {
     gfx::draw_text(top, {200, 90}, last_line_, {.align = nnh::TextAlign::Center});
     if (verdict_[0] != '\0') {
         const bool pass = std::strncmp(verdict_, "camera: PASS", 12) == 0;
-        gfx::draw_text(top, {200, 120}, verdict_,
-                       {.color = pass ? nnh::colors::green : nnh::colors::red, .align = nnh::TextAlign::Center});
+        gfx::draw_text(
+            top, {200, 120}, verdict_,
+            {.color = pass ? nnh::colors::green : nnh::colors::red, .align = nnh::TextAlign::Center});
     }
     if (check_) {
         // The rig's view as a small picture: where its primary screen looks in the 1280 × 768 world.
@@ -46,8 +47,9 @@ void SelfCheckScene::draw() {
         gfx::draw_rect(top, {40, 150, 320, 80}, nnh::colors::gray);
         gfx::fill_rect(top, {40 + p.x / 4, 150 + p.y / 9.6f, 6, 6}, nnh::colors::yellow);
     }
-    gfx::draw_text(nnh::Screen::Bottom, {8, 8},
-                   "600 updates of a camera rig: a target\nthat runs, stops and jumps, a dead\nzone, smoothing, "
-                   "limits changed\nmid-way, trauma, zoom changes and\nthe tall-world layout. A checksum of\n"
-                   "every position's bits: the PC and\nthe 3DS must agree.\n\nSELECT bench  START quit");
+    gfx::draw_text(
+        nnh::Screen::Bottom, {8, 8},
+        "600 updates of a camera rig: a target\nthat runs, stops and jumps, a dead\nzone, smoothing, "
+        "limits changed\nmid-way, trauma, zoom changes and\nthe tall-world layout. A checksum of\n"
+        "every position's bits: the PC and\nthe 3DS must agree.\n\nSELECT bench  START quit");
 }

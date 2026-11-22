@@ -1,5 +1,5 @@
-// Trauma shake (spec 018 FR-8): add and clamp, linear decay to exactly 0, offset bounded by max_shake / zoom × trauma²,
-// seeded, never moving the followed position, kept inside the limits unless turned off.
+// Trauma shake (spec 018 FR-8): add and clamp, linear decay to exactly 0, offset bounded by max_shake / zoom
+// × trauma², seeded, never moving the followed position, kept inside the limits unless turned off.
 
 #include "camera_fixture.hpp"
 
@@ -9,7 +9,9 @@ using nnh::Vec2;
 
 namespace {
 
-float absf(float v) { return v < 0 ? -v : v; }
+float absf(float v) {
+    return v < 0 ? -v : v;
+}
 
 } // namespace
 

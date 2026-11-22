@@ -1,5 +1,6 @@
-// The zoomed expansion (spec 018 FR-9, decision D33; see tile_expand.hpp): quads placed on the zoomed tile edges,
-// one pixel wider/taller where an edge step is floor(tile × zoom) + 1, cut in row chunks when the scratch fills.
+// The zoomed expansion (spec 018 FR-9, decision D33; see tile_expand.hpp): quads placed on the zoomed tile
+// edges, one pixel wider/taller where an edge step is floor(tile × zoom) + 1, cut in row chunks when the
+// scratch fills.
 
 #include "nnh/assert.hpp"
 #include "tilemap/tile_animation.hpp"
@@ -14,7 +15,7 @@ ExpandResult expand_zoomed(const ExpandInput& in, platform::TileQuad2D* out, int
     const int columns = v.x1 - v.x0;
     NNH_ASSERT(columns <= kMaxZoomCells, "tilemap: %d zoomed columns", columns);
     if (columns > kMaxZoomCells) return r; // impossible within the zoom and tile size limits
-    std::int16_t xs[kMaxZoomCells + 1]; // 256 bytes of stack
+    std::int16_t xs[kMaxZoomCells + 1];    // 256 bytes of stack
     zoom_edges(v.origin_x, in.tile_w, v.zoom_q, v.x0, columns, xs);
     const int dst_w = zoomed_size(in.tile_w, v.zoom_q); // = TileBatch2D::dst_w
     const int dst_h = zoomed_size(in.tile_h, v.zoom_q);

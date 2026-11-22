@@ -1,6 +1,6 @@
-// gfx::draw_tilemap at a camera zoom, end to end on the fake platform (spec 018 FR-9, AC-3, decision D33): full
-// layers have no gap and no overlap at any zoom, integer zooms set no widen/taller bit, a parallax-1 layer stays on
-// sprites, and zoom 0.5 draws about four times the quads of zoom 1.
+// gfx::draw_tilemap at a camera zoom, end to end on the fake platform (spec 018 FR-9, AC-3, decision D33):
+// full layers have no gap and no overlap at any zoom, integer zooms set no widen/taller bit, a parallax-1
+// layer stays on sprites, and zoom 0.5 draws about four times the quads of zoom 1.
 
 #include "map_fixture.hpp"
 #include "nnh/platform/video.hpp"
@@ -42,7 +42,9 @@ struct Scene {
     }
 };
 
-const fake::FakeTiles& tiles() { return fake::state().last_frame_tiles; }
+const fake::FakeTiles& tiles() {
+    return fake::state().last_frame_tiles;
+}
 
 int width_of(const platform::TileQuad2D& q, const platform::TileBatch2D& b) {
     return b.dst_w + ((q.orient & platform::kTileOrientWiden) != 0 ? 1 : 0);
@@ -63,7 +65,8 @@ NNH_TEST(zoomed_layers_cover_the_screen_without_gaps_or_overlaps) {
         const int n = b.count;
         // Columns: the row length is the number of quads before y changes.
         int columns = 0;
-        while (columns < n && tiles().quads[columns].y == tiles().quads[0].y) ++columns;
+        while (columns < n && tiles().quads[columns].y == tiles().quads[0].y)
+            ++columns;
         const int rows = n / columns;
         CHECK(columns * rows == n);
         int gaps = 0;
@@ -88,7 +91,8 @@ NNH_TEST(integer_zooms_set_no_widen_or_taller_bit) {
         s.frame({{13.7f, 5.2f}, static_cast<float>(z)});
         const platform::TileBatch2D& b = tiles().batches[0].batch;
         CHECK(b.dst_w == 32 * z && b.dst_h == 32 * z && b.tile_w == 32);
-        for (int i = 0; i < tiles().quad_count; ++i) CHECK((tiles().quads[i].orient & 0x18) == 0);
+        for (int i = 0; i < tiles().quad_count; ++i)
+            CHECK((tiles().quads[i].orient & 0x18) == 0);
     }
 }
 

@@ -16,4 +16,6 @@ float look_ahead_step(float current, bool facing_left) {
     return current;
 }
 
-float landing_trauma(float fall_speed) { return fall_speed >= kHardLandingSpeed ? kLandingTrauma : 0.0f; }
+float landing_trauma(float fall_speed) {
+    return fall_speed >= kHardLandingSpeed ? kLandingTrauma : 0.0f;
+}

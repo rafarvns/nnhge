@@ -1,6 +1,6 @@
-// CameraRig::debug_draw() (spec 018 FR-14): the dead zone (yellow), the limits (red) and the target (green cross)
-// on the driven screen(s), layer 15, in screen pixels. Linked only by games that call it in Debug/Development (the
-// header's inline function is empty in Release).
+// CameraRig::debug_draw() (spec 018 FR-14): the dead zone (yellow), the limits (red) and the target (green
+// cross) on the driven screen(s), layer 15, in screen pixels. Linked only by games that call it in
+// Debug/Development (the header's inline function is empty in Release).
 
 #include "camera/camera_internal.hpp"
 
@@ -13,7 +13,8 @@ constexpr ShapeOptions kOnTop{.layer = 15, .ignore_camera = true};
 constexpr float kCross = 4; // half the cross, screen pixels
 
 bool visible(Screen screen, Rect r) {
-    return r.x < static_cast<float>(screen_width(screen)) && r.y < cam::kScreenHeight && r.x + r.w > 0 && r.y + r.h > 0;
+    return r.x < static_cast<float>(screen_width(screen)) && r.y < cam::kScreenHeight && r.x + r.w > 0 &&
+           r.y + r.h > 0;
 }
 
 /// A world rectangle in `screen`'s pixels.
@@ -27,10 +28,11 @@ void draw_screen(const CameraRig& rig, Screen screen) {
     const CameraSettings& s = rig.settings();
     const Rect z = s.dead_zone;
     if (z.w > 0 || z.h > 0) {
-        // Around the drawn view's centre (in world pixels, so it lands right on both screens of a tall world).
+        // Around the drawn view's centre (in world pixels, so it lands right on both screens of a tall
+        // world).
         const Vec2 centre = rig.position() + cam::view_size(s) * 0.5f;
-        const Rect zone = on_screen(rig, screen, {centre.x + z.x / s.zoom, centre.y + z.y / s.zoom, z.w / s.zoom,
-                                                  z.h / s.zoom});
+        const Rect zone = on_screen(
+            rig, screen, {centre.x + z.x / s.zoom, centre.y + z.y / s.zoom, z.w / s.zoom, z.h / s.zoom});
         if (visible(screen, zone)) gfx::draw_rect(screen, zone, colors::yellow, kOnTop);
     }
     if (s.has_limits) {

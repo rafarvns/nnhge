@@ -38,7 +38,8 @@ void BenchScene::update() {
             tall_.add_trauma(0.5f);
             bottom_.add_trauma(0.5f);
         }
-        const nnh::Vec2 target{200 + f * 1.5f + static_cast<float>(i), 300 + static_cast<float>((frames_ * 7) % 200)};
+        const nnh::Vec2 target{200 + f * 1.5f + static_cast<float>(i),
+                               300 + static_cast<float>((frames_ * 7) % 200)};
         tall_.update(target);
         tall_.apply();
         bottom_.update(target);
@@ -57,18 +58,21 @@ void BenchScene::update() {
 void BenchScene::report() {
     const double avg = total_.seconds() * 1000.0 / kFrames / kPairsPerFrame;
     const double worst = worst_.seconds() * 1000.0 / kPairsPerFrame;
-    std::snprintf(result_, sizeof result_, "camera: bench avg %.4f ms worst %.4f ms per pair (target < %.2f ms) %s",
-                  avg, worst, kTargetMs, avg < kTargetMs ? "PASS" : "FAIL");
+    std::snprintf(result_, sizeof result_,
+                  "camera: bench avg %.4f ms worst %.4f ms per pair (target < %.2f ms) %s", avg, worst,
+                  kTargetMs, avg < kTargetMs ? "PASS" : "FAIL");
     NNH_LOG_INFO(example, "%s", result_);
-    std::snprintf(shown_, sizeof shown_, "per pair of rigs:\navg   %.4f ms\nworst %.4f ms\ntarget < %.2f ms: %s", avg,
-                  worst, kTargetMs, avg < kTargetMs ? "PASS" : "FAIL");
+    std::snprintf(shown_, sizeof shown_,
+                  "per pair of rigs:\navg   %.4f ms\nworst %.4f ms\ntarget < %.2f ms: %s", avg, worst,
+                  kTargetMs, avg < kTargetMs ? "PASS" : "FAIL");
 }
 
 void BenchScene::draw() {
     namespace gfx = nnh::gfx;
     gfx::set_camera(nnh::Screen::Top, {});
     gfx::set_camera(nnh::Screen::Bottom, {});
-    gfx::draw_text(nnh::Screen::Top, {200, 40}, "CAMERA BENCH", {.scale = 2, .align = nnh::TextAlign::Center});
+    gfx::draw_text(nnh::Screen::Top, {200, 40}, "CAMERA BENCH",
+                   {.scale = 2, .align = nnh::TextAlign::Center});
     char info[64];
     std::snprintf(info, sizeof info, "frame %d/%d, %d pairs per frame", frames_, kFrames, kPairsPerFrame);
     gfx::draw_text(nnh::Screen::Top, {200, 90}, info, {.align = nnh::TextAlign::Center});

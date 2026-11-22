@@ -10,10 +10,18 @@ namespace gfx = nnh::gfx;
 
 namespace {
 
-void set_zoom(float zoom) { gfx::set_camera(Screen::Top, {{3, 4}, zoom}); }
-void too_big() { set_zoom(9); }
-void too_small() { set_zoom(0.25f); }
-void nan_zoom() { set_zoom(__builtin_nanf("")); }
+void set_zoom(float zoom) {
+    gfx::set_camera(Screen::Top, {{3, 4}, zoom});
+}
+void too_big() {
+    set_zoom(9);
+}
+void too_small() {
+    set_zoom(0.25f);
+}
+void nan_zoom() {
+    set_zoom(__builtin_nanf(""));
+}
 
 } // namespace
 

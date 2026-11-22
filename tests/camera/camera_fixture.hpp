@@ -1,16 +1,16 @@
 #pragma once
 // Shared helpers for the camera rig tests (spec 018).
 
-#include <bit>
-#include <cstdint>
-#include <cstring>
-
 #include "crash/crash_internal.hpp"
 #include "nnh/app.hpp"
 #include "nnh/build.hpp"
 #include "nnh/camera.hpp"
 #include "nnh/platform_fake.hpp"
 #include "test.hpp"
+
+#include <bit>
+#include <cstdint>
+#include <cstring>
 
 namespace cam_test {
 
@@ -28,9 +28,9 @@ inline bool same_bits(nnh::Vec2 a, nnh::Vec2 b) {
 }
 
 /// Runs `n` updates towards `target`.
-template <typename T>
-void run(nnh::CameraRig& rig, T target, int n) {
-    for (int i = 0; i < n; ++i) rig.update(target);
+template <typename T> void run(nnh::CameraRig& rig, T target, int n) {
+    for (int i = 0; i < n; ++i)
+        rig.update(target);
 }
 
 /// Runs `fn` and reports whether it reached the crash screen (an assert). Works with or without nnh::init().

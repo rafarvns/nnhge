@@ -1,12 +1,13 @@
-// Trauma shake (spec 018 FR-8): Eiserloh's trauma² with the engine's own seeded value noise (an integer hash and a
-// smoothstep, no libm), so the same seed and calls shake the same on every system.
+// Trauma shake (spec 018 FR-8): Eiserloh's trauma² with the engine's own seeded value noise (an integer hash
+// and a smoothstep, no libm), so the same seed and calls shake the same on every system.
 
 #include "camera/camera_internal.hpp"
 
 namespace nnh::detail::cam {
 namespace {
 
-/// An integer finalizer (lowbias32-style multiply/xor-shift): every input bit changes about half the output bits.
+/// An integer finalizer (lowbias32-style multiply/xor-shift): every input bit changes about half the output
+/// bits.
 std::uint32_t mix(std::uint32_t x) {
     x ^= x >> 16;
     x *= 0x7FEB352Du;
@@ -25,7 +26,9 @@ std::uint32_t noise_hash(std::uint32_t seed, int axis, std::uint32_t cell) {
     return mix(seed ^ mix(cell * 2u + static_cast<std::uint32_t>(axis)));
 }
 
-float lattice_value(std::uint32_t hash) { return static_cast<float>(hash >> 8) * kTwoPowMinus23 - 1.0f; }
+float lattice_value(std::uint32_t hash) {
+    return static_cast<float>(hash >> 8) * kTwoPowMinus23 - 1.0f;
+}
 
 float noise(std::uint32_t seed, int axis, std::uint32_t t) {
     const std::uint32_t cell = t >> 16;
@@ -44,7 +47,8 @@ std::uint32_t noise_step(float speed) {
 Vec2 shake_offset(const CameraSettings& s, float trauma, std::uint32_t t) {
     if (!(trauma > 0)) return {};
     const float t2 = trauma * trauma;
-    return {(s.max_shake.x / s.zoom) * t2 * noise(s.seed, 0, t), (s.max_shake.y / s.zoom) * t2 * noise(s.seed, 1, t)};
+    return {(s.max_shake.x / s.zoom) * t2 * noise(s.seed, 0, t),
+            (s.max_shake.y / s.zoom) * t2 * noise(s.seed, 1, t)};
 }
 
 } // namespace nnh::detail::cam

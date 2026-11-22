@@ -1,7 +1,8 @@
 #pragma once
 // The camera bench (spec 018 AC-7): each frame, 16 times, update and apply two rigs — a tall-world one and a
 // bottom-screen one, both with a dead zone, smoothing and trauma — for 600 frames, then log
-// "camera: bench avg X ms worst Y ms per pair (target < 0.05 ms) PASS|FAIL". SELECT goes back to the playground.
+// "camera: bench avg X ms worst Y ms per pair (target < 0.05 ms) PASS|FAIL". SELECT goes back to the
+// playground.
 
 #include "demos.hpp"
 
@@ -10,7 +11,7 @@
 #include <nnh/time.hpp>
 
 class BenchScene final : public nnh::Scene {
-public:
+  public:
     static constexpr int kFrames = 600;
     static constexpr int kPairsPerFrame = 16;
 
@@ -20,7 +21,7 @@ public:
     void update() override;
     void draw() override;
 
-private:
+  private:
     void report();
 
     const Demos& demos_;

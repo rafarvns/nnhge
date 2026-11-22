@@ -6,11 +6,14 @@
 namespace nnh::detail::cam {
 
 Vec2 view_size(const CameraSettings& s) {
-    if (s.layout == CameraLayout::TallWorld) return {kTallWidth / s.zoom, (2 * kScreenHeight) / s.zoom + s.gap};
+    if (s.layout == CameraLayout::TallWorld)
+        return {kTallWidth / s.zoom, (2 * kScreenHeight) / s.zoom + s.gap};
     return {static_cast<float>(screen_width(s.screen)) / s.zoom, kScreenHeight / s.zoom};
 }
 
-Screen primary(const CameraSettings& s) { return s.layout == CameraLayout::TallWorld ? Screen::Top : s.screen; }
+Screen primary(const CameraSettings& s) {
+    return s.layout == CameraLayout::TallWorld ? Screen::Top : s.screen;
+}
 
 float round_half_up(float v) {
     // Truncation towards zero, then down one for negative non-integers: floor(v + 0.5) for |v| < 2^30.
@@ -30,7 +33,8 @@ bool CameraRig::drives(Screen screen) const {
 
 Camera2D CameraRig::camera(Screen screen) const {
     if (!drives(screen)) {
-        NNH_ASSERT(false, "camera: this rig doesn't drive the %s screen", screen == Screen::Top ? "top" : "bottom");
+        NNH_ASSERT(false, "camera: this rig doesn't drive the %s screen",
+                   screen == Screen::Top ? "top" : "bottom");
         screen = detail::cam::primary(settings_);
     }
     const float z = settings_.zoom;
@@ -48,11 +52,16 @@ Rect CameraRig::view(Screen screen) const {
     const Camera2D c = camera(screen); // asserts for a screen the rig doesn't drive
     const Screen s = drives(screen) ? screen : detail::cam::primary(settings_);
     const float z = settings_.zoom;
-    return {c.position.x, c.position.y, static_cast<float>(screen_width(s)) / z, detail::cam::kScreenHeight / z};
+    return {c.position.x, c.position.y, static_cast<float>(screen_width(s)) / z,
+            detail::cam::kScreenHeight / z};
 }
 
-Vec2 CameraRig::to_world(Screen screen, Vec2 p) const { return camera(screen).position + p / settings_.zoom; }
+Vec2 CameraRig::to_world(Screen screen, Vec2 p) const {
+    return camera(screen).position + p / settings_.zoom;
+}
 
-Vec2 CameraRig::to_screen(Screen screen, Vec2 w) const { return (w - camera(screen).position) * settings_.zoom; }
+Vec2 CameraRig::to_screen(Screen screen, Vec2 w) const {
+    return (w - camera(screen).position) * settings_.zoom;
+}
 
 } // namespace nnh

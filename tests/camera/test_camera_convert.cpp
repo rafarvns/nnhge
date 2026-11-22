@@ -1,5 +1,5 @@
-// Screen ↔ world conversions and pixel snap (spec 018 FR-11, FR-13): round trips for both screens, both layouts
-// and zooms 0.5, 1, 2, 3; pixel snap rounds the applied camera only.
+// Screen ↔ world conversions and pixel snap (spec 018 FR-11, FR-13): round trips for both screens, both
+// layouts and zooms 0.5, 1, 2, 3; pixel snap rounds the applied camera only.
 
 #include "camera/camera_internal.hpp"
 #include "camera_fixture.hpp"
@@ -62,7 +62,7 @@ NNH_TEST(pixel_snap_rounds_the_applied_camera_to_screen_pixels_only) {
     const Vec2 c = rig.camera(Screen::Top).position;
     CHECK(at(c, 900.5f, 441));
     CHECK(!(rig.position() == c) && !(rig.followed() == c)); // the reported positions are never rounded
-    CHECK(at(rig.to_screen(Screen::Top, c), 0, 0)); // conversions use the snapped camera
+    CHECK(at(rig.to_screen(Screen::Top, c), 0, 0));          // conversions use the snapped camera
 }
 
 NNH_TEST(pixel_snap_is_off_by_default) {

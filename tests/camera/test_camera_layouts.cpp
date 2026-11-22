@@ -1,5 +1,5 @@
-// Screen modes (spec 018 FR-10): single view on either screen, one tall world over both (bottom view centred under
-// the top one, 40 px inset, a gap), and two views as two rigs.
+// Screen modes (spec 018 FR-10): single view on either screen, one tall world over both (bottom view centred
+// under the top one, 40 px inset, a gap), and two views as two rigs.
 
 #include "camera/camera_internal.hpp"
 #include "camera_fixture.hpp"
@@ -15,7 +15,9 @@ namespace cam = nnh::detail::cam;
 namespace {
 
 CameraRig* g_rig = nullptr;
-void ask_undriven_screen() { (void)g_rig->camera(Screen::Bottom); }
+void ask_undriven_screen() {
+    (void)g_rig->camera(Screen::Bottom);
+}
 
 } // namespace
 
@@ -62,7 +64,8 @@ NNH_TEST(tall_world_limits_use_the_combined_height) {
     rig.set_limits({0, 0, 1000, 1000});
     rig.update(Vec2{5000, 5000});
     CHECK(at(rig.position(), 600, 1000 - 500));
-    CHECK(rig.view(Screen::Bottom).y + rig.view(Screen::Bottom).h == 1000); // the bottom view ends at the limit
+    CHECK(rig.view(Screen::Bottom).y + rig.view(Screen::Bottom).h ==
+          1000); // the bottom view ends at the limit
 }
 
 NNH_TEST(tall_world_dead_zone_is_around_the_combined_centre) {

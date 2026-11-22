@@ -1,5 +1,5 @@
-// apply() (spec 018 FR-13): writes the driven screen(s)' Camera2D, leaves the other screen alone; conversions match
-// what the renderer then draws (FR-11).
+// apply() (spec 018 FR-13): writes the driven screen(s)' Camera2D, leaves the other screen alone; conversions
+// match what the renderer then draws (FR-11).
 
 #include "../gfx/gfx_fixture.hpp"
 #include "camera_fixture.hpp"
@@ -59,7 +59,8 @@ NNH_TEST(a_sprite_drawn_at_to_world_lands_under_that_screen_point_at_zoom_3) {
     gfx::draw(Screen::Bottom, tile, rig.to_world(Screen::Bottom, {100, 50}));
     CHECK(nnh::frame());
     const nnh::platform::DrawItem2D& it = fake::state().last_frame_items[0];
-    CHECK(it.x >= 99 && it.x <= 101 && it.y >= 49 && it.y <= 51); // within the renderer's whole-pixel rounding
+    CHECK(it.x >= 99 && it.x <= 101 && it.y >= 49 &&
+          it.y <= 51); // within the renderer's whole-pixel rounding
     CHECK(it.w == 48);
     tile.reset();
     nnh::shutdown();

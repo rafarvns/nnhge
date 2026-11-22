@@ -33,14 +33,17 @@ CameraScene::CameraScene(const Demos& demos, world::World& world) : demos_(demos
     player_.position = world::kStart;
 }
 
-float CameraScene::zoom() const { return kZooms[zoom_index_]; }
+float CameraScene::zoom() const {
+    return kZooms[zoom_index_];
+}
 
 void CameraScene::preset() {
     if (demo_is("zoom2")) zoom_index_ = 2;
     if (demo_is("zoom05")) zoom_index_ = 4;
     if (demo_is("tall")) mode_ = Mode::Tall;
     if (demo_is("two")) mode_ = Mode::Two;
-    // In the doorway between the two left rooms: the combined view centres it on the seam between the screens.
+    // In the doorway between the two left rooms: the combined view centres it on the seam between the
+    // screens.
     if (demo_is("tall")) player_.position = {314, 378};
 }
 

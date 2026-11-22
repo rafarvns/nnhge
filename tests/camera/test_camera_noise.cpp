@@ -1,5 +1,5 @@
-// The shake's noise (spec 018 FR-8, FR-12): an integer hash, exact lattice values in [-1, 1), a smoothstep between
-// them on a 16.16 clock; golden values pin the bits on every compiler and system.
+// The shake's noise (spec 018 FR-8, FR-12): an integer hash, exact lattice values in [-1, 1), a smoothstep
+// between them on a 16.16 clock; golden values pin the bits on every compiler and system.
 
 #include "camera/camera_internal.hpp"
 #include "camera_fixture.hpp"
@@ -67,9 +67,9 @@ NNH_TEST(noise_golden_values) {
         std::uint32_t bits;
     };
     const Case cases[] = {
-        {0x4E4E4843u, 0, 0, 0xBC1EA880u},       {0x4E4E4843u, 1, 0, 0xBE92EDC0u},
-        {0x4E4E4843u, 0, 98304, 0x3E61E538u},   {0x4E4E4843u, 1, 1234567, 0x3F796907u},
-        {1, 0, 0xFFFF0000u, 0xBF3EFC4Eu},       {0xDEADBEEFu, 1, 777777, 0x3EA5B466u},
+        {0x4E4E4843u, 0, 0, 0xBC1EA880u},     {0x4E4E4843u, 1, 0, 0xBE92EDC0u},
+        {0x4E4E4843u, 0, 98304, 0x3E61E538u}, {0x4E4E4843u, 1, 1234567, 0x3F796907u},
+        {1, 0, 0xFFFF0000u, 0xBF3EFC4Eu},     {0xDEADBEEFu, 1, 777777, 0x3EA5B466u},
     };
     for (const Case& c : cases) {
         const float n = cam::noise(c.seed, c.axis, c.t);

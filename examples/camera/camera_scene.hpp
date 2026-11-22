@@ -1,10 +1,10 @@
 #pragma once
-// The camera playground: a CameraRig follows the square the player moves through the rooms, with its dead zone and
-// limits drawn. Controls (every 3DS has them):
-//   Circle Pad / D-Pad  move          A  trauma 0.4 (shake)       X  zoom 1 → 1.5 → 2 → 3 → 0.5
-//   Y  smoothing on/off               L  gap 0 / 24 (tall world)  R  mode: single view → tall world → two views
+// The camera playground: a CameraRig follows the square the player moves through the rooms, with its dead
+// zone and limits drawn. Controls (every 3DS has them):
+//   Circle Pad / D-Pad  move    A  trauma 0.4 (shake)    X  zoom 1 → 1.5 → 2 → 3 → 0.5    Y  smoothing on/off
+//   L  gap 0 / 24 (tall world)  R  mode: single view → tall world → two views
 //   touch the bottom screen (tall world, two views): a marker at the world point under the finger
-//   SELECT  self-check                START  quit
+//   SELECT  self-check          START  quit
 
 #include "demos.hpp"
 #include "world.hpp"
@@ -13,7 +13,7 @@
 #include <nnh/scene.hpp>
 
 class CameraScene final : public nnh::Scene {
-public:
+  public:
     enum class Mode { Single, Tall, Two };
 
     CameraScene(const Demos& demos, world::World& world);
@@ -31,7 +31,7 @@ public:
     bool smoothing() const { return smoothing_; }
     const nnh::CameraRig& rig() const { return rig_; }
 
-private:
+  private:
     void configure(); ///< settings of both rigs from the current mode, zoom, smoothing and gap
     void controls();
     void touch();

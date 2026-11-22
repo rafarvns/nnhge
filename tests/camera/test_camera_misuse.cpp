@@ -1,5 +1,5 @@
-// Misuse (spec 018 FR-15): every case asserts in Debug/Development; Release clamps or ignores it, never undefined
-// behaviour, and logs one error per rig.
+// Misuse (spec 018 FR-15): every case asserts in Debug/Development; Release clamps or ignores it, never
+// undefined behaviour, and logs one error per rig.
 
 #include "camera_fixture.hpp"
 
@@ -13,29 +13,62 @@ CameraRig* g_rig = nullptr;
 constexpr float kNan = __builtin_nanf("");
 constexpr float kInf = __builtin_inff();
 
-void zoom_too_big() { g_rig->set_zoom(9); }
-void zoom_too_small() { g_rig->set_zoom(0.1f); }
-void zoom_nan() { g_rig->set_zoom(kNan); }
-void negative_dead_zone() { g_rig->set({.dead_zone = {0, 0, -5, 10}}); }
-void smoothing_zero() { g_rig->set({.smoothing = {0, 1}}); }
-void smoothing_above_one() { g_rig->set({.smoothing = {1, 1.5f}}); }
-void decay_zero() { g_rig->set({.trauma_decay = 0}); }
-void speed_zero() { g_rig->set({.shake_speed = 0}); }
-void speed_above_one() { g_rig->set({.shake_speed = 2}); }
-void negative_gap() { g_rig->set({.gap = -1}); }
-void nan_offset() { g_rig->set_offset({kNan, 0}); }
-void inf_limits() { g_rig->set_limits({0, 0, kInf, 100}); }
-void negative_limits() { g_rig->set_limits({0, 0, -100, 100}); }
-void nan_target() { g_rig->update(Vec2{kNan, 0}); }
-void inf_box() { g_rig->snap(nnh::Rect{0, kInf, 1, 1}); }
-void nan_trauma() { g_rig->add_trauma(kNan); }
+void zoom_too_big() {
+    g_rig->set_zoom(9);
+}
+void zoom_too_small() {
+    g_rig->set_zoom(0.1f);
+}
+void zoom_nan() {
+    g_rig->set_zoom(kNan);
+}
+void negative_dead_zone() {
+    g_rig->set({.dead_zone = {0, 0, -5, 10}});
+}
+void smoothing_zero() {
+    g_rig->set({.smoothing = {0, 1}});
+}
+void smoothing_above_one() {
+    g_rig->set({.smoothing = {1, 1.5f}});
+}
+void decay_zero() {
+    g_rig->set({.trauma_decay = 0});
+}
+void speed_zero() {
+    g_rig->set({.shake_speed = 0});
+}
+void speed_above_one() {
+    g_rig->set({.shake_speed = 2});
+}
+void negative_gap() {
+    g_rig->set({.gap = -1});
+}
+void nan_offset() {
+    g_rig->set_offset({kNan, 0});
+}
+void inf_limits() {
+    g_rig->set_limits({0, 0, kInf, 100});
+}
+void negative_limits() {
+    g_rig->set_limits({0, 0, -100, 100});
+}
+void nan_target() {
+    g_rig->update(Vec2{kNan, 0});
+}
+void inf_box() {
+    g_rig->snap(nnh::Rect{0, kInf, 1, 1});
+}
+void nan_trauma() {
+    g_rig->add_trauma(kNan);
+}
 
 } // namespace
 
 NNH_TEST(every_misuse_asserts_in_debug_and_is_handled_in_release) {
-    void (*const cases[])() = {zoom_too_big,  zoom_too_small, zoom_nan,     negative_dead_zone, smoothing_zero,
-                               smoothing_above_one, decay_zero, speed_zero, speed_above_one, negative_gap,
-                               nan_offset, inf_limits, negative_limits, nan_target, inf_box, nan_trauma};
+    void (*const cases[])() = {zoom_too_big,    zoom_too_small,      zoom_nan,   negative_dead_zone,
+                               smoothing_zero,  smoothing_above_one, decay_zero, speed_zero,
+                               speed_above_one, negative_gap,        nan_offset, inf_limits,
+                               negative_limits, nan_target,          inf_box,    nan_trauma};
     for (auto fn : cases) {
         CameraRig rig;
         g_rig = &rig;

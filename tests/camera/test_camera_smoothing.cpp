@@ -1,5 +1,5 @@
-// Smoothing (spec 018 FR-4): a fixed fraction of the remaining distance per frame, per axis; closer than 1/64 px
-// it snaps, so a still target leaves the camera exactly on the desired bits; fraction 1 is an assignment.
+// Smoothing (spec 018 FR-4): a fixed fraction of the remaining distance per frame, per axis; closer than 1/64
+// px it snaps, so a still target leaves the camera exactly on the desired bits; fraction 1 is an assignment.
 
 #include "camera/camera_internal.hpp"
 #include "camera_fixture.hpp"
@@ -29,7 +29,8 @@ NNH_TEST(smoothing_snaps_below_a_64th_of_a_pixel) {
     const float eps = 1.0f / 1024;
     CHECK(cam::smooth_axis(0, nnh::kCameraSnapDistance - eps, 0.5f) == nnh::kCameraSnapDistance - eps);
     CHECK(cam::smooth_axis(0, -(nnh::kCameraSnapDistance - eps), 0.5f) == -(nnh::kCameraSnapDistance - eps));
-    CHECK(cam::smooth_axis(0, nnh::kCameraSnapDistance + eps, 0.5f) == (nnh::kCameraSnapDistance + eps) * 0.5f);
+    CHECK(cam::smooth_axis(0, nnh::kCameraSnapDistance + eps, 0.5f) ==
+          (nnh::kCameraSnapDistance + eps) * 0.5f);
     CHECK(cam::smooth_axis(0, nnh::kCameraSnapDistance, 0.5f) == nnh::kCameraSnapDistance * 0.5f);
 }
 

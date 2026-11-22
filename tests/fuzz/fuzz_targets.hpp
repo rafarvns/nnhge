@@ -39,4 +39,13 @@ bool data_index_fixed_accepted(const std::uint8_t* data, std::size_t size);
 /// A valid index (two types, every group used) written to `out`; its size (0 if `capacity` is short).
 std::size_t data_index_seed(std::uint8_t* out, std::size_t capacity);
 
+/// Saved input bindings `NNHB` (spec 017, fuzz_bindings.cpp): validated as given, then with the header's count, CRC
+/// and game version fixed (so mutations reach the entries); every accepted blob is applied to a set with every action
+/// kind, saved again, and that must load back with nothing skipped and save to the same bytes.
+int bindings_target(const std::uint8_t* data, std::size_t size);
+/// For the mini-fuzz: whether `data`, with its header fixed as bindings_target does, is accepted.
+bool bindings_fixed_accepted(const std::uint8_t* data, std::size_t size);
+/// A valid blob for bindings_target's set (whole, part, invert and cleared entries); its size (0 if short).
+std::size_t bindings_seed(std::uint8_t* out, std::size_t capacity);
+
 } // namespace nnh::fuzz

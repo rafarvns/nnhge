@@ -222,3 +222,33 @@ NNH_TEST(save_target_survives_mutated_inputs) {
     mutate_and_run(nnh::fuzz::save_target, nullptr, 0);
     CHECK(true);
 }
+
+NNH_TEST(bindings_target_survives_mutated_inputs) {
+    // Saved input bindings (spec 017) with whole, part, invert and cleared entries, 1-4 bytes changed and sometimes
+    // cut or grown. The target fixes the header itself, so mutants reach the entries; the accepted ones are applied,
+    // saved, reloaded and saved again (counted here to prove the deep path runs). Random short inputs too.
+    std::uint8_t seed[256];
+    const std::size_t size = nnh::fuzz::bindings_seed(seed, sizeof seed);
+    CHECK(size == 16 + 12 * 5);
+    CHECK(nnh::fuzz::bindings_fixed_accepted(seed, size));
+    nnh::fuzz::bindings_target(seed, size);
+    const int live = nnh::mem::live_allocations();
+    std::uint32_t state = 2017;
+    int accepted = 0;
+    std::uint8_t buffer[sizeof seed];
+    for (int i = 0; i < 6000; ++i) {
+        std::size_t n = size;
+        std::memcpy(buffer, seed, size);
+        if (i % 8 == 0) n = next(state) % (size + 1);
+        if (i % 8 == 1) n = size + next(state) % 30;
+        const int flips = 1 + static_cast<int>(next(state) % 4);
+        for (int k = 0; k < flips && n > 0; ++k) {
+            buffer[next(state) % n] ^= static_cast<std::uint8_t>(1 + next(state) % 255);
+        }
+        nnh::fuzz::bindings_target(buffer, n);
+        accepted += nnh::fuzz::bindings_fixed_accepted(buffer, n) ? 1 : 0;
+    }
+    CHECK(accepted > 1000);
+    CHECK(nnh::mem::live_allocations() == live); // every set was freed
+    mutate_and_run(nnh::fuzz::bindings_target, nullptr, 0);
+}

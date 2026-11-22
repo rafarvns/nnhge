@@ -4,10 +4,10 @@ Header: `<nnh/tilemap.hpp>` · Uses: [collision.md](collision.md), [texture.md](
 [memory.md](memory.md), [assets.md](assets.md) · Spec: [012](../../specs/012-tilemaps-and-collision/spec.md)
 (FR-0…FR-7, FR-11)
 
-> Status: spec 012 **stage 4** — maps are **built in code**, queried, edited, collided against and **drawn**
-> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS gate passed), and **loaded** from converted `.nnhmap` assets
-> (`load_tilemap`). The converter that makes `.nnhmap` files from Tiled maps (`nnh-assetc`, stage 5) and animated
-> tiles (stage 6) come later; they use the same `Tilemap` object, so code written against this page keeps working.
+> Status: spec 012 **stage 5** — maps are **built in code**, queried, edited, collided against and **drawn**
+> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS gate passed), and **made in Tiled**: the build converts `.tmj`
+> files into `.nnhmap` assets (`nnh-assetc`) that `load_tilemap` loads. Animated tiles (stage 6) come later; they
+> use the same `Tilemap` object, so code written against this page keeps working.
 > Example: [`examples/platformer`](../../examples/platformer/main.cpp) (a level built in code, a tile benchmark, a
 > flip test).
 
@@ -102,8 +102,9 @@ auto roomy = nnh::load_tilemap("levels/level2", {.extra_objects = 8, .extra_prop
 ```
 
 `load_tilemap(path, options)` reads the asset `<path>.nnhmap` (the path has no extension, like `load_texture`), a
-map the build converted from Tiled (the converter, `nnh-assetc`, is spec 012 stage 5). The result is a `Tilemap`
-like one built in code: every query, edit, `collision_grid()` and `draw_tilemap` works on it.
+map the build converted from a Tiled `.tmj` ([below](#maps-made-in-tiled)). The result is a `Tilemap` like one
+built in code: every query, edit, `collision_grid()` and `draw_tilemap` works on it (a unit test builds the same map
+both ways and compares every query: `tests/tilemap/test_code_vs_file.cpp`).
 
 - **Checked before use.** The whole file is validated first: header, format version, size, CRC-32, every limit of
   [the table above](#building-a-map), section offsets, strings (terminated, ≤ 255 bytes), tilesets against their
@@ -135,6 +136,35 @@ like one built in code: every query, edit, `collision_grid()` and `draw_tilemap`
 The engine logs the full reason on the `tilemap` channel (`load_tilemap("levels/level1"): ...`); the error message
 is short. The binary format is `engine/core/src/tilemap/map_format.hpp`: the file *is* the map block, a 128-byte
 header and fixed-size sections, little-endian.
+
+### Maps made in Tiled
+
+Put the map in the game's `ASSETS` folder as a **`.tmj`** (Tiled's JSON map format) with its tilesets (`.tsj` or
+embedded) and their PNG images. The build converts `levels/level1.tmj` into the asset `levels/level1.nnhmap` with
+`nnh-assetc` ([cmake.md](../tech/cmake.md)); `.tsj`, `.tiled-project` and `.tiled-session` files are read but not
+packed. A map is converted again only when it, a tileset or an image it uses, or the converter changes.
+
+| In Tiled | In the `Tilemap` |
+|----------|------------------|
+| map size, tile size (8–64 px), parallax origin, map properties | `width()` …, `parallax_origin()`, `properties()` |
+| tilesets in first-gid order (gaps in gids are fine) | tilesets with consecutive ids from 1: gid `g` of a tileset with first gid `f` is id `first + g − f` |
+| tile property `solid` / `one_way` (bool) | `tile_collision(id)` = `Solid` / `OneWay` (not kept as properties) |
+| other tile properties | `properties(PropertyOwner::tile(id))` |
+| tile layers in order: name, offset, parallax, opacity, visible, flips | tile layers in the same order |
+| layer property `collision` (bool) | `layer_collision(layer)` (not kept as a property) |
+| object layers; rectangles and points with id, name, type (or class), properties | object layers and objects in the same order |
+| property types bool, int, float, string; `color` (`#AARRGGBB`), `file` (path as written), `object` (its id) | bool, int, float, string, string, string, int |
+
+The build **refuses**, naming the file and the reason (`level1.tmj: infinite maps aren't supported: turn off Map >
+Map Properties > Infinite`): isometric, staggered and hexagonal maps; infinite maps; image and group layers;
+compressed layer data (save the layer format as **CSV**; uncompressed base64 also works); XML tilesets (`.tsx`);
+image-collection tilesets, wang sets, tile offsets, animated tiles (until stage 6); tilesets whose tile size is not
+the map's; images that are not a PNG inside the assets folder, whose size differs from what Tiled recorded or that
+are not textures (power-of-two sides from 8 to 1024); a tileset's columns or tile count that don't match its image
+(NNHGE keeps the margin on every side of the image); ellipse, polygon, polyline, text and tile objects, templates
+and rotated objects; `class` properties; layer tint colours; diagonal flips on non-square tiles; strings over 255
+bytes and anything over the [limits](#building-a-map). The converter checks the file it writes with the same
+validator `load_tilemap` runs, so a converted map always passes the loader's checks.
 
 ## Tiles
 

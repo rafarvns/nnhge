@@ -50,7 +50,14 @@ least one valid file.
   and the `.nnhmap` map validator of spec 012 (`tilemap/map_validate.*`), which `tilemap_target` runs as given and
   again with the size and CRC fixed so mutations reach the content checks, then copies every accepted map, runs
   every query, the draw-time tile expansion and a few edits on it; libFuzzer executable `fuzz_tilemap`, not run
-  on Linux yet). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+  on Linux yet). The build-time Tiled converter `nnh-assetc` (spec 012 stage 5, `tools/assetc/`) reads external
+  JSON with its own bounded reader (`json*.cpp`: document ≤ 64 MiB, nesting ≤ 32, ≤ 8 Mi values, numbers ≤ 64
+  characters and finite, strings valid UTF-8 with paired surrogates), reads only files inside the assets folder
+  for images (tilesets may sit anywhere), and checks every map it writes with the run-time validator; its targets
+  live in `tools/assetc/tests/fuzz_assetc.cpp` (`json_target`; `map_target`, a whole conversion of an in-memory map
+  and tileset, whose accepted output must pass the validator), as a mini-fuzz in `nnh_assetc_tests` (8 000 JSON
+  and 6 000 map/tileset mutants) and libFuzzer executables `fuzz_assetc_json`, `fuzz_assetc_map` (not run on
+  Linux yet). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
   for Ogg, where each run decodes; 8 000 mutations of two valid maps for `.nnhmap`) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
   build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built

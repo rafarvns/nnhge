@@ -40,12 +40,20 @@ add_subdirectory(third_party/stb_vorbis)
 add_subdirectory(engine)
 add_subdirectory(link) # shared by the nnh tool and the NNH Link app (spec 011)
 
+if(NNH_BUILD_TESTS)
+    enable_testing() # before any folder that adds tests (tools/assetc is added by the host tools below)
+endif()
+
+# nnh-assetc (spec 012, D27): built in PC presets, built for the host on demand in cross presets. Before the
+# examples: a game's asset step with Tiled maps needs the program (nnh_assetc_command()).
+include(nnh_host_tools)
+nnh_host_tools_setup()
+
 if(NNH_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
 if(NNH_BUILD_TESTS)
-    enable_testing()
     add_subdirectory(tests)
 endif()
 
@@ -55,7 +63,3 @@ add_subdirectory(apps) # NNH Link (spec 011); after tests: its test target uses 
 if(NNH_PLATFORM STREQUAL "pc")
     add_subdirectory(tools/nnh)
 endif()
-
-# nnh-assetc (spec 012, D27): built in PC presets, built for the host on demand in cross presets.
-include(nnh_host_tools)
-nnh_host_tools_setup()

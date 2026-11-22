@@ -1,6 +1,6 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0–4 done (2026-11-21; T3.9 passed on the Old 3DS XL); next: stage 5
+Status: approved (2026-11-21); stages 0–5 done (2026-11-21; T3.9 passed on the Old 3DS XL); next: stage 6
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -213,32 +213,55 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
 
 ## Stage 5 — the Tiled converter
 
-- [ ] **T5.1** bounded JSON reader (depth ≤ 32, document ≤ 64 MiB, strings, numbers, escapes, UTF-8) + mini-fuzz
+- [x] **T5.1** bounded JSON reader (depth ≤ 32, document ≤ 64 MiB, strings, numbers, escapes, UTF-8) + mini-fuzz
   — files: `tools/assetc/src/json.{hpp,cpp}` — test: `tools/assetc/tests/test_json.cpp` — covers FR-1, X
-- [ ] **T5.2** tilesets: `.tsj` and embedded, image inside the assets root, PNG size vs Tiled's numbers, margin,
+- [x] **T5.2** tilesets: `.tsj` and embedded, image inside the assets root, PNG size vs Tiled's numbers, margin,
   spacing, `solid`/`one_way`, tile properties; refusals (image collections, wang sets, tile size outside 8–64) —
   files: `tiled_tileset.*`, `png_size.*` — test: `test_tiled_tileset.cpp` — covers FR-1, FR-2, FR-7
-- [ ] **T5.3** maps: orientation/infinite/render checks, tile layers (CSV data; base64 without compression;
+- [x] **T5.3** maps: orientation/infinite/render checks, tile layers (CSV data; base64 without compression;
   zlib/zstd refused with "save the layer format as CSV"), flips from gids, layer offset/opacity/parallax/visible,
   `collision`, parallax origin, map and layer properties; refusals (image and group layers) — files:
   `tiled_map.*`, `tiled_properties.*` — test: `test_tiled_map.cpp` — covers FR-1, FR-2, FR-3, FR-6, FR-7
-- [ ] **T5.4** [P] objects: rectangles and points, name, class/type, properties; refusals (text, polygon,
+- [x] **T5.4** [P] objects: rectangles and points, name, class/type, properties; refusals (text, polygon,
   polyline, ellipse, tile objects — see plan question 3) — files: `tiled_objects.*` — test: `test_tiled_objects.cpp`
   — covers FR-1, FR-5, FR-6
-- [ ] **T5.5** writer + self-validation with `map_validate`, limits with messages, depfile, CLI and
+- [x] **T5.5** writer + self-validation with `map_validate`, limits with messages, depfile, CLI and
   `file: reason` diagnostics — files: `map_writer.*`, `depfile.*`, `cli.*`, `main.cpp` — test:
   `test_map_writer.cpp`, `test_cli.cpp` — covers FR-1, FR-11
-- [ ] **T5.6** build integration: `.tmj` → `.nnhmap` step with `DEPFILE`, `.tsj`/`.tiled-*` not packed, index of
+- [x] **T5.6** build integration: `.tmj` → `.nnhmap` step with `DEPFILE`, `.tsj`/`.tiled-*` not packed, index of
   output names (stale removal) — files: `cmake/nnh_assets.cmake`, `nnh_asset_index.cmake`, `nnh_host_tools.cmake`
   — test: ctest `asset_index_*` updated; editing a `.tsj` reconverts only its maps (checked with `ninja -d explain`)
   — covers FR-1, III
-- [ ] **T5.7** bad-file fixtures and ctest `map_convert_rejects_*` / `map_convert_explains_*` (list in the plan)
+- [x] **T5.7** bad-file fixtures and ctest `map_convert_rejects_*` / `map_convert_explains_*` (list in the plan)
   — files: `tests/data/maps/`, `tests/CMakeLists.txt` — covers AC-3, FR-1, FR-11
-- [ ] **T5.8** [P] converter fuzzing: whole conversion from in-memory files (mini-fuzz) + `fuzz_assetc_json`,
+- [x] **T5.8** [P] converter fuzzing: whole conversion from in-memory files (mini-fuzz) + `fuzz_assetc_json`,
   `fuzz_assetc_map` (libFuzzer) — files: `tools/assetc/tests/`, `tools/assetc/CMakeLists.txt` — covers AC-3, X
-- [ ] **T5.9** code vs file: the fixture `tests/data/maps/good.tmj` converted at build time and loaded, compared
+- [x] **T5.9** code vs file: the fixture `tests/data/maps/good.tmj` converted at build time and loaded, compared
   query by query with the same map built in code — files: `tests/tilemap/test_code_vs_file.cpp`,
   `tests/CMakeLists.txt` — covers FR-0, AC-2
+
+  **Result (2026-11-21, T5.1–T5.9):** `nnh-assetc map <in.tmj> <out.nnhmap> --assets <dir> --depfile <d>` converts
+  Tiled maps; `.tmj` assets become `.nnhmap` at build time. 93 tests in `nnh_assetc_tests` (JSON 17, fields 6, paths
+  + PNG header + files 9, tilesets 16, maps 16, objects 7, writer 10, depfile 2, CLI 7, mini-fuzz 3: 8000 JSON and
+  6000 map/tileset mutants, > 100 converted and validated), 4 code-vs-file tests in `nnh_tests` (918/918), ctest
+  148/148 in pc-debug (new: `assetc_unit`, `map_convert_accepts_good`, 21 `map_convert_rejects_*` /
+  `map_convert_explains_*` pairs, `asset_index_names_maps_by_their_output`), 147/147 in pc-release; pc-debug,
+  pc-release, `3ds-dev` and `3ds-release` (converter built for the host by the ExternalProject) without warnings.
+  `fuzz_assetc_json` / `fuzz_assetc_map` are wired like the others but not run yet (VM 120, T8.1). Deviations in
+  [plan.md](plan.md) ("Stage 5 refinements").
+  - **Budgets (III)**, Windows, three edits each: edit `examples/hello/main.cpp` → simulator 1.51–1.60 s before,
+    1.48–1.52 s after; `.3dsx` 2.64–2.79 s before, 2.68–2.73 s after. With two maps added to a game for the check,
+    touching a `.tsj` reconverted only the map using it, on PC and 3DS (`ninja -d explain`); touching an image used
+    by both reconverted both; removing them removed the stale outputs. The first 3DS check found every map
+    reconverted on every build (MSYS's CMake misread the depfile's `E:/...` paths): depfile paths are now relative to
+    the working directory.
+  - Mutation check (103 hand mutants of the JSON reader, fields, properties, tilesets, map, tile layers, objects,
+    writer, paths, depfile, CLI and PNG header): first run 88 killed (4 of them by the build itself: `good.tmj` no
+    longer converted); the 15 survivors were real and got tests (control character 0x1F, a high surrogate followed by
+    a non-low `\u` escape, U+0800 encoding, image height mismatch, a 4-px image, tile height only, a tile listed
+    twice, exactly 8192 ids, total cells over 4 Mi — now checked before any layer data is read —, layer height only,
+    opacity over 1, too many CSV values and base64 bytes, a false bool property, a stale depfile hiding an unwritten
+    one). Final: **103 killed, 0 equivalent**.
 
 ## Stage 6 — animated tiles (cheap; can be cut alone)
 

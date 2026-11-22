@@ -38,7 +38,8 @@ apps/<app>/                                  apps made with NNHGE that ship with
                                              against fakes; views and one scene; platform_link_<system>.cpp
 tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010; src/remote/: test
                                              scripts and the console remote's PC side, spec 013); tools/assetc
-                                             (nnh-assetc, build-time conversions, spec 012, D27; built by
+                                             (nnh-assetc, build-time conversions, spec 012, D27: Tiled maps; src/
+                                             json*, tiled_*, map_writer; tests/ with the fuzz targets; built by
                                              cmake/nnh_host_tools.cmake, standalone-capable CMakeLists.txt)
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules

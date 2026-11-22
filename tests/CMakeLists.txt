@@ -84,6 +84,7 @@ add_executable(nnh_tests
     scene/test_scene_stack.cpp
     system/test_system.cpp
     text/test_builtin_font.cpp
+    tilemap/test_code_vs_file.cpp
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
     tilemap/test_map_draw.cpp
@@ -320,6 +321,9 @@ add_test(NAME asset_index_sorts_valid_names
 add_test(NAME asset_index_removes_stale_outputs
     COMMAND ${CMAKE_COMMAND} -DDIR=${_lists} -DWORK=${CMAKE_CURRENT_BINARY_DIR}/asset_index_stale
             -DSCRIPT=${_index_script} -P ${_lists}/check_stale.cmake)
+add_test(NAME asset_index_names_maps_by_their_output
+    COMMAND ${CMAKE_COMMAND} -DASSETS_SCRIPT=${PROJECT_SOURCE_DIR}/cmake/nnh_assets.cmake
+            -P ${_lists}/check_output_names.cmake)
 foreach(case "dotdot|no '.' or '..' folders"
              "chars|use only letters"
              "reserved|reserved"
@@ -336,6 +340,66 @@ foreach(case "dotdot|no '.' or '..' folders"
                 -P ${_index_script})
     set_tests_properties(asset_index_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
 endforeach()
+
+# Tiled map converter (spec 012 T5.7, AC-3): nnh-assetc on the fixtures of data/maps (written by hand; the PNGs by
+# make_fixtures.py). Each bad map must fail AND name the file and the problem.
+set(_maps ${CMAKE_CURRENT_SOURCE_DIR}/data/maps)
+set(_maps_out ${CMAKE_CURRENT_BINARY_DIR}/maps)
+file(MAKE_DIRECTORY ${_maps_out})
+# Over 4096 objects: generated here rather than committed (4097 copies of one object; ids don't matter, the limit
+# is checked first).
+string(REPEAT "{\"id\": 1, \"x\": 0, \"y\": 0}, " 4096 _objects)
+file(WRITE ${_maps_out}/bad_too_many_objects.tmj
+     "{\"orientation\": \"orthogonal\", \"width\": 2, \"height\": 1, \"tilewidth\": 16, \"tileheight\": 16,
+       \"layers\": [{\"type\": \"objectgroup\", \"name\": \"things\", \"objects\": [${_objects}{\"id\": 1, \"x\": 0, \"y\": 0}]}]}\n")
+add_test(NAME map_convert_accepts_good
+    COMMAND nnh_assetc map ${_maps}/good.tmj ${_maps_out}/good_check.nnhmap --assets ${_maps})
+foreach(case "infinite|bad_infinite.tmj: infinite maps aren't supported"
+             "isometric|bad_isometric.tmj: isometric maps aren't supported"
+             "hexagonal|bad_hexagonal.tmj: hexagonal maps aren't supported"
+             "image_layer|bad_image_layer.tmj: layer .sky.: image layers aren't supported"
+             "group_layer|bad_group_layer.tmj: layer .level.: group layers aren't supported"
+             "wang_set|bad_wang_set.tmj: wang sets [(]terrains[)] aren't supported"
+             "text_object|bad_text_object.tmj: object 1 in layer .things.: text objects aren't supported"
+             "polygon|bad_polygon.tmj: object 1 in layer .things.: polygon objects aren't supported"
+             "class_property|bad_class_property.tmj: map: property .stats.: class properties aren't supported"
+             "missing_image|bad_missing_image.tmj: tileset image tiles/missing.png not found"
+             "image_outside|bad_image_outside.tmj: tileset image ../images/ok_16x8.png is outside the assets folder"
+             "not_power_of_two|bad_not_power_of_two.tmj: tileset image tiles/npot.png is 100x60: tileset images need power-of-two sides"
+             "tile_size_4|bad_tile_size_4.tmj: tiles are 4x4: NNHGE tiles are 8 to 64 pixels per side"
+             "tile_size_128|bad_tile_size_128.tmj: tiles are 128x128: NNHGE tiles are 8 to 64 pixels per side"
+             "too_many_layers|bad_too_many_layers.tmj: more than 16 tile layers"
+             "too_many_tilesets|bad_too_many_tilesets.tmj: more than 8 tilesets"
+             "too_many_tiles|bad_too_many_tiles.tmj: the tilesets have 16384 tiles in all: a map can use at most 8191"
+             "too_many_objects|bad_too_many_objects.tmj: the map has more than 4096 objects"
+             "diagonal_non_square|bad_diagonal_non_square.tmj: layer .ground.: cell [(]1, 0[)] is flipped diagonally, which needs square tiles"
+             "compressed|bad_compressed.tmj: layer .ground.: compressed layer data [(]zlib[)] isn't supported: save the layer format as CSV"
+             "broken_json|bad_broken_json.tmj: line 3, column 19: expected ',' or '}'")
+    string(REPLACE "|" ";" case "${case}")
+    list(GET case 0 name)
+    list(GET case 1 expected)
+    set(_in ${_maps}/bad_${name}.tmj)
+    if(name STREQUAL "too_many_objects")
+        set(_in ${_maps_out}/bad_${name}.tmj)
+    endif()
+    set(_convert nnh_assetc map ${_in} ${_maps_out}/bad_${name}.nnhmap --assets ${_maps})
+    add_test(NAME map_convert_rejects_${name} COMMAND ${_convert})
+    set_tests_properties(map_convert_rejects_${name} PROPERTIES WILL_FAIL TRUE)
+    add_test(NAME map_convert_explains_${name} COMMAND ${_convert})
+    set_tests_properties(map_convert_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+endforeach()
+
+# The good fixture converted at build time, for the code-vs-file test (spec 012 T5.9): nnh_tests reads it from here.
+add_custom_command(OUTPUT ${_maps_out}/good.nnhmap
+    COMMAND nnh_assetc map ${_maps}/good.tmj ${_maps_out}/good.nnhmap --assets ${_maps}
+            --depfile ${_maps_out}/good.nnhmap.d
+    DEPENDS ${_maps}/good.tmj nnh_assetc
+    DEPFILE ${_maps_out}/good.nnhmap.d
+    COMMENT "Map tests/data/maps/good.tmj"
+    VERBATIM)
+add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap)
+add_dependencies(nnh_tests nnh_test_maps)
+target_compile_definitions(nnh_tests PRIVATE NNH_TEST_MAPS_DIR="${_maps_out}")
 
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60

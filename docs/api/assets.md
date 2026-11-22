@@ -7,7 +7,10 @@ Declare the folder in the game's build: `nnh_add_game(my_game SOURCES ... ASSETS
 under `assets/` becomes an asset named by its relative path ([cmake.md](../tech/cmake.md#common-changes)).
 Example: [`examples/sprites`](../../examples/sprites/main.cpp) (textures and a level file). Sounds and music
 are assets too: `.wav`/`.ogg` files are checked by the build and loaded by path without extension
-([audio.md](audio.md), [`examples/audio`](../../examples/audio/main.cpp)).
+([audio.md](audio.md), [`examples/audio`](../../examples/audio/main.cpp)). Tiled maps (`.tmj`) are converted by
+the build into `.nnhmap` assets of the same path (`levels/level1.tmj` → `levels/level1.nnhmap`, loaded with
+`load_tilemap("levels/level1")`); Tiled's own `.tsj`, `.tiled-project` and `.tiled-session` files are not packed
+([tilemap.md](tilemap.md#maps-made-in-tiled)).
 
 A game keeps its content — images, levels, dialogue, tables — in an **assets folder** next to its code.
 The build converts each file for the system and packs them with the game: into the **romfs** inside the

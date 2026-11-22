@@ -1,0 +1,13 @@
+{
+ "type": "map",
+ "orientation": "hexagonal",
+ "renderorder": "right-down",
+ "infinite": false,
+ "width": 2,
+ "height": 1,
+ "tilewidth": 16,
+ "tileheight": 16,
+ "hexsidelength": 8,
+ "staggeraxis": "y",
+ "staggerindex": "odd"
+}

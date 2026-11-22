@@ -50,6 +50,11 @@ it (the tool is built only on demand); edit one game `.cpp` → simulator 1.4 s,
 configure + build (engine + 7 examples + NNH Link) 12.1 + 19.3 s; building `nnh-assetc` for the host in a 3DS
 folder: 9.0 s the first time (Windows), 0.8 s (Linux VM).
 
+Spec 012 stage 5 (2026-11-21, same machine; the Tiled converter and the `.tmj` asset step; three edits each): edit
+`examples/hello/main.cpp` → simulator 1.51–1.60 s before, 1.48–1.52 s after; → `.3dsx` 2.64–2.79 s before,
+2.68–2.73 s after (no change: games without maps don't touch the converter). 3DS no-op 1.81 s. Editing a `.tsj`
+reconverts only the maps that use it, on PC and 3DS (`ninja -d explain`).
+
 Spec 013 (2026-11-21, same machine; before = commit `82f6e91`, the approved plan without remote code, after = the
 finished spec; separate build folders, 3DS without ccache, PC with ccache but every edit a miss; three edits each):
 edit `examples/hello/main.cpp` → simulator 1.66–2.07 s before, 1.77–2.04 s after; → `.3dsx` 2.97–3.05 s before,
@@ -92,7 +97,7 @@ is compiled out). All within budget; the simulator edit is close to its 2 s limi
 
 ## M3 — Assets
 - [x] Assets folder and romfs ([spec 007](../specs/007-assets-and-romfs/spec.md)): `nnh_add_game(... ASSETS <folder>)` checks and converts each file in the build (one step per file, rerun only when it changes), writes a sorted case-sensitive index and packs the folder into the romfs on 3DS / next to the program on PC; `<nnh/assets.hpp>` (`exists`/`size`/`read`/`load` by path); `load_texture("art/hero")` from assets, `IMAGES` kept for embedded images; `examples/sprites` loads its textures and a level file — verified on PC, Linux and an Old 3DS XL (2026-11-18). Cost: `hello.3dsx` +10.5 KB (romfs support)
-- [ ] `assetc` tool (a C++ converter with an incremental cache) — only when conversion outgrows the CMake steps (texture formats, atlases, audio). Started by spec 012 (D27): `nnh-assetc`, built for the host in every preset (stage 0), converts Tiled maps (stage 7)
+- [ ] `assetc` tool (a C++ converter with an incremental cache) — only when conversion outgrows the CMake steps (texture formats, atlases, audio). Started by spec 012 (D27): `nnh-assetc`, built for the host in every preset (stage 0), converts Tiled maps (stage 5)
 
 ## M4 — Audio
 - [x] Audio ([spec 008](../specs/008-audio/spec.md)): `<nnh/audio.hpp>` — `load_sound` (WAV/Ogg Vorbis from assets), voices with volume/pan/pitch/priority, groups + master, streamed `music::play`/`crossfade` with loop points (`LOOPSTART`) and fades, `SoundFinished`/`MusicFinished`, silent fallback without output; 3DS DSP (ndsp) and PC (SDL 3 + software mixer); vendored stb_vorbis; `examples/audio` — verified on PC and an Old 3DS XL (2026-11-18). Cost: every `.3dsx` +8 KB (ndsp), +60 KB with Ogg; builds within budget (clean engine 8.6 s)
@@ -111,7 +116,7 @@ is compiled out). All within budget; the simulator edit is close to its 2 s limi
 - [ ] Later (spec 013 non-goals): drive games started by NNH Link; record and replay a player's session
 
 ## M7 — Game structure
-- [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md); stage 2 done: maps built in code, `<nnh/tilemap.hpp>`, [api/tilemap.md](api/tilemap.md); stage 3 done on PC and 3DS builds: `gfx::draw_tilemap` as tile batches (D26), `AppConfig::gfx.max_tiles`, `examples/platformer` skeleton with a tile benchmark; the Old 3DS gate passed: 4 layers + 300 sprites with no missed frame, limits 6 layers / 600 sprites; stage 4 done: `load_tilemap` of converted `.nnhmap` assets, a bounded validator fuzzed by `tilemap_target`; next: stage 5, the Tiled converter in `nnh-assetc`)
+- [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md); stage 2 done: maps built in code, `<nnh/tilemap.hpp>`, [api/tilemap.md](api/tilemap.md); stage 3 done on PC and 3DS builds: `gfx::draw_tilemap` as tile batches (D26), `AppConfig::gfx.max_tiles`, `examples/platformer` skeleton with a tile benchmark; the Old 3DS gate passed: 4 layers + 300 sprites with no missed frame, limits 6 layers / 600 sprites; stage 4 done: `load_tilemap` of converted `.nnhmap` assets, a bounded validator fuzzed by `tilemap_target`; stage 5 done: the Tiled converter in `nnh-assetc` — `.tmj` assets become `.nnhmap` at build time with a depfile, bounded JSON reader, refusals naming the file, every output checked by the run-time validator, fuzz targets `fuzz_assetc_json`/`fuzz_assetc_map`; next: stage 6, animated tiles)
 - [ ] Entities/components, tweens, scene transitions (scenes and saves: done)
 
 ### Features in the spirit of Godot and Unity

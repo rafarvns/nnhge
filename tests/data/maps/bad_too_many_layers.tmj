@@ -1,0 +1,182 @@
+{
+ "type": "map",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "infinite": false,
+ "width": 2,
+ "height": 1,
+ "tilewidth": 16,
+ "tileheight": 16,
+ "layers": [
+  {
+   "type": "tilelayer",
+   "name": "layer0",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer1",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer2",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer3",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer4",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer5",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer6",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer7",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer8",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer9",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer10",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer11",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer12",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer13",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer14",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer15",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  },
+  {
+   "type": "tilelayer",
+   "name": "layer16",
+   "width": 2,
+   "height": 1,
+   "data": [
+    0,
+    0
+   ]
+  }
+ ]
+}

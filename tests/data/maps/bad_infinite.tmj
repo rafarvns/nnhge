@@ -1,0 +1,10 @@
+{
+ "type": "map",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "infinite": true,
+ "width": 2,
+ "height": 1,
+ "tilewidth": 16,
+ "tileheight": 16
+}

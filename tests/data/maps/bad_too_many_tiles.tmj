@@ -1,0 +1,23 @@
+{
+ "type": "map",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "infinite": false,
+ "width": 2,
+ "height": 1,
+ "tilewidth": 8,
+ "tileheight": 8,
+ "tilesets": [
+  {
+   "firstgid": 1,
+   "name": "set",
+   "image": "tiles/big.png",
+   "imagewidth": 1024,
+   "imageheight": 1024,
+   "tilewidth": 8,
+   "tileheight": 8,
+   "tilecount": 16384,
+   "columns": 128
+  }
+ ]
+}

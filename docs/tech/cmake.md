@@ -84,15 +84,19 @@ that file changes, writes into `build/<preset>/<game dir>/assets/<path>`: PNGs a
 (below) and, on 3DS, converted by `tex3ds` under the same name; `.wav` and `.ogg` files are checked by
 `nnh_check_sound.cmake` (header only: PCM 8/16-bit WAV or Ogg Vorbis, mono or stereo, 8000–48000 Hz —
 `jump.wav is 24-bit: save it as PCM 16-bit (or 8-bit)`; ctest cases `sound_check_*`, fixtures in
-`tests/data/sounds/`) and copied; other files are copied. Then
-`nnh_asset_index.cmake` writes `assets/.nnh_assets` (the sorted list core reads at init) and fails the
+`tests/data/sounds/`) and copied; Tiled maps (`.tmj`, spec 012) are converted by `nnh-assetc` (below) into
+`<path>.nnhmap`, one step per map with a Ninja `DEPFILE` (in `build/<preset>/<game dir>/nnh_maps/`) listing the
+tilesets and images it read, so editing a shared `.tsj` or tileset image reconverts exactly the maps that use it;
+`.tsj`, `.tiled-project` and `.tiled-session` files are not packed (`nnh_asset_output_name()`; a `.tmj` and a
+`.nnhmap` of the same name are a configure error); other files are copied. Then
+`nnh_asset_index.cmake` writes `assets/.nnh_assets` (the sorted list of output names core reads at init) and fails the
 build for names that break the asset path rules, use characters outside `A-Z a-z 0-9 space - _ .`, are
 reserved, or differ from another only by letter case; it also deletes outputs of removed assets. On PC
 that folder is next to the executable; on 3DS the target `<game>_assets` is a devkitPro asset target
 passed as `ROMFS` to `ctr_create_3dsx`, so the `.3dsx` is repacked when an asset changes. The folder is
 scanned with `file(GLOB_RECURSE ... CONFIGURE_DEPENDS)` — the one exception to "no GLOB" below: assets
 are data, and adding a file must not require editing CMake. Script tests: `asset_index_*` (fixtures in
-`tests/data/asset_lists/`).
+`tests/data/asset_lists/`; `asset_index_names_maps_by_their_output` checks the output names).
 
 **Images** (`IMAGES`, decision D19: embedded in the executable, for small games; `ASSETS` is the
 recommended way): one build step per image, rerun only when that image changes:
@@ -118,19 +122,36 @@ gives an asset step the program to run and what to depend on:
 
 | Preset | `nnh_assetc` is | Built |
 |--------|-----------------|-------|
-| PC | the executable of `tools/assetc/` (`build/<preset>/tools/assetc/nnh-assetc`), ctest `assetc_*` | with everything |
+| PC | the executable of `tools/assetc/` (`build/<preset>/tools/assetc/nnh-assetc`), ctest `assetc_*` (`assetc_unit` = `nnh_assetc_tests`) and `map_convert_*` | with everything |
 | 3DS | an `ExternalProject` configuring `tools/assetc/` as its own project with the host compiler `NNH_HOST_CXX`, in Release, into `build/<preset>/_host/assetc/` | only when a step needs it or you build the target (`EXCLUDE_FROM_ALL`); a 3DS build without maps never pays for it |
 | 3DS with `-DNNH_ASSETC=<path>` | a prebuilt `nnh-assetc` (e.g. `build/pc-debug/tools/assetc/nnh-assetc.exe`), like `NNH_MAKEROM`; the target just prints its version | never |
 
 `tools/assetc/CMakeLists.txt` is therefore standalone-capable (its own `project()`, includes
-`nnh_engine_options.cmake` itself) and compiles pure core files (`engine/core/src/core/crc32.cpp`, later the map
-format and validator) directly, so the console and the converter share one implementation. It links the C++
-runtime statically when the compiler is MinGW (checked with `CMAKE_CXX_PLATFORM_ID`, because inside devkitPro's
-MSYS2 the host CMake is MSYS's while the compiler is MinGW).
+`nnh_engine_options.cmake` itself; standalone it builds only the program, no tests) and compiles pure core files
+(`core/crc32.cpp`, `tilemap/map_layout.cpp`, `map_strings.cpp`, `map_property_table.cpp`, `map_validate*.cpp`)
+into `nnh_assetc_lib`, so the console and the converter share one implementation. It links the C++ runtime
+statically when the compiler is MinGW (checked with `CMAKE_CXX_PLATFORM_ID`, because inside devkitPro's MSYS2 the
+host CMake is MSYS's while the compiler is MinGW). The top-level `CMakeLists.txt` sets it up (and calls
+`enable_testing()`) **before** `examples/`, so a game's asset step can ask for the program.
+
+The command the asset step runs (one per map, from the game's build folder):
+
+```sh
+nnh-assetc map <in.tmj> <out.nnhmap> --assets <assets folder> --depfile <out.d>   # exit 1 + "file: reason" on error
+nnh-assetc --version                                                               # another command line: usage, exit 2
+```
+
+On failure it prints `file: reason` (the file the problem is in: the map, a tileset or an image) and removes any
+old output. **Depfile paths are relative to the working directory**: CMake reads them from there, and devkitPro's
+MSYS CMake took the native program's absolute `E:/...` paths for relative ones (prefixing the build folder), so every
+map reconverted on every build. Converter fixtures are in `tests/data/maps/` (PNGs by `make_fixtures.py`); the
+`map_convert_rejects_*` / `map_convert_explains_*` ctests run it on each bad map, and `nnh_tests` loads
+`good.tmj` converted at build time (`tests/CMakeLists.txt`). With `-DNNH_BUILD_FUZZERS=ON` and clang,
+`fuzz_assetc_json` and `fuzz_assetc_map` are built in `build/<preset>/tools/assetc/`.
 
 `NNH_HOST_CXX` (cache variable) defaults to the environment variable of the same name, else `c++`/`g++`/`clang++`
-on the PATH (Linux: the system compiler). With none, 3DS presets still configure and build; only `nnh_assetc` (and,
-later, games with maps) fail, saying to set `NNH_HOST_CXX` or `NNH_ASSETC`. **On Windows** devkitPro's MSYS2 has no
+on the PATH (Linux: the system compiler). With none, 3DS presets still configure and build; only `nnh_assetc` (and
+games with maps, at configure time) fail, saying to set `NNH_HOST_CXX` or `NNH_ASSETC`. **On Windows** devkitPro's MSYS2 has no
 host compiler and starts with an almost empty environment (Git Bash's variables don't reach it), so
 `scripts/dkp.sh` finds `g++` (else `c++`, `clang++`) on Git Bash's PATH — or takes your `NNH_HOST_CXX` — and hands
 it over as an argument; inside it is exported in MSYS form (`/c/...`, or `/home/...` for `C:/Users`), because

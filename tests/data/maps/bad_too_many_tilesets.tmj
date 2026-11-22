@@ -1,0 +1,48 @@
+{
+ "type": "map",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "infinite": false,
+ "width": 2,
+ "height": 1,
+ "tilewidth": 16,
+ "tileheight": 16,
+ "tilesets": [
+  {
+   "firstgid": 1,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 9,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 17,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 25,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 33,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 41,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 49,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 57,
+   "source": "tiles/good.tsj"
+  },
+  {
+   "firstgid": 65,
+   "source": "tiles/good.tsj"
+  }
+ ]
+}

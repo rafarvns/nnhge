@@ -87,10 +87,12 @@ vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS v
 `<nnh/math.hpp>`): `<nnh/collision.hpp>` — `overlaps`/`contains`/`intersection`/`separation` on boxes;
 `collision::move` sweeps a box through a `Grid` the game describes (`grid_view` over its own `Cell` array, or a
 callback), x then y, solid and one-way cells, no tunnelling; `contacts`, `cells_touching`
-([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–4: built in code, drawn, loaded from `.nnhmap`; the Tiled
-converter comes later): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
+([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–5: built in code, drawn, loaded from `.nnhmap`, made in
+Tiled): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
 tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`;
-`load_tilemap("levels/level1", {extras})` validates a converted map (fuzzed) and owns its tileset textures;
+`load_tilemap("levels/level1", {extras})` validates a converted map (fuzzed) and owns its tileset textures; the
+build converts Tiled `.tmj` files in `ASSETS` into `.nnhmap` with `nnh-assetc` (D27; depfile per map; refusals
+print `file: reason`; fixtures and `map_convert_*` ctests in `tests/data/maps/`);
 `gfx::draw_tilemap` draws tile batches (D26: contract `draw_tiles`, only visible cells, Tiled parallax and flips,
 needs `AppConfig::gfx.max_tiles`, 0 by default); demo `examples/platformer` ([api/tilemap.md](docs/api/tilemap.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
@@ -112,7 +114,7 @@ tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
 apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
 tools/nnh/                                       the nnh command (spec 010): build, run on the console, install; test scripts (013)
-tools/assetc/                                    nnh-assetc (spec 012): asset converter; host-built in 3DS presets (NNH_HOST_CXX)
+tools/assetc/                                    nnh-assetc (spec 012): Tiled .tmj → .nnhmap converter; host-built in 3DS presets (NNH_HOST_CXX)
 examples/<name>/                                 one small program per feature (tests/*.nnhs: its test scripts)
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
 docs/                                            architecture/, process/, tech/, api/, guides/

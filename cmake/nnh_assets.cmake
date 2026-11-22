@@ -5,9 +5,13 @@
 # when that file changes, writes into <binary dir>/assets/<path>:
 #   *.png  -> checked (nnh_check_image.cmake); 3DS: converted by tex3ds (same name), PC: copied;
 #   *.wav, *.ogg -> checked (nnh_check_sound.cmake: PCM 8/16-bit or Vorbis, mono/stereo, 8-48 kHz), copied;
+#   *.tmj (Tiled maps, spec 012) -> converted by nnh-assetc into <path without .tmj>.nnhmap; a Ninja depfile
+#       lists the tilesets and images it read, so editing a shared .tsj reconverts exactly the maps using it;
+#   *.tsj, *.tiled-project, *.tiled-session -> not packed (Tiled's own files; the converter reads the .tsj);
 #   others -> copied unchanged.
-# nnh_asset_index.cmake then writes <binary dir>/assets/.nnh_assets (the sorted list core reads at init),
-# refuses invalid names and names differing only by letter case, and removes stale outputs.
+# nnh_asset_index.cmake then writes <binary dir>/assets/.nnh_assets (the sorted list of output names core reads at
+# init), refuses invalid names and names differing only by letter case, and removes stale outputs.
+# nnh-assetc is only needed (and, in cross presets, only built) when the folder has a .tmj (nnh_host_tools.cmake).
 # On PC that folder sits next to the executable; on 3DS it becomes the romfs of the .3dsx (the target
 # `<target>_assets` is a devkitPro asset target, so ctr_create_3dsx(ROMFS) repacks when an asset changes).
 #
@@ -15,6 +19,34 @@
 # "no GLOB" rule, because assets are data, not sources — adding a file must not require editing CMake.
 
 set(_NNH_ASSETS_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
+# nnh_asset_output_name(<name> <out_var>): the asset name a source file becomes ("" = not packed).
+function(nnh_asset_output_name name out_var)
+    if(name MATCHES "\\.(tsj|tiled-project|tiled-session)$")
+        set(${out_var} "" PARENT_SCOPE)
+    elseif(name MATCHES "\\.tmj$")
+        string(REGEX REPLACE "\\.tmj$" ".nnhmap" converted "${name}")
+        set(${out_var} "${converted}" PARENT_SCOPE)
+    else()
+        set(${out_var} "${name}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+# One map conversion step: <source>/<name> (.tmj) -> <out>/<output name>, with a depfile beside the target's
+# other build files (not in the packed folder).
+function(_nnh_add_map_step target source out name output_name assetc assetc_depends)
+    set(output "${out}/${output_name}")
+    set(depfile "${CMAKE_CURRENT_BINARY_DIR}/nnh_maps/${output_name}.d")
+    get_filename_component(output_dir "${output}" DIRECTORY)
+    get_filename_component(depfile_dir "${depfile}" DIRECTORY)
+    add_custom_command(OUTPUT "${output}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir} ${depfile_dir}
+        COMMAND ${assetc} map ${source}/${name} ${output} --assets ${source} --depfile ${depfile}
+        DEPENDS "${source}/${name}" ${assetc_depends}
+        DEPFILE "${depfile}"
+        COMMENT "Map ${name}"
+        VERBATIM)
+endfunction()
 
 function(nnh_add_assets target folder)
     get_filename_component(source "${folder}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -24,13 +56,28 @@ function(nnh_add_assets target folder)
     file(GLOB_RECURSE files LIST_DIRECTORIES false CONFIGURE_DEPENDS RELATIVE "${source}" "${source}/*")
     list(SORT files)
     set(out "${CMAKE_CURRENT_BINARY_DIR}/assets")
+    if(files MATCHES "\\.tmj(;|$)")
+        nnh_assetc_command(assetc assetc_depends) # only games with maps need (and build) the converter
+    endif()
 
     set(outputs "")
+    set(names "") # output names, for the index
     foreach(name IN LISTS files)
+        nnh_asset_output_name("${name}" output_name)
+        if(output_name STREQUAL "")
+            continue()
+        endif()
+        if(NOT output_name STREQUAL name AND output_name IN_LIST files)
+            message(FATAL_ERROR "nnh_add_game(${target}): ${name} and ${output_name} would both become the asset "
+                                "${output_name}: remove one of them")
+        endif()
+        list(APPEND names "${output_name}")
         set(input "${source}/${name}")
-        set(output "${out}/${name}")
+        set(output "${out}/${output_name}")
         get_filename_component(output_dir "${output}" DIRECTORY)
-        if(name MATCHES "\\.png$")
+        if(name MATCHES "\\.tmj$")
+            _nnh_add_map_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
+        elseif(name MATCHES "\\.png$")
             set(check ${CMAKE_COMMAND} -DIMAGE=${input} -P ${_NNH_ASSETS_DIR}/nnh_check_image.cmake)
             if(NNH_PLATFORM STREQUAL "3ds")
                 if(NOT CTR_TEX3DS_EXE)
@@ -68,7 +115,7 @@ function(nnh_add_assets target folder)
 
     # The list of names, rewritten only when it changes (so the index only reruns then).
     set(list_file "${CMAKE_CURRENT_BINARY_DIR}/nnh_assets_${target}.list")
-    string(REPLACE ";" "\n" list_text "${files}")
+    string(REPLACE ";" "\n" list_text "${names}")
     file(WRITE "${list_file}.new" "${list_text}\n")
     file(COPY_FILE "${list_file}.new" "${list_file}" ONLY_IF_DIFFERENT)
 

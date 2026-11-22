@@ -1,0 +1,44 @@
+{
+ "type": "map",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "infinite": false,
+ "width": 2,
+ "height": 1,
+ "tilewidth": 16,
+ "tileheight": 16,
+ "tilesets": [
+  {
+   "firstgid": 1,
+   "source": "tiles/good.tsj"
+  }
+ ],
+ "layers": [
+  {
+   "type": "tilelayer",
+   "name": "ground",
+   "width": 2,
+   "height": 1,
+   "data": [
+    "e",
+    "J",
+    "x",
+    "j",
+    "Z",
+    "G",
+    "B",
+    "g",
+    "A",
+    "A",
+    "A",
+    "A",
+    "B",
+    "g",
+    "A",
+    "C"
+   ],
+   "encoding": "base64",
+   "compression": "zlib"
+  }
+ ]
+}

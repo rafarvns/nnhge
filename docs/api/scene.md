@@ -79,6 +79,15 @@ on the crash screen, in every build flavor:
 `nnh::shutdown()` exits every scene still on the stack (top first), so a hand-written loop can just call
 `shutdown()` before its scenes go out of scope.
 
+## Tweens and timers bound to a scene
+
+A `nnh::TweenSet` member created with the scene (`nnh::TweenSet tweens_{*this, {.tweens = 32}};`) is updated
+right before the scene's `update()`, only while the scene is on top (a pause menu freezes the level's
+animations), and cleared silently right after its `on_exit()`. Nothing to update or clear by hand; see
+[api/tween.md](tween.md#scene-bound-sets) and the attachment hook in
+[architecture/scenes.md](../architecture/scenes.md#scene-attachments-d30). Destroying a scene while such a set is
+still attached to it stops the game with an error, like destroying a scene on the stack.
+
 ## Without run()
 
 `run()` is optional. A manual loop works the same and can mix scenes with other code:

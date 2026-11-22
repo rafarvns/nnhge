@@ -82,6 +82,9 @@ never through `#ifdef` in game code.
 - 2026-11-22: D30 (scene attachments: the allocation-free hook that updates and clears scene-bound tween sets), from
   plan 015, pre-approved by the maintainer; design only until spec 015 stage 5 is implemented. The scenes page
   ([scenes.md](scenes.md)) gets its section when the code lands (plan 015, T8.1).
+- 2026-11-22: D30 implemented (spec 015 stage 5): as decided, with `scene_notify()` in its own object file so a game
+  with scenes but no bound set links only it (+176 bytes of code on the 3DS); the scenes page has its section
+  ([scenes.md](scenes.md#scene-attachments-d30)).
 - 2026-11-22: D26 and D27 confirmed by spec 012 (implemented): the Old 3DS gate passed without D26's fallbacks;
   D26's quads are 10 bytes, not 12.
 - 2026-11-22: D31 (sprite animation: Aseprite exports converted by `nnh-assetc sprite` into the `.nnhsprite` block

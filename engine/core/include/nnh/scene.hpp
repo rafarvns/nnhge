@@ -24,7 +24,9 @@ namespace nnh {
 
 namespace detail {
 class SceneStack;
-}
+struct SceneAttachment;
+struct SceneAccess;
+} // namespace detail
 
 /// One game mode. Override what you need; every function is optional.
 /// Every virtual function is defined inline on purpose: games may build with RTTI while the engine
@@ -35,9 +37,10 @@ class Scene {
 public:
     Scene() = default;
     virtual ~Scene() {
-        NNH_VERIFY(!on_stack_ && pending_ == 0,
-                   "scene destroyed while still on the scene stack (or waiting to be pushed): keep scene "
-                   "objects alive until they are popped");
+        // One check (one message) keeps every game scene's destructor small (D30's cost budget).
+        NNH_VERIFY(!on_stack_ && pending_ == 0 && attachments_ == nullptr,
+                   "scene destroyed while still on the scene stack (or waiting to be pushed), or with a TweenSet "
+                   "still attached: keep scene objects alive until they are popped, bound sets inside them");
     }
     Scene(const Scene&) = delete;
     Scene& operator=(const Scene&) = delete;
@@ -56,6 +59,8 @@ public:
 
 private:
     friend class detail::SceneStack;
+    friend struct detail::SceneAccess;
+    detail::SceneAttachment* attachments_ = nullptr; // objects bound to this scene (D30), e.g. a TweenSet
     bool on_stack_ = false;
     std::uint8_t pending_ = 0; // queued push/replace requests that point here
 };

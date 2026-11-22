@@ -104,6 +104,7 @@ add_executable(nnh_tests
     remote/test_remote_wire.cpp
     result/test_result.cpp
     scene/test_run.cpp
+    scene/test_scene_attachments.cpp
     scene/test_scene_stack.cpp
     system/test_system.cpp
     text/test_builtin_font.cpp
@@ -139,6 +140,26 @@ add_executable(nnh_tests
     time/test_clock.cpp
     time/test_duration.cpp
     time/test_fixed_step.cpp
+    time/test_frame_time.cpp
+    tween/test_ease.cpp
+    tween/test_ease_golden.cpp
+    tween/test_ease_math.cpp
+    tween/test_frame_clock.cpp
+    tween/test_sequence.cpp
+    tween/test_sequence_loops.cpp
+    tween/test_timer.cpp
+    tween/test_tween_alloc.cpp
+    tween/test_tween_finish.cpp
+    tween/test_tween_group.cpp
+    tween/test_tween_handles.cpp
+    tween/test_tween_loops.cpp
+    tween/test_tween_misuse.cpp
+    tween/test_tween_reentrancy.cpp
+    tween/test_tween_scene.cpp
+    tween/test_tween_set.cpp
+    tween/test_tween_start.cpp
+    tween/test_tween_timers.cpp
+    tween/test_tween_values.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 # The remote session in the frame (spec 013) exists only in Debug and Development builds; Release compiles it out,
@@ -189,7 +210,16 @@ if(TARGET platformer AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STR
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PLATFORMER_DEMO=replay;NNH_EXIT_AFTER_FRAMES=920"
         TIMEOUT 120)
 endif()
+# The tweens example's self-check in the simulator (spec 015 AC-5): the same verdict the console script waits for.
+if(TARGET tweens AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME tweens_self_check_pc COMMAND tweens)
+    set_tests_properties(tweens_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;TWEENS_DEMO=check;NNH_EXIT_AFTER_FRAMES=610"
+        PASS_REGULAR_EXPRESSION "tweens: PASS B44CA3F6" FAIL_REGULAR_EXPRESSION "tweens: FAIL" TIMEOUT 120)
+endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
+# The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
+target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/tweens/self_check.cpp)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.
@@ -245,6 +275,20 @@ if(NOT MSVC)
         COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include
                 ${CMAKE_CURRENT_SOURCE_DIR}/events/compile_fail_big_capture.cpp)
     set_tests_properties(large_handler_capture_rejected PROPERTIES WILL_FAIL TRUE)
+
+    # Tween setters, callbacks and finish events keep the inline size rules (spec 015 FR-5, FR-11): each file
+    # compiles with -DNNH_EXPECT_OK and must fail with the size message without it.
+    set(_tween_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    foreach(case "setter_capture|capture too large [(]max 16 bytes[)]"
+                 "big_event|event published on finish too large [(]max 32 bytes[)]")
+        string(REPLACE "|" ";" case "${case}")
+        list(GET case 0 name)
+        list(GET case 1 expected)
+        set(_file ${CMAKE_CURRENT_SOURCE_DIR}/tween/compile_fail_${name}.cpp)
+        add_test(NAME tween_${name}_ok COMMAND ${_tween_check} -DNNH_EXPECT_OK ${_file})
+        add_test(NAME tween_${name}_rejected COMMAND ${_tween_check} ${_file})
+        set_tests_properties(tween_${name}_rejected PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+    endforeach()
 
     # AppConfig::title defaults to the game's TITLE (spec 009 FR-1); the last case proves the check bites.
     set(_title_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)

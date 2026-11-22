@@ -7,6 +7,7 @@
 #include "nnh/build.hpp"
 #include "nnh/platform_fake.hpp"
 #include "recording_scene.hpp"
+#include "scene/scene_attachments.hpp"
 #include "scene/scene_stack.hpp"
 #include "test.hpp"
 
@@ -139,6 +140,66 @@ NNH_TEST(changes_requested_by_on_exit_during_clear_are_dropped) {
     stack.apply_pending();
     stack.clear();
     CHECK(stack.size() == 0 && stack.pending() == 0 && log.is(""));
+}
+
+namespace {
+
+/// An attachment that logs "<name>b" before its scene's update and "<name>x" after its scene's on_exit (D30).
+struct Hooked : nnh::detail::SceneAttachment {
+    Hooked(char n, Log* l) : name(n), log(l) {
+        notify = [](nnh::detail::SceneAttachment& self, nnh::detail::SceneHook hook) {
+            auto& h = static_cast<Hooked&>(self);
+            h.log->add(h.name, hook == nnh::detail::SceneHook::BeforeUpdate ? 'b' : 'x');
+        };
+    }
+    char name;
+    Log* log;
+};
+
+} // namespace
+
+NNH_TEST(attachments_run_before_the_top_update_only) {
+    Log log;
+    RecordingScene level('L', &log), pause('P', &log);
+    Hooked on_level('l', &log), on_pause('p', &log);
+    nnh::detail::scene_attach(level, on_level);
+    nnh::detail::scene_attach(pause, on_pause);
+    SceneStack stack;
+    stack.request_push(level);
+    stack.apply_pending();
+    log.clear();
+    stack.update_and_draw();
+    CHECK(log.is("lb Lu Ld"));
+    stack.request_push(pause);
+    stack.apply_pending();
+    log.clear();
+    stack.update_and_draw(); // the level is under the pause menu: no hook, no update
+    CHECK(log.is("pb Pu Ld Pd"));
+    stack.clear();
+    nnh::detail::scene_detach(level, on_level);
+    nnh::detail::scene_detach(pause, on_pause);
+}
+
+NNH_TEST(attachments_hear_after_exit_on_pop_replace_and_clear) {
+    Log log;
+    RecordingScene a('A', &log), b('B', &log), c('C', &log);
+    Hooked on_a('a', &log), on_b('b', &log), on_c('c', &log);
+    nnh::detail::scene_attach(a, on_a);
+    nnh::detail::scene_attach(b, on_b);
+    nnh::detail::scene_attach(c, on_c);
+    SceneStack stack;
+    stack.request_push(a);
+    stack.request_push(b);
+    stack.request_pop();
+    stack.request_replace(c);
+    stack.apply_pending();
+    CHECK(log.is("A+ B+ B- bx A- ax C+"));
+    log.clear();
+    stack.clear();
+    CHECK(log.is("C- cx"));
+    nnh::detail::scene_detach(a, on_a);
+    nnh::detail::scene_detach(b, on_b);
+    nnh::detail::scene_detach(c, on_c);
 }
 
 namespace {

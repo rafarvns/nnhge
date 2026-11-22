@@ -1,6 +1,6 @@
 # Spec 015: Tweens and timers
 
-Status: approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with
+Status: implemented (console T7.2 pending) · approved 2026-11-22 (maintainer pre-approved recommendations: every open question below is answered with
 the recommended answer)
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 001](../001-event-bus-and-scenes/spec.md) (event bus, scenes and the scene stack),

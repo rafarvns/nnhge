@@ -34,6 +34,63 @@ struct Duration {
     constexpr bool operator>=(Duration o) const { return ns >= o.ns; }
 };
 
+/// A whole number of 60 Hz frames: `nnh::Frames{30}` is half a second of game frames.
+struct Frames {
+    std::int32_t count = 0;
+};
+
+/// A span of the deterministic frame clock (tweens, timers, animation), in ticks of 1/4096 of a 60 Hz frame.
+/// Converts implicitly from a Duration (rounded to the nearest tick, half up: 1 s = 60 frames = 245 760 ticks
+/// exactly, 16.67 ms = 4096) and from Frames (exact). The range is 0 to kMaxFrameTime (1 hour); anything outside
+/// it (a negative or longer time) becomes the invalid marker `ticks == kInvalid`, which the functions taking a
+/// FrameTime reject (they assert in Debug/Development and log in Release). Plain value, no state.
+/// @code
+/// nnh::FrameTime a = nnh::Duration::from_ms(500); // 30 frames
+/// nnh::FrameTime b = nnh::Frames{12};
+/// @endcode
+struct FrameTime {
+    static constexpr std::int32_t kTicksPerFrame = 4096;
+    static constexpr std::int32_t kInvalid = -1;
+    static constexpr std::int32_t kMaxTicks = 3600 * 60 * kTicksPerFrame; ///< 1 hour: 884 736 000 ticks
+    static constexpr std::int32_t kMaxFrames = 3600 * 60;
+
+    constexpr FrameTime() = default;
+    // NOLINTNEXTLINE(google-explicit-constructor): implicit on purpose, `to(&x, 1, Duration::from_ms(400))`.
+    constexpr FrameTime(Duration d) : ticks(from_ns(d.ns)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    constexpr FrameTime(Frames f)
+        : ticks(f.count >= 0 && f.count <= kMaxFrames ? f.count * kTicksPerFrame : kInvalid) {}
+
+    /// A raw tick count (0..kMaxTicks; anything else is kept as the invalid marker).
+    static constexpr FrameTime from_ticks(std::int64_t t) {
+        FrameTime f;
+        f.ticks = t >= 0 && t <= kMaxTicks ? static_cast<std::int32_t>(t) : kInvalid;
+        return f;
+    }
+
+    constexpr bool valid() const { return ticks >= 0; }
+    /// Back to nanoseconds, rounded to the nearest one. Duration{-1} for the invalid marker.
+    constexpr Duration duration() const {
+        return valid() ? Duration{(static_cast<std::int64_t>(ticks) * 25'000'000 + 3072) / 6144} : Duration{-1};
+    }
+    /// In frames (fractional): 2048 ticks = 0.5.
+    constexpr float frames() const { return static_cast<float>(ticks) / static_cast<float>(kTicksPerFrame); }
+
+    constexpr bool operator==(const FrameTime&) const = default;
+
+    std::int32_t ticks = 0;
+
+private:
+    // ticks = ns · 4096 · 60 / 10⁹ = ns · 6144 / 25 000 000, rounded half up. Bounds first: no overflow.
+    static constexpr std::int32_t from_ns(std::int64_t ns) {
+        if (ns < 0 || ns > 3'600'000'000'000) return kInvalid;
+        return static_cast<std::int32_t>((ns * 6144 + 12'500'000) / 25'000'000);
+    }
+};
+
+/// The longest FrameTime: 1 hour of frames. Longer waits: count with your own variables.
+inline constexpr FrameTime kMaxFrameTime = FrameTime::from_ticks(FrameTime::kMaxTicks);
+
 namespace time {
 
 /// Time since nnh::init(), from a monotonic clock. Valid after init(); 0 before.

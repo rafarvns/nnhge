@@ -1,6 +1,6 @@
 # Plan 015: Tweens and timers
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: implemented (console T7.2 pending) · approved 2026-11-22 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D30 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (event bus, scene stack), spec 002 (`Duration`, memory tags, asserts, logs, profiler), spec 013 (console
 test scripts)
@@ -429,6 +429,215 @@ mode measures it with `time::now()` around `update()`, averaged over 600 frames 
 in the flavor that `nnh run` builds (Development). If the target is missed, the order of fixes is: cache `1/D` per
 loop (one multiply instead of a divide), a branch-free curve dispatch, then reporting the real number and adjusting
 the docs' target with the maintainer.
+
+#### Stage 0 results (2026-11-22)
+
+Baseline before any tween code (T0.1, Windows, WinLibs GCC 16.2.0 and devkitARM GCC 16.1.0; three runs, the first
+one after a header change, so it rebuilds more; another agent was building in the main tree at the same time, so the
+times are noisy):
+
+| Measure | Value |
+|---------|-------|
+| `hello.exe` pc-debug (`size`: text / data / bss) | 196 572 / 26 756 / 210 128 |
+| `hello.exe` pc-release | 129 080 / 21 988 / 207 536 |
+| `hello.elf` 3ds-release · `hello.3dsx` | 216 084 / 28 328 / 102 576 · 261 460 B |
+| `hello.elf` 3ds-dev · `hello.3dsx` | 232 464 / 32 848 / 105 144 · 282 564 B |
+| edit `examples/hello/main.cpp` → simulator (pc-debug) | 5.92 / 1.47 / 1.61 s |
+| edit `examples/hello/main.cpp` → `.3dsx` (3ds-release) | 5.75 / 2.59 / 2.92 s |
+| clean `nnh_core` (pc-debug, Ninja, 24 threads) | 3.22 / 3.36 / 3.19 s |
+| one-line TU `#include <nnh/events.hpp>`: preprocessed lines · `-fsyntax-only` | 7 633 · 0.45 / 0.39 / 0.38 s |
+
+Determinism probe (T0.2, scratch `probe.cpp` with draft `sin_quarter`, `exp2_neg`, `elastic_out`):
+
+- **WinLibs GCC 16.2.0 (x86-64)**: the C++ default is `-ffp-contract=fast` (`g++ -Q --help=optimizers`). Without
+  `-march` there is no FMA instruction to fuse into: `objdump -d` shows no `vfmadd`/`vfmsub`/`vfnm` with or without
+  `-ffp-contract=off`, and the printed bits (checksum `c1cd8013`) are identical at `-O0`/`-O2`, with and without the
+  flag. The golden table of T1.4 was also generated at `-O0` and `-O2`, with and without the flag: identical.
+- **devkitARM GCC 16.1.0** (`-march=armv6k -mfloat-abi=hard`): `vmla.f32`/`vnmls.f32` appear **in both modes**. They
+  are VFPv2's chained multiply-accumulate (the product is rounded first), so they give the same bits as a separate
+  multiply and add; GCC does not treat them as contraction. No `vfma` (VFPv2 has none).
+- **libctru**: `objdump -d libctru.a` shows `mov r1, #0x3000000; vmsr fpscr, r1` in both `__system_initSyscalls` and
+  `initThreadVars`: round to nearest, flush-to-zero, default NaN, as the plan states.
+- **Pending (lead):** the same probe and ctest with GCC 13/14 and clang 18 on VM 120; the 3DS bits come with the
+  example's self-check (T7.2).
+
+#### Stage 1–2 refinements (2026-11-22, implemented)
+
+- `FrameTime` also has `kInvalid` (-1), `kMaxTicks`, `kMaxFrames`, `from_ticks()`, `valid()` and `operator==`;
+  `duration()` of the invalid marker is `Duration{-1}`. Its tests are `tests/time/test_frame_time.cpp` (amendment by
+  plan 016); 100 ms = 24 576 ticks is in the table for plan 016.
+- The log channel `tween` lives alone in `tween/tween_log.cpp`, not in `tween_set.cpp`: `nnh::Timer` logs misuse
+  through it, and a game that only uses `Timer` must not link the set code (FR-19). The memory tag stays in
+  `tween_set.cpp` and is reached through `detail::tween_memory_tag()` (as `audio_memory_tag()`).
+- `Timer`: `running()` stays true while paused; `stop()` halts **and rewinds** (remaining = the whole period);
+  `restart()` clears a pause; a fired zero-length one-shot reports progress 1. Invalid times and a repeating
+  period of 0 assert, and in Release leave the timer stopped.
+- Value parameters of `to`/`by`/`from_to` are `std::type_identity_t<T>`, so `to(&x, 10, ...)` deduces `T` from the
+  target only (an `int` literal works). The setter form needs an explicit `nnh::Setter<T>{...}`, as the plan wrote.
+- "Fresh" tweens need no flag: a pass stops at the list tail it saw when it began, and new tweens are appended after
+  it, so they start counting at the next update (FR-12 unchanged).
+- Kills only mark slots while the block is **busy** — inside an update *or* inside `complete()` — and the outermost
+  leave sweeps them. So a callback run by `complete()` outside an update can't see the slot it runs from reused.
+  A set destroyed or move-assigned while busy asserts.
+- A default-constructed set (no storage) treats every start as "full" (error log + assert).
+- One `advance()` call covers at most 1 hour of set time after the speed is applied (the ticks are clamped).
+- Stale handles: `progress()` and `loops_left()` answer 0.
+- Measured record sizes: 3DS `SlotHot` 96 B + `SlotCold` 88 B = 184 B (as planned), `TweenBlock` 48 B,
+  `TweenOptions` 112 B, `Timer` 12 B; PC x64 112 + 112 = 224 B, `TweenBlock` 64 B, `TweenOptions` 144 B.
+- The test framework's `kMaxTests` went from 1024 to 2048 (the suite passed 1024 tests).
+
+#### Stage 3 refinements (2026-11-22, implemented)
+
+- `after(time, fn)` and `after(time, Event{})` were ambiguous: both `TweenCallback` (`SmallFunction`) and
+  `FinishEvent` had unconstrained converting constructors. Now `SmallFunction`'s constructor accepts only callables
+  (`std::is_invocable_v<F&, Args...>`; every valid event handler still converts, the bus is unchanged) and
+  `FinishEvent`'s only non-callables. No new overloads or templates in `TweenSet`.
+- `every(period, fn, times)` stores `fn` as both `on_loop` and `on_finish`: each period but the last calls `on_loop`,
+  the last calls `on_finish`, so `fn` runs every period, and `complete()` calls it once.
+- `on_loop` runs at the end of every loop but the last (the last runs `on_finish`). If it pauses its own tween, the
+  rest of that update's time stays in the loop (the value is written, no further loops end in that update).
+- The depth limit counts callbacks (`on_finish` and `on_loop`) on the stack: at depth 8 a completion still writes
+  its end value and ends, but skips its callbacks and event, with one error per outermost update or `complete()`.
+- A set destroyed or move-assigned from its own callback asserts in Debug/Development. In Release it is logged,
+  everything in it is killed (nothing else is advanced or called back) and the block is freed when the outermost
+  update or `complete()` returns: no use after free (`TweenBlock::doomed`, test in `test_tween_misuse.cpp`).
+- Publishing on finish before `nnh::init()` relies on the bus's own assert; Release drops it like
+  `events::publish` does. The tween itself still finishes.
+- The re-entrancy tests (T3.3) passed on their first run: the stage 2 design (a pass stops at the tail it saw; kills
+  only mark slots while busy) already gave FR-12's rules. They stay as regression tests, and mutation testing
+  (below) checks that they bite.
+- Tests that assert inside an update use `tween_test::recover_after_crash(set)` (test-only: marks the block idle
+  after the crash path jumped out of the update).
+- **Hand mutation testing** (stages 1–3, `nnh_tests` in pc-debug; scratch runner, files restored and touched after
+  each mutant): 55 mutants over the curves and approximations, `FrameTime`, `Timer`, the update loop and clock,
+  slot advance, values, handles and commands, starts and completion. 45 were killed at once. 6 real survivors got
+  new tests, which kill them: the sine polynomial rounds above 1 for 25 floats in [0.99983, 1) (an exhaustive
+  search of [0, 1]; the clamp is needed: a bit-by-bit test of [0.996, 1)); the speed is rounded to nearest, not
+  truncated; a frozen set (speed 0) starts and finishes nothing; a tween starts on the very update its delay ends;
+  an `on_loop` that pauses its tween stops further loops in that update; `kill_target(nullptr)` spares timers and
+  setters. 4 were equivalent: three were dead code, now removed (a clamp in `bounce_out`, which never exceeds 1 for
+  any float of [0, 1]; a "started" check in `progress()`, where `elapsed` is 0 until the start; a "doomed" check
+  before callbacks), and one swaps the final write with the kill inside `tween_finish` (not observable). Result:
+  51/51 non-equivalent mutants killed.
+
+#### Stage 4 refinements (2026-11-22, implemented)
+
+- **Sequences are played by position, not by advancing children.** Each update moves the sequence's position along
+  its loop (integer ticks; backwards in a yoyo loop) and plays every step the move crosses. A step is evaluated at
+  its local time (its own delay, loops and yoyo included), so carry across steps and loops, the mirrored yoyo and
+  `complete()` need no per-child state. The children are slots off the start-order list, reached through the step
+  records; `active()` counts tweens, timers and sequences, not a sequence's steps. A sequence is one slot plus one
+  slot and one step record per step, as planned.
+- **Crossing rules.** A forward move plays what lies in (p0, p1]; at the start of the first loop and of every
+  restart p0 is -1, so steps at 0 play. A backward move plays [p1, p0), so a call step at a turning point never runs
+  twice in a row (forward then straight back). A step's start value is captured when the move first reaches it (the
+  end of its own delay). Within one update the crossed steps play group by group in step order (forwards) or in
+  reverse (backwards), not strictly sorted by time inside a group.
+- **Callbacks.** Call steps run in both directions. A child's `on_finish`, `on_loop` and event run only in forward
+  play, when that child ends (or loops). If a callback ends the sequence (kill, complete, kill_target) the update
+  stops at once; if it pauses the sequence, the rest of that update's move still plays (values stay consistent) and
+  no further loop starts.
+- **Builder rules.** A failed append (full set, out of step records, more than 64 steps, a step looping forever, an
+  invalid step, a sequence longer than 1 hour, or steps appended after the sequence started) removes the whole
+  sequence and leaves an empty handle (asserts in Debug/Development). `from` of the first group is written at append
+  when neither the sequence nor the step has a delay. An infinite sequence of length 0 (only calls) asserts at its
+  first update and is removed in Release.
+- `SequenceBuilder` also has `by()` (the plan listed it implicitly); `SequenceOptions` mirrors `TweenOptions`.
+  `SlotHot` gained `first_step` inside existing padding (sizes unchanged: 3DS 96 + 88 B, PC 112 + 112 B);
+  `TweenBlock` is now 68 B on 3DS and 96 B on PC (step free list, scene attachment, scene pointer).
+- The "three 0.5 s steps end on update 90" case lives in `tests/tween/test_sequence.cpp` (with the other sequence
+  playing tests) instead of `test_frame_clock.cpp`.
+- **Alloc counter** (`tests/framework/alloc_counter.{hpp,cpp}`, in `nnh_test_framework`): a counting replacement of
+  the global scalar `operator new`/`delete` (libstdc++'s array and nothrow forms forward to it), with
+  `enable(bool)`, `reset()`, `count()`. Its own test keeps the pointer in a `volatile` so Release can't elide the
+  new/delete pair.
+
+#### Stage 5 refinements and results (2026-11-22, implemented)
+
+- D30 as planned, with two refinements for size: the pass state and `scene_notify()` live in
+  `scene/scene_notify.cpp`, and `scene_attach`/`scene_detach` in `scene/scene_attachments.cpp`, so a game with
+  scenes but no bound set links only `scene_notify()`. `SceneAccess` (the friend of `Scene`) is defined in the
+  internal header. The `Scene` destructor keeps **one** `NNH_VERIFY` (its message now also names a TweenSet still
+  attached) instead of two, because that code is inlined into every game scene's destructor. Notifying from inside a
+  notification is an `NNH_ASSERT` (it cannot happen through the scene stack, whose changes are deferred).
+- A bound set ignores a notification while it is busy (also impossible through the stack), detaches at once when it
+  is destroyed or move-assigned (also on the misuse path that defers freeing), and `bound()` reports it.
+- **T5.4 opt-in check** (`hello`, text bytes against stage 0; no `tween` symbol in any `hello`):
+
+  | Build | Stage 0 | Now | Δ text |
+  |-------|---------|-----|--------|
+  | 3ds-release `hello.elf` | 216 084 | 216 260 | **+176** (budget 256) |
+  | 3ds-dev `hello.elf` | 232 464 | 232 928 | +464 (assert strings of Development) |
+  | pc-release `hello.exe` | 129 080 | 129 376 | +296 (x64 code; 40 B over the 256 target: **accepted by the maintainer** 2026-11-22, the 3DS is within budget) |
+  | pc-debug `hello.exe` | 196 572 | 197 288 | +716 (unoptimized) |
+
+  `hello.3dsx` (3ds-release) went from 261 460 to 261 640 B. `Scene` grew by one pointer (4 B on 3DS, 8 B on PC).
+  `examples/scenes` screenshot checked (unchanged title screen); the platformer's `gate.nnhs` and `level.nnhs` pass
+  with `nnh run platformer --pc --script`.
+- **Hand mutation testing, stages 4–5** (same scratch runner): 40 mutants over sequence playing, layout, building,
+  commands on sequences, the scene hooks, attach/detach/notify and binding. 26 were killed at once. 13 real
+  survivors got new tests that kill them:
+  - a call at the start of a restarted loop;
+  - a looping yoyo step inside a sequence (forward and mirrored loops, ending on its start);
+  - `on_loop` of a looping step;
+  - a step back at its start is not written again;
+  - a child callback that pauses its sequence;
+  - a step joined to a later group is not written at append;
+  - appending after the start;
+  - a sequence longer than 1 hour;
+  - a step looping forever (the old test hid it behind an earlier failure in the same set);
+  - a node attached during a pass that the pass still reaches (two mutants);
+  - the partial-sequence cleanup, visible only in Release, since Debug stops at the assert: checked with the pc-release
+    tests.
+
+  One was equivalent: marking a sequence's children Dead when it ends was dead code (nothing reads a child's state;
+  freeing the sequence frees them), so `sequence_kill_children` was removed. Result: 39/39 non-equivalent mutants
+  killed.
+
+#### Stage 6 refinements and results (2026-11-22, implemented on PC)
+
+- `examples/tweens` as planned, with one file fewer: the scene switcher is a plain `Demos` struct of scene pointers
+  (`demos.hpp`), and each scene handles SELECT/START itself. The intro (`intro.{hpp,cpp}`) shows the sequence, a
+  timer started from a call step ("READY") and an `nnh::Timer` blink; the overlay has its own bound set.
+- The self-check (`self_check.{hpp,cpp}`, pure) plays a fixed script for 600 frames: tweens of the three kinds
+  (elastic yoyo loops with `on_loop`, `by` with a delay, an infinite yoyo Color with `BackOut` overshoot, a looping
+  setter), a yoyo sequence with a join, a wait, a call and `BackInOut`, `after`/`every`, `nnh::Timer` values, speed
+  changes (0.5 at frame 150, 1.5 at 300, 1 at 450), a kill and a `complete()` of an unstarted sequence. FNV-1a over
+  every value's bits, each callback's letter and `active()`, every frame. Golden checksum **`B44CA3F6`** (pc-debug
+  and pc-release give the same). It also runs as `tests/tweens/test_self_check.cpp` (in `nnh_tests`) and as the
+  ctest `tweens_self_check_pc` (the simulator, `TWEENS_DEMO=check`, Debug/Development).
+- **`check.nnhs`**: the verdict line comes in the same frame as frame 600's checksum line, and `expect` matches only
+  later frames, so the script waits for `tweens: PASS B44CA3F6` (which carries the same sum) instead of the 600
+  line. `NNH_PRESET=pc-debug nnh run tweens --pc --no-build --script examples/tweens/tests/check.nnhs` passes (44
+  lines, 1441 frames); its screenshots (showcase, overlay, self-check, bench) were read.
+- PC bench (pc-debug): 256 tweens, average 0.06 ms, worst 0.23 ms per `update()`; the set's block is 57 440 B
+  (224 B per slot on x64).
+- Hand mutation testing of the self-check's logic (verdict, checkpoint cadence, end, rounding probe, mixing, the
+  callback record, the FAIL text): 9/9 killed.
+
+#### Stage 7 (prepared; the console run needs the maintainer)
+
+- T7.1 done on Windows: `tweens.3dsx` builds in 3ds-release (291 612 B; `tweens.elf` text 245 700) and in 3ds-dev,
+  the flavor `nnh run` uses (315 832 B; text 265 188), without warnings. The bench logs the set's block size on
+  start (`tweens bench: started, 256 tweens, set block N bytes`): on the 3DS N is 256 × 184 + 68 = 47 172 B (plus
+  alignment), which checks the 32-bit slot size on the console itself.
+- T7.2, on the Old 3DS: open the Homebrew Launcher and press Y, then run
+  `build/pc-debug/tools/nnh/nnh run tweens --script examples/tweens/tests/check.nnhs`. Expected in the saved log
+  (`build/logs/tweens-*/`): `tweens: self-check started, rounding probe ok`, the nine checksum lines
+  `tweens: 60 sum 7332AADE` … `tweens: 540 sum 65BFE3A6`, then `tweens: PASS B44CA3F6`, then
+  `tweens bench: 256 tweens avg X.XX ms worst Y.YY ms (target < 1 ms) PASS` and `nnh: PASS`. Then a look at the
+  showcase at 60 Hz with the debug overlay.
+
+#### Final measurements (T8.3, 2026-11-22; Windows, 3 runs)
+
+| Measure | Stage 0 | Now |
+|---------|---------|-----|
+| one-line TU: preprocessed lines · `-fsyntax-only` | `<nnh/events.hpp>` 7 633 · 0.38–0.45 s | `<nnh/tween.hpp>` 8 413 · 0.42–0.51 s |
+| edit `examples/hello/main.cpp` → simulator (pc-debug) | 1.47 / 1.61 s | 1.45 / 1.35 / 1.37 s |
+| edit `examples/hello/main.cpp` → `.3dsx` (3ds-release) | 2.59 / 2.92 s | 2.80 / 2.61 / 2.58 s |
+| clean `nnh_core` (pc-debug, Ninja) | 3.2–3.4 s | 3.6–3.8 s (+14 tween/scene files) |
+| `hello` text | see stage 0 | see the stage 5 table (+176 B on 3ds-release) |
+| `tweens` | — | 3ds-release `.3dsx` 291 612 B, pc-release `tweens.exe` text 254 568 |
 
 ## Test strategy
 

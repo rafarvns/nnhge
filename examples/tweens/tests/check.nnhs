@@ -1,0 +1,44 @@
+# Spec 015 AC-5/AC-7, automatic (spec 013): the showcase and its overlay (screenshots), then the self-check, whose
+# checksum lines must be the PC's bit for bit, then the 256-tween bench.
+# PC:      nnh run tweens --pc --script examples/tweens/tests/check.nnhs
+# Console: nnh run tweens --script examples/tweens/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The checksum lines below are the PC's (pc-debug). They change only if the script in self_check.cpp or the tween
+# module's arithmetic changes: then run `TWEENS_DEMO=check NNH_EXIT_AFTER_FRAMES=605
+# build/pc-debug/examples/tweens/tweens.exe`, copy its lines here and kSelfCheckGolden into self_check.hpp.
+fail-on "] E "
+fail-on "tweens: FAIL"
+
+# The showcase: the easing gallery and the intro (READY blinks after about 2 s).
+wait 150
+screenshot showcase
+tap X
+wait 40
+screenshot overlay
+tap START
+wait 20
+
+# The self-check (SELECT): 600 frames, a checksum every 60, then the verdict.
+tap SELECT
+expect "tweens: self-check started, rounding probe ok" 20
+expect "tweens: 60 sum 7332AADE" 120
+expect "tweens: 120 sum 02354F9E" 120
+expect "tweens: 180 sum 79163750" 120
+expect "tweens: 240 sum 951776E6" 120
+expect "tweens: 300 sum CA893106" 120
+expect "tweens: 360 sum 2F46ED76" 120
+expect "tweens: 420 sum 0C0785E1" 120
+expect "tweens: 480 sum AFDE4A11" 120
+expect "tweens: 540 sum 65BFE3A6" 120
+# Frame 600's checksum line and the verdict come in the same frame: the verdict carries the same sum.
+expect "tweens: PASS B44CA3F6" 120
+wait 10
+screenshot self-check
+
+# The bench (SELECT): 600 measured frames; the line says PASS (average under 1 ms) or OVER.
+tap SELECT
+expect "tweens bench: started, 256 tweens" 20
+expect "tweens bench: 256 tweens avg" 700
+wait 10
+screenshot bench
+end

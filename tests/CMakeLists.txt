@@ -13,6 +13,22 @@ target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 # Unit tests: nnh::core driven through the fake platform.
 add_executable(nnh_tests
     framework/alloc_counter.cpp
+    animation/test_animator_clock.cpp
+    animation/test_animator_draw.cpp
+    animation/test_animator_notices.cpp
+    animation/test_animator_play.cpp
+    animation/test_animator_reentrancy.cpp
+    animation/test_animator_sequences.cpp
+    animation/test_animator_states.cpp
+    animation/test_sprite_alloc.cpp
+    animation/test_sprite_clips.cpp
+    animation/test_sprite_frames.cpp
+    animation/test_sprite_layout.cpp
+    animation/test_sprite_library.cpp
+    animation/test_sprite_lifetime.cpp
+    animation/test_sprite_markers.cpp
+    animation/test_sprite_sequence.cpp
+    animation/test_sprite_states.cpp
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
     assets/test_asset_index.cpp
@@ -289,6 +305,12 @@ if(NOT MSVC)
         add_test(NAME tween_${name}_rejected COMMAND ${_tween_check} ${_file})
         set_tests_properties(tween_${name}_rejected PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
     endforeach()
+    # Sprite notice callbacks keep the same inline size rule (spec 016 FR-8).
+    set(_file ${CMAKE_CURRENT_SOURCE_DIR}/animation/compile_fail_callback_capture.cpp)
+    add_test(NAME animation_callback_capture_ok COMMAND ${_tween_check} -DNNH_EXPECT_OK ${_file})
+    add_test(NAME animation_callback_capture_rejected COMMAND ${_tween_check} ${_file})
+    set_tests_properties(animation_callback_capture_rejected PROPERTIES
+                         PASS_REGULAR_EXPRESSION "capture too large [(]max 16 bytes[)]")
 
     # AppConfig::title defaults to the game's TITLE (spec 009 FR-1); the last case proves the check bites.
     set(_title_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)

@@ -122,11 +122,15 @@ add_executable(nnh_tests
     tween/test_ease_math.cpp
     tween/test_frame_clock.cpp
     tween/test_timer.cpp
+    tween/test_tween_finish.cpp
     tween/test_tween_group.cpp
     tween/test_tween_handles.cpp
     tween/test_tween_loops.cpp
+    tween/test_tween_misuse.cpp
+    tween/test_tween_reentrancy.cpp
     tween/test_tween_set.cpp
     tween/test_tween_start.cpp
+    tween/test_tween_timers.cpp
     tween/test_tween_values.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
@@ -236,7 +240,8 @@ if(NOT MSVC)
     # Tween setters, callbacks and finish events keep the inline size rules (spec 015 FR-5, FR-11): each file
     # compiles with -DNNH_EXPECT_OK and must fail with the size message without it.
     set(_tween_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)
-    foreach(case "setter_capture|capture too large [(]max 16 bytes[)]")
+    foreach(case "setter_capture|capture too large [(]max 16 bytes[)]"
+                 "big_event|event published on finish too large [(]max 32 bytes[)]")
         string(REPLACE "|" ";" case "${case}")
         list(GET case 0 name)
         list(GET case 1 expected)

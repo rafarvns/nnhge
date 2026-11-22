@@ -59,6 +59,11 @@ void tween_enter(TweenBlock& b) {
 
 void tween_leave(TweenBlock& b) {
     if (--b.busy != 0) return;
+    if (b.doomed) {
+        mem::free(
+            &b); // its set was destroyed from a callback (misuse, logged): nothing touches it after this
+        return;
+    }
     b.depth_logged = false;
     if (b.dead > 0) tween_sweep(b);
 }

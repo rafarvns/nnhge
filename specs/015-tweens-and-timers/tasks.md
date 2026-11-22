@@ -1,6 +1,6 @@
 # Tasks 015: Tweens and timers
 
-Status: approved (2026-11-22, maintainer pre-approved); in progress (stages 0–2 done on Windows; VM 120 runs pending)
+Status: approved (2026-11-22, maintainer pre-approved); in progress (stages 0–3 done on Windows; the VM 120 runs of T0.2, T1.4 and the stage ends are pending)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops. `[P]` means the task can be done in parallel with the previous one. Every
@@ -71,17 +71,17 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 3: completion, timers and re-entrancy (fake platform)
 
-- [ ] **T3.1** Completion: final write → `on_finish` → event (`FinishEvent`, `events_publish`), `on_loop`, `complete`
+- [x] **T3.1** Completion: final write → `on_finish` → event (`FinishEvent`, `events_publish`), `on_loop`, `complete`
   running completion, nothing on kill/clear. Files: `tween/tween_finish.cpp`, `tween_detail.hpp` (`FinishEvent`).
   Test: `tests/tween/test_tween_finish.cpp` (events delivered at the next `nnh::frame()` on the fake platform);
   `tests/tween/compile_fail_big_event.cpp`. Covers FR-8, FR-11.
-- [ ] **T3.2** Timers `after` (callback and event form) and `every` (n and forever, several fires per `advance`,
+- [x] **T3.2** Timers `after` (callback and event form) and `every` (n and forever, several fires per `advance`,
   minimum period). Files: `tween/tween_start.cpp`, `tween/tween_advance.cpp`. Test:
   `tests/tween/test_tween_timers.cpp`. Covers FR-13, FR-16.
-- [ ] **T3.3** Re-entrancy: start/pause/complete/kill from callbacks (including self and `kill_all`), fresh tweens,
+- [x] **T3.3** Re-entrancy: start/pause/complete/kill from callbacks (including self and `kill_all`), fresh tweens,
   the depth limit 8 with one logged error. Files: `tween/tween_update.cpp`, `tween/tween_finish.cpp`. Test:
   `tests/tween/test_tween_reentrancy.cpp`. Covers FR-12.
-- [ ] **T3.4** Misuse matrix: Debug asserts and Release-path logs for full sets, foreign handles, invalid times, bad
+- [x] **T3.4** Misuse matrix: Debug asserts and Release-path logs for full sets, foreign handles, invalid times, bad
   speed, publishing before init. Files: the files above as needed. Test: `tests/tween/test_tween_misuse.cpp`.
   Covers FR-18.
 

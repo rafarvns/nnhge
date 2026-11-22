@@ -4,7 +4,9 @@
 #include "test.hpp"
 #include "tween/ease_math.hpp"
 
+#include <bit>
 #include <cmath>
+#include <cstdint>
 
 using nnh::detail::exp2_neg;
 using nnh::detail::sin_quarter;
@@ -56,6 +58,14 @@ NNH_TEST(sin_quarter_is_exact_at_its_ends) {
 NNH_TEST(sin_quarter_never_exceeds_one) {
     for (int i = 0; i <= 100'000; ++i) {
         CHECK(sin_quarter(static_cast<float>(i) / 100'000.0f) <= 1.0f);
+    }
+}
+
+NNH_TEST(sin_quarter_never_exceeds_one_for_any_float_near_one) {
+    // The fitted polynomial rounds above 1 for 25 floats in [0.99983, 1), found by an exhaustive search of
+    // [0, 1]; the clamp keeps SineOut and the elastic wave in range. Checks every float of [0.996, 1).
+    for (std::uint32_t bits = 0x3F7F0000u; bits < 0x3F800000u; ++bits) {
+        CHECK(sin_quarter(std::bit_cast<float>(bits)) <= 1.0f);
     }
 }
 

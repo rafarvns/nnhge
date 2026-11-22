@@ -99,6 +99,20 @@ NNH_TEST(speed_scales_the_clock_exactly) {
     CHECK(set.speed() == 0.5f);
     set.set_speed(1.0f / 3.0f);
     CHECK(set.speed() == 1365.0f / 4096.0f); // rounded once to 1/4096
+    set.set_speed(0.9999f);                  // 4095.59 ticks: rounded to nearest, not truncated
+    CHECK(set.speed() == 1.0f);
+}
+
+NNH_TEST(a_frozen_set_starts_nothing_and_finishes_nothing) {
+    TweenSet set({.tweens = 4});
+    set.set_speed(0.0f);
+    float x = 7, y = 0;
+    int calls = 0;
+    set.to(&x, 1.0f, Frames{0});                                  // would finish on its first update
+    set.from_to(&y, 5.0f, 6.0f, Frames{4}, {.delay = Frames{0}}); // started at creation
+    set.after(Frames{0}, [&calls] { ++calls; });
+    tween_test::run(set, 10);
+    CHECK(x == 7.0f && calls == 0 && set.active() == 3);
 }
 
 NNH_TEST(speed_zero_freezes_the_set) {

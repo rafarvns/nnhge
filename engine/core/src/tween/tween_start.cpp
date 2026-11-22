@@ -102,4 +102,21 @@ TweenHandle TweenSet::start(const detail::TweenSpec& spec, FrameTime time, const
     return {static_cast<std::uint16_t>(index), block_->serial, s.generation};
 }
 
+TweenHandle TweenSet::after(FrameTime time, TweenCallback fn) {
+    return start({}, time, {.on_finish = fn});
+}
+
+TweenHandle TweenSet::after(FrameTime time, FinishEvent event) {
+    return start({}, time, {.publish = event});
+}
+
+TweenHandle TweenSet::every(FrameTime period, TweenCallback fn, int times) {
+    if (period.valid() && period.ticks == 0) {
+        detail::reject("every(): the period must be at least 1 tick");
+        return {};
+    }
+    // Each loop end but the last calls on_loop, the last calls on_finish: the same function both times.
+    return start({}, period, {.loops = times, .on_finish = fn, .on_loop = fn});
+}
+
 } // namespace nnh

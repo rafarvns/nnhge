@@ -62,8 +62,18 @@ TweenBlock* create_block(const TweenSetConfig& c) {
 
 void destroy_block(TweenBlock* b) {
     if (b == nullptr) return;
-    NNH_ASSERT(b->busy == 0, "nnh::TweenSet destroyed or replaced from inside its own update or callback");
-    mem::free(b); // slots hold only trivially destructible data: nothing runs, nothing is called back
+    if (b->busy == 0) {
+        mem::free(b); // slots hold only trivially destructible data: nothing runs, nothing is called back
+        return;
+    }
+    // Misuse: the update or completion running on this block is still on the stack. Kill everything (nothing
+    // else is advanced or called back) and let the outermost tween_leave() free the block.
+    NNH_LOG_ERROR(tween, "TweenSet destroyed from inside its own update or callback (freed when it returns)");
+    NNH_ASSERT(false, "nnh::TweenSet destroyed or replaced from inside its own update or callback");
+    for (int i = b->head; i >= 0; i = b->hot[i].next) {
+        if (b->hot[i].state == SlotState::Active) tween_kill_slot(*b, i);
+    }
+    b->doomed = true;
 }
 
 } // namespace

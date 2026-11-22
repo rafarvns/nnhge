@@ -7,6 +7,7 @@
 #include "nnh/platform_fake.hpp"
 #include "nnh/tween.hpp"
 #include "test.hpp"
+#include "tween/tween_internal.hpp"
 
 #include <cstring>
 
@@ -32,6 +33,18 @@ inline void restart(const nnh::AppConfig& config = {}) {
 
 inline bool last_log_mentions(const char* text) {
     return std::strstr(nnh::platform_fake::state().last_console_line, text) != nullptr;
+}
+
+/// After an expected assert inside an update or a callback (the crash path jumps out of it), marks the set
+/// idle again so it can be used and destroyed. Test-only: a TweenSet is exactly its block pointer.
+inline void recover_after_crash(nnh::TweenSet& set) {
+    static_assert(sizeof(nnh::TweenSet) == sizeof(nnh::detail::TweenBlock*));
+    nnh::detail::TweenBlock* block = nullptr;
+    std::memcpy(&block, &set, sizeof block);
+    if (block == nullptr) return;
+    block->busy = 0;
+    block->callback_depth = 0;
+    nnh::detail::tween_sweep(*block);
 }
 
 /// Runs `n` updates of `set`.

@@ -17,6 +17,28 @@ if (nnh::time::now() - last_shot > cooldown) shoot();
 | `.ns`, `.ms()`, `.seconds()` | read as nanoseconds, milliseconds (integer), seconds (double) |
 | `+ - * += -=`, `== != < > <= >=` | arithmetic and comparison |
 
+## Frames and FrameTime (the frame clock)
+
+The deterministic clock of tweens and timers ([spec 015](../../specs/015-tweens-and-timers/spec.md)) counts game
+frames, not wall time: one update is exactly one 60 Hz frame on every machine, so replays and console checks give
+the same numbers on PC and 3DS.
+
+```cpp
+nnh::FrameTime a = nnh::Duration::from_ms(500); // 30 frames
+nnh::FrameTime b = nnh::Frames{12};             // 12 frames
+```
+
+| Member | |
+|--------|-|
+| `nnh::Frames{n}` | a whole number of 60 Hz frames |
+| `FrameTime(Duration)`, `FrameTime(Frames)` | implicit; ticks of 1/4096 frame. A `Duration` is rounded to the nearest tick (1 s = 245 760 ticks = 60 frames exactly, 16.67 ms = 4096); frames are exact |
+| `.ticks`, `.valid()`, `.duration()`, `.frames()` | the tick count; false for the invalid marker; back to nanoseconds (rounded); fractional frames |
+| `FrameTime::from_ticks(t)` | a raw tick count |
+| `nnh::kMaxFrameTime` | 1 hour (884 736 000 ticks). Negative or longer times become the invalid marker (`ticks == FrameTime::kInvalid`), which functions taking a `FrameTime` reject |
+
+Plain values: no state, `constexpr`, no allocation. `<nnh/tween.hpp>` (in progress) uses them for durations,
+delays and periods.
+
 ## Clock
 
 | Function | Returns |

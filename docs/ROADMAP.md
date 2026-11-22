@@ -164,7 +164,10 @@ spec; the order below is a proposal.
   sprite sheet, timings, loop), events on frames (a footstep sound), and a simple state machine (idle, run, jump);
   optionally read from Aseprite files
 - [ ] **Tweens and timers** (Godot Tween and Timer, DOTween): animate any value with easing, sequences and
-  delays; timers and "wait then do" without hand-written counters
+  delays; timers and "wait then do" without hand-written counters. In progress
+  ([spec 015](../specs/015-tweens-and-timers/spec.md), stages 0–3 done: the frame clock in `<nnh/time.hpp>`,
+  easings, `nnh::Timer`, tween sets with handles, loops, yoyo, callbacks, finish events and timers; sequences,
+  scene binding, the example and `docs/api/tween.md` to come)
 - [ ] **Input actions** (Godot InputMap, Unity Input System): named actions (`jump`, `attack`) mapped to buttons,
   remappable by the player and saved, instead of fixed buttons in game code
 - [ ] **Camera helpers** (Godot Camera2D, Cinemachine): follow with smoothing and a dead zone, map limits, shake,

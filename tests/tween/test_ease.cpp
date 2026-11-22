@@ -4,7 +4,9 @@
 #include "nnh/tween.hpp"
 #include "test.hpp"
 
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 
 using nnh::Ease;
@@ -118,6 +120,14 @@ NNH_TEST(curves_without_overshoot_stay_inside_0_1) {
             const float v = ease(curve(i), sample(k));
             CHECK(v >= 0.0f && v <= 1.0f);
         }
+    }
+}
+
+NNH_TEST(sine_and_bounce_stay_at_or_below_1_for_every_float_near_1) {
+    for (std::uint32_t bits = 0x3F7F0000u; bits < 0x3F800000u; ++bits) {
+        const float t = std::bit_cast<float>(bits);
+        CHECK(ease(Ease::SineOut, t) <= 1.0f);
+        CHECK(ease(Ease::BounceOut, t) <= 1.0f);
     }
 }
 

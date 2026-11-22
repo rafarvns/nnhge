@@ -208,6 +208,16 @@ public:
                      options);
     }
 
+    // Timers (FR-13): a tween with no value. They have handles, like tweens.
+
+    /// Calls `fn` once when `time` has passed (a time of 0: on the next update).
+    TweenHandle after(FrameTime time, TweenCallback fn);
+    /// Publishes a copy of the game's `event` once when `time` has passed: `after(1s, ReadyGo{})`.
+    TweenHandle after(FrameTime time, FinishEvent event);
+    /// Calls `fn` at the end of every `period` (≥ 1 tick), `times` times or forever. Every period that ends
+    /// counts, even several in one update; complete() calls it once more and stops.
+    TweenHandle every(FrameTime period, TweenCallback fn, int times = kForever);
+
     // Handles (FR-8). Stale or empty handles answer "not running" and are ignored.
     bool running(TweenHandle h) const;   ///< alive: waiting for its delay, playing or paused
     bool paused(TweenHandle h) const;

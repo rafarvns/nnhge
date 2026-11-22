@@ -61,7 +61,9 @@ struct FinishEvent {
     static constexpr std::size_t kMaxSize = 32;
 
     FinishEvent() = default;
-    template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, FinishEvent>>>
+    // Not for callables: `after(t, [this] {...})` must pick the callback overload.
+    template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, FinishEvent> &&
+                                                      !std::is_invocable_v<const T&>>>
     FinishEvent(const T& event) // NOLINT(google-explicit-constructor): `.publish = IntroFinished{}`
         : type(type_id<T>()), size(static_cast<std::uint32_t>(sizeof(T))) {
         static_assert(std::is_trivially_copyable_v<T>,

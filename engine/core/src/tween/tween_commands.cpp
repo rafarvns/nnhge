@@ -41,7 +41,7 @@ float TweenSet::progress(TweenHandle h) const {
     const int i = detail::tween_find(block_, h);
     if (i < 0) return 0.0f;
     const detail::SlotHot& s = block_->hot[i];
-    if ((s.flags & detail::slot_flag::kStarted) == 0 || s.duration <= 0) return 0.0f;
+    if (s.duration <= 0) return 0.0f; // elapsed stays 0 until the tween starts: 0 during the delay
     return static_cast<float>(s.elapsed) / static_cast<float>(s.duration);
 }
 

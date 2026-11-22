@@ -83,7 +83,7 @@ float bounce_out(float t) {
         const float u = t - 2.625f / d;
         v = n * u * u + 0.984375f;
     }
-    return v < 1.0f ? v : 1.0f;
+    return v; // never above 1: checked for every float of [0, 1] (a clamp here was dead code)
 }
 
 float bounce_in_out(float t) {

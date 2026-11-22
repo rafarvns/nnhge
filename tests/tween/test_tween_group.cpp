@@ -59,6 +59,16 @@ NNH_TEST(kill_target_kills_only_the_tweens_on_that_address) {
     CHECK(set.running(keep));
 }
 
+NNH_TEST(kill_target_of_null_spares_timers_and_setters) {
+    TweenSet set({.tweens = 4});
+    float sink = 0;
+    const TweenHandle timer = set.after(Frames{10}, [] {});
+    const TweenHandle setter =
+        set.from_to(nnh::Setter<float>{[&sink](float v) { sink = v; }}, 0.0f, 1.0f, Frames{10});
+    set.kill_target(nullptr);
+    CHECK(set.running(timer) && set.running(setter));
+}
+
 NNH_TEST(two_tweens_on_one_target_both_write_and_the_later_wins) {
     TweenSet set({.tweens = 4});
     float x = 0;

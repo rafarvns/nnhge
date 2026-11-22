@@ -76,6 +76,7 @@ struct TweenBlock {
     std::uint8_t busy = 0;           ///< > 0 inside an update or a completion: kills only mark slots dead
     std::uint8_t callback_depth = 0; ///< callbacks running on the stack (FR-12)
     bool depth_logged = false;       ///< the depth-limit error is logged once per busy section
+    bool doomed = false; ///< its set was destroyed while busy (misuse): freed by the outermost leave
 };
 
 } // namespace nnh::detail

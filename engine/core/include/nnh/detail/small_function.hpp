@@ -24,7 +24,10 @@ class SmallFunction<R(Args...)> {
 public:
     SmallFunction() = default;
 
-    template <typename F, typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, SmallFunction>>>
+    // Only callables convert: overloads taking a SmallFunction or a value (a tween's `after(t, fn)` and
+    // `after(t, event)`) are not ambiguous.
+    template <typename F, typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, SmallFunction> &&
+                                                      std::is_invocable_v<std::decay_t<F>&, Args...>>>
     SmallFunction(F&& callable) { // NOLINT: implicit on purpose (pass lambdas directly)
         using Fn = std::decay_t<F>;
         static_assert(sizeof(Fn) <= kSmallFunctionCapacity,

@@ -23,6 +23,16 @@ NNH_TEST(a_delay_holds_the_tween_before_it_starts) {
     CHECK(x == 4.0f && !set.running(h));
 }
 
+NNH_TEST(a_tween_starts_on_the_update_its_delay_ends) {
+    TweenSet set({.tweens = 4});
+    float x = 0;
+    set.from_to(&x, 5.0f, 9.0f, Frames{4}, {.delay = Frames{3}});
+    run(set, 2);
+    CHECK(x == 0.0f);
+    run(set, 1); // the delay ends exactly here: the tween starts and shows its start value
+    CHECK(x == 5.0f);
+}
+
 NNH_TEST(restart_loops_jump_back_to_the_start_value) {
     TweenSet set({.tweens = 4});
     float x = 0;

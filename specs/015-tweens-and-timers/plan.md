@@ -486,6 +486,40 @@ Determinism probe (T0.2, scratch `probe.cpp` with draft `sin_quarter`, `exp2_neg
   `TweenOptions` 112 B, `Timer` 12 B; PC x64 112 + 112 = 224 B, `TweenBlock` 64 B, `TweenOptions` 144 B.
 - The test framework's `kMaxTests` went from 1024 to 2048 (the suite passed 1024 tests).
 
+#### Stage 3 refinements (2026-11-22, implemented)
+
+- `after(time, fn)` and `after(time, Event{})` were ambiguous: both `TweenCallback` (`SmallFunction`) and
+  `FinishEvent` had unconstrained converting constructors. Now `SmallFunction`'s constructor accepts only callables
+  (`std::is_invocable_v<F&, Args...>`; every valid event handler still converts, the bus is unchanged) and
+  `FinishEvent`'s only non-callables. No new overloads or templates in `TweenSet`.
+- `every(period, fn, times)` stores `fn` as both `on_loop` and `on_finish`: each period but the last calls `on_loop`,
+  the last calls `on_finish`, so `fn` runs every period, and `complete()` calls it once.
+- `on_loop` runs at the end of every loop but the last (the last runs `on_finish`). If it pauses its own tween, the
+  rest of that update's time stays in the loop (the value is written, no further loops end in that update).
+- The depth limit counts callbacks (`on_finish` and `on_loop`) on the stack: at depth 8 a completion still writes
+  its end value and ends, but skips its callbacks and event, with one error per outermost update or `complete()`.
+- A set destroyed or move-assigned from its own callback asserts in Debug/Development. In Release it is logged,
+  everything in it is killed (nothing else is advanced or called back) and the block is freed when the outermost
+  update or `complete()` returns: no use after free (`TweenBlock::doomed`, test in `test_tween_misuse.cpp`).
+- Publishing on finish before `nnh::init()` relies on the bus's own assert; Release drops it like
+  `events::publish` does. The tween itself still finishes.
+- The re-entrancy tests (T3.3) passed on their first run: the stage 2 design (a pass stops at the tail it saw; kills
+  only mark slots while busy) already gave FR-12's rules. They stay as regression tests, and mutation testing
+  (below) checks that they bite.
+- Tests that assert inside an update use `tween_test::recover_after_crash(set)` (test-only: marks the block idle
+  after the crash path jumped out of the update).
+- **Hand mutation testing** (stages 1–3, `nnh_tests` in pc-debug; scratch runner, files restored and touched after
+  each mutant): 55 mutants over the curves and approximations, `FrameTime`, `Timer`, the update loop and clock,
+  slot advance, values, handles and commands, starts and completion. 45 were killed at once. 6 real survivors got
+  new tests, which kill them: the sine polynomial rounds above 1 for 25 floats in [0.99983, 1) (an exhaustive
+  search of [0, 1]; the clamp is needed: a bit-by-bit test of [0.996, 1)); the speed is rounded to nearest, not
+  truncated; a frozen set (speed 0) starts and finishes nothing; a tween starts on the very update its delay ends;
+  an `on_loop` that pauses its tween stops further loops in that update; `kill_target(nullptr)` spares timers and
+  setters. 4 were equivalent: three were dead code, now removed (a clamp in `bounce_out`, which never exceeds 1 for
+  any float of [0, 1]; a "started" check in `progress()`, where `elapsed` is 0 until the start; a "doomed" check
+  before callbacks), and one swaps the final write with the kill inside `tween_finish` (not observable). Result:
+  51/51 non-equivalent mutants killed.
+
 ## Test strategy
 
 All tests run on the fake platform (`ctest --preset pc-debug`). Stage ends are also run on VM 120 (GCC 13/14,

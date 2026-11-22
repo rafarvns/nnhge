@@ -79,6 +79,9 @@ int Tilemap::width() const { return block_ ? detail::map_view(*this).header().wi
 int Tilemap::height() const { return block_ ? detail::map_view(*this).header().height : 0; }
 int Tilemap::tile_width() const { return block_ ? detail::map_view(*this).header().tile_width : 0; }
 int Tilemap::tile_height() const { return block_ ? detail::map_view(*this).header().tile_height : 0; }
+Rect Tilemap::bounds() const {
+    return {0, 0, static_cast<float>(width() * tile_width()), static_cast<float>(height() * tile_height())};
+}
 int Tilemap::tileset_count() const { return block_ ? detail::map_view(*this).header().tilesets : 0; }
 int Tilemap::tile_id_count() const { return block_ ? detail::map_view(*this).header().tile_ids : 0; }
 

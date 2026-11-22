@@ -1,6 +1,6 @@
 #pragma once
 // Playing one level, whatever made its map (Tiled file or code): the player against the map's collision grid,
-// the camera following it (clamped to the map), coins collected by overlap, doors to another demo. Its tile
+// an nnh::CameraRig following it (clamped to the map), coins collected by overlap, doors to another demo. Its tile
 // layers draw around the player: parallax layers behind, then the ground, then coins and the player, then a
 // layer named "front" over them.
 //
@@ -14,6 +14,7 @@
 #include "player_sprite.hpp"
 #include "replay_run.hpp"
 
+#include <nnh/camera.hpp>
 #include <nnh/tilemap.hpp>
 
 class LevelPlay {
@@ -52,7 +53,7 @@ class LevelPlay {
     Player player_;
     PlayerSprite sprite_; ///< drawing only: an animator chooses the frames (spec 016)
     nnh::Vec2 spawn_{};
-    nnh::Vec2 camera_{};
+    nnh::CameraRig camera_; ///< follows the player (spec 018), see level_camera.hpp
     CoinBook coins_;
     Door doors_[kMaxDoors] = {};
     int door_count_ = 0;

@@ -1,6 +1,6 @@
 #include "level_play.hpp"
 
-#include "camera_follow.hpp"
+#include "level_camera.hpp"
 
 #include <cstring>
 #include <nnh/app.hpp>
@@ -30,7 +30,8 @@ bool door_target(const char* to, Demo& out) {
 
 } // namespace
 
-LevelPlay::LevelPlay(const Art& art, const nnh::Tilemap& map) : art_(art), map_(map) {
+LevelPlay::LevelPlay(const Art& art, const nnh::Tilemap& map)
+    : art_(art), map_(map), camera_(level_camera_settings(map.bounds())) {
     grid_ = map.collision_grid();
     grid_.outside = nnh::collision::Cell::Solid; // walls the level in (and a floor under the pits)
     layer_count_ = map.tile_layer_count() < kMaxLayers ? map.tile_layer_count() : kMaxLayers;
@@ -63,10 +64,8 @@ void LevelPlay::restart() {
     player_.spawn(spawn_);
     coins_.restart();
     in_door_ = false;
-    camera_ = follow_camera(player_.box(), {400, 240},
-                            {static_cast<float>(map_.width() * map_.tile_width()),
-                             static_cast<float>(map_.height() * map_.tile_height())});
-    nnh::gfx::set_camera(kTop, {camera_});
+    camera_.snap(player_.box()); // no glide from wherever the camera was
+    camera_.apply();
     nnh::events::publish(LevelRestarted{coins_.count()});
 }
 
@@ -74,18 +73,16 @@ void LevelPlay::update(const PlayerInput& input, bool doors) {
     player_.update(grid_, input);
     sprite_.update({.on_ground = player_.on_ground(), .velocity = player_.velocity(),
                     .facing_left = player_.facing_left()});
-    const nnh::Vec2 world{static_cast<float>(map_.width() * map_.tile_width()),
-                          static_cast<float>(map_.height() * map_.tile_height())};
     const nnh::Rect box = player_.box();
-    if (box.y + box.h >= world.y) {
+    if (box.y + box.h >= map_.bounds().h) {
         NNH_LOG_INFO(platformer, "fell into the water: back to the start");
         restart();
         return;
     }
     take_coins();
     if (doors) enter_doors();
-    camera_ = follow_camera(box, {400, 240}, world);
-    nnh::gfx::set_camera(kTop, {camera_});
+    camera_.update(box); // after moving the player: this frame's position
+    camera_.apply();
 }
 
 void LevelPlay::take_coins() {
@@ -107,7 +104,7 @@ void LevelPlay::enter_doors() {
 
 ReplaySample LevelPlay::sample() const {
     return {
-        .box = player_.box(), .camera = camera_, .touching = player_.touching(), .coins = coins_.collected()};
+        .box = player_.box(), .camera = camera_.position(), .touching = player_.touching(), .coins = coins_.collected()};
 }
 
 void LevelPlay::draw() const {

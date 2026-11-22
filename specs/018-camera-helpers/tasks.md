@@ -75,18 +75,18 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 3: applying, debug drawing, the map's bounds, the platformer's swap (zoom 1)
 
-- [ ] **T3.1** `apply()`: `gfx::set_camera` on the driven screen(s) with position and zoom (until stage 4 the zoom
+- [x] **T3.1** `apply()`: `gfx::set_camera` on the driven screen(s) with position and zoom (until stage 4 the zoom
   field doesn't exist: `apply` writes the position; T4.1 adds the zoom), other screen untouched, pixel snap. Files:
   `camera/camera_apply.cpp`. Test: `tests/camera/test_camera_apply.cpp` (fake platform). Covers FR-13.
-- [ ] **T3.2** [P] `debug_draw()`: the inline header function, `detail::camera_debug_draw` (dead zone yellow, limits
+- [x] **T3.2** [P] `debug_draw()`: the inline header function, `detail::camera_debug_draw` (dead zone yellow, limits
   red where visible, target green cross; layer 15, `ignore_camera`; both screens in TallWorld; nothing outside a
   frame). Files: `camera/camera_debug.cpp`, `camera.hpp`. Test: `tests/camera/test_camera_debug.cpp`. Covers FR-14.
-- [ ] **T3.3** [P] `Tilemap::bounds()`. Files: `engine/core/include/nnh/tilemap.hpp`, `src/tilemap/tilemap.cpp`. Test:
+- [x] **T3.3** [P] `Tilemap::bounds()`. Files: `engine/core/include/nnh/tilemap.hpp`, `src/tilemap/tilemap.cpp`. Test:
   `tests/tilemap/test_map_bounds.cpp` (code-built, loaded, empty). Covers FR-7.
-- [ ] **T3.4** Opt-in check: `hello` Release sizes against T0.1 (unchanged: the rig isn't linked) and `nm` (no
+- [x] **T3.4** Opt-in check: `hello` Release sizes against T0.1 (unchanged: the rig isn't linked) and `nm` (no
   `CameraRig`/`camera_` symbol) on PC and 3DS; a test object using only the camera has no tilemap symbol and the
   tilemap module has no camera symbol. Files: plan.md ("Stage 3 results"). Covers FR-7, FR-16, AC-8.
-- [ ] **T3.5** Platformer step 1 (identical configuration): `level_camera.{hpp,cpp}` (target the player's box, no
+- [x] **T3.5** Platformer step 1 (identical configuration): `level_camera.{hpp,cpp}` (target the player's box, no
   dead zone, no smoothing, limits `map.bounds()`, Start alignment); `test_level_camera.cpp` compares a frozen copy of
   `follow_camera()` with the rig over a dense sweep of boxes and worlds (incl. a world smaller than the view) bit for
   bit, through `snap` and `update`; `level_play` uses the rig (`snap` in `restart()`, `update` + `apply` in

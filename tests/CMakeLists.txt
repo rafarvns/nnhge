@@ -75,7 +75,9 @@ add_executable(nnh_tests
     audio/test_voice_table.cpp
     audio/test_wav_reader.cpp
     build/test_flavor.cpp
+    camera/test_camera_apply.cpp
     camera/test_camera_convert.cpp
+    camera/test_camera_debug.cpp
     camera/test_camera_dead_zone.cpp
     camera/test_camera_follow.cpp
     camera/test_camera_layouts.cpp
@@ -171,6 +173,7 @@ add_executable(nnh_tests
     text/test_builtin_font.cpp
     tilemap/test_code_vs_file.cpp
     tilemap/test_map_animations.cpp
+    tilemap/test_map_bounds.cpp
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
     tilemap/test_map_draw.cpp
@@ -285,7 +288,7 @@ target_include_directories(nnh_tests PRIVATE ${_3ds_src})
 # 60 Hz meter, player physics) are pure files of the example, tested like core logic.
 set(_platformer ${PROJECT_SOURCE_DIR}/examples/platformer)
 target_sources(nnh_tests PRIVATE
-    platformer/test_camera_follow.cpp
+    platformer/test_level_camera.cpp
     platformer/test_coin_book.cpp
     platformer/test_frame_meter.cpp
     platformer/test_gate_run.cpp
@@ -293,7 +296,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_player_sprite.cpp
     platformer/test_replay_run.cpp
     platformer/test_replay_script.cpp
-    ${_platformer}/camera_follow.cpp
+    ${_platformer}/level_camera.cpp
     ${_platformer}/coin_book.cpp
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp

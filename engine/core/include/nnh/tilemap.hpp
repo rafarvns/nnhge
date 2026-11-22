@@ -159,6 +159,9 @@ public:
     int height() const;      ///< cells
     int tile_width() const;  ///< pixels
     int tile_height() const; ///< pixels
+    /// The map's world rectangle: {0, 0, width() × tile_width(), height() × tile_height()} ({} for an empty map).
+    /// Cheap. Made for camera limits: `rig.set_limits(map.bounds())` (<nnh/camera.hpp>).
+    Rect bounds() const;
 
     /// The world rectangle of cell (x, y) (any x, y, also outside the map).
     Rect cell_rect(int x, int y) const;

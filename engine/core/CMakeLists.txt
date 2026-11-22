@@ -185,6 +185,8 @@ endif()
 # Camera helpers (spec 018): every float operation of the rig lives in these files; no fused multiply-add, so the
 # followed and shaken positions have the same bits on every compiler and on the 3DS (FR-12).
 set(_nnh_camera_sources
+    src/camera/camera_apply.cpp
+    src/camera/camera_debug.cpp
     src/camera/camera_follow.cpp
     src/camera/camera_layout.cpp
     src/camera/camera_limits.cpp

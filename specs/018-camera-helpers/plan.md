@@ -526,3 +526,33 @@ Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   `tweens` at 60, platformer `PLATFORMER_DEMO=bench` and level 1 at 90 (pc-debug, offscreen SDL software renderer).
   `build/ref-018/compare.sh` rebuilds and compares them byte for byte; the bench is compared on its top screen only
   (its bottom screen shows measured frame times, which differ from run to run).
+
+## Stage 1–3 refinements and results
+
+- **`CameraRig::aim()`** (public, read-only): the last target plus the offset, the point the dead zone holds. The
+  plan's private `target_` slot is this value; `debug_draw` needs it for the green cross. The rig is 128 bytes as
+  planned (settings 84 + four `Vec2` + trauma + noise clock + flags).
+- **Smoothing below `kCameraMinSmoothing` (1/1024)** counts as misuse (the spec's "(0, 1]" has no smallest value a
+  Release build could clamp to); Release clamps to it, or to 1 for NaN. `max_shake` (negative or non-finite) was added
+  to the misuse list. Release keeps the previous value for a non-finite or negative dead zone, limits, offset, decay
+  and speed ≤ 0, and clamps zoom, smoothing above 1, speed above 1 and a negative gap.
+- **`snap()` places both axes**, also one that isn't followed: that is how a locked axis gets its position (a
+  horizontal shooter snaps once, then follows x only).
+- **The dead zone is clamped per axis at each update** (it depends on the zoom and the layout), with one warning per
+  rig in Debug/Development (`dead zone larger than the view`); Release clamps silently.
+- **The zoom range** lives in `camera_internal.hpp` until stage 4 adds `kMinCameraZoom`/`kMaxCameraZoom` to
+  `<nnh/gfx.hpp>`.
+- **Debug drawing**: the dead zone is drawn around the drawn (shaken) view's centre, so it sits where the player sees
+  it; the limits only when they meet the screen; the target cross on every driven screen (the renderer clips it). At
+  most 4 shape draws per screen.
+- **`set_layout`** changes layout and screen only (no validation needed; the primary top-left is kept).
+- The camera log channel `camera` is defined in `camera_rig.cpp` (linked only with the rig).
+- T3.4 (opt-in): after stage 3, pc-release `hello.exe` text/data/bss 130 024 / 21 988 / 211 728 and 3ds-release
+  `hello.elf` 216 484 / 28 328 / 106 696 — identical to stage 0; `nm` finds no camera symbol in either. The camera
+  objects reference no tilemap symbol and the tilemap objects no camera symbol (`nm -C` of the pc-release objects; the
+  camera's only outside references are `gfx::set_camera`, `gfx::draw_rect`, `gfx::draw_line` and the logger).
+- T3.5 (platformer step 1): `examples/platformer/level_camera.{hpp,cpp}` (Start alignment, limits `map.bounds()`, no
+  dead zone, no smoothing); `tests/platformer/test_level_camera.cpp` compares a frozen copy of `follow_camera()` with
+  the rig over a dense sweep (five worlds incl. smaller than the view and exactly the view; `update` and `snap`): no
+  mismatching bit. The ctest `platformer_replay_matches_script` passes and `nnh run platformer --pc --no-build --script
+  examples/platformer/tests/level.nnhs` → `nnh: PASS (73 lines)`, both with the **unchanged** checksum lines.

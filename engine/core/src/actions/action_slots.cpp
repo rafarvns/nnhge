@@ -133,9 +133,9 @@ void refresh_slot(SlotRec& slot, std::uint8_t caps) {
     slot.flags = static_cast<std::uint8_t>(active ? slot.flags | slot_flag::kActive : slot.flags & ~slot_flag::kActive);
 }
 
-std::uint32_t footprint(const SlotRec& slot, Part part) {
-    const std::uint8_t* d = slot.cur.d;
-    switch (slot.cur.kind) {
+std::uint32_t footprint(const PackedSource& source, Part part) {
+    const std::uint8_t* d = source.d;
+    switch (source.kind) {
     case Source::Kind::None:
     case Source::Kind::Touch: return 0;
     case Source::Kind::Button: return button_bit(d[0]);

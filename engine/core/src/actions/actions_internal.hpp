@@ -75,12 +75,18 @@ void publish_action_events(const ActionBlock& block);
 /// One evaluation while listening (FR-16): timeout, cancel, capture.
 void listen_step(ActionBlock& block, const InputView& view);
 
-/// Puts `source` (a part's button, when `part` is not Whole) into a binding with the conflict policy
-/// (FR-17). `source` must fit the action and slot; the slot must be remappable.
+/// Puts `source` into a binding unit with the conflict policy (FR-17): a whole source when `part` is Whole, else a
+/// Button source for that composite part. Checked by the caller: the slot is remappable and the source fits.
 RemapResult assign(ActionBlock& block, int action, int slot, Part part, const Source& source,
                    ConflictPolicy policy);
+/// Why `source` can't go into the unit by remapping (locked slot, touch, wrong kind, bad part), or nullptr.
+const char* remap_problem(const ActionRec& action, int slot, Part part, const Source& source);
 /// The controls a binding unit reads: Button bits, plus stick directions at bit 16 + stick * 4 + direction.
-std::uint32_t footprint(const SlotRec& slot, Part part);
+std::uint32_t footprint(const PackedSource& source, Part part);
+/// The binding units of a slot: its composite parts, or Whole; none when empty. Returns the count.
+int units_of(const PackedSource& source, Part out[4]);
+/// Index of a composite part in the source's data bytes (Negative/Up 0, Positive/Down 1, Left 2, Right 3).
+int part_index(Part part);
 
 /// Clears the runtime state of a slot whose source changed.
 inline void slot_changed(SlotRec& slot, std::uint8_t caps) {

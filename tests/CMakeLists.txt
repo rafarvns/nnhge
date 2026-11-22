@@ -15,12 +15,16 @@ add_executable(nnh_tests
     framework/alloc_counter.cpp
     actions/test_action_blocking.cpp
     actions/test_action_combine.cpp
+    actions/test_action_conflicts.cpp
     actions/test_action_contexts.cpp
     actions/test_action_declare.cpp
+    actions/test_action_determinism.cpp
+    actions/test_action_edit.cpp
     actions/test_action_events.cpp
     actions/test_action_fallback.cpp
     actions/test_action_hook.cpp
     actions/test_action_kinds.cpp
+    actions/test_action_listen.cpp
     actions/test_action_queries.cpp
     actions/test_action_repeat.cpp
     actions/test_action_scenes.cpp

@@ -14,7 +14,7 @@ using Kind = Item::Kind;
 float snap(float v) { return std::floor(v + 0.5f); }
 
 /// Fills `item` from `c` for a sprite. @return false if its texture is gone.
-bool sprite_item(const DrawCommand& c, Vec2 at, const TextureTable& textures, Item& item) {
+bool sprite_item(const DrawCommand& c, Vec2 at, float z, const TextureTable& textures, Item& item) {
     const TextureData* texture = textures.get(c.texture_slot, c.texture_generation);
     if (texture == nullptr) return false;
     item.texture = texture->platform;
@@ -24,26 +24,27 @@ bool sprite_item(const DrawCommand& c, Vec2 at, const TextureTable& textures, It
     item.flip_y = c.flip_y != (c.scale.y < 0);
     const float sx = std::fabs(c.scale.x);
     const float sy = std::fabs(c.scale.y);
-    item.w = static_cast<float>(item.region.w) * sx;
-    item.h = static_cast<float>(item.region.h) * sy;
-    item.pivot_x = c.pivot.x * sx;
-    item.pivot_y = c.pivot.y * sy;
+    item.w = static_cast<float>(item.region.w) * sx * z;
+    item.h = static_cast<float>(item.region.h) * sy * z;
+    item.pivot_x = c.pivot.x * sx * z;
+    item.pivot_y = c.pivot.y * sy * z;
     item.rotation = c.rotation;
-    item.x = snap(at.x);
-    item.y = snap(at.y);
+    item.x = snap(at.x * z);
+    item.y = snap(at.y * z);
     return true;
 }
 
-void shape_item(const DrawCommand& c, Vec2 at, Vec2 camera, Item& item) {
-    item.x = snap(at.x);
-    item.y = snap(at.y);
+/// `at` = position − camera, `z` = zoom (1 when ignoring the camera). Outlines and lines stay one pixel thick.
+void shape_item(const DrawCommand& c, Vec2 at, Vec2 camera, float z, Item& item) {
+    item.x = snap(at.x * z);
+    item.y = snap(at.y * z);
     if (c.kind == Kind::Line) {
-        item.w = snap(c.second.x - camera.x); // end point
-        item.h = snap(c.second.y - camera.y);
+        item.w = snap((c.second.x - camera.x) * z); // end point
+        item.h = snap((c.second.y - camera.y) * z);
     } else {
         // Round both corners, so touching rectangles stay touching.
-        item.w = snap(at.x + c.second.x) - item.x;
-        item.h = snap(at.y + c.second.y) - item.y;
+        item.w = snap((at.x + c.second.x) * z) - item.x;
+        item.h = snap((at.y + c.second.y) * z) - item.y;
     }
 }
 
@@ -72,7 +73,7 @@ bool DrawList::record(const DrawCommand& command) {
     return true;
 }
 
-DrawList::BuildResult DrawList::build(Screen screen, Vec2 camera, const TextureTable& textures,
+DrawList::BuildResult DrawList::build(Screen screen, Camera2D camera, const TextureTable& textures,
                                       platform::DrawItem2D* out, int out_capacity, TileSplit* splits,
                                       int split_capacity) const {
     // Stable counting sort by layer of this screen's commands (O(n), no allocation).
@@ -93,19 +94,20 @@ DrawList::BuildResult DrawList::build(Screen screen, Vec2 camera, const TextureT
             if (result.splits < split_capacity) splits[result.splits++] = {result.items, c.tile_batch};
             continue;
         }
-        const Vec2 cam = c.ignore_camera ? Vec2{} : camera;
+        const Vec2 cam = c.ignore_camera ? Vec2{} : camera.position;
+        const float z = c.ignore_camera ? 1.0f : camera.zoom; // × 1 is exact: zoom 1 = the unzoomed pass (D33)
         const Vec2 at = c.position - cam;
         Item item;
         item.kind = c.kind;
         item.layer = c.layer;
         item.color = c.color;
         if (c.kind == Kind::Sprite) {
-            if (!sprite_item(c, at, textures, item)) {
+            if (!sprite_item(c, at, z, textures, item)) {
                 ++result.stale;
                 continue;
             }
         } else {
-            shape_item(c, at, cam, item);
+            shape_item(c, at, cam, z, item);
         }
         out[result.items++] = item;
     }

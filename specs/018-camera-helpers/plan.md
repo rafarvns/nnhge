@@ -556,3 +556,19 @@ Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   the rig over a dense sweep (five worlds incl. smaller than the view and exactly the view; `update` and `snap`): no
   mismatching bit. The ctest `platformer_replay_matches_script` passes and `nnh run platformer --pc --no-build --script
   examples/platformer/tests/level.nnhs` → `nnh: PASS (73 lines)`, both with the **unchanged** checksum lines.
+
+## Stage 4 refinements and results
+
+- **The cameras moved out of `GfxState`** into their own `Camera2D g_cameras[2]` (`detail::gfx_cameras()`, reset with
+  the state at init and shutdown). With the zoom's default of 1 inside `GfxState`, the whole state (≈ 640 bytes) moved
+  from `.bss` to `.data` and grew `hello`'s file by as much; apart, only the two cameras (24 bytes) are in `.data`.
+- `DrawList::build` takes a `Camera2D`; the old `Vec2` form stays as a constrained template (zoom 1), so
+  `tests/gfx/test_draw_list.cpp` is unchanged and `build(screen, {}, ...)` still means a default camera.
+- `draw_list.cpp` is compiled with `-ffp-contract=off` (`_nnh_zoom_sources` in `engine/core/CMakeLists.txt`):
+  `snap((p − c) × z)` must never become a fused multiply-add.
+- `set_camera` in Release clamps silently (NaN → 1); the assert message exists only in Debug/Development.
+- `hello` after stage 4 (Release): 3DS text 216 612 (+128), data 28 352 (+24), bss 106 680 (−16), `.3dsx` 262 640;
+  PC text 130 232 (+208), data 22 020 (+32), bss 211 696 (−32). No camera symbol. Within the text budget (≤ 320 B
+  3DS, ≤ 512 B PC); the remaining stages add the tile path's zoomed branch.
+- T4.3: `test_zoom1_regression` passes unchanged; `build/ref-018/compare.sh`: every reference screenshot identical
+  (`hello`, `sprites`, `scenes`, `tweens`, `text`, and the platformer's bench and level 1).

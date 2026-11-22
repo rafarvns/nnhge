@@ -41,9 +41,7 @@ Camera2D CameraRig::camera(Screen screen) const {
     if (settings_.pixel_snap) {
         p = {detail::cam::round_half_up(p.x * z) / z, detail::cam::round_half_up(p.y * z) / z};
     }
-    Camera2D c;
-    c.position = p;
-    return c;
+    return {p, z};
 }
 
 Rect CameraRig::view(Screen screen) const {

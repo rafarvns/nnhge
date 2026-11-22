@@ -98,15 +98,15 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 4: zoom in `Camera2D` (sprites, shapes, text)
 
-- [ ] **T4.1** `Camera2D::zoom`, `kMin/kMaxCameraZoom`, `set_camera` clamp (assert in Debug/Development, NaN → 1,
+- [x] **T4.1** `Camera2D::zoom`, `kMin/kMaxCameraZoom`, `set_camera` clamp (assert in Debug/Development, NaN → 1,
   Release silent); `apply()` writes the zoom. Files: `engine/core/include/nnh/gfx.hpp`, `src/gfx/draw2d.cpp`,
   `camera_apply.cpp`. Test: `tests/gfx/test_camera_zoom_clamp.cpp`, `test_camera_apply.cpp` (zoom). Covers FR-9, FR-13.
-- [ ] **T4.2** `DrawList::build(screen, Camera2D, …)`: positions, sizes and pivots × zoom for sprites and glyphs,
+- [x] **T4.2** `DrawList::build(screen, Camera2D, …)`: positions, sizes and pivots × zoom for sprites and glyphs,
   rectangle corners and line ends; `ignore_camera` at zoom 1; `-ffp-contract=off` on `draw_list.cpp`. Files:
   `src/gfx/draw_list.{hpp,cpp}`, `gfx_frame.cpp`, `engine/core/CMakeLists.txt`. Test:
   `tests/gfx/test_draw_list_zoom.cpp` (zooms 2 and 0.5: expected items; integer zoom = exact multiples; debug pass
   unchanged); `test_zoom1_regression.cpp` and `test_draw_list.cpp` unchanged and passing. Covers FR-9, AC-3.
-- [ ] **T4.3** Stage end: ctest; AC-8 comparison (`build/ref-018/compare.sh`) for the scenes without tilemaps
+- [x] **T4.3** Stage end: ctest; AC-8 comparison (`build/ref-018/compare.sh`) for the scenes without tilemaps
   (`sprites`, `scenes`, `tweens`, `text`, `hello`): identical. Covers AC-3, AC-8.
 
 ## Stage 5: zoomed tile batches (D33)

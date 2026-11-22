@@ -141,8 +141,10 @@ add_executable(nnh_tests
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
     fuzz/test_fuzz_sprite.cpp
+    gfx/test_camera_zoom_clamp.cpp
     gfx/test_draw_calls.cpp
     gfx/test_draw_list.cpp
+    gfx/test_draw_list_zoom.cpp
     gfx/test_texture_rules.cpp
     gfx/test_texture_table.cpp
     gfx/test_tile_batches.cpp

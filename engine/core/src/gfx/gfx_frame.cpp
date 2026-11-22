@@ -16,6 +16,7 @@ NNH_MEM_TAG(gfx);
 namespace {
 
 detail::GfxState g_state;
+Camera2D g_cameras[2];
 detail::DrawCommand* g_commands = nullptr;
 std::uint16_t* g_order = nullptr;
 detail::TextureSlot* g_slots = nullptr;
@@ -44,6 +45,7 @@ void free_all() {
     g_tile_records = nullptr;
     g_tile_scratch = nullptr;
     g_state = detail::GfxState{};
+    g_cameras[0] = g_cameras[1] = Camera2D{};
 }
 
 /// Expands tile batch `index` and sends it. @return 1 if its texture is gone (skipped), else 0.
@@ -70,9 +72,10 @@ int submit_tiles(Screen screen, int index, Vec2 camera) {
 /// The screen's 2D pass: the sorted items, cut by tile batches where they sit among them.
 void submit_screen(Screen screen) {
     detail::GfxState& g = g_state;
-    const Vec2 camera = g.cameras[screen == Screen::Top ? 0 : 1].position;
+    const Camera2D camera2d = g_cameras[screen == Screen::Top ? 0 : 1];
+    const Vec2 camera = camera2d.position;
     const auto result =
-        g.draws.build(screen, camera, g.textures, g.pass, g.max_draws, g.splits, detail::kMaxTileBatches);
+        g.draws.build(screen, camera2d, g.textures, g.pass, g.max_draws, g.splits, detail::kMaxTileBatches);
     int stale_tiles = 0;
     int from = 0;
     for (int i = 0; i < result.splits; ++i) {
@@ -101,6 +104,7 @@ bool tiles_init(int max_tiles) {
 } // namespace
 
 detail::GfxState& detail::gfx_state() { return g_state; }
+Camera2D* detail::gfx_cameras() { return g_cameras; }
 
 bool detail::gfx_init(const GfxConfig& config) {
     free_all();

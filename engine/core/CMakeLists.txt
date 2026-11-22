@@ -77,7 +77,6 @@ add_library(nnh_core STATIC
     src/fs/save_format.cpp
     src/gfx/draw2d.cpp
     src/gfx/draw_text.cpp
-    src/gfx/draw_list.cpp
     src/gfx/gfx.cpp
     src/gfx/gfx_frame.cpp
     src/gfx/image_registry_default.cpp
@@ -197,6 +196,15 @@ set(_nnh_camera_sources
 target_sources(nnh_core PRIVATE ${_nnh_camera_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_camera_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# Zoomed drawing (spec 018, D33): positions × zoom, then rounded; no fused multiply-add, so PC and 3DS put every
+# zoomed draw on the same pixels.
+set(_nnh_zoom_sources
+    src/gfx/draw_list.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_zoom_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_zoom_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)

@@ -115,9 +115,16 @@ void gfx::draw_line(Screen screen, Vec2 from, Vec2 to, Color color, const ShapeO
     if (drawing()) record(shape(Kind::Line, screen, from, to, color, options));
 }
 
-void gfx::set_camera(Screen screen, Camera2D camera) { detail::gfx_state().cameras[screen_index(screen)] = camera; }
+void gfx::set_camera(Screen screen, Camera2D camera) {
+    const float z = camera.zoom;
+    if (!(z >= kMinCameraZoom && z <= kMaxCameraZoom)) { // NaN too
+        NNH_ASSERT(false, "Camera2D::zoom %g is outside 0.5..4", static_cast<double>(z));
+        camera.zoom = z > kMaxCameraZoom ? kMaxCameraZoom : (z < kMinCameraZoom ? kMinCameraZoom : 1.0f);
+    }
+    detail::gfx_cameras()[screen_index(screen)] = camera;
+}
 
-Camera2D gfx::camera(Screen screen) { return detail::gfx_state().cameras[screen_index(screen)]; }
+Camera2D gfx::camera(Screen screen) { return detail::gfx_cameras()[screen_index(screen)]; }
 
 gfx::Stats gfx::stats() {
     const detail::GfxState& g = detail::gfx_state();

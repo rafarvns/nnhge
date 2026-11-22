@@ -38,6 +38,33 @@ NNH_TEST(apply_in_tall_world_writes_both_screens) {
     nnh::shutdown();
 }
 
+NNH_TEST(apply_writes_the_zoom_too) {
+    cam_test::restart();
+    CameraRig rig({.layout = CameraLayout::TallWorld, .zoom = 2});
+    rig.snap(Vec2{1000, 1000});
+    rig.apply();
+    CHECK(gfx::camera(Screen::Top).zoom == 2 && gfx::camera(Screen::Bottom).zoom == 2);
+    CHECK(at(gfx::camera(Screen::Top).position, 900, 880));
+    CHECK(rig.camera(Screen::Bottom).zoom == 2);
+    nnh::shutdown();
+}
+
+NNH_TEST(a_sprite_drawn_at_to_world_lands_under_that_screen_point_at_zoom_3) {
+    gfx_test::restart();
+    nnh::Texture tile = gfx_test::load("tile");
+    CameraRig rig({.layout = CameraLayout::TallWorld, .zoom = 3, .gap = 6});
+    rig.snap(Vec2{1234.25f, 987.75f});
+    CHECK(nnh::frame());
+    rig.apply();
+    gfx::draw(Screen::Bottom, tile, rig.to_world(Screen::Bottom, {100, 50}));
+    CHECK(nnh::frame());
+    const nnh::platform::DrawItem2D& it = fake::state().last_frame_items[0];
+    CHECK(it.x >= 99 && it.x <= 101 && it.y >= 49 && it.y <= 51); // within the renderer's whole-pixel rounding
+    CHECK(it.w == 48);
+    tile.reset();
+    nnh::shutdown();
+}
+
 NNH_TEST(apply_writes_the_pixel_snapped_camera) {
     cam_test::restart();
     CameraRig rig({.pixel_snap = true});

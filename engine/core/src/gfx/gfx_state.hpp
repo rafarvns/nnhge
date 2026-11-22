@@ -54,7 +54,6 @@ struct GfxState {
     PendingDestroy* pending = nullptr;    // textures released during the frame (max_textures)
     int pending_count = 0;
     int max_draws = 0;
-    Camera2D cameras[2];
     int draws_last_frame = 0;
     int dropped_total = 0;
     // Tile batches (spec 012): storage only when max_tiles > 0.
@@ -67,6 +66,10 @@ struct GfxState {
 };
 
 GfxState& gfx_state();
+
+/// The screens' cameras (top, bottom), reset to {(0, 0), zoom 1} at init and shutdown. Kept apart from GfxState so
+/// that the zoom's non-zero default doesn't move the whole state from .bss to .data (spec 018 stage 4).
+Camera2D* gfx_cameras();
 
 /// True inside a frame with the graphics module ready (draw calls are recorded).
 bool gfx_drawing();

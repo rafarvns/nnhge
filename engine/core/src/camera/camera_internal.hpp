@@ -14,8 +14,8 @@ NNH_LOG_CHANNEL_EXTERN(camera);
 
 namespace nnh::detail::cam {
 
-inline constexpr float kMinZoom = 0.5f;
-inline constexpr float kMaxZoom = 4.0f;
+inline constexpr float kMinZoom = kMinCameraZoom;
+inline constexpr float kMaxZoom = kMaxCameraZoom;
 inline constexpr float kScreenHeight = 240.0f;
 inline constexpr float kTallWidth = 400.0f; // the top screen's width (TallWorld's combined view)
 

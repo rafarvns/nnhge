@@ -84,10 +84,19 @@ struct ShapeOptions {
     bool ignore_camera = false; ///< draw in screen pixels (HUD)
 };
 
-/// The view of a screen: `position` is the world point shown at the screen's top-left corner.
-/// Draws are shifted by it unless they ignore the camera. A 3D camera will be a separate type.
+/// Camera2D::zoom range (decision D33).
+inline constexpr float kMinCameraZoom = 0.5f;
+inline constexpr float kMaxCameraZoom = 4.0f;
+
+/// The view of a screen: `position` is the world point shown at the screen's top-left corner (at every zoom).
+/// A camera-relative draw lands at `(world − position) × zoom` screen pixels: sprites, text and rectangles grow
+/// `zoom` times (outlines and lines stay one pixel thick), tile layers stay seamless (tile edges snapped to whole
+/// pixels). Draws with `ignore_camera`, debug text and the overlay are never zoomed. Zoom 1 draws exactly as with no
+/// zoom; integer zooms are pixel-exact, fractional ones give uneven pixel sizes. A 3D camera will be a separate type.
+/// To zoom about a point other than the top-left, move `position` too (nnh::CameraRig zooms about the view's centre).
 struct Camera2D {
     Vec2 position{};
+    float zoom = 1; ///< kMinCameraZoom..kMaxCameraZoom; set_camera clamps it (asserts in Debug/Development)
 };
 
 /// Horizontal alignment of text, relative to the x of its position, line by line.
@@ -143,7 +152,9 @@ void draw_text(Screen screen, Vec2 position, const char* utf8, const TextOptions
 /// @endcode
 Vec2 measure_text(const char* utf8, int scale = 1);
 
-/// Sets / reads a screen's camera (both start at (0, 0) at init()).
+/// Sets / reads a screen's camera (both start at (0, 0), zoom 1, at init()). The camera at the end of the frame
+/// places the frame's draws. A zoom outside kMinCameraZoom..kMaxCameraZoom asserts in Debug/Development and is
+/// clamped (NaN → 1) in Release. Cheap; safe every frame.
 void set_camera(Screen screen, Camera2D camera);
 Camera2D camera(Screen screen);
 

@@ -379,6 +379,39 @@ Found while building the drawing path; the exact code is `engine/core/src/gfx/ti
   2000 sprites (`max_tiles` = 12 × 416) and prints frame time, worst frame and missed frames since the last change
   on the bottom screen (debug text, so it works in Release, where the overlay is off).
 
+#### Stage 4 refinements (2026-11-21, implemented)
+
+Found while writing the validator and the loader; the exact code is `engine/core/src/tilemap/map_validate*.{hpp,cpp}`,
+`map_copy.{hpp,cpp}` and `map_load.cpp`.
+
+- **Validator split in two files** (`map_validate.cpp`: header, layout, strings, tilesets, tile table;
+  `map_validate_content.cpp`: layers and cells, objects, properties; internal `map_validate_parts.hpp`) to stay
+  near the 200-line aim. It returns `{MapProblem, reason}` (`Damaged` → `Corrupted`, `NewerVersion` →
+  `Unsupported`, `OverLimit` → `LimitReached`), reads through `memcpy` (any alignment) and is pure, so the converter
+  can use it. Strict where the converter can be: capacities ≥ counts and offsets equal to the layout of those
+  capacities, tile sources equal to what the tileset gives, the has-properties flag matching the sorted tile-property
+  table, every property owned by exactly one range, finite floats, opacity 0..1, point objects with no size, object
+  ids 1..2^31−1, each layer's tilesets mask covering the tilesets its cells use. Runtime fields are ignored.
+  **Animated tiles** (any animation, frame or `animated` flag) are refused as `NewerVersion` until stage 6 adds them.
+- **Copy step as its own pure file** (`map_copy.{hpp,cpp}`, not in the plan's file list): `loaded_capacities` (file
+  capacities + extras; each extra checked against its limit before adding, so no overflow; the tile-property table
+  grows by `extra_properties`, up to the tile ids) and `copy_map` (only used entries are copied, so the extra room is
+  zero; layer cell offsets set for the new layout; texture handles −1; collision-layer mask recomputed). The fuzz
+  target uses it through `detail::tilemap_from_file` without the engine running.
+- **Texture ownership**: a loaded map owns its tileset textures. Header byte `reserved1` became `owned_textures`
+  (runtime bit per tileset; `Tilemap::reset` frees them through `detail::release_map_textures`); tilesets with the
+  same image share one texture (only the first owns it); `TextureAccess::release` hands a texture over without
+  freeing it. A tileset image whose size differs from the one recorded at conversion is `Corrupted`.
+- **`LoadTilemapOptions`** as sketched; object layers and tilesets cannot be added to a loaded map (no extras for
+  them).
+- **Fuzz target** body in its own file `tests/fuzz/fuzz_tilemap.cpp` (in `nnh_fuzz_targets`). It validates the
+  input as is, then with the header's size and CRC fixed (otherwise nearly every mutant dies at the CRC), and on
+  an accepted map runs every query, the tile expansion of each layer × tileset for a 400×240 view, `collision::move`
+  and edits into extra room. Mini-fuzz: 2 × 4000 mutants of the sample and minimal maps; more than 100 are
+  accepted, so the deep path runs.
+- **Tests' file writer**: `tests/tilemap/map_file.{hpp,cpp}` builds `.nnhmap` buffers with the pure layout helpers
+  (`sample()`, `minimal()`) or writes a map built in code (`from_map()`), and `seal()`s damaged ones.
+
 ### Files
 
 | File | New/changed | Responsibility |
@@ -399,6 +432,7 @@ Found while building the drawing path; the exact code is `engine/core/src/gfx/ti
 | `engine/core/src/tilemap/map_collision.cpp` | new | tile collision flags, `collision_at`, `collision_grid` |
 | `engine/core/src/tilemap/map_objects.cpp` | new | object queries |
 | `engine/core/src/tilemap/map_properties.cpp` | new | `Properties` view, setters, string pool |
+| `engine/core/src/tilemap/map_copy.hpp/.cpp` | new (stage 4) | validated file → map block with extra capacity (pure) |
 | `engine/core/src/tilemap/map_load.cpp` | new | `load_tilemap`: asset → validate → copy with extras → tileset textures |
 | `engine/core/src/tilemap/visible_range.hpp/.cpp` | new | parallax/camera → snapped origin + visible cell range (pure) |
 | `engine/core/src/tilemap/tile_expand.hpp/.cpp` | new | visible cells of one (layer, tileset) → `TileQuad2D[]` (pure) |

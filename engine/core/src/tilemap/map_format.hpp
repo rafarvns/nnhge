@@ -87,7 +87,9 @@ struct Header {
     std::uint16_t collision_layers; ///< runtime: layers that may contribute to collision (bit per layer)
     std::uint16_t reserved0;
     std::uint8_t tilesets, tilesets_cap, tile_layers, tile_layers_cap;
-    std::uint8_t object_layers, object_layers_cap, reserved1, reserved2;
+    std::uint8_t object_layers, object_layers_cap;
+    std::uint8_t owned_textures; ///< runtime: bit per tileset whose texture load_tilemap loaded (freed with the map)
+    std::uint8_t reserved2;
     std::uint16_t tile_ids, tile_ids_cap; ///< ids 1..tile_ids are in use
     std::uint16_t tile_props, tile_props_cap;
     std::uint16_t animations, animations_cap;

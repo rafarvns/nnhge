@@ -39,6 +39,21 @@ struct CapacityCheck {
 /// most 4 Mi cells over all tile layers).
 CapacityCheck check_capacities(const MapCapacities& capacities);
 
+/// Tiles that fit along one side of a tileset image: (image - 2·margin + spacing) / (tile + spacing), 0 when
+/// not even one fits. `tile` > 0, `spacing` >= 0.
+constexpr int tiles_along(int image, int tile, int margin, int spacing) {
+    const int room = image - 2 * margin;
+    return room < tile ? 0 : (room + spacing) / (tile + spacing);
+}
+
+/// Top-left pixel of tile `index` (0-based) of a tileset: left to right, top to bottom, after the margin.
+constexpr mapfmt::TileSource tile_source(const mapfmt::TilesetEntry& set, int index, int tile_w, int tile_h) {
+    const int column = index % set.columns;
+    const int row = index / set.columns;
+    return {static_cast<std::uint16_t>(set.margin + column * (tile_w + set.spacing)),
+            static_cast<std::uint16_t>(set.margin + row * (tile_h + set.spacing))};
+}
+
 /// The capacities a block's header declares.
 MapCapacities capacities_of(const mapfmt::Header& header);
 

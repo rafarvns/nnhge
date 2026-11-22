@@ -87,9 +87,10 @@ vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS v
 `<nnh/math.hpp>`): `<nnh/collision.hpp>` — `overlaps`/`contains`/`intersection`/`separation` on boxes;
 `collision::move` sweeps a box through a `Grid` the game describes (`grid_view` over its own `Cell` array, or a
 callback), x then y, solid and one-way cells, no tunnelling; `contacts`, `cells_touching`
-([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–3: built in code and drawn; loading Tiled
-maps comes later): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
+([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–4: built in code, drawn, loaded from `.nnhmap`; the Tiled
+converter comes later): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
 tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`;
+`load_tilemap("levels/level1", {extras})` validates a converted map (fuzzed) and owns its tileset textures;
 `gfx::draw_tilemap` draws tile batches (D26: contract `draw_tiles`, only visible cells, Tiled parallax and flips,
 needs `AppConfig::gfx.max_tiles`, 0 by default); demo `examples/platformer` ([api/tilemap.md](docs/api/tilemap.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a

@@ -111,7 +111,7 @@ is compiled out). All within budget; the simulator edit is close to its 2 s limi
 - [ ] Later (spec 013 non-goals): drive games started by NNH Link; record and replay a player's session
 
 ## M7 — Game structure
-- [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md); stage 2 done: maps built in code, `<nnh/tilemap.hpp>`, [api/tilemap.md](api/tilemap.md); stage 3 done on PC and 3DS builds: `gfx::draw_tilemap` as tile batches (D26), `AppConfig::gfx.max_tiles`, `examples/platformer` skeleton with a tile benchmark; the Old 3DS gate passed: 4 layers + 300 sprites with no missed frame, limits 6 layers / 600 sprites; next: stage 4, loading converted maps)
+- [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md); stage 2 done: maps built in code, `<nnh/tilemap.hpp>`, [api/tilemap.md](api/tilemap.md); stage 3 done on PC and 3DS builds: `gfx::draw_tilemap` as tile batches (D26), `AppConfig::gfx.max_tiles`, `examples/platformer` skeleton with a tile benchmark; the Old 3DS gate passed: 4 layers + 300 sprites with no missed frame, limits 6 layers / 600 sprites; stage 4 done: `load_tilemap` of converted `.nnhmap` assets, a bounded validator fuzzed by `tilemap_target`; next: stage 5, the Tiled converter in `nnh-assetc`)
 - [ ] Entities/components, tweens, scene transitions (scenes and saves: done)
 
 ### Features in the spirit of Godot and Unity

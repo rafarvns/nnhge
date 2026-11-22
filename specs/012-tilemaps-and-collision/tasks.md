@@ -1,7 +1,6 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0, 1, 2 and 3 done (2026-11-21; T3.9 passed on the Old 3DS XL); next:
-stage 4
+Status: approved (2026-11-21); stages 0–4 done (2026-11-21; T3.9 passed on the Old 3DS XL); next: stage 5
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -184,15 +183,33 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
 
 ## Stage 4 — loading converted maps
 
-- [ ] **T4.1** bounded validator of `.nnhmap` (header, version, sizes, offsets, CRC, counts vs limits, tile ids
+- [x] **T4.1** bounded validator of `.nnhmap` (header, version, sizes, offsets, CRC, counts vs limits, tile ids
   ≤ count, strings terminated, property/object ranges) — files: `tilemap/map_validate.{hpp,cpp}` — test:
   `test_map_validate.cpp` (a test-only writer makes valid and damaged buffers) — covers FR-1, FR-11
-- [ ] **T4.2** [P] fuzz target `tilemap_target` (validate + copy into a layout) — files: `tests/fuzz/fuzz_targets.*`,
+- [x] **T4.2** [P] fuzz target `tilemap_target` (validate + copy into a layout) — files: `tests/fuzz/fuzz_targets.*`,
   `libfuzzer_tilemap.cpp`, `test_fuzz_smoke.cpp`, `tests/CMakeLists.txt` — test: mini-fuzz in `nnh_tests` —
   covers AC-3
-- [ ] **T4.3** `load_tilemap`: asset → validate → copy with `LoadTilemapOptions` extras → tileset textures (errors
+- [x] **T4.3** `load_tilemap`: asset → validate → copy with `LoadTilemapOptions` extras → tileset textures (errors
   name the image) — files: `tilemap/map_load.cpp` — test: `test_map_load.cpp` (fake assets: ok, not found,
   damaged, truncated, wrong version, texture missing), `test_map_edit_after_load.cpp` — covers FR-0, FR-1, FR-11
+
+  **Result (2026-11-21, T4.1–T4.3):** 78 new unit tests (914/914 in pc-debug, 881 in pc-release; ctest 103/103):
+  validator 28 + 26 (`test_map_validate.cpp`, `test_map_validate_content.cpp`), loading 17 (`test_map_load.cpp`),
+  editing after load 6 (`test_map_edit_after_load.cpp`), mini-fuzz 1 (`tilemap_target_survives_mutated_inputs`:
+  8000 mutants of two valid maps, > 100 accepted and queried). Test-only writer `tests/tilemap/map_file.*`
+  (`sample`, `minimal`, `two_tilesets`, `from_map`, `seal`), fixture `load_fixture.hpp`. PC (Debug, Release) and
+  `3ds-release` build without warnings. `fuzz_tilemap` (libFuzzer) is wired like the others but not run yet (VM 120,
+  T8.1). Deviations in [plan.md](plan.md) ("Stage 4 refinements"): `map_copy.*` and `map_validate_content.cpp` /
+  `map_validate_parts.hpp` added, fuzz body in `tests/fuzz/fuzz_tilemap.cpp`, header byte `owned_textures`, animated
+  tiles refused until stage 6.
+  - Mutation check (93 hand mutants of the validator, the copy and the loader): first run 70 killed; 20 real
+    survivors got tests (a string capacity running past the end of the file — an out-of-bounds read —, x of the
+    parallax origin, a 256-byte string, animation tables, zero-tile tilesets, two-tileset masks, name offsets of
+    objects, object layers and properties, a `collision` layer of non-solid tiles, loaded strings overwritten by new
+    ones, an image of another height, borrowed textures freed by a code-built map) or sharper expectations (property
+    range reasons split into outside / overlap / without an owner). Final: **90 killed, 3 equivalent** (copy's
+    `texture_slot = -1` and `owned_textures = 0`, overwritten by the loader before any use; copying the strings'
+    final NUL into a zeroed block).
 
 ## Stage 5 — the Tiled converter
 

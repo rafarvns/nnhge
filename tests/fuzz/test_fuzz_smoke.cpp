@@ -5,11 +5,15 @@
 #include <cstdio>
 #include <cstring>
 
+#include "../tilemap/map_file.hpp"
 #include "audio/wav_reader.hpp"
 #include "fs/save_format.hpp"
 #include "fuzz_targets.hpp"
+#include "nnh/memory.hpp"
 #include "remote/remote_wire.hpp"
 #include "test.hpp"
+#include "tilemap/map_validate.hpp"
+#include "tilemap/tilemap_internal.hpp"
 
 namespace {
 
@@ -121,6 +125,33 @@ NNH_TEST(remote_target_survives_mutated_inputs) {
     mutate_and_run(nnh::fuzz::remote_target, seed, size);
     mutate_and_run(nnh::fuzz::remote_target, nullptr, 0);
     CHECK(true);
+}
+
+NNH_TEST(tilemap_target_survives_mutated_inputs) {
+    // The sample map (every section used) and the minimal one, with 1-4 bytes changed and sometimes cut. The
+    // target fixes the size and CRC itself, so mutants reach the content checks; some are even accepted and
+    // then copied, queried and edited (counted here to prove the deep path runs).
+    const map_file::Bytes seeds[] = {map_file::sample(), map_file::minimal()};
+    std::uint32_t state = 4242;
+    int accepted = 0;
+    for (const map_file::Bytes& seed : seeds) {
+        CHECK(nnh::detail::validate_map(seed.data(), seed.size()).ok());
+        nnh::fuzz::tilemap_target(seed.data(), seed.size());
+        for (int i = 0; i < 4000; ++i) {
+            map_file::Bytes buffer = seed;
+            if (i % 8 == 0) buffer.resize(next(state) % (seed.size() + 1));
+            const int flips = 1 + static_cast<int>(next(state) % 4);
+            for (int k = 0; k < flips && !buffer.empty(); ++k) {
+                buffer[next(state) % buffer.size()] ^= static_cast<std::uint8_t>(1 + next(state) % 255);
+            }
+            nnh::fuzz::tilemap_target(buffer.data(), buffer.size());
+            if (buffer.size() < sizeof(nnh::detail::mapfmt::Header)) continue;
+            map_file::seal(buffer);
+            accepted += nnh::detail::validate_map(buffer.data(), buffer.size()).ok() ? 1 : 0;
+        }
+    }
+    CHECK(accepted > 100);
+    CHECK(nnh::mem::tag_stats(nnh::detail::tilemap_memory_tag()).count == 0); // every map was freed
 }
 
 NNH_TEST(save_target_survives_mutated_inputs) {

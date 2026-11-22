@@ -45,9 +45,13 @@ least one valid file.
   file, and fails with a `Result` error instead of crashing.
 - Each parser has a fuzz target in `tests/fuzz/` (today: path validator, save-file validator, asset
   index, WAV reader, Ogg Vorbis reader — which drives the vendored stb_vorbis through open, decoding and
-  seeking —, and the console remote's reader, schedule and input merge of spec 013, with a round-trip check
-  of its 16-byte messages; libFuzzer executable `fuzz_remote`; 2026-11-21, 60 s: 922 651 runs, cov 132, no crash). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
-  for Ogg, where each run decodes) inside `nnh_tests` on every
+  seeking —, the console remote's reader, schedule and input merge of spec 013, with a round-trip check
+  of its 16-byte messages; libFuzzer executable `fuzz_remote`; 2026-11-21, 60 s: 922 651 runs, cov 132, no crash —,
+  and the `.nnhmap` map validator of spec 012 (`tilemap/map_validate.*`), which `tilemap_target` runs as given and
+  again with the size and CRC fixed so mutations reach the content checks, then copies every accepted map, runs
+  every query, the draw-time tile expansion and a few edits on it; libFuzzer executable `fuzz_tilemap`, not run
+  on Linux yet). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+  for Ogg, where each run decodes; 8 000 mutations of two valid maps for `.nnhmap`) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
   build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built
   with `-fsanitize=fuzzer-no-link,address` in that configuration: without it libFuzzer gets no coverage

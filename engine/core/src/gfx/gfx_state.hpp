@@ -27,6 +27,12 @@ struct TextureAccess {
         t.height_ = height;
         return t;
     }
+    /// Empties `t` without freeing its texture: its owner is now someone else (a loaded map).
+    static void release(Texture& t) {
+        t.slot_ = -1;
+        t.generation_ = 0;
+        t.width_ = t.height_ = 0;
+    }
 };
 
 namespace detail {

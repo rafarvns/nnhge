@@ -16,20 +16,11 @@ using namespace detail::mapfmt;
 Error invalid(const char* what) { return detail::map_refuse(ErrorCode::InvalidArgument, what); }
 Error full(const char* what) { return detail::map_refuse(ErrorCode::LimitReached, what); }
 
-/// Tiles that fit along one side of an image: (size - 2·margin + spacing) / (tile + spacing).
-int tiles_along(int image, int tile, int margin, int spacing) {
-    const int room = image - 2 * margin;
-    return room < tile ? 0 : (room + spacing) / (tile + spacing);
-}
+using detail::tiles_along;
 
 void fill_sources(const detail::MapView& v, const TilesetEntry& set, int tile_w, int tile_h) {
     TileSource* sources = v.tile_sources();
-    for (int i = 0; i < set.tile_count; ++i) {
-        const int column = i % set.columns;
-        const int row = i / set.columns;
-        sources[set.first_id + i] = {static_cast<std::uint16_t>(set.margin + column * (tile_w + set.spacing)),
-                                     static_cast<std::uint16_t>(set.margin + row * (tile_h + set.spacing))};
-    }
+    for (int i = 0; i < set.tile_count; ++i) sources[set.first_id + i] = detail::tile_source(set, i, tile_w, tile_h);
 }
 
 } // namespace

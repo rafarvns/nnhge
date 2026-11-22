@@ -1,13 +1,15 @@
 # tilemap — maps of tiles, objects and properties
 
 Header: `<nnh/tilemap.hpp>` · Uses: [collision.md](collision.md), [texture.md](texture.md), [result.md](result.md),
-[memory.md](memory.md) · Spec: [012](../../specs/012-tilemaps-and-collision/spec.md) (FR-0, FR-2, FR-4…FR-7, FR-11)
+[memory.md](memory.md), [assets.md](assets.md) · Spec: [012](../../specs/012-tilemaps-and-collision/spec.md)
+(FR-0…FR-7, FR-11)
 
-> Status: spec 012 **stage 3** — maps are **built in code**, queried, edited, collided against and **drawn**
-> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS benchmark gate is pending). Loading maps converted from Tiled
-> (`load_tilemap`, stage 4) and animated tiles (stage 6) come later; they will use the same `Tilemap` object, so
-> code written against this page keeps working. Example: [`examples/platformer`](../../examples/platformer/main.cpp)
-> (a level built in code, a tile benchmark, a flip test).
+> Status: spec 012 **stage 4** — maps are **built in code**, queried, edited, collided against and **drawn**
+> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS gate passed), and **loaded** from converted `.nnhmap` assets
+> (`load_tilemap`). The converter that makes `.nnhmap` files from Tiled maps (`nnh-assetc`, stage 5) and animated
+> tiles (stage 6) come later; they use the same `Tilemap` object, so code written against this page keeps working.
+> Example: [`examples/platformer`](../../examples/platformer/main.cpp) (a level built in code, a tile benchmark, a
+> flip test).
 
 A `Tilemap` is a grid of cells in **tile layers**, cut from **tilesets** (textures), plus **object layers**
 (rectangles and points with a name and a type) and **properties** (named bool/int/float/string values on the map,
@@ -86,6 +88,53 @@ its index. Settings change later with `set_layer_offset/parallax/opacity/visible
 `layer_offset()` … `layer_collision()`; `find_tile_layer(name)` (−1 if none), `tile_layer_name(i)`. Offset,
 parallax, opacity and visibility affect [drawing](#drawing) only; `set_parallax_origin(Vec2)` /
 `parallax_origin()` set the map's parallax origin (Tiled's map property of the same name).
+
+## Loading a converted map
+
+```cpp
+auto loaded = nnh::load_tilemap("levels/level1");                    // assets/levels/level1.nnhmap
+if (!loaded) { NNH_LOG_ERROR(game, "%s", loaded.error().message); return; }
+nnh::Tilemap level = std::move(loaded.value());
+
+// Room to add things in code later (a file has no spare capacity of its own):
+auto roomy = nnh::load_tilemap("levels/level2", {.extra_objects = 8, .extra_properties = 8,
+                                                 .extra_string_bytes = 128});
+```
+
+`load_tilemap(path, options)` reads the asset `<path>.nnhmap` (the path has no extension, like `load_texture`), a
+map the build converted from Tiled (the converter, `nnh-assetc`, is spec 012 stage 5). The result is a `Tilemap`
+like one built in code: every query, edit, `collision_grid()` and `draw_tilemap` works on it.
+
+- **Checked before use.** The whole file is validated first: header, format version, size, CRC-32, every limit of
+  [the table above](#building-a-map), section offsets, strings (terminated, ≤ 255 bytes), tilesets against their
+  image size, every cell's tile id, objects, property types and ranges. A damaged file is an error, never a crash
+  (the validator is fuzzed: [security.md](../architecture/security.md#bounded-parsers-and-fuzzing-spec-002)).
+- **Tileset images** are loaded like `load_texture(name)`, with the image names the file carries (asset paths
+  without `.png`). Two tilesets with the same image share one texture. The map **owns** these textures: they are
+  freed with it (`reset()` or the destructor); keep the map alive while it is drawn. Each counts in
+  `AppConfig::gfx.max_textures`.
+- **Runtime data is rebuilt**: the collision-layer mask is worked out from the layers and tiles, so
+  `collision_at` and `collision::move` behave as if the map had been built in code.
+- **Extra room** (`LoadTilemapOptions`): `extra_tile_layers`, `extra_objects`, `extra_properties` (each can also give
+  one more tile its first property) and `extra_string_bytes`, all ≥ 0. Object layers and tilesets can't be added to
+  a loaded map. Without options a loaded map is full: `add_*` and new properties return `LimitReached` (replacing a
+  property's value still works).
+- **Load time only.** The file is read into a temporary buffer (tag `assets`), checked (one pass, plus a bitwise
+  CRC — about 8 shifts per byte), copied into the map's block and freed before the images load, so the peak is
+  file + map.
+
+| Error | When |
+|-------|------|
+| `InvalidArgument` | null or bad path, a negative extra |
+| `NotFound` | no such map; a tileset image missing (the message names the image) |
+| `Corrupted` | damaged or truncated file (CRC, sizes, offsets, content); a tileset image of another size than when the map was converted |
+| `Unsupported` | before `nnh::init()`; a map made by a newer engine (format version, animated tiles until stage 6) |
+| `LimitReached` | over a map limit (also with the extras); `AppConfig::gfx.max_textures` full |
+| `OutOfMemory` | no memory for the map |
+
+The engine logs the full reason on the `tilemap` channel (`load_tilemap("levels/level1"): ...`); the error message
+is short. The binary format is `engine/core/src/tilemap/map_format.hpp`: the file *is* the map block, a 128-byte
+header and fixed-size sections, little-endian.
 
 ## Tiles
 
@@ -207,6 +256,10 @@ bytes = 128 + 24·max_tilesets + 4·ids + align4(ids) + align4(6·tp)
 
 Cells dominate: 2 bytes per cell per layer **of capacity** (layers you never add still cost their cells).
 
+A **loaded** map's block is the `.nnhmap` file's size (its capacities are what it holds) plus its
+`LoadTilemapOptions`: 40 + 2·width·height bytes per extra tile layer, 36 per extra object, 12 per extra property (+ 6
+per extra tile that may get properties, up to the tile ids) and the extra string bytes, each section 4-byte aligned.
+
 | Map | Bytes |
 |-----|-------|
 | 40×15, default desc | 11 940 (≈ 11.7 KiB) |
@@ -220,7 +273,9 @@ Tileset textures are separate (tag `textures`, `Linear`): a 256×256 RGBA8 sheet
 ## Pitfalls
 
 - Capacities are fixed: size `max_*` for everything the level will ever hold, including objects or properties added
-  while playing.
+  while playing. For a loaded map, ask for that room with `LoadTilemapOptions`.
+- A loaded map's tileset textures are its own (a separate `load_texture` of the same image is another texture):
+  they count in `max_textures` until the map is freed.
 - `set_tile` with a tile id that no tileset has yet is a bug (assert): add tilesets first.
 - A `collision` layer makes **every** non-empty tile solid, including decorative ones; mark individual tiles with
   `set_tile_collision` instead when only some should block (a one-way plank on a `collision` layer is solid).

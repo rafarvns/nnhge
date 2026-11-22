@@ -6,7 +6,7 @@ target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
 # Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
-add_library(nnh_fuzz_targets STATIC fuzz/fuzz_targets.cpp)
+add_library(nnh_fuzz_targets STATIC fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
 target_include_directories(nnh_fuzz_targets PUBLIC fuzz PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 
@@ -87,10 +87,15 @@ add_executable(nnh_tests
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
     tilemap/test_map_draw.cpp
+    tilemap/test_map_edit_after_load.cpp
     tilemap/test_map_layout.cpp
+    tilemap/test_map_load.cpp
     tilemap/test_map_objects.cpp
     tilemap/test_map_properties.cpp
+    tilemap/map_file.cpp
     tilemap/test_map_tiles.cpp
+    tilemap/test_map_validate.cpp
+    tilemap/test_map_validate_content.cpp
     tilemap/test_tile_expand.cpp
     tilemap/test_tilemap_alloc.cpp
     tilemap/test_visible_range.cpp
@@ -341,7 +346,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg remote)
+    foreach(name path save asset_index wav ogg remote tilemap)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

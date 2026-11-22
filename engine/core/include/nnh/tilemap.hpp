@@ -2,7 +2,8 @@
 /// @file nnh/tilemap.hpp
 /// Tilemaps: a grid of tiles in layers, drawn from tilesets (textures) by gfx::draw_tilemap, with objects,
 /// properties and a collision grid for <nnh/collision.hpp>. Every part can be built in code; maps converted
-/// from the Tiled editor load into the same object (later stage of spec 012). See docs/api/tilemap.md.
+/// by the build (`.nnhmap`, from the Tiled editor) load into the same object with load_tilemap().
+/// See docs/api/tilemap.md.
 ///
 /// A map is one block of memory (tag "tilemap", Heap) allocated by create() with fixed capacities:
 /// nothing grows while playing, queries and edits never allocate. Coordinates: the map's cell (0, 0)
@@ -245,6 +246,33 @@ private:
     friend struct TilemapAccess;
     std::uint8_t* block_ = nullptr;
 };
+
+/// Extra room in a loaded map, so code can add to it later (a file has no spare capacity of its own). Each extra
+/// costs what docs/api/tilemap.md#memory says (a tile layer: 40 B + 2 B per cell). Every field ≥ 0.
+struct LoadTilemapOptions {
+    int extra_tile_layers = 0;  ///< for add_tile_layer()
+    int extra_objects = 0;      ///< for add_object() (object layers can't be added to a loaded map)
+    int extra_properties = 0;   ///< for set_*(); each can also give one more tile its first property
+    int extra_string_bytes = 0; ///< for new names and string values (each takes its length + 1)
+};
+
+/// Loads a map converted by the build from the game's assets: `path` is the asset path without extension
+/// ("levels/level1" → levels/level1.nnhmap, made from levels/level1.tmj), then loads its tilesets' images (as
+/// load_texture(); two tilesets with the same image share one texture). The map owns those textures: they are
+/// freed with it. The file is checked completely before it is used (a damaged file is an error, never a crash).
+/// The result is a Tilemap like one built in code: every query and edit works on it.
+/// Load time only: allocates the map's block (tag "tilemap": the file's size plus the extras) and reads the file
+/// into a temporary buffer first (tag "assets"). Errors: InvalidArgument (null or bad path, negative extras),
+/// NotFound (no such map, or a tileset image missing: the message names the image), Corrupted (damaged or
+/// truncated file, or a tileset image of another size than at conversion), Unsupported (before init(), or made
+/// for a newer engine), LimitReached (over a map limit with the extras, or AppConfig::gfx.max_textures full),
+/// OutOfMemory.
+/// @code
+/// auto loaded = nnh::load_tilemap("levels/level1");
+/// if (!loaded) { NNH_LOG_ERROR(game, "%s", loaded.error().message); return; }
+/// nnh::Tilemap level = std::move(loaded.value());
+/// @endcode
+Result<Tilemap> load_tilemap(const char* path, const LoadTilemapOptions& options = {});
 
 namespace gfx {
 

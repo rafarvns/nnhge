@@ -79,13 +79,17 @@ add_library(nnh_core STATIC
     src/text/utf8.cpp
     src/tilemap/map_build.cpp
     src/tilemap/map_collision.cpp
+    src/tilemap/map_copy.cpp
     src/tilemap/map_draw.cpp
     src/tilemap/map_layout.cpp
+    src/tilemap/map_load.cpp
     src/tilemap/map_objects.cpp
     src/tilemap/map_properties.cpp
     src/tilemap/map_property_table.cpp
     src/tilemap/map_strings.cpp
     src/tilemap/map_tiles.cpp
+    src/tilemap/map_validate.cpp
+    src/tilemap/map_validate_content.cpp
     src/tilemap/tile_expand.cpp
     src/tilemap/tilemap.cpp
     src/tilemap/visible_range.cpp

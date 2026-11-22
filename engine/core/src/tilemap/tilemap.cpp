@@ -65,7 +65,10 @@ Tilemap& Tilemap::operator=(Tilemap&& other) noexcept {
 }
 
 void Tilemap::reset() {
-    if (block_ != nullptr) detail::gfx_forget_tiles(block_); // batches drawn this frame must not read it
+    if (block_ != nullptr) {
+        detail::gfx_forget_tiles(block_); // batches drawn this frame must not read it
+        detail::release_map_textures(block_);
+    }
     mem::free(block_);
     block_ = nullptr;
 }

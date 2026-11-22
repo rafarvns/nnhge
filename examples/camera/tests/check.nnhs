@@ -1,0 +1,86 @@
+# Spec 018 AC-5/AC-6/AC-7, automatic (spec 013): the playground at zooms 1, 1.5, 2 and 0.5 (screenshots: no seams
+# between tiles; on the console, no texel bleeding at 1.5 and 0.5), the tall world (the square across both screens,
+# a touch on the bottom screen and its marker line), two views, then the self-check, whose checksum lines must be
+# the PC's bit for bit, then the bench (two rigs, target < 0.05 ms per pair).
+# PC:      nnh run camera --pc --script examples/camera/tests/check.nnhs
+# Console: nnh run camera --script examples/camera/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The checksum lines below are the PC's (pc-debug). They change only if the script in self_check.cpp or the camera
+# module's arithmetic changes: then run `CAMERA_DEMO=check NNH_EXIT_AFTER_FRAMES=615
+# build/pc-debug/examples/camera/camera.exe`, copy its lines here and kCameraCheckGolden into self_check.hpp.
+fail-on "] E "
+fail-on "camera: FAIL"
+
+# The playground: single view with the HUD below, then each zoom (X: 1 → 1.5 → 2 → 3 → 0.5 → 1).
+wait 30
+screenshot zoom1
+tap X
+expect "camera: zoom 1.50" 10
+wait 30
+screenshot zoom15
+tap X
+expect "camera: zoom 2.00" 10
+wait 30
+screenshot zoom2
+tap X
+expect "camera: zoom 3.00" 10
+wait 10
+tap X
+expect "camera: zoom 0.50" 10
+wait 30
+screenshot zoom05
+tap X
+expect "camera: zoom 1.00" 10
+wait 10
+
+# Walk right for a second (the camera follows after the dead zone), then shake.
+hold RIGHT 60
+tap A
+wait 10
+screenshot shake
+wait 60
+
+# Tall world (R): the bottom screen continues the top one; a touch there puts a marker on the world point below it.
+tap R
+expect "camera: mode tall world" 10
+wait 40
+touch 160 120
+expect "camera: marker at" 10
+wait 10
+untouch
+wait 10
+screenshot tall
+
+# Two views (R): the bottom screen follows the automatic square at zoom 0.5.
+tap R
+expect "camera: mode two views" 10
+wait 40
+screenshot two
+tap R
+expect "camera: mode single view" 10
+wait 10
+
+# The self-check (SELECT): 600 updates, a checksum every 60, then the verdict.
+tap SELECT
+expect "camera: self-check started" 20
+expect "camera: 60 sum C1C4E2C9" 120
+expect "camera: 120 sum 50E077AD" 120
+expect "camera: 180 sum 6FE473D5" 120
+expect "camera: 240 sum FBE97331" 120
+expect "camera: 300 sum FFE1EC52" 120
+expect "camera: 360 sum 27C62865" 120
+expect "camera: 420 sum 3F549B0D" 120
+expect "camera: 480 sum E3526DCC" 120
+expect "camera: 540 sum CDCE34AF" 120
+# Frame 600's checksum line and the verdict come in the same frame: the verdict carries the same sum.
+expect "camera: PASS 5201E6CF" 120
+wait 10
+screenshot self-check
+
+# The bench (SELECT): 600 measured frames; the line says PASS (average under 0.05 ms per pair) or FAIL.
+tap SELECT
+expect "camera: bench started" 20
+expect "camera: bench avg" 700
+wait 10
+screenshot bench
+end

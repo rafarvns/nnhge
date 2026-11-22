@@ -335,6 +335,13 @@ if(TARGET tweens AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;TWEENS_DEMO=check;NNH_EXIT_AFTER_FRAMES=610"
         PASS_REGULAR_EXPRESSION "tweens: PASS B44CA3F6" FAIL_REGULAR_EXPRESSION "tweens: FAIL" TIMEOUT 120)
 endif()
+# The camera example's self-check in the simulator (spec 018 AC-6): the verdict the console script waits for.
+if(TARGET camera AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME camera_self_check_pc COMMAND camera)
+    set_tests_properties(camera_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;CAMERA_DEMO=check;NNH_EXIT_AFTER_FRAMES=615"
+        PASS_REGULAR_EXPRESSION "camera: PASS 5201E6CF" FAIL_REGULAR_EXPRESSION "camera: FAIL" TIMEOUT 120)
+endif()
 # The data example's self-check in the simulator (spec 014 T8.3): the line the console script expects.
 if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME data_self_check_pc COMMAND data)
@@ -355,6 +362,8 @@ target_sources(nnh_tests PRIVATE animation_example/test_self_check.cpp
 add_executable(nnh_actions_bench EXCLUDE_FROM_ALL actions/bench_actions.cpp)
 target_include_directories(nnh_actions_bench PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
+# The camera example's self-check (spec 018 T6.2): its golden checksum on every host compiler.
+target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)

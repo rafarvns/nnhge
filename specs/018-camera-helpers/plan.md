@@ -605,3 +605,29 @@ Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
 - T5.6: `test_zoom1_regression` passes (dst = tile size at zoom 1); `build/ref-018/compare.sh`: platformer bench and
   level 1 identical. The zoomed screenshots of the platformer bench (B cycles the zoom) are part of T7.2; the zoomed
   tiles are first checked visually with `examples/camera` (stage 6).
+
+## Stage 6 refinements and results
+
+- **The zoom cycle is 1 → 1.5 → 2 → 3 → 0.5** (X): the spec's (0.5, 1, 2, 3) plus 1.5, so the console script can
+  photograph a fractional zoom (T6.4, T9.2 ask for `zoom15`; fractional zooms are where texel bleeding would show).
+- **L toggles a 24-pixel gap** in the tall world (the gap is a setting, FR-10; 0 by default so the square is
+  continuous across the screens in the screenshot).
+- **Files**: `main.cpp`, `world.{hpp,cpp}` (the map built in code: 2 × 2 rooms of 40 × 24 tiles = 1280 × 768 pixels,
+  the player's square, the automatic target), `camera_scene.{hpp,cpp}`, `hud.{hpp,cpp}`, `self_check.{hpp,cpp}`,
+  `self_check_scene.{hpp,cpp}`, `bench_scene.{hpp,cpp}`, `demos.hpp` (no `demos.cpp`: `demo_is` lives in `main.cpp`),
+  `art/make_art.py` → `assets/art/tiles.png` (64 × 64, eight 16 × 16 tiles with a one-pixel frame on the top and left
+  edges, so a seam would show as a doubled or a missing line). The log channel is `example` (the engine owns
+  `camera`). `max_tiles` 8192 (two layers on both screens at zoom 0.5).
+- **Self-check script** (600 updates): a target that runs, stops and teleports (with `snap`), a dead zone 48 × 32,
+  smoothing (0.25, 0.125), limits narrowed at 230 and restored at 400, trauma at 60, 260 and 470, zooms 2 / 0.5 /
+  1.5, an offset, the tall-world layout from 300, the bottom screen from 520, limits cleared at 560. Every factor of
+  the target path is a short binary fraction, so the path is exact and the example's own `.cpp` needs no
+  `-ffp-contract=off`. Golden `0x5201E6CF` (pc-debug and pc-release); ctest `camera_self_check_pc`.
+- **Bench** (PC simulator, Debug): `camera: bench avg 0.0013 ms worst 0.0043 ms per pair (target < 0.05 ms) PASS`.
+- **Screenshots read back** (`CAMERA_DEMO=zoom1|zoom2|zoom05|tall|two`, and the script's `zoom15`, `shake`, `tall`,
+  `two`): no gap or doubled line between tiles at 0.5, 1.5 and 2 (the clear colour never shows through; at 1.5 the
+  frame lines are one or two pixels wide, the documented uneven texel size); in the tall world the square stands in
+  the doorway across the two screens, the brick rows continue from the top screen to the bottom one 40 pixels in; the
+  marker lands under the touch; two views show the automatic target at zoom 0.5 below.
+- `nnh run camera --pc --no-build --script examples/camera/tests/check.nnhs` → `nnh: PASS (86 lines, frames
+  1–1623)`, twice.

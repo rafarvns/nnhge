@@ -143,7 +143,7 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 6: `examples/camera` (PC)
 
-- [ ] **T6.1** Example core: original tileset made by `art/make_art.py` (contrasting tile borders that make any seam
+- [x] **T6.1** Example core: original tileset made by `art/make_art.py` (contrasting tile borders that make any seam
   visible), a code-built map larger than four screens with rooms, the player square (Circle Pad / D-Pad) and an
   automatic second target, `CameraRig` with dead zone, smoothing on y, limits from `bounds()`, `debug_draw`. Controls
   (every 3DS has them): A trauma 0.4, X cycles zoom 0.5 → 1 → 2 → 3, Y toggles smoothing, R cycles the screen mode
@@ -152,18 +152,18 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
   (`CAMERA_DEMO=zoom1|zoom2|zoom05|tall|two`, `NNH_EXIT_AFTER_FRAMES`, `NNH_SCREENSHOT`) read back: no seams between
   tiles, the square continuous across the screens in tall-world mode, the marker under the touch. Covers AC-5, FR-10,
   FR-11, FR-14.
-- [ ] **T6.2** Self-check (AC-2): `self_check.{hpp,cpp}` (pure: a 600-update script — target path with jumps and
+- [x] **T6.2** Self-check (AC-2): `self_check.{hpp,cpp}` (pure: a 600-update script — target path with jumps and
   stops, dead zone, smoothing, limits changed mid-way, trauma, zoom changes, tall-world mode — FNV checksum of the
   bits of `followed()` and `position()` per update, checkpoints every 60), golden values from the simulator;
   `self_check_scene` logs `camera: <frame> sum <checksum>` every 60 frames and `camera: PASS <checksum>` or
   `camera: FAIL …`. Files: `examples/camera/self_check.{hpp,cpp}`, `self_check_scene.{hpp,cpp}`,
   `tests/camera_example/test_self_check.cpp`, `tests/CMakeLists.txt`. Test: the unit test against the goldens.
   Covers AC-2, AC-6, FR-12.
-- [ ] **T6.3** [P] Bench (AC-7): `bench_scene` updates and applies a tall-world pair (dead zone, smoothing, trauma)
+- [x] **T6.3** [P] Bench (AC-7): `bench_scene` updates and applies a tall-world pair (dead zone, smoothing, trauma)
   16 times per frame for 600 frames, profile scope `camera`, logs `camera: bench avg X ms worst Y ms per pair
   (target < 0.05 ms) PASS|FAIL`. Files: `examples/camera/bench_scene.{hpp,cpp}`. Test: PC run logs the line. Covers
   AC-7, FR-15.
-- [ ] **T6.4** The script `examples/camera/tests/check.nnhs`: SELECT → expect every `camera: <frame> sum` line and
+- [x] **T6.4** The script `examples/camera/tests/check.nnhs`: SELECT → expect every `camera: <frame> sum` line and
   `camera: PASS`; then X/R presses with screenshots `zoom2`, `zoom05`, `zoom15` (set by the script's presses),
   `tall`, `two`; a touch on the bottom screen and its marker line; the bench line; `fail-on "camera: FAIL"`,
   `fail-on "] E "`. Test: `nnh run camera --pc --no-build --script examples/camera/tests/check.nnhs` → PASS, twice.

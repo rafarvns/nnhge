@@ -664,3 +664,42 @@ Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
 - T7.4: `hello` as in stage 5 (Release 3DS text 216 748, PC 130 732; no camera symbol); `build/ref-018/compare.sh`:
   every reference screenshot identical after stage 7 (platformer level 1 too: at frame 90 the camera is still at the
   level's edge).
+
+## Stage 8: Linux checks (left to the maintainer)
+
+Not run in this session (the maintainer runs VM 120). What to compare on GCC 13, GCC 14 and clang 18 (ASan/UBSan):
+`nnh_tests` and ctest pass; `noise_golden_values` (six bit patterns in `tests/camera/test_camera_noise.cpp`),
+`zoom_1_draws_the_same_items_batches_and_quads_as_before_zoom` (`0x276C0CD5`) and
+`the_camera_self_check_reaches_the_golden_checksum` (`0x5201E6CF`) pass unchanged.
+
+## Stage 9: console run (prepared)
+
+T9.1 was done on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development builds
+(`3ds-dev`) of `camera`, `platformer` and `hello` build without a warning; `scripts/check_release_strings.sh
+build/3ds-release/examples/camera/camera.elf` → ok (the Release `camera.elf` has no `camera_debug_draw` and none of
+the Debug-only strings; the misuse error text stays, as FR-15 wants a Release log). 3ds-release `camera.elf` text
+256 716; 3ds-dev `hello.elf` text 233 560 (stage 0: 233 264).
+
+T9.2, on an Old 3DS, nobody touching it after Y. Three runs, each: open the Homebrew Launcher, press **Y**, then on the
+PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs and screenshots in `build/logs/`):
+
+1. `build/pc-debug/tools/nnh/nnh run camera --script examples/camera/tests/check.nnhs` (about 30 s). Expected, as on
+   the PC: `camera: zoom 1.50`, `2.00`, `3.00`, `0.50`, `1.00`; `camera: mode tall world`, `camera: marker at …`,
+   `camera: mode two views`, `camera: mode single view`; `camera: self-check started`; `camera: 60 sum C1C4E2C9`,
+   `120 sum 50E077AD`, `180 sum 6FE473D5`, `240 sum FBE97331`, `300 sum FFE1EC52`, `360 sum 27C62865`,
+   `420 sum 3F549B0D`, `480 sum E3526DCC`, `540 sum CDCE34AF`, `camera: PASS 5201E6CF`; `camera: bench avg X ms worst
+   Y ms per pair (target < 0.05 ms) PASS`; `nnh: PASS (86 lines, …)`. Then read the screenshots `zoom15`, `zoom05`,
+   `zoom2`, `tall` (top and bottom): no seams between tiles, no texel bleeding (a stray line of the neighbouring
+   tile's colour at a tile's edge; if seen at 1.5 or 0.5, apply the plan's mitigation), the square continuous across
+   the screens in `tall`.
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (about 40 s). Expected:
+   `replay: 60 level1 x 121 y 242 coins 1 sum 0CF7E4CE`, `120 … sum 712D6080`, `180 … sum B81241F7`,
+   `240 … sum 334BB1A5`, `300 … sum 47219250`, `360 … sum CC2AA785`, `420 … sum 27D1EDDA`, `480 … sum A8162475`,
+   `540 … sum 1100B98D`, `600 … sum 8E234F2C`, `660 bonus … sum CFF54129`, `720 … sum A1A13061`, `780 … sum 8607A3AD`,
+   `840 … sum 23D5768C`, `replay: done 900 frames sum 7CA9B256: 60 Hz PASS`; `nnh: PASS`.
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/zoom_gate.nnhs` (up to about
+   7.5 minutes). Expected: `bench: PASS 4 layers + 300 sprites, …` (zoom 1: spec 012's gate still passes), `bench:
+   zoom 0.50 limits L layers (300 sprites), S sprites (4 layers)`, `bench: zoom 0.50 done`, `bench: zoom 2.00 limits
+   …`, `bench: zoom 2.00 done`, `nnh: PASS`. Record L and S at both zooms here and in `docs/api/tilemap.md#zoom`.
+
+Results: pending (fill in "Stage 9 results": verdicts, the bench number per pair, the limits, the log folders).

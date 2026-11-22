@@ -99,6 +99,13 @@ Release `hello.exe` 277,503 bytes and `hello.3dsx` 261,464, unchanged by spec 01
 sections equal a build of the previous commit; the growth since T0.1 came with spec 015), with no data symbol;
 `data.3dsx` 502,680 bytes.
 
+Spec 018 (camera helpers, zoom in `Camera2D`), 2026-11-22, same machine: Release `hello.elf` text 216,484 →
+216,748 (+264: the zoom in the draw list and the tile path's chunk loop; budget 320), data +24 (the two cameras);
+`hello.exe` text 130,024 → 130,732 (+708, over the PC budget of 512: x86-64 code and 16-byte function alignment);
+no camera symbol in either. Edit `hello` → simulator 1.5–1.6 s, → `.3dsx` 2.9 s; `<nnh/camera.hpp>` 951
+preprocessed lines and 0.30–0.35 s alone (`<nnh/gfx.hpp>` 768 lines, 0.30–0.36 s). Details: plan 018, "Stage 0
+results" and "Stage 10 results".
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -214,9 +221,16 @@ spec; the order below is a proposal.
   overrides saved with `nnh::save` (`NNHB`, fuzzed), Old 3DS fallbacks ([api/actions.md](api/actions.md)).
   `examples/actions`: playfield, controls screen, bench (PC: 64 actions × 4 slots in 0.026 ms) and a self-check
   script (`tests/check.nnhs`)
-- [ ] **Camera helpers** (Godot Camera2D, Cinemachine): follow with smoothing and a dead zone, map limits, shake,
-  zoom, the two screens as one tall world or two views — [spec 018](../specs/018-camera-helpers/spec.md) (approved 2026-11-22,
-  maintainer pre-approved recommendations; plan next)
+- [x] **Camera helpers** (Godot Camera2D, Cinemachine) — [spec 018](../specs/018-camera-helpers/spec.md), implemented,
+  console check pending: `<nnh/camera.hpp>`, a `CameraRig` value per view that follows a point or a box with an
+  offset, a dead zone in screen pixels and per-frame smoothing, stays inside limits (`Tilemap::bounds()`), shakes from
+  seeded trauma, zooms about its centre, drives one screen or both as one tall world (two rigs = two views), converts
+  screen ↔ world points and draws its dead zone and limits; frame-deterministic, 128 bytes, no allocation
+  ([api/camera.md](api/camera.md)). `Camera2D::zoom` in the renderer (D33: sprites, text, shapes, seamless tile layers
+  with snapped edges, row chunks below zoom 1; zoom 1 byte-identical) ([api/gfx.md](api/gfx.md#zoom)).
+  `examples/camera`: playground, self-check (`tests/check.nnhs`), bench (PC: 0.0013 ms per pair of rigs); the
+  platformer follows its player with the rig (dead zone, smoothing on y, look-ahead, landing shake) and its bench
+  zooms (B; `tests/zoom_gate.nnhs`)
 - [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels and layout boxes built
   in code, focus moved with the D-Pad and touch on the bottom screen; menus without drawing rectangles by hand
 - [ ] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System): emitters configured by a C++

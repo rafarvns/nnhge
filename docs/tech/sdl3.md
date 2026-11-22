@@ -14,7 +14,7 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `audio_mixer_pc.cpp` | The software stand-in for the 3DS DSP: voices and streams resampled (linear) to 48 kHz, gains ramped per block; SDL-free, unit tested in `tests/simulator/` |
 | `texture_pc.cpp` | Textures: embedded PNG → `SDL_LoadPNG_IO` → `SDL_Texture` (nearest filtering) |
 | `draw2d_pc.cpp` | One 2D pass: sprites (`SDL_RenderTextureRotated` + color/alpha mod) and shapes, clipped per screen |
-| `draw_tiles_pc.cpp` | Tile batches (spec 012, D26): one `SDL_RenderTexture` per quad, `SDL_RenderTextureRotated` for flips; one color/alpha mod per batch |
+| `draw_tiles_pc.cpp` | Tile batches (spec 012, D26): one `SDL_RenderTexture` per quad, `SDL_RenderTextureRotated` for flips; one color/alpha mod per batch; zoomed quads at the batch's destination size (spec 018, D33) |
 | `video_pc.cpp` | Frame begin/end, 60 Hz pacing, screenshots |
 | `input_pc.cpp` | Keyboard → buttons and sticks; combines keyboard, gamepad and mouse into one sample |
 | `gamepad_pc.cpp` | First connected gamepad (hot-plug), buttons by position, sticks, triggers |
@@ -75,6 +75,15 @@ clockwise turn `R(u, v) = (−v, u)`, Tiled's result `F·T` equals `R·S` for th
 That is: horizontal = `flip_y`, vertical = `!flip_x` (square tiles only, so the turn stays in place).
 `tests/platform_conformance/test_draw_tiles_pc.cpp` draws the 8 orientations of an 8×8 texture with a different
 color per pixel and reads every pixel back (headless, software renderer).
+
+**Zoom** (spec 018, D33): a quad covers `{x, y, w, h}` with `w = dst_w (+1 with kTileOrientWiden)` and
+`h = dst_h (+1 with kTileOrientTaller)`; the source rectangle stays the tile. The fast path is
+`(orient & 7) == 0` (no flip; the size bits don't matter). A diagonal quad with `w ≠ h` passes the **pre-swapped**
+rectangle `{x + (w − h) / 2, y + (h − w) / 2, h, w}` to `SDL_RenderTextureRotated`: SDL turns it 90° about its
+centre, so its footprint is exactly `{x, y, w, h}` (with `w = h` it is the plain destination, so zoom 1 is
+unchanged). The screens are native-size render targets with nearest sampling, so the window scale doesn't interact
+with the zoom. The conformance test checks zoom 2 texel by texel and that a widened quad and a widened diagonal quad
+cover exactly their 13 × 12 rectangles.
 
 ## Developer features
 

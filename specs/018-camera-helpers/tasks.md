@@ -187,22 +187,22 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 - [x] **T7.3** `examples/platformer/tests/zoom_gate.nnhs`: the zoom-1 gate (`bench: PASS` required), then B + A at
   zoom 0.5 and at zoom 2 (`expect "bench: zoom 0.50 done"`, `"bench: zoom 2.00 done"`), screenshots of each. Test:
   `nnh run platformer --pc --no-build --script examples/platformer/tests/zoom_gate.nnhs` → PASS. Covers AC-7.
-- [ ] **T7.4** Opt-in and regression: `hello` sizes against T0.1 (budget ≤ 320 B text 3ds-release, ≤ 512 B
+- [x] **T7.4** Opt-in and regression: `hello` sizes against T0.1 (budget ≤ 320 B text 3ds-release, ≤ 512 B
   pc-release; no camera symbol), AC-8 comparison of every reference screenshot, `gate.nnhs --pc` and the other
   examples' scripts unchanged and passing. Files: plan.md ("Stage 7 results"). Covers FR-16, AC-8.
 
 ## Stage 8: Linux checks (VM 120)
 
-- [ ] **T8.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the noise
+- [ ] **T8.1** (left to the maintainer, not run in this session: see plan.md "Stage 8") On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the noise
   goldens, the zoom-1 regression hash and the AC-2 checksums are identical on all three. Files: tasks.md (results).
   Covers I, FR-12, AC-2.
 
 ## Stage 9: console check (the only steps on the 3DS)
 
-- [ ] **T9.1** Builds and strings: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development builds of
+- [x] **T9.1** (done on the PC; plan.md "Stage 9: console run (prepared)") Builds and strings: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development builds of
   `examples/camera` and `examples/platformer`; `scripts/check_release_strings.sh` on the Release `camera.elf` (no
   camera debug strings); `hello.elf` size recorded. Covers FR-14, AC-8.
-- [ ] **T9.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [ ] **T9.2** (prepared: commands and expected lines in plan.md "Stage 9: console run (prepared)") Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run camera --script examples/camera/tests/check.nnhs` → every sum line equals
      the PC's, `camera: PASS`, bench < 0.05 ms per pair; screenshots (zoom 2, 0.5, 1.5, tall world) read back: no
      seams, no texel bleeding (else the plan's mitigation);

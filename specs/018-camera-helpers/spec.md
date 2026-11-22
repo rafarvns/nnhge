@@ -1,7 +1,7 @@
 # Spec 018: Camera helpers
 
-Status: approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with the
-recommended answer)
+Status: implemented, console check (T9.2) and Linux checks (T8.1) pending (2026-11-22). Approved 2026-11-22
+(maintainer pre-approved recommendations: every open question below is answered with the recommended answer)
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 002](../002-core-foundation/spec.md) (asserts, logs, profiling), [spec 004](../004-2d-graphics/spec.md)
 (`Camera2D`, `gfx::set_camera`, camera-relative and `ignore_camera` draws; FR-9 extends `Camera2D` with a zoom),

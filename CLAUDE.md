@@ -114,6 +114,13 @@ Input actions (spec 017, implemented; demo `examples/actions`): `<nnh/actions.hp
 touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
 frame (D32 after-input hook), listen/conflicts/reset for a controls screen, `NNHB` overrides saved with `nnh::save`
 ([api/actions.md](docs/api/actions.md)).
+Camera helpers (spec 018, implemented, console check pending; D33; demo `examples/camera`): `<nnh/camera.hpp>` —
+`nnh::CameraRig`, a 128-byte value per view: `update(target)` once per frame after moving the target (one 60 Hz
+frame, bit-identical on PC and 3DS), `apply()` writes `Camera2D`; dead zone in screen pixels, per-frame smoothing,
+limits (`set_limits(map.bounds())`), seeded trauma shake, zoom about the centre, `CameraLayout::TallWorld` (both
+screens as one world) or two rigs for two views, `to_world`/`to_screen`, `debug_draw()`. `Camera2D::zoom` (0.5–4)
+is applied by core to sprites, text, shapes and tile layers (snapped tile edges, row chunks below zoom 1; zoom 1
+byte-identical) ([api/camera.md](docs/api/camera.md), [gfx.md#zoom](docs/api/gfx.md#zoom)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in

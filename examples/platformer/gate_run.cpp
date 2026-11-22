@@ -1,5 +1,7 @@
 #include "gate_run.hpp"
 
+#include <cstdio>
+
 GateRun::GateRun(const GateConfig& config) : config_(config) {
     start(config_.target);
 }
@@ -71,4 +73,30 @@ GateStep GateRun::next_sprite_trial() {
     }
     phase_ = GatePhase::Done;
     return GateStep::Finished;
+}
+
+float next_bench_zoom(float zoom) {
+    if (zoom == 1) return 0.5f;
+    if (zoom == 0.5f) return 2;
+    return 1;
+}
+
+nnh::Vec2 bench_camera_max(float zoom) {
+    if (zoom == 1) return {288, 96}; // 48 × 24 cells (the bench's map before spec 018) minus the view and a margin
+    return {64 * 16 - 400 / zoom - 80, 40 * 16 - 240 / zoom - 48};
+}
+
+void format_zoom_limits(char* out, std::size_t size, float zoom, int layer_limit, int sprite_limit,
+                        GateCounts target) {
+    char sprites[24];
+    if (sprite_limit < 0)
+        std::snprintf(sprites, sizeof sprites, "none");
+    else
+        std::snprintf(sprites, sizeof sprites, "%d sprites", sprite_limit);
+    std::snprintf(out, size, "bench: zoom %.2f limits %d layers (%d sprites), %s (%d layers)",
+                  static_cast<double>(zoom), layer_limit, target.sprites, sprites, target.layers);
+}
+
+void format_zoom_done(char* out, std::size_t size, float zoom) {
+    std::snprintf(out, size, "bench: zoom %.2f done", static_cast<double>(zoom));
 }

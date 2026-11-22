@@ -1,0 +1,50 @@
+# Spec 018 AC-7, automatic (spec 013): the tile benchmark's gate at zoom 1 (spec 012's 4 full layers + 300 sprites at
+# 60 Hz must still pass with zoom built in), then the same trials at zooms 0.5 and 2, which only measure the limits
+# (`bench: zoom Z limits L layers (300 sprites), S sprites (4 layers)`; zooming out is the game's cost choice).
+# PC:      nnh run platformer --pc --script examples/platformer/tests/zoom_gate.nnhs
+# Console: nnh run platformer --script examples/platformer/tests/zoom_gate.nnhs   (Homebrew Launcher open, press Y)
+# Up to about 27000 frames (7.5 minutes) when every trial passes. Screenshots are taken between the gates.
+fail-on "] E "
+
+# To the benchmark (level 1 -> bonus -> benchmark), at 4 layers + 300 sprites, zoom 1.
+wait 30
+tap SELECT
+wait 10
+tap SELECT
+wait 60
+screenshot bench-zoom1
+wait 30
+
+# The zoom-1 gate: the verdict.
+fail-on "bench: FAIL"
+tap A
+expect "bench: gate started" 10
+expect "bench: PASS" 12000
+wait 15
+screenshot gate-zoom1
+
+# Zoom 0.5 (B): four times the tiles; the limits only.
+tap B
+expect "bench: zoom 0.50" 10
+wait 60
+screenshot bench-zoom05
+wait 30
+tap A
+expect "bench: gate started" 10
+# The limits line comes in the same frame, just before this one (it is in the saved log).
+expect "bench: zoom 0.50 done" 12000
+wait 15
+screenshot gate-zoom05
+
+# Zoom 2 (B): a quarter of the tiles.
+tap B
+expect "bench: zoom 2.00" 10
+wait 60
+screenshot bench-zoom2
+wait 30
+tap A
+expect "bench: gate started" 10
+expect "bench: zoom 2.00 done" 12000
+wait 15
+screenshot gate-zoom2
+end

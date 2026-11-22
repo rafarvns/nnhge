@@ -1,6 +1,7 @@
 # Plan 018: Camera helpers
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: implemented, console check (T9.2) and Linux checks (T8.1) pending (2026-11-22); approved 2026-11-22
+(maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D33 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, profiler), spec 004 (`Camera2D`, the recorded draw list), spec 005 (text as sprites),
 spec 012 (tile batches, D26; the platformer and its gate), spec 013 (scripts), spec 015 (the determinism rules of the
@@ -631,3 +632,35 @@ Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   marker lands under the touch; two views show the automatic target at zoom 0.5 below.
 - `nnh run camera --pc --no-build --script examples/camera/tests/check.nnhs` → `nnh: PASS (86 lines, frames
   1–1623)`, twice.
+
+## Stage 7 refinements and results
+
+- **Platformer step 2** (`level_camera.{hpp,cpp}`): dead zone 32 × 48 screen pixels, smoothing (1, 0.15) — y only, so
+  runs stay crisp and jumps don't jerk the view —, `max_shake` (4, 6), map limits with Start alignment; a look-ahead
+  of 32 pixels in the facing direction that moves 1 pixel per frame when the player turns (`look_ahead_step`, the
+  rig's offset); a landing at full fall speed (6 px/frame, `kHardLandingSpeed`) adds trauma 0.5 (`landing_trauma`).
+  Tests: the frozen old camera against a rig configured as in step 1 (kept), the step 2 settings, the settling at the
+  edges, the look-ahead (64 frames for a full turn), the landing threshold.
+- **`restart()` assigns a fresh rig.** The first regeneration of the replay lines passed standalone
+  (`PLATFORMER_DEMO=replay`) but `level.nnhs` failed at frame 360: the script plays level 1 before the replay, and the
+  shake's noise clock (which `stop_shake()` and `snap()` don't reset) had advanced, so the replay's landing shake
+  sampled other noise. A new `CameraRig` in `restart()` (trauma 0, noise clock 0) makes every restart — and the
+  replay — start the same. Documented in `docs/api/camera.md` ("assign a fresh rig").
+- **New replay lines** (`examples/platformer/tests/level.nnhs`, regenerated in the same commit as the feel): frame 60
+  is unchanged (the camera is still at the level's left/bottom edge), then `120 … sum 712D6080` … `840 … sum
+  23D5768C`, `replay: done 900 frames sum 7CA9B256: 60 Hz PASS`. ctest `platformer_replay_matches_script` passes and
+  `nnh run platformer --pc --no-build --script examples/platformer/tests/level.nnhs` → `nnh: PASS (74 lines)`.
+- **Bench zoom** (T7.2): B cycles 1 → 0.5 → 2 (`next_bench_zoom`), the bench sets `Camera2D` by hand (no rig, XI);
+  map 64 × 40 cells; the wandering camera's range is (288, 96) at zoom 1 — spec 012's, so the bench screenshot is
+  identical (`compare.sh`) — and keeps the view on the map at the other zooms (`bench_camera_max`); `max_tiles` =
+  12 × 51 × 31 (full layers at zoom 0.5; the scratch is unchanged, only the budget grows). A at zoom ≠ 1 runs the same
+  trials, measure only: `bench: zoom Z limits L layers (300 sprites), S sprites (4 layers)` then `bench: zoom Z done`
+  (`format_zoom_limits`/`format_zoom_done`, unit-tested), and the screens say MEASURED instead of a verdict.
+- **`zoom_gate.nnhs`** (T7.3) with `--pc`: `nnh: PASS (50 lines, frames 1–18101)`; zoom 1: `bench: PASS 4 layers + 300
+  sprites, avg 16.7 ms, worst 17.6 ms` (limits 12 layers, 2000 sprites: the PC's maximum); zoom 0.5: limits 12 layers,
+  1500 sprites; zoom 2: limits 3 layers, 200 sprites. The PC's zoom-2 numbers are an artefact of the simulator's
+  renderer (scaled texture copies cost more there than 1:1 copies; zoom 2 draws a quarter of the tiles: 408 for 4
+  layers); the console numbers are the ones that count (stage 9). Screenshots read back: zoom 0.5 and 2 without seams.
+- T7.4: `hello` as in stage 5 (Release 3DS text 216 748, PC 130 732; no camera symbol); `build/ref-018/compare.sh`:
+  every reference screenshot identical after stage 7 (platformer level 1 too: at frame 90 the camera is still at the
+  level's edge).

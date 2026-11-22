@@ -1,6 +1,7 @@
 # Tasks 018: Camera helpers
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: implemented, console check (T9.2) and Linux checks (T8.1) pending (2026-11-22); approved 2026-11-22
+(maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -171,19 +172,19 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 7: the platformer's new feel, the zoomed gate, opt-in checks
 
-- [ ] **T7.1** Platformer step 2: dead zone, smoothing on y, a look-ahead offset in the facing direction, a small
+- [x] **T7.1** Platformer step 2: dead zone, smoothing on y, a look-ahead offset in the facing direction, a small
   trauma when the player lands from a high fall (landing speed threshold); `test_level_camera.cpp` covers the new
   settings and the landing rule. Regenerate the replay lines with `PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=920
   build/pc-debug/examples/platformer/platformer.exe` and copy them into `examples/platformer/tests/level.nnhs` **in
   the same commit**, whose message says why they changed. Files: `examples/platformer/level_camera.cpp`,
   `level_play.cpp`, `tests/level.nnhs`, `tests/platformer/test_level_camera.cpp`. Test: ctest
   `platformer_replay_matches_script`; `level.nnhs --pc` → PASS. Covers AC-4 step 2.
-- [ ] **T7.2** [P] Bench zoom: B cycles 1 → 0.5 → 2 (`gfx::set_camera` by hand: the bench keeps its own camera, XI);
+- [x] **T7.2** [P] Bench zoom: B cycles 1 → 0.5 → 2 (`gfx::set_camera` by hand: the bench keeps its own camera, XI);
   map 64 × 40 cells with the zoom-1 camera range unchanged; a measure-only gate at zoom ≠ 1 logging
   `bench: zoom 0.50 limits L layers (300 sprites), S sprites (4 layers)` and `bench: zoom 0.50 done`. Files:
   `examples/platformer/bench.{hpp,cpp}`, `gate.{hpp,cpp}`, `tests/platformer/test_gate_run.cpp`. Test: unit test of
   the measure-only gate; AC-8 bench screenshot identical at zoom 1. Covers AC-7, AC-8.
-- [ ] **T7.3** `examples/platformer/tests/zoom_gate.nnhs`: the zoom-1 gate (`bench: PASS` required), then B + A at
+- [x] **T7.3** `examples/platformer/tests/zoom_gate.nnhs`: the zoom-1 gate (`bench: PASS` required), then B + A at
   zoom 0.5 and at zoom 2 (`expect "bench: zoom 0.50 done"`, `"bench: zoom 2.00 done"`), screenshots of each. Test:
   `nnh run platformer --pc --no-build --script examples/platformer/tests/zoom_gate.nnhs` → PASS. Covers AC-7.
 - [ ] **T7.4** Opt-in and regression: `hello` sizes against T0.1 (budget ≤ 320 B text 3ds-release, ≤ 512 B

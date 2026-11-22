@@ -54,6 +54,7 @@ class LevelPlay {
     PlayerSprite sprite_; ///< drawing only: an animator chooses the frames (spec 016)
     nnh::Vec2 spawn_{};
     nnh::CameraRig camera_; ///< follows the player (spec 018), see level_camera.hpp
+    float look_ahead_ = 0;  ///< the camera's offset x: ahead of the player, eased when it turns
     CoinBook coins_;
     Door doors_[kMaxDoors] = {};
     int door_count_ = 0;

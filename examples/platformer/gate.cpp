@@ -36,12 +36,14 @@ void sprite_limit_text(char* out, std::size_t size, int limit) {
 
 } // namespace
 
-void Gate::start() {
+void Gate::start(float zoom) {
     run_ = GateRun(kConfig);
+    zoom_ = zoom;
     running_ = true;
     finished_ = false;
-    NNH_LOG_INFO(platformer, "bench: gate started: %d layers + %d sprites for %d frames, then the limits",
-                 kConfig.target.layers, kConfig.target.sprites, kConfig.target_frames);
+    NNH_LOG_INFO(platformer, "bench: gate started: %d layers + %d sprites for %d frames, then the limits%s",
+                 kConfig.target.layers, kConfig.target.sprites, kConfig.target_frames,
+                 measure_only() ? " (zoomed: measure only)" : "");
 }
 
 void Gate::stop() {
@@ -88,6 +90,14 @@ void Gate::log_layer_limit() const {
 }
 
 void Gate::log_finish() const {
+    if (measure_only()) {
+        char line[128];
+        format_zoom_limits(line, sizeof line, zoom_, run_.layer_limit(), run_.sprite_limit(), kConfig.target);
+        NNH_LOG_INFO(platformer, "%s", line);
+        format_zoom_done(line, sizeof line, zoom_);
+        NNH_LOG_INFO(platformer, "%s", line);
+        return;
+    }
     char text[48];
     sprite_limit_text(text, sizeof text, run_.sprite_limit());
     NNH_LOG_INFO(platformer, "bench: limit %s with %d layers", text, kConfig.target.layers);
@@ -135,8 +145,13 @@ void Gate::draw_verdict() const {
     const GateTrial& t = run_.target();
     char text[48];
     const bool pass = run_.passed();
-    nnh::gfx::draw_text(kBottom, {12, 26}, pass ? "GATE: PASS" : "GATE: FAIL",
-                        {.color = pass ? kPass : kFail, .scale = 3, .shadow = true});
+    if (measure_only()) {
+        std::snprintf(text, sizeof text, "ZOOM %.2f", static_cast<double>(zoom_));
+        nnh::gfx::draw_text(kBottom, {12, 26}, text, {.color = kBusy, .scale = 3, .shadow = true});
+    } else {
+        nnh::gfx::draw_text(kBottom, {12, 26}, pass ? "GATE: PASS" : "GATE: FAIL",
+                            {.color = pass ? kPass : kFail, .scale = 3, .shadow = true});
+    }
     const int y = 60;
     nnh::debug::printf(kBottom, 12, y, "%d layers + %d sprites at 60 Hz", t.counts.layers, t.counts.sprites);
     nnh::debug::printf(kBottom, 12, y + line, "avg %.1f ms  worst %.1f ms", t.average_ms(), t.worst_ms);
@@ -156,12 +171,13 @@ void Gate::draw_banner() const {
     if (!finished_) return;
     namespace gfx = nnh::gfx;
     const bool pass = run_.passed();
-    const char* verdict = pass ? "GATE: PASS" : "GATE: FAIL";
+    const char* verdict = measure_only() ? "MEASURED" : (pass ? "GATE: PASS" : "GATE: FAIL");
     const nnh::Vec2 size = gfx::measure_text(verdict, 4);
     const float x = (400 - size.x) / 2;
     const float y = (240 - size.y) / 2;
     gfx::fill_rect(kTop, {x - 12, y - 10, size.x + 24, size.y + 20}, nnh::rgba(0, 0, 0, 200),
                    {.layer = 3, .ignore_camera = true});
     gfx::draw_text(kTop, {x, y}, verdict,
-                   {.color = pass ? kPass : kFail, .scale = 4, .layer = 3, .ignore_camera = true});
+                   {.color = measure_only() ? kBusy : (pass ? kPass : kFail), .scale = 4, .layer = 3,
+                    .ignore_camera = true});
 }

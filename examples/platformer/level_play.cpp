@@ -64,13 +64,21 @@ void LevelPlay::restart() {
     player_.spawn(spawn_);
     coins_.restart();
     in_door_ = false;
+    // A fresh rig: no trauma and the shake's noise clock back at 0, so a restart (and the replay that starts with
+    // one) plays the same whatever came before.
+    camera_ = nnh::CameraRig(level_camera_settings(map_.bounds()));
+    look_ahead_ = player_.facing_left() ? -kLookAhead : kLookAhead;
+    camera_.set_offset({look_ahead_, 0});
     camera_.snap(player_.box()); // no glide from wherever the camera was
     camera_.apply();
     nnh::events::publish(LevelRestarted{coins_.count()});
 }
 
 void LevelPlay::update(const PlayerInput& input, bool doors) {
+    const bool was_on_ground = player_.on_ground();
+    const float fall_speed = player_.velocity().y;
     player_.update(grid_, input);
+    if (!was_on_ground && player_.on_ground()) camera_.add_trauma(landing_trauma(fall_speed)); // a hard landing
     sprite_.update({.on_ground = player_.on_ground(), .velocity = player_.velocity(),
                     .facing_left = player_.facing_left()});
     const nnh::Rect box = player_.box();
@@ -81,6 +89,8 @@ void LevelPlay::update(const PlayerInput& input, bool doors) {
     }
     take_coins();
     if (doors) enter_doors();
+    look_ahead_ = look_ahead_step(look_ahead_, player_.facing_left());
+    camera_.set_offset({look_ahead_, 0});
     camera_.update(box); // after moving the player: this frame's position
     camera_.apply();
 }

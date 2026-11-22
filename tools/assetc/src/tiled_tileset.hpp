@@ -3,7 +3,8 @@
 // JSON tileset file (`.tsj`/`.json`, path relative to the map). Its image must be a PNG inside the assets folder
 // (path relative to the file that names it) whose real size matches Tiled's numbers and the texture rules; tiles
 // must be the map's size. Tile properties `solid` and `one_way` (bools) become collision flags; the others stay
-// tile properties. Refused: XML tilesets, image collections, wang sets, tile offsets, animations (stage 6).
+// tile properties; a tile's "animation" (1..32 frames of its own tileset, 1..65535 ms each) is kept with local ids.
+// Refused: XML tilesets, image collections, wang sets, tile offsets.
 
 #include <string>
 

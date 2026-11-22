@@ -101,7 +101,9 @@ nnh::Result<nnh::Tilemap> build_bonus_level(const nnh::Texture& tiles) {
                                       .max_tilesets = 1,
                                       .max_tile_ids = tile::kCount,
                                       .max_objects = 64,
-                                      .string_bytes = 256});
+                                      .string_bytes = 256,
+                                      .max_animations = 1,
+                                      .max_animation_frames = 2});
     if (!made) return made.error();
     nnh::Tilemap map = std::move(made.value());
     auto first = map.add_tileset({.texture = &tiles, .tile_count = tile::kCount, .name = "tiles"});
@@ -121,6 +123,10 @@ nnh::Result<nnh::Tilemap> build_bonus_level(const nnh::Texture& tiles) {
     for (int id : {tile::Grass, tile::Dirt, tile::Bricks, tile::Stone})
         map.set_tile_collision(id, nnh::collision::Cell::Solid);
     map.set_tile_collision(tile::Plank, nnh::collision::Cell::OneWay);
+    // The water in the pits ripples: every Water cell shows Water and Water2 in turn (Tiled: a tile animation).
+    const nnh::Tilemap::AnimationFrame ripple[] = {{.tile_id = tile::Water, .ms = 400},
+                                                   {.tile_id = tile::Water2, .ms = 400}};
+    if (auto animated = map.set_tile_animation(tile::Water, ripple, 2); !animated) return animated.error();
     build_backdrops(map, layers[0], layers[1]);
     build_ground(map, layers[2], layers[3]);
 

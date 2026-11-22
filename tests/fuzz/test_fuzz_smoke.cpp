@@ -128,12 +128,14 @@ NNH_TEST(remote_target_survives_mutated_inputs) {
 }
 
 NNH_TEST(tilemap_target_survives_mutated_inputs) {
-    // The sample map (every section used) and the minimal one, with 1-4 bytes changed and sometimes cut. The
-    // target fixes the size and CRC itself, so mutants reach the content checks; some are even accepted and
-    // then copied, queried and edited (counted here to prove the deep path runs).
-    const map_file::Bytes seeds[] = {map_file::sample(), map_file::minimal()};
+    // The sample map (every section used), the same with animated tiles, and the minimal one, with 1-4 bytes
+    // changed and sometimes cut. The target fixes the size and CRC itself, so mutants reach the content checks;
+    // some are even accepted and then copied, queried, drawn and edited (counted here to prove the deep path runs,
+    // animated tiles included).
+    const map_file::Bytes seeds[] = {map_file::sample(), map_file::animated(), map_file::minimal()};
     std::uint32_t state = 4242;
     int accepted = 0;
+    int animated = 0;
     for (const map_file::Bytes& seed : seeds) {
         CHECK(nnh::detail::validate_map(seed.data(), seed.size()).ok());
         nnh::fuzz::tilemap_target(seed.data(), seed.size());
@@ -147,10 +149,13 @@ NNH_TEST(tilemap_target_survives_mutated_inputs) {
             nnh::fuzz::tilemap_target(buffer.data(), buffer.size());
             if (buffer.size() < sizeof(nnh::detail::mapfmt::Header)) continue;
             map_file::seal(buffer);
-            accepted += nnh::detail::validate_map(buffer.data(), buffer.size()).ok() ? 1 : 0;
+            if (!nnh::detail::validate_map(buffer.data(), buffer.size()).ok()) continue;
+            ++accepted;
+            animated += map_file::view(buffer).header().animations > 0 ? 1 : 0;
         }
     }
     CHECK(accepted > 100);
+    CHECK(animated > 30);
     CHECK(nnh::mem::tag_stats(nnh::detail::tilemap_memory_tag()).count == 0); // every map was freed
 }
 

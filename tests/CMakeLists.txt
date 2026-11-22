@@ -85,6 +85,7 @@ add_executable(nnh_tests
     system/test_system.cpp
     text/test_builtin_font.cpp
     tilemap/test_code_vs_file.cpp
+    tilemap/test_map_animations.cpp
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
     tilemap/test_map_draw.cpp
@@ -96,7 +97,9 @@ add_executable(nnh_tests
     tilemap/map_file.cpp
     tilemap/test_map_tiles.cpp
     tilemap/test_map_validate.cpp
+    tilemap/test_map_validate_animations.cpp
     tilemap/test_map_validate_content.cpp
+    tilemap/test_tile_animation.cpp
     tilemap/test_tile_expand.cpp
     tilemap/test_tilemap_alloc.cpp
     tilemap/test_visible_range.cpp
@@ -373,6 +376,7 @@ foreach(case "infinite|bad_infinite.tmj: infinite maps aren't supported"
              "too_many_tiles|bad_too_many_tiles.tmj: the tilesets have 16384 tiles in all: a map can use at most 8191"
              "too_many_objects|bad_too_many_objects.tmj: the map has more than 4096 objects"
              "diagonal_non_square|bad_diagonal_non_square.tmj: layer .ground.: cell [(]1, 0[)] is flipped diagonally, which needs square tiles"
+             "animation|bad_animation.tmj: tile 1: animation frame 1: .tileid. must be a whole number from 0 to 7"
              "compressed|bad_compressed.tmj: layer .ground.: compressed layer data [(]zlib[)] isn't supported: save the layer format as CSV"
              "broken_json|bad_broken_json.tmj: line 3, column 19: expected ',' or '}'")
     string(REPLACE "|" ";" case "${case}")

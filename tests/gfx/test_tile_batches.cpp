@@ -135,3 +135,15 @@ NNH_TEST(without_storage_nothing_is_recorded) {
     CHECK(empty.add(r) == -1);
     CHECK(empty.expand(0, Screen::Top, {}).count == 0);
 }
+
+NNH_TEST(tile_batches_pass_the_recorded_clock_to_the_expand_function) {
+    Fixture f;
+    TileBatchRecord r;
+    r.expand = write_arg_quads;
+    r.source = &kSourceA;
+    r.arg = 1;
+    r.clock = 123456789012ull;
+    CHECK(f.batches.add(r) == 0);
+    f.batches.expand(0, Screen::Top, {});
+    CHECK(g_calls == 1 && g_last.clock == 123456789012ull);
+}

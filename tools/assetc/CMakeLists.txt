@@ -85,6 +85,7 @@ if(NNH_BUILD_TESTS)
         tests/test_paths.cpp
         tests/test_tiled_map.cpp
         tests/test_tiled_objects.cpp
+        tests/test_tiled_animations.cpp
         tests/test_tiled_tileset.cpp
         tests/tiled_fixture.cpp
     )

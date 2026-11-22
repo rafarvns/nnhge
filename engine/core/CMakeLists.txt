@@ -77,6 +77,7 @@ add_library(nnh_core STATIC
     src/text/font_texture.cpp
     src/text/layout.cpp
     src/text/utf8.cpp
+    src/tilemap/map_animations.cpp
     src/tilemap/map_build.cpp
     src/tilemap/map_collision.cpp
     src/tilemap/map_copy.cpp
@@ -90,6 +91,7 @@ add_library(nnh_core STATIC
     src/tilemap/map_tiles.cpp
     src/tilemap/map_validate.cpp
     src/tilemap/map_validate_content.cpp
+    src/tilemap/tile_animation.cpp
     src/tilemap/tile_expand.cpp
     src/tilemap/tilemap.cpp
     src/tilemap/visible_range.cpp

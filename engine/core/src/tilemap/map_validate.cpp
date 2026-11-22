@@ -102,19 +102,55 @@ MapCheck check_tilesets(const Reader& r) {
     return {};
 }
 
+/// Animations sorted by tile id, each on an animated tile, owning the next run of 1..32 frames; every frame a tile
+/// of the animated tile's tileset, shown 1 ms or more.
+MapCheck check_animations(const Reader& r, int animated_flags) {
+    const Header& h = r.h;
+    if (animated_flags != h.animations) return damaged("animated flags do not match the animation table");
+    int previous = 0;
+    int next_frame = 0;
+    for (int i = 0; i < h.animations; ++i) {
+        const AnimationEntry a = r.at<AnimationEntry>(kAnimations, i);
+        if (a.tile_id < 1 || a.tile_id > h.tile_ids) return damaged("animation of an unknown tile id");
+        if (a.tile_id <= previous) return damaged("animation table not sorted by tile id");
+        previous = a.tile_id;
+        if ((r.at<std::uint8_t>(kTileFlags, a.tile_id) & kTileAnimated) == 0) {
+            return damaged("animated flags do not match the animation table");
+        }
+        if (a.frame_count == 0) return damaged("animation without frames");
+        if (a.frame_count > kMaxFramesPerAnimation) return over("more than 32 frames in one animation");
+        if (a.first_frame != next_frame || next_frame + a.frame_count > h.frames) {
+            return damaged("animation frames do not follow each other");
+        }
+        const int set = r.tileset_of(a.tile_id);
+        for (int f = next_frame; f < next_frame + a.frame_count; ++f) {
+            const FrameEntry frame = r.at<FrameEntry>(kFrames, f);
+            if (frame.tile_id < 1 || frame.tile_id > h.tile_ids || r.tileset_of(frame.tile_id) != set) {
+                return damaged("animation frame is not a tile of the animated tile's tileset");
+            }
+            if (frame.ms == 0) return damaged("animation frame of 0 ms");
+        }
+        next_frame += a.frame_count;
+    }
+    if (next_frame != h.frames) return damaged("animation frames do not add up to the header's frames");
+    return {};
+}
+
 MapCheck check_tile_flags(const Reader& r) {
     const Header& h = r.h;
-    if (h.animations != 0 || h.frames != 0) return newer("animated tiles are not supported by this engine yet");
     if (r.at<std::uint8_t>(kTileFlags, 0) != 0) return damaged("tile flags on id 0 (empty)");
     int with_properties = 0;
+    int animated = 0;
     for (int id = 1; id <= h.tile_ids; ++id) {
         const std::uint8_t f = r.at<std::uint8_t>(kTileFlags, id);
-        if ((f & kTileAnimated) != 0) return newer("animated tiles are not supported by this engine yet");
-        if ((f & ~(kTileCollisionMask | kTileHasProperties)) != 0 || (f & kTileCollisionMask) == 3) {
+        if ((f & ~(kTileCollisionMask | kTileAnimated | kTileHasProperties)) != 0 || (f & kTileCollisionMask) == 3) {
             return damaged("unknown tile flags");
         }
         if ((f & kTileHasProperties) != 0) ++with_properties;
+        if ((f & kTileAnimated) != 0) ++animated;
     }
+    const MapCheck animations = check_animations(r, animated);
+    if (!animations.ok()) return animations;
     int previous = 0;
     for (int i = 0; i < h.tile_props; ++i) {
         const int id = r.at<TilePropsEntry>(kTileProps, i).tile_id;

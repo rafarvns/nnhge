@@ -1,6 +1,6 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0–5 done (2026-11-21; T3.9 passed on the Old 3DS XL); next: stage 6
+Status: approved (2026-11-21); stages 0–6 done (2026-11-21; T3.9 passed on the Old 3DS XL); next: stage 7
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -265,14 +265,37 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
 
 ## Stage 6 — animated tiles (cheap; can be cut alone)
 
-- [ ] **T6.1** format and builder: animation table, `animated` flag; `Tilemap::set_tile_animation` (code) —
+- [x] **T6.1** format and builder: animation table, `animated` flag; `Tilemap::set_tile_animation` (code) —
   files: `map_format.hpp`, `map_build.cpp`, `map_validate.cpp` — test: `test_map_build.cpp`, `test_map_validate.cpp`
   — covers FR-0, FR-2
-- [ ] **T6.2** current frame per animation and its use in expansion; default clock from `frame_count()` —
+- [x] **T6.2** current frame per animation and its use in expansion; default clock from `frame_count()` —
   files: `tilemap/tile_animation.{hpp,cpp}`, `tile_expand.cpp` — test: `test_tile_animation.cpp`,
   `test_tile_expand.cpp` — covers FR-2, FR-10
-- [ ] **T6.3** [P] converter: Tiled `animation` arrays (frame tile ids within the tileset, durations) and limits —
+- [x] **T6.3** [P] converter: Tiled `animation` arrays (frame tile ids within the tileset, durations) and limits —
   files: `tiled_tileset.cpp` — test: `test_tiled_tileset.cpp` — covers FR-1
+
+  **Result (2026-11-21, T6.1–T6.3):** animated tiles work in code, from Tiled, loaded, drawn and fuzzed. API:
+  `TilemapDesc::max_animations`/`max_animation_frames` (0 by default), `Tilemap::set_tile_animation` (`count` 0
+  removes), `tile_animation`, `animated_tile_id`, `TilemapDrawOptions::animation_time` (default `frame_count()` at
+  60 Hz); [tilemap.md](../../docs/api/tilemap.md#animated-tiles). 36 new tests in `nnh_tests` (954/954 in pc-debug,
+  921 in pc-release): builder and drawing 14 (`test_map_animations.cpp`), validator 10
+  (`test_map_validate_animations.cpp`, replacing the old refusal test), pure clock/frame/lookup/table 8
+  (`test_tile_animation.cpp`), expansion 2, the gfx clock 1, a loaded animated map 1, code vs file 1; the
+  `tilemap_target` mini-fuzz gained an animated seed (12 000 mutants, > 30 accepted with animations) and runs
+  expansion at two clocks and animation edits. 8 new tests in `nnh_assetc_tests` (101/101,
+  `test_tiled_animations.cpp`); the converter mini-fuzz tileset has animations; ctest 150/150 (new pair
+  `map_convert_{rejects,explains}_animation` on `bad_animation.tmj`; `good.tmj` animates its water tile), 149/149 in
+  pc-release. PC (Debug, Release), `3ds-dev` and `3ds-release` build without warnings. The platformer's bonus level
+  animates its water: screenshots at frames 20 and 30 differ only in the pit's water pixels.
+  - Mutation check (68 hand mutants of the clock, frame lookup, table range, expansion, the draw/gfx clock, the
+    builder, the validator, the converter's reader and writer): first run 49 killed of 56 run (12 more skipped by a
+    line-ending slip in the script and run after); 5 real survivors got tests (an explicit time 0 taken as the
+    default clock, animations of a second tileset, negative times, a frame run past the last frame, a removed
+    animation leaving its flag), one exposed a redundant check (removed). Final: **64 killed, 3 equivalent** (the
+    `animations == 0` early exit, zeroing freed frames and a freed entry beyond the counts), 1 removed with its code.
+  Deviations in [plan.md](plan.md) ("Stage 6 refinements"): the builder in its own `map_animations.cpp`, the
+  getters, defaults of 0, no total duration in the entry, the clock through gfx as an opaque `clock`, no load extras
+  for animations.
 
 ## Stage 7 — the example
 

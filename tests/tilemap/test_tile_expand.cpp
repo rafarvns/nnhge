@@ -151,3 +151,38 @@ NNH_TEST(quads_past_the_capacity_are_dropped_and_counted) {
     const ExpandResult none = l.expand(kAll, 1, 4, 0);
     CHECK(none.written == 0 && none.dropped == 4);
 }
+
+NNH_TEST(an_animated_tile_takes_the_source_of_its_current_frame) {
+    Layer l;
+    std::uint8_t flags[8] = {};
+    flags[2] = fmt::kTileAnimated;
+    const fmt::AnimationEntry animations[] = {{.tile_id = 2, .frame_count = 1, .first_frame = 0}};
+    const fmt::TileSource current[] = {{200, 201}};
+    l.set(0, 0, 2, true, false, false);
+    l.set(1, 0, 3);
+    ExpandInput in = l.input(kAll);
+    in.flags = flags;
+    in.animations = animations;
+    in.animation_count = 1;
+    in.animated = current;
+    CHECK(expand_tiles(in, l.out, 32).written == 2);
+    CHECK(l.out[0].src_x == 200 && l.out[0].src_y == 201);
+    CHECK(l.out[0].orient == nnh::platform::kTileOrientFlipX); // the cell's flips stay
+    CHECK(l.out[1].src_x == 48 && l.out[1].src_y == 103);       // not animated: its own source
+}
+
+NNH_TEST(a_flagged_tile_without_an_animation_in_the_pass_keeps_its_source) {
+    Layer l;
+    std::uint8_t flags[8] = {};
+    flags[2] = fmt::kTileAnimated;
+    const fmt::AnimationEntry animations[] = {{.tile_id = 3, .frame_count = 1, .first_frame = 0}};
+    const fmt::TileSource current[] = {{200, 201}};
+    l.set(0, 0, 2);
+    ExpandInput in = l.input(kAll);
+    in.flags = flags;
+    in.animations = animations;
+    in.animation_count = 1;
+    in.animated = current;
+    CHECK(expand_tiles(in, l.out, 32).written == 1);
+    CHECK(l.out[0].src_x == 32 && l.out[0].src_y == 102);
+}

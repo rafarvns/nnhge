@@ -51,8 +51,10 @@ const char kMapSeed[] = R"({"type":"map","orientation":"orthogonal","infinite":f
 {"type":"objectgroup","name":"o","objects":[{"id":1,"name":"spawn","x":1,"y":2,"point":true},
 {"id":2,"type":"coin","x":3,"y":4,"width":16,"height":16,"properties":[{"name":"v","type":"int","value":5}]}]}]})";
 const char kSetSeed[] = R"({"image":"set.png","imagewidth":64,"imageheight":64,"tilewidth":16,"tileheight":16,
-"tilecount":16,"columns":4,"tiles":[{"id":1,"properties":[{"name":"solid","type":"bool","value":true}]},
-{"id":2,"properties":[{"name":"one_way","type":"bool","value":true},{"name":"k","value":"x"}]}]})";
+"tilecount":16,"columns":4,"tiles":[{"id":1,"properties":[{"name":"solid","type":"bool","value":true}],
+"animation":[{"tileid":1,"duration":100},{"tileid":5,"duration":50}]},
+{"id":2,"properties":[{"name":"one_way","type":"bool","value":true},{"name":"k","value":"x"}]},
+{"id":9,"animation":[{"tileid":15,"duration":7}]}]})";
 
 bool converts(const std::string& map, const std::string& set) {
     nnh::assetc::MemoryFiles files;

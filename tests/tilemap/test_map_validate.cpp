@@ -145,20 +145,13 @@ NNH_TEST(map_validate_refuses_counts_over_capacities) {
     }
 }
 
-NNH_TEST(map_validate_refuses_animated_tiles_until_they_are_supported) {
-    Bytes file = map_file::sample();
-    map_file::view(file).tile_flags()[2] |= fmt::kTileAnimated;
-    CHECK(rejects(file, MapProblem::NewerVersion, "animated"));
-    for (int frames = 0; frames < 2; ++frames) { // an animation table or a frame table alone
-        const nnh::detail::MapCapacities caps{.width = 1, .height = 1, .animations = 1 - frames,
-                                              .animation_frames = frames, .string_bytes = 1};
-        Bytes table(nnh::detail::map_layout(caps).total);
-        nnh::detail::init_map_block(table.data(), caps, 16, 16);
-        CHECK(validate_map((map_file::seal(table), table.data()), table.size()).ok()); // room alone is fine
-        header(table).animations = static_cast<std::uint16_t>(1 - frames);
-        header(table).frames = static_cast<std::uint16_t>(frames);
-        CHECK(rejects(table, MapProblem::NewerVersion, "animated"));
-    }
+NNH_TEST(map_validate_accepts_room_for_animations_that_is_not_used) {
+    // Animated tiles themselves: test_map_validate_animations.cpp.
+    const nnh::detail::MapCapacities caps{.width = 1, .height = 1, .animations = 1, .animation_frames = 2,
+                                          .string_bytes = 1};
+    Bytes table(nnh::detail::map_layout(caps).total);
+    nnh::detail::init_map_block(table.data(), caps, 16, 16);
+    CHECK(validate_map((map_file::seal(table), table.data()), table.size()).ok());
 }
 
 // --- strings ---

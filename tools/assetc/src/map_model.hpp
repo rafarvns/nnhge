@@ -21,9 +21,15 @@ struct Property {
 };
 using Properties = std::vector<Property>;
 
+struct AnimationFrame {
+    int tile = 0; ///< the tile shown: a local id of the same tileset
+    int ms = 0;   ///< 1..65535
+};
+
 struct TileInfo {
     std::uint8_t collision = 0; ///< collision::Cell value: 0 Empty, 1 Solid (`solid`), 2 OneWay (`one_way`)
     Properties properties;      ///< the tile's other properties
+    std::vector<AnimationFrame> animation; ///< Tiled's frames (1..32), or empty: not animated
 };
 
 struct Tileset {
@@ -32,7 +38,7 @@ struct Tileset {
     int tile_count = 0, columns = 0, margin = 0, spacing = 0;
     int image_width = 0, image_height = 0;
     std::string image; ///< asset name of the image, without ".png" (what load_texture takes)
-    std::map<int, TileInfo> tiles; ///< by local tile id, only tiles with collision or properties
+    std::map<int, TileInfo> tiles; ///< by local tile id, only tiles with collision, properties or an animation
 };
 
 struct TileLayer {

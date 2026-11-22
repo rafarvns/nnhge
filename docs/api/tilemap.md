@@ -4,12 +4,11 @@ Header: `<nnh/tilemap.hpp>` · Uses: [collision.md](collision.md), [texture.md](
 [memory.md](memory.md), [assets.md](assets.md) · Spec: [012](../../specs/012-tilemaps-and-collision/spec.md)
 (FR-0…FR-7, FR-11)
 
-> Status: spec 012 **stage 5** — maps are **built in code**, queried, edited, collided against and **drawn**
-> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS gate passed), and **made in Tiled**: the build converts `.tmj`
-> files into `.nnhmap` assets (`nnh-assetc`) that `load_tilemap` loads. Animated tiles (stage 6) come later; they
-> use the same `Tilemap` object, so code written against this page keeps working.
-> Example: [`examples/platformer`](../../examples/platformer/main.cpp) (a level built in code, a tile benchmark, a
-> flip test).
+> Status: spec 012 **stage 6** — maps are **built in code**, queried, edited, collided against and **drawn**
+> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS gate passed), with **animated tiles**, and **made in Tiled**: the
+> build converts `.tmj` files into `.nnhmap` assets (`nnh-assetc`) that `load_tilemap` loads. The Tiled level of the
+> example comes in stage 7. Example: [`examples/platformer`](../../examples/platformer/main.cpp) (a level built in
+> code with animated water, a tile benchmark, a flip test).
 
 A `Tilemap` is a grid of cells in **tile layers**, cut from **tilesets** (textures), plus **object layers**
 (rectangles and points with a name and a type) and **properties** (named bool/int/float/string values on the map,
@@ -62,6 +61,8 @@ map.set_tile_collision(first + 2, nnh::collision::Cell::OneWay);         // a pl
 | `max_objects` | 64 | 4096 |
 | `max_properties` (all owners) | 64 | 16 384 |
 | `string_bytes` (names, string values) | 2048 | 64 KiB; each string ≤ 255 bytes; equal strings are stored once; byte 0 is `""` |
+| `max_animations` (animated tiles) | 0 | 256 |
+| `max_animation_frames` (over all animations) | 0 | 4096; each animation 1–32 frames |
 
 Errors of `create`: `InvalidArgument` (size < 1, tile size outside 8–64, negative capacities), `LimitReached`
 (over a limit above), `OutOfMemory`.
@@ -89,6 +90,37 @@ its index. Settings change later with `set_layer_offset/parallax/opacity/visible
 parallax, opacity and visibility affect [drawing](#drawing) only; `set_parallax_origin(Vec2)` /
 `parallax_origin()` set the map's parallax origin (Tiled's map property of the same name).
 
+### Animated tiles
+
+```cpp
+auto made = nnh::Tilemap::create({.width = 100, .height = 15, .max_animations = 4, .max_animation_frames = 16});
+...
+const nnh::Tilemap::AnimationFrame ripple[] = {{.tile_id = water, .ms = 400}, {.tile_id = water + 1, .ms = 400}};
+(void)map.set_tile_animation(water, ripple, 2);     // every `water` cell now ripples
+```
+
+`set_tile_animation(tile_id, frames, count)` animates a **tile id** (Tiled's tile animations): wherever that tile is
+placed, drawing shows the frames in turn, each for its `ms`, looping; every cell of it shows the same frame. Frames
+are tiles **of the same tileset** (1–65535 ms each, 1–32 frames); the animated tile need not be one of them. Calling
+it again replaces the animation, `count = 0` removes it. Only drawing changes: `tile()`, `collision_at()`,
+`tile_collision()` and the tile's properties are those of the tile id itself.
+
+| Function | Does |
+|----------|------|
+| `Result<void> set_tile_animation(tile_id, frames, count)` | sets, replaces or (`count` 0) removes a tile's animation; never allocates (build time: it shifts the frame table) |
+| `int tile_animation(tile_id, frames, capacity)` | copies up to `capacity` frames, returns how many there are (0: not animated) |
+| `int animated_tile_id(tile_id, Duration time)` | the tile shown at `time` (negative counts as 0), or `tile_id` when not animated |
+
+Errors of `set_tile_animation`: `InvalidArgument` (unknown tile id, a frame of another tileset, unknown or 0 ms, null
+frames, negative count), `LimitReached` (over 32 frames, `max_animations` or `max_animation_frames` full). A loaded
+map has room for its own animations only: it can replace one with as many frames or fewer, or remove it.
+
+**The clock** is `TilemapDrawOptions::animation_time` ([drawing](#drawing)). By default it is the frame count at
+60 Hz (`frame_count() · 1000 / 60` ms), so the simulator and the console show the same frame on the same frame
+number; pass your own `Duration` to pause or speed animations. Cost per frame: each batch resolves the current frame
+of its tileset's animations once (≤ 256 short loops), then one flag test per tile; animated tiles look their frame up
+in a sorted table (a binary search over ≤ 256 entries). No per-cell state, no allocation.
+
 ## Loading a converted map
 
 ```cpp
@@ -108,7 +140,8 @@ both ways and compares every query: `tests/tilemap/test_code_vs_file.cpp`).
 
 - **Checked before use.** The whole file is validated first: header, format version, size, CRC-32, every limit of
   [the table above](#building-a-map), section offsets, strings (terminated, ≤ 255 bytes), tilesets against their
-  image size, every cell's tile id, objects, property types and ranges. A damaged file is an error, never a crash
+  image size, every cell's tile id, the animation table (sorted, frames in the animated tile's tileset, 1–32 frames
+  of ≥ 1 ms), objects, property types and ranges. A damaged file is an error, never a crash
   (the validator is fuzzed: [security.md](../architecture/security.md#bounded-parsers-and-fuzzing-spec-002)).
 - **Tileset images** are loaded like `load_texture(name)`, with the image names the file carries (asset paths
   without `.png`). Two tilesets with the same image share one texture. The map **owns** these textures: they are
@@ -129,7 +162,7 @@ both ways and compares every query: `tests/tilemap/test_code_vs_file.cpp`).
 | `InvalidArgument` | null or bad path, a negative extra |
 | `NotFound` | no such map; a tileset image missing (the message names the image) |
 | `Corrupted` | damaged or truncated file (CRC, sizes, offsets, content); a tileset image of another size than when the map was converted |
-| `Unsupported` | before `nnh::init()`; a map made by a newer engine (format version, animated tiles until stage 6) |
+| `Unsupported` | before `nnh::init()`; a map made by a newer engine (format version) |
 | `LimitReached` | over a map limit (also with the extras); `AppConfig::gfx.max_textures` full |
 | `OutOfMemory` | no memory for the map |
 
@@ -150,6 +183,7 @@ packed. A map is converted again only when it, a tileset or an image it uses, or
 | tilesets in first-gid order (gaps in gids are fine) | tilesets with consecutive ids from 1: gid `g` of a tileset with first gid `f` is id `first + g − f` |
 | tile property `solid` / `one_way` (bool) | `tile_collision(id)` = `Solid` / `OneWay` (not kept as properties) |
 | other tile properties | `properties(PropertyOwner::tile(id))` |
+| tile animation (frames of the same tileset, durations in ms) | `tile_animation(id, ...)`; drawn animated |
 | tile layers in order: name, offset, parallax, opacity, visible, flips | tile layers in the same order |
 | layer property `collision` (bool) | `layer_collision(layer)` (not kept as a property) |
 | object layers; rectangles and points with id, name, type (or class), properties | object layers and objects in the same order |
@@ -158,7 +192,8 @@ packed. A map is converted again only when it, a tileset or an image it uses, or
 The build **refuses**, naming the file and the reason (`level1.tmj: infinite maps aren't supported: turn off Map >
 Map Properties > Infinite`): isometric, staggered and hexagonal maps; infinite maps; image and group layers;
 compressed layer data (save the layer format as **CSV**; uncompressed base64 also works); XML tilesets (`.tsx`);
-image-collection tilesets, wang sets, tile offsets, animated tiles (until stage 6); tilesets whose tile size is not
+image-collection tilesets, wang sets, tile offsets; animations with more than 32 frames, a frame outside its
+tileset or of 0 ms (more than 256 animated tiles or 4096 frames in a map are over the limits); tilesets whose tile size is not
 the map's; images that are not a PNG inside the assets folder, whose size differs from what Tiled recorded or that
 are not textures (power-of-two sides from 8 to 1024); a tileset's columns or tile count that don't match its image
 (NNHGE keeps the margin on every side of the image); ellipse, polygon, polyline, text and tile objects, templates
@@ -202,6 +237,7 @@ layer and then call order (as [gfx.md](gfx.md#order-layers)), so sprites can sit
 | `opacity` | 1 | 0–1, times each map layer's opacity |
 | `offset` | (0, 0) | added to each map layer's offset (pixels) |
 | `ignore_camera` | false | screen pixels (HUD maps); parallax then uses camera (0, 0) |
+| `animation_time` | −1 ns | [animated tiles](#animated-tiles)' clock; negative = `frame_count()` at 60 Hz |
 
 - **When it reads the map.** The call records one batch per (map layer, tileset that layer uses); the cells are read
   when the frame ends, with the camera of that moment. A `set_tile` after the call is drawn in the same frame; a
@@ -280,6 +316,7 @@ The block is exactly (sections 4-byte aligned; `ids = max_tile_ids + 1`, `tp = m
 
 ```
 bytes = 128 + 24·max_tilesets + 4·ids + align4(ids) + align4(6·tp)
+      + 8·max_animations + 4·max_animation_frames
       + 40·max_tile_layers + align4(2·width·height·max_tile_layers)
       + 12·max_object_layers + 36·max_objects + 12·max_properties + align4(string_bytes)
 ```
@@ -307,6 +344,9 @@ Tileset textures are separate (tag `textures`, `Linear`): a 256×256 RGBA8 sheet
 - A loaded map's tileset textures are its own (a separate `load_texture` of the same image is another texture):
   they count in `max_textures` until the map is freed.
 - `set_tile` with a tile id that no tileset has yet is a bug (assert): add tilesets first.
+- `max_animations` and `max_animation_frames` are 0 by default: a map built in code needs them set before
+  `set_tile_animation` works (it returns `LimitReached` otherwise).
+- Animations are per tile id, not per cell: two cells that should animate out of step need two tile ids.
 - A `collision` layer makes **every** non-empty tile solid, including decorative ones; mark individual tiles with
   `set_tile_collision` instead when only some should block (a one-way plank on a `collision` layer is solid).
 - `draw_tilemap` needs `AppConfig::gfx.max_tiles` sized for every layer you draw on both screens (≈ 416 per full

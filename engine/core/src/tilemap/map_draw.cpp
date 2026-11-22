@@ -3,7 +3,9 @@
 // the tilemap side of that bridge.
 
 #include "gfx/gfx_state.hpp"
+#include "nnh/app.hpp"
 #include "nnh/assert.hpp"
+#include "tilemap/tile_animation.hpp"
 #include "tilemap/tile_expand.hpp"
 #include "tilemap/tilemap_internal.hpp"
 #include "tilemap/visible_range.hpp"
@@ -41,12 +43,14 @@ detail::TileExpandResult expand_batch(const detail::TileExpandRequest& r) {
     in.view = detail::visible_range(p, h.tile_width, h.tile_height, h.width, h.height);
     in.tile_w = h.tile_width;
     in.tile_h = h.tile_height;
+    TileSource animated[kMaxAnimations]; // 1 KB of stack, only read for this tileset's animations
+    detail::prepare_animations(v, tileset, r.clock, animated, in);
     const detail::ExpandResult x = detail::expand_tiles(in, r.out, r.capacity);
     return {x.written, x.dropped};
 }
 
 /// Records the batches of one map layer (nothing if hidden, empty or fully transparent).
-void record_layer(Screen screen, const Tilemap& map, int layer, const gfx::TilemapDrawOptions& o) {
+void record_layer(Screen screen, const Tilemap& map, int layer, const gfx::TilemapDrawOptions& o, std::uint64_t ms) {
     const detail::MapView v = detail::map_view(map);
     const Header& h = v.header();
     const TileLayerEntry& e = v.tile_layers()[layer];
@@ -68,6 +72,7 @@ void record_layer(Screen screen, const Tilemap& map, int layer, const gfx::Tilem
         r.source = v.base;
         r.arg = (layer << kTilesetBits) | s;
         r.offset = o.offset;
+        r.clock = ms;
         r.texture_slot = set.texture_slot;
         r.texture_generation = set.texture_generation;
         r.tile_w = h.tile_width;
@@ -83,14 +88,16 @@ void record_layer(Screen screen, const Tilemap& map, int layer, const gfx::Tilem
 void gfx::draw_tilemap(Screen screen, const Tilemap& map, const TilemapDrawOptions& options) {
     if (!detail::gfx_drawing() || !map.valid() || !detail::gfx_tiles_enabled()) return;
     const int layers = map.tile_layer_count();
+    const std::uint64_t ms = options.animation_time.ns < 0 ? detail::default_animation_ms(frame_count())
+                                                           : static_cast<std::uint64_t>(options.animation_time.ms());
     if (options.map_layer == -1) {
         for (int l = 0; l < layers; ++l)
-            record_layer(screen, map, l, options);
+            record_layer(screen, map, l, options, ms);
         return;
     }
     const bool known = options.map_layer >= 0 && options.map_layer < layers;
     NNH_ASSERT(known, "draw_tilemap: no tile layer %d (%d layers)", options.map_layer, layers);
-    if (known) record_layer(screen, map, options.map_layer, options);
+    if (known) record_layer(screen, map, options.map_layer, options, ms);
 }
 
 } // namespace nnh

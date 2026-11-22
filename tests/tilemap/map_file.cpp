@@ -97,10 +97,23 @@ void add_objects(const MapView& v) {
     add_property(v, {&coin.properties_first, &coin.properties_count}, "value", PropertyType::Int).value = 5;
 }
 
-} // namespace
+void add_animations(const MapView& v) {
+    auto* animations = v.section<AnimationEntry>(kAnimations);
+    auto* frames = v.section<FrameEntry>(kFrames);
+    animations[0] = {.tile_id = 2, .frame_count = 2, .first_frame = 0};
+    animations[1] = {.tile_id = 6, .frame_count = 1, .first_frame = 2};
+    frames[0] = {2, 100};
+    frames[1] = {4, 50};
+    frames[2] = {7, 30};
+    v.tile_flags()[2] |= kTileAnimated;
+    v.tile_flags()[6] |= kTileAnimated;
+    v.header().animations = 2;
+    v.header().frames = 3;
+}
 
-Bytes sample(const char* image) {
+Bytes sample_map(const char* image, bool animated) {
     const MapCapacities caps{.width = 8, .height = 4, .tilesets = 1, .tile_ids = 8, .tile_props = 1,
+                             .animations = animated ? 2 : 0, .animation_frames = animated ? 3 : 0,
                              .tile_layers = 2, .object_layers = 1, .objects = 2, .properties = 5,
                              .string_bytes = 128};
     Bytes file(map_layout(caps).total);
@@ -114,9 +127,16 @@ Bytes sample(const char* image) {
     Header& h = v.header();
     PropertyEntry& music = add_property(v, {&h.properties_first, &h.properties_count}, "music", PropertyType::String);
     music.value = str(v, "theme");
+    if (animated) add_animations(v);
     seal(file);
     return file;
 }
+
+} // namespace
+
+Bytes sample(const char* image) { return sample_map(image, false); }
+
+Bytes animated(const char* image) { return sample_map(image, true); }
 
 Bytes minimal() {
     const MapCapacities caps{.width = 1, .height = 1, .string_bytes = 1};

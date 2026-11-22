@@ -47,6 +47,7 @@ TileBatches::Quads TileBatches::expand(int index, Screen screen, Vec2 camera) {
     request.screen = screen;
     request.camera = r->ignore_camera ? Vec2{} : camera;
     request.offset = r->offset;
+    request.clock = r->clock;
     request.out = scratch_;
     request.capacity = left < scratch_capacity_ ? (left > 0 ? left : 0) : scratch_capacity_;
     const TileExpandResult result = r->expand(request);

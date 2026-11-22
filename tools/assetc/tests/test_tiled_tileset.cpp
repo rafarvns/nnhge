@@ -175,8 +175,6 @@ NNH_TEST(tileset_refuses_a_grid_that_does_not_match_the_image) {
 NNH_TEST(tileset_refuses_bad_tile_entries) {
     Files f = with_world();
     CHECK(refused(f, embedded(R"(, "tiles": [{"id": 8}])"), "\"id\" must be a whole number from 0 to 7"));
-    CHECK(refused(f, embedded(R"(, "tiles": [{"id": 1, "animation": [{"tileid": 0, "duration": 100}]}])"),
-                  "animated tiles"));
     CHECK(refused(f, embedded(R"(, "tiles": [{"id": 1, "properties": [{"name": "solid", "type": "int", "value": 1}]}])"),
                   "\"solid\" must be a bool"));
     CHECK(refused(f, embedded(R"(, "tiles": [{"id": 1, "properties": [{"name": "solid", "type": "bool", "value": true},

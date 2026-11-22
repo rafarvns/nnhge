@@ -25,6 +25,8 @@ detail::MapCapacities detail::capacities_for(const TilemapDesc& d) {
             .tilesets = d.max_tilesets,
             .tile_ids = d.max_tile_ids,
             .tile_props = std::max(0, std::min(d.max_properties, d.max_tile_ids)),
+            .animations = d.max_animations,
+            .animation_frames = d.max_animation_frames,
             .tile_layers = d.max_tile_layers,
             .object_layers = d.max_object_layers,
             .objects = d.max_objects,

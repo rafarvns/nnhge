@@ -11,6 +11,7 @@
 #include "nnh/tilemap.hpp"
 #include "tilemap/map_format.hpp"
 #include "tilemap/map_validate.hpp"
+#include "tilemap/tile_animation.hpp"
 #include "tilemap/tile_expand.hpp"
 #include "tilemap/tilemap_internal.hpp"
 
@@ -32,9 +33,10 @@ void read_properties(const Properties& p) {
     }
 }
 
-/// Every layer × tileset expanded for a 400 × 240 screen, as at the end of a frame.
-void expand_all(const Tilemap& map) {
+/// Every layer × tileset expanded for a 400 × 240 screen, as at the end of a frame, at animation time `ms`.
+void expand_all(const Tilemap& map, std::uint64_t ms) {
     static platform::TileQuad2D quads[1600];
+    static TileSource animated[kMaxAnimations];
     const detail::MapView v = detail::map_view(map);
     const Header& h = v.header();
     for (int layer = 0; layer < h.tile_layers; ++layer) {
@@ -55,6 +57,8 @@ void expand_all(const Tilemap& map) {
             in.view = detail::visible_range(p, h.tile_width, h.tile_height, h.width, h.height);
             in.tile_w = h.tile_width;
             in.tile_h = h.tile_height;
+            detail::prepare_animations(v, s, ms, animated, in);
+            if (in.animation_count > kMaxAnimations) std::abort();
             const detail::ExpandResult r = detail::expand_tiles(in, quads, 1600);
             if (r.written < 0 || r.written > 1600) std::abort();
         }
@@ -81,9 +85,20 @@ void query_everything(Tilemap& map) {
         read_properties(o.properties);
     }
     read_properties(map.properties());
+    for (int id = 0; id <= map.tile_id_count() + 1; ++id) {
+        Tilemap::AnimationFrame frames[kMaxFramesPerAnimation];
+        const int count = map.tile_animation(id, frames, kMaxFramesPerAnimation);
+        if (count < 0 || count > kMaxFramesPerAnimation) std::abort();
+        for (int i = 0; i < count; ++i) {
+            if (frames[i].tile_id < 1 || frames[i].tile_id > map.tile_id_count() || frames[i].ms == 0) std::abort();
+        }
+        const int shown = map.animated_tile_id(id, Duration::from_ms(id * 37));
+        if (count > 0 ? shown < 1 || shown > map.tile_id_count() : shown != id) std::abort();
+    }
     const collision::MoveResult moved = collision::move(map.collision_grid(), {1, 1, 10, 14}, {300, 200});
     (void)moved;
-    expand_all(map);
+    expand_all(map, 0);
+    expand_all(map, 0xFFFFFFFFFFull); // a late clock: frames wrap
 }
 
 /// Edits into the extra room, then the queries again.
@@ -92,6 +107,14 @@ void edit(Tilemap& map) {
     if (!layer) std::abort(); // one extra layer was asked for and the limits allow 16
     map.fill(layer.value(), 0, 0, map.width(), 1, Tile{static_cast<std::uint16_t>(map.tile_id_count())});
     if (map.tile_id_count() > 0) map.set_tile_collision(1, collision::Cell::OneWay);
+    // Animations into whatever room the file left: replace or remove the first animated tile's, add tile 1's.
+    const Tilemap::AnimationFrame one[] = {{.tile_id = 1, .ms = 7}};
+    for (int id = 1; id <= map.tile_id_count(); ++id) {
+        if (map.tile_animation(id, nullptr, 0) == 0) continue;
+        (void)map.set_tile_animation(id, nullptr, 0);
+        break;
+    }
+    (void)map.set_tile_animation(1, one, 1);
     (void)map.set_int(PropertyOwner::map(), "fuzz", 1);
     if (map.object_layer_count() > 0) (void)map.add_object(0, {.name = "fuzz", .bounds = {1, 2, 3, 4}});
     query_everything(map);

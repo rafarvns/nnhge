@@ -59,7 +59,8 @@ void put(Tilemap& m, int layer, int x, int y, int id, bool fx = false, bool fy =
 Tilemap build_in_code(const nnh::Texture& good, const nnh::Texture& second) {
     auto made = Tilemap::create({.width = 6, .height = 4, .tile_width = 16, .tile_height = 16, .max_tile_layers = 3,
                                  .max_tilesets = 2, .max_tile_ids = 17, .max_object_layers = 1, .max_objects = 3,
-                                 .max_properties = 16, .string_bytes = 256});
+                                 .max_properties = 16, .string_bytes = 256, .max_animations = 1,
+                                 .max_animation_frames = 2});
     CHECK(made.ok());
     Tilemap m = std::move(made.value());
     CHECK(m.add_tileset({.texture = &good}).ok());
@@ -88,6 +89,8 @@ Tilemap build_in_code(const nnh::Texture& good, const nnh::Texture& second) {
     CHECK(m.set_bool(PropertyOwner::map(), "hard", true).ok());
     CHECK(m.set_int(PropertyOwner::tile(6), "damage", 2).ok());
     CHECK(m.set_string(PropertyOwner::tile(9), "kind", "water").ok());
+    const Tilemap::AnimationFrame water[] = {{.tile_id = 9, .ms = 100}, {.tile_id = 11, .ms = 50}};
+    CHECK(m.set_tile_animation(9, water, 2).ok());
     CHECK(m.set_float(PropertyOwner::tile_layer(0), "depth", 1.5f).ok());
     CHECK(m.add_object_layer("things").ok());
     CHECK(m.set_bool(PropertyOwner::object_layer(0), "active", true).ok());
@@ -206,6 +209,31 @@ NNH_TEST(code_vs_file_objects_and_properties_match) {
         CHECK(code.find_objects("coin", code_coins, 3) == 2 && file.find_objects("coin", file_coins, 3) == 2);
         CHECK(code_coins[0] == file_coins[0] && code_coins[1] == file_coins[1]);
         CHECK(code.find_object("coin_b") == file.find_object("coin_b"));
+    }
+    nnh::shutdown();
+}
+
+NNH_TEST(code_vs_file_animations_match) {
+    start_with_good_map();
+    {
+        auto good = nnh::load_texture("tiles/good");
+        auto second = nnh::load_texture("tiles/second");
+        const Tilemap code = build_in_code(good.value(), second.value());
+        auto loaded = nnh::load_tilemap("levels/good");
+        const Tilemap& file = loaded.value();
+        int animated = 0;
+        for (int id = 0; id <= 18; ++id) {
+            Tilemap::AnimationFrame a[4] = {}, b[4] = {};
+            const int count = code.tile_animation(id, a, 4);
+            CHECK(file.tile_animation(id, b, 4) == count);
+            for (int i = 0; i < count; ++i) CHECK(a[i].tile_id == b[i].tile_id && a[i].ms == b[i].ms);
+            for (const int ms : {0, 99, 100, 149, 150, 1234}) {
+                CHECK(code.animated_tile_id(id, nnh::Duration::from_ms(ms)) ==
+                      file.animated_tile_id(id, nnh::Duration::from_ms(ms)));
+            }
+            animated += count > 0 ? 1 : 0;
+        }
+        CHECK(animated == 1 && file.animated_tile_id(9, nnh::Duration::from_ms(120)) == 11);
     }
     nnh::shutdown();
 }

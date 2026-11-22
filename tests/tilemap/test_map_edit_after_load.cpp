@@ -117,3 +117,22 @@ NNH_TEST(a_map_built_in_code_loads_back_the_same) {
     }
     nnh::shutdown();
 }
+
+NNH_TEST(a_loaded_map_keeps_its_animations_with_room_for_no_more) {
+    start(map_file::animated("tiles/world"));
+    {
+        for (const int extra_layers : {0, 2}) { // with extras, every later section moves
+            Tilemap map = load("levels/other", {.extra_tile_layers = extra_layers, .extra_properties = 3});
+            nnh::Tilemap::AnimationFrame frames[4] = {};
+            CHECK(map.tile_animation(2, frames, 4) == 2 && frames[1].tile_id == 4 && frames[1].ms == 50);
+            CHECK(map.animated_tile_id(2, nnh::Duration::from_ms(120)) == 4);
+            CHECK(map.animated_tile_id(6, nnh::Duration::from_ms(5)) == 7);
+            CHECK(map.tile_animation(3, frames, 4) == 0);
+            const nnh::Tilemap::AnimationFrame one[] = {{.tile_id = 3, .ms = 10}};
+            CHECK(!map.set_tile_animation(3, one, 1).ok()); // no spare animation
+            CHECK(map.set_tile_animation(2, one, 1).ok());  // a shorter one fits
+            CHECK(map.animated_tile_id(2, {}) == 3 && map.animated_tile_id(6, {}) == 7);
+        }
+    }
+    nnh::shutdown();
+}

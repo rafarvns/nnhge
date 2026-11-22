@@ -24,6 +24,7 @@
 #include "nnh/gfx.hpp"
 #include "nnh/math.hpp"
 #include "nnh/result.hpp"
+#include "nnh/time.hpp"
 
 namespace nnh {
 
@@ -102,6 +103,8 @@ struct TilemapDesc {
     int max_objects = 64;      ///< ≤ 4096
     int max_properties = 64;   ///< ≤ 16384, over all owners
     int string_bytes = 2048;   ///< names and string values (each ≤ 255 bytes + NUL), ≤ 64 KiB; 1 byte is ""
+    int max_animations = 0;       ///< animated tiles, ≤ 256 (0: set_tile_animation is refused)
+    int max_animation_frames = 0; ///< frames over all animations, ≤ 4096
 };
 
 /// A tileset: a texture cut into tiles of the map's tile size, left to right, top to bottom.
@@ -217,6 +220,29 @@ public:
     /// lives (moving the Tilemap object is fine). Empty map: a grid of size 0.
     collision::Grid collision_grid() const;
 
+    /// One frame of an animated tile: the tile shown and for how long.
+    struct AnimationFrame {
+        std::uint16_t tile_id = 0; ///< a tile of the same tileset as the animated tile
+        std::uint16_t ms = 0;      ///< 1..65535 milliseconds
+    };
+    /// Animates a tile id (Tiled: a tile's animation): wherever it is placed, drawing shows `frames` in turn, looping
+    /// (all cells in step, by the clock of gfx::TilemapDrawOptions::animation_time). Collision, properties and
+    /// tile() still see the tile id itself. Replaces the tile's animation; `count` 0 removes it. Build time
+    /// (shifts the frame table); never allocates. Errors: InvalidArgument (unknown tile id, a frame of another
+    /// tileset or of 0 ms, frames null, negative count), LimitReached (more than 32 frames, max_animations or
+    /// max_animation_frames full; a loaded map has room only for its own animations).
+    /// @code
+    /// const nnh::Tilemap::AnimationFrame water[] = {{.tile_id = 9, .ms = 200}, {.tile_id = 10, .ms = 200}};
+    /// map.set_tile_animation(9, water, 2);
+    /// @endcode
+    Result<void> set_tile_animation(int tile_id, const AnimationFrame* frames, int count);
+    /// Copies up to `capacity` frames of a tile's animation into `frames` (may be null when capacity is 0) and
+    /// returns how many it has (0: not animated, unknown id).
+    int tile_animation(int tile_id, AnimationFrame* frames, int capacity) const;
+    /// The tile id an animated tile shows at `time` (frames loop over their total duration; negative times count
+    /// as 0), or `tile_id` itself when it is not animated.
+    int animated_tile_id(int tile_id, Duration time) const;
+
     /// Adds an object layer and returns its index. Errors: InvalidArgument (name over 255 bytes),
     /// LimitReached (max_object_layers or string_bytes full).
     Result<int> add_object_layer(const char* name);
@@ -286,6 +312,10 @@ struct TilemapDrawOptions {
     float opacity = 1;          ///< 0..1, times each map layer's opacity
     Vec2 offset{};              ///< added to each map layer's offset
     bool ignore_camera = false; ///< draw in screen pixels (parallax then uses camera (0, 0))
+    /// The animated tiles' clock. Negative (the default): frame_count() at 60 Hz (frame · 1000 / 60 ms), so the
+    /// simulator and the console show the same frame on the same frame number. Pass your own (a pause-aware
+    /// time) to control it.
+    Duration animation_time{-1};
 };
 
 /// Draws a map's tile layers on `screen`, at the end of the frame like sprites (ordered by `layer`, then

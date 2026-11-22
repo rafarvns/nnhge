@@ -11,7 +11,8 @@
     { "firstgid": 1, "source": "tiles/good.tsj" },
     { "firstgid": 20, "name": "second", "image": "tiles/second.png", "imagewidth": 64, "imageheight": 64,
       "tilewidth": 16, "tileheight": 16, "margin": 1, "spacing": 4, "tilecount": 9, "columns": 3,
-      "tiles": [ { "id": 0, "properties": [ { "name": "kind", "type": "string", "value": "water" } ] } ] }
+      "tiles": [ { "id": 0, "properties": [ { "name": "kind", "type": "string", "value": "water" } ],
+                   "animation": [ { "tileid": 0, "duration": 100 }, { "tileid": 2, "duration": 50 } ] } ] }
   ],
   "layers": [
     { "id": 1, "type": "tilelayer", "name": "back", "x": 0, "y": 0, "width": 6, "height": 4,

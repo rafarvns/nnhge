@@ -87,9 +87,10 @@ vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS v
 `<nnh/math.hpp>`): `<nnh/collision.hpp>` — `overlaps`/`contains`/`intersection`/`separation` on boxes;
 `collision::move` sweeps a box through a `Grid` the game describes (`grid_view` over its own `Cell` array, or a
 callback), x then y, solid and one-way cells, no tunnelling; `contacts`, `cells_touching`
-([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–5: built in code, drawn, loaded from `.nnhmap`, made in
-Tiled): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
-tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`;
+([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–6: built in code, drawn, loaded from `.nnhmap`, made in
+Tiled, animated tiles): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
+tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`,
+`set_tile_animation` (clock: `TilemapDrawOptions::animation_time`, default `frame_count()` at 60 Hz);
 `load_tilemap("levels/level1", {extras})` validates a converted map (fuzzed) and owns its tileset textures; the
 build converts Tiled `.tmj` files in `ASSETS` into `.nnhmap` with `nnh-assetc` (D27; depfile per map; refusals
 print `file: reason`; fixtures and `map_convert_*` ctests in `tests/data/maps/`);

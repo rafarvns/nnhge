@@ -101,7 +101,7 @@ on the 3DS.
 - Entities/components, tweens and scene transitions (later M7 specs).
 - Isometric and hexagonal maps; infinite (chunked) Tiled maps; image layers; Tiled's group layers, wang sets and
   text objects. The build refuses them with a clear message.
-- Animated tiles (see open questions).
+- (Animated tiles were a possible non-goal; the open question below decided to include them — stage 6.)
 - A level editor inside the engine; reading Tiled files at run time on the console (they are converted at build
   time).
 - Path-finding and AI.

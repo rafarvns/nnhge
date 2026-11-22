@@ -78,7 +78,34 @@ bool read_grid(Fields& f, const std::string& file, int tile_w, int tile_h, Conte
     return true;
 }
 
-/// One entry of "tiles": collision from `solid`/`one_way`, the other properties.
+/// A tile's "animation": 0..32 frames, each a tile of this tileset shown 1..65535 ms. False with `error` set.
+bool read_animation(json::Ref list, const std::string& where, int tile_count, std::vector<AnimationFrame>& out,
+                    std::string& error) {
+    namespace fmt = nnh::detail::mapfmt;
+    if (list.size() > fmt::kMaxFramesPerAnimation) {
+        error = where + ": the animation has " + std::to_string(list.size()) + " frames: at most 32";
+        return false;
+    }
+    int index = 0;
+    for (json::Ref frame = list.first(); frame; frame = frame.next(), ++index) {
+        const std::string name = where + ": animation frame " + std::to_string(index);
+        if (!frame.is_object()) {
+            error = name + " must be an object";
+            return false;
+        }
+        Fields f(frame, name);
+        const int tile = static_cast<int>(f.required_integer("tileid", 0, tile_count - 1));
+        const int ms = static_cast<int>(f.required_integer("duration", 1, 65535));
+        if (!f.ok()) {
+            error = f.error();
+            return false;
+        }
+        out.push_back({tile, ms});
+    }
+    return true;
+}
+
+/// One entry of "tiles": collision from `solid`/`one_way`, the other properties, the animation.
 bool read_tile(json::Ref tile, const std::string& file, Context& ctx, Tileset& out) {
     Fields f(tile, "tileset tile");
     const int id = static_cast<int>(f.required_integer("id", 0, out.tile_count - 1));
@@ -87,13 +114,14 @@ bool read_tile(json::Ref tile, const std::string& file, Context& ctx, Tileset& o
     if (tile.get("image")) {
         return ctx.fail(file, "image collection tilesets (one image per tile) aren't supported: use one tileset image");
     }
-    if (tile.get("animation").size() > 0) {
-        return ctx.fail(file, where + " has an animation: animated tiles aren't supported yet");
-    }
+    Fields own(tile, where);
+    const json::Ref animation = own.array("animation");
+    if (!own.ok()) return ctx.fail(file, own.error());
     TileInfo info;
     std::string error;
     bool solid = false, one_way = false;
-    if (!read_properties(tile.get("properties"), where, info.properties, error) ||
+    if (!read_animation(animation, where, out.tile_count, info.animation, error) ||
+        !read_properties(tile.get("properties"), where, info.properties, error) ||
         !take_bool(info.properties, "solid", where, solid, error) ||
         !take_bool(info.properties, "one_way", where, one_way, error)) {
         return ctx.fail(file, error);
@@ -101,7 +129,7 @@ bool read_tile(json::Ref tile, const std::string& file, Context& ctx, Tileset& o
     if (solid && one_way) return ctx.fail(file, where + " is both solid and one_way: keep one");
     info.collision = solid ? 1 : one_way ? 2 : 0;
     if (out.tiles.count(id) != 0) return ctx.fail(file, where + " is listed twice");
-    if (info.collision != 0 || !info.properties.empty()) out.tiles[id] = std::move(info);
+    if (info.collision != 0 || !info.properties.empty() || !info.animation.empty()) out.tiles[id] = std::move(info);
     return true;
 }
 

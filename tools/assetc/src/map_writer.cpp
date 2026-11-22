@@ -75,6 +75,8 @@ MapCapacities capacities(const Map& m, std::size_t pool) {
         for (const auto& tile : s.tiles) {
             c.tile_props += tile.second.properties.empty() ? 0 : 1;
             properties += tile.second.properties.size();
+            c.animations += tile.second.animation.empty() ? 0 : 1;
+            c.animation_frames += static_cast<int>(tile.second.animation.size()); // ≤ 32 each (reader)
         }
     }
     for (const TileLayer& l : m.tile_layers) properties += l.properties.size();
@@ -107,6 +109,20 @@ struct Writer {
         }
     }
 
+    /// Appends tile `id`'s animation (ids ascend, so the table stays sorted) and marks the tile animated.
+    void animation(const Tileset& s, int id, const std::vector<AnimationFrame>& frames) const {
+        if (frames.empty()) return;
+        fmt::Header& h = v.header();
+        fmt::AnimationEntry& a = v.section<fmt::AnimationEntry>(fmt::kAnimations)[h.animations++];
+        a.tile_id = u16(id);
+        a.frame_count = static_cast<std::uint8_t>(frames.size());
+        a.first_frame = h.frames;
+        for (const AnimationFrame& f : frames) {
+            v.section<fmt::FrameEntry>(fmt::kFrames)[h.frames++] = {u16(s.first_id + f.tile), u16(f.ms)};
+        }
+        v.tile_flags()[id] = static_cast<std::uint8_t>(v.tile_flags()[id] | fmt::kTileAnimated);
+    }
+
     void tilesets(const Map& m) const {
         fmt::Header& h = v.header();
         for (const Tileset& s : m.tilesets) {
@@ -119,6 +135,7 @@ struct Writer {
             for (const auto& [local, info] : s.tiles) { // ascending ids: entries are appended in order
                 const int id = s.first_id + local;
                 v.tile_flags()[id] = info.collision;
+                animation(s, id, info.animation);
                 if (info.properties.empty()) continue;
                 fmt::TilePropsEntry& t = v.tile_props()[add_tile_props(v, id)];
                 props({&t.properties_first, &t.properties_count}, info.properties);

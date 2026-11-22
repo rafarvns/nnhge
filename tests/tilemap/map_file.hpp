@@ -25,6 +25,9 @@ using Bytes = std::vector<std::uint8_t>;
 /// The runtime fields are as a converter writes them: no collision mask, texture slot -1.
 Bytes sample(const char* image = "hero");
 
+/// sample() with two animated tiles: tile 2 shows tiles 2 (100 ms) and 4 (50 ms), tile 6 shows tile 7 (30 ms).
+Bytes animated(const char* image = "hero");
+
 /// A minimal valid map: 1 x 1 cell of 16 x 16, no tilesets, layers, objects or properties.
 Bytes minimal();
 

@@ -1,7 +1,6 @@
-// platformer: tilemaps (spec 012). Stage 3 skeleton: the bonus level built entirely in code (parallax
-// backdrops, solid and one-way tiles, a front layer over the player, coins as map objects), a tile benchmark
-// and a flip test. The Tiled level, replay mode and animated tiles come in later stages. SELECT cycles bonus
-// level → benchmark → flip test; START exits.
+// platformer: tilemaps (spec 012). The bonus level built entirely in code (parallax backdrops, solid and one-way
+// tiles, a front layer over the player, animated water, coins as map objects), a tile benchmark and a flip test.
+// The Tiled level and replay mode come in stage 7. SELECT cycles bonus level → benchmark → flip test; START exits.
 //
 // Screenshots (Debug/Development):
 //   NNH_SIM_INPUT="buttons=Right" NNH_EXIT_AFTER_FRAMES=120 NNH_SCREENSHOT=build/platformer.png \

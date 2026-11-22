@@ -457,6 +457,41 @@ Found while writing the converter; the exact code is `tools/assetc/src/` and `cm
   data). T5.9 converts `good.tmj` at build time (target `nnh_test_maps`) into `build/<preset>/tests/maps/`.
 - **Version** stays 0.1.0 (the `map` command is the tool's first; maps depend on the program file anyway).
 
+#### Stage 6 refinements (2026-11-21, implemented)
+
+Found while adding animated tiles; the exact code is `engine/core/src/tilemap/{tile_animation,map_animations}.*`,
+`map_validate.cpp` (`check_animations`), `map_draw.cpp` and `tools/assetc/src/{tiled_tileset,map_writer}.cpp`.
+
+- **Files**: the builder is its own file `map_animations.cpp` (not `map_build.cpp`: one concept per file); the pure
+  `tile_animation.{hpp,cpp}` also holds `prepare_animations`, which fills a pass's animation table. Tests in new
+  files `test_map_animations.cpp`, `test_map_validate_animations.cpp`, `test_tile_animation.cpp` and the converter's
+  `test_tiled_animations.cpp`.
+- **API additions** (all additive): `TilemapDesc::max_animations` / `max_animation_frames` (**0 by default**: a map
+  without animations pays nothing, XI), `Tilemap::tile_animation(id, frames, capacity)` and
+  `animated_tile_id(id, Duration)` (the frame shown at a time; for games and the code-vs-file test).
+  `set_tile_animation` replaces an animation, and `count = 0` removes it. `TilemapDrawOptions::animation_time` as
+  sketched (`Duration`, default −1 ns = `frame_count() · 1000 / 60` ms, read when `draw_tilemap` is called).
+- **Format**: no total duration in `AnimationEntry` (the sketch had one; ≤ 32 frames of up to 65 535 ms don't fit a
+  u16): it is summed when the frame is resolved. Animations are sorted by tile id and own consecutive frame runs in
+  that order, covering exactly the header's frames; the builder keeps this by shifting frames (build time).
+- **Validator** (`check_animations`): animated flags = animations; tile ids known and strictly increasing; 1–32
+  frames (0 → `Damaged`, over 32 → `OverLimit`); runs consecutive; frame tiles in the animated tile's tileset; ms ≥ 1.
+  Reserved fields are not checked (as elsewhere). The old `NewerVersion` refusal is gone.
+- **Drawing**: gfx carries the clock as an opaque `std::uint64_t clock` in `TileBatchRecord`/`TileExpandRequest`
+  (gfx still knows nothing about tilemaps). At submit, `prepare_animations` resolves the animations of the batch's
+  tileset (a contiguous run of the sorted table) into a 1 KB stack table; `ExpandInput::flags` stays null when that
+  tileset has none, so maps without animations pay one pointer test per tile. An animated tile finds its entry by
+  binary search over that run.
+- **Loaded maps** have room only for their own animations (no `LoadTilemapOptions` extras for them, like object
+  layers and tilesets): they can be replaced by as many frames or fewer, or removed.
+- **Converter**: `TileInfo::animation` (local ids); an empty `animation` array is none; each frame needs `tileid`
+  within the tileset and `duration` 1–65535 (`level.tmj: tile 1: animation frame 1: "tileid" must be a whole number
+  from 0 to 7`); over 32 frames is refused per tile; the per-map limits (256 animated tiles, 4096 frames) come from
+  the writer's capacity check (`the map has more than 256 animated tiles (a limit of the format)`). New fixture
+  `bad_animation.tmj` (+ ctest pair); `good.tmj`'s water tile is animated and compared with the code-built map.
+- **Example**: the bonus level's water is animated (`Water` ↔ `Water2`, 400 ms each); screenshots at frames 20 and
+  30 differ only in the water.
+
 ### Files
 
 | File | New/changed | Responsibility |
@@ -481,7 +516,8 @@ Found while writing the converter; the exact code is `tools/assetc/src/` and `cm
 | `engine/core/src/tilemap/map_load.cpp` | new | `load_tilemap`: asset → validate → copy with extras → tileset textures |
 | `engine/core/src/tilemap/visible_range.hpp/.cpp` | new | parallax/camera → snapped origin + visible cell range (pure) |
 | `engine/core/src/tilemap/tile_expand.hpp/.cpp` | new | visible cells of one (layer, tileset) → `TileQuad2D[]` (pure) |
-| `engine/core/src/tilemap/tile_animation.hpp/.cpp` | new | current frame per animation (pure) |
+| `engine/core/src/tilemap/tile_animation.hpp/.cpp` | new | current frame per animation, a pass's animation table (pure) |
+| `engine/core/src/tilemap/map_animations.cpp` | new (stage 6) | `set_tile_animation`, `tile_animation`, `animated_tile_id` |
 | `engine/core/src/tilemap/map_draw.cpp` | new | `gfx::draw_tilemap` → tile batch commands |
 | `engine/core/src/gfx/tile_batches.hpp/.cpp` | new | per-frame batch records, forget-by-source, expansion at submit, counts/drops |
 | `engine/core/src/gfx/draw_list.hpp/.cpp` | changed | tile-batch commands; `build()` also returns the split points |

@@ -2,6 +2,8 @@
 
 #include "tilemap/tile_expand.hpp"
 
+#include "tilemap/tile_animation.hpp"
+
 namespace nnh::detail {
 
 ExpandResult expand_tiles(const ExpandInput& in, platform::TileQuad2D* out, int capacity) {
@@ -26,7 +28,11 @@ ExpandResult expand_tiles(const ExpandInput& in, platform::TileQuad2D* out, int 
                 ++r.dropped;
                 continue;
             }
-            const mapfmt::TileSource src = in.sources[id];
+            mapfmt::TileSource src = in.sources[id];
+            if (in.flags != nullptr && (in.flags[id] & mapfmt::kTileAnimated) != 0) {
+                const int a = find_animation(in.animations, in.animation_count, static_cast<int>(id));
+                if (a >= 0) src = in.animated[a];
+            }
             platform::TileQuad2D& q = out[r.written++];
             q.x = static_cast<std::int16_t>(px);
             q.y = static_cast<std::int16_t>(py);

@@ -27,6 +27,7 @@ struct TileExpandRequest {
     Screen screen = Screen::Top;
     Vec2 camera{}; ///< the screen's camera at the end of the frame; zero when ignoring it
     Vec2 offset{}; ///< the draw's offset
+    std::uint64_t clock = 0; ///< the recorder's clock at draw time (tilemaps: animated tiles' ms)
     platform::TileQuad2D* out = nullptr;
     int capacity = 0; ///< quads `out` can take (scratch and budget)
 };
@@ -43,6 +44,7 @@ struct TileBatchRecord {
     const void* source = nullptr;
     std::int32_t arg = 0;
     Vec2 offset{};
+    std::uint64_t clock = 0; ///< handed to expand() as is
     int texture_slot = -1; ///< the tileset's texture handle, resolved at submit (stale = skipped)
     std::uint32_t texture_generation = 0;
     std::uint16_t tile_w = 0, tile_h = 0;

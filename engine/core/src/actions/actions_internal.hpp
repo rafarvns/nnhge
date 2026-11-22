@@ -50,6 +50,9 @@ bool slot_engaged(const SlotRec& slot, const InputView& view, float threshold);
 void combine(ActionKind kind, SlotOut& into, const SlotOut& slot);
 /// Hysteresis of axis/vector held: on at `press`, kept until below `release`.
 bool held_with_hysteresis(float magnitude, bool was_held, float press, float release);
+/// An action's slots read and combined (FR-6, FR-7), blocked slots skipped or unblocked (FR-13): eval_slot() and
+/// combine() over its active slots, fast (read_slots.cpp). Button/axis vectors are (value, 0).
+SlotOut read_slots(ActionRec& action, const InputView& view);
 
 // ---- The set (action_*.cpp) -----------------------------------------------------------------------------------
 

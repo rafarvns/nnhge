@@ -2,7 +2,7 @@
 // per-slot blocking (FR-13), slots combined (FR-7), edges, counters and repeat. No allocation, no logging in the
 // normal path.
 
-#include "actions/actions_internal.hpp"
+#include "actions/slot_read.hpp"
 #include "nnh/build.hpp"
 #include "nnh/profile.hpp"
 
@@ -13,7 +13,6 @@ constexpr std::uint8_t kEdges = action_flag::kPressed | action_flag::kReleased |
 constexpr std::uint32_t kNever = 0xFFFFFFFFu;
 
 std::uint32_t saturating_next(std::uint32_t v) { return v == kNever ? v : v + 1; }
-float magnitude(float v) { return v < 0.0f ? -v : v; }
 
 /// Idle without edges or events (disabled context, listening). Counters restart when `restart`.
 void go_idle(ActionRec& r, bool restart) {
@@ -54,22 +53,9 @@ void block_held(ActionBlock& b, int context, const InputView& v) {
         ActionRec& r = b.actions[b.order[i]];
         if (r.context != context) continue;
         for (SlotRec& s : r.slots) {
-            if (slot_engaged(s, v, s.press / 100.0f)) s.state = static_cast<std::uint8_t>(s.state | slot_state::kBlocked);
+            if (engaged(s, v, percent(s.press))) s.state = static_cast<std::uint8_t>(s.state | slot_state::kBlocked);
         }
     }
-}
-
-SlotOut read_slots(ActionRec& r, const InputView& v) {
-    SlotOut acc;
-    for (SlotRec& s : r.slots) {
-        if ((s.flags & slot_flag::kActive) == 0) continue;
-        if ((s.state & slot_state::kBlocked) != 0) {
-            if (slot_engaged(s, v, s.release / 100.0f)) continue;
-            s.state = static_cast<std::uint8_t>(s.state & ~slot_state::kBlocked);
-        }
-        combine(r.kind, acc, eval_slot(r.kind, s, v));
-    }
-    return acc;
 }
 
 bool repeat_now(const ActionRec& r) {
@@ -83,7 +69,7 @@ void evaluate_action(ActionRec& r, const InputView& v) {
     const bool was = (r.flags & action_flag::kHeld) != 0;
     const bool held = r.kind == ActionKind::Button
                           ? acc.held
-                          : held_with_hysteresis(magnitude(acc.value), was, r.press / 100.0f, r.release / 100.0f);
+                          : compare_magnitude(acc.value) >= percent(was ? r.release : r.press); // FR-3 hysteresis
     std::uint8_t flags = static_cast<std::uint8_t>(r.flags & ~(kEdges | action_flag::kHeld));
     if (held) flags |= action_flag::kHeld;
     if (held && !was) flags |= action_flag::kPressed;

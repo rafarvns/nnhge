@@ -411,6 +411,8 @@ button indices, unused bytes 0).
 | `engine/core/src/actions/input_view.hpp` / `.cpp` | new | `InputView` (held mask, shaped sticks, 8 pushes, lengths, touch) built once per hook pass from the public queries |
 | `engine/core/src/actions/source_eval.cpp` | new | one slot's `(held, value, vec)` per source kind, thresholds, dead zone, composites, touch, invert (pure) |
 | `engine/core/src/actions/action_combine.cpp` | new | FR-7 combining, axis/vector held hysteresis (pure) |
+| `engine/core/src/actions/slot_read.hpp` | new (console bench refinement) | the slot readings and FR-7 folds inline, the percent table; `source_eval.cpp` is their out-of-line form |
+| `engine/core/src/actions/read_slots.cpp` | new (console bench refinement) | the per-frame slot loop, one per action kind, controls at rest skipped |
 | `engine/core/src/actions/action_set.cpp` | new | construction/destruction (one `mem::alloc`, tag `actions`), move, ids, hook registration, log channel `actions` |
 | `engine/core/src/actions/action_declare.cpp` | new | `add_context`, `add`: name rules, hash, capacities, kind/source checks, defaults |
 | `engine/core/src/actions/action_eval.cpp` | new | the per-frame evaluation: contexts, blocking, edges, counters, repeat, listen dispatch, profile scope |
@@ -633,6 +635,66 @@ ignored, conflicts across contexts, held-at-listen never forgotten, axis invert 
 exclude mask ignored, loading into locked slots, repeated keys applied, no part entries, reserved byte unchecked,
 fallback inverted, a scene binding that never ends, no hash-collision check, reset keeping inverts, the frame-loop
 pointer left set, the FR-9 warning repeated.
+
+## Console bench refinement
+
+First console measure (Old 3DS, Development build, `examples/actions` bench, events off): **avg 0.224 ms, worst
+0.317 ms** for 64 actions × 4 mixed slots (plus the game's 11 actions), ≈ 3.5 µs (≈ 940 cycles) per action, over the
+0.1 ms target; behaviour right (the console's sums matched the PC's). The bench runs at rest (nobody touches the
+console), so the cost was the per-slot machinery, not the input.
+
+What was hot, read from the ARM code (`arm-none-eabi-objdump` of the 3ds-dev objects, GCC -O2, VFPv2):
+
+- Two out-of-line calls per slot (`eval_slot`, then `combine` in another file), each with a 16-byte `SlotOut` going
+  through memory, and a switch on the action kind inside each.
+- A VFP divide (`vdiv.f32`, not pipelined on the ARM11) for every percent threshold or dead zone: `press / 100.0f`
+  for stick directions, `dead_zone / 100.0f` for every whole-stick and stick-axis slot even at rest, two more per
+  axis/vector action for its held hysteresis, one more per blocked slot.
+- A float compare followed by `vmrs APSR_nzcv, fpscr` (which waits for the VFP pipeline) for nearly every slot, even
+  for a button that is up: `combine` compared the slot's 0 against the action's value.
+- Not hot: the `InputView` (two `vsqrt` per set), the repeat's `%` (`__aeabi_uidivmod`, only for held actions with a
+  repeat), asserts (none in the path), contexts.
+
+Changes (no public API change, no layout change: `ActionRec` is still 160 B):
+
+- `slot_read.hpp`: the slot readings (`read_slot`, `engaged`) and the FR-7 folds inline; thresholds through a
+  `constexpr` table of `p / 100.0f` for every byte (the same bits as the division the code did before);
+  `compare_magnitude` (`vabs`) where a magnitude is only compared; `at_least` compares two floats known to be ≥ 0 and
+  not NaN (stick pushes, a button action's value) as integers.
+- `read_slots.cpp`: one loop per action kind with every slot inline, so per slot there is no call and no `SlotOut` in
+  memory. Controls at rest are skipped with integer tests where their reading could not change the result: an up
+  button or touch area (button actions), a composite with no part or opposite parts down, a stick axis or direction
+  reading ±0, a whole stick of length +0 (vector actions; its vector is then exactly zero). Uncommon source/action
+  pairs still go through `read_slot()`, so every pair reads as before.
+- `action_eval.cpp`: one `read_slots()` call per action; the held hysteresis and blocking use the table.
+- `eval_slot()`, `slot_engaged()` and `combine()` stay (tests, listening), now thin wrappers of the inline functions.
+
+Exactness: `test_action_eval_golden.cpp` hashes every public reading of the bench's set over 2000 frames of
+threshold-edge inputs (second context toggled, repeats, other thresholds, inverts); its golden value `4AE2673F` was
+taken before the change and holds after it (pc-debug and pc-release); all other tests unchanged.
+
+ARM code of the evaluation path (3ds-dev): `vdiv.f32` at rest 0 (was 1 per stick slot and 2 per axis/vector action:
+≈ 190 per bench evaluation); calls per slot 0 (was 2); `vmrs` per slot at rest 0 for buttons, touch, composites and
+sticks (was 1–3); per action one `read_slots()` call and, for axis/vector actions, one compare. Divisions left: a moved
+stick with an extra dead zone (re-scale and the vector's scale), as the plan expects.
+
+PC microbenchmark (`nnh_actions_bench`, pc-release -O3, the bench's set evaluated 20 000 times, best of 5, old and new
+binaries interleaved on the same machine, which was shared with other builds, so absolute numbers vary between runs):
+
+| Workload | Before | After | Gain |
+|----------|--------|-------|------|
+| At rest (the console bench's case) | 1.75–1.85 µs (3.0–3.1 µs under load) | 1.16–1.30 µs (2.0–2.2 µs under load) | ≈ −34 % |
+| A new random input every evaluation (worst case for branch prediction) | 2.15–2.35 µs (3.7 µs under load) | 1.78–1.95 µs (2.9–3.0 µs under load) | ≈ −20 % |
+
+The PC has hardware divide, a short-latency FPU and no `vmrs` stall, so it shows less than the ARM11 should gain: on
+the console the removed divides alone were ≈ 190 × ~19 cycles per evaluation, and the removed calls, memory round trips
+and VFP flag transfers were the rest of the ≈ 240 cycles per slot. Simulator check script: `nnh: PASS (77 lines)`,
+same sums as before.
+
+Next: re-run the console bench (`nnh run actions --script examples/actions/tests/check.nnhs`, HBL → Y) and record
+avg/worst here and in `docs/api/actions.md`. If still over the target, the remaining per-action cost is memory (4 of
+the 5 cache lines of each 160-byte record are read every frame): a hot/cold split of `ActionRec` would be the next
+step, a layout change for the plan.
 
 ## Stage 7: console run (prepared)
 

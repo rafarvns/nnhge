@@ -507,3 +507,22 @@ Small decisions the plan would normally ask about; each takes the recommended op
 | XI | ✅ | Optional module; `Camera2D` by hand (with zoom) fully supported; camera and tilemap independent; `hello` links nothing of it |
 
 No constitution exception is requested. D33 amends D26 (see [decisions.md](../../docs/architecture/decisions.md)).
+
+## Stage 0 results
+
+Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM), before any change to the renderer.
+
+- `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 024 / 21 988 / 211 728; pc-debug 197 872 /
+  26 756 / 214 384; 3ds-release `hello.elf` 216 484 / 28 328 / 106 696 (`.3dsx` 261 864 bytes); 3ds-dev `hello.elf`
+  233 264 / 32 848 / 109 304.
+- Build times (3 runs): edit `examples/hello/main.cpp` → simulator (pc-debug) 1.64, 1.61, 1.54 s; → `.3dsx`
+  (3ds-release) 2.89, 2.85 s (a first run that reconfigured took 9.6 s); clean `nnh_core` (pc-debug, parallel) 5.95,
+  5.65, 5.73 s.
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU): `<nnh/gfx.hpp>` 768 preprocessed lines, 0.30–0.36 s.
+- T0.2: `tests/gfx/test_zoom1_regression.cpp` pinned at `0x276C0CD5` (19 items, 6 batches and 148–166 quads per frame
+  over three frames with fractional cameras on both screens; text with shadow and scale 2, sprites with every option,
+  two maps with 8×8 and 16×16 tiles, parallax, offsets, flips incl. diagonal, an animated tile).
+- T0.3: reference screenshots in `build/ref-018/` (not committed): `hello`, `sprites`, `scenes`, `text` at frame 30,
+  `tweens` at 60, platformer `PLATFORMER_DEMO=bench` and level 1 at 90 (pc-debug, offscreen SDL software renderer).
+  `build/ref-018/compare.sh` rebuilds and compares them byte for byte; the bench is compared on its top screen only
+  (its bottom screen shows measured frame times, which differ from run to run).

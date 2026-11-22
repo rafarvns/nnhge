@@ -12,18 +12,18 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 0: baseline and the zoom-1 regression
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
   (3ds-release, 3ds-dev) sizes (`size` text/data/bss); edit `examples/hello/main.cpp` → simulator and `.3dsx` build
   times; clean engine build; preprocessed line count and compile time of a one-line TU including `<nnh/gfx.hpp>` (the
   future `camera.hpp` comparison). Files: plan.md ("Stage 0 results"). Covers III, FR-16, AC-8.
-- [ ] **T0.2** Zoom-1 regression test, written and pinned on today's code: on the fake platform, a frame with
+- [x] **T0.2** Zoom-1 regression test, written and pinned on today's code: on the fake platform, a frame with
   sprites (sub-pixel and negative positions, scale, negative scale, flips, pivot, rotation, tint/opacity), fill and
   outline rectangles, lines, text with shadow and scale 2, `ignore_camera` draws, and a code-built tilemap (8×8 and
   16×16 tilesets, 3 layers: parallax 0.5, an offset, flips incl. diagonal, an animated tile), at fractional cameras on
   both screens over 3 frames; a hash of every recorded `DrawItem2D` field and every `TileBatch2D`/`TileQuad2D` field
   (named fields, never raw bytes: padding) pinned as golden values. Files: `tests/gfx/test_zoom1_regression.cpp`,
   `tests/CMakeLists.txt`. Test: passes on `main` before any change. Covers FR-9, AC-3.
-- [ ] **T0.3** [P] Reference screenshots for AC-8 (kept in `build/ref-018/`, not committed): `sprites`, `scenes`,
+- [x] **T0.3** [P] Reference screenshots for AC-8 (kept in `build/ref-018/`, not committed): `sprites`, `scenes`,
   `tweens`, `text`, `hello`, platformer `PLATFORMER_DEMO=bench` and level 1 (`NNH_EXIT_AFTER_FRAMES` +
   `NNH_SCREENSHOT`), plus a script `build/ref-018/compare.sh` that rebuilds them and `cmp`s each PNG. Files: plan.md
   (list and frame numbers). Covers AC-8.

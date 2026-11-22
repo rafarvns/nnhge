@@ -134,6 +134,7 @@ add_executable(nnh_tests
     gfx/test_tile_submit.cpp
     gfx/test_textures.cpp
     gfx/test_images.cpp
+    gfx/test_zoom1_regression.cpp
     input/test_dpad_mirror.cpp
     input/test_input_queries.cpp
     input/test_input_state.cpp

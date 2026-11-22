@@ -1,6 +1,6 @@
 # Tasks 018: Camera helpers
 
-Status: implemented, console check (T9.2) and Linux checks (T8.1) pending (2026-11-22); approved 2026-11-22
+Status: implemented, console check (T9.2) pending (2026-11-22; T8.1 passed on VM 120); approved 2026-11-22
 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
@@ -193,9 +193,14 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 8: Linux checks (VM 120)
 
-- [ ] **T8.1** (left to the maintainer, not run in this session: see plan.md "Stage 8") On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the noise
+- [x] **T8.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the noise
   goldens, the zoom-1 regression hash and the AC-2 checksums are identical on all three. Files: tasks.md (results).
   Covers I, FR-12, AC-2.
+
+  **Result (2026-11-22, VM 120, merge 43979d6):** GCC 13 and GCC 14 build without warnings and pass ctest 257/257
+  (`nnh_script_pc_smoke` skipped: it needs a `pc-dev` folder); clang 18 ASan/UBSan ctest 257/257, `nnh_tests`
+  1849/1849 and `nnh_assetc_tests` 260/260 with leak checks on. The noise goldens, the zoom-1 hash `0x276C0CD5` and the
+  self-check `0x5201E6CF` are test assertions, so they hold on all three compilers.
 
 ## Stage 9: console check (the only steps on the 3DS)
 

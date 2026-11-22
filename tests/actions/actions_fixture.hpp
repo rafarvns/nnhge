@@ -6,6 +6,7 @@
 #include "nnh/actions.hpp"
 #include "nnh/app.hpp"
 #include "nnh/build.hpp"
+#include "nnh/debug.hpp"
 #include "nnh/platform_fake.hpp"
 #include "test.hpp"
 
@@ -42,6 +43,7 @@ inline void restart(bool old_3ds = false) {
                                               Capability::CirclePad, Capability::CStick, Capability::ZButtons});
     }
     CHECK(nnh::init({}));
+    nnh::debug::set_overlay_visible(false); // SELECT + L in a test toggles it, and it outlives init()
 }
 
 inline bool last_log_mentions(const char* text) {

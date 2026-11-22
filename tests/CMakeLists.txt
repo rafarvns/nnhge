@@ -18,6 +18,7 @@ add_executable(nnh_tests
     actions/test_action_combine.cpp
     actions/test_action_conflicts.cpp
     actions/test_action_contexts.cpp
+    actions/test_action_debug.cpp
     actions/test_action_declare.cpp
     actions/test_action_determinism.cpp
     actions/test_action_edit.cpp
@@ -243,6 +244,9 @@ endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 # The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
 target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/tweens/self_check.cpp)
+# The actions example's self-check and log lines (spec 017 T6.4).
+target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.

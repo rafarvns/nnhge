@@ -144,6 +144,7 @@ set(_nnh_actions_sources
     src/actions/action_combine.cpp
     src/actions/action_conflicts.cpp
     src/actions/action_contexts.cpp
+    src/actions/action_debug.cpp
     src/actions/action_declare.cpp
     src/actions/action_edit.cpp
     src/actions/action_eval.cpp

@@ -177,8 +177,13 @@ spec; the order below is a proposal.
   `<nnh/time.hpp>`), no allocation while playing, sets bound to a scene updated and cleared by it (D30)
   ([api/tween.md](api/tween.md)). `examples/tweens`: easing gallery, an intro sequence, an overlay scene, a
   self-check with a golden checksum (`tests/check.nnhs`) and a 256-tween bench (PC: 0.06 ms per update)
-- [ ] **Input actions** (Godot InputMap, Unity Input System): named actions (`jump`, `attack`) mapped to buttons,
-  remappable by the player and saved, instead of fixed buttons in game code
+- [x] **Input actions** (Godot InputMap, Unity Input System) — spec 017, implemented (console check pending):
+  `<nnh/actions.hpp>`, button/axis/vector actions with several bindings (buttons, stick directions, sticks,
+  composites, touch areas), contexts bound to scenes with no leaking presses, queries and `ActionPressed` events in the
+  same frame (D32 after-input hook: 16 bytes in `hello` on the 3DS), listen/conflicts/reset for a controls screen,
+  overrides saved with `nnh::save` (`NNHB`, fuzzed), Old 3DS fallbacks ([api/actions.md](api/actions.md)).
+  `examples/actions`: playfield, controls screen, bench (PC: 64 actions × 4 slots in 0.026 ms) and a self-check
+  script (`tests/check.nnhs`)
 - [ ] **Camera helpers** (Godot Camera2D, Cinemachine): follow with smoothing and a dead zone, map limits, shake,
   zoom, the two screens as one tall world or two views
 - [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels and layout boxes built

@@ -88,6 +88,13 @@ animations), and cleared silently right after its `on_exit()`. Nothing to update
 [architecture/scenes.md](../architecture/scenes.md#scene-attachments-d30). Destroying a scene while such a set is
 still attached to it stops the game with an error, like destroying a scene on the stack.
 
+## Input contexts bound to a scene
+
+`controls.bind_context(Ctx::Menu, *this)` in a scene's `on_enter()` enables that [action](actions.md) context exactly
+while the scene is on top and ends the binding when it leaves the stack: a pushed pause menu turns the level's
+controls off and its own on, and controls held at the switch don't leak into the other context
+([api/actions.md](actions.md#contexts-and-scenes)).
+
 ## Without run()
 
 `run()` is optional. A manual loop works the same and can mix scenes with other code:

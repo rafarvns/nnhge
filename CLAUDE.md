@@ -97,6 +97,11 @@ libm-free easings (same bits everywhere), `nnh::Timer`, `TweenSet` (float/Vec2/C
 yoyo, sequences, `after`/`every`, callbacks or your own finish events) on the frame clock (`Frames`/`FrameTime` in
 `<nnh/time.hpp>`); a set built with `{*this, ...}` in a scene is updated and cleared by it (D30, scene attachments)
 ([api/tween.md](docs/api/tween.md)).
+Input actions (spec 017, implemented, console check pending; demo `examples/actions`): `<nnh/actions.hpp>` —
+`ActionSet` of button/axis/vector actions with up to 4 bindings each (buttons, stick directions, sticks, composites,
+touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
+frame (D32 after-input hook), listen/conflicts/reset for a controls screen, `NNHB` overrides saved with `nnh::save`
+([api/actions.md](docs/api/actions.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in

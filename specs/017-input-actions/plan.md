@@ -1,6 +1,7 @@
 # Plan 017: Input actions
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: implemented (console check pending) — approved 2026-11-22 (maintainer pre-approved); see the stage results at
+the end
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D32 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (event bus, scene stack; D30 scene attachments from spec 015), spec 002 (memory tags, asserts, logs,
 `Result`, `nnh::save`, profiler), spec 003 (the input sample and its queries), spec 013 (scripts, remote input)
@@ -536,3 +537,129 @@ also compiled into the fuzz target.
 | XI | ✅ | D32: `app` holds one pointer, nothing names actions; actions need no other optional module (scenes and the bus are core) |
 
 No constitution exception is requested.
+
+## Stage 0 results
+
+`hello` Release before any change (WinLibs GCC 16.2 / devkitARM, 2026-11-22): PC `hello.exe` text 129 376, data
+21 988, bss 207 568; 3DS `hello.elf` text 216 260, data 28 328, bss 102 584. Build times and the header line count of
+T0.1 were not measured in this session (open item, with T8.4).
+
+## Stage 1–2 refinements
+
+- A file `actions/action_slots.cpp` was added (packing sources, which source fits which kind, the active flag of
+  FR-9, footprints), so `source_eval.cpp` only evaluates.
+- `Source::kNoButton` (0xFF) marks an empty composite part (a part listened into a simple slot, a cleared part);
+  `detail::button_index()` in the public header serves the `constexpr` factories. A `Button` value that is not one
+  button is refused at declaration.
+- Context names are 1–15 characters (`kMaxContextName`); `add_context(0, …)` renames the `default` context.
+- `ActionRec` is 160 bytes on every system (no pointers): name 32, a stored `value` (vector length), 4 slots of
+  24 bytes each holding current and default source (5 bytes each), percent thresholds, flags, runtime bits and the
+  touch rectangle (`static_assert(sizeof(ActionRec) <= 160)`).
+- A control that goes down on the very evaluation that enables its context is blocked too: that evaluation is "the
+  moment the context becomes enabled" (FR-13).
+- The FR-9 warning is logged once per context per set. Disabling a context restarts the counters (`held_frames` 0,
+  `frames_since_pressed` "never"); while listening, actions read idle with `held_frames` 0 and
+  `frames_since_pressed` still counting.
+- `enable()` on a scene-bound context asserts (unbind it first).
+- Every action has `kMaxSlots` slots for remapping, declared or not (a player may bind an empty slot), so the
+  loader's "slot ≥ declared slots" is "slot ≥ 4".
+
+## Stage 3 results and refinements
+
+- **The hook is a function pointer.** The inline loop on a head pointer in `app.cpp` cost 40 bytes of `hello` text
+  on the 3DS (budget 16). As the plan's risk section foresaw, the loop moved out of line: `app.cpp` defines
+  `detail::g_run_input_hooks` (null), `nnh::frame()` does `if (g_run_input_hooks) g_run_input_hooks();`, and
+  `core/input_hooks.cpp` (linked only by its users) holds the list head, the loop, and sets/clears the pointer as the
+  list fills and empties. Measured: 3DS `hello.elf` text 216 276 (+16, four instructions), bss +8; PC `frame()` +14
+  bytes of code (the PE `.text` grows 64 because of 16-byte function alignment), bss +32. `nm`: only
+  `g_run_input_hooks`, no action symbol.
+- Each set builds its own `InputView` (the hook list has no pass identity to share one; it is a dozen loads and two
+  square roots).
+- `examples/input`, `scenes` and `platformer` build unchanged; every ctest passes; the platformer's `level.nnhs` and
+  `gate.nnhs` pass with `--pc`.
+
+## Stage 4 refinements
+
+- Conflicts look at every slot of the context, active or not, so the same remap gives the same result on every
+  system (FR-22). When a whole slot is assigned, the slot's other units are skipped; when a part is assigned into a
+  simple slot, the simple source it replaces is skipped.
+- `set_source`/`set_part` keep the slot's invert flags (a player's "invert Y" survives a rebind); a listen that
+  captures a stick axis sets `invert_x` from the side pushed.
+- No fixed array of hits: `assign` walks the context twice (count and holder, then apply).
+- `clear_listen_result()` does nothing while listening.
+
+## Stage 5 refinements
+
+- `bindings_io.cpp` writes and saves/loads files; applying a blob is in `bindings_apply.cpp`.
+- Part entries carry kind `Button`, or `None` for an emptied part; their flags must be 0.
+- The fuzz target creates its set per input (a set registers an input hook, which must not outlive the call); the
+  mini-fuzz checks that every set is freed. libFuzzer `fuzz_bindings` is wired (`NNH_BUILD_FUZZERS`) but was not run
+  (open item, with the Linux VM checks of T2.7/T5.5).
+- The allocation test checks `save(path)`/`load(path)` on engine memory only: the fake platform keeps files in std
+  containers.
+
+## Stage 6 results and refinements
+
+- The example logs through its own channel `example` (the engine owns `actions`); its self-check class is
+  `ActionsSelfCheck` (the tweens example's `SelfCheck` is linked into the same test program).
+- `NNH_SIM_INPUT` holds its controls from the first frame, which FR-13 blocks (a control held when a set is created
+  doesn't press), so it can't show actions moving. Screenshots: `NNH_SIM_INPUT`/`ACTIONS_DEMO=controls` for the static
+  screens (checked), and the script's `screenshot` commands for motion, the swap and the verdict (checked).
+- The bench reads the profiler's `actions` scope (every set's evaluation, so the game's 11 actions are included):
+  PC simulator, Debug, avg 0.026 ms, worst 0.055 ms. Its screen stays up with the verdict (B goes back).
+- `nnh run actions --pc --no-build --script examples/actions/tests/check.nnhs` (`NNH_PRESET=pc-debug`): PASS
+  (77 lines, frames 1–833), twice in a row (the second run starts with the first run's saved file).
+- `scripts/check_release_strings.sh` also refuses the FR-9 warning text; the Release `actions.elf` passes, the
+  Development one fails as expected; the debug view's strings are absent from Release.
+
+## Stage 8 results
+
+- Header cost (T8.4; `g++ -std=c++20 -fsyntax-only` of a one-line TU, WinLibs GCC 16.2, average of 3): `<nnh/input.hpp>`
+  534 preprocessed lines, 253 ms; `<nnh/actions.hpp>` 8 240 lines, 387 ms — the same as `<nnh/tween.hpp>` (8 413
+  lines, 379 ms); the cost is `<type_traits>` and `nnh/result.hpp`'s `<new>`/`<utility>`. The header is 287 lines
+  (the plan aimed at 250).
+- Sizes: Release `actions.exe` text 270 140 (PC), `actions.elf` text 257 812 (3DS); `hello` as in stage 3.
+- Not measured in this session: build times (edit → rebuild, clean engine), the set's tag bytes on the 3DS.
+- Hand mutation testing: see "Mutation testing" below.
+
+## Mutation testing
+
+32 hand mutants of `src/actions/*` and `core/input_hooks.cpp` (one at a time, rebuild, whole `nnh_tests`, file
+restored): **32/32 killed**, no survivor. Covered: stick hysteresis swapped, touch edge inclusive, diagonal not
+scaled, dead zone ignored, axis invert ignored, ties taking the later slot (axis, vector), no analog hysteresis, no
+blocking on enable, unblocking at the press threshold, repeat delay off by one, counters kept when disabled, no
+saturation, contexts left on while listening, releases before presses, swap never giving back, locked bindings
+ignored, conflicts across contexts, held-at-listen never forgotten, axis invert on the wrong side, timeout one late,
+exclude mask ignored, loading into locked slots, repeated keys applied, no part entries, reserved byte unchecked,
+fallback inverted, a scene binding that never ends, no hash-collision check, reset keeping inverts, the frame-loop
+pointer left set, the FR-9 warning repeated.
+
+## Stage 7: console run (prepared)
+
+Old 3DS, nobody touching it after Y:
+
+1. On the 3DS: Homebrew Launcher, press **Y** (netloader waits).
+2. On the PC: `build/pc-debug/tools/nnh/nnh run actions --script examples/actions/tests/check.nnhs`
+
+Expected log lines, in order (the sum is the PC's; the console must print the same):
+
+```text
+I example actions: no saved bindings: defaults        (or "loaded 2 applied 0 skipped" on a second run)
+I example actions: aim uses L/R (no C-Stick)           (an Old 3DS; a New 3DS says "aim uses C-Stick")
+I example actions: pause pressed
+I example actions: reset all
+I example actions: rebind jump -> B (swapped with attack)
+I example actions: reset jump
+I example actions: rebind jump -> Y
+I example actions: saved 40 bytes sum AAB4AA36
+I example actions: jump pressed
+I example actions: attack pressed
+I example actions: reloaded 2 applied 0 skipped sum AAB4AA36
+I example actions: bench started, 64 actions x 4 slots
+I example actions: bench avg 0.0xx ms worst 0.0xx ms (target < 0.1 ms) PASS
+I example actions: PASS 7/7
+nnh: PASS (77 lines, ...)
+```
+
+Pass = the saved log (`build/logs/actions-<date>-<time>.txt`) ends with `actions: PASS 7/7`; record the bench
+avg/worst and the aim line here.

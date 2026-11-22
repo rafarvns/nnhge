@@ -15,6 +15,9 @@ forbidden="$forbidden"'|remote control on|remote input off|its time is not repre
 forbidden="$forbidden"'|remote_frame_start|remote_frame_ended|remote_receive|remote_send|remote_capture|screenshots_send'
 # The simulator's end (spec 013 stage 4): NNH_REMOTE is read, and the log redirected, only in Debug/Development.
 forbidden="$forbidden"'|NNH_REMOTE|remote_open|remote_log_line|parse_remote_address'
+# Input actions (spec 017 FR-9, FR-24): the Development warning about unusable actions (the debug view is compiled
+# out with it).
+forbidden="$forbidden"'|unusable on this system'
 
 if grep -aEq "$forbidden" "$binary"; then
     echo "FAIL: $binary contains debug-only strings:"

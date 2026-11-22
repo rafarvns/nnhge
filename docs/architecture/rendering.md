@@ -54,6 +54,28 @@ How it is built (`engine/core/src/gfx/`, `engine/core/src/tilemap/`):
 - Memory: nothing when `max_tiles` is 0 (the default); otherwise ~20 KB once (64 batch records and the
   scratch), and on 3DS one citro2d quad (~192 B, `Linear`) per `max_tiles`.
 
+## Zoom (D33)
+
+> Status: **design** ([spec 018](../../specs/018-camera-helpers/spec.md), [plan 018](../../specs/018-camera-helpers/plan.md),
+> decision D33). Not built yet: today `Camera2D` has only a position.
+
+`Camera2D` gains a `zoom` (0.5–4, default 1). Core applies it when it builds a screen's pass, so platforms keep
+receiving screen pixels:
+
+- A camera-relative draw lands at `(world − position) × zoom`; `position` is still the world point at the screen's
+  top-left. Sprites and text glyphs scale (position, size, pivot); rectangles scale, outlines and lines stay one pixel
+  thick. `ignore_camera` draws and the debug pass are never zoomed. At zoom 1 every value is today's (multiplying by 1
+  is exact).
+- Tile layers snap each tile's **edges**, not its size: `edge(i) = O + round(i × tile × zoom)` from the layer's origin
+  `O` (snapped once, as today), so tiles never gap or overlap. A batch tells the platform the destination tile size
+  (`dst_w`, `dst_h` = `floor(tile × zoom)`) and a quad marks with two orientation bits the tiles one pixel wider or
+  taller. Integer zooms are pixel-exact; fractional zooms give uneven texel sizes.
+- Visible cells follow the zoomed view (zoom 0.5 shows about four times the tiles, within `max_tiles`). A batch larger
+  than the 1600-quad scratch is expanded and sent in row chunks (several `draw_tiles` calls, in order).
+- Platforms: the 3DS draws each quad at the destination size with the same texture coordinates; the PC copies to the
+  destination rectangle (a diagonal flip with unequal sides uses a pre-swapped rectangle); the fake platform records
+  the zoomed items, batches and quads for tests.
+
 ## Why record instead of drawing on the spot
 
 - **Order by layer** without making the game sort its calls.
@@ -80,7 +102,8 @@ SDL's default renderer, which is enough for 2D (3D will need a GPU device).
 ## Coordinates and names
 
 - 2D works in **screen pixels**, (0, 0) top-left, y down, `float` positions (`nnh::Vec2`).
-- Each screen has a **`Camera2D`** (a position subtracted from camera-relative draws). A 3D camera, 3D
+- Each screen has a **`Camera2D`** (a position subtracted from camera-relative draws; a zoom is designed in
+  [Zoom (D33)](#zoom-d33)). A 3D camera, 3D
   vectors and matrices will be separate types next to these, never a renamed 2D type.
 - The final position of a sprite is rounded to whole pixels on both systems, so pixel art stays sharp
   and PC and 3DS agree; game state keeps the sub-pixel position.

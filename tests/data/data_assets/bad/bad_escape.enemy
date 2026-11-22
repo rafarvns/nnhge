@@ -1,0 +1,2 @@
+# expect: bad/bad_escape.enemy:2: escape \x isn't supported (use \" \\ \n \t or \uXXXX)
+name = "Gob\x41lin"

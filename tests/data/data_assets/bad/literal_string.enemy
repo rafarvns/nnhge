@@ -1,0 +1,2 @@
+# expect: bad/literal_string.enemy:2: literal strings ('...') aren't supported: use "..."
+name = 'Goblin'

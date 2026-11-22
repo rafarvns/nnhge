@@ -45,6 +45,14 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   Restart/Yoyo loops, `SetLink` to tie a tween's life to an object: https://dotween.demigiant.com/documentation.php
 - **Robert Penner's easing equations** (BSD licence) — the standard curves and their constants, which our 19
   easings re-derive without libm: http://robertpenner.com/easing/
+- **Unity ScriptableObjects** — typed data assets defined by a class and edited in the Inspector; our data assets
+  keep the idea (a type in code, many asset files, references between them) without an editor (spec 014):
+  https://docs.unity3d.com/Manual/class-ScriptableObject.html
+- **Godot Resources** — exported properties saved as text `.tres` in the repository and as binary `.res` in the
+  game: the same text-in-repo, binary-in-game split as spec 014:
+  https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html
+- **TOML 1.0** (MIT-licensed specification) — the syntax our data files are a strict subset of; our reader is our
+  own (no code from TOML libraries): https://toml.io/en/v1.0.0
 
 ## Real-world 3DS engine write-ups
 - Silent Hill 2 → 3DS (C engine on libctru + citro3d, offline asset packer, linear-memory budgeting):

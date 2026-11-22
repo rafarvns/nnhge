@@ -1,0 +1,3 @@
+# expect: bad/unknown_enum.enemy:3: element: unknown Element 'Fier' (did you mean 'Fire'?)
+name = "Goblin"
+element = "Fier"

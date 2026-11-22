@@ -1,0 +1,3 @@
+# expect: bad/nan.enemy:3: inf and nan aren't supported
+name = "Goblin"
+speed = nan

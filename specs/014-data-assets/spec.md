@@ -1,7 +1,7 @@
 # Spec 014: Data assets
 
 Status: approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with
-the recommended answer); in progress, stages 0–5 of the [tasks](tasks.md) done
+the recommended answer); implemented (console check pending; Linux fuzz/probe pending) — see the [tasks](tasks.md)
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (assets folder, paths, build-time conversion),
 [spec 002](../002-core-foundation/spec.md) (`Result`, memory tags, logs, `nnh::fs`), decision D27 (`nnh-assetc`, the

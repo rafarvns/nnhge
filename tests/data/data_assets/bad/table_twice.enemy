@@ -1,0 +1,6 @@
+# expect: bad/table_twice.enemy:5: [stats] is defined twice (first on line 3)
+name = "Goblin"
+[stats]
+hp = 1
+[stats]
+hp = 2

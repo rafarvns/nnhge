@@ -1,0 +1,4 @@
+# expect: bad/missing_required_nested.enemy:3: [stats]: missing required field 'hp'
+name = "Goblin"
+[stats]
+attack = 2

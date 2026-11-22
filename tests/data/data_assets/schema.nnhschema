@@ -1,0 +1,25 @@
+nnh-data-schema 1
+enum Element 3 Normal Fire Ice
+type Drop - 2 64550E63 tests/data_assets/test_types.cpp
+field item one ref Item required
+field chance one float min 0 max 1
+type Enemy enemy 12 FCEF3C32 tests/data_assets/test_types.cpp
+field name one string 24 required
+field stats one struct Stats
+field speed one float min 0
+field element one enum Element
+field sprite one texture
+field hurt one sound
+field drops list 4 struct Drop
+field tint one color
+field spawn one vec2
+field flags array 3 bool
+field level one u8 min 1 max 99
+field theme one music
+type Item item 3 DEC58D9B tests/data_assets/test_types.cpp
+field name one string 16
+field price one i32 min 0
+field icon one texture
+type Stats - 2 3780FD32 tests/data_assets/test_types.cpp
+field hp one u16 min 1 max 999 required
+field attack one i8

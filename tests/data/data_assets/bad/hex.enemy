@@ -1,0 +1,3 @@
+# expect: bad/hex.enemy:3: hexadecimal, octal and binary numbers aren't supported
+name = "Goblin"
+level = 0x10

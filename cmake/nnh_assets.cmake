@@ -8,10 +8,17 @@
 #   *.tmj (Tiled maps, spec 012) -> converted by nnh-assetc into <path without .tmj>.nnhmap; a Ninja depfile
 #       lists the tilesets and images it read, so editing a shared .tsj reconverts exactly the maps using it;
 #   *.tsj, *.tiled-project, *.tiled-session -> not packed (Tiled's own files; the converter reads the .tsj);
-#   others -> copied unchanged.
+#   others -> copied unchanged, except in a game with a data schema (spec 014, nnh_data.cmake): there every other
+#       file (but Aseprite's *.ase.json, *.ase and *.aseprite, decision D31) goes through `nnh-assetc data`, which
+#       converts a file whose extension is a declared key (`enemies/goblin.enemy`, same output name) and copies any
+#       other, writing a references sidecar in <binary dir>/nnh_data/<target>/refs/; then `nnh-assetc data-index`
+#       checks every reference and writes the data index `.nnh_data` (an asset of its own). Messages show paths
+#       relative to the folder of the calling CMakeLists.txt (`assets/enemies/goblin.enemy:9: ...`). Both tools
+#       rewrite an output only when its bytes change, so an edit that changes nothing converted repacks nothing.
 # nnh_asset_index.cmake then writes <binary dir>/assets/.nnh_assets (the sorted list of output names core reads at
 # init), refuses invalid names and names differing only by letter case, and removes stale outputs.
-# nnh-assetc is only needed (and, in cross presets, only built) when the folder has a .tmj (nnh_host_tools.cmake).
+# nnh-assetc is only needed (and, in cross presets, only built) when the folder has a .tmj or the game a data
+# schema (nnh_host_tools.cmake).
 # On PC that folder sits next to the executable; on 3DS it becomes the romfs of the .3dsx (the target
 # `<target>_assets` is a devkitPro asset target, so ctr_create_3dsx(ROMFS) repacks when an asset changes).
 #
@@ -48,6 +55,43 @@ function(_nnh_add_map_step target source out name output_name assetc assetc_depe
         VERBATIM)
 endfunction()
 
+# One data step (spec 014): <source>/<name> -> <out>/<name> (converted or copied) + its references sidecar.
+function(_nnh_add_data_step source out name assetc assetc_depends schema refs)
+    set(input "${source}/${name}")
+    set(output "${out}/${name}")
+    get_filename_component(output_dir "${output}" DIRECTORY)
+    get_filename_component(refs_dir "${refs}" DIRECTORY)
+    file(RELATIVE_PATH shown "${CMAKE_CURRENT_SOURCE_DIR}" "${input}")
+    add_custom_command(OUTPUT "${output}" "${refs}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir} ${refs_dir}
+        COMMAND ${assetc} data ${input} ${output} --schema ${schema} --refs ${refs} --name ${name} --show ${shown}
+        DEPENDS "${input}" "${schema}" ${assetc_depends}
+        COMMENT "Data ${name}"
+        VERBATIM)
+endfunction()
+
+# The data index step (spec 014): every sidecar + the asset list -> <out>/.nnh_data.
+function(_nnh_add_data_index target source out list_file sidecars assetc assetc_depends schema)
+    set(refs_list "${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}/refs.list")
+    # Relative to the list's folder: in cross presets this file is read by a native program, which can't open the
+    # MSYS paths devkitPro's CMake writes.
+    set(relative "")
+    foreach(sidecar IN LISTS sidecars)
+        file(RELATIVE_PATH r "${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}" "${sidecar}")
+        list(APPEND relative "${r}")
+    endforeach()
+    string(REPLACE ";" "\n" text "${relative}")
+    file(WRITE "${refs_list}.new" "${text}\n")
+    file(COPY_FILE "${refs_list}.new" "${refs_list}" ONLY_IF_DIFFERENT)
+    file(RELATIVE_PATH shown "${CMAKE_CURRENT_SOURCE_DIR}" "${source}")
+    add_custom_command(OUTPUT "${out}/.nnh_data"
+        COMMAND ${assetc} data-index --out ${out}/.nnh_data --schema ${schema} --assets-list ${list_file}
+                --refs-list ${refs_list} --show ${shown}
+        DEPENDS ${sidecars} "${list_file}" "${refs_list}" "${schema}" ${assetc_depends}
+        COMMENT "Data index for ${target}"
+        VERBATIM)
+endfunction()
+
 function(nnh_add_assets target folder)
     get_filename_component(source "${folder}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     if(NOT IS_DIRECTORY "${source}")
@@ -56,8 +100,19 @@ function(nnh_add_assets target folder)
     file(GLOB_RECURSE files LIST_DIRECTORIES false CONFIGURE_DEPENDS RELATIVE "${source}" "${source}/*")
     list(SORT files)
     set(out "${CMAKE_CURRENT_BINARY_DIR}/assets")
-    if(files MATCHES "\\.tmj(;|$)")
-        nnh_assetc_command(assetc assetc_depends) # only games with maps need (and build) the converter
+    get_target_property(schema ${target} NNH_DATA_SCHEMA_FILE) # set by nnh_add_data_schema (DATA_SCHEMA)
+    if(NOT schema)
+        set(schema "")
+    endif()
+    if(schema)
+        nnh_assetc_command(assetc assetc_depends "data assets")
+        if(".nnh_data" IN_LIST files)
+            message(FATAL_ERROR "nnh_add_game(${target}): the asset name .nnh_data is reserved (the data index)")
+        endif()
+        set(refs_dir "${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}/refs")
+        set(sidecars "")
+    elseif(files MATCHES "\\.tmj(;|$)")
+        nnh_assetc_command(assetc assetc_depends "Tiled maps") # only games with maps need (and build) it
     endif()
 
     set(outputs "")
@@ -102,6 +157,10 @@ function(nnh_add_assets target folder)
                 DEPENDS "${input}" "${_NNH_ASSETS_DIR}/nnh_check_sound.cmake"
                 COMMENT "Asset ${name}"
                 VERBATIM)
+        elseif(schema AND NOT name MATCHES "\\.(ase\\.json|ase|aseprite)$")
+            set(refs "${refs_dir}/${name}.refs")
+            _nnh_add_data_step("${source}" "${out}" "${name}" "${assetc}" "${assetc_depends}" "${schema}" "${refs}")
+            list(APPEND sidecars "${refs}")
         else()
             add_custom_command(OUTPUT "${output}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
@@ -113,15 +172,25 @@ function(nnh_add_assets target folder)
         list(APPEND outputs "${output}")
     endforeach()
 
+    set(generated "")
+    if(schema)
+        list(APPEND names ".nnh_data")
+        set(generated -DGENERATED=.nnh_data)
+    endif()
     # The list of names, rewritten only when it changes (so the index only reruns then).
     set(list_file "${CMAKE_CURRENT_BINARY_DIR}/nnh_assets_${target}.list")
     string(REPLACE ";" "\n" list_text "${names}")
     file(WRITE "${list_file}.new" "${list_text}\n")
     file(COPY_FILE "${list_file}.new" "${list_file}" ONLY_IF_DIFFERENT)
+    if(schema)
+        _nnh_add_data_index(${target} "${source}" "${out}" "${list_file}" "${sidecars}" "${assetc}"
+                            "${assetc_depends}" "${schema}")
+        list(APPEND outputs "${out}/.nnh_data")
+    endif()
 
     set(index "${out}/.nnh_assets")
     add_custom_command(OUTPUT "${index}"
-        COMMAND ${CMAKE_COMMAND} -DLIST=${list_file} -DOUT=${index} -DFOLDER=${out}
+        COMMAND ${CMAKE_COMMAND} -DLIST=${list_file} -DOUT=${index} -DFOLDER=${out} ${generated}
                 -P ${_NNH_ASSETS_DIR}/nnh_asset_index.cmake
         DEPENDS "${list_file}" "${_NNH_ASSETS_DIR}/nnh_asset_index.cmake" ${outputs}
         COMMENT "Asset index for ${target}"
@@ -131,4 +200,8 @@ function(nnh_add_assets target folder)
     # A devkitPro asset target: ctr_create_3dsx(ROMFS) packs this folder and depends on these files.
     set_target_properties(${target}_assets PROPERTIES DKP_ASSET_FOLDER "${out}" DKP_ASSET_FILES "${outputs};${index}")
     add_dependencies(${target} ${target}_assets)
+    if(schema)
+        get_target_property(schema_target ${target} NNH_DATA_SCHEMA_TARGET)
+        add_dependencies(${target}_assets ${schema_target})
+    endif()
 endfunction()

@@ -5,8 +5,8 @@ starting with the **Nintendo 3DS**, and runs the same code in a **desktop simula
 
 > Early development. What works today, on the PC simulator and on 3DS: the engine loop, events and
 > scenes, full input, 2D graphics and text, assets, audio, collision and tilemaps (built in code or drawn in
-> Tiled),
-> `.3dsx` and `.cia` packaging, the `nnh` tool, NNH Link, and test scripts that drive a game on the
+> Tiled), typed data assets (hand-written text files checked by the build; console check
+> pending), `.3dsx` and `.cia` packaging, the `nnh` tool, NNH Link, and test scripts that drive a game on the
 > console from the PC. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ```cpp

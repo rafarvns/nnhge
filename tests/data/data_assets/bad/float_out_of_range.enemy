@@ -1,0 +1,3 @@
+# expect: bad/float_out_of_range.enemy:3: speed: 1e39 is outside a float's range
+name = "Goblin"
+speed = 1e39

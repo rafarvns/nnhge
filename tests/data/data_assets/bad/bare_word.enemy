@@ -1,0 +1,2 @@
+# expect: bad/bare_word.enemy:2: text without quotes: strings are written "Goblin"
+name = Goblin

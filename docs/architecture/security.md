@@ -72,7 +72,13 @@ every lookup on accepted indexes (libFuzzer `fuzz_data_index`). `nnh-assetc data
 TOML-subset reader (`toml*.cpp`: ≤ 64 KiB, lines ≤ 1024 bytes, UTF-8 checked per line, arrays nested ≤ 2, headers ≤
 4 parts) and the game's schema description with a bounded reader (≤ 1 MiB, counts and name lengths checked, every
 fingerprint recomputed), and checks every file it writes with the engine's validator; mini-fuzz in
-`nnh_assetc_tests`, libFuzzer `fuzz_assetc_toml` and `fuzz_assetc_data`, not run on Linux yet (T9.1). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+`nnh_assetc_tests`, libFuzzer `fuzz_assetc_toml` and `fuzz_assetc_data`, not run on Linux yet (T9.1).
+`nnh-assetc data-index` reads the references sidecars the data step wrote with a strict reader (`data_refs.cpp`: ≤ 1
+MiB each, every record and number checked, every name and path a valid asset path — a NUL inside one was found by
+the mini-fuzz and is refused), and the lists of sidecars and assets (≤ 4 MiB); it checks the index it writes with
+the engine's index validator. Fuzz target `refs_target` (mini-fuzz of 6 000 mutated sidecars, libFuzzer
+`fuzz_assetc_refs`, not run on Linux yet). The data schema program (`tools/data_schema`) only runs the game's own
+compiled tables through the engine's schema check. They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
   for Ogg, where each run decodes; 12 000 mutations of three valid maps, one with animated tiles, for `.nnhmap`) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
   build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built

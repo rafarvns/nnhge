@@ -1,0 +1,1 @@
+missing_ref/enemies/goblin.enemy:3: drops[0].item: no item 'items/potoin' (no file missing_ref/items/potoin.item; did you mean 'items/potion'?)

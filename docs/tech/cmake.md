@@ -34,7 +34,9 @@ Build folders: `build/<preset>/`. Personal presets go in `CMakeUserPresets.json`
 | `cmake/nnh_assets.cmake` | `nnh_add_assets()` (the `ASSETS` folder of `nnh_add_game`), with `nnh_asset_index.cmake` (the index and its name checks) |
 | `cmake/nnh_images.cmake` | `nnh_add_images()` (the `IMAGES` of `nnh_add_game`), with the build-time scripts `nnh_check_image.cmake` and `nnh_embed.cmake` |
 | `cmake/nnh_sdl3.cmake` | Provides `SDL3::SDL3` for the PC platform |
-| `cmake/nnh_host_tools.cmake` | Target `nnh_assetc` in every preset and `nnh_assetc_command()` (host tools, below) |
+| `cmake/nnh_host_tools.cmake` | Target `nnh_assetc` in every preset, `nnh_assetc_command()` and `_nnh_host_cxx()` (host tools, below) |
+| `cmake/nnh_data.cmake` | `nnh_add_data_schema()` (the `DATA_SCHEMA` of `nnh_add_game`) and `nnh_use_data_schema()` (data assets, below) |
+| `tools/data_schema/CMakeLists.txt` | the data schema programs: `nnh_data_schema_support` (PC) or one game's program (3DS `ExternalProject`) |
 | `examples/CMakeLists.txt` | One `add_subdirectory` per example |
 | `tests/CMakeLists.txt` | `nnh_tests` (core + fake), `nnh_conformance_<platform>` (PC only) |
 
@@ -58,6 +60,7 @@ nnh_add_game(sprites
     SOURCES main.cpp
     ASSETS assets                       # optional folder: assets/art/hero.png -> load_texture("art/hero")
     IMAGES art/logo.png                 # optional embedded images: load_texture("logo")
+    DATA_SCHEMA data_types.cpp          # optional: typed data assets (spec 014, "Data assets" below)
     TITLE "Sprites demo" DESCRIPTION "NNHGE example" AUTHOR "NNHGE contributors"
     VERSION 1.0.0                       # optional, default 0.1.0 (major.minor.micro, at most 63.63.15)
     ICON icon.png                       # optional 48x48 PNG; the NNHGE icon otherwise
@@ -88,7 +91,8 @@ that file changes, writes into `build/<preset>/<game dir>/assets/<path>`: PNGs a
 `<path>.nnhmap`, one step per map with a Ninja `DEPFILE` (in `build/<preset>/<game dir>/nnh_maps/`) listing the
 tilesets and images it read, so editing a shared `.tsj` or tileset image reconverts exactly the maps that use it;
 `.tsj`, `.tiled-project` and `.tiled-session` files are not packed (`nnh_asset_output_name()`; a `.tmj` and a
-`.nnhmap` of the same name are a configure error); other files are copied. Then
+`.nnhmap` of the same name are a configure error); other files are copied — or, in a game with `DATA_SCHEMA`, go
+through the data steps ([Data assets](#data-assets-data_schema)). Then
 `nnh_asset_index.cmake` writes `assets/.nnh_assets` (the sorted list of output names core reads at init) and fails the
 build for names that break the asset path rules, use characters outside `A-Z a-z 0-9 space - _ .`, are
 reserved, or differ from another only by letter case; it also deletes outputs of removed assets. On PC
@@ -142,19 +146,18 @@ The command the asset step runs (one per map, from the game's build folder):
 ```sh
 nnh-assetc map <in.tmj> <out.nnhmap> --assets <assets folder> --depfile <out.d>   # exit 1 + "file: reason" on error
 nnh-assetc data <in> <out> --schema <schema.nnhschema> --refs <out.refs> --name <asset name> [--show <path>]
+nnh-assetc data-index --out <.nnh_data> --schema <schema.nnhschema> --assets-list <names> --refs-list <sidecars>
+                      [--show <assets folder>]
 nnh-assetc --version                                                               # another command line: usage, exit 2
 ```
 
 On failure it prints `file: reason` (the file the problem is in: the map, a tileset or an image) and removes any
-old output. `data` (spec 014, stage 5; the build runs it from stage 7) converts a data file whose extension is a key
-of the game's schema description into a converted data asset and writes its references sidecar (format in
-`tools/assetc/src/data_refs.hpp`); any other file is copied unchanged with an empty sidecar. On failure it prints
-every problem as `<shown path>:<line>: reason` (at most 20) and removes both outputs ([data.md](../api/data.md)). **Depfile paths are relative to the working directory**: CMake reads them from there, and devkitPro's
+old output. `data` and `data-index` are the data asset steps (spec 014, next section). **Depfile paths are relative to the working directory**: CMake reads them from there, and devkitPro's
 MSYS CMake took the native program's absolute `E:/...` paths for relative ones (prefixing the build folder), so every
 map reconverted on every build. Converter fixtures are in `tests/data/maps/` (PNGs by `make_fixtures.py`); the
 `map_convert_rejects_*` / `map_convert_explains_*` ctests run it on each bad map, and `nnh_tests` loads
 `good.tmj` converted at build time (`tests/CMakeLists.txt`). With `-DNNH_BUILD_FUZZERS=ON` and clang,
-`fuzz_assetc_json`, `fuzz_assetc_map`, `fuzz_assetc_toml` and `fuzz_assetc_data` are built in
+`fuzz_assetc_json`, `fuzz_assetc_map`, `fuzz_assetc_toml`, `fuzz_assetc_data` and `fuzz_assetc_refs` are built in
 `build/<preset>/tools/assetc/`.
 
 `NNH_HOST_CXX` (cache variable) defaults to the environment variable of the same name, else `c++`/`g++`/`clang++`
@@ -175,6 +178,48 @@ plus the romfs and `.3dsx` (3.2–3.3 s in all). Numbers in the [ROADMAP](../ROA
 scripts/dkp.sh cmake --build --preset 3ds-release --target nnh_assetc   # build it for the host explicitly
 build/3ds-release/_host/assetc/nnh-assetc --version                       # nnh-assetc 0.2.0 (crc32 CBF43926)
 ```
+
+### Data assets (DATA_SCHEMA)
+
+`nnh_add_game(<game> ... DATA_SCHEMA <schema sources> ASSETS <folder>)` (spec 014, decision D29,
+[api/data.md](../api/data.md)); `cmake/nnh_data.cmake` and `cmake/nnh_assets.cmake`:
+
+1. **Schema sources** form an OBJECT library `<game>_data_schema_objs`, compiled like the game's sources and added
+   to the game as objects (never through an archive, so the static registrations can't be dropped). Include
+   directories: the engine's public headers, the folder of the calling `CMakeLists.txt` and each schema source's.
+2. **The schema program** `<game>_data_schema` = those declarations + `tools/data_schema/schema_main.cpp` + core's pure
+   registry files, for the host. It checks the schema (two types with one key: a build error naming both sources)
+   and writes `build/<preset>/<game dir>/nnh_data/<game>.nnhschema`, only when its text changes.
+   - **PC presets:** an executable linking the very same objects with `nnh_data_schema_support` (defined by
+     `tools/data_schema/CMakeLists.txt`, added from `nnh_host_tools.cmake`): nothing is compiled twice.
+   - **Cross presets (3DS):** an `ExternalProject` building `tools/data_schema/` as a project of its own with the host
+     compiler (`NNH_HOST_CXX`, found by `_nnh_host_cxx()` in `nnh_host_tools.cmake`, as for `nnh-assetc`), into
+     `nnh_data/<game>_host/`. No `BUILD_ALWAYS`: its build step depends on a stamp that depends on the console
+     objects of the schema sources (`$<TARGET_OBJECTS:...>`) and on the program's own engine sources, so it reruns
+     only when a schema source, a header it includes, or that engine code changes. Without a host compiler the 3DS
+     build still configures; the data game's schema step fails saying to set `NNH_HOST_CXX`. A prebuilt
+     `-DNNH_ASSETC` doesn't replace this program (it holds the game's own declarations).
+3. **One data step per asset** the pipeline doesn't otherwise own (not images, sounds, maps, Tiled files, nor
+   Aseprite's `*.ase.json`/`*.ase`/`*.aseprite`, D31): `nnh-assetc data` converts files whose extension is a
+   declared key and copies the rest, under the same asset name, and writes a references sidecar in
+   `nnh_data/<game>/refs/` (format: `tools/assetc/src/data_refs.hpp`). Messages show paths relative to the game's
+   folder: `assets/enemies/goblin.enemy:9: ...` (at most 20 per file).
+4. **The index step** `nnh-assetc data-index` reads every sidecar (listed in `nnh_data/<game>/refs.list`, relative to
+   that folder: in cross presets devkitPro's MSYS CMake would write absolute `/e/...` paths the native tool can't
+   open) and the asset list, checks names, references, media kinds, hash collisions and counts, and writes
+   `assets/.nnh_data`, which joins the asset index (`nnh_asset_index.cmake` reserves the name unless
+   `-DGENERATED=.nnh_data`; ctests `asset_index_*_data`).
+
+Both tools and the schema program rewrite an output only when its bytes change (Ninja's `restat`), so: editing a
+data file reruns its step and the asset index (+ the `.3dsx` repack), with no C++ compile or link — a comment-only
+edit stops after its own step; a schema edit that doesn't change the schema (a comment, a default value) recompiles
+the schema source (console + host on 3DS, once on PC) and relinks, but reconverts nothing; a schema change reconverts
+every data file. Measured in [tasks.md](../../specs/014-data-assets/tasks.md) (T7.7, T7.8) and the
+[ROADMAP](../ROADMAP.md) table. Tests: `data_convert_*` and `data_index_rejects_*` (fixtures in
+`tests/data/data_assets/`, against its committed `schema.nnhschema`, kept equal to the compiled tests' schema by
+`data_schema_program_writes_the_fixtures_schema`), `data_schema_program_refuses_a_key_used_twice`,
+`data_build_{fails,explains}_with_file_line` (builds the test game `nnh_test_broken_data_assets`), and the
+round trip in `nnh_tests` (`tests/data/data_assets/game/` converted by the real pipeline, target `nnh_test_data`).
 
 **Shared link library** (`link/`, every preset, spec 011): `nnh_link` holds the network code `nnh` and the
 NNH Link console app share (sockets, SHA-256/HMAC, message codec, pairing). It never depends on

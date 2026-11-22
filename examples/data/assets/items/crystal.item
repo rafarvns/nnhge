@@ -1,0 +1,4 @@
+name = "Ice crystal"
+price = 2_000
+icon = "art/crystal"
+summons = "enemies/yeti"

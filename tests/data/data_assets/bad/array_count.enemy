@@ -1,0 +1,3 @@
+# expect: bad/array_count.enemy:3: flags: 1 value, exactly 3
+name = "Goblin"
+flags = [true]

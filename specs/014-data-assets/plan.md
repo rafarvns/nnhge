@@ -1,6 +1,6 @@
 # Plan 014: Data assets
 
-Status: approved (2026-11-22, maintainer pre-approved); in progress, stages 0–5 done (see the "Stage N refinements")
+Status: implemented (console check pending; Linux fuzz/probe pending) — approved 2026-11-22 (maintainer pre-approved); see the "Stage N refinements"
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D29 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`Result`, memory tags, logs), spec 007 (assets, per-file build steps, the asset index), spec 012 /
 D27 (`nnh-assetc`, host tools in cross presets, shared pure validators), spec 013 (console test scripts)
@@ -591,6 +591,72 @@ committed outputs, like the platformer's script).
   0x<value from the PC run>"`. The same script runs first in the simulator (`nnh run data --pc --script …`), so a
   checksum that changed with the data fails on PC before the console. The maintainer only opens the Homebrew
   Launcher and presses Y; `nnh` prints `nnh: PASS`/`FAIL`.
+
+#### Stages 6–9 refinements (2026-11-22, implemented)
+
+**Stage 6 — the index step** (`tools/assetc/src/{data_index_build,index_writer,cli_data_index}.*`, the sidecar reader
+in `data_refs.cpp`; tests `test_data_index.cpp`, `test_data_refs.cpp`, `test_cli_data_index.cpp`; fixtures and
+ctests in `tests/data/data_assets/`):
+
+- CLI `data-index --out --schema --assets-list --refs-list [--show]` (its own file `cli_data_index.cpp`, like
+  `cli_data.cpp`). The sidecar list names files **relative to the list's folder** (or absolute): in cross presets
+  devkitPro's MSYS CMake writes `/e/...` paths the native tool can't open (found in the first `3ds-release` build).
+- Messages: `drop: no item 'items/potoin' (no file assets/items/potoin.item; did you mean 'items/potion'?)`,
+  `drops[1].item: 'enemies/bat' is an enemy, not an item`, `sprite: 'sfx/hit' is a sound, not a texture`,
+  `the data asset name 'potion' is also used by assets/potion.enemy: names must be unique across types` (on the
+  later file, line 1). Only the first file (by shown path) with problems is printed (≤ 20). Problems of the whole
+  index — counts, string bytes, a **media** path hashing to 0 or two media paths sharing a hash — print as
+  `<assets folder>: reason`, before any file's. A sidecar of a type the schema lacks: `rebuild the assets`.
+- The sidecar reader is strict and bounded (≤ 1 MiB, lists ≤ 4 MiB) and checks every name and path with the asset
+  path rules; the mini-fuzz `refs_target` found that a NUL inside a path passed that check (the C string stopped
+  early) — now refused. `refs_target` (libFuzzer `fuzz_assetc_refs`) reads mutated sidecars and indexes accepted
+  ones against `data_target`'s schema; an accepted index must pass the engine's validator.
+- **Every output is rewritten only when its bytes change** — the converted file, its sidecar, the index, and the
+  schema description — so Ninja's `restat` stops the chain: a comment edit in a data file reruns that step only; a
+  value edit doesn't rerun the index step (the sidecar is unchanged). On failure both tools remove their outputs, so
+  the step reruns next time.
+- Fixtures: each bad file starts with `# expect: <message>` lines (a TOML comment), which `check_convert.cmake`
+  compares with the converter's output exactly; the cross-file cases are folders under `index/` with
+  `index/<case>.expect`, run through the real `data` + `data-index` commands by `check_index.cmake`. So one ctest per
+  fixture (`data_convert_rejects_<rule>`, `data_index_rejects_<case>`) checks the failure, the line and the exact
+  text; there are no separate `explains_` tests. Over-limit files (64 KiB, 1024-byte lines) are generated at
+  configure time. The committed `schema.nnhschema` is the tests' schema with sources relative to the repository; the
+  ctest `data_schema_program_writes_the_fixtures_schema` keeps it equal to what the tests' schema program writes.
+- The TOML reader's size message became `the file is larger than 64 KiB` (the command line reads at most 64 KiB + 1
+  bytes, so the old "65537 bytes" was wrong for bigger files).
+
+**Stage 7 — build integration** (`cmake/nnh_data.cmake`, `tools/data_schema/`, `cmake/nnh_assets.cmake`,
+`nnh_asset_index.cmake`, `nnh_host_tools.cmake`, `nnh_game.cmake`):
+
+- Names follow CMake targets: `<game>_data_schema` (the program), `<game>_data_schema_objs`, `<game>_data_description`
+  (the target producing `nnh_data/<game>.nnhschema`). `nnh_data_schema_support` is defined by
+  `tools/data_schema/CMakeLists.txt` (PC: as a subdirectory; 3DS: the same file builds one game's program), not by
+  `engine/core/CMakeLists.txt`, so the program's files stay together.
+- The schema objects take `nnh::core`'s usage requirements and reach the game as `$<TARGET_OBJECTS>` (not by linking
+  the OBJECT library, which would drag a private `nnh::engine` link into test programs that use the fake platform).
+- `nnh_use_data_schema(<target> <description> <producer>)` lets a target reuse another's description: the tests'
+  "games" `tests/data/data_assets/game` (T7.5, target `nnh_test_data`) and `broken_game` (T7.6) use `nnh_tests`'
+  schema, whose source `test_types.cpp` moved out of `nnh_tests`' list into `nnh_add_data_schema(nnh_tests ...)`. The
+  3DS side of T7.3 is checked with `examples/data` (tests aren't built in cross presets).
+- Without a host compiler, a 3DS configure still succeeds; the data game's schema step fails at build time with what
+  to set. `nnh_assetc_command()` takes what needs it (`"data assets"`) for its configure message.
+- `.nnh_data` is reserved in `nnh_asset_index.cmake` unless passed in `-DGENERATED=.nnh_data`; a game with a schema
+  refuses a user file of that name at configure time.
+- D31 applied (plan 016's T7.6): `.ase.json`, `.ase`, `.aseprite` are copied, never routed to the data step; the keys
+  `nnhsprite`, `ase`, `aseprite` are reserved in `schema_check.cpp`.
+- On Windows CMake writes `.nnh_assets` with CRLF line ends (the engine's parser accepts both); the round-trip test
+  strips them. A fixture with CRLF line ends is exempted from the repository's LF normalisation (`.gitattributes`).
+- The two ctests that run `cmake --build` on the test game share a `RESOURCE_LOCK` (one Ninja per build folder).
+
+**Stage 8 — the example**: types as planned, with `Element { Normal, Fire, Ice, Earth }`, enemies goblin, imp, slime,
+yeti, items potion, ether and the ice crystal (summons the yeti, which drops it: the reference cycle), `game.settings`.
+The self-check's allocation check compares `mem::region_stats(Heap)` and `data::memory_used()` across 100 loads
+(the `data` tag isn't public); its line is also a PC ctest (`data_self_check_pc`). Index + scratch: 595 bytes.
+
+**Stage 9**: no guide (the plan asks for none); `docs/api/data.md` is the reference. Hand mutation testing of the
+new logic: 68 of 72 valid mutants killed, the 4 left equivalent (tasks.md T9.5). The compile-fail ctests'
+regexes no longer match a quote character (GCC prints ‘ ’ in a UTF-8 locale on Linux). The Linux runs of T9.1 (GCC 13
+and clang 18 probe, ASan/UBSan, the five libFuzzer targets) are left to the maintainer.
 
 ## Test strategy
 

@@ -1,8 +1,10 @@
-# cmake -DLIST=<names file> -DOUT=<index file> [-DFOLDER=<assets output folder>] -P nnh_asset_index.cmake
+# cmake -DLIST=<names file> -DOUT=<index file> [-DFOLDER=<assets output folder>] [-DGENERATED=<names>]
+#       -P nnh_asset_index.cmake
 #
 # Writes the asset index core reads at init (spec 007): the asset paths of LIST, one per line, sorted.
 # Fails the build, naming the file, if a name breaks the asset path rules (relative, '/'-separated, no
-# "." or ".." or empty segments, letters/digits/space/-/_/., at most 255 bytes), is reserved, or differs
+# "." or ".." or empty segments, letters/digits/space/-/_/., at most 255 bytes), is reserved (.nnh_assets, and
+# .nnh_data — the data index, spec 014 — unless GENERATED names it: the build itself made it), or differs
 # from another only by letter case (it would work on Windows and fail on the 3DS). With FOLDER, removes
 # outputs of assets that no longer exist.
 
@@ -30,6 +32,8 @@ foreach(name IN LISTS names)
         set(bad "no '.' or '..' folders and no empty folder names")
     elseif(name STREQUAL ".nnh_assets")
         set(bad "the name .nnh_assets is reserved")
+    elseif(name STREQUAL ".nnh_data" AND NOT ".nnh_data" IN_LIST GENERATED)
+        set(bad "the name .nnh_data is reserved (the data index of games with data assets)")
     endif()
     if(bad)
         message(FATAL_ERROR "asset \"${name}\": invalid name (${bad})")

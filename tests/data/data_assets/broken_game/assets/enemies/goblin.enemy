@@ -1,0 +1,3 @@
+# A broken data file: building nnh_test_broken_data_assets must fail with its file and line (spec 014 T7.6).
+name = "Goblin"
+lvel = 3

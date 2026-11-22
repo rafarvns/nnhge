@@ -38,7 +38,8 @@ bool check_line(Cursor& c, std::string_view line) {
 /// Sizes, line ends, control characters and UTF-8 of the whole text, before reading it; skips a BOM.
 bool check_text(Cursor& c) {
     if (c.text.size() > kMaxFileBytes) {
-        return c.fail("the file is " + std::to_string(c.text.size()) + " bytes: at most 64 KiB");
+        // The command line reads at most 64 KiB + 1 bytes, so the real size isn't known here.
+        return c.fail("the file is larger than 64 KiB");
     }
     if (c.text.substr(0, 3) == "\xEF\xBB\xBF") c.at = 3;
     for (std::size_t at = c.at; at < c.text.size(); ++c.line) {

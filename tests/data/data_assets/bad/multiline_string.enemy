@@ -1,0 +1,2 @@
+# expect: bad/multiline_string.enemy:2: multi-line strings aren't supported
+name = """Goblin"""

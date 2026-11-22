@@ -1,0 +1,3 @@
+# A \u escape becomes UTF-8: the name is 6 bytes
+name = "\u00C9ther"
+price = 1_500

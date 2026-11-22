@@ -97,6 +97,13 @@ libm-free easings (same bits everywhere), `nnh::Timer`, `TweenSet` (float/Vec2/C
 yoyo, sequences, `after`/`every`, callbacks or your own finish events) on the frame clock (`Frames`/`FrameTime` in
 `<nnh/time.hpp>`); a set built with `{*this, ...}` in a scene is updated and cleared by it (D30, scene attachments)
 ([api/tween.md](docs/api/tween.md)).
+Data assets (spec 014, implemented, console check pending; D29; demo `examples/data`): `<nnh/data.hpp>` — plain
+structs + `NNH_DATA_TYPE(Enemy, "enemy", NNH_DATA_FIELD(hp, .min = 1), ...)` in a schema source named in
+`nnh_add_game(... DATA_SCHEMA data_types.cpp ASSETS assets)`; hand-written TOML-subset files `assets/enemies/goblin.enemy`
+checked by the build (`nnh-assetc data`/`data-index`, `file:line: reason`, fixtures in `tests/data/data_assets/`) and
+converted; `data::load("enemies/goblin", e)`, `count<T>`/`name<T>`, `Ref<T>`/`TextureRef` + `data::path(ref)`;
+allocation-free once the index `.nnh_data` is loaded. Schema sources compile for the host too: declarations only
+([api/data.md](docs/api/data.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
@@ -116,7 +123,8 @@ tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
 apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
 tools/nnh/                                       the nnh command (spec 010): build, run on the console, install; test scripts (013)
-tools/assetc/                                    nnh-assetc (specs 012, 014): Tiled .tmj → .nnhmap, data files → NNHD; host-built in 3DS presets (NNH_HOST_CXX)
+tools/assetc/                                    nnh-assetc (specs 012, 014): Tiled .tmj → .nnhmap, data files → NNHD, .nnh_data; host-built in 3DS presets (NNH_HOST_CXX)
+tools/data_schema/                               main() of each game's data schema program (spec 014, cmake/nnh_data.cmake)
 examples/<name>/                                 one small program per feature (tests/*.nnhs: its test scripts)
 specs/NNN-slug/                                  spec.md, plan.md, tasks.md
 docs/                                            architecture/, process/, tech/, api/, guides/
@@ -149,6 +157,7 @@ NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/h
 PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png build/pc-debug/examples/platformer/platformer.exe   # level1 (default)|bonus|bench|gate|flips|replay
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs   # tile gate on the console (Development, HBL → Y): bench: PASS/FAIL
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs  # levels + replay on the console: checksums = PC's, 60 Hz PASS/FAIL
+build/pc-debug/tools/nnh/nnh run data [--pc] --script examples/data/tests/check.nnhs        # data assets: self-check checksum = PC's
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

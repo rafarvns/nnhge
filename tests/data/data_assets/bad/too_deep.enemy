@@ -1,0 +1,4 @@
+# expect: bad/too_deep.enemy:3: a header has at most 4 parts
+name = "Goblin"
+[stats.a.b.c.d]
+hp = 1

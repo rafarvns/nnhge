@@ -1,0 +1,3 @@
+# expect: bad/dotted_key.enemy:3: dotted keys aren't supported: write a [stats] section
+name = "Goblin"
+stats.hp = 3

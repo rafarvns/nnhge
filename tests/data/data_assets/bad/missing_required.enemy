@@ -1,0 +1,2 @@
+# expect: bad/missing_required.enemy:1: missing required field 'name'
+speed = 2

@@ -30,4 +30,11 @@ const char* data_seed();
 /// For the mini-fuzz: whether data_target's fixed schema accepts `text` as a data file.
 bool data_converts(const char* text, std::size_t size);
 
+/// `nnh-assetc data-index`'s inputs (spec 014, fuzz_assetc_data.cpp): the input is a references sidecar; read
+/// back, refused with a line, or indexed against data_target's schema (with the media it names present, and once
+/// with its name used twice): an accepted index must pass the engine's index validator.
+int refs_target(const std::uint8_t* data, std::size_t size);
+/// A sidecar with every record kind (a seed).
+const char* refs_seed();
+
 } // namespace nnh::assetc::fuzz

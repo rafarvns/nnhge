@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 
 namespace nnh::assetc {
 
@@ -31,6 +32,13 @@ bool write_file(const std::string& path, const void* data, std::size_t size) {
     if (file == nullptr) return false;
     const bool ok = std::fwrite(data, 1, size, file) == size;
     return std::fclose(file) == 0 && ok;
+}
+
+bool write_file_if_changed(const std::string& path, const void* data, std::size_t size) {
+    std::string old;
+    if (DiskFiles{}.read(path, size + 1, old) && old.size() == size && std::memcmp(old.data(), data, size) == 0)
+        return true;
+    return write_file(path, data, size);
 }
 
 bool MemoryFiles::read(const std::string& path, std::size_t max_bytes, std::string& out) {

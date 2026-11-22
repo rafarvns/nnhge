@@ -1,7 +1,7 @@
-// Fuzz target body for `nnh-assetc data` (see fuzz_assetc.hpp): a whole conversion from memory against a
-// fixed schema with every field kind (declared here like a game's, read back through its description),
-// checked with the engine's validator and applied into the compiled struct; and, after a NUL byte, a schema
-// description of its own.
+// Fuzz target bodies for `nnh-assetc data` and `data-index` (see fuzz_assetc.hpp): a whole conversion from
+// memory against a fixed schema with every field kind (declared here like a game's, read back through its
+// description), checked with the engine's validator and applied into the compiled struct; after a NUL byte, a
+// schema description of its own. And a references sidecar read back and indexed against the same schema.
 
 #include <cmath>
 #include <cstdlib>
@@ -15,6 +15,8 @@
 #include "data/schema_fingerprint.hpp"
 #include "data/schema_write.hpp"
 #include "data_convert.hpp"
+#include "data_index_build.hpp"
+#include "data_refs.hpp"
 #include "fuzz_assetc.hpp"
 #include "nnh/data.hpp"
 #include "nnh/detail/name_hash.hpp"
@@ -150,6 +152,37 @@ bool data_converts(const char* text, std::size_t size) {
     Diagnostics problems;
     return convert_data(fixed().schema, *fixed().schema.type_by_key("all"), std::string_view(text, size), out,
                         problems);
+}
+
+const char* refs_seed() {
+    return "nnh-data-refs 1\nasset all 120 things/one\nref 3 data part part.link parts/p\n"
+           "ref 9 texture - sprite art/a\nref 10 sound - sound sfx/b\nref 11 music - music mu sic/c\n";
+}
+
+int refs_target(const std::uint8_t* data, std::size_t size) {
+    RefsFile f;
+    std::string error;
+    if (!read_refs(std::string_view(reinterpret_cast<const char*>(data), size), f, error)) {
+        if (error.rfind("line ", 0) != 0) std::abort(); // every refusal names its line
+        return 0;
+    }
+    IndexInput in;
+    in.schema = &fixed().schema;
+    for (const DataReference& r : f.references) { // the media it names exist, so the index step can accept it
+        in.assets.push_back(r.path + (r.kind == detail::FieldKind::TextureRef ? ".png" : ".wav"));
+    }
+    in.data.push_back(f);
+    in.data.push_back(f); // the same name twice: refused (unless it isn't a data asset)
+    IndexModel model;
+    std::string errors;
+    if (build_index(in, model, errors) == errors.empty()) {
+        in.data.pop_back();
+        std::string problem;
+        if (build_index(in, model, errors) && write_index(model, problem).empty()) std::abort(); // it validates
+    } else {
+        std::abort(); // a refusal always prints something, an acceptance nothing
+    }
+    return 0;
 }
 
 int data_target(const std::uint8_t* data, std::size_t size) {

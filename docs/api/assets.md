@@ -59,3 +59,21 @@ Release `AssetData` before `nnh::shutdown()`, like any engine memory, or the lea
 | `Unsupported` | called before `nnh::init()` |
 
 Assets are read-only. Saves and files the game writes live in its data folder ([fs.md](fs.md)).
+
+## Data assets
+
+In a game with `nnh_add_game(... DATA_SCHEMA ...)` (spec 014, [data.md](data.md)), a file whose extension is a
+declared key (`enemies/goblin.enemy`) is a **data asset**: the build checks the text and packs a converted binary
+under the **same asset name** (the text itself is not packed), and adds one more asset, the **data index**
+`.nnh_data` (the name is reserved in every game). Other files of such a game are copied as usual. Read data assets
+with `nnh::data::load`, not `assets::load`. Both formats are versioned and independent of any compiler's struct
+layout; their exact layout is documented in the source:
+
+| File | Format (version 1) | Defined in |
+|------|--------------------|-----------|
+| a converted data asset | `NNHD`: 20-byte header (magic, version, flags, size, CRC-32 of the body, the type's schema fingerprint), then the values field by field (`u8` field index + value; unset fields absent), little-endian, ≤ 64 KiB | [`data_format.hpp`](../../engine/core/src/data/data_format.hpp) |
+| `.nnh_data` | `NNHX`: 32-byte header, every data type (key, fingerprint, entries), entries (path hash, path offset) grouped data/texture/sound/music, a lookup sorted by (group, hash), the paths | [`index_format.hpp`](../../engine/core/src/data/index_format.hpp) |
+
+Both are checked by the same bounded validators in the build and on the console (constitution X). A converted file
+whose fingerprint doesn't match the game's compiled struct (an old build folder) loads as `Corrupted`: "rebuild the
+assets".

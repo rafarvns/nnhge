@@ -1,0 +1,5 @@
+# expect: bad/int_too_big_for_type.enemy:5: stats.attack: 200 doesn't fit an i8 (-128 to 127)
+name = "Goblin"
+[stats]
+hp = 5
+attack = 200

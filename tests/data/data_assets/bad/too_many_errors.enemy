@@ -1,0 +1,44 @@
+# expect: bad/too_many_errors.enemy:23: unknown field 'x0'
+# expect: bad/too_many_errors.enemy:24: unknown field 'x1'
+# expect: bad/too_many_errors.enemy:25: unknown field 'x2'
+# expect: bad/too_many_errors.enemy:26: unknown field 'x3'
+# expect: bad/too_many_errors.enemy:27: unknown field 'x4'
+# expect: bad/too_many_errors.enemy:28: unknown field 'x5'
+# expect: bad/too_many_errors.enemy:29: unknown field 'x6'
+# expect: bad/too_many_errors.enemy:30: unknown field 'x7'
+# expect: bad/too_many_errors.enemy:31: unknown field 'x8'
+# expect: bad/too_many_errors.enemy:32: unknown field 'x9'
+# expect: bad/too_many_errors.enemy:33: unknown field 'x10'
+# expect: bad/too_many_errors.enemy:34: unknown field 'x11'
+# expect: bad/too_many_errors.enemy:35: unknown field 'x12'
+# expect: bad/too_many_errors.enemy:36: unknown field 'x13'
+# expect: bad/too_many_errors.enemy:37: unknown field 'x14'
+# expect: bad/too_many_errors.enemy:38: unknown field 'x15'
+# expect: bad/too_many_errors.enemy:39: unknown field 'x16'
+# expect: bad/too_many_errors.enemy:40: unknown field 'x17'
+# expect: bad/too_many_errors.enemy:41: unknown field 'x18'
+# expect: bad/too_many_errors.enemy:42: unknown field 'x19'
+# expect: bad/too_many_errors.enemy: ... and 2 more
+name = "Goblin"
+x0 = 1
+x1 = 1
+x2 = 1
+x3 = 1
+x4 = 1
+x5 = 1
+x6 = 1
+x7 = 1
+x8 = 1
+x9 = 1
+x10 = 1
+x11 = 1
+x12 = 1
+x13 = 1
+x14 = 1
+x15 = 1
+x16 = 1
+x17 = 1
+x18 = 1
+x19 = 1
+x20 = 1
+x21 = 1

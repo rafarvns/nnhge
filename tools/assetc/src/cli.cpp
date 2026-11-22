@@ -25,7 +25,10 @@ namespace {
 
 constexpr const char* kUsage =
     "usage: nnh-assetc --version\n"
-    "       nnh-assetc map <in.tmj> <out.nnhmap> --assets <assets folder> [--depfile <out.d>]\n";
+    "       nnh-assetc map <in.tmj> <out.nnhmap> --assets <assets folder> [--depfile <out.d>]\n"
+    "       nnh-assetc data <in> <out> --schema <schema> --refs <out.refs> --name <asset name> [--show <path>]\n"
+    "       nnh-assetc data-index --out <.nnh_data> --schema <schema> --assets-list <file> --refs-list <file>\n"
+    "                  [--show <assets folder>]\n";
 
 struct MapArgs {
     std::string in, out, assets, depfile;
@@ -96,6 +99,10 @@ int run_cli(int argc, const char* const* argv, std::FILE* out, std::FILE* err) {
     if (argc >= 2 && std::strcmp(argv[1], "map") == 0 && parse_map_args(argc, argv, args)) return run_map(args, err);
     if (argc >= 2 && std::strcmp(argv[1], "data") == 0) {
         const int code = run_data(argc, argv, err);
+        if (code != 2) return code;
+    }
+    if (argc >= 2 && std::strcmp(argv[1], "data-index") == 0) {
+        const int code = run_data_index(argc, argv, err);
         if (code != 2) return code;
     }
     std::fputs(kUsage, err);

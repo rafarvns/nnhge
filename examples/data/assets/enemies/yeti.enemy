@@ -1,0 +1,22 @@
+name = "Yeti"
+element = "Ice"
+speed = 0.75
+sprite = "art/yeti"
+hurt_sound = "sfx/roar"
+tint = "#B8E8FF"
+spawn = [320, 140]
+flags = [false, true, false]
+
+[stats]
+hp = 1_200
+attack = 25
+defense = 12
+
+# The crystal it drops summons a yeti again: a reference cycle, which is fine (never followed by itself).
+[[drops]]
+item = "items/crystal"
+chance = 0.05
+
+[[drops]]
+item = "items/potion"
+chance = 0.3

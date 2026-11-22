@@ -1,0 +1,1 @@
+wrong_type_ref/enemies/goblin.enemy:3: drops[0].item: 'enemies/bat' is an enemy, not an item

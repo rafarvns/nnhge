@@ -1,0 +1,3 @@
+# expect: bad/wrong_kind.enemy:3: speed: expected a number, found a string
+name = "Goblin"
+speed = "fast"

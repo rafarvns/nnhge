@@ -1,0 +1,27 @@
+# Every kind of field, set (spec 014 T6.3 / T7.5: the round trip compares it with test_round_trip.cpp).
+name = "Goblin"   # String<24>
+speed = 1.5
+element = "Fire"
+sprite = "art/goblin"
+hurt = "sfx/hurt"
+tint = "#FF8040"
+spawn = [3.5, -2]
+flags = [
+    true,
+    false,
+    true,   # trailing comma
+]
+level = 7
+theme = "music/battle"
+
+[stats]
+hp = 300
+attack = -3
+
+[[drops]]
+item = "items/potion"
+chance = 0.25
+
+[[drops]]
+item = "items/ether"
+chance = 1e-1

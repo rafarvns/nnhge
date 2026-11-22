@@ -9,4 +9,8 @@ namespace nnh::assetc {
 /// 014): returns the exit code (2 for a usage error, which run_cli reports).
 int run_data(int argc, const char* const* argv, std::FILE* err);
 
+/// `data-index --out <.nnh_data> --schema <description> --assets-list <names> --refs-list <sidecar paths>
+/// [--show <assets folder shown>]` (spec 014): returns the exit code (2 for a usage error).
+int run_data_index(int argc, const char* const* argv, std::FILE* err);
+
 } // namespace nnh::assetc

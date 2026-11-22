@@ -2,6 +2,7 @@
 #     SOURCES <files...>
 #     [ASSETS <folder>]
 #     [IMAGES <png files...>]
+#     [DATA_SCHEMA <schema sources...>]
 #     [TITLE <text>] [DESCRIPTION <text>] [AUTHOR <text>] [VERSION <major.minor.micro>]
 #     [ICON <48x48 png>]
 #     [CIA UNIQUE_ID <0x00300-0xF7FFF> [PRODUCT_CODE <CTR-X-XXXX>] [BANNER <256x128 png>]
@@ -12,6 +13,10 @@
 #   3DS: <target>.elf and <target>.3dsx with SMDH metadata (title, description, author, icon).
 # ASSETS: every file of the folder, converted and packed with the game (nnh_assets.cmake; romfs on 3DS,
 # a folder next to the PC executable); read with <nnh/assets.hpp>, images with nnh::load_texture("path").
+# DATA_SCHEMA (spec 014): the sources holding the game's NNH_DATA_TYPE tables, compiled into the game and into a
+# host program that describes the schema (nnh_data.cmake); then every ASSETS file whose extension the asset pipeline
+# doesn't own goes through `nnh-assetc data`, which converts the files whose extension is a declared key and checks
+# their references (nnh_assets.cmake).
 # IMAGES are checked, converted and embedded (nnh_images.cmake); load them with nnh::load_texture("name").
 # Package (spec 009, nnh_package_rules.cmake): the metadata is checked at configure time; ICON (default:
 # the NNHGE icon) at build time, on every system. TITLE becomes the default AppConfig::title. CIA options
@@ -22,10 +27,11 @@ include("${CMAKE_CURRENT_LIST_DIR}/nnh_assets.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_images.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_package_rules.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_cia.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_data.cmake")
 set(_NNH_GAME_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(nnh_add_game target)
-    cmake_parse_arguments(PARSE_ARGV 1 G "" "TITLE;DESCRIPTION;AUTHOR;VERSION;ICON;ASSETS" "SOURCES;IMAGES;CIA")
+    cmake_parse_arguments(PARSE_ARGV 1 G "" "TITLE;DESCRIPTION;AUTHOR;VERSION;ICON;ASSETS" "SOURCES;IMAGES;CIA;DATA_SCHEMA")
     if(NOT G_SOURCES)
         message(FATAL_ERROR "nnh_add_game(${target}): SOURCES is required")
     endif()
@@ -87,6 +93,9 @@ function(nnh_add_game target)
 
     if(G_IMAGES)
         nnh_add_images(${target} ${G_IMAGES})
+    endif()
+    if(G_DATA_SCHEMA)
+        nnh_add_data_schema(${target} ${G_DATA_SCHEMA}) # before the assets: their data steps need the description
     endif()
     set(_romfs "")
     if(G_ASSETS)

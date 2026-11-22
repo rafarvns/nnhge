@@ -1,0 +1,3 @@
+# expect: bad/date.enemy:3: dates and times aren't supported
+name = "Goblin"
+level = 1979-05-27

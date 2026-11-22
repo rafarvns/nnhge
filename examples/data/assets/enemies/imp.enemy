@@ -1,0 +1,16 @@
+name = "Imp"
+element = "Fire"
+speed = 2.5
+sprite = "art/imp"
+hurt_sound = "sfx/roar"
+tint = "#FF7A45"
+spawn = [200, 60]
+flags = [true, false, false]
+
+[stats]
+hp = 18
+attack = 9
+
+[[drops]]
+item = "items/ether"
+chance = 0.25

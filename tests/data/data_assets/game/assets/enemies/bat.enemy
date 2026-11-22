@@ -1,0 +1,2 @@
+# Only the required field, CRLF line ends: everything else keeps the defaults.
+name = "Bat"

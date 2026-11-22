@@ -1,0 +1,4 @@
+# expect: bad/unknown_section.enemy:3: unknown field 'stat' (did you mean 'stats'?)
+name = "Goblin"
+[stat]
+hp = 1

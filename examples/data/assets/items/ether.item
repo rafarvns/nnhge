@@ -1,0 +1,4 @@
+name = "Ether"
+price = 150
+icon = "art/ether"
+heal = 10

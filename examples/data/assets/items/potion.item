@@ -1,0 +1,4 @@
+name = "Potion"
+price = 50
+icon = "art/potion"
+heal = 30

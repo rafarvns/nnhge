@@ -85,7 +85,7 @@ NNH_TEST(toml_refuses_files_and_lines_over_their_limits) {
         fits += std::string(99, '#') + "\n";
     fits += std::string(kMaxFileBytes - fits.size(), '\n');
     CHECK(fits.size() == kMaxFileBytes && parses(fits));
-    CHECK(problem_of(fits + "\n") == "1: the file is 65537 bytes: at most 64 KiB");
+    CHECK(problem_of(fits + "\n") == "1: the file is larger than 64 KiB");
     const std::string line(kMaxLineBytes, '#');
     CHECK(parses("a = 1\n" + line + "\r\n"));
     CHECK(problem_of("a = 1\n" + line + "#\n") == "2: the line is 1025 bytes: at most 1024");

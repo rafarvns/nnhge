@@ -1,0 +1,3 @@
+# expect: bad/bad_color.enemy:3: tint: expected "#RRGGBB" or "#RRGGBBAA"
+name = "Goblin"
+tint = "#12345"

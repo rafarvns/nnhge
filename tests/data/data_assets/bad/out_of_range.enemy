@@ -1,0 +1,3 @@
+# expect: bad/out_of_range.enemy:3: level: 100 is out of range: from 1 to 99
+name = "Goblin"
+level = 100

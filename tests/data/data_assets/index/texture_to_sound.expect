@@ -1,0 +1,1 @@
+texture_to_sound/enemies/goblin.enemy:2: sprite: 'sfx/hurt' is a sound, not a texture

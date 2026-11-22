@@ -6,6 +6,7 @@
 #include <string>
 
 #include "convert.hpp"
+#include "data_refs.hpp"
 #include "data/schema_write.hpp"
 #include "files.hpp"
 #include "fuzz_assetc.hpp"
@@ -91,6 +92,22 @@ bool converts(const std::string& map, const std::string& set) {
 }
 
 } // namespace
+
+NNH_TEST(assetc_refs_target_survives_mutated_sidecars) {
+    nnh::assetc::RefsFile seed;
+    std::string error;
+    CHECK(nnh::assetc::read_refs(nnh::assetc::fuzz::refs_seed(), seed, error) && seed.references.size() == 4);
+    Rng rng{1414};
+    int accepted = 0;
+    for (int i = 0; i < 6000; ++i) {
+        std::string doc = nnh::assetc::fuzz::refs_seed();
+        mutate_toml(doc, rng);
+        nnh::assetc::fuzz::refs_target(reinterpret_cast<const std::uint8_t*>(doc.data()), doc.size());
+        nnh::assetc::RefsFile f;
+        accepted += nnh::assetc::read_refs(doc, f, error) ? 1 : 0;
+    }
+    CHECK(accepted > 300); // the mutants reach the index step, not only the reader's first checks
+}
 
 NNH_TEST(assetc_json_target_survives_mutated_documents) {
     Rng rng{12345};

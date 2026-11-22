@@ -252,7 +252,9 @@ NNH_TEST(data_schema_check_accepts_keys_at_the_limits) {
 }
 
 NNH_TEST(data_schema_check_refuses_reserved_keys) {
-    const char* reserved[] = {"png", "wav", "ogg", "tmj", "tsj", "nnhmap", "nnh_data", "t3x"};
+    // D31 (spec 016): Aseprite exports and their converted sprite libraries belong to the sprite step.
+    const char* reserved[] = {"png", "wav", "ogg",       "tmj", "tsj",     "nnhmap",
+                              "nnh_data", "t3x", "nnhsprite", "ase", "aseprite"};
     for (const char* key : reserved) {
         const TypeInfo t = with_key(kItem, key);
         Reg r;

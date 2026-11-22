@@ -1,0 +1,2 @@
+# expect: bad/string_too_long.enemy:2: name: 25 bytes, at most 24
+name = "Goblin the Magnificent!!!"

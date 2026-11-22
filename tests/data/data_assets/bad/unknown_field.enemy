@@ -1,0 +1,3 @@
+# expect: bad/unknown_field.enemy:3: unknown field 'lvel' (did you mean 'level'?)
+name = "Goblin"
+lvel = 3

@@ -1,0 +1,6 @@
+# The game's settings: one data asset of its own type (key "settings").
+title = "NNHGE Bestiary"
+top_color = "#1A2238"
+bottom_color = "#202A3C"
+music = "music/theme"
+first = "enemies/goblin"

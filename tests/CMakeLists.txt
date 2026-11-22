@@ -53,12 +53,12 @@ add_executable(nnh_tests
     data_assets/test_index_lookup.cpp
     data_assets/test_index_validate.cpp
     data_assets/test_refs.cpp
+    data_assets/test_round_trip.cpp
     data_assets/test_schema_check.cpp
     data_assets/test_schema_declare.cpp
     data_assets/test_schema_registry.cpp
     data_assets/test_schema_write.cpp
     data_assets/test_string_list.cpp
-    data_assets/test_types.cpp
     crash/test_report.cpp
     debug/test_debug_list.cpp
     debug/test_debug_pass.cpp
@@ -173,6 +173,44 @@ endif()
 # Sound fixtures (tests/data/sounds, made by make_sounds.py) are read from the source tree.
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
+# The tests' data schema (spec 014), declared like a game's: compiled into nnh_tests and into its schema program
+# nnh_tests_data_schema (cmake/nnh_data.cmake), whose description converts the fixtures of data/data_assets/game
+# through the real asset pipeline (target nnh_test_data) for the code-vs-file test (T7.5, test_round_trip.cpp).
+nnh_add_data_schema(nnh_tests data_assets/test_types.cpp)
+get_target_property(NNH_TESTS_DATA_SCHEMA nnh_tests NNH_DATA_SCHEMA_FILE)
+add_subdirectory(data/data_assets/game ${CMAKE_CURRENT_BINARY_DIR}/data_assets_game)
+add_dependencies(nnh_tests nnh_test_data)
+target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_GAME_DIR="${CMAKE_CURRENT_BINARY_DIR}/data_assets_game/assets")
+# The schema program writes exactly the fixtures' committed description, and only when it changes (T7.2, T6.3).
+add_test(NAME data_schema_program_writes_the_fixtures_schema
+    COMMAND ${CMAKE_COMMAND} -DPROGRAM=$<TARGET_FILE:nnh_tests_data_schema>
+            -DOUT=${CMAKE_CURRENT_BINARY_DIR}/data_assets_schema_check.nnhschema
+            -DCOMMITTED=${CMAKE_CURRENT_SOURCE_DIR}/data/data_assets/schema.nnhschema -DROOT=${PROJECT_SOURCE_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/data/data_assets/check_schema_program.cmake)
+add_test(NAME data_schema_program_explains_its_usage COMMAND nnh_tests_data_schema)
+set_tests_properties(data_schema_program_explains_its_usage PROPERTIES
+    PASS_REGULAR_EXPRESSION "usage: <game>_data_schema <out[.]nnhschema>")
+# Two schema sources declaring one key: the program refuses, naming both (T7.2, FR-1).
+add_executable(nnh_test_dup_key_schema data_assets/schema_dup_a.cpp data_assets/schema_dup_b.cpp)
+target_link_libraries(nnh_test_dup_key_schema PRIVATE nnh_data_schema_support)
+add_test(NAME data_schema_program_refuses_a_key_used_twice
+         COMMAND nnh_test_dup_key_schema ${CMAKE_CURRENT_BINARY_DIR}/data_assets_dup.nnhschema)
+set_tests_properties(data_schema_program_refuses_a_key_used_twice PROPERTIES WILL_FAIL TRUE)
+add_test(NAME data_schema_program_names_both_sources_of_a_key
+         COMMAND nnh_test_dup_key_schema ${CMAKE_CURRENT_BINARY_DIR}/data_assets_dup.nnhschema)
+set_tests_properties(data_schema_program_names_both_sources_of_a_key PROPERTIES PASS_REGULAR_EXPRESSION
+    "schema_dup_[ab][.]cpp: types dup_[ab]::[A-Za-z]+ and dup_[ab]::[A-Za-z]+ both use the key 'thing' [(]also in [^)]*schema_dup_[ab][.]cpp[)]")
+# A game whose data file is broken fails to build with `file:line: reason` (T7.6, AC-3, FR-9).
+add_subdirectory(data/data_assets/broken_game ${CMAKE_CURRENT_BINARY_DIR}/data_assets_broken_game)
+foreach(_name fails explains)
+    add_test(NAME data_build_${_name}_with_file_line
+             COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target nnh_test_broken_data_assets)
+    # One Ninja at a time in this build folder (ctest -j).
+    set_tests_properties(data_build_${_name}_with_file_line PROPERTIES RESOURCE_LOCK nnh_build_folder)
+endforeach()
+set_tests_properties(data_build_fails_with_file_line PROPERTIES WILL_FAIL TRUE)
+set_tests_properties(data_build_explains_with_file_line PROPERTIES PASS_REGULAR_EXPRESSION
+    "assets/enemies/goblin[.]enemy:3: unknown field 'lvel' [(]did you mean 'level'[?][)]")
 # The PC simulator's window layout and settings are pure (SDL-free) and tested here (spec 006).
 set(_pc_src ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
 target_sources(nnh_tests PRIVATE ${_pc_src}/audio_mixer_pc.cpp ${_pc_src}/remote_address_pc.cpp
@@ -216,6 +254,14 @@ if(TARGET tweens AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
     set_tests_properties(tweens_self_check_pc PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;TWEENS_DEMO=check;NNH_EXIT_AFTER_FRAMES=610"
         PASS_REGULAR_EXPRESSION "tweens: PASS B44CA3F6" FAIL_REGULAR_EXPRESSION "tweens: FAIL" TIMEOUT 120)
+endif()
+# The data example's self-check in the simulator (spec 014 T8.3): the line the console script expects.
+if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME data_self_check_pc COMMAND data)
+    set_tests_properties(data_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;DATA_DEMO=check;NNH_EXIT_AFTER_FRAMES=10"
+        PASS_REGULAR_EXPRESSION "data check: PASS checksum 0xD5BD3020 [(]4 enemies, 3 items, 1 settings, index 595 bytes[)]"
+        FAIL_REGULAR_EXPRESSION "data check: FAIL|\\] E " TIMEOUT 120)
 endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 # The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
@@ -304,7 +350,8 @@ if(NOT MSVC)
                       -I${PROJECT_SOURCE_DIR}/engine/core/include)
     set(_schemas ${CMAKE_CURRENT_SOURCE_DIR}/data_assets/compile_fail)
     add_test(NAME data_schema_accepts_good COMMAND ${_schema_check} -Werror ${_schemas}/good.cpp)
-    foreach(case "unknown_member|.damgae. is not a member"
+    # Names: GCC quotes them with ASCII quotes or, in a UTF-8 locale (Linux), with 3-byte ‘ ’, so no quote is matched.
+    foreach(case "unknown_member|damgae[^ ]* is not a member"
                  "pointer|data fields can't be pointers or references"
                  "double|double isn't a data field kind: use float"
                  "int64|64-bit integers aren't data field kinds"
@@ -315,7 +362,7 @@ if(NOT MSVC)
                  "not_aggregate|a data type must be a plain struct"
                  "too_big|a data type can be at most 16 KiB"
                  "too_many_fields|a data type can list at most 64 fields"
-                 "unknown_enum_name|.Fier. was not declared")
+                 "unknown_enum_name|Fier[^ ]* was not declared")
         string(REPLACE "|" ";" case "${case}")
         list(GET case 0 name)
         list(GET case 1 expected)
@@ -448,9 +495,14 @@ add_test(NAME asset_index_removes_stale_outputs
 add_test(NAME asset_index_names_maps_by_their_output
     COMMAND ${CMAKE_COMMAND} -DASSETS_SCRIPT=${PROJECT_SOURCE_DIR}/cmake/nnh_assets.cmake
             -P ${_lists}/check_output_names.cmake)
+# The data index's name (spec 014 T7.4): reserved, unless the build generated it (games with a data schema).
+add_test(NAME asset_index_accepts_generated_data
+    COMMAND ${CMAKE_COMMAND} -DLIST=${_lists}/reserved_data.list -DGENERATED=.nnh_data
+            -DOUT=${CMAKE_CURRENT_BINARY_DIR}/asset_index_generated_data.txt -P ${_index_script})
 foreach(case "dotdot|no '.' or '..' folders"
              "chars|use only letters"
              "reserved|reserved"
+             "reserved_data|the name .nnh_data is reserved"
              "clash|differ only by letter case")
     string(REPLACE "|" ";" case "${case}")
     list(GET case 0 name)
@@ -512,6 +564,44 @@ foreach(case "infinite|bad_infinite.tmj: infinite maps aren't supported"
     set_tests_properties(map_convert_rejects_${name} PROPERTIES WILL_FAIL TRUE)
     add_test(NAME map_convert_explains_${name} COMMAND ${_convert})
     set_tests_properties(map_convert_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+endforeach()
+
+# Data converter and index step (spec 014 T6.3, AC-3): nnh-assetc on the fixtures of data/data_assets, against the
+# committed description of the tests' schema (data/data_assets/schema.nnhschema; ctest data_fixtures_schema_is_current
+# keeps it equal to the compiled one). Each bad fixture starts with `# expect: <message>` lines that the converter
+# must print exactly (check_convert.cmake); each index case's expected output is index/<case>.expect.
+set(_dfx ${CMAKE_CURRENT_SOURCE_DIR}/data/data_assets)
+set(_dfx_out ${CMAKE_CURRENT_BINARY_DIR}/data_assets_fixtures)
+set(_dfx_args -DASSETC=$<TARGET_FILE:nnh_assetc> -DSCHEMA=${_dfx}/schema.nnhschema)
+# Over the limits: generated here rather than committed.
+string(REPEAT "x" 1000 _x1000)
+string(REPEAT "# ${_x1000}\n" 66 _filler)
+string(REPEAT "x" 1023 _x1023)
+file(WRITE ${_dfx_out}/bad/file_too_big.enemy
+     "# expect: bad/file_too_big.enemy:1: the file is larger than 64 KiB\nname = \"Goblin\"\n${_filler}")
+file(WRITE ${_dfx_out}/bad/line_too_long.enemy
+     "# expect: bad/line_too_long.enemy:3: the line is 1025 bytes: at most 1024\nname = \"Goblin\"\n# ${_x1023}\n")
+foreach(name array_count bad_color bad_escape bare_word binary date dotted_key float_out_of_range hex inf
+             inline_table int_too_big_for_type key_twice list_too_long literal_string missing_required
+             missing_required_nested multiline_string nan octal out_of_range quoted_key string_too_long table_twice
+             too_deep too_many_errors unknown_enum unknown_field unknown_section wrong_kind
+             file_too_big line_too_long)
+    set(_in ${_dfx}/bad/${name}.enemy)
+    if(name MATCHES "^(file_too_big|line_too_long)$")
+        set(_in ${_dfx_out}/bad/${name}.enemy)
+    endif()
+    add_test(NAME data_convert_rejects_${name}
+        COMMAND ${CMAKE_COMMAND} ${_dfx_args} -DINPUT=${_in} -DSHOW=bad/${name}.enemy -DWORK=${_dfx_out}/work/${name}
+                -P ${_dfx}/check_convert.cmake)
+endforeach()
+add_test(NAME data_convert_accepts_good
+    COMMAND ${CMAKE_COMMAND} ${_dfx_args} -DCASE=${_dfx}/game/assets -DSHOW=assets -DWORK=${_dfx_out}/work/good
+            -P ${_dfx}/check_index.cmake)
+foreach(name duplicate_name missing_ref missing_texture sound_to_image texture_to_sound wrong_type_ref)
+    add_test(NAME data_index_rejects_${name}
+        COMMAND ${CMAKE_COMMAND} ${_dfx_args} -DCASE=${_dfx}/index/${name} -DSHOW=${name}
+                -DEXPECT=${_dfx}/index/${name}.expect -DWORK=${_dfx_out}/work/index_${name}
+                -P ${_dfx}/check_index.cmake)
 endforeach()
 
 # The good fixture converted at build time, for the code-vs-file test (spec 012 T5.9): nnh_tests reads it from here.

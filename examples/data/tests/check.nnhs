@@ -1,0 +1,26 @@
+# Spec 014 AC-1, FR-16, automatic (spec 013): the bestiary (screenshots of the first and the last enemy), then the
+# self-check, whose line — a CRC-32 of every loaded value, written field by field — must be the simulator's.
+# PC:      nnh run data --pc --script examples/data/tests/check.nnhs
+# Console: nnh run data --script examples/data/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected line is the PC's (pc-debug). It changes only if a data file under examples/data/assets or check.cpp
+# changes: then run `DATA_DEMO=check NNH_EXIT_AFTER_FRAMES=5 build/pc-debug/examples/data/data.exe` and copy its
+# "data check:" line here.
+fail-on "] E "
+fail-on "data check: FAIL"
+
+# The bestiary: the goblin (settings.first), then the yeti (three DOWNs) and its drops — the crystal summons it.
+wait 30
+screenshot goblin
+tap DOWN
+tap DOWN
+tap DOWN
+wait 10
+screenshot yeti
+
+# The self-check (SELECT): every asset loaded, every reference followed, errors and allocations checked.
+tap SELECT
+expect "data check: PASS checksum 0xD5BD3020 (4 enemies, 3 items, 1 settings, index 595 bytes)" 30
+wait 10
+screenshot check
+end

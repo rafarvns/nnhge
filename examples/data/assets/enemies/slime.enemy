@@ -1,0 +1,14 @@
+# Only what differs from the struct's defaults (speed 1, no flags, defense 0).
+name = "Slime"
+element = "Earth"
+sprite = "art/slime"
+hurt_sound = "sfx/squish"
+tint = "#A070FF"
+
+[stats]
+hp = 12
+attack = 3
+
+[[drops]]
+item = "items/potion"
+chance = 0.75

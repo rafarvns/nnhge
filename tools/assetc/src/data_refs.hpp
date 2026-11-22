@@ -29,4 +29,17 @@ std::string refs_text(std::string_view name, std::string_view key, std::size_t s
 /// The sidecar of an asset that isn't a data asset (copied unchanged).
 std::string empty_refs_text();
 
+/// A sidecar read back (by the data-index step).
+struct RefsFile {
+    bool data = false; ///< false for an asset that isn't a data asset (no 'asset' line)
+    std::string key;
+    std::size_t size = 0; ///< the converted file's size (at most 64 KiB)
+    std::string name;
+    std::vector<DataReference> references;
+};
+
+/// Reads a sidecar written by refs_text / empty_refs_text. Strict: anything else is refused with
+/// `error` = "line N: reason". Linear in the text; the caller bounds its size.
+bool read_refs(std::string_view text, RefsFile& out, std::string& error);
+
 } // namespace nnh::assetc

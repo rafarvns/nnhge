@@ -50,16 +50,14 @@ std::string extension(const std::string& path) {
     return path.substr(dot + 1);
 }
 
-/// Both outputs, or neither (a failed write removes what was written).
+/// Both outputs, or neither (run_data removes them on failure). Unchanged bytes keep their file times.
 int write_outputs(const DataArgs& a, const std::string& bytes, const std::string& refs, std::FILE* err) {
     const char* failed = nullptr;
-    if (!write_file(a.out, bytes.data(), bytes.size()))
+    if (!write_file_if_changed(a.out, bytes.data(), bytes.size()))
         failed = a.out.c_str();
-    else if (!write_file(a.refs, refs.data(), refs.size()))
+    else if (!write_file_if_changed(a.refs, refs.data(), refs.size()))
         failed = a.refs.c_str();
     if (failed == nullptr) return 0;
-    std::remove(a.out.c_str());
-    std::remove(a.refs.c_str());
     std::fprintf(err, "%s: can't write the file\n", failed);
     return 1;
 }
@@ -81,13 +79,7 @@ int convert(const DataArgs& a, const Schema& schema, const detail::TypeInfo& typ
     return write_outputs(a, bytes, refs_text(name, type.key, bytes.size(), converted.references), err);
 }
 
-} // namespace
-
-int run_data(int argc, const char* const* argv, std::FILE* err) {
-    DataArgs a;
-    if (!parse(argc, argv, a)) return 2;
-    std::remove(a.out.c_str()); // a failed conversion leaves nothing to pack
-    std::remove(a.refs.c_str());
+int run_checked(const DataArgs& a, std::FILE* err) {
     DiskFiles files;
     std::string description;
     if (!files.read(a.schema, kMaxDescriptionBytes + 1, description)) {
@@ -110,6 +102,19 @@ int run_data(int argc, const char* const* argv, std::FILE* err) {
     }
     if (type == nullptr) return write_outputs(a, text, empty_refs_text(), err);
     return convert(a, schema, *type, text, err);
+}
+
+} // namespace
+
+int run_data(int argc, const char* const* argv, std::FILE* err) {
+    DataArgs a;
+    if (!parse(argc, argv, a)) return 2;
+    const int code = run_checked(a, err);
+    if (code != 0) { // a failed conversion leaves nothing to pack (and reruns next build)
+        std::remove(a.out.c_str());
+        std::remove(a.refs.c_str());
+    }
+    return code;
 }
 
 } // namespace nnh::assetc

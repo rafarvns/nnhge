@@ -80,6 +80,25 @@ Release `hello.3dsx` 261,260 → 261,284 bytes (+24 since spec 013's measurement
 365,632 bytes (romfs with the level and art included). All within budget; a game with maps pays ~1 s on every 3DS
 build for the converter's check, and its `.3dsx` edit (≈ 4 s) is the closest to a limit.
 
+Spec 014 finished (2026-11-22, same machine; data assets, `DATA_SCHEMA`, `examples/data`; another agent was building
+in parallel, so 3DS times are noisy — the best of each set is given, slow outliers up to 8 s were machine load):
+
+| Measurement | Budget | Result |
+|-------------|--------|--------|
+| Edit `examples/hello/main.cpp` → simulator | < 2 s | 1.63–1.77 s (hello's own steps unchanged since T0.1) |
+| Edit `examples/hello/main.cpp` → `.3dsx` | < 5 s | 2.86–3.12 s |
+| Edit a data file's value (`goblin.enemy` hp) → simulator | < 2 s | 0.82 s: its data step and the asset index, no C++ |
+| Edit a data file → `.3dsx` | < 5 s | 3.68 s: the data step, the asset index, the repack (and `nnh-assetc`'s up-to-date check) |
+| Edit a data file's comment | — | 0.65 s (PC): its step only, the output is unchanged |
+| Edit the schema source, schema unchanged / changed → simulator | — | 2.7 s / 3.3–3.4 s (one compile, two links; changed: every data file reconverted) |
+| Same → `.3dsx` | — | 6.6 s / 7.7 s: the console object and the host program both rebuild |
+| Clean 3DS engine (`nnh_core` + `nnh_platform_3ds`, no ccache) | < 30 s | 13.9 s (145 steps: specs 014 and 015 add sources) |
+| 3DS no-op build | — | 1.7 s for `hello`; 3.0 s for `data` (`nnh-assetc`'s check; the schema program doesn't run) |
+
+Release `hello.exe` 277,503 bytes and `hello.3dsx` 261,464, unchanged by spec 014's stages 6–9 (the `hello.elf`
+sections equal a build of the previous commit; the growth since T0.1 came with spec 015), with no data symbol;
+`data.3dsx` 502,680 bytes.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -147,16 +166,19 @@ optional** (constitution XI, decision D25): a game uses what it wants, mixes it 
 and writes plain C++ on the core APIs; no item requires another the game didn't choose. Each item becomes its own
 spec; the order below is a proposal.
 
-- [ ] **Data assets** (Unity's ScriptableObjects, Godot's Resources): typed, shared game data (an enemy's stats, an
+- [x] **Data assets** (Unity's ScriptableObjects, Godot's Resources): typed, shared game data (an enemy's stats, an
   item, a level's settings) in their own files in the assets folder — a readable text format written by hand —
   whose shape is a C++ struct the game declares; the build checks every file against it, the game loads them by
   path or name, values change without recompiling, and they can reference each other (an enemy's drop is an item)
-  and textures or sounds — [spec 014](../specs/014-data-assets/spec.md), **in progress, stages 0–5 done**
-  (2026-11-22: `<nnh/data.hpp>` value types and the `NNH_DATA_*` schema macros, the schema check, fingerprint and
-  description, the converted format's validator and apply; the data index `.nnh_data` and `data::load` / `count` /
-  `name` / `ref` / `find` / `path` (allocation-free once the index is loaded); `nnh-assetc data`: the TOML-subset
-  reader and the converter with `file:line` messages and "did you mean"; all fuzzed. The index step, the build
-  integration (`DATA_SCHEMA`) and the example follow)
+  and textures or sounds — [spec 014](../specs/014-data-assets/spec.md), **implemented 2026-11-22, console check
+  pending** (and the Linux fuzz/sanitizer runs): `<nnh/data.hpp>` (`NNH_DATA_TYPE`/`STRUCT`/`ENUM`/`FIELD` over plain
+  structs; `data::load` / `count` / `name` / `ref` / `find` / `path`, allocation-free once the index is loaded),
+  `nnh_add_game(... DATA_SCHEMA ...)` (a per-game schema program, decision D29), a TOML-subset text format checked
+  by `nnh-assetc data` and `data-index` with `file:line: reason` and "did you mean" (one fixture per rule), a
+  layout-independent binary validated on load; all parsers fuzzed ([api/data.md](api/data.md)). `examples/data`: a
+  bestiary and shop with a self-check whose checksum the console must match (`examples/data/tests/check.nnhs`,
+  `nnh: PASS` in the simulator). Editing a data file runs no C++ compile: 0.8 s to the simulator, 3.7 s to the
+  `.3dsx` (table above)
 - [ ] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
   every one with a tag, cheap to compare (hashed at build time)
 - [ ] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets

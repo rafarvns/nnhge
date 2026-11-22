@@ -17,8 +17,10 @@ set(_core ${_nnh_root}/engine/core/src)
 add_library(nnh_assetc_lib STATIC
     src/cli.cpp
     src/cli_data.cpp
+    src/cli_data_index.cpp
     src/convert.cpp
     src/data_convert.cpp
+    src/data_index_build.cpp
     src/data_refs.cpp
     src/data_tables.cpp
     src/data_values.cpp
@@ -26,6 +28,7 @@ add_library(nnh_assetc_lib STATIC
     src/diagnostics.cpp
     src/depfile.cpp
     src/files.cpp
+    src/index_writer.cpp
     src/json.cpp
     src/json_fields.cpp
     src/json_parse.cpp
@@ -103,8 +106,11 @@ if(NNH_BUILD_TESTS)
         tests/convert_fixture.cpp
         tests/test_cli.cpp
         tests/test_cli_data.cpp
+        tests/test_cli_data_index.cpp
         tests/test_data_convert.cpp
         tests/test_data_convert_tables.cpp
+        tests/test_data_index.cpp
+        tests/test_data_refs.cpp
         tests/test_data_writer.cpp
         tests/test_depfile.cpp
         tests/test_diagnostics.cpp
@@ -145,12 +151,13 @@ endif()
 
 # libFuzzer programs (clang only, like tests/): fuzz_assetc_json (the JSON reader), fuzz_assetc_map (a whole
 # conversion of an in-memory map + tileset), fuzz_assetc_toml (the TOML-subset reader of data files) and
-# fuzz_assetc_data (a whole data conversion, and the schema description reader).
+# fuzz_assetc_data (a whole data conversion, and the schema description reader) and fuzz_assetc_refs (the
+# references sidecar reader and the data index step).
 if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_assetc_lib nnh_assetc_fuzz)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name json map toml data)
+    foreach(name json map toml data refs)
         add_executable(fuzz_assetc_${name} tests/libfuzzer_assetc_${name}.cpp)
         target_link_libraries(fuzz_assetc_${name} PRIVATE nnh_assetc_fuzz)
         target_compile_options(fuzz_assetc_${name} PRIVATE -fsanitize=fuzzer,address)

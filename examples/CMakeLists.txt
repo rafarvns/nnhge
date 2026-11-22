@@ -1,4 +1,5 @@
 add_subdirectory(audio)
+add_subdirectory(data)
 add_subdirectory(foundation)
 add_subdirectory(hello)
 add_subdirectory(input)

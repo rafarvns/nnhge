@@ -1,0 +1,12 @@
+# expect: bad/list_too_long.enemy:3: drops: 5 blocks, at most 4
+name = "Goblin"
+[[drops]]
+item = "items/potion"
+[[drops]]
+item = "items/potion"
+[[drops]]
+item = "items/potion"
+[[drops]]
+item = "items/potion"
+[[drops]]
+item = "items/potion"

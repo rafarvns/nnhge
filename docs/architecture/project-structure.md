@@ -25,7 +25,10 @@ tests/
   <module>/test_<concept>.cpp                mirrors engine/core/src/<module>/
   platform_conformance/                      contract tests, linked against every platform
   data/<kind>/                               test inputs (images, sounds, asset lists, package; maps: Tiled
-                                             fixtures good.tmj and bad_*.tmj for the converter's ctests)
+                                             fixtures good.tmj and bad_*.tmj for the converter's ctests;
+                                             data_assets: bad/<rule>.enemy with its expected message, index/
+                                             cases, the test games game/ and broken_game/)
+  data_assets/                               the data module's tests (spec 014; tests/data/ holds fixtures)
   <example>/test_<concept>.cpp               an example's pure logic, compiled from examples/<example>/
                                              (tests/platformer: the benchmark's gate, camera, coins, player,
                                              replay; replay_matches_script.cmake checks tests/level.nnhs)
@@ -45,9 +48,11 @@ apps/<app>/                                  apps made with NNHGE that ship with
 tools/<tool>/                                host tools: tools/nnh (the nnh command, spec 010; src/remote/: test
                                              scripts and the console remote's PC side, spec 013); tools/assetc
                                              (nnh-assetc, build-time conversions, spec 012, D27: Tiled maps; src/
-                                             json*, tiled_*, map_writer; spec 014: toml*, schema_read, data_*;
-                                             tests/ with the fuzz targets; built by
-                                             cmake/nnh_host_tools.cmake, standalone-capable CMakeLists.txt)
+                                             json*, tiled_*, map_writer; spec 014: toml*, schema_read, data_*,
+                                             data_index_build, index_writer; tests/ with the fuzz targets; built by
+                                             cmake/nnh_host_tools.cmake, standalone-capable CMakeLists.txt);
+                                             tools/data_schema (spec 014: main() of each game's data schema
+                                             program, cmake/nnh_data.cmake)
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules
 cmake/                                       CMake helpers

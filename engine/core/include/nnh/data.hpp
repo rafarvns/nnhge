@@ -2,7 +2,8 @@
 /// @file nnh/data.hpp
 /// Data assets (spec 014): typed game data — enemies, items, a level's settings — kept in hand-written text
 /// files in the assets folder, checked by the build against a plain C++ struct and loaded into it by path.
-/// Optional (constitution XI): a game that doesn't use it links no data code.
+/// Optional (constitution XI): a game that doesn't use it links no data code. Reference: docs/api/data.md;
+/// example: examples/data.
 ///
 /// This header holds the value types data structs are made of (`String`, `List`, references), the per-field
 /// options and, through <nnh/detail/data_schema.hpp>, the macros that declare a struct's schema:

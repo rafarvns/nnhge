@@ -95,3 +95,17 @@ NNH_TEST(updating_from_a_callback_asserts_or_is_ignored) {
     CHECK(anim_test::asserts_or_is_ignored([] { (void)g->a.update(); }));
     if (!nnh::build::kAssertsEnabled) CHECK(s.a.position() == 1);
 }
+
+NNH_TEST(a_clip_changed_by_the_entry_callback_gets_none_of_the_updates_time) {
+    // The pending entry fires before time advances; a callback that switches clips there drops this update's time.
+    Setup s;
+    s.walk = clip(s.lib, "walk", 4, 1);
+    s.attack = s.lib.add_clip({.name = "attack", .first = 4, .count = 2, .frame_time = nnh::Frames{4}}).value();
+    CHECK(s.lib.add_marker(s.walk, 0, "go").ok());
+    s.a.on_notice([p = &s](SpriteAnimator& a, const SpriteNotice& n) {
+        if (n.marker == sprite_name("go")) a.play(p->attack);
+    });
+    s.a.play(s.walk);
+    (void)s.a.update();
+    CHECK(s.a.clip() == s.attack && s.a.time_in_frame().ticks == 0);
+}

@@ -98,6 +98,9 @@ never through `#ifdef` in game code.
   shutdown hook that frees the data index runs in Debug and Development only (a plain call made Release `hello` 1 KB
   larger on PC and 124 bytes on 3DS, breaking AC-6; Release has no leak report); `nnh-assetc data` takes a
   `--name` argument (plan 014, "Stage 3/4/5 refinements").
+- 2026-11-22: D31 implemented (spec 016): as decided. The `.ase.json` step sits before the generic rules in
+  `nnh_assets.cmake`; spec 014's data routing (D29) was not in the tree yet, so applying the `.ase.json`/`.ase`/
+  `.aseprite` exclusion to it is left to whichever change lands second (plan 016, T7.6). `nnh-assetc` is 0.3.0.
 - 2026-11-22: D32 (input actions: the after-input hook list in `nnh::frame()` and the `NNHB` bindings overrides), from
   plan 017, pre-approved by the maintainer; design only until spec 017 is implemented. It is D30's second user
   (contexts bound to a scene); the events and scenes pages get their sections when the code lands (plan 017, T8.2).

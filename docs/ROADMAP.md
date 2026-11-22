@@ -165,9 +165,17 @@ spec; the order below is a proposal.
   set of components and values), spawned many times and overridden per copy; a Tiled object can name one
 - [ ] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
   that follow the parent (a gun on a ship, a hat on a head)
-- [ ] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): named clips declared in code (frames of a
+- [x] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): named clips declared in code (frames of a
   sprite sheet, timings, loop), events on frames (a footstep sound), and a simple state machine (idle, run, jump);
-  optionally read from Aseprite files
+  optionally read from Aseprite files — [spec 016](../specs/016-sprite-animation/spec.md) (implemented 2026-11-22,
+  **console check pending**, T10.2): `<nnh/animation.hpp>` — sprite libraries in one block (grid or trimmed frames,
+  clips in loop/once/repeat/ping-pong forward or reverse, frame markers, a state machine with now/at-end/never rules,
+  keep-time and next-on-finish), a 64-byte `SpriteAnimator` on the frame clock with queue, speed, flips, notices by
+  callback or returned view, no allocation while playing; Aseprite exports (`<name>.ase.json`, D31) converted by
+  `nnh-assetc sprite` into `.nnhsprite` and loaded with `load_sprite_library` ([api/animation.md](api/animation.md)).
+  `examples/animation`: a gallery of modes, an Aseprite knight on a state machine, a self-check with a golden checksum
+  (`tests/check.nnhs`) and a 512-animator bench (PC: 0.04 ms per frame in pc-dev); the platformer's player now draws
+  through an animator
 - [x] **Tweens and timers** (Godot Tween and Timer, DOTween): animate any value with easing, sequences and
   delays; timers and "wait then do" without hand-written counters —
   [spec 015](../specs/015-tweens-and-timers/spec.md) (implemented 2026-11-22, **console check pending**, T7.2):

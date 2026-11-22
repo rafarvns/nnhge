@@ -63,7 +63,12 @@ least one valid file.
   and 6 000 map/tileset mutants) and libFuzzer executables `fuzz_assetc_json`, `fuzz_assetc_map` (not run on
   Linux yet: T8.1). Converted data assets `NNHD` of spec 014 (stage 2) are checked by `data/data_validate.*`
   against the game's compiled schema (header, CRC, schema fingerprint, then every field index, value, string, enum
-  index and list count, linear in the file size); `data_target` validates as given and with the header fixed, applies
+  index and list count, linear in the file size); sprite libraries `.nnhsprite` of spec 016 are checked by
+  `animation/sprite_validate.*` (header, CRC, capacities, every frame, clip range, mode end, cycle duration, marker
+  run, name hash, state and rule) — `sprite_library_target` validates as given and with the size and CRC fixed, then
+  plays every clip and state of an accepted library (mini-fuzz in `nnh_tests`, libFuzzer `fuzz_sprite`, not run on
+  Linux yet) — and the converter's Aseprite reader (`aseprite_*.cpp` on the same bounded JSON reader, output checked
+  by that validator) has `sprite_target` (mini-fuzz in `nnh_assetc_tests`, libFuzzer `fuzz_assetc_sprite`); `data_target` validates as given and with the header fixed, applies
   every input into a guarded struct (apply clamps counts and lengths even on refused files) and checks the values of
   accepted ones; libFuzzer executable `fuzz_data`, not run on Linux yet (spec 014 T9.1). The data index `.nnh_data`
 (stage 3) is checked by `data/index_validate.*` before any lookup (counts, sections, type keys, every path a valid

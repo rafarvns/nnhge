@@ -69,6 +69,8 @@ Shapes take `ShapeOptions{layer, ignore_camera}`.
 Everything drawn on a screen in a frame is **recorded** and drawn when the frame ends: layer 0 first,
 layer 15 last; within a layer, in call order. Tilemap layers (`gfx::draw_tilemap`, [tilemap.md](tilemap.md#drawing))
 follow the same order, so a sprite can sit between a background and a foreground layer. Debug text and the debug overlay always draw on top.
+Animated sprites: a `SpriteAnimator`'s `draw_options()` fills the region, pivot and flips of its current frame
+([animation.md](animation.md#drawing-fr-10)).
 Calls outside a frame (before the first `frame()`, after the loop) are ignored.
 
 ## Cameras

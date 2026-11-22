@@ -92,3 +92,17 @@ NNH_TEST(no_clip_draws_nothing_special) {
     CHECK(o.region.empty() && o.pivot == (Vec2{0, 0}));
     CHECK(a.pivot() == (Vec2{0, 0}) && a.offset() == (Vec2{0, 0}));
 }
+
+NNH_TEST(flipping_mirrors_an_off_centre_pivot_inside_the_region) {
+    auto made = nnh::SpriteLibrary::create({.frames = 1, .clips = 1, .clip_frames = 1});
+    nnh::SpriteLibrary lib = std::move(made.value());
+    CHECK(lib.add_frame({.region = {0, 0, 16, 8}, .pivot = {3, 2}}).ok());
+    CHECK(lib.add_clip({.name = "c", .count = 1}).ok());
+    SpriteAnimator a{lib};
+    a.play(lib.find_clip("c"));
+    a.set_flip(true, false);
+    CHECK(a.pivot() == (Vec2{13, 2}));
+    a.set_flip(false, true);
+    CHECK(a.pivot() == (Vec2{3, 6}));
+    CHECK(lib.draw_options(0, true, true).pivot == (Vec2{13, 6}));
+}

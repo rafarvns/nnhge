@@ -130,3 +130,19 @@ NNH_TEST(states_and_rules_are_checked) {
     CHECK(record_edit<TransitionEntry>(kTransitions, 1, [](TransitionEntry& t) { t.from = 2; t.to = kAnyState; }) ==
           kDamaged); // the same states as rule 0
 }
+
+NNH_TEST(clips_must_own_their_frames_in_order) {
+    // Two clips of equal-duration frames: pointing the second at the first's frames changes no total and no
+    // duration, only the run order (mutation survivor, spec 016 T6.1).
+    auto made = nnh::SpriteLibrary::create({.frames = 4, .clips = 2, .clip_frames = 4});
+    nnh::SpriteLibrary lib = std::move(made.value());
+    CHECK(lib.add_grid({.frame_width = 8, .frame_height = 8, .count = 4, .columns = 4}).ok());
+    CHECK(lib.add_clip({.name = "a", .first = 0, .count = 2}).ok());
+    CHECK(lib.add_clip({.name = "b", .first = 0, .count = 2}).ok());
+    File f = anim_test::sprite_file(lib);
+    CHECK(validate_sprite_library(f.data(), f.size()).ok());
+    ClipEntry b = get<ClipEntry>(f, kClips, 1);
+    b.first = 0;
+    put(f, kClips, 1, b);
+    CHECK(problem_of(f) == kDamaged);
+}

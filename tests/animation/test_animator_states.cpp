@@ -210,3 +210,12 @@ NNH_TEST(the_example_drive_loop_picks_states_from_the_games_conditions) {
     }
     CHECK(steps == 4 && a.state() == h.idle); // run for 16 frames: 2 loops, 2 steps each
 }
+
+NNH_TEST(a_looping_state_never_moves_on_by_itself) {
+    // next-on-finish is for finite clips: a loop's wrap is not its end (mutation survivor, spec 016 T5.2).
+    Hero h;
+    CHECK(h.lib.set_next_on_finish(h.run, h.idle).ok());
+    SpriteAnimator a{h.lib, h.run};
+    for (int i = 0; i < 20; ++i) a.update(); // run loops every 8 frames
+    CHECK(a.state() == h.run && a.loops() == 2);
+}

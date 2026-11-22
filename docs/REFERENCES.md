@@ -58,6 +58,14 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   https://docs.unity3d.com/Manual/script-AnimationWindowEvent.html
 - **DOTween** (Unity) — getter/setter targets, `Sequence` with Append/Join/AppendInterval/AppendCallback,
   Restart/Yoyo loops, `SetLink` to tie a tween's life to an object: https://dotween.demigiant.com/documentation.php
+- **Godot InputMap and actions** — named actions with several events, per-action dead zone,
+  `is_action_just_pressed`/`get_axis`/`get_vector`; our input actions follow them (spec 017):
+  https://docs.godotengine.org/en/stable/tutorials/inputs/inputevent.html ·
+  https://docs.godotengine.org/en/stable/classes/class_inputmap.html
+- **Unity Input System** — Button/Value actions, 2D-vector composites, action maps enabled and disabled, interactive
+  rebinding with cancel and excluded controls, binding overrides saved as differences (spec 017):
+  https://docs.unity3d.com/Packages/com.unity.inputsystem@1.11/manual/Actions.html ·
+  https://docs.unity3d.com/Packages/com.unity.inputsystem@1.11/manual/ActionBindings.html#interactive-rebinding
 - **Robert Penner's easing equations** (BSD licence) — the standard curves and their constants, which our 19
   easings re-derive without libm: http://robertpenner.com/easing/
 - **Unity ScriptableObjects** — typed data assets defined by a class and edited in the Inspector; our data assets

@@ -118,7 +118,8 @@ pushed further wins.
   only" layout there is no touch screen.
 - Scripted input for screenshots and tests: `NNH_SIM_INPUT` ([simulator.md](simulator.md)).
 
-Remapping (actions like "Jump" bound to several keys) is a later spec.
+Named actions ("jump" on A or B, "move" from the Circle Pad or the D-Pad) with contexts, player remapping and saved
+bindings are in [actions.md](actions.md) (`<nnh/actions.hpp>`, optional); they read the same input as these queries.
 
 ## Example
 

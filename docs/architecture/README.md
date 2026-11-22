@@ -34,6 +34,7 @@ nnh::frame()
  ├─ present previous frame, wait vsync (60 Hz)
  ├─ platform: poll system events, read input
  ├─ input module: compute pressed/released → publish input events
+ ├─ after-input hooks (D32): input action sets evaluated → ActionPressed/ActionReleased queued
  ├─ event bus: dispatch queued events (one fixed point, single thread)
  └─ scene stack: active scene update() → draw()      (scenes arrive with spec 001)
 ```

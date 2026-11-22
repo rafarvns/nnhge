@@ -1,3 +1,4 @@
+add_subdirectory(actions)
 add_subdirectory(animation)
 add_subdirectory(audio)
 add_subdirectory(data)

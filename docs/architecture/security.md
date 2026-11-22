@@ -73,7 +73,11 @@ least one valid file.
   accepted ones; libFuzzer executable `fuzz_data`, not run on Linux yet (spec 014 T9.1). The data index `.nnh_data`
 (stage 3) is checked by `data/index_validate.*` before any lookup (counts, sections, type keys, every path a valid
 asset path whose FNV-1a hash matches, sorted runs, a lookup sorted by group and hash); `data_index_target` runs
-every lookup on accepted indexes (libFuzzer `fuzz_data_index`). `nnh-assetc data` reads data files with a bounded
+every lookup on accepted indexes (libFuzzer `fuzz_data_index`). Saved input bindings `NNHB` (spec 017) are
+validated whole (size, magic, format, count ≤ 256, CRC) before anything changes, and each entry is checked against
+the set before it is applied (unfitting ones skipped and counted, never an assert); `bindings_target` applies every
+accepted blob, saves it again and checks that it reloads with nothing skipped and saves the same bytes (libFuzzer
+`fuzz_bindings`, not run on Linux yet). `nnh-assetc data` reads data files with a bounded
 TOML-subset reader (`toml*.cpp`: ≤ 64 KiB, lines ≤ 1024 bytes, UTF-8 checked per line, arrays nested ≤ 2, headers ≤
 4 parts) and the game's schema description with a bounded reader (≤ 1 MiB, counts and name lengths checked, every
 fingerprint recomputed), and checks every file it writes with the engine's validator; mini-fuzz in

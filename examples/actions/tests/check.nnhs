@@ -1,0 +1,77 @@
+# Spec 017 AC-8, automatic (spec 013): play a little (screenshots), open the controls screen, reset everything,
+# rebind jump to B (a swap with attack), reset jump, rebind it to Y, leave (save), press Y and A in play, reload the
+# bindings from the file (same checksum), run the bench; the example ends with "actions: PASS 7/7". Only controls
+# every 3DS has. Repeatable: a saved file from an earlier run is reset by "reset all".
+# PC:      nnh run actions --pc --script examples/actions/tests/check.nnhs
+# Console: nnh run actions --script examples/actions/tests/check.nnhs   (Homebrew Launcher open, press Y)
+fail-on "] E "
+fail-on "actions: FAIL"
+
+# The playfield: move right while charging an attack, then let go (the shot flies).
+wait 20
+screenshot play
+press B
+stick circle 1 0
+wait 40
+screenshot charging
+release B
+stick circle 0 0
+wait 20
+screenshot shot
+
+# The controls screen (START), everything back to the defaults.
+tap START
+expect "actions: pause pressed" 10
+wait 10
+tap Y
+expect "actions: reset all" 10
+wait 10
+
+# Rebind jump (second item) to B: attack had B, so they swap.
+tap DOWN
+tap A
+wait 4
+tap B
+expect "actions: rebind jump -> B (swapped with attack)" 10
+wait 10
+screenshot swapped
+
+# Reset jump (A again; attack keeps A from the swap), then rebind it to Y and leave: the bindings are saved.
+tap X
+expect "actions: reset jump" 10
+wait 10
+tap A
+wait 4
+tap Y
+expect "actions: rebind jump -> Y" 10
+wait 10
+tap B
+expect "actions: saved 40 bytes sum" 10
+wait 10
+
+# Play with the new controls: Y jumps, A attacks.
+tap Y
+expect "actions: jump pressed" 10
+wait 10
+tap A
+expect "actions: attack pressed" 10
+wait 10
+
+# Back in the controls screen: reload the file (same checksum as saved), then the bench and the verdict.
+tap START
+wait 10
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap A
+expect "actions: reloaded 2 applied 0 skipped sum" 10
+wait 10
+tap DOWN
+tap A
+expect "actions: bench started" 10
+expect "actions: bench avg" 700
+expect "actions: PASS 7/7" 10
+wait 10
+screenshot verdict
+end

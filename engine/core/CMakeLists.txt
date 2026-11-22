@@ -31,6 +31,7 @@ add_library(nnh_core STATIC
     src/collision/grid_query.cpp
     src/core/crc32.cpp
     src/core/crc32_update.cpp
+    src/core/input_hooks.cpp
     src/core/shutdown_hooks.cpp
     src/crash/crash.cpp
     src/crash/report.cpp
@@ -152,6 +153,33 @@ set(_nnh_tween_sources
 target_sources(nnh_core PRIVATE ${_nnh_tween_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_tween_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# Input actions (spec 017): every float comparison of the module lives in these files; no fused multiply-add, so the
+# thresholds, dead zones and combined values are the same on every compiler and system (FR-22).
+set(_nnh_actions_sources
+    src/actions/action_combine.cpp
+    src/actions/action_conflicts.cpp
+    src/actions/action_contexts.cpp
+    src/actions/action_debug.cpp
+    src/actions/action_declare.cpp
+    src/actions/action_edit.cpp
+    src/actions/action_eval.cpp
+    src/actions/action_events.cpp
+    src/actions/action_hook.cpp
+    src/actions/action_listen.cpp
+    src/actions/action_queries.cpp
+    src/actions/action_set.cpp
+    src/actions/action_slots.cpp
+    src/actions/bindings_apply.cpp
+    src/actions/bindings_format.cpp
+    src/actions/bindings_io.cpp
+    src/actions/input_view.cpp
+    src/actions/source_eval.cpp
+    src/actions/source_names.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_actions_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_actions_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)

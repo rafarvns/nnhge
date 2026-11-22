@@ -6,14 +6,37 @@ target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
 # Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
-add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_sprite.cpp fuzz/fuzz_targets.cpp
-                                     fuzz/fuzz_tilemap.cpp)
+add_library(nnh_fuzz_targets STATIC fuzz/fuzz_bindings.cpp fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_sprite.cpp
+                                     fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
 target_include_directories(nnh_fuzz_targets PUBLIC fuzz PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 
 # Unit tests: nnh::core driven through the fake platform.
 add_executable(nnh_tests
     framework/alloc_counter.cpp
+    actions/test_action_alloc.cpp
+    actions/test_action_blocking.cpp
+    actions/test_action_combine.cpp
+    actions/test_action_conflicts.cpp
+    actions/test_action_contexts.cpp
+    actions/test_action_debug.cpp
+    actions/test_action_declare.cpp
+    actions/test_action_determinism.cpp
+    actions/test_action_edit.cpp
+    actions/test_action_events.cpp
+    actions/test_action_fallback.cpp
+    actions/test_action_hook.cpp
+    actions/test_action_kinds.cpp
+    actions/test_action_listen.cpp
+    actions/test_action_queries.cpp
+    actions/test_action_repeat.cpp
+    actions/test_action_scenes.cpp
+    actions/test_action_set.cpp
+    actions/test_bindings_format.cpp
+    actions/test_bindings_io.cpp
+    actions/test_input_view.cpp
+    actions/test_source_eval.cpp
+    actions/test_source_names.cpp
     animation/test_animator_clock.cpp
     animation/test_animator_draw.cpp
     animation/test_animator_notices.cpp
@@ -36,6 +59,7 @@ add_executable(nnh_tests
     animation/test_sprite_validate.cpp
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
+    app/test_input_hooks.cpp
     assets/test_asset_index.cpp
     assets/test_asset_path.cpp
     assets/test_asset_textures.cpp
@@ -188,7 +212,7 @@ target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/s
 # so its behaviour tests are left out there (the wire, reader, schedule and merge stay: they are pure).
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     target_sources(nnh_tests PRIVATE remote/test_remote_frames.cpp remote/test_remote_screenshot.cpp
-                                     remote/test_remote_session.cpp)
+                                     remote/test_remote_session.cpp actions/test_action_input_paths.cpp)
     # Shutdown hooks run before the leak report, which Release doesn't have (spec 014 T3.3).
     target_sources(nnh_tests PRIVATE app/test_shutdown_hooks.cpp)
 endif()
@@ -301,6 +325,9 @@ target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR
 target_sources(nnh_tests PRIVATE animation_example/test_self_check.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/animation/libraries.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/animation/self_check.cpp)
+# The actions example's self-check and log lines (spec 017 T6.4).
+target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.
@@ -707,7 +734,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg remote tilemap data data_index sprite)
+    foreach(name path save asset_index wav ogg remote tilemap data data_index sprite bindings)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

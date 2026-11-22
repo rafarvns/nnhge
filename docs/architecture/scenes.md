@@ -45,7 +45,7 @@ still on the stack is caught at runtime ([api/scene.md](../api/scene.md#ownershi
 ## Frame flow with scenes
 
 ```
-frame():  present previous frame → apply scene changes → input → deliver events (input events last)
+frame():  present previous frame → apply scene changes → input → input actions (D32) → deliver events (input last)
 game:     top scene update() → draw scenes bottom-to-top          (scenes::update_and_draw(), nnh::run())
 ```
 
@@ -66,6 +66,11 @@ for this ([decision D30](decisions.md)), so scenes never depend on the modules t
   detaching during a pass is safe (the pass keeps a cursor). One pass runs at a time.
 - The `Scene` destructor checks that nothing is still attached (a bound set must not outlive its scene: make it a
   member of the scene).
+
+A second user is input actions ([api/actions.md](../api/actions.md#contexts-and-scenes)): a context bound with
+`ActionSet::bind_context(ctx, scene)` carries one node that only listens for `AfterExit`, which ends the binding, so a
+binding lasts one stay on the stack. Whether the context is on is decided when the set is evaluated, right after input
+(`scenes::top() == scene`): `BeforeUpdate` comes after that evaluation and would be one frame late (decision D32).
 
 Internal API: `engine/core/src/scene/scene_attachments.hpp` (`scene_attach`, `scene_detach`, `scene_notify`).
 Cost for a scene with nothing attached: one pointer and a null check per frame and per exit; a game with scenes but

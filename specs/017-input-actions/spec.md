@@ -1,7 +1,7 @@
 # Spec 017: Input actions
 
-Status: approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with
-the recommended answer)
+Status: implemented (console check pending) — approved 2026-11-22 (maintainer pre-approved recommendations: every
+open question below is answered with the recommended answer); implemented 2026-11-22 except the console run (T7.2)
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 001](../001-event-bus-and-scenes/spec.md) (event bus, scenes; scene attachments of
 [D30](../../docs/architecture/decisions.md)), [spec 002](../002-core-foundation/spec.md) (memory tags, asserts,

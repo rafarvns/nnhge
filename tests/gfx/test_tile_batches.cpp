@@ -147,3 +147,76 @@ NNH_TEST(tile_batches_pass_the_recorded_clock_to_the_expand_function) {
     f.batches.expand(0, Screen::Top, {});
     CHECK(g_calls == 1 && g_last.clock == 123456789012ull);
 }
+
+// Zoom (spec 018, D33).
+
+namespace {
+
+/// Like write_arg_quads, but stops after 5 quads when allowed to cut the batch in chunks, reporting row 5 next.
+TileExpandResult write_in_chunks(const TileExpandRequest& r) {
+    g_last = r;
+    ++g_calls;
+    TileExpandResult result;
+    for (int i = r.first_row; i < r.arg && result.written < r.capacity; ++i) {
+        if (r.chunk && result.written == 5) {
+            result.next_row = i;
+            break;
+        }
+        r.out[result.written++] = {static_cast<std::int16_t>(i), 0, 0, 0, 0};
+    }
+    return result;
+}
+
+} // namespace
+
+NNH_TEST(expanding_returns_the_destination_size_the_expand_function_gives) {
+    Fixture f;
+    TileBatchRecord r;
+    r.source = &kSourceA;
+    r.expand = [](const TileExpandRequest& q) {
+        TileExpandResult x;
+        x.written = q.capacity > 0 ? 1 : 0;
+        x.dst_w = 24;
+        x.dst_h = 12;
+        return x;
+    };
+    const TileBatches::Quads q = f.batches.expand(f.batches.add(r), Screen::Top, {{}, 1.5f});
+    CHECK(q.count == 1 && q.dst_w == 24 && q.dst_h == 12);
+}
+
+NNH_TEST(expanding_passes_the_zoom_and_zoom_1_when_ignoring_the_camera) {
+    Fixture f;
+    const int a = f.add(1);
+    const int b = f.add(1, &kSourceA, true);
+    f.batches.expand(a, Screen::Top, {{5, 6}, 2});
+    CHECK(g_last.zoom == 2 && g_last.camera == (Vec2{5, 6}));
+    f.batches.expand(b, Screen::Top, {{5, 6}, 2});
+    CHECK(g_last.zoom == 1 && g_last.camera == (Vec2{0, 0}));
+}
+
+NNH_TEST(a_batch_can_be_expanded_in_row_chunks_when_the_scratch_is_the_limit) {
+    Fixture f;
+    TileBatchRecord r;
+    r.expand = write_in_chunks;
+    r.source = &kSourceA;
+    r.arg = 12;
+    const int i = f.batches.add(r);
+    TileBatches::Quads q = f.batches.expand(i, Screen::Top, {{}, 0.5f});
+    CHECK(g_last.chunk && g_last.first_row == 0);
+    CHECK(q.count == 5 && q.next_row == 5);
+    q = f.batches.expand(i, Screen::Top, {{}, 0.5f}, q.next_row);
+    CHECK(g_last.first_row == 5 && q.count == 5 && q.quads[0].x == 5 && q.next_row == 10);
+    q = f.batches.expand(i, Screen::Top, {{}, 0.5f}, q.next_row);
+    CHECK(q.count == 2 && q.next_row == -1);
+    CHECK(f.batches.tiles() == 12 && f.batches.dropped() == 0);
+}
+
+NNH_TEST(when_the_budget_is_the_limit_the_batch_is_not_cut_in_chunks) {
+    Fixture f(6); // budget 6 < scratch 8
+    TileBatchRecord r;
+    r.expand = write_in_chunks;
+    r.source = &kSourceA;
+    r.arg = 12;
+    const TileBatches::Quads q = f.batches.expand(f.batches.add(r), Screen::Top, {{}, 0.5f});
+    CHECK(!g_last.chunk && g_last.capacity == 6 && q.next_row == -1);
+}

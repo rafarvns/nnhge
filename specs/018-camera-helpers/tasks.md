@@ -111,33 +111,33 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 5: zoomed tile batches (D33)
 
-- [ ] **T5.1** Contract: `TileBatch2D::dst_w/dst_h`, `kTileOrientWiden/Taller`, comments; `detail::zoomed_tile_size`;
+- [x] **T5.1** Contract: `TileBatch2D::dst_w/dst_h`, `kTileOrientWiden/Taller`, comments; `detail::zoomed_tile_size`;
   `gfx_frame.cpp` fills `dst_w/dst_h` (= tile size at zoom 1). Files: `contract/nnh/platform/video.hpp`,
   `src/gfx/tile_batches.{hpp,cpp}`, `gfx_frame.cpp`. Test: `tests/gfx/test_tile_batches.cpp` (dst at zoom 1, 2, 0.5,
   1.5); `test_zoom1_regression.cpp` unchanged except for the new fields (equal to the tile size). Covers FR-9.
-- [ ] **T5.2** Edges and visible cells: `zoom_edges` (edge(i) = O + round(i × tile × z), tables ≤ 128 per axis), the
+- [x] **T5.2** Edges and visible cells: `zoom_edges` (edge(i) = O + round(i × tile × z), tables ≤ 128 per axis), the
   zoomed parallax centre and origin, visible = cells whose span meets the screen; zoom 1 takes today's code. Files:
   `src/tilemap/zoom_edges.{hpp,cpp}`, `visible_range.{hpp,cpp}`, CMake (+ `-ffp-contract=off`). Test:
   `tests/tilemap/test_zoom_edges.cpp`, `test_visible_range_zoom.cpp` (counts at 0.5/2, parallax 0 and 0.5 layers,
   huge/NaN cameras still empty); `test_visible_range.cpp` unchanged. Covers FR-9, AC-3.
-- [ ] **T5.3** Expansion: the zoomed loop (quad `x/y` from the edge tables, widen/taller bits from `edge(i+1) −
+- [x] **T5.3** Expansion: the zoomed loop (quad `x/y` from the edge tables, widen/taller bits from `edge(i+1) −
   edge(i) − dst`), row resume (`first_row` → `next_row` when the scratch fills at a row boundary; budget drops as
   today); `map_draw.cpp` forwards zoom and rows; `gfx_frame.cpp` loops `expand → draw_tiles` per chunk. Files:
   `src/tilemap/tile_expand.{hpp,cpp}`, `map_draw.cpp`, `src/gfx/gfx_frame.cpp`, `tile_batches.cpp`. Test:
   `tests/tilemap/test_tile_expand_zoom.cpp`, `tests/gfx/test_tile_chunks.cpp` (8×8 tiles at 0.5: several calls,
   rows in order, totals right, no drop with a big budget; a small budget drops as before); `test_tile_expand.cpp`
   and `test_tile_submit.cpp` unchanged. Covers FR-9, II.
-- [ ] **T5.4** End to end on the fake platform: full layers at zooms 0.5, 0.75, 1.3, 1.5, 2, 3 have no gap and no
+- [x] **T5.4** End to end on the fake platform: full layers at zooms 0.5, 0.75, 1.3, 1.5, 2, 3 have no gap and no
   overlap (each row's quads abut: `x + dst_w + widen = next x`, first ≤ 0, last ≥ screen width; same for columns);
   integer zooms set no widen/taller bit; a sprite at a tile corner of a parallax-1 layer lands on the quad's corner
   (exact at integer zooms, within 1 px otherwise); quads at zoom 0.5 ≈ 4× zoom 1. Files: tests only. Test:
   `tests/tilemap/test_map_draw_zoom.cpp`. Covers FR-9, AC-3.
-- [ ] **T5.5** Backends: PC (`dest` from `dst_w/dst_h` + bits, fast path on `(orient & 7) == 0`, pre-swapped
+- [x] **T5.5** Backends: PC (`dest` from `dst_w/dst_h` + bits, fast path on `(orient & 7) == 0`, pre-swapped
   rectangle for diagonal quads with `w ≠ h`) and 3DS (`pos.w/h` from `dst_w/dst_h` + bits, texcoords unchanged). Files:
   `engine/platforms/pc/src/draw_tiles_pc.cpp`, `engine/platforms/3ds/src/draw_tiles_3ds.cpp`. Test:
   `tests/platform_conformance/test_draw_tiles_pc.cpp` (pixels: 16→32 exact, a widened 17-pixel tile, diagonal with a
   widen bit covers exactly its rectangle); `scripts/dkp.sh cmake --build --preset 3ds-release` builds. Covers FR-9, I.
-- [ ] **T5.6** Stage end: ctest; `test_zoom1_regression.cpp` passes; AC-8 comparison for the platformer bench and
+- [x] **T5.6** Stage end: ctest; `test_zoom1_regression.cpp` passes; AC-8 comparison for the platformer bench and
   level 1: identical; a quick PC screenshot of the platformer bench at zoom 0.5 and 2 (B) read back: no seams. Covers
   AC-3, AC-8.
 

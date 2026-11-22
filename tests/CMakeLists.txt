@@ -150,6 +150,7 @@ add_executable(nnh_tests
     gfx/test_tile_batches.cpp
     gfx/test_tile_submit.cpp
     gfx/test_textures.cpp
+    gfx/test_tile_chunks.cpp
     gfx/test_images.cpp
     gfx/test_zoom1_regression.cpp
     input/test_dpad_mirror.cpp
@@ -179,6 +180,7 @@ add_executable(nnh_tests
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
     tilemap/test_map_draw.cpp
+    tilemap/test_map_draw_zoom.cpp
     tilemap/test_map_edit_after_load.cpp
     tilemap/test_map_layout.cpp
     tilemap/test_map_load.cpp
@@ -191,8 +193,11 @@ add_executable(nnh_tests
     tilemap/test_map_validate_content.cpp
     tilemap/test_tile_animation.cpp
     tilemap/test_tile_expand.cpp
+    tilemap/test_tile_expand_zoom.cpp
     tilemap/test_tilemap_alloc.cpp
     tilemap/test_visible_range.cpp
+    tilemap/test_visible_range_zoom.cpp
+    tilemap/test_zoom_edges.cpp
     simulator/test_audio_mixer_pc.cpp
     simulator/test_remote_address.cpp
     simulator/test_sim_layout.cpp

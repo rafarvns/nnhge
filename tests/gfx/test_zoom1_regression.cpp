@@ -75,6 +75,8 @@ void hash_frame(Hash& h) {
         h.byte(fb.batch.layer);
         h.i32(fb.batch.count);
         h.i32(fb.first_quad);
+        // Spec 018 T5.1 added the destination size: at zoom 1 it is the tile size (kept out of the pinned hash).
+        CHECK(fb.batch.dst_w == fb.batch.tile_w && fb.batch.dst_h == fb.batch.tile_h);
     }
     h.i32(t.quad_count);
     for (int q = 0; q < t.quad_count && q < fake::kMaxRecordedTileQuads; ++q) {

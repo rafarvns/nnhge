@@ -572,3 +572,36 @@ Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   3DS, ≤ 512 B PC); the remaining stages add the tile path's zoomed branch.
 - T4.3: `test_zoom1_regression` passes unchanged; `build/ref-018/compare.sh`: every reference screenshot identical
   (`hello`, `sprites`, `scenes`, `tweens`, `text`, and the platformer's bench and level 1).
+
+## Stage 5 refinements and results
+
+- **Tile edges in 16.16 fixed point.** `edge(i) = O + ((i × tile × zq + 32768) >> 16)` with `zq = round(zoom × 65536)`
+  (`tilemap/zoom_edges.hpp`), instead of a float product per edge. With float products a step could be one less than
+  `floor(tile × zoom)` when `tile × zoom` is a hair above an integer, which the two orientation bits can't express;
+  in integers every step is exactly `floor` or `floor + 1` by construction, for every zoom, and PC and 3DS compute the
+  same edges. For every zoom with at most 16 fractional bits (0.5, 0.75, 1.25, 1.5, 2, 3, …) this is exactly the
+  plan's `round_half_up(i × tile × z)`; other zooms are quantized to 1/65536 (invisible). The visible cells come from
+  the same integers (`zoom_axis_range`, one 64-bit division per axis and batch).
+- **Zoom 1 is decided on `zoom_q == 65536`**, so `visible_range` and `expand_tiles` take today's code for any zoom
+  within 1/131072 of 1 (sprites still use the exact float zoom).
+- **The destination size comes from the expand function** (`TileExpandResult::dst_w/dst_h`, filled by the tilemap's
+  `expand_batch` with the same fixed-point rule as the edges), not from gfx: gfx never computes the rounding, and the
+  code stays out of games that draw no tilemap. `detail::zoomed_tile_size` (gfx) became `detail::zoomed_size`
+  (tilemap, `zoom_edges.hpp`).
+- **The zoomed loop is its own file**, `tilemap/tile_expand_zoom.cpp` (`expand_zoomed`), called by `expand_tiles`
+  when the view's `zoom_q` isn't 65536; the zoom-1 loop is untouched. A row is taken back when the scratch fills
+  (`chunk`), resumed with `first_row`; when the frame's budget is the limit (`left < scratch`), tiles are dropped as at
+  zoom 1. `-ffp-contract=off` covers `draw_list.cpp`, `visible_range.cpp`, `tile_expand*.cpp` and `zoom_edges.cpp`.
+- `TileBatches::expand` takes a `Camera2D` and a `first_row` and returns `next_row` and the destination size;
+  `gfx_frame.cpp` loops `expand → draw_tiles` until `next_row` is −1 (one call at zoom ≥ 1).
+- PC backend: the fast path tests `(orient & 7) == 0`; the diagonal quad passes the pre-swapped rectangle. 3DS: `pos.w/h`
+  from `dst_w/dst_h` plus the bits. The conformance test checks zoom 2 texel by texel and that a widened quad and a
+  widened diagonal quad cover exactly 13 × 12 pixels; three hand mutants of the PC backend are killed.
+- `hello` after stage 5 (Release): 3DS text 216 748 (**+264** against stage 0, budget 320), data 28 352 (+24); PC text
+  130 732 (**+708**, budget 512: over). x86-64 code and 16-byte function alignment in the PE make the PC count about
+  2.7 times the ARM one; moving `zoomed_tile_size` out of line made both larger, moving the rounding to the tilemap side
+  saved 64 bytes (3DS). The 3DS budget, the one that matters for the console (constitution II), holds; the PC overrun
+  is recorded here as a deviation.
+- T5.6: `test_zoom1_regression` passes (dst = tile size at zoom 1); `build/ref-018/compare.sh`: platformer bench and
+  level 1 identical. The zoomed screenshots of the platformer bench (B cycles the zoom) are part of T7.2; the zoomed
+  tiles are first checked visually with `examples/camera` (stage 6).

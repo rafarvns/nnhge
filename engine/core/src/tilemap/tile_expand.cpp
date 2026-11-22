@@ -10,6 +10,7 @@ ExpandResult expand_tiles(const ExpandInput& in, platform::TileQuad2D* out, int 
     ExpandResult r;
     const LayerView& v = in.view;
     if (v.empty()) return r;
+    if (v.zoom_q != 65536) return expand_zoomed(in, out, capacity);
     const unsigned first = static_cast<unsigned>(in.first_id);
     const unsigned count = static_cast<unsigned>(in.tile_count);
     // The cell bits 13..15 are diagonal, flip y, flip x: the contract's orient bits once shifted down.

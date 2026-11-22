@@ -10,6 +10,8 @@
 
 #include <SDL3/SDL.h>
 
+#include <initializer_list>
+
 namespace platform = nnh::platform;
 
 namespace {
@@ -94,6 +96,8 @@ NNH_TEST(pc_draw_tiles_places_every_pixel_of_the_eight_orientations_like_tiled) 
     batch.texture = info.handle;
     batch.tile_w = kSize;
     batch.tile_h = kSize;
+    batch.dst_w = kSize;
+    batch.dst_h = kSize;
     batch.color = nnh::colors::white;
     batch.quads = quads;
     batch.count = 9;
@@ -112,6 +116,86 @@ NNH_TEST(pc_draw_tiles_places_every_pixel_of_the_eight_orientations_like_tiled) 
         pixel_color(sx, sy, er, eg, eb);
         CHECK(shot.at(0, 20, r, g, b) && r == er && g == eg && b == eb);
         CHECK(shot.at(kSize - 3, 20, r, g, b) && r == 0 && g == 0 && b == 0); // nothing past the tile
+    }
+    platform::end_frame();
+    platform::texture_destroy(info.handle);
+    platform::shutdown();
+}
+
+namespace {
+
+bool lit(const Readback& shot, int x, int y) {
+    Uint8 r = 0, g = 0, b = 0;
+    return shot.at(x, y, r, g, b) && b == 200; // every texel has blue 200; the clear color is black
+}
+
+/// Counts pixels of [x0, x1) × [y0, y1) that are lit (`want` true) or not.
+int count_lit(const Readback& shot, int x0, int y0, int x1, int y1, bool want) {
+    int n = 0;
+    for (int y = y0; y < y1; ++y)
+        for (int x = x0; x < x1; ++x)
+            if (lit(shot, x, y) == want) ++n;
+    return n;
+}
+
+} // namespace
+
+// Zoom (spec 018, decision D33): quads are drawn at the batch's destination size, plus one pixel per widen/taller bit.
+NNH_TEST(pc_draw_tiles_draws_zoomed_quads_exactly_on_their_rectangles) {
+    nnh::AppConfig config;
+    config.title = "conformance";
+    config.pc_window_scale = 1;
+    CHECK(platform::init(config));
+    static unsigned char pixels[kSize * kSize * 4];
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            unsigned char* p = pixels + (y * kSize + x) * 4;
+            pixel_color(x, y, p[0], p[1], p[2]);
+            p[3] = 255;
+        }
+    }
+    platform::TextureInfo info;
+    CHECK(platform::texture_create_rgba(pixels, kSize, kSize, info));
+    CHECK(platform::poll_events());
+    platform::begin_frame(nnh::colors::black, nnh::colors::black);
+    platform::TileBatch2D batch;
+    batch.texture = info.handle;
+    batch.tile_w = kSize;
+    batch.tile_h = kSize;
+    batch.color = nnh::colors::white;
+    // Zoom 2: one 16 × 16 quad at (0, 0).
+    platform::TileQuad2D doubled{0, 0, 0, 0, 0};
+    batch.dst_w = batch.dst_h = 2 * kSize;
+    batch.quads = &doubled;
+    batch.count = 1;
+    platform::draw_tiles(nnh::Screen::Top, batch);
+    // Zoom 1.5 (dst 12): a widened quad (13 × 12) at (40, 0) and a diagonal widened one at (40, 20).
+    platform::TileQuad2D wide[2] = {{40, 0, 0, 0, platform::kTileOrientWiden},
+                                    {40, 20, 0, 0, platform::kTileOrientWiden | platform::kTileOrientDiagonal}};
+    batch.dst_w = batch.dst_h = 12;
+    batch.quads = wide;
+    batch.count = 2;
+    platform::draw_tiles(nnh::Screen::Top, batch);
+    {
+        const Readback shot(SDL_Rect{0, 0, 64, 40});
+        CHECK(shot.surface != nullptr);
+        // Zoom 2: texel (tx, ty) fills the 2 × 2 square at (2tx, 2ty).
+        int wrong = 0;
+        for (int y = 0; y < 2 * kSize; ++y) {
+            for (int x = 0; x < 2 * kSize; ++x) {
+                Uint8 r = 0, g = 0, b = 0, er = 0, eg = 0, eb = 0;
+                pixel_color(x / 2, y / 2, er, eg, eb);
+                if (!(shot.at(x, y, r, g, b) && r == er && g == eg && b == eb)) ++wrong;
+            }
+        }
+        CHECK(wrong == 0);
+        CHECK(count_lit(shot, 16, 0, 18, 18, true) == 0 && count_lit(shot, 0, 16, 18, 18, true) == 0);
+        // The widened quads cover exactly 13 × 12 pixels, nothing around them.
+        for (int top : {0, 20}) {
+            CHECK(count_lit(shot, 40, top, 53, top + 12, false) == 0);
+            CHECK(count_lit(shot, 39, top, 40, top + 12, true) == 0 && count_lit(shot, 53, top, 54, top + 12, true) == 0);
+            CHECK(count_lit(shot, 40, top + 12, 53, top + 13, true) == 0);
+        }
     }
     platform::end_frame();
     platform::texture_destroy(info.handle);

@@ -48,34 +48,41 @@ void free_all() {
     g_cameras[0] = g_cameras[1] = Camera2D{};
 }
 
-/// Expands tile batch `index` and sends it. @return 1 if its texture is gone (skipped), else 0.
-int submit_tiles(Screen screen, int index, Vec2 camera) {
+/// Expands tile batch `index` and sends it (in row chunks when it is larger than the scratch, zoom < 1).
+/// @return 1 if its texture is gone (skipped), else 0.
+int submit_tiles(Screen screen, int index, Camera2D camera) {
     detail::GfxState& g = g_state;
     const detail::TileBatchRecord* r = g.tiles.get(index);
     if (r == nullptr) return 0; // its map was destroyed during the frame
     const detail::TextureData* texture = g.textures.get(r->texture_slot, r->texture_generation);
     if (texture == nullptr) return 1;
-    const detail::TileBatches::Quads quads = g.tiles.expand(index, screen, camera);
-    if (quads.count == 0) return 0;
     platform::TileBatch2D batch;
     batch.texture = texture->platform;
     batch.tile_w = r->tile_w;
     batch.tile_h = r->tile_h;
     batch.color = r->color;
     batch.layer = r->layer;
-    batch.quads = quads.quads;
-    batch.count = quads.count;
-    platform::draw_tiles(screen, batch);
+    int row = 0;
+    do {
+        const detail::TileBatches::Quads quads = g.tiles.expand(index, screen, camera, row);
+        if (quads.count > 0) {
+            batch.dst_w = quads.dst_w;
+            batch.dst_h = quads.dst_h;
+            batch.quads = quads.quads;
+            batch.count = quads.count;
+            platform::draw_tiles(screen, batch);
+        }
+        row = quads.next_row;
+    } while (row >= 0);
     return 0;
 }
 
 /// The screen's 2D pass: the sorted items, cut by tile batches where they sit among them.
 void submit_screen(Screen screen) {
     detail::GfxState& g = g_state;
-    const Camera2D camera2d = g_cameras[screen == Screen::Top ? 0 : 1];
-    const Vec2 camera = camera2d.position;
+    const Camera2D camera = g_cameras[screen == Screen::Top ? 0 : 1];
     const auto result =
-        g.draws.build(screen, camera2d, g.textures, g.pass, g.max_draws, g.splits, detail::kMaxTileBatches);
+        g.draws.build(screen, camera, g.textures, g.pass, g.max_draws, g.splits, detail::kMaxTileBatches);
     int stale_tiles = 0;
     int from = 0;
     for (int i = 0; i < result.splits; ++i) {

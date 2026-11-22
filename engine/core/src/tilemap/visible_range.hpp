@@ -6,6 +6,10 @@
 // screen = world + offset + (camera + screen_size/2 − parallax_origin)·(1 − parallax) − camera.
 // The screen position of world (0, 0) is snapped to whole pixels once (halves up, like sprites), so every
 // tile is an exact multiple of the tile size from it: no seams, and PC and 3DS agree.
+//
+// Zoom (spec 018, D33): the view's centre is camera + screen_size / zoom / 2, the origin is
+// snap((world origin − camera) × zoom), and cell i spans [origin + zoom_edge(i), origin + zoom_edge(i + 1))
+// (tilemap/zoom_edges.hpp). At zoom 1 the code and every value are the unzoomed ones.
 
 #include "nnh/math.hpp"
 
@@ -17,12 +21,14 @@ struct LayerPlacement {
     Vec2 offset{};          ///< the layer's offset plus the draw's
     Vec2 parallax{1, 1};    ///< 1 = scrolls with the camera, 0 = fixed on screen
     Vec2 parallax_origin{}; ///< the map's
+    float zoom = 1;         ///< the camera's (1 when ignoring the camera)
 };
 
 struct LayerView {
     int origin_x = 0, origin_y = 0; ///< screen pixel of cell (0, 0)'s top-left corner
     int x0 = 0, y0 = 0;             ///< first visible cell
     int x1 = 0, y1 = 0;             ///< one past the last visible cell (clamped to the map)
+    int zoom_q = 65536;             ///< the zoom in 16.16 (65536 = 1: cells are exactly tile-sized)
     bool empty() const { return x0 >= x1 || y0 >= y1; }
 };
 

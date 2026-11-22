@@ -9,6 +9,7 @@
 #include "tilemap/tile_expand.hpp"
 #include "tilemap/tilemap_internal.hpp"
 #include "tilemap/visible_range.hpp"
+#include "tilemap/zoom_edges.hpp"
 
 #include <algorithm>
 
@@ -30,6 +31,7 @@ detail::TileExpandResult expand_batch(const detail::TileExpandRequest& r) {
     const TilesetEntry& set = v.tilesets()[tileset];
     detail::LayerPlacement p;
     p.camera = r.camera;
+    p.zoom = r.zoom;
     p.screen_size = {static_cast<float>(screen_width(r.screen)), static_cast<float>(screen_height(r.screen))};
     p.offset = Vec2{e.offset_x, e.offset_y} + r.offset;
     p.parallax = {e.parallax_x, e.parallax_y};
@@ -43,10 +45,13 @@ detail::TileExpandResult expand_batch(const detail::TileExpandRequest& r) {
     in.view = detail::visible_range(p, h.tile_width, h.tile_height, h.width, h.height);
     in.tile_w = h.tile_width;
     in.tile_h = h.tile_height;
+    in.first_row = r.first_row;
+    in.chunk = r.chunk;
     TileSource animated[kMaxAnimations]; // 1 KB of stack, only read for this tileset's animations
     detail::prepare_animations(v, tileset, r.clock, animated, in);
     const detail::ExpandResult x = detail::expand_tiles(in, r.out, r.capacity);
-    return {x.written, x.dropped};
+    const int zq = in.view.zoom_q;
+    return {x.written, x.dropped, x.next_row, detail::zoomed_size(h.tile_width, zq), detail::zoomed_size(h.tile_height, zq)};
 }
 
 /// Records the batches of one map layer (nothing if hidden, empty or fully transparent).

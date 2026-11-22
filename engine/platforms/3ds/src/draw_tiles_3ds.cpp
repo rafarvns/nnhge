@@ -7,6 +7,9 @@
 // (u, v) = (top or bottom, left or right). With left = v of the tile's top row, right = v of its bottom row,
 // top = u of its left column and bottom = u of its right column, the screen's top-right corner shows the
 // tile's bottom-left: a transpose. The mirrors then apply to that, as Tiled does.
+//
+// Zoom (decision D33): each quad is drawn dst_w (+1 with kTileOrientWiden) by dst_h (+1 with kTileOrientTaller)
+// with the same texture coordinates; nearest sampling makes integer zooms exact texel squares.
 
 #include "context_3ds.hpp"
 #include "nnh/platform/video.hpp"
@@ -31,8 +34,8 @@ void draw_tiles(Screen screen, const TileBatch2D& batch) {
     C3D_Tex* tex = ctr::texture_of(batch.texture);
     const float inv_w = 1.0f / static_cast<float>(tex->width);
     const float inv_h = 1.0f / static_cast<float>(tex->height);
-    const float w = static_cast<float>(batch.tile_w);
-    const float h = static_cast<float>(batch.tile_h);
+    const float dw = static_cast<float>(batch.dst_w);
+    const float dh = static_cast<float>(batch.dst_h);
     const bool tinted = !is_white(batch.color);
     C2D_ImageTint tint;
     if (tinted) {
@@ -61,6 +64,8 @@ void draw_tiles(Screen screen, const TileBatch2D& batch) {
             sub.top = l;
             sub.bottom = r;
         }
+        const float w = (q.orient & kTileOrientWiden) != 0 ? dw + 1 : dw;
+        const float h = (q.orient & kTileOrientTaller) != 0 ? dh + 1 : dh;
         params.pos.x = static_cast<float>(q.x);
         params.pos.y = static_cast<float>(q.y);
         params.pos.w = (q.orient & kTileOrientFlipX) != 0 ? -w : w;

@@ -124,9 +124,7 @@ add_library(nnh_core STATIC
     src/tilemap/map_validate.cpp
     src/tilemap/map_validate_content.cpp
     src/tilemap/tile_animation.cpp
-    src/tilemap/tile_expand.cpp
     src/tilemap/tilemap.cpp
-    src/tilemap/visible_range.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )
@@ -201,6 +199,10 @@ endif()
 # zoomed draw on the same pixels.
 set(_nnh_zoom_sources
     src/gfx/draw_list.cpp
+    src/tilemap/tile_expand.cpp
+    src/tilemap/tile_expand_zoom.cpp
+    src/tilemap/visible_range.cpp
+    src/tilemap/zoom_edges.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_zoom_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

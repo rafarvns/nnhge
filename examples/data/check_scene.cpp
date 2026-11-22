@@ -30,7 +30,7 @@ void CheckScene::draw() {
         nnh::gfx::fill_rect(screen, {0, 70, middle * 2, 70}, color);
         nnh::gfx::draw_text(screen, {middle, 84}, verdict, {.scale = 6, .align = nnh::TextAlign::Center});
     }
-    char detail[64];
+    char detail[128]; // a failure message is up to 96 bytes
     if (result_.pass) {
         std::snprintf(detail, sizeof detail, "checksum 0x%08X", static_cast<unsigned>(result_.checksum));
     } else {

@@ -10,7 +10,8 @@ initializer list"; the same braces inside test bodies compile); fixed by naming 
 After that GCC 13/14 pass ctest (apart from spec 014's compile-message regexes, fixed in main since, and
 `nnh_script_pc_smoke`, which needs a `pc-dev` build folder). clang 18 ASan/UBSan: `nnh_tests` 1540/1540 clean; the
 example ctests pass with `detect_leaks=0` (SDL's offscreen EGL driver leaks). `fuzz_bindings` 2 minutes: cov 436, no
-crash.
+crash. After the merge (main): GCC 13 ctest 256/256 (one `-Wformat-truncation` in `examples/actions/main.cpp`, fixed),
+clang ASan/UBSan ctest 256/256 and `nnh_tests` 1701/1701 with leak checks on, `fuzz_bindings` cov 471, no crash.
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
 previous one. Every stage ends with something verifiable on PC (`ctest --preset pc-debug`, a screenshot, a `--pc`

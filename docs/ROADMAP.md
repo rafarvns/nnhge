@@ -154,7 +154,7 @@ sections equal a build of the previous commit; the growth since T0.1 came with s
 
 ## M7 — Game structure
 - [x] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (implemented 2026-11-22): pure `<nnh/collision.hpp>` (box queries, `collision::move` through any grid, one-way cells, no tunnelling; [api/collision.md](api/collision.md)); `<nnh/tilemap.hpp>` — maps built in code or drawn in Tiled (`.tmj` assets converted by `nnh-assetc` at build time, D27, and loaded with `load_tilemap`; bounded and fuzzed readers), objects, properties, animated tiles, a collision grid ([api/tilemap.md](api/tilemap.md), guide [Levels in Tiled](guides/levels.md)); `gfx::draw_tilemap` as tile batches (D26). **Old 3DS XL: 4 full 16×16 layers + 300 sprites at 60 Hz (avg 16.7 ms, worst 17.4 ms, 0 missed of 600); limits 6 layers / 600 sprites.** `examples/platformer`: level 1 from Tiled, the bonus level in code, a replay checked against `tests/level.nnhs`. Still with the maintainer: T7.4 (`tests/level.nnhs` on the Old 3DS); Linux, ASan/UBSan and the three libFuzzer targets ran clean on the build VM
-- [ ] Entities/components, scene transitions (scenes, saves and tweens: done; tweens' console check pending)
+- [ ] Entities/components, scene transitions (scenes, saves and tweens: done)
 
 ### Features in the spirit of Godot and Unity
 
@@ -170,8 +170,8 @@ spec; the order below is a proposal.
   item, a level's settings) in their own files in the assets folder — a readable text format written by hand —
   whose shape is a C++ struct the game declares; the build checks every file against it, the game loads them by
   path or name, values change without recompiling, and they can reference each other (an enemy's drop is an item)
-  and textures or sounds — [spec 014](../specs/014-data-assets/spec.md), **implemented 2026-11-22, console check
-  pending** (and the Linux fuzz/sanitizer runs): `<nnh/data.hpp>` (`NNH_DATA_TYPE`/`STRUCT`/`ENUM`/`FIELD` over plain
+  and textures or sounds — [spec 014](../specs/014-data-assets/spec.md), **implemented 2026-11-22**; the Old 3DS
+  check (same checksum as the simulator) and the Linux sanitizer/fuzz runs passed: `<nnh/data.hpp>` (`NNH_DATA_TYPE`/`STRUCT`/`ENUM`/`FIELD` over plain
   structs; `data::load` / `count` / `name` / `ref` / `find` / `path`, allocation-free once the index is loaded),
   `nnh_add_game(... DATA_SCHEMA ...)` (a per-game schema program, decision D29), a TOML-subset text format checked
   by `nnh-assetc data` and `data-index` with `file:line: reason` and "did you mean" (one fixture per rule), a
@@ -200,7 +200,7 @@ spec; the order below is a proposal.
   through an animator
 - [x] **Tweens and timers** (Godot Tween and Timer, DOTween): animate any value with easing, sequences and
   delays; timers and "wait then do" without hand-written counters —
-  [spec 015](../specs/015-tweens-and-timers/spec.md) (implemented 2026-11-22, **console check pending**, T7.2):
+  [spec 015](../specs/015-tweens-and-timers/spec.md) (implemented 2026-11-22; Old 3DS check passed: same checksum as the PC, 256 tweens 0.71 ms):
   `<nnh/tween.hpp>` — 19 libm-free easings with the same bits everywhere, `nnh::Timer`, tween sets (float, Vec2,
   Color by pointer or setter; delay, loops, yoyo, speed, handles, callbacks or your own finish events, `after`/
   `every`, sequences with joins, waits and calls) on the deterministic frame clock (`Frames`/`FrameTime` in

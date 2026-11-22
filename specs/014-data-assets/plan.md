@@ -1,6 +1,6 @@
 # Plan 014: Data assets
 
-Status: implemented (console check pending; Linux fuzz/probe pending) — approved 2026-11-22 (maintainer pre-approved); see the "Stage N refinements"
+Status: implemented (T8.4 passed on the Old 3DS XL and T9.1 on VM 120, 2026-11-22) — approved 2026-11-22 (maintainer pre-approved); see the "Stage N refinements"
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D29 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`Result`, memory tags, logs), spec 007 (assets, per-file build steps, the asset index), spec 012 /
 D27 (`nnh-assetc`, host tools in cross presets, shared pure validators), spec 013 (console test scripts)

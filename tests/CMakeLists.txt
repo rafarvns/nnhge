@@ -419,7 +419,8 @@ if(NOT MSVC)
     set(_schemas ${CMAKE_CURRENT_SOURCE_DIR}/data_assets/compile_fail)
     add_test(NAME data_schema_accepts_good COMMAND ${_schema_check} -Werror ${_schemas}/good.cpp)
     # Names: GCC quotes them with ASCII quotes or, in a UTF-8 locale (Linux), with 3-byte ‘ ’, so no quote is matched.
-    foreach(case "unknown_member|damgae[^ ]* is not a member"
+    # `~` separates alternatives (any one passes): GCC's wording, then clang's.
+    foreach(case "unknown_member|damgae[^ ]* is not a member~no member named .damgae."
                  "pointer|data fields can't be pointers or references"
                  "double|double isn't a data field kind: use float"
                  "int64|64-bit integers aren't data field kinds"
@@ -430,10 +431,11 @@ if(NOT MSVC)
                  "not_aggregate|a data type must be a plain struct"
                  "too_big|a data type can be at most 16 KiB"
                  "too_many_fields|a data type can list at most 64 fields"
-                 "unknown_enum_name|Fier[^ ]* was not declared")
+                 "unknown_enum_name|Fier[^ ]* was not declared~undeclared identifier .Fier.")
         string(REPLACE "|" ";" case "${case}")
         list(GET case 0 name)
         list(GET case 1 expected)
+        string(REPLACE "~" ";" expected "${expected}")
         add_test(NAME data_schema_rejects_${name} COMMAND ${_schema_check} ${_schemas}/${name}.cpp)
         set_tests_properties(data_schema_rejects_${name} PROPERTIES WILL_FAIL TRUE)
         add_test(NAME data_schema_explains_${name} COMMAND ${_schema_check} ${_schemas}/${name}.cpp)

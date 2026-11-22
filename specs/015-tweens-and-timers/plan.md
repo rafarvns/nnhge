@@ -1,6 +1,6 @@
 # Plan 015: Tweens and timers
 
-Status: implemented (console T7.2 pending) · approved 2026-11-22 (maintainer pre-approved)
+Status: implemented (T7.2 passed on the Old 3DS XL, 2026-11-22) · approved 2026-11-22 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D30 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (event bus, scene stack), spec 002 (`Duration`, memory tags, asserts, logs, profiler), spec 013 (console
 test scripts)

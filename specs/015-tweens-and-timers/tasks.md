@@ -1,6 +1,6 @@
 # Tasks 015: Tweens and timers
 
-Status: implemented (console T7.2 pending) · approved 2026-11-22 (maintainer pre-approved)
+Status: implemented (T7.2 passed on the Old 3DS XL, 2026-11-22) · approved 2026-11-22 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops. `[P]` means the task can be done in parallel with the previous one. Every
@@ -164,11 +164,15 @@ misuse test (a `TweenSet` local to a call that asserts and jumps out); fixed in 
 
 - [x] **T7.1** Build and size check: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development build
   that `nnh run` uses; log the 32-bit slot size from the example at start. Files: plan.md. Covers II.
-- [ ] **T7.2** On the Old 3DS: the maintainer opens the Homebrew Launcher and presses Y, then runs
+- [x] **T7.2** On the Old 3DS: the maintainer opens the Homebrew Launcher and presses Y, then runs
   `nnh run tweens --script examples/tweens/tests/check.nnhs`. Pass when the saved log in `build/logs/` has
   `tweens: PASS <checksum>` with the PC's checksum, the rounding probe line and the bench line under 1 ms. The bench
   number and the screenshots go into plan.md and the docs. A quick look with the debug overlay at 60 Hz in the
   showcase. Covers AC-5, AC-6, AC-7, FR-3.
+
+  **Result (2026-11-22, Old 3DS XL, Development):** `nnh: PASS`; every checkpoint and `tweens: PASS B44CA3F6` equal
+  the PC's (the easings give the same bits on ARM11 VFPv2 with libctru's FPSCR); bench 256 tweens avg 0.71 ms, worst
+  0.84 ms (target < 1 ms).
 
 ## Stage 8: docs, roadmap, status
 

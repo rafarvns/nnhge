@@ -48,7 +48,7 @@ struct Game {
 
 void load_bindings(nnh::ActionSet& set) {
     const nnh::Result<nnh::LoadReport> r = set.load(kBindingsPath, kBindingsVersion);
-    char line[96];
+    char line[160]; // an error message is up to 63 characters
     if (!r) {
         std::snprintf(line, sizeof line, "actions: bindings not loaded (%s): defaults", r.error().message);
     } else if (!r.value().found) {

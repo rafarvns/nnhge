@@ -1,6 +1,6 @@
 # Tasks 014: Data assets
 
-Status: implemented (console check pending; Linux fuzz/probe pending) — approved 2026-11-22 (maintainer pre-approved)
+Status: implemented (T8.4 passed on the Old 3DS XL and T9.1 on VM 120, 2026-11-22) — approved 2026-11-22 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -290,9 +290,14 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
   simulator < 2 s, screenshot shows the new value; numbers into `docs/ROADMAP.md`'s build table; leak report clean
   — files: `examples/data/check.cpp`, `examples/data/tests/check.nnhs` — test: `nnh run data --pc --script
   examples/data/tests/check.nnhs` → `nnh: PASS` — covers AC-1, AC-2, AC-7, FR-13
-- [ ] **T8.4** **3DS** (maintainer presses Y only): Homebrew Launcher open, then on the PC `nnh run data --script
+- [x] **T8.4** **3DS** (maintainer presses Y only): Homebrew Launcher open, then on the PC `nnh run data --script
   examples/data/tests/check.nnhs` (builds `3ds-dev`) → `nnh: PASS`, the same checksum as the simulator, screenshots
   saved in `build/logs/data-<stamp>/` — covers AC-1, FR-16
+
+  **Result (2026-11-22, Old 3DS XL, Development):** `data check: PASS checksum 0xD5BD3020 (4 enemies, 3 items, 1
+  settings, index 595 bytes)`, the simulator's checksum; the two provoked warnings; the goblin/yeti/check screenshots
+  as on PC. The first run stopped at "the game didn't answer": the example loads its media before frame 1 (2.2 s) and
+  `nnh` waited only 3 s for the `Hello` answer — now 10 s, restarted by each log line (commit 4530bd1).
 
   **Result (2026-11-22, T8.1–T8.3):** `examples/data` (4 enemies, 3 items, `game.settings`; art and sounds by
   `art/make_art.py`). Screenshots read back: the bestiary (goblin, tinted from its data file, stats, drops with
@@ -305,9 +310,19 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
 
 ## Stage 9 — verification and docs
 
-- [ ] **T9.1** Linux on VM 120: gcc build + ctest; clang ASan/UBSan for `nnh_tests` and `nnh_assetc_tests`;
+- [x] **T9.1** Linux on VM 120: gcc build + ctest; clang ASan/UBSan for `nnh_tests` and `nnh_assetc_tests`;
   `fuzz_data`, `fuzz_data_index`, `fuzz_assetc_toml`, `fuzz_assetc_data` 60 s each without findings; `3ds-release`
   with the host-built programs — covers AC-5, FR-16
+
+  **Result (2026-11-22, VM 120, commit 905c708):** GCC 13 builds and passes ctest 229/229 (one `-Wformat-truncation`
+  warning in `examples/data/check_scene.cpp`, fixed by a 128-byte buffer). clang 18 ASan/UBSan: `nnh_tests`
+  1371/1371 and `nnh_assetc_tests` 233/233 with leak checks on; ctest green except `data_schema_explains_unknown_
+  {member,enum_name}`, whose regexes knew only GCC's wording — they now also accept clang's ("no member named",
+  "undeclared identifier"). libFuzzer 120 s each, no crash: `fuzz_data` cov 242, `fuzz_data_index` 145,
+  `fuzz_assetc_toml` 926, `fuzz_assetc_data` 1948, `fuzz_assetc_refs` 2212, `fuzz_assetc_json` 433. The earlier
+  stage 3–5 run gave the same picture (`fuzz_data` 257, `fuzz_data_index` 142, `fuzz_assetc_toml` 926,
+  `fuzz_assetc_data` 2014). Full `ninja` in a `NNH_BUILD_FUZZERS` build fails to link the `nnh-assetc` program
+  (instrumented library, uninstrumented link): build the fuzz targets by name.
 - [x] **T9.2** `docs/api/data.md` (declaring a type, every kind and file form, references, loading, listing, errors,
   limits, memory formula with the example's measured total, the schema-source rule, editor TOML highlighting for the
   extensions) + header comments; format section in `docs/api/assets.md` — covers AC-8, VIII
@@ -331,6 +346,4 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
   empty diagnostics entry that `add` never creates, which of two duplicate names wins once the duplicate is already
   an error, the writer's self-check that a correct writer can't fail, the CLI filtering non-data sidecars that
   `build_index` filters again). Also: the compile-fail ctests' regexes `damgae[^ ]* is not a member` and
-  `Fier[^ ]* was not declared` match GCC's quotes in any locale (Linux UTF-8 uses ‘ ’). **T9.1 (Linux: GCC 13 /
-  clang 18 probe, ASan/UBSan, the libFuzzer targets — now five on the converter side with `fuzz_assetc_refs` — and a
-  3DS build there) is the maintainer's.**
+  `Fier[^ ]* was not declared` match GCC's quotes in any locale (Linux UTF-8 uses ‘ ’). T9.1 ran afterwards (above).

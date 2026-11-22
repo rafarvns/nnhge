@@ -7,7 +7,10 @@ VM 120 results (2026-11-22, on the branch before the merge): GCC 13 and 14 build
 were spec 014's two compile-message regexes, fixed in main since, and `nnh_script_pc_smoke`, which needs a `pc-dev`
 build folder the VM doesn't have). clang 18 ASan/UBSan: `nnh_tests` clean apart from the tween misuse leak already
 fixed in main; the example ctests pass with `detect_leaks=0` (SDL's offscreen EGL driver leaks). libFuzzer for 2
-minutes each, not the 10 the tasks ask: `fuzz_sprite` cov 187, `fuzz_assetc_sprite` cov 714, no crash.
+minutes each, not the 10 the tasks ask: `fuzz_sprite` cov 187, `fuzz_assetc_sprite` cov 714, no crash. After the
+merge (main, 2026-11-22): from an empty corpus `fuzz_sprite` stays near cov 50 (it rarely builds a valid header); seeded
+with the converted fixtures (`nnh-assetc sprite tests/data/aseprite/good*.ase.json` → two `.nnhsprite` files in the
+corpus folder) it reaches cov 479 in 120 s, no crash. Seed it that way.
 
 Each task is one or a few TDD loops. `[P]` means the task can be done in parallel with the previous one. Every
 stage ends with something verifiable on PC (`ctest --preset pc-debug`, a screenshot, a `--pc` script). The only

@@ -14,3 +14,6 @@ compile_commands.json
 
 # Python bytecode (scripts in scripts/ and examples/*/art/)
 __pycache__/
+
+# Claude Code agent worktrees (temporary copies of the repo)
+/.claude/worktrees/

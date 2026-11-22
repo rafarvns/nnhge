@@ -5,6 +5,15 @@ Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D30 ([decisi
 Uses spec 001 (event bus, scene stack), spec 002 (`Duration`, memory tags, asserts, logs, profiler), spec 013 (console
 test scripts)
 
+> **Amended by plan 016 (2026-11-22).** `Frames` and `FrameTime` (with `kMaxFrameTime`, the `Duration` conversion and
+> the invalid marker, unchanged) are declared in the foundation header `<nnh/time.hpp>`, not in `<nnh/tween.hpp>`, so
+> sprite animation ([plan 016](../016-sprite-animation/plan.md)) uses the frame clock without depending on tweens
+> (constitution XI). `<nnh/tween.hpp>` includes `time.hpp`, so the API below and game code are unchanged. Whichever
+> spec is implemented first adds them, with their conversion tests in `tests/time/test_frame_time.cpp` (T1.1's
+> conversion table moves there; the tween clock cases stay in `tests/tween/test_frame_clock.cpp`). Likewise, the
+> counting `operator new` of T4.4 lives in `tests/framework/alloc_counter.{hpp,cpp}`, shared by both modules (one
+> definition per test binary).
+
 ## Constitution Check (before design)
 
 | Article | OK? | Note |
@@ -130,7 +139,7 @@ struct Easing {
     EaseFn custom = nullptr;
 };
 
-// ---- The frame clock (FR-16) ----
+// ---- The frame clock (FR-16): declared in <nnh/time.hpp> (amended by plan 016), shown here for reference ----
 struct Frames { std::int32_t count = 0; };   ///< a whole number of 60 Hz frames
 /// A span of the frame clock in ticks of 1/4096 frame. Implicit from Duration (rounded to the nearest tick,
 /// 1 s = 60 frames exactly) and from Frames. Range 0..kMaxFrameTime (1 hour); outside it, ticks = -1 (invalid:

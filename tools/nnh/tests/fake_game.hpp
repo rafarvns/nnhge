@@ -24,11 +24,17 @@ struct FakeGame {
     std::uint32_t late_line_frame = 0; ///< > 0: logs "late line" on this frame
     std::uint32_t tick_every = 4;      ///< the console's kTickEvery
     std::vector<std::string> first_lines; ///< written right after connecting
+    int init_lines = 0;   ///< a slow init before frame 1: this many "loading" lines...
+    int init_gap_ms = 0;  ///< ...each after this long, reading nothing meanwhile
     std::vector<wire::Message> received;
 
     void run(std::uint16_t port) {
         socket = net::tcp_connect(Ipv4{{127, 0, 0, 1}}, port, 2000);
         for (const std::string& line : first_lines) socket.send_all(line.data(), line.size());
+        for (int i = 0; i < init_lines; ++i) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(init_gap_ms));
+            log("loading " + std::to_string(i));
+        }
         for (frame = 1; frame <= static_cast<std::uint32_t>(frames) && socket.valid(); ++frame) {
             read_messages();
             if (!socket.valid()) break;

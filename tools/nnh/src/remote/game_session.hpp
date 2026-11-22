@@ -25,7 +25,9 @@ struct SessionConfig {
     std::string shots_dir;       ///< screenshots go here, created at the first one
     remote::ScriptRunner* runner = nullptr; ///< a script or interactive mode; null = only the log
     StdinLines* typed = nullptr; ///< interactive mode: the lines typed in the terminal
-    int hello_timeout_ms = 3000; ///< how long the game has to answer a Hello (plan: 3 s)
+    /// How long the game has to answer a Hello, counted again from each line it logs meanwhile. 10 s: a game that
+    /// loads its assets before frame 1 answers late on an Old 3DS (examples/data: 2-4 s).
+    int hello_timeout_ms = 10000;
     int linger_ms = 1000;        ///< after a script's verdict: how long the log is still shown, waiting for
                                  ///< the game to close (the simulator closes on Bye{quit})
 };

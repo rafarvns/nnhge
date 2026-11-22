@@ -75,7 +75,8 @@ private:
         while (c_.typed->take(line)) c_.runner->on_typed(line);
     }
 
-    /// The game has hello_timeout_ms to answer each Hello; no answer is reported once.
+    /// The game has hello_timeout_ms to answer each Hello, counted from the last bytes it sent; no answer is
+    /// reported once.
     void check_hello() {
         if (c_.runner == nullptr || !c_.runner->hello_sent() || c_.runner->attached()) {
             hello_waiting_ = false;
@@ -104,6 +105,8 @@ private:
             flush();
             return;
         }
+        // Anything from the game while it owes a Hello answer shows it's alive (a slow init logging): wait again.
+        if (hello_waiting_) hello_since_ = Clock::now();
         stream_.feed(buffer, static_cast<std::size_t>(n), items);
         deliver(items);
     }

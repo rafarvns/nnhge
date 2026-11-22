@@ -77,7 +77,8 @@ nnh run <game> [--console <ip>] [--pc] [--script <file.nnhs>] [--no-build]
 
 The game is driven over the connection it already opens for its log (port 17491 on the console,
 loopback with `--pc`), so only the PC that started it can drive it. `nnh` says `Hello` first; a game that
-doesn't answer within 3 s is a Release build or one built before this feature. When `nnh` stops (end of
+doesn't answer within 10 s is a Release build or one built before this feature (the wait starts again with every
+line the game logs, so a game that loads for a while before its first frame is waited for). When `nnh` stops (end of
 the script, `end`, Ctrl+C) the game gets every control back: remote buttons are released, sticks centred,
 the touch lifted. On the console the game keeps running; real buttons keep working the whole time (remote
 and real input are merged).
@@ -199,7 +200,7 @@ no matching line in frames 1-42`. After the verdict, `nnh` still shows the log f
 |-----------------------------|---------|
 | 0 | PASS |
 | 1 | FAIL: an `expect` timed out, a `fail-on` matched, a level-F line, an input that arrived late, a message the console rejected or dropped, a screenshot that failed, a control the console doesn't have, or the game closed before `end` |
-| 2 | could not run: a bad command line or script, `--release`, the build failed, nothing built (`--no-build`), no console found, no log connection within 10 s, a simulator that closed without connecting, no answer to `Hello` within 3 s (a Release or older build), another protocol version |
+| 2 | could not run: a bad command line or script, `--release`, the build failed, nothing built (`--no-build`), no console found, no log connection within 10 s, a simulator that closed without connecting, no answer to `Hello` within 10 s of the game's last log line (a Release or older build), another protocol version |
 
 Without `--script`, `nnh run` exits as before: 0 when the game ran (on the console) or the simulator's own
 exit code (`--pc`), 1 when it couldn't build or send the game, 2 for a bad command line.

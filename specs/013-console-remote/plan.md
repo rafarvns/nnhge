@@ -577,3 +577,9 @@ recorded sends, synthetic captures, conformance).
 | XI | ✅ | Nothing for games to do; scripts optional; no cost without a connected `nnh` |
 
 Changed during design: II and X needed the numbers and the fuzzed fixed-size reader above, and a new decision (D28).
+
+#### Refinement after spec 014's console run (2026-11-22)
+
+`examples/data` loads its textures, sounds and music before frame 1 and answered `Hello` after more than 3 s on the
+Old 3DS, so `nnh` gave up on a working game. The wait is now 10 s and starts again with every byte the game sends
+while it owes the answer (`session_waits_for_a_game_that_logs_while_it_loads`).

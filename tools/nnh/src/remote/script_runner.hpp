@@ -2,7 +2,7 @@
 // Runs a test script, or lines typed one by one, against a connected Development game (spec 013 FR-3, FR-5;
 // plan "Runner"). Pure: the session (stage 4) feeds it what the game sent — records and log lines — and
 // sends the messages it hands out, writes the screenshots and prints the notes. Frame-driven only: wall-clock
-// time (the 3 s wait for the Hello answer) is the session's, which reports it with no_answer().
+// time (the wait for the Hello answer) is the session's, which reports it with no_answer().
 // Tested against a fake console in tools/nnh/tests/test_script_runner.cpp and test_script_interactive.cpp.
 //
 // Script mode: Hello first; at the answer, every control the script uses must exist (ZL/ZR, C-Stick); then

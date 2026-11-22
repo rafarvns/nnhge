@@ -126,6 +126,27 @@ NNH_TEST(session_gives_up_when_the_game_does_not_answer) {
     CHECK(game.received.size() == 1); // the Hello, and no Bye to a game that never attached
 }
 
+// A game loading for seconds before its first frame (examples/data on an Old 3DS: ~2-4 s) answers late; every log
+// line it sends meanwhile shows it's alive, so the wait starts again.
+NNH_TEST(session_waits_for_a_game_that_logs_while_it_loads) {
+    FakeGame game;
+    game.init_lines = 4;
+    game.init_gap_ms = 80; // 320 ms of loading, each gap under the 150 ms timeout
+    rr::ScriptRunner runner(script_of("wait 5\nend\n"), rr::RunnerOptions{});
+    SessionConfig config;
+    config.runner = &runner;
+    config.hello_timeout_ms = 150;
+    config.linger_ms = 0;
+    const Run r = run_session(game, config);
+    CHECK(r.code == 0);
+    CHECK(!has(r.out, "didn't answer"));
+    CHECK(has(r.out, "game   loading 3\n") && has(r.out, "nnh: PASS"));
+}
+
+NNH_TEST(the_default_wait_for_an_answer_allows_a_slow_start) {
+    CHECK(SessionConfig{}.hello_timeout_ms >= 10000);
+}
+
 NNH_TEST(typed_commands_to_a_game_that_does_not_answer_leave_its_log_running) {
     FakeGame game;
     game.answer_hello = false;

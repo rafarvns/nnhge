@@ -102,8 +102,8 @@ sections equal a build of the previous commit; the growth since T0.1 came with s
 Spec 018 (camera helpers, zoom in `Camera2D`), 2026-11-22, same machine: Release `hello.elf` text 216,484 →
 216,748 (+264: the zoom in the draw list and the tile path's chunk loop; budget 320), data +24 (the two cameras);
 `hello.exe` text 130,024 → 130,732 (+708, over the PC budget of 512: x86-64 code and 16-byte function alignment);
-no camera symbol in either. Edit `hello` → simulator 1.5–1.6 s, → `.3dsx` 2.9 s; `<nnh/camera.hpp>` 951
-preprocessed lines and 0.30–0.35 s alone (`<nnh/gfx.hpp>` 768 lines, 0.30–0.36 s). Details: plan 018, "Stage 0
+no camera symbol in either. Edit `hello` → simulator 1.5–1.6 s, → `.3dsx` 2.9 s; `<nnh/camera.hpp>` 956
+preprocessed lines and 0.30–0.33 s alone (`<nnh/gfx.hpp>` 779 lines, 0.31–0.33 s). Details: plan 018, "Stage 0
 results" and "Stage 10 results".
 
 ## M0.5 — Way of working

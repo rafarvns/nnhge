@@ -87,4 +87,7 @@ NNH_TEST(zone_axis_clamps_only_what_passes_the_view) {
     clamped = false;
     z = nnh::detail::cam::zone_axis(250, 10, 1, 200, clamped); // starts past the view: pinned to its edge
     CHECK(z.pos == 200 && z.size == 0 && clamped);
+    clamped = false;
+    z = nnh::detail::cam::zone_axis(-300, 10, 1, 200, clamped); // ends before the view: never a negative size
+    CHECK(z.pos == -200 && z.size == 0 && clamped);
 }

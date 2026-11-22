@@ -703,3 +703,34 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    …`, `bench: zoom 2.00 done`, `nnh: PASS`. Record L and S at both zooms here and in `docs/api/tilemap.md#zoom`.
 
 Results: pending (fill in "Stage 9 results": verdicts, the bench number per pair, the limits, the log folders).
+
+## Mutation testing
+
+66 hand mutants (`build/ref-018/mutants.txt`, applied one at a time by a script: rebuild the test program, run the
+whole `nnh_tests` — or `nnh_conformance_pc` for the PC backend —, restore the file) of `src/camera/*`,
+`tilemap/zoom_edges.*`, `tile_expand_zoom.cpp`, the zoomed parts of `visible_range.cpp`, `draw_list.cpp`,
+`tile_batches.cpp`, `gfx_frame.cpp`, `map_draw.cpp`, `Tilemap::bounds()`, the platformer's `level_camera.cpp` and the
+example's self-check script: **64/66 killed** on the first run. The two survivors exposed test gaps, closed with
+new checks: a dead zone lying entirely before the view must clamp to size 0, not a negative size
+(`zone_axis_clamps_only_what_passes_the_view`), and the debug dead zone must be drawn in screen pixels at zoom 2
+(`debug_draw_shows_the_dead_zone_in_screen_pixels_at_any_zoom`); both mutants are killed now (**66/66**). Plus three
+mutants of the PC tile backend (no pre-swapped diagonal rectangle, widen bit ignored, tile size instead of the
+destination size): 3/3 killed by the conformance test. Covered among others: dead-zone edges and point zones, the
+fraction-1 assignment, the 1/64 snap, small-world alignment, both clamps, smoothstep, hash and lattice values, the
+noise step, trauma² and its decay and clamp, zoom about the centre, the tall-world inset and gap, pixel snap,
+conversions, the 16.16 edge rounding, the visible range's first/last cells, widen/taller bits, chunk rollback and
+resume, zoomed parallax, sprite/pivot/rect/line zoom, `ignore_camera`, the chunk flag, the destination size, the
+camera reset at init, the look-ahead and the landing threshold.
+
+## Stage 10 results
+
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs): `<nnh/camera.hpp>` 956 preprocessed lines,
+  0.30–0.33 s; `<nnh/gfx.hpp>` 779 lines (+11 for the zoom), 0.31–0.33 s (stage 0: 768 lines, 0.30–0.36 s). The
+  camera header costs what `gfx.hpp` costs (`<cstdint>`, `build.hpp`, `gfx.hpp`).
+- Build times (3 runs): edit `hello` → simulator 1.63, 1.58, 1.68 s (stage 0: 1.54–1.64); → `.3dsx` 2.83, 2.91 s (a
+  first run with a reconfigure 5.4 s); clean `nnh_core` (pc-debug, parallel) 5.98, 5.67, 5.85 s (stage 0: 5.65–5.95).
+- `hello` Release: 3DS text 216 748 (+264), data 28 352 (+24), bss 106 680 (−16), `.3dsx` 262 156; PC text 130 732
+  (+708, over the 512 budget, see stage 5), no camera symbol.
+- `nnh_tests` (pc-debug): 1849 tests, 0 failures; ctest pc-debug 258/258, pc-release 252/252; every example script
+  passes with `--pc` (`input`, `tweens`, `animation`, `actions`, `data`, `camera`, platformer `level`, `gate`,
+  `zoom_gate`). Note: the test runner's `kMaxTests` is 2048 (199 left).

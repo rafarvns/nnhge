@@ -213,19 +213,19 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 10: docs, roadmap, status
 
-- [ ] **T10.1** `docs/api/camera.md` (following, dead zone, smoothing, limits, trauma shake with the "shake for N
+- [x] **T10.1** `docs/api/camera.md` (following, dead zone, smoothing, limits, trauma shake with the "shake for N
   frames" recipe, zoom, the screen modes with a picture of the tall-world layout, conversions, pixel snap, debug
   drawing, determinism, costs and measured numbers, misuse) and header comments (allocates? per-frame safe? misuse?).
   Covers VIII, AC-9.
-- [ ] **T10.2** Other pages: `docs/api/gfx.md` (`Camera2D::zoom`), `docs/api/tilemap.md` (`bounds()`, zoomed layers,
+- [x] **T10.2** Other pages: `docs/api/gfx.md` (`Camera2D::zoom`), `docs/api/tilemap.md` (`bounds()`, zoomed layers,
   the zoom limits measured in T9.2), `docs/architecture/rendering.md` (zoom section status → implemented),
   `docs/tech/devkitpro-3ds.md` and `docs/tech/sdl3.md` (zoomed tiles, the diagonal rectangle), `docs/guides/levels.md`
   (limits from `bounds()`), `docs/REFERENCES.md` (Godot `Camera2D`, Cinemachine, Eiserloh), `CLAUDE.md` (layout
   paragraph and module list); `python -I scripts/docs_tool.py check` → 0 broken links. Covers AC-9.
-- [ ] **T10.3** `docs/architecture/decisions.md`: D33 change-log note "implemented" with any stage refinements.
+- [x] **T10.3** `docs/architecture/decisions.md`: D33 change-log note "implemented" with any stage refinements.
   Covers AC-9.
-- [ ] **T10.4** Final measurements (header cost of `camera.hpp`, build times, `hello` sizes) in plan.md and
+- [x] **T10.4** Final measurements (header cost of `camera.hpp`, build times, `hello` sizes) in plan.md and
   `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T10.5** `docs/ROADMAP.md`: "Camera helpers" checkbox.
-- [ ] **T10.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T9.2
+- [x] **T10.5** `docs/ROADMAP.md`: "Camera helpers" checkbox.
+- [x] **T10.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T9.2
   pending").

@@ -63,6 +63,21 @@ NNH_TEST(debug_draw_shows_the_dead_zone_limits_and_target_on_the_top_layer) {
     nnh::shutdown();
 }
 
+NNH_TEST(debug_draw_shows_the_dead_zone_in_screen_pixels_at_any_zoom) {
+    cam_test::restart();
+    CameraRig rig({.dead_zone = CameraSettings::centered_zone(64, 48), .zoom = 2});
+    rig.snap(Vec2{1000, 500});
+    CHECK(nnh::frame());
+    rig.apply();
+    rig.debug_draw();
+    CHECK(nnh::frame());
+    if (nnh::build::kDevToolsEnabled) {
+        const auto* zone = first(nnh::colors::yellow);
+        CHECK(zone != nullptr && zone->x == 200 - 32 && zone->y == 120 - 24 && zone->w == 64 && zone->h == 48);
+    }
+    nnh::shutdown();
+}
+
 NNH_TEST(debug_draw_in_tall_world_draws_on_both_screens) {
     cam_test::restart();
     CameraRig rig({.layout = CameraLayout::TallWorld, .dead_zone = CameraSettings::centered_zone(40, 40)});

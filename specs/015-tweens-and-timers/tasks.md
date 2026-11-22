@@ -1,6 +1,6 @@
 # Tasks 015: Tweens and timers
 
-Status: approved (2026-11-22, maintainer pre-approved); in progress (stages 0–3 done on Windows; the VM 120 runs of T0.2, T1.4 and the stage ends are pending)
+Status: approved (2026-11-22, maintainer pre-approved); in progress (stages 0–5 done on Windows; the VM 120 runs of T0.2, T1.4 and the stage ends are pending)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops. `[P]` means the task can be done in parallel with the previous one. Every
@@ -89,18 +89,18 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 4: sequences (pure)
 
-- [ ] **T4.1** `SequenceBuilder`: steps (to/by/from_to, `join`, `wait`, `call`), the per-sequence and per-set limits,
+- [x] **T4.1** `SequenceBuilder`: steps (to/by/from_to, `join`, `wait`, `call`), the per-sequence and per-set limits,
   a failed build (full) → empty handle and the partial sequence freed, the first-group `from` written at append,
   total length. Files: `tween/sequence_build.cpp`, `tween.hpp`. Test: `tests/tween/test_sequence.cpp` (building).
   Covers FR-10.
-- [ ] **T4.2** Playing: groups, longest member, carry across groups (three 0.5 s steps end on update 90), zero-length
+- [x] **T4.2** Playing: groups, longest member, carry across groups (three 0.5 s steps end on update 90), zero-length
   call groups in the same update, capture when reached, a child's `on_finish`. Files: `tween/sequence_advance.cpp`.
   Test: `test_sequence.cpp` (playing), `test_frame_clock.cpp` (90). Covers FR-10, FR-16.
-- [ ] **T4.3** Sequence loops, restart and yoyo (groups in reverse order, mirrored child time, calls in both
+- [x] **T4.3** Sequence loops, restart and yoyo (groups in reverse order, mirrored child time, calls in both
   directions), sequence-level `on_loop`/`on_finish`/event, `complete` and `kill_target` on sequences, re-entrancy
   inside call steps. Files: `sequence_advance.cpp`, `tween_commands.cpp`. Test: `test_sequence.cpp`,
   `test_tween_group.cpp`, `test_tween_reentrancy.cpp`. Covers FR-9, FR-10, FR-11, FR-12.
-- [ ] **T4.4** No allocation while playing: a counting global `operator new`/`delete` in the tests binary plus
+- [x] **T4.4** No allocation while playing: a counting global `operator new`/`delete` in the tests binary plus
   `mem::live_allocations()` around creating, starting, building, playing, finishing and killing tweens, timers and
   sequences; the leak report is clean after destruction. Files: `tests/tween/alloc_counter.cpp`,
   `tests/tween/test_tween_alloc.cpp`. Covers FR-4, AC-4.
@@ -109,19 +109,19 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 5: scene binding (D30)
 
-- [ ] **T5.1** Scene attachments: node, attach in order, detach, notify pass with epoch (attached during a pass waits)
+- [x] **T5.1** Scene attachments: node, attach in order, detach, notify pass with epoch (attached during a pass waits)
   and cursor (detached during a pass is safe), the `Scene` destructor check. Files: `nnh/scene.hpp`,
   `engine/core/src/scene/scene_attachments.{hpp,cpp}`. Test: `tests/scene/test_scene_attachments.cpp` (a fake
   attachment that records calls). Covers FR-15.
-- [ ] **T5.2** Scene stack calls: `BeforeUpdate` before the top `update()` only, `AfterExit` after `on_exit()` on
+- [x] **T5.2** Scene stack calls: `BeforeUpdate` before the top `update()` only, `AfterExit` after `on_exit()` on
   pop/replace/`clear()`. Files: `scene/scene_stack.cpp`. Test: `tests/scene/test_scene_stack.cpp` (new cases),
   existing scene tests unchanged and green. Covers FR-15.
-- [ ] **T5.3** Bound sets: `TweenSet(Scene&, config)`, attach/detach in the block, update via the hook, silent clear
+- [x] **T5.3** Bound sets: `TweenSet(Scene&, config)`, attach/detach in the block, update via the hook, silent clear
   after exit, hand `update`/`advance` asserts, re-entering works, destruction while on the stack detaches. Files:
   `tween/tween_scene.cpp`, `tween_set.cpp`. Test: `tests/tween/test_tween_scene.cpp` with `RecordingScene` and the
   fake platform's `run()`/`shutdown()` (order relative to `update()`, frozen under a pushed scene, cleared on
   pop/replace/end of run/shutdown, no callbacks or events, targets untouched). Covers FR-15, AC-3.
-- [ ] **T5.4** Opt-in check: `hello.exe` and `hello.elf` sizes against T0.1 (budget: + ≤ 256 B of text from the
+- [x] **T5.4** Opt-in check: `hello.exe` and `hello.elf` sizes against T0.1 (budget: + ≤ 256 B of text from the
   hook, no `tween` symbol in `nm`); `examples/scenes` screenshot unchanged; the platformer's `level.nnhs` and
   `gate.nnhs` with `--pc`. Files: plan.md ("Stage 5 results"). Covers FR-19, AC-8.
 

@@ -81,6 +81,7 @@ add_executable(nnh_tests
     remote/test_remote_wire.cpp
     result/test_result.cpp
     scene/test_run.cpp
+    scene/test_scene_attachments.cpp
     scene/test_scene_stack.cpp
     system/test_system.cpp
     text/test_builtin_font.cpp
@@ -131,6 +132,7 @@ add_executable(nnh_tests
     tween/test_tween_loops.cpp
     tween/test_tween_misuse.cpp
     tween/test_tween_reentrancy.cpp
+    tween/test_tween_scene.cpp
     tween/test_tween_set.cpp
     tween/test_tween_start.cpp
     tween/test_tween_timers.cpp

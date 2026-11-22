@@ -31,7 +31,9 @@ void unlink_and_free(TweenBlock& b, int index) {
 
 /// One pass: every slot alive when the pass starts, in start order. Slots started during the pass come after
 /// the tail seen here, so they begin counting at the next pass (FR-12).
-void pass(TweenBlock& b, std::int32_t ticks) {
+} // namespace
+
+void tween_pass(TweenBlock& b, std::int32_t ticks) {
     NNH_PROFILE_SCOPE("tween update");
     if (ticks <= 0 || b.head < 0) return;
     tween_enter(b);
@@ -44,8 +46,15 @@ void pass(TweenBlock& b, std::int32_t ticks) {
     tween_leave(b);
 }
 
+namespace {
+
 bool usable_for_update(const TweenBlock* b) {
     if (b == nullptr) return false;
+    if (b->scene != nullptr) {
+        NNH_LOG_ERROR(tween, "TweenSet: update()/advance() on a set bound to a scene (its scene updates it)");
+        NNH_ASSERT(false, "nnh::TweenSet: a bound set is updated by its scene, not by hand");
+        return false;
+    }
     if (b->busy == 0) return true;
     NNH_LOG_ERROR(tween, "TweenSet: update()/advance() called from inside its own update (ignored)");
     NNH_ASSERT(false, "nnh::TweenSet: update()/advance() from inside its own update or callback");
@@ -72,7 +81,6 @@ void tween_leave(TweenBlock& b) {
 void tween_kill_slot(TweenBlock& b, int index) {
     SlotHot& s = b.hot[index];
     if (++s.generation == 0) s.generation = 1; // handles go stale now
-    if (s.kind == TweenKind::Sequence) sequence_kill_children(b, index);
     --b.active;
     if (b.busy > 0) {
         s.state = SlotState::Dead;
@@ -94,7 +102,7 @@ void tween_sweep(TweenBlock& b) {
 } // namespace detail
 
 void TweenSet::update() {
-    if (detail::usable_for_update(block_)) detail::pass(*block_, block_->speed_ticks);
+    if (detail::usable_for_update(block_)) detail::tween_pass(*block_, block_->speed_ticks);
 }
 
 void TweenSet::advance(FrameTime time) {
@@ -109,7 +117,7 @@ void TweenSet::advance(FrameTime time) {
         static_cast<std::int64_t>(time.ticks) * block_->speed_ticks + block_->remainder;
     block_->remainder = static_cast<std::int32_t>(scaled % FrameTime::kTicksPerFrame);
     const std::int64_t ticks = scaled / FrameTime::kTicksPerFrame;
-    detail::pass(*block_,
+    detail::tween_pass(*block_,
                  static_cast<std::int32_t>(ticks < FrameTime::kMaxTicks ? ticks : FrameTime::kMaxTicks));
 }
 

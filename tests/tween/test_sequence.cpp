@@ -28,7 +28,9 @@ float g_value = 0;
 
 void too_many_steps() {
     nnh::SequenceBuilder b = g_set->sequence();
-    for (int i = 0; i <= nnh::kMaxSequenceSteps; ++i) b.wait(Frames{1});
+    for (int i = 0; i <= nnh::kMaxSequenceSteps; ++i) {
+        b.wait(Frames{1});
+    }
 }
 void out_of_step_records() {
     (void)g_set->sequence().wait(Frames{1}).wait(Frames{1}).wait(Frames{1});
@@ -80,7 +82,7 @@ NNH_TEST(join_plays_steps_together_and_the_group_lasts_as_its_longest_member) {
     CHECK(v.x == 2.0f && v.y == 2.0f);
     run(set, 2);
     CHECK(v.y == 4.0f && v.z == 0.0f);
-    run(set, 7); // the group ended at 10 (x's length): z is 1 frame in
+    run(set, 7);                        // the group ended at 10 (x's length): z is 1 frame in
     CHECK(v.x == 10.0f && v.z == 1.0f); // z: 0 → 2 over 2 frames
 }
 
@@ -162,8 +164,11 @@ NNH_TEST(the_first_group_writes_its_from_values_when_appended) {
     TweenSet set({.tweens = 8, .steps = 8});
     Values v;
     v.y = 9;
-    set.sequence().from_to(&v.x, 3.0f, 4.0f, Frames{2}).join().from_to(&v.z, 7.0f, 8.0f, Frames{2}).from_to(
-        &v.y, 1.0f, 2.0f, Frames{2});
+    set.sequence()
+        .from_to(&v.x, 3.0f, 4.0f, Frames{2})
+        .join()
+        .from_to(&v.z, 7.0f, 8.0f, Frames{2})
+        .from_to(&v.y, 1.0f, 2.0f, Frames{2});
     CHECK(v.x == 3.0f && v.z == 7.0f);
     CHECK(v.y == 9.0f); // second group: written when reached
 }
@@ -177,7 +182,8 @@ NNH_TEST(a_childs_on_finish_and_event_fire_when_that_child_ends) {
         TweenSet set({.tweens = 8, .steps = 8});
         Values v;
         int received = 0;
-        nnh::Subscription sub = nnh::events::subscribe<StepDone>([&](const StepDone& e) { received += e.step; });
+        nnh::Subscription sub =
+            nnh::events::subscribe<StepDone>([&](const StepDone& e) { received += e.step; });
         set.sequence()
             .to(&v.x, 1.0f, Frames{2}, {.on_finish = [p = &v] { p->mark('x'); }, .publish = StepDone{1}})
             .to(&v.y, 1.0f, Frames{2}, {.on_finish = [p = &v] { p->mark('y'); }});
@@ -194,7 +200,8 @@ NNH_TEST(a_childs_on_finish_and_event_fire_when_that_child_ends) {
 NNH_TEST(a_sequence_with_only_calls_finishes_on_its_first_update) {
     TweenSet set({.tweens = 8, .steps = 8});
     Values v;
-    const TweenHandle h = set.sequence({.on_finish = [p = &v] { p->mark('f'); }}).call([p = &v] { p->mark('c'); });
+    const TweenHandle h =
+        set.sequence({.on_finish = [p = &v] { p->mark('f'); }}).call([p = &v] { p->mark('c'); });
     set.update();
     CHECK(v.n == 2 && v.order[0] == 'c' && v.order[1] == 'f' && !set.running(h));
 }
@@ -212,11 +219,46 @@ NNH_TEST(each_step_uses_one_slot_and_one_step_record) {
     CHECK(set.after(Frames{1}, [] {}) != TweenHandle{});
 }
 
+NNH_TEST(a_step_joined_to_a_later_group_is_not_written_at_append) {
+    TweenSet set({.tweens = 8, .steps = 8});
+    Values v;
+    set.sequence()
+        .from_to(&v.x, 3.0f, 4.0f, Frames{2})
+        .from_to(&v.y, 5.0f, 6.0f, Frames{2})
+        .join()
+        .from_to(&v.z, 7.0f, 8.0f, Frames{2});
+    CHECK(v.x == 3.0f && v.y == 0.0f && v.z == 0.0f);
+}
+
+NNH_TEST(steps_appended_after_the_sequence_started_remove_it) {
+    TweenSet set({.tweens = 8, .steps = 8});
+    g_set = &set;
+    static nnh::SequenceBuilder* builder = nullptr;
+    nnh::SequenceBuilder b = set.sequence().wait(Frames{5});
+    builder = &b;
+    set.update();
+    CHECK(tween_test::asserts_or_is_ignored([] { builder->wait(Frames{1}); }));
+    if (!nnh::build::kAssertsEnabled) CHECK(b.handle() == TweenHandle{} && set.active() == 0);
+}
+
+NNH_TEST(a_sequence_longer_than_an_hour_is_refused) {
+    TweenSet set({.tweens = 8, .steps = 8});
+    g_set = &set;
+    CHECK(tween_test::asserts_or_is_ignored([] {
+        (void)g_set->sequence().wait(Duration::from_seconds(1800)).wait(Duration::from_seconds(1801));
+    }));
+    if (!nnh::build::kAssertsEnabled) CHECK(set.active() == 0);
+    CHECK(set.running(set.sequence().wait(Duration::from_seconds(1800)).wait(Duration::from_seconds(1800))));
+}
+
 NNH_TEST(a_failed_build_removes_the_partial_sequence) {
     TweenSet set({.tweens = 80, .steps = 2});
     g_set = &set;
     CHECK(tween_test::asserts_or_is_ignored(out_of_step_records));
+    TweenSet other({.tweens = 80, .steps = 80}); // a fresh set: the case above may have left steps behind
+    g_set = &other;
     CHECK(tween_test::asserts_or_is_ignored(infinite_child));
+    g_set = &set;
     if (!nnh::build::kAssertsEnabled) {
         const TweenHandle h = set.sequence().wait(Frames{1}).wait(Frames{1}).wait(Frames{1});
         CHECK(h == TweenHandle{});

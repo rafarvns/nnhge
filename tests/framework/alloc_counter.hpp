@@ -1,7 +1,7 @@
 #pragma once
-// Counts calls to the global operator new while enabled (alloc_counter.cpp replaces it for the whole test binary),
-// so tests can prove that code allocates nothing on the C++ heap. Engine allocations through nnh::mem are checked
-// with mem::live_allocations() instead.
+// Counts calls to the global operator new while enabled (alloc_counter.cpp replaces it for the whole test
+// binary), so tests can prove that code allocates nothing on the C++ heap. Engine allocations through
+// nnh::mem are checked with mem::live_allocations() instead.
 
 namespace nnh::test::alloc_counter {
 

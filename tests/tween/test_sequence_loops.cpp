@@ -1,6 +1,6 @@
-// Whole-sequence loops, yoyo, completion and commands (spec 015 FR-9..FR-12; T4.3): restart, yoyo (steps backwards
-// in reverse order, calls in both directions), sequence callbacks and events, complete, kill, kill_target, pause,
-// and callbacks inside call steps.
+// Whole-sequence loops, yoyo, completion and commands (spec 015 FR-9..FR-12; T4.3): restart, yoyo (steps
+// backwards in reverse order, calls in both directions), sequence callbacks and events, complete, kill,
+// kill_target, pause, and callbacks inside call steps.
 
 #include "nnh/events.hpp"
 #include "tween_fixture.hpp"
@@ -31,11 +31,12 @@ void forever_with_zero_length() {
 
 NNH_TEST(restart_loops_replay_every_step_from_its_captured_start) {
     Ctx c;
-    c.seq = c.set.sequence({.loops = 3, .on_finish = [p = &c] { ++p->finishes; }, .on_loop = [p = &c] {
-                                ++p->loops;
-                            }})
-                .to(&c.x, 2.0f, Frames{2})
-                .call([p = &c] { ++p->calls; });
+    c.seq =
+        c.set
+            .sequence(
+                {.loops = 3, .on_finish = [p = &c] { ++p->finishes; }, .on_loop = [p = &c] { ++p->loops; }})
+            .to(&c.x, 2.0f, Frames{2})
+            .call([p = &c] { ++p->calls; });
     run(c.set, 1);
     CHECK(c.x == 1.0f);
     run(c.set, 1); // loop 1 ends (x = 2, call), loop 2 starts in the same update (x back to its start)
@@ -45,6 +46,69 @@ NNH_TEST(restart_loops_replay_every_step_from_its_captured_start) {
     run(c.set, 3);
     CHECK(c.calls == 3 && c.loops == 2 && c.finishes == 1 && c.x == 2.0f);
     CHECK(!c.set.running(c.seq));
+}
+
+NNH_TEST(a_restart_replays_a_call_at_the_start_of_the_loop) {
+    Ctx c;
+    c.set.sequence({.loops = 3}).call([p = &c] { ++p->calls; }).to(&c.x, 1.0f, Frames{2});
+    run(c.set, 1);
+    CHECK(c.calls == 1);
+    run(c.set, 1); // loop 2 starts in this update: its call runs here
+    CHECK(c.calls == 2);
+    run(c.set, 4);
+    CHECK(c.calls == 3);
+}
+
+NNH_TEST(a_looping_yoyo_step_inside_a_sequence_mirrors_and_ends_on_its_start) {
+    Ctx c;
+    c.set.sequence()
+        .to(&c.x, 4.0f, Frames{4}, {.ease = Ease::QuadIn, .loops = 2, .loop_mode = LoopMode::Yoyo})
+        .to(&c.y, 1.0f, Frames{1});
+    run(c.set, 1); // the step's first loop plays forwards
+    CHECK(c.x == 4.0f * nnh::ease(Ease::QuadIn, 0.25f));
+    run(c.set, 4); // the step's second loop, backwards, 1/4 in: its forward value at 3/4
+    CHECK(c.x == 4.0f * nnh::ease(Ease::QuadIn, 0.75f));
+    run(c.set, 3);
+    CHECK(c.x == 0.0f && c.y == 0.0f); // the step ended on its start value; y starts now
+}
+
+NNH_TEST(a_looping_step_calls_on_loop_between_its_loops) {
+    Ctx c;
+    c.set.sequence().to(&c.x, 1.0f, Frames{2},
+                        {.delay = Frames{1}, .loops = 3, .on_loop = [p = &c] { ++p->loops; }});
+    run(c.set, 2);
+    CHECK(c.loops == 0);
+    run(c.set, 1);
+    CHECK(c.loops == 1);
+    run(c.set, 10);
+    CHECK(c.loops == 2);
+}
+
+NNH_TEST(a_step_back_at_its_start_is_not_written_again) {
+    Ctx c;
+    int writes = 0;
+    c.set.sequence({.loops = 2, .loop_mode = LoopMode::Yoyo})
+        .from_to(nnh::Setter<float>{[&writes](float) { ++writes; }}, 0.0f, 1.0f, Frames{2},
+                 {.delay = Frames{2}});
+    run(c.set, 4); // forward: written when its delay ends (frame 2), at 3, at its end (4)
+    CHECK(writes == 3);
+    run(c.set,
+        4); // backward: at 3, back at its start at 2; then nothing while the sequence crosses its delay
+    CHECK(writes == 5);
+}
+
+NNH_TEST(a_child_callback_that_pauses_its_sequence_stops_further_loops) {
+    Ctx c;
+    c.seq = c.set.sequence({.loops = 10}).to(&c.x, 1.0f, Frames{1}, {.on_finish = [p = &c] {
+        ++p->child_finishes;
+        p->set.pause(p->seq);
+    }});
+    c.set.advance(Frames{5});
+    // Paused at the end of its first loop: that loop end waits for the resume.
+    CHECK(c.child_finishes == 1 && c.set.paused(c.seq) && c.set.loops_left(c.seq) == 10);
+    c.set.resume(c.seq);
+    c.set.update();
+    CHECK(c.set.loops_left(c.seq) == 9 && c.child_finishes == 2); // the next loop ended it and paused again
 }
 
 NNH_TEST(yoyo_plays_the_steps_backwards_in_reverse_order) {
@@ -75,9 +139,9 @@ NNH_TEST(call_steps_run_in_both_directions_but_not_twice_at_a_turn) {
     run(c.set, 4); // back past the call
     CHECK(c.calls == 2);
     Ctx d;
-    d.set.sequence({.loops = 3, .loop_mode = LoopMode::Yoyo})
-        .to(&d.x, 1.0f, Frames{2})
-        .call([p = &d] { ++p->calls; });
+    d.set.sequence({.loops = 3, .loop_mode = LoopMode::Yoyo}).to(&d.x, 1.0f, Frames{2}).call([p = &d] {
+        ++p->calls;
+    });
     run(d.set, 4); // forward to the call at the end, then straight back
     CHECK(d.calls == 1);
     run(d.set, 2); // forward again: passes it once more
@@ -90,7 +154,8 @@ NNH_TEST(a_sequence_publishes_its_event_when_it_finishes) {
     {
         Ctx c;
         int received = 0;
-        nnh::Subscription sub = nnh::events::subscribe<IntroFinished>([&](const IntroFinished&) { ++received; });
+        nnh::Subscription sub =
+            nnh::events::subscribe<IntroFinished>([&](const IntroFinished&) { ++received; });
         c.set.sequence({.publish = IntroFinished{}}).to(&c.x, 1.0f, Frames{2}).wait(Frames{1});
         run(c.set, 2);
         CHECK(nnh::frame());
@@ -134,7 +199,9 @@ NNH_TEST(kill_stops_a_sequence_silently_and_frees_its_slots) {
     c.set.kill(c.seq);
     run(c.set, 10);
     CHECK(c.x == 2.0f && c.y == 0.0f && c.finishes == 0 && c.child_finishes == 0);
-    for (int i = 0; i < 16; ++i) CHECK(c.set.after(Frames{1}, [] {}) != TweenHandle{});
+    for (int i = 0; i < 16; ++i) {
+        CHECK(c.set.after(Frames{1}, [] {}) != TweenHandle{});
+    }
 }
 
 NNH_TEST(kill_target_kills_the_whole_sequence_that_animates_it) {

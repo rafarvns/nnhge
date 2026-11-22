@@ -3,6 +3,7 @@
 #include "scene/scene_stack.hpp"
 
 #include "nnh/assert.hpp"
+#include "scene/scene_attachments.hpp"
 
 namespace nnh::detail {
 
@@ -31,6 +32,7 @@ void SceneStack::do_pop() {
     stack_[size_] = nullptr;
     scene->on_stack_ = false;
     scene->on_exit();
+    scene_notify(*scene, SceneHook::AfterExit); // after on_exit(): also clears what on_exit() started (D30)
 }
 
 void SceneStack::apply_pending() {
@@ -59,6 +61,7 @@ void SceneStack::apply_pending() {
 
 void SceneStack::update_and_draw() {
     if (size_ == 0) return;
+    scene_notify(*stack_[size_ - 1], SceneHook::BeforeUpdate); // only the top scene's attachments (D30)
     stack_[size_ - 1]->update(); // requests from update() are only queued: the stack is stable while drawing
     for (int i = 0; i < size_; ++i) stack_[i]->draw();
 }

@@ -1,10 +1,11 @@
-// Playing sequences (spec 015 FR-10, FR-16): each update moves the sequence's position along its loop (forwards,
-// or backwards in a yoyo loop) and plays every step that the move crosses. A step is evaluated at its local time,
-// so leftover time carries across steps and loops, a yoyo loop mirrors every step, and nothing drifts.
+// Playing sequences (spec 015 FR-10, FR-16): each update moves the sequence's position along its loop
+// (forwards, or backwards in a yoyo loop) and plays every step that the move crosses. A step is evaluated at
+// its local time, so leftover time carries across steps and loops, a yoyo loop mirrors every step, and
+// nothing drifts.
 //
-// Positions are integer ticks within the loop. A forward move (p0, p1] crosses what lies after p0 up to p1 (p0 is
-// -1 at the start of the first loop and of every restart, so steps at 0 play); a backward move [p1, p0) mirrors
-// it, so a call step at a turning point never runs twice in a row.
+// Positions are integer ticks within the loop. A forward move (p0, p1] crosses what lies after p0 up to p1
+// (p0 is -1 at the start of the first loop and of every restart, so steps at 0 play); a backward move [p1,
+// p0) mirrors it, so a call step at a turning point never runs twice in a row.
 
 #include "nnh/assert.hpp"
 #include "tween/tween_internal.hpp"
@@ -66,7 +67,7 @@ bool play_forward(Play& p, const StepPlace* places, int n, int64_t p0, int64_t p
             if (!p.alive()) return false;
             continue;
         }
-        if (t1 < c.delay || t0 >= length) continue; // not started yet, or done before this move
+        if (t1 < c.delay || t0 >= length) continue;               // not started yet, or done before this move
         if ((c.flags & slot_flag::kStarted) == 0) tween_begin(c); // captured when the sequence reaches it
         write_child_at(c, t1 < length ? t1 : length, length);
         if (!child_loops(p, step.child, t0, t1)) return false;

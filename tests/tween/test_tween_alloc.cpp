@@ -1,6 +1,6 @@
-// No allocation while playing (spec 015 FR-4, AC-4; T4.4): after a set is created, starting, building, playing,
-// finishing and killing tweens, timers and sequences allocate nothing (C++ heap and nnh::mem); the leak report is
-// clean once the sets are gone.
+// No allocation while playing (spec 015 FR-4, AC-4; T4.4): after a set is created, starting, building,
+// playing, finishing and killing tweens, timers and sequences allocate nothing (C++ heap and nnh::mem); the
+// leak report is clean once the sets are gone.
 
 #include "alloc_counter.hpp"
 #include "nnh/gfx.hpp"
@@ -25,9 +25,10 @@ struct Game {
 void play(Game& g) {
     for (int round = 0; round < 20; ++round) {
         const TweenHandle t = g.set.to(&g.a, 1.0f, Frames{3}, {.ease = nnh::Ease::ElasticOut, .loops = 2});
-        g.set.by(&g.b, {1, 2}, Frames{2}, {.loop_mode = nnh::LoopMode::Yoyo, .on_finish = [p = &g] { ++p->calls; }});
-        g.set.from_to(nnh::Setter<nnh::Color>{[p = &g](nnh::Color v) { p->c = v; }}, nnh::Color{}, nnh::rgb(9, 9, 9),
-                      Frames{4});
+        g.set.by(&g.b, {1, 2}, Frames{2},
+                 {.loop_mode = nnh::LoopMode::Yoyo, .on_finish = [p = &g] { ++p->calls; }});
+        g.set.from_to(nnh::Setter<nnh::Color>{[p = &g](nnh::Color v) { p->c = v; }}, nnh::Color{},
+                      nnh::rgb(9, 9, 9), Frames{4});
         g.set.after(Frames{2}, [p = &g] { ++p->calls; });
         const TweenHandle tick = g.set.every(Frames{1}, [p = &g] { ++p->calls; }, 3);
         const TweenHandle seq = g.set.sequence({.loops = 2, .loop_mode = nnh::LoopMode::Yoyo})

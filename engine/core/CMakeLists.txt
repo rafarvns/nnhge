@@ -63,6 +63,8 @@ add_library(nnh_core STATIC
     src/log/log.cpp
     src/memory/memory.cpp
     src/result/error.cpp
+    src/scene/scene_attachments.cpp
+    src/scene/scene_notify.cpp
     src/scene/scene_stack.cpp
     src/scene/scenes.cpp
     src/remote/remote_input.cpp
@@ -111,6 +113,7 @@ set(_nnh_tween_sources
     src/tween/tween_commands.cpp
     src/tween/tween_finish.cpp
     src/tween/tween_log.cpp
+    src/tween/tween_scene.cpp
     src/tween/tween_set.cpp
     src/tween/tween_start.cpp
     src/tween/tween_update.cpp

@@ -1,5 +1,6 @@
-// Building sequences (spec 015 FR-10): a sequence slot on the start-order list, its steps appended in place (one
-// step record + one child slot each, no allocation), limits, and a failed build that removes the whole sequence.
+// Building sequences (spec 015 FR-10): a sequence slot on the start-order list, its steps appended in place
+// (one step record + one child slot each, no allocation), limits, and a failed build that removes the whole
+// sequence.
 
 #include "nnh/assert.hpp"
 #include "tween/tween_internal.hpp"
@@ -52,8 +53,12 @@ SequenceBuilder TweenSet::sequence(const SequenceOptions& o) {
     }
     const int index = tween_take_slot(block_);
     if (index < 0) return {block_, {}};
-    const TweenOptions options{.delay = o.delay, .loops = o.loops, .loop_mode = o.loop_mode,
-                               .on_finish = o.on_finish, .on_loop = o.on_loop, .publish = o.publish};
+    const TweenOptions options{.delay = o.delay,
+                               .loops = o.loops,
+                               .loop_mode = o.loop_mode,
+                               .on_finish = o.on_finish,
+                               .on_loop = o.on_loop,
+                               .publish = o.publish};
     TweenSpec spec;
     spec.kind = TweenKind::Sequence;
     SlotHot& s = block_->hot[index];
@@ -62,12 +67,12 @@ SequenceBuilder TweenSet::sequence(const SequenceOptions& o) {
     return {block_, {static_cast<std::uint16_t>(index), block_->serial, s.generation}};
 }
 
-SequenceBuilder& SequenceBuilder::append(const detail::TweenSpec& spec, FrameTime time, const TweenOptions& options,
-                                         bool call) {
+SequenceBuilder& SequenceBuilder::append(const detail::TweenSpec& spec, FrameTime time,
+                                         const TweenOptions& options, bool call) {
     using namespace detail;
     const bool join = std::exchange(join_next_, false);
     const int seq = tween_find(block_, handle_);
-    if (seq < 0) return *this; // a failed or ended sequence: ignored (the failure was reported)
+    if (seq < 0) return *this; // a failed or ended sequence: ignored (the failure was already reported)
     SlotHot& s = block_->hot[seq];
     const Tail tail = tail_of(*block_, s);
     const char* problem = check_step(*block_, s, tail, options);
@@ -84,12 +89,16 @@ SequenceBuilder& SequenceBuilder::append(const detail::TweenSpec& spec, FrameTim
     SlotHot& c = block_->hot[child];
     tween_fill(c, block_->cold[child], spec, time, options);
     const int st = take_step(*block_);
-    block_->steps[st] = Step{static_cast<std::int16_t>(child), -1,
+    block_->steps[st] = Step{static_cast<std::int16_t>(child),
+                             -1,
                              static_cast<std::uint8_t>((join && tail.count > 0 ? step_flag::kJoin : 0) |
                                                        (call ? step_flag::kCall : 0)),
                              {}};
-    if (tail.last >= 0) block_->steps[tail.last].next = static_cast<std::int16_t>(st);
-    else s.first_step = static_cast<std::int16_t>(st);
+    if (tail.last >= 0) {
+        block_->steps[tail.last].next = static_cast<std::int16_t>(st);
+    } else {
+        s.first_step = static_cast<std::int16_t>(st);
+    }
     StepPlace places[kMaxSequenceSteps];
     std::int64_t total = 0;
     sequence_layout(*block_, seq, places, total);
@@ -114,8 +123,12 @@ SequenceBuilder& SequenceBuilder::join() {
     return *this;
 }
 
-SequenceBuilder& SequenceBuilder::wait(FrameTime time) { return append({}, time, {}); }
+SequenceBuilder& SequenceBuilder::wait(FrameTime time) {
+    return append({}, time, {});
+}
 
-SequenceBuilder& SequenceBuilder::call(TweenCallback fn) { return append({}, Frames{0}, {.on_finish = fn}, true); }
+SequenceBuilder& SequenceBuilder::call(TweenCallback fn) {
+    return append({}, Frames{0}, {.on_finish = fn}, true);
+}
 
 } // namespace nnh

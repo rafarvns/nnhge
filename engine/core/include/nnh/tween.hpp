@@ -14,6 +14,8 @@
 
 namespace nnh {
 
+class Scene; // <nnh/scene.hpp>
+
 // ---- Easing (FR-1..FR-3) ----
 
 /// The standard easing curves (Robert Penner's equations): back overshoots by 1.70158, elastic uses period 0.3
@@ -182,7 +184,18 @@ struct TweenHandle {
 class TweenSet {
 public:
     TweenSet() = default; ///< no storage: every start fails (asserts in Debug/Development)
+    /// Unbound: the game calls update() (or advance()) once per frame.
     explicit TweenSet(const TweenSetConfig& config);
+    /// Bound to `scene` (FR-15, D30): updated automatically right before the scene's update(), only while it is
+    /// the top scene (a pause menu over it freezes it), and cleared silently (no callbacks, no events) right after
+    /// its on_exit(). Make it a member of that scene: it must not outlive it. Don't call update()/advance() on it
+    /// (asserts). Unbound and bound sets cost the scene nothing else.
+    /// @code
+    /// class Level : public nnh::Scene {
+    ///     nnh::TweenSet tweens_{*this, {.tweens = 32}};
+    /// };
+    /// @endcode
+    TweenSet(Scene& scene, const TweenSetConfig& config);
     ~TweenSet(); ///< kills everything silently (no callbacks, no events) and frees the block
     TweenSet(TweenSet&& other) noexcept;
     TweenSet& operator=(TweenSet&& other) noexcept;
@@ -261,12 +274,13 @@ public:
     void kill_target(const void* target); ///< kills every tween whose pointer target is `target`
 
     // Clock (FR-16, FR-17).
-    void update();                ///< one 60 Hz frame × speed
-    void advance(FrameTime time); ///< any span × speed (the sub-tick remainder carries to the next call)
+    void update();                ///< one 60 Hz frame × speed (unbound sets only)
+    void advance(FrameTime time); ///< any span × speed, the sub-tick remainder carried (unbound sets only)
     void set_speed(float speed);  ///< 0..64, rounded once to 1/4096 (0.5 is exact); 0 freezes the set
     float speed() const;
 
-    int active() const;   ///< tweens and timers alive
+    int active() const;   ///< tweens, timers and sequences alive (a sequence's steps are not counted)
+    bool bound() const;   ///< bound to a scene (updated and cleared by it)
     int capacity() const; ///< 0 without storage
 
 private:

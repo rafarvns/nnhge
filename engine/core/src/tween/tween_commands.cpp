@@ -90,7 +90,11 @@ void TweenSet::resume_all() {
 }
 
 void TweenSet::kill_all() {
-    detail::for_each_active(block_, detail::tween_kill_slot);
+    if (block_ != nullptr) detail::tween_kill_all(*block_);
+}
+
+void detail::tween_kill_all(TweenBlock& b) {
+    for_each_active(&b, tween_kill_slot);
 }
 
 void TweenSet::kill_target(const void* target) {

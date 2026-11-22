@@ -42,6 +42,12 @@ void tween_finish(TweenBlock& block, int index, bool backwards_end);
 void tween_run_completion(TweenBlock& block, int index);
 /// Runs a slot's on_loop callback (depth limit applies).
 void tween_loop_callback(TweenBlock& block, int index);
+/// One update pass over the start-order list (tween_update.cpp).
+void tween_pass(TweenBlock& block, std::int32_t ticks);
+/// Kills every tween, timer and sequence silently.
+void tween_kill_all(TweenBlock& block);
+/// Detaches a bound set's block from its scene (tween_scene.cpp).
+void tween_unbind(TweenBlock& block);
 /// Marks the block busy around callbacks; leaving the outermost section sweeps the Dead slots.
 void tween_enter(TweenBlock& block);
 void tween_leave(TweenBlock& block);
@@ -59,9 +65,8 @@ int sequence_layout(const TweenBlock& block, int index, StepPlace out[kMaxSequen
 void sequence_advance(TweenBlock& block, int index, std::int32_t ticks);
 /// complete(): every step to its end (or, `backwards`, to its start), capturing first; no callbacks.
 void sequence_jump_to_end(TweenBlock& block, int index, bool backwards);
-/// Marks the children Dead (handles of children don't exist; this only ends them).
-void sequence_kill_children(TweenBlock& block, int index);
-/// Frees the children and the step records (when the sequence slot itself is freed).
+/// Frees the children and the step records when the sequence slot itself is freed (children have no handles,
+/// so ending the sequence ends them: nothing else reaches them).
 void sequence_release(TweenBlock& block, int index);
 bool sequence_has_target(const TweenBlock& block, int index, const void* target);
 

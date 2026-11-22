@@ -520,6 +520,80 @@ Determinism probe (T0.2, scratch `probe.cpp` with draft `sin_quarter`, `exp2_neg
   before callbacks), and one swaps the final write with the kill inside `tween_finish` (not observable). Result:
   51/51 non-equivalent mutants killed.
 
+#### Stage 4 refinements (2026-11-22, implemented)
+
+- **Sequences are played by position, not by advancing children.** Each update moves the sequence's position along
+  its loop (integer ticks; backwards in a yoyo loop) and plays every step the move crosses. A step is evaluated at
+  its local time (its own delay, loops and yoyo included), so carry across steps and loops, the mirrored yoyo and
+  `complete()` need no per-child state. The children are slots off the start-order list, reached through the step
+  records; `active()` counts tweens, timers and sequences, not a sequence's steps. A sequence is one slot plus one
+  slot and one step record per step, as planned.
+- **Crossing rules.** A forward move plays what lies in (p0, p1]; at the start of the first loop and of every
+  restart p0 is -1, so steps at 0 play. A backward move plays [p1, p0), so a call step at a turning point never runs
+  twice in a row (forward then straight back). A step's start value is captured when the move first reaches it (the
+  end of its own delay). Within one update the crossed steps play group by group in step order (forwards) or in
+  reverse (backwards), not strictly sorted by time inside a group.
+- **Callbacks.** Call steps run in both directions. A child's `on_finish`, `on_loop` and event run only in forward
+  play, when that child ends (or loops). If a callback ends the sequence (kill, complete, kill_target) the update
+  stops at once; if it pauses the sequence, the rest of that update's move still plays (values stay consistent) and
+  no further loop starts.
+- **Builder rules.** A failed append (full set, out of step records, more than 64 steps, a step looping forever, an
+  invalid step, a sequence longer than 1 hour, or steps appended after the sequence started) removes the whole
+  sequence and leaves an empty handle (asserts in Debug/Development). `from` of the first group is written at append
+  when neither the sequence nor the step has a delay. An infinite sequence of length 0 (only calls) asserts at its
+  first update and is removed in Release.
+- `SequenceBuilder` also has `by()` (the plan listed it implicitly); `SequenceOptions` mirrors `TweenOptions`.
+  `SlotHot` gained `first_step` inside existing padding (sizes unchanged: 3DS 96 + 88 B, PC 112 + 112 B);
+  `TweenBlock` is now 68 B on 3DS and 96 B on PC (step free list, scene attachment, scene pointer).
+- The "three 0.5 s steps end on update 90" case lives in `tests/tween/test_sequence.cpp` (with the other sequence
+  playing tests) instead of `test_frame_clock.cpp`.
+- **Alloc counter** (`tests/framework/alloc_counter.{hpp,cpp}`, in `nnh_test_framework`): a counting replacement of
+  the global scalar `operator new`/`delete` (libstdc++'s array and nothrow forms forward to it), with
+  `enable(bool)`, `reset()`, `count()`. Its own test keeps the pointer in a `volatile` so Release can't elide the
+  new/delete pair.
+
+#### Stage 5 refinements and results (2026-11-22, implemented)
+
+- D30 as planned, with two refinements for size: the pass state and `scene_notify()` live in
+  `scene/scene_notify.cpp`, and `scene_attach`/`scene_detach` in `scene/scene_attachments.cpp`, so a game with
+  scenes but no bound set links only `scene_notify()`. `SceneAccess` (the friend of `Scene`) is defined in the
+  internal header. The `Scene` destructor keeps **one** `NNH_VERIFY` (its message now also names a TweenSet still
+  attached) instead of two, because that code is inlined into every game scene's destructor. Notifying from inside a
+  notification is an `NNH_ASSERT` (it cannot happen through the scene stack, whose changes are deferred).
+- A bound set ignores a notification while it is busy (also impossible through the stack), detaches at once when it
+  is destroyed or move-assigned (also on the misuse path that defers freeing), and `bound()` reports it.
+- **T5.4 opt-in check** (`hello`, text bytes against stage 0; no `tween` symbol in any `hello`):
+
+  | Build | Stage 0 | Now | Δ text |
+  |-------|---------|-----|--------|
+  | 3ds-release `hello.elf` | 216 084 | 216 260 | **+176** (budget 256) |
+  | 3ds-dev `hello.elf` | 232 464 | 232 928 | +464 (assert strings of Development) |
+  | pc-release `hello.exe` | 129 080 | 129 376 | +296 (x64 code; 40 B over the 256 target) |
+  | pc-debug `hello.exe` | 196 572 | 197 288 | +716 (unoptimized) |
+
+  `hello.3dsx` (3ds-release) went from 261 460 to 261 640 B. `Scene` grew by one pointer (4 B on 3DS, 8 B on PC).
+  `examples/scenes` screenshot checked (unchanged title screen); the platformer's `gate.nnhs` and `level.nnhs` pass
+  with `nnh run platformer --pc --script`.
+- **Hand mutation testing, stages 4–5** (same scratch runner): 40 mutants over sequence playing, layout, building,
+  commands on sequences, the scene hooks, attach/detach/notify and binding. 26 were killed at once. 13 real
+  survivors got new tests that kill them:
+  - a call at the start of a restarted loop;
+  - a looping yoyo step inside a sequence (forward and mirrored loops, ending on its start);
+  - `on_loop` of a looping step;
+  - a step back at its start is not written again;
+  - a child callback that pauses its sequence;
+  - a step joined to a later group is not written at append;
+  - appending after the start;
+  - a sequence longer than 1 hour;
+  - a step looping forever (the old test hid it behind an earlier failure in the same set);
+  - a node attached during a pass that the pass still reaches (two mutants);
+  - the partial-sequence cleanup, visible only in Release, since Debug stops at the assert: checked with the pc-release
+    tests.
+
+  One was equivalent: marking a sequence's children Dead when it ends was dead code (nothing reads a child's state;
+  freeing the sequence frees them), so `sequence_kill_children` was removed. Result: 39/39 non-equivalent mutants
+  killed.
+
 ## Test strategy
 
 All tests run on the fake platform (`ctest --preset pc-debug`). Stage ends are also run on VM 120 (GCC 13/14,

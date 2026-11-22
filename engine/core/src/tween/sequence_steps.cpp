@@ -1,5 +1,6 @@
 // The step list of a sequence (spec 015 FR-10): layout in groups, ending and freeing the children with their
-// sequence, and kill_target's search. Children are slots off the start-order list, reached only through steps.
+// sequence, and kill_target's search. Children are slots off the start-order list, reached only through
+// steps.
 
 #include "tween/tween_internal.hpp"
 
@@ -10,7 +11,8 @@ int sequence_layout(const TweenBlock& b, int index, StepPlace out[kMaxSequenceSt
     std::int64_t group_start = 0, group_length = 0;
     for (int st = b.hot[index].first_step; st >= 0 && count < kMaxSequenceSteps; st = b.steps[st].next) {
         const SlotHot& c = b.hot[b.steps[st].child];
-        if (count > 0 && (b.steps[st].flags & step_flag::kJoin) == 0) { // a new group starts after the last one
+        if (count > 0 &&
+            (b.steps[st].flags & step_flag::kJoin) == 0) { // a new group starts after the last one
             group_start += group_length;
             group_length = 0;
         }
@@ -23,14 +25,6 @@ int sequence_layout(const TweenBlock& b, int index, StepPlace out[kMaxSequenceSt
     return count;
 }
 
-void sequence_kill_children(TweenBlock& b, int index) {
-    for (int st = b.hot[index].first_step; st >= 0; st = b.steps[st].next) {
-        SlotHot& c = b.hot[b.steps[st].child];
-        if (++c.generation == 0) c.generation = 1;
-        c.state = SlotState::Dead;
-    }
-}
-
 void sequence_release(TweenBlock& b, int index) {
     SlotHot& s = b.hot[index];
     for (int st = s.first_step; st >= 0;) {
@@ -38,6 +32,7 @@ void sequence_release(TweenBlock& b, int index) {
         const int next = step.next;
         SlotHot& c = b.hot[step.child];
         c.state = SlotState::Free;
+        if (++c.generation == 0) c.generation = 1;
         c.prev = -1;
         c.next = b.free_head;
         b.free_head = step.child;

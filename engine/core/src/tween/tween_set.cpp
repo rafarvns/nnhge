@@ -64,6 +64,7 @@ TweenBlock* create_block(const TweenSetConfig& c) {
 
 void destroy_block(TweenBlock* b) {
     if (b == nullptr) return;
+    tween_unbind(*b); // the scene must not notify a block that is going away
     if (b->busy == 0) {
         mem::free(b); // slots hold only trivially destructible data: nothing runs, nothing is called back
         return;
@@ -118,6 +119,9 @@ TweenSet& TweenSet::operator=(TweenSet&& other) noexcept {
 
 int TweenSet::active() const {
     return block_ != nullptr ? block_->active : 0;
+}
+bool TweenSet::bound() const {
+    return block_ != nullptr && block_->scene != nullptr;
 }
 int TweenSet::capacity() const {
     return block_ != nullptr ? block_->capacity : 0;

@@ -4,6 +4,7 @@
 // only on loop or finish.
 
 #include "nnh/tween.hpp"
+#include "scene/scene_attachments.hpp"
 
 #include <cstdint>
 
@@ -85,6 +86,8 @@ struct TweenBlock {
     std::uint8_t callback_depth = 0; ///< callbacks running on the stack (FR-12)
     bool depth_logged = false;       ///< the depth-limit error is logged once per busy section
     bool doomed = false; ///< its set was destroyed while busy (misuse): freed by the outermost leave
+    SceneAttachment attachment{}; ///< bound sets (D30): the node in the scene's list
+    Scene* scene = nullptr;       ///< the scene a bound set belongs to
 };
 
 } // namespace nnh::detail

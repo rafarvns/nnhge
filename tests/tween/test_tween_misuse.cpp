@@ -32,9 +32,11 @@ void destroy_the_set_from_its_own_callback() {
     g_holder->set.update();
 }
 
+// Lives outside the call: an assert jumps out of it, which would skip a local set's destructor (a leak).
+TweenSet* g_other = nullptr;
+
 void use_a_foreign_handle() {
-    TweenSet other({.tweens = 1});
-    const TweenHandle h = other.after(Frames{1}, [] {});
+    const TweenHandle h = g_other->after(Frames{1}, [] {});
     g_holder->set.complete(h);
 }
 
@@ -76,6 +78,8 @@ NNH_TEST(release_logs_name_the_misuse) {
     tween_test::restart();
     Holder h;
     g_holder = &h;
+    TweenSet other({.tweens = 1});
+    g_other = &other;
     use_a_foreign_handle();
     CHECK(tween_test::last_log_mentions("handle of another set"));
     over_an_hour();
@@ -89,6 +93,8 @@ NNH_TEST(release_logs_name_the_misuse) {
 NNH_TEST(foreign_handles_and_absurd_times_assert_in_debug) {
     Holder h;
     g_holder = &h;
+    TweenSet other({.tweens = 1});
+    g_other = &other;
     CHECK(tween_test::asserts_or_is_ignored(use_a_foreign_handle));
     CHECK(tween_test::asserts_or_is_ignored(over_an_hour));
     CHECK(tween_test::asserts_or_is_ignored(nan_speed));

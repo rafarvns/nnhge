@@ -13,6 +13,18 @@ target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 # Unit tests: nnh::core driven through the fake platform.
 add_executable(nnh_tests
     framework/alloc_counter.cpp
+    actions/test_action_blocking.cpp
+    actions/test_action_combine.cpp
+    actions/test_action_contexts.cpp
+    actions/test_action_declare.cpp
+    actions/test_action_fallback.cpp
+    actions/test_action_kinds.cpp
+    actions/test_action_queries.cpp
+    actions/test_action_repeat.cpp
+    actions/test_action_set.cpp
+    actions/test_input_view.cpp
+    actions/test_source_eval.cpp
+    actions/test_source_names.cpp
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
     assets/test_asset_index.cpp

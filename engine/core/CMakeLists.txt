@@ -98,6 +98,25 @@ add_library(nnh_core STATIC
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )
+# Tweens and timers (spec 015): every float operation of the module lives in these files. No fused multiply-add,
+# so the curves and the tweened values have the same bits on every compiler and system (plan 015 "Determinism").
+set(_nnh_tween_sources
+    src/tween/ease.cpp
+    src/tween/ease_math.cpp
+    src/tween/timer.cpp
+    src/tween/tween_advance.cpp
+    src/tween/tween_commands.cpp
+    src/tween/tween_finish.cpp
+    src/tween/tween_log.cpp
+    src/tween/tween_set.cpp
+    src/tween/tween_start.cpp
+    src/tween/tween_update.cpp
+    src/tween/tween_values.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_tween_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_tween_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

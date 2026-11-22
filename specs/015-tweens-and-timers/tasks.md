@@ -1,6 +1,6 @@
 # Tasks 015: Tweens and timers
 
-Status: approved (2026-11-22, maintainer pre-approved); not started
+Status: approved (2026-11-22, maintainer pre-approved); in progress (stages 0–2 done on Windows; VM 120 runs pending)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops. `[P]` means the task can be done in parallel with the previous one. Every
@@ -10,11 +10,11 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 0: baseline and toolchain probe
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each). Measure: the `hello.exe` and `hello.3dsx`/`.elf` sizes
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each). Measure: the `hello.exe` and `hello.3dsx`/`.elf` sizes
   (`size`); edit `examples/hello/main.cpp` → simulator and `.3dsx` build times; clean engine build; the
   preprocessed line count and compile time of a one-line TU including `<nnh/events.hpp>` (the future
   `tween.hpp` comparison). Files: plan.md ("Stage 0 results"). Covers III, AC-8.
-- [ ] **T0.2** Determinism probe (scratch, not committed). Files: a 60-line `probe.cpp` with draft `sin_quarter`,
+- [x] **T0.2** Determinism probe (scratch, not committed). Files: a 60-line `probe.cpp` with draft `sin_quarter`,
   `exp2_neg` and `ease_elastic_out`. Build it with WinLibs GCC, devkitARM (`scripts/dkp.sh`), and GCC 13/14 and
   clang 18 on VM 120. Test: `objdump -d` shows no fused multiply-add with `-ffp-contract=off`, and records what
   the default does; the printed bit patterns agree on all hosts. Record GCC's C++ default for `-ffp-contract` and
@@ -22,21 +22,21 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 1: easing, the frame clock and the timer value (pure)
 
-- [ ] **T1.1** `FrameTime`, `Frames`, the `Duration` → ticks rounding, the invalid marker and the limits. Files:
+- [x] **T1.1** `FrameTime`, `Frames`, the `Duration` → ticks rounding, the invalid marker and the limits. Files:
   `engine/core/include/nnh/tween.hpp` (first part). Test: `tests/tween/test_frame_clock.cpp` (conversion table:
   1 s = 245 760, 0.5 s, 16.67 ms = 4096, 1 ms, 0, negative and > 1 h invalid, `Frames{n}`, `duration()` round
   trip). Covers FR-13, FR-16.
-- [ ] **T1.2** Approximations `sin_quarter`, `sin_turns`, `exp2_neg`. Files: `engine/core/src/tween/ease_math.{hpp,cpp}`.
+- [x] **T1.2** Approximations `sin_quarter`, `sin_turns`, `exp2_neg`. Files: `engine/core/src/tween/ease_math.{hpp,cpp}`.
   Test: `tests/tween/test_ease_math.cpp` (error bounds against `<cmath>` on a dense sweep, exact endpoints,
   reduction across periods). Covers FR-3.
-- [ ] **T1.3** The 19 curves, `ease()`, `Easing` (built-in and custom), and the t ≤ 0 / NaN / tiny / ≥ 1 rules.
+- [x] **T1.3** The 19 curves, `ease()`, `Easing` (built-in and custom), and the t ≤ 0 / NaN / tiny / ≥ 1 rules.
   Files: `tween/ease.cpp`, `tween.hpp`, `engine/core/CMakeLists.txt` (sources + `-ffp-contract=off` on
   `src/tween/*`). Test: `tests/tween/test_ease.cpp` (endpoints, range, overshoot, against the double reference
   within 1/4096, custom function, no init). Covers FR-1, FR-2.
-- [ ] **T1.4** Golden bit table: 19 curves × 33 points, generated once on PC, then frozen. Files:
+- [x] **T1.4** Golden bit table: 19 curves × 33 points, generated once on PC, then frozen. Files:
   `tests/tween/test_ease_golden.cpp`. Test: passes with WinLibs GCC and on VM 120 (GCC 13/14, clang 18).
   Covers FR-3.
-- [ ] **T1.5** [P] The `Timer` value type. Files: `tween/timer.cpp`, `tween.hpp`. Test: `tests/tween/test_timer.cpp`
+- [x] **T1.5** [P] The `Timer` value type. Files: `tween/timer.cpp`, `tween.hpp`. Test: `tests/tween/test_timer.cpp`
   (once, repeating, several fires in one `advance`, carry, pause/resume/stop/restart, remaining/elapsed/progress,
   no `nnh::init`). Covers FR-14, FR-16.
 
@@ -44,25 +44,25 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 2: tween sets: storage, values, handles, the clock (pure)
 
-- [ ] **T2.1** `TweenBlock` layout, `SlotHot`/`SlotCold`/`Step`, size `static_assert`s, construction and destruction
+- [x] **T2.1** `TweenBlock` layout, `SlotHot`/`SlotCold`/`Step`, size `static_assert`s, construction and destruction
   (one `mem::alloc`, tag `tween`), move, set serials, capacities and their limits, log channel `tween` (defined in
   the module, not in `engine_channels.cpp`). Files: `nnh/detail/tween_detail.hpp`, `tween/tween_block.hpp`,
   `tween/tween_internal.hpp`, `tween/tween_set.cpp`. Test: `tests/tween/test_tween_set.cpp` (tag stats, freed on
   destruction, move, absurd capacities assert). Covers FR-4, FR-18.
-- [ ] **T2.2** Value packing and interpolation for float/Vec2/Color, writes by pointer and by setter, capture from a
+- [x] **T2.2** Value packing and interpolation for float/Vec2/Color, writes by pointer and by setter, capture from a
   pointer, Color rounding and clamping, exact final write. Files: `tween/tween_values.cpp`, `tween_detail.hpp`
   (`Setter<T>`, `is_tween_value`). Test: `tests/tween/test_tween_values.cpp`;
   `tests/tween/compile_fail_setter_capture.cpp` (ctest that expects a compile failure, as the bus's
   `compile_fail_big_capture.cpp`). Covers FR-5.
-- [ ] **T2.3** Starting tweens: `to`/`by`/`from_to` (pointer and setter), the `from` write at creation, the full set
+- [x] **T2.3** Starting tweens: `to`/`by`/`from_to` (pointer and setter), the `from` write at creation, the full set
   (empty handle + log + assert), invalid times. Files: `tween/tween_start.cpp`, `tween.hpp`. Test:
   `tests/tween/test_tween_start.cpp`. Covers FR-4, FR-5, FR-6.
-- [ ] **T2.4** Advancing one slot (delay, capture at start, progress, loops, restart, yoyo with mirrored time, carry)
+- [x] **T2.4** Advancing one slot (delay, capture at start, progress, loops, restart, yoyo with mirrored time, carry)
   and the update loop (start-order list, `fresh` flag, sweep, `update`/`advance`/speed with remainder, profile
   scope). Files: `tween/tween_advance.cpp`, `tween/tween_update.cpp`. Test: `tests/tween/test_tween_loops.cpp`,
   the clock cases of `test_frame_clock.cpp` (30/60/600 updates, speed 0.5/0/2, `Frames{n}`, two identical runs give
   the same bits). Covers FR-6, FR-7, FR-16, FR-17, FR-18.
-- [ ] **T2.5** Handles and commands: queries, pause/resume/kill/complete (without callbacks yet), stale handles,
+- [x] **T2.5** Handles and commands: queries, pause/resume/kill/complete (without callbacks yet), stale handles,
   foreign handles, group commands, `kill_target` (standalone). Files: `tween/tween_commands.cpp`. Test:
   `tests/tween/test_tween_handles.cpp`, `test_tween_group.cpp` (two tweens on one target, later wins). Covers FR-8,
   FR-9.

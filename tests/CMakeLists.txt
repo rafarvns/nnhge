@@ -116,6 +116,18 @@ add_executable(nnh_tests
     time/test_clock.cpp
     time/test_duration.cpp
     time/test_fixed_step.cpp
+    time/test_frame_time.cpp
+    tween/test_ease.cpp
+    tween/test_ease_golden.cpp
+    tween/test_ease_math.cpp
+    tween/test_frame_clock.cpp
+    tween/test_timer.cpp
+    tween/test_tween_group.cpp
+    tween/test_tween_handles.cpp
+    tween/test_tween_loops.cpp
+    tween/test_tween_set.cpp
+    tween/test_tween_start.cpp
+    tween/test_tween_values.cpp
 )
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 # The remote session in the frame (spec 013) exists only in Debug and Development builds; Release compiles it out,
@@ -220,6 +232,19 @@ if(NOT MSVC)
         COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include
                 ${CMAKE_CURRENT_SOURCE_DIR}/events/compile_fail_big_capture.cpp)
     set_tests_properties(large_handler_capture_rejected PROPERTIES WILL_FAIL TRUE)
+
+    # Tween setters, callbacks and finish events keep the inline size rules (spec 015 FR-5, FR-11): each file
+    # compiles with -DNNH_EXPECT_OK and must fail with the size message without it.
+    set(_tween_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    foreach(case "setter_capture|capture too large [(]max 16 bytes[)]")
+        string(REPLACE "|" ";" case "${case}")
+        list(GET case 0 name)
+        list(GET case 1 expected)
+        set(_file ${CMAKE_CURRENT_SOURCE_DIR}/tween/compile_fail_${name}.cpp)
+        add_test(NAME tween_${name}_ok COMMAND ${_tween_check} -DNNH_EXPECT_OK ${_file})
+        add_test(NAME tween_${name}_rejected COMMAND ${_tween_check} ${_file})
+        set_tests_properties(tween_${name}_rejected PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+    endforeach()
 
     # AppConfig::title defaults to the game's TITLE (spec 009 FR-1); the last case proves the check bites.
     set(_title_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)

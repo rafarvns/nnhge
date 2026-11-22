@@ -430,6 +430,62 @@ in the flavor that `nnh run` builds (Development). If the target is missed, the 
 loop (one multiply instead of a divide), a branch-free curve dispatch, then reporting the real number and adjusting
 the docs' target with the maintainer.
 
+#### Stage 0 results (2026-11-22)
+
+Baseline before any tween code (T0.1, Windows, WinLibs GCC 16.2.0 and devkitARM GCC 16.1.0; three runs, the first
+one after a header change, so it rebuilds more; another agent was building in the main tree at the same time, so the
+times are noisy):
+
+| Measure | Value |
+|---------|-------|
+| `hello.exe` pc-debug (`size`: text / data / bss) | 196 572 / 26 756 / 210 128 |
+| `hello.exe` pc-release | 129 080 / 21 988 / 207 536 |
+| `hello.elf` 3ds-release · `hello.3dsx` | 216 084 / 28 328 / 102 576 · 261 460 B |
+| `hello.elf` 3ds-dev · `hello.3dsx` | 232 464 / 32 848 / 105 144 · 282 564 B |
+| edit `examples/hello/main.cpp` → simulator (pc-debug) | 5.92 / 1.47 / 1.61 s |
+| edit `examples/hello/main.cpp` → `.3dsx` (3ds-release) | 5.75 / 2.59 / 2.92 s |
+| clean `nnh_core` (pc-debug, Ninja, 24 threads) | 3.22 / 3.36 / 3.19 s |
+| one-line TU `#include <nnh/events.hpp>`: preprocessed lines · `-fsyntax-only` | 7 633 · 0.45 / 0.39 / 0.38 s |
+
+Determinism probe (T0.2, scratch `probe.cpp` with draft `sin_quarter`, `exp2_neg`, `elastic_out`):
+
+- **WinLibs GCC 16.2.0 (x86-64)**: the C++ default is `-ffp-contract=fast` (`g++ -Q --help=optimizers`). Without
+  `-march` there is no FMA instruction to fuse into: `objdump -d` shows no `vfmadd`/`vfmsub`/`vfnm` with or without
+  `-ffp-contract=off`, and the printed bits (checksum `c1cd8013`) are identical at `-O0`/`-O2`, with and without the
+  flag. The golden table of T1.4 was also generated at `-O0` and `-O2`, with and without the flag: identical.
+- **devkitARM GCC 16.1.0** (`-march=armv6k -mfloat-abi=hard`): `vmla.f32`/`vnmls.f32` appear **in both modes**. They
+  are VFPv2's chained multiply-accumulate (the product is rounded first), so they give the same bits as a separate
+  multiply and add; GCC does not treat them as contraction. No `vfma` (VFPv2 has none).
+- **libctru**: `objdump -d libctru.a` shows `mov r1, #0x3000000; vmsr fpscr, r1` in both `__system_initSyscalls` and
+  `initThreadVars`: round to nearest, flush-to-zero, default NaN, as the plan states.
+- **Pending (lead):** the same probe and ctest with GCC 13/14 and clang 18 on VM 120; the 3DS bits come with the
+  example's self-check (T7.2).
+
+#### Stage 1–2 refinements (2026-11-22, implemented)
+
+- `FrameTime` also has `kInvalid` (-1), `kMaxTicks`, `kMaxFrames`, `from_ticks()`, `valid()` and `operator==`;
+  `duration()` of the invalid marker is `Duration{-1}`. Its tests are `tests/time/test_frame_time.cpp` (amendment by
+  plan 016); 100 ms = 24 576 ticks is in the table for plan 016.
+- The log channel `tween` lives alone in `tween/tween_log.cpp`, not in `tween_set.cpp`: `nnh::Timer` logs misuse
+  through it, and a game that only uses `Timer` must not link the set code (FR-19). The memory tag stays in
+  `tween_set.cpp` and is reached through `detail::tween_memory_tag()` (as `audio_memory_tag()`).
+- `Timer`: `running()` stays true while paused; `stop()` halts **and rewinds** (remaining = the whole period);
+  `restart()` clears a pause; a fired zero-length one-shot reports progress 1. Invalid times and a repeating
+  period of 0 assert, and in Release leave the timer stopped.
+- Value parameters of `to`/`by`/`from_to` are `std::type_identity_t<T>`, so `to(&x, 10, ...)` deduces `T` from the
+  target only (an `int` literal works). The setter form needs an explicit `nnh::Setter<T>{...}`, as the plan wrote.
+- "Fresh" tweens need no flag: a pass stops at the list tail it saw when it began, and new tweens are appended after
+  it, so they start counting at the next update (FR-12 unchanged).
+- Kills only mark slots while the block is **busy** — inside an update *or* inside `complete()` — and the outermost
+  leave sweeps them. So a callback run by `complete()` outside an update can't see the slot it runs from reused.
+  A set destroyed or move-assigned while busy asserts.
+- A default-constructed set (no storage) treats every start as "full" (error log + assert).
+- One `advance()` call covers at most 1 hour of set time after the speed is applied (the ticks are clamped).
+- Stale handles: `progress()` and `loops_left()` answer 0.
+- Measured record sizes: 3DS `SlotHot` 96 B + `SlotCold` 88 B = 184 B (as planned), `TweenBlock` 48 B,
+  `TweenOptions` 112 B, `Timer` 12 B; PC x64 112 + 112 = 224 B, `TweenBlock` 64 B, `TweenOptions` 144 B.
+- The test framework's `kMaxTests` went from 1024 to 2048 (the suite passed 1024 tests).
+
 ## Test strategy
 
 All tests run on the fake platform (`ctest --preset pc-debug`). Stage ends are also run on VM 120 (GCC 13/14,

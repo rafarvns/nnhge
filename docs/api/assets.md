@@ -12,6 +12,9 @@ the build into `.nnhmap` assets of the same path (`levels/level1.tmj` → `level
 `load_tilemap("levels/level1")`); Tiled's own `.tsj`, `.tiled-project` and `.tiled-session` files are not packed
 ([tilemap.md](tilemap.md#maps-made-in-tiled), guide [Levels in Tiled](../guides/levels.md)); a map that breaks
 a rule stops the build with `file: reason`. Example: [`examples/platformer`](../../examples/platformer/main.cpp).
+Aseprite sprite sheets (`<name>.ase.json` beside `<name>.png`) are converted into sprite libraries `<name>.nnhsprite`
+(`load_sprite_library("<name>")`, [below](#aseprite-sprite-sheets)); Aseprite's own `.ase`/`.aseprite` files are not
+packed. Example: [`examples/animation`](../../examples/animation/main.cpp).
 
 A game keeps its content — images, levels, dialogue, tables — in an **assets folder** next to its code.
 The build converts each file for the system and packs them with the game: into the **romfs** inside the
@@ -77,3 +80,45 @@ layout; their exact layout is documented in the source:
 Both are checked by the same bounded validators in the build and on the console (constitution X). A converted file
 whose fingerprint doesn't match the game's compiled struct (an old build folder) loads as `Corrupted`: "rebuild the
 assets".
+
+## Aseprite sprite sheets
+
+Sprite animation ([animation.md](animation.md), spec 016, D31) reads Aseprite's sprite sheet export. The suffix
+`.ase.json` is reserved for it: a plain `.json` stays a data file, copied unchanged.
+
+**Export** (File → Export Sprite Sheet, or the CLI):
+
+- Layout: any (By Rows, Packed…); the sheet must obey the texture rules (power-of-two sides up to 1024 on 3DS: use
+  the "Power of 2" constraint or a fixed width). Trim Cels is fine.
+- Output: the PNG as `<name>.png` and **JSON Data** as `<name>.ase.json`, in the same folder, Hash or Array layout;
+  tick **Tags** (frame tags) and **Slices**.
+- CLI: `aseprite -b hero.aseprite --sheet hero.png --data hero.ase.json --format json-hash --list-tags --list-slices
+  --sheet-type packed --trim`.
+
+**What is read:**
+
+| Export | Becomes |
+|---|---|
+| `frames` (file order) | the frames: `frame` (region), `spriteSourceSize`/`sourceSize` (trim offset), `duration` (ms → frame clock, rounded half up: 100 ms = 6 frames); `rotated: true` is refused |
+| a tag `{name, from, to, direction, repeat}` | a clip: `forward`/`reverse` loop, `repeat` 1 → Once, n → Repeat n; `pingpong`/`pingpong_reverse` → ping-pong of `repeat` one-way passes (absent: forever), exactly as Aseprite plays it |
+| a tag named `@step` or `@hit=2` | a marker (value −32768..32767) on every clip frame showing its frames, in every clip; not a clip |
+| no clip tags | one clip `default`: every frame, forward, looping |
+| the slice `pivot` | every frame's pivot: its first key's `pivot` (relative to the key's `bounds`) or the bottom-centre of its `bounds`; without it, top-left |
+| `meta.image`, `meta.size` | must name the PNG beside the export and match its size |
+
+Tag colours and user data, layers and other slices are ignored. The pivot point is read relative to the slice's
+bounds, as Aseprite shows a slice's centre; this was not confirmed against a real export yet — if your pivots land
+off by the slice's position, report it.
+
+**Errors** stop the build with `file:line: reason`, for example:
+
+```
+art/hero.ase.json:99: frame tag "run": unknown direction "sideways" (forward, reverse, pingpong, pingpong_reverse)
+art/hero.ase.json:24: frame 1 ("hero 1.aseprite"): rotated frames aren't supported
+art/hero.ase.json:93: "meta": "size" is 128x16 but hero.png is 64x16
+art/hero.ase.json: hero.png not found: export the sheet beside the data (--sheet hero.png)
+```
+
+Other refusals: a tag out of range, two clips with one name, a duration outside 1..65 535 ms, a clip over 256 frames
+or one play over 1 hour, more than 8 markers on a frame, a pivot more than 2047 pixels away, and the library limits.
+Editing one export reconverts only it (a depfile lists the JSON and the PNG).

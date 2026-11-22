@@ -188,3 +188,16 @@ NNH_TEST(json_a_new_parse_replaces_the_document) {
     CHECK(d.parse("[7]"));
     CHECK(d.root().first().number() == 7 && d.error().empty());
 }
+
+NNH_TEST(json_values_know_their_line) {
+    // Spec 016 T7.1: converters report `file:line: reason`.
+    Document d;
+    CHECK(d.parse("{\n  \"a\": 1,\n  \"b\": [\n    true,\n\n    {\"c\": \"x\"}\n  ]\n}"));
+    CHECK(d.root().line() == 1);
+    CHECK(d.root().get("a").line() == 2);
+    const Ref b = d.root().get("b");
+    CHECK(b.line() == 3 && b.first().line() == 4);
+    CHECK(b.first().next().line() == 6 && b.first().next().get("c").line() == 6);
+    CHECK(d.root().get("missing").line() == 0);
+    CHECK(d.parse("\r\n\r\n 7") && d.root().line() == 3);
+}

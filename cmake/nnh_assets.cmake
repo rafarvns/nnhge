@@ -8,17 +8,22 @@
 #   *.tmj (Tiled maps, spec 012) -> converted by nnh-assetc into <path without .tmj>.nnhmap; a Ninja depfile
 #       lists the tilesets and images it read, so editing a shared .tsj reconverts exactly the maps using it;
 #   *.tsj, *.tiled-project, *.tiled-session -> not packed (Tiled's own files; the converter reads the .tsj);
+#   *.ase.json (Aseprite sprite sheet data, spec 016, D31) -> converted by nnh-assetc into <path without .ase.json>
+#       .nnhsprite; a depfile lists the export and the PNG beside it (that PNG is packed as an image, as usual);
+#   *.ase, *.aseprite -> not packed (Aseprite's own files, if kept in the folder);
 #   others -> copied unchanged, except in a game with a data schema (spec 014, nnh_data.cmake): there every other
-#       file (but Aseprite's *.ase.json, *.ase and *.aseprite, decision D31) goes through `nnh-assetc data`, which
-#       converts a file whose extension is a declared key (`enemies/goblin.enemy`, same output name) and copies any
-#       other, writing a references sidecar in <binary dir>/nnh_data/<target>/refs/; then `nnh-assetc data-index`
-#       checks every reference and writes the data index `.nnh_data` (an asset of its own). Messages show paths
-#       relative to the folder of the calling CMakeLists.txt (`assets/enemies/goblin.enemy:9: ...`). Both tools
-#       rewrite an output only when its bytes change, so an edit that changes nothing converted repacks nothing.
+#       file goes through `nnh-assetc data`, which converts a file whose extension is a declared key
+#       (`enemies/goblin.enemy`, same output name) and copies any other, writing a references sidecar in
+#       <binary dir>/nnh_data/<target>/refs/; then `nnh-assetc data-index` checks every reference and writes the data
+#       index `.nnh_data` (an asset of its own). Messages show paths relative to the folder of the calling
+#       CMakeLists.txt (`assets/enemies/goblin.enemy:9: ...`). Both tools rewrite an output only when its bytes
+#       change, so an edit that changes nothing converted repacks nothing.
+# The .ase.json match comes before every generic rule, the data step included (D31), so it owns the suffix in every
+# game.
 # nnh_asset_index.cmake then writes <binary dir>/assets/.nnh_assets (the sorted list of output names core reads at
 # init), refuses invalid names and names differing only by letter case, and removes stale outputs.
-# nnh-assetc is only needed (and, in cross presets, only built) when the folder has a .tmj or the game a data
-# schema (nnh_host_tools.cmake).
+# nnh-assetc is only needed (and, in cross presets, only built) when the folder has a .tmj or a .ase.json, or the
+# game a data schema (nnh_host_tools.cmake).
 # On PC that folder sits next to the executable; on 3DS it becomes the romfs of the .3dsx (the target
 # `<target>_assets` is a devkitPro asset target, so ctr_create_3dsx(ROMFS) repacks when an asset changes).
 #
@@ -29,8 +34,11 @@ set(_NNH_ASSETS_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 # nnh_asset_output_name(<name> <out_var>): the asset name a source file becomes ("" = not packed).
 function(nnh_asset_output_name name out_var)
-    if(name MATCHES "\\.(tsj|tiled-project|tiled-session)$")
+    if(name MATCHES "\\.(tsj|tiled-project|tiled-session|ase|aseprite)$")
         set(${out_var} "" PARENT_SCOPE)
+    elseif(name MATCHES "\\.ase\\.json$")
+        string(REGEX REPLACE "\\.ase\\.json$" ".nnhsprite" converted "${name}")
+        set(${out_var} "${converted}" PARENT_SCOPE)
     elseif(name MATCHES "\\.tmj$")
         string(REGEX REPLACE "\\.tmj$" ".nnhmap" converted "${name}")
         set(${out_var} "${converted}" PARENT_SCOPE)
@@ -92,6 +100,22 @@ function(_nnh_add_data_index target source out list_file sidecars assetc assetc_
         VERBATIM)
 endfunction()
 
+# One sprite conversion step (spec 016): <source>/<name> (.ase.json) -> <out>/<output name> (.nnhsprite), with a
+# depfile listing the export and its PNG.
+function(_nnh_add_sprite_step target source out name output_name assetc assetc_depends)
+    set(output "${out}/${output_name}")
+    set(depfile "${CMAKE_CURRENT_BINARY_DIR}/nnh_sprites/${output_name}.d")
+    get_filename_component(output_dir "${output}" DIRECTORY)
+    get_filename_component(depfile_dir "${depfile}" DIRECTORY)
+    add_custom_command(OUTPUT "${output}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir} ${depfile_dir}
+        COMMAND ${assetc} sprite ${source}/${name} ${output} --assets ${source} --depfile ${depfile}
+        DEPENDS "${source}/${name}" ${assetc_depends}
+        DEPFILE "${depfile}"
+        COMMENT "Sprite ${name}"
+        VERBATIM)
+endfunction()
+
 function(nnh_add_assets target folder)
     get_filename_component(source "${folder}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     if(NOT IS_DIRECTORY "${source}")
@@ -112,7 +136,9 @@ function(nnh_add_assets target folder)
         set(refs_dir "${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}/refs")
         set(sidecars "")
     elseif(files MATCHES "\\.tmj(;|$)")
-        nnh_assetc_command(assetc assetc_depends "Tiled maps") # only games with maps need (and build) it
+        nnh_assetc_command(assetc assetc_depends "Tiled maps") # only games with maps, sprites or data build it
+    elseif(files MATCHES "\.ase\.json(;|$)")
+        nnh_assetc_command(assetc assetc_depends "Aseprite exports (.ase.json)")
     endif()
 
     set(outputs "")
@@ -132,6 +158,9 @@ function(nnh_add_assets target folder)
         get_filename_component(output_dir "${output}" DIRECTORY)
         if(name MATCHES "\\.tmj$")
             _nnh_add_map_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
+        elseif(name MATCHES "\\.ase\\.json$")
+            _nnh_add_sprite_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}"
+                                 "${assetc_depends}")
         elseif(name MATCHES "\\.png$")
             set(check ${CMAKE_COMMAND} -DIMAGE=${input} -P ${_NNH_ASSETS_DIR}/nnh_check_image.cmake)
             if(NNH_PLATFORM STREQUAL "3ds")

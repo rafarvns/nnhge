@@ -1,6 +1,6 @@
 # Spec 016: Sprite animation
 
-Status: approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with
+Status: implemented (console check pending, T10.2) — approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with
 the recommended answer)
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 002](../002-core-foundation/spec.md) (`Duration`, memory tags, asserts, logs, `Result`, profiling),

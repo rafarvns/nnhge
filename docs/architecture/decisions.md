@@ -106,6 +106,9 @@ never through `#ifdef` in game code.
   further; the index step reads sidecar paths relative to its list (devkitPro's MSYS CMake writes `/e/...` paths a
   native program can't open). D31's routing amendment is applied by spec 014 (plan 016's T7.6 is done): `.ase.json`,
   `.ase`, `.aseprite` are never data assets, and the keys `nnhsprite`, `ase`, `aseprite` are reserved.
+- 2026-11-22: D31 implemented (spec 016): as decided. The `.ase.json` step sits before the generic rules in
+  `nnh_assets.cmake`; spec 014's data routing (D29) landed first and applies the `.ase.json`/`.ase`/`.aseprite`
+  exclusion (plan 016, T7.6). `nnh-assetc` is 0.3.0 after both.
 - 2026-11-22: D32 (input actions: the after-input hook list in `nnh::frame()` and the `NNHB` bindings overrides), from
   plan 017, pre-approved by the maintainer; design only until spec 017 is implemented. It is D30's second user
   (contexts bound to a scene); the events and scenes pages get their sections when the code lands (plan 017, T8.2).

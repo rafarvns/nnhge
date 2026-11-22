@@ -10,8 +10,10 @@ engine/
   core/include/nnh/<module>.hpp              public API, one header per module (what games include)
   core/src/<module>/<concept>.cpp|.hpp       core implementation, internal headers (a pure file there may be
                                              shared with a host tool, e.g. remote/remote_wire.cpp with tools/nnh,
-                                             tilemap/map_format.hpp, map_layout, map_validate* and the pure data/
-                                             files — schema, fingerprint, validators — with tools/assetc)
+                                             tilemap/map_format.hpp, map_layout, map_validate*, the pure data/
+                                             files — schema, fingerprint, validators — and animation/
+                                             sprite_format.hpp, sprite_layout, sprite_sequence, sprite_validate
+                                             with tools/assetc)
   core/src/core/                             engine-wide internal state shared by modules; pure helpers with no
                                              engine includes that host tools compile too (crc32)
   core/contract/nnh/platform/<area>.hpp      platform contract (what each platform library implements)
@@ -27,11 +29,13 @@ tests/
   data/<kind>/                               test inputs (images, sounds, asset lists, package; maps: Tiled
                                              fixtures good.tmj and bad_*.tmj for the converter's ctests;
                                              data_assets: bad/<rule>.enemy with its expected message, index/
-                                             cases, the test games game/ and broken_game/)
+                                             cases, the test games game/ and broken_game/;
+                                             aseprite: make_fixtures.py, good*.ase.json, bad_*.ase.json)
   data_assets/                               the data module's tests (spec 014; tests/data/ holds fixtures)
   <example>/test_<concept>.cpp               an example's pure logic, compiled from examples/<example>/
                                              (tests/platformer: the benchmark's gate, camera, coins, player,
-                                             replay; replay_matches_script.cmake checks tests/level.nnhs)
+                                             replay; replay_matches_script.cmake checks tests/level.nnhs;
+                                             tests/animation_example: examples/animation's self-check)
 examples/<name>/                             one small program per feature (main.cpp + CMakeLists.txt)
   tests/*.nnhs                               test scripts (spec 013): nnh run <name> [--pc] --script ...
                                              (guide: guides/testing-on-the-console.md)

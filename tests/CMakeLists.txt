@@ -6,13 +6,34 @@ target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
 # Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
-add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
+add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_sprite.cpp fuzz/fuzz_targets.cpp
+                                     fuzz/fuzz_tilemap.cpp)
 target_include_directories(nnh_fuzz_targets PUBLIC fuzz PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 
 # Unit tests: nnh::core driven through the fake platform.
 add_executable(nnh_tests
     framework/alloc_counter.cpp
+    animation/test_animator_clock.cpp
+    animation/test_animator_draw.cpp
+    animation/test_animator_notices.cpp
+    animation/test_animator_play.cpp
+    animation/test_animator_reentrancy.cpp
+    animation/test_animator_sequences.cpp
+    animation/test_animator_states.cpp
+    animation/sprite_file.cpp
+    animation/test_sprite_alloc.cpp
+    animation/test_sprite_aseprite.cpp
+    animation/test_sprite_clips.cpp
+    animation/test_sprite_frames.cpp
+    animation/test_sprite_layout.cpp
+    animation/test_sprite_library.cpp
+    animation/test_sprite_load.cpp
+    animation/test_sprite_lifetime.cpp
+    animation/test_sprite_markers.cpp
+    animation/test_sprite_sequence.cpp
+    animation/test_sprite_states.cpp
+    animation/test_sprite_validate.cpp
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
     assets/test_asset_index.cpp
@@ -79,6 +100,7 @@ add_executable(nnh_tests
     fs/test_path.cpp
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
+    fuzz/test_fuzz_sprite.cpp
     gfx/test_draw_calls.cpp
     gfx/test_draw_list.cpp
     gfx/test_texture_rules.cpp
@@ -229,6 +251,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_frame_meter.cpp
     platformer/test_gate_run.cpp
     platformer/test_player.cpp
+    platformer/test_player_sprite.cpp
     platformer/test_replay_run.cpp
     platformer/test_replay_script.cpp
     ${_platformer}/camera_follow.cpp
@@ -236,6 +259,7 @@ target_sources(nnh_tests PRIVATE
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp
     ${_platformer}/player.cpp
+    ${_platformer}/player_sprite.cpp
     ${_platformer}/replay_run.cpp
     ${_platformer}/replay_script.cpp)
 # The replay played twice gives the same log (spec 012 T7.3, FR-10): the simulator's checksum lines must be the ones
@@ -247,6 +271,13 @@ if(TARGET platformer AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STR
     set_tests_properties(platformer_replay_matches_script PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PLATFORMER_DEMO=replay;NNH_EXIT_AFTER_FRAMES=920"
         TIMEOUT 120)
+endif()
+# The animation example's self-check in the simulator (spec 016 AC-6): the verdict the console script waits for.
+if(TARGET animation AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME animation_self_check_pc COMMAND animation)
+    set_tests_properties(animation_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;ANIMATION_DEMO=check;NNH_EXIT_AFTER_FRAMES=610"
+        PASS_REGULAR_EXPRESSION "animation: PASS" FAIL_REGULAR_EXPRESSION "animation: FAIL" TIMEOUT 120)
 endif()
 # The tweens example's self-check in the simulator (spec 015 AC-5): the same verdict the console script waits for.
 if(TARGET tweens AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -266,6 +297,10 @@ endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 # The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
 target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/tweens/self_check.cpp)
+# The animation example's self-check (spec 016 T8.2): its golden checksum on every host compiler.
+target_sources(nnh_tests PRIVATE animation_example/test_self_check.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/animation/libraries.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/animation/self_check.cpp)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.
@@ -335,6 +370,12 @@ if(NOT MSVC)
         add_test(NAME tween_${name}_rejected COMMAND ${_tween_check} ${_file})
         set_tests_properties(tween_${name}_rejected PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
     endforeach()
+    # Sprite notice callbacks keep the same inline size rule (spec 016 FR-8).
+    set(_file ${CMAKE_CURRENT_SOURCE_DIR}/animation/compile_fail_callback_capture.cpp)
+    add_test(NAME animation_callback_capture_ok COMMAND ${_tween_check} -DNNH_EXPECT_OK ${_file})
+    add_test(NAME animation_callback_capture_rejected COMMAND ${_tween_check} ${_file})
+    set_tests_properties(animation_callback_capture_rejected PROPERTIES
+                         PASS_REGULAR_EXPRESSION "capture too large [(]max 16 bytes[)]")
 
     # AppConfig::title defaults to the game's TITLE (spec 009 FR-1); the last case proves the check bites.
     set(_title_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -I${PROJECT_SOURCE_DIR}/engine/core/include)
@@ -616,6 +657,47 @@ add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap)
 add_dependencies(nnh_tests nnh_test_maps)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_MAPS_DIR="${_maps_out}")
 
+# Aseprite converter (spec 016 T7.5, AC-4): nnh-assetc sprite on the fixtures of data/aseprite (make_fixtures.py).
+# Each bad export must fail AND say `file:line: reason`.
+set(_ase ${CMAKE_CURRENT_SOURCE_DIR}/data/aseprite)
+set(_ase_out ${CMAKE_CURRENT_BINARY_DIR}/aseprite)
+file(MAKE_DIRECTORY ${_ase_out})
+foreach(good good good_array)
+    add_test(NAME sprite_convert_accepts_${good}
+        COMMAND nnh_assetc sprite ${_ase}/${good}.ase.json ${_ase_out}/${good}_check.nnhsprite --assets ${_ase})
+endforeach()
+foreach(case "rotated|bad_rotated.ase.json:24: frame 1 .* rotated frames aren't supported"
+             "direction|bad_direction.ase.json:99: frame tag .run.: unknown direction .sideways."
+             "range|bad_range.ase.json:99: frame tag .run.: .to. must be a whole number from 0 to 3"
+             "duplicate|bad_duplicate.ase.json:106: frame tag .run.: two clips have this name"
+             "duration|bad_duration.ase.json:3: frame 0 .*: .duration. must be a whole number from 1 to 65535"
+             "image|bad_image.ase.json:91: .meta.: .image. is .hero.png.: it must be bad_image.png"
+             "size|bad_size.ase.json:93: .meta.: .size. is 128x16 but bad_size.png is 64x16"
+             "marker|bad_marker.ase.json:99: marker tag .@hit=lots.: the value after '=' must be a whole number"
+             "repeat|bad_repeat.ase.json:99: frame tag .run.: .repeat. must be a whole number"
+             "missing_png|bad_missing_png.ase.json: bad_missing_png.png not found"
+             "broken_json|bad_broken_json.ase.json: line 3, column 20: expected a key")
+    string(REPLACE "|" ";" case "${case}")
+    list(GET case 0 name)
+    list(GET case 1 expected)
+    set(_convert nnh_assetc sprite ${_ase}/bad_${name}.ase.json ${_ase_out}/bad_${name}.nnhsprite --assets ${_ase})
+    add_test(NAME sprite_convert_rejects_${name} COMMAND ${_convert})
+    set_tests_properties(sprite_convert_rejects_${name} PROPERTIES WILL_FAIL TRUE)
+    add_test(NAME sprite_convert_explains_${name} COMMAND ${_convert})
+    set_tests_properties(sprite_convert_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+endforeach()
+# The good export converted at build time, read back by nnh_tests (tests/animation/test_sprite_aseprite.cpp).
+add_custom_command(OUTPUT ${_ase_out}/good.nnhsprite
+    COMMAND nnh_assetc sprite ${_ase}/good.ase.json ${_ase_out}/good.nnhsprite --assets ${_ase}
+            --depfile ${_ase_out}/good.nnhsprite.d
+    DEPENDS ${_ase}/good.ase.json nnh_assetc
+    DEPFILE ${_ase_out}/good.nnhsprite.d
+    COMMENT "Sprite tests/data/aseprite/good.ase.json"
+    VERBATIM)
+add_custom_target(nnh_test_sprites DEPENDS ${_ase_out}/good.nnhsprite)
+add_dependencies(nnh_tests nnh_test_sprites)
+target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
+
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60
 option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)
@@ -625,7 +707,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg remote tilemap data data_index)
+    foreach(name path save asset_index wav ogg remote tilemap data data_index sprite)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

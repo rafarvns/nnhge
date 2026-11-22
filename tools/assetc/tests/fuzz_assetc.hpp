@@ -36,5 +36,13 @@ bool data_converts(const char* text, std::size_t size);
 int refs_target(const std::uint8_t* data, std::size_t size);
 /// A sidecar with every record kind (a seed).
 const char* refs_seed();
+/// `nnh-assetc sprite` from memory (spec 016, fuzz_assetc_sprite.cpp): the input is an Aseprite export
+/// (`/g/assets/art/hero.ase.json`) beside a 64x16 PNG header; an accepted one must pass the engine's validator, a
+/// refusal must name a file and a reason.
+int sprite_target(const std::uint8_t* data, std::size_t size);
+/// An export using every feature the converter reads (a seed).
+const char* sprite_seed();
+/// For the mini-fuzz: whether `text` converts (aborting on a broken invariant, as sprite_target does).
+bool sprite_converts(const char* text, std::size_t size);
 
 } // namespace nnh::assetc::fuzz

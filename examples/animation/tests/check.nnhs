@@ -1,0 +1,39 @@
+# Spec 016 AC-5/AC-6/AC-7, automatic (spec 013): the showcase (screenshot), then the self-check, whose checksum lines
+# must be the PC's bit for bit, then the 512-animator bench.
+# PC:      nnh run animation --pc --script examples/animation/tests/check.nnhs
+# Console: nnh run animation --script examples/animation/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The checksum lines below are the PC's (pc-debug). They change only if the script in self_check.cpp or the animation
+# module changes: then run `ANIMATION_DEMO=check NNH_EXIT_AFTER_FRAMES=605
+# build/pc-debug/examples/animation/animation.exe`, copy its lines here and kAnimationSelfCheckGolden into
+# self_check.hpp.
+fail-on "] E "
+fail-on "animation: FAIL"
+
+# The showcase: the gallery and the knight (loaded from the Aseprite export).
+wait 120
+screenshot showcase
+
+# The self-check (SELECT): 600 frames, a checksum every 60, then the verdict.
+tap SELECT
+expect "animation: self-check started, 64 animators" 20
+expect "animation: 60 sum 7661A5D7" 120
+expect "animation: 120 sum 653C3F71" 120
+expect "animation: 180 sum F98EE98A" 120
+expect "animation: 240 sum 56559D2A" 120
+expect "animation: 300 sum 5D5A809D" 120
+expect "animation: 360 sum 491C7CDA" 120
+expect "animation: 420 sum C35EC2F4" 120
+expect "animation: 480 sum A013ECEC" 120
+expect "animation: 540 sum 2C7BDBAB" 120
+expect "animation: PASS 512F027F" 120
+wait 10
+screenshot self-check
+
+# The bench (SELECT): 600 measured frames; the line says PASS (average under 0.5 ms) or OVER.
+tap SELECT
+expect "animation bench: started, 512 animators" 20
+expect "animation bench: 512 animators avg" 700
+wait 10
+screenshot bench
+end

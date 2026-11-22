@@ -34,6 +34,11 @@ std::size_t data_seed(std::uint8_t* out, std::size_t capacity);
 /// fixed; on an accepted index every lookup runs and must agree with the others (types by key and entry, entries
 /// by group and hash, paths and their hashes).
 int data_index_target(const std::uint8_t* data, std::size_t size);
+/// `.nnhsprite` sprite libraries (spec 016, fuzz_sprite.cpp): validated as given, then with the header's size and CRC
+/// fixed; an accepted file is copied into a library with extra room, every frame is queried, every clip and every
+/// state is played for about 30 frames (in steps of the shortest frame, so the per-update bounds are never reached),
+/// and a marker, a state and a rule are added. Inputs over 256 KiB are only validated.
+int sprite_library_target(const std::uint8_t* data, std::size_t size);
 /// For the mini-fuzz: whether `data`, with its size and CRC fixed as data_index_target does, is accepted.
 bool data_index_fixed_accepted(const std::uint8_t* data, std::size_t size);
 /// A valid index (two types, every group used) written to `out`; its size (0 if `capacity` is short).

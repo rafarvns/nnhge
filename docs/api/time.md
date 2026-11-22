@@ -37,7 +37,8 @@ nnh::FrameTime b = nnh::Frames{12};             // 12 frames
 | `nnh::kMaxFrameTime` | 1 hour (884 736 000 ticks). Negative or longer times become the invalid marker (`ticks == FrameTime::kInvalid`), which functions taking a `FrameTime` reject |
 
 Plain values: no state, `constexpr`, no allocation. [Tweens and timers](tween.md) (`<nnh/tween.hpp>`) take them
-for durations, delays and periods; `nnh::Timer` is a plain timer value on the same clock.
+for durations, delays and periods; `nnh::Timer` is a plain timer value on the same clock. Sprite animation
+([animation.md](animation.md), `<nnh/animation.hpp>`) uses it for frame durations and `SpriteAnimator::advance`.
 
 ## Clock
 

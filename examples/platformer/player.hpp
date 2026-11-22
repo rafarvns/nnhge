@@ -1,7 +1,7 @@
 #pragma once
 // The player: runs, jumps, drops through one-way planks (Down + A), collides with any collision::Grid.
 // Fixed steps of one frame (60 Hz) and input as a PlayerInput (buttons or a replay's script), so a run plays
-// the same on every system (tested in tests/platformer/test_player.cpp).
+// the same on every system (tested in tests/platformer/test_player.cpp). How it looks: player_sprite.hpp.
 
 #include "player_input.hpp"
 
@@ -18,10 +18,13 @@ class Player {
     void spawn(nnh::Vec2 feet);
     /// Moves one frame through `grid` with `input`.
     void update(const nnh::collision::Grid& grid, const PlayerInput& input);
-    void draw(nnh::Screen screen, const nnh::Texture& sheet, int layer) const;
 
     nnh::Rect box() const { return box_; }
     bool on_ground() const { return on_ground_; }
+    nnh::Vec2 velocity() const { return velocity_; }
+    bool facing_left() const { return facing_left_; }
+    /// The middle of the bottom of its box: where the sprite stands (player_sprite.hpp draws it).
+    nnh::Vec2 feet() const { return {box_.x + box_.w / 2, box_.y + box_.h}; }
     /// Sides the last move touched.
     nnh::collision::Sides touching() const { return touching_; }
 
@@ -31,5 +34,4 @@ class Player {
     nnh::collision::Sides touching_{};
     bool on_ground_ = false;
     bool facing_left_ = false;
-    int walk_frames_ = 0;
 };

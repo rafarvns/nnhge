@@ -10,6 +10,7 @@
 
 #include "cli_internal.hpp"
 #include "convert.hpp"
+#include "convert_sprite.hpp"
 #include "core/crc32.hpp" // shared with core (pure file): the version line proves which CRC the maps get
 #include "depfile.hpp"
 #include "files.hpp"
@@ -62,13 +63,16 @@ std::vector<std::string> from_working_dir(const std::vector<std::string>& paths)
     return out;
 }
 
-int run_map(const MapArgs& a, std::FILE* err) {
+using ConvertFn = bool (*)(FileSource&, const std::string&, const std::string&, Converted&, Problem&);
+
+/// `map` (Tiled) and `sprite` (Aseprite, spec 016): convert, write the output and the depfile.
+int run_convert(ConvertFn convert, const MapArgs& a, std::FILE* err) {
     std::remove(a.out.c_str()); // a failed conversion leaves nothing to pack
     DiskFiles files;
     Converted converted;
     Problem problem;
-    if (!convert_map(files, a.in, a.assets, converted, problem)) {
-        std::fprintf(err, "%s: %s\n", problem.file.c_str(), problem.reason.c_str());
+    if (!convert(files, a.in, a.assets, converted, problem)) {
+        std::fprintf(err, "%s\n", problem_text(problem).c_str()); // `file: reason` or `file:line: reason`
         return 1;
     }
     const char* failed = nullptr;
@@ -96,7 +100,12 @@ int run_cli(int argc, const char* const* argv, std::FILE* out, std::FILE* err) {
         return 0;
     }
     MapArgs args;
-    if (argc >= 2 && std::strcmp(argv[1], "map") == 0 && parse_map_args(argc, argv, args)) return run_map(args, err);
+    if (argc >= 2 && std::strcmp(argv[1], "map") == 0 && parse_map_args(argc, argv, args)) {
+        return run_convert(convert_map, args, err);
+    }
+    if (argc >= 2 && std::strcmp(argv[1], "sprite") == 0 && parse_map_args(argc, argv, args)) {
+        return run_convert(convert_sprite, args, err);
+    }
     if (argc >= 2 && std::strcmp(argv[1], "data") == 0) {
         const int code = run_data(argc, argv, err);
         if (code != 2) return code;

@@ -29,6 +29,7 @@ private:
     std::string_view text_;
     const Limits& limits_;
     std::size_t pos_ = 0;
+    std::uint32_t line_ = 1; ///< line at pos_ (strings can't hold a raw newline, so only spaces move it)
 
     bool fail_plain(const std::string& what) {
         doc_.error_ = what;
@@ -48,7 +49,10 @@ private:
     char peek() const { return at_end() ? '\0' : text_[pos_]; }
 
     void skip_space() {
-        while (!at_end() && (peek() == ' ' || peek() == '\t' || peek() == '\n' || peek() == '\r')) ++pos_;
+        while (!at_end() && (peek() == ' ' || peek() == '\t' || peek() == '\n' || peek() == '\r')) {
+            line_ += peek() == '\n' ? 1 : 0;
+            ++pos_;
+        }
     }
 
     bool new_node(std::uint32_t& index) {
@@ -68,6 +72,7 @@ private:
 
     bool value(std::uint32_t index, int depth) {
         skip_space();
+        node(index).line = line_;
         switch (peek()) {
         case '{': return container(index, depth, Type::Object);
         case '[': return container(index, depth, Type::Array);

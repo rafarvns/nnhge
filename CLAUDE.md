@@ -104,6 +104,11 @@ checked by the build (`nnh-assetc data`/`data-index`, `file:line: reason`, fixtu
 converted; `data::load("enemies/goblin", e)`, `count<T>`/`name<T>`, `Ref<T>`/`TextureRef` + `data::path(ref)`;
 allocation-free once the index `.nnh_data` is loaded. Schema sources compile for the host too: declarations only
 ([api/data.md](docs/api/data.md)).
+Sprite animation (spec 016, implemented, console check pending; demo `examples/animation`): `<nnh/animation.hpp>` —
+`SpriteLibrary` (one block, tag `animation`: frames, clips, markers, a state machine), a 64-byte `SpriteAnimator` per
+sprite (`update()` on the frame clock, notices by callback or returned view, `draw_options()`); `<name>.ase.json`
+Aseprite exports → `nnh-assetc sprite` → `load_sprite_library("<name>")` (D31; fixtures in `tests/data/aseprite/`)
+([api/animation.md](docs/api/animation.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
@@ -154,6 +159,7 @@ build/pc-debug/tools/nnh/nnh run input --script examples/input/tests/remote.nnhs
 build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
 NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
+ANIMATION_DEMO=check NNH_EXIT_AFTER_FRAMES=605 build/pc-debug/examples/animation/animation.exe   # showcase (default)|check|bench
 PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png build/pc-debug/examples/platformer/platformer.exe   # level1 (default)|bonus|bench|gate|flips|replay
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs   # tile gate on the console (Development, HBL → Y): bench: PASS/FAIL
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs  # levels + replay on the console: checksums = PC's, 60 Hz PASS/FAIL

@@ -1,6 +1,6 @@
 # Plan 016: Sprite animation
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: implemented (console check pending, T10.2) — approved (2026-11-22, maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D31 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`Duration`, memory tags, asserts, logs, `Result`, profiler), spec 004 (`Region`, `DrawOptions`), spec 007
 (assets by path), spec 012 (`nnh-assetc`, D27), spec 013 (console test scripts), and the frame clock of spec 015, which
@@ -591,3 +591,69 @@ ASan/UBSan, libFuzzer).
 
 No exceptions to the constitution. D31 is the one new decision (Aseprite exports and the `.nnhsprite` format); moving
 the frame clock to `<nnh/time.hpp>` amends plan 015 only.
+
+## Stage refinements and results (implementation, 2026-11-22)
+
+Deviations found while building, as plan 012 records them. None changes the public API sketched above beyond the
+additions listed.
+
+**Stage 0 results.** T0.2 and T0.3 were already done on main (`Frames`/`FrameTime` in `<nnh/time.hpp>` by spec 015,
+`detail::fnv1a32` by spec 014). Baselines (WinLibs GCC 16, devkitARM): pc-release `hello.exe` text 129 376, data
+21 988, bss 207 568 (file 277 503 bytes); 3ds-release `hello.elf` text 216 260, data 28 328, bss 102 584. A one-line TU
+with `<nnh/events.hpp>`: 7 636 preprocessed lines, ≈ 0.43 s `-fsyntax-only`. Build-time measurements of hello edits
+were not repeated (no build-system change touches hello).
+
+**Stage 1 refinements.** The header stores the offsets of the five sections after the frames (`offset[5]`, u32;
+frames start at 64) and keeps the serial in bytes 6–7, outside the CRC (memory only; the validator ignores it).
+`ClipFrameEntry` puts the duration first (no padding inside). Pivot/offset helpers are a pure header,
+`sprite_frame_math.hpp`. `SpriteLibraryAccess` (internal header) adopts loaded blocks and gives tests the block.
+
+**Stage 3–5 refinements.** The animator has one more byte than sketched, `changes_` (a change counter for
+re-entrancy, in what was padding); the callback comes first for alignment: 64 bytes on 3DS (`static_assert`ed, the
+3DS build checks it), 80 on PC. The walk over crossings is its own file (`animator_walk.cpp`). Fixed details: a
+finished clip holds its last frame with `time_in_frame()` = that frame's whole duration; `set_frame` restarts the loop
+count (a finite clip could otherwise never reach its end); `force()` of the current state only clears a waiting
+request; the start state of `SpriteAnimator{lib, state}` fires its frame's markers but no `StateChanged`; a state
+change made during an update (at-end, next-on-finish) starts `time_in_state()` at the carried time; a command from a
+callback that changes the clip also drops the rest of the update's time when it happens during the pending entry.
+Release's bound path skips whole loops by division and caps silent steps at 65 536 per call (then drops the rest of
+the time: only pathological chains of tiny finite clips reach it). `add_marker` can't refuse two different marker
+names with one hash (names aren't stored); the converter refuses them.
+
+**Stage 6 refinements.** "Code vs file" is covered by `test_sprite_load.cpp` (a code-built library written as a file
+plays the same frames and notices) and `test_sprite_aseprite.cpp` (the converted fixture, end to end); the mini-fuzz
+is its own file, `tests/fuzz/test_fuzz_sprite.cpp`. The fuzz target advances in steps of the library's shortest frame
+so it never reaches the per-update bounds, which assert in Debug. libFuzzer runs (`fuzz_sprite`,
+`fuzz_assetc_sprite`) are wired but not run (Linux, VM 120).
+
+**Stage 7 refinements.** `Problem` gains `line` and `problem_text()` (`file:line: reason`); Tiled messages are
+unchanged (no line). `run_map` became `run_convert`, shared by `map` and `sprite`. `nnh-assetc` is **0.3.0** (spec 014
+took 0.2.0; merge note: keep whichever is higher and bump once). An absent `direction` reads as forward; `"repeat":
+"0"` as a loop. `nnh_assetc_command()` takes an optional third argument naming what the game has, for its configure
+error. **T7.6:** spec 014's data routing (D29) isn't in this tree (stages 6–9 of spec 014 are being implemented in
+parallel), so there is nothing to apply yet: whichever lands second puts the `.ase.json` match before the data step and
+adds `.ase.json`/`.ase`/`.aseprite` to the owned list (D31 change log). The editing-one-export measurement of T7.5
+relies on the same depfile mechanism as maps (one custom command per export, DEPFILE listing JSON + PNG); it was not
+timed separately. **Unconfirmed:** the `pivot` slice key's pivot is read relative to its bounds (one marked line in
+`aseprite_slices.cpp`); no real Aseprite export was available.
+
+**Stage 8 refinements.** The self-check uses two libraries built in code (`libraries.cpp`: the gallery and a knight
+state machine), so the unit tests run it with no assets; the Aseprite library is exercised by the showcase and
+`test_sprite_aseprite.cpp`. Its symbols are `AnimationSelfCheck`/`format_animation_*` (the tweens example's
+`SelfCheck` is linked into the same test program). Golden checksum `512F027F`, the same in pc-debug and pc-dev (the
+`--pc` script uses the Development build). The gallery's speed is on L/R (the D-Pad runs the knight). The knight's jump
+and fall are looping one-frame clips (the game requests them every frame). Bench on PC: 512 animators avg 0.118 ms,
+worst 0.308 ms (pc-debug); 0.036 / 0.082 ms (pc-dev). The platformer's `PlayerSprite` polls the update's notices (no
+callback, so `LevelPlay` stays movable) and picks frames from the physics after the move: identical to the old counter
+while running (tested), possibly one frame apart at take-off or landing (drawing only; the replay and both scripts
+pass unchanged).
+
+**Stage 9 results.** One-line TU with `<nnh/animation.hpp>`: 8 170 preprocessed lines (+534 over `events.hpp`), the
+same ≈ 0.42–0.46 s `-fsyntax-only`.
+
+**Mutation testing (by hand, 2026-11-22).** 24 mutants over the sequence math, the walk, the clock, the rules, the
+state machine, markers, copy, validator, frame maths and the converter (Aseprite tags, slices, writer, frames): 20
+killed at first; the 4 survivors were real gaps (next-on-finish on a looping clip's wrap, the time a callback drops
+during the pending entry, the clip-order check of the validator, an off-centre pivot under flips) and each got a test
+(`a_looping_state_never_moves_on_by_itself`, `a_clip_changed_by_the_entry_callback_gets_none_of_the_updates_time`,
+`clips_must_own_their_frames_in_order`, `flipping_mirrors_an_off_centre_pivot_inside_the_region`): 24/24 killed.

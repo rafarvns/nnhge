@@ -25,6 +25,12 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   https://doc.mapeditor.org/en/stable/reference/json-map-format/ · flip bits in gids:
   https://doc.mapeditor.org/en/stable/reference/global-tile-ids/ · parallax (centre-based scrolling, parallax
   origin): https://doc.mapeditor.org/en/stable/manual/layers/#parallax-scrolling-factor
+- **Aseprite** (Igara Studio; paid editor, MIT-licensed sources read for the export format only) — its sprite sheet
+  JSON (`frames` Hash/Array, `meta.frameTags` with `direction` and `repeat` written as a string, `meta.slices` with
+  pivots) is what `nnh-assetc sprite` converts (spec 016, our own reader; nothing of Aseprite is shipped or needed to
+  build): https://www.aseprite.org/docs/sprite-sheet/ · https://www.aseprite.org/docs/cli/ ·
+  https://www.aseprite.org/docs/slices/ · ping-pong and repeat semantics checked against `src/doc/playback.cpp` and
+  `src/app/doc_exporter.cpp` (github.com/aseprite/aseprite)
 
 ## Engines and frameworks (design inspiration)
 - **Butano** (GBA, modern C++, zlib) — best model for API style and documentation quality; no exceptions/RTTI,
@@ -41,6 +47,15 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   parallel steps, intervals and callbacks; our scene-bound tween sets follow them (spec 015):
   https://docs.godotengine.org/en/stable/classes/class_tween.html ·
   https://docs.godotengine.org/en/stable/classes/class_timer.html
+- **Godot AnimatedSprite2D / SpriteFrames** — named animations with a speed and relative frame durations, shared
+  frames, `animation_finished`/`animation_looped` signals; our sprite libraries, animators and notices follow them
+  (spec 016): https://docs.godotengine.org/en/stable/classes/class_animatedsprite2d.html ·
+  https://docs.godotengine.org/en/stable/classes/class_spriteframes.html
+- **Unity Animator and animation events** — states → clips, transitions with exit time, Any State; events at a
+  frame; our state machine's rule table (AtEnd = exit time, `any()` = Any State) and frame markers (spec 016, without
+  Unity's parameters): https://docs.unity3d.com/Manual/class-Animator.html ·
+  https://docs.unity3d.com/Manual/class-Transition.html ·
+  https://docs.unity3d.com/Manual/script-AnimationWindowEvent.html
 - **DOTween** (Unity) — getter/setter targets, `Sequence` with Append/Join/AppendInterval/AppendCallback,
   Restart/Yoyo loops, `SetLink` to tie a tween's life to an object: https://dotween.demigiant.com/documentation.php
 - **Robert Penner's easing equations** (BSD licence) — the standard curves and their constants, which our 19

@@ -6,7 +6,7 @@ target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
 # Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
-add_library(nnh_fuzz_targets STATIC fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
+add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
 target_include_directories(nnh_fuzz_targets PUBLIC fuzz PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 
@@ -36,6 +36,19 @@ add_executable(nnh_tests
     collision/test_one_way.cpp
     core/test_crc32.cpp
     crash/test_assert.cpp
+    data_assets/data_file.cpp
+    data_assets/test_data_apply.cpp
+    data_assets/test_data_layout.cpp
+    data_assets/test_data_validate.cpp
+    data_assets/test_enum_names.cpp
+    data_assets/test_fingerprint.cpp
+    data_assets/test_refs.cpp
+    data_assets/test_schema_check.cpp
+    data_assets/test_schema_declare.cpp
+    data_assets/test_schema_registry.cpp
+    data_assets/test_schema_write.cpp
+    data_assets/test_string_list.cpp
+    data_assets/test_types.cpp
     crash/test_report.cpp
     debug/test_debug_list.cpp
     debug/test_debug_pass.cpp
@@ -229,6 +242,32 @@ if(NOT MSVC)
     add_test(NAME game_title_mismatch_fails COMMAND ${_title_check} "-DNNH_GAME_TITLE=\"My Game\""
              ${CMAKE_CURRENT_SOURCE_DIR}/app/compile_game_title.cpp)
     set_tests_properties(game_title_mismatch_fails PROPERTIES WILL_FAIL TRUE)
+
+    # Data schemas (spec 014 FR-1): a correct one compiles; each mistake fails to compile AND says what is wrong.
+    set(_schema_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra
+                      -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    set(_schemas ${CMAKE_CURRENT_SOURCE_DIR}/data_assets/compile_fail)
+    add_test(NAME data_schema_accepts_good COMMAND ${_schema_check} -Werror ${_schemas}/good.cpp)
+    foreach(case "unknown_member|.damgae. is not a member"
+                 "pointer|data fields can't be pointers or references"
+                 "double|double isn't a data field kind: use float"
+                 "int64|64-bit integers aren't data field kinds"
+                 "std_string|data fields must be trivially copyable"
+                 "min_on_string|data_error_min_or_max_on_a_field_that_is_not_a_number"
+                 "min_above_max|data_error_min_is_greater_than_max"
+                 "listed_twice|data_error_field_listed_twice"
+                 "not_aggregate|a data type must be a plain struct"
+                 "too_big|a data type can be at most 16 KiB"
+                 "too_many_fields|a data type can list at most 64 fields"
+                 "unknown_enum_name|.Fier. was not declared")
+        string(REPLACE "|" ";" case "${case}")
+        list(GET case 0 name)
+        list(GET case 1 expected)
+        add_test(NAME data_schema_rejects_${name} COMMAND ${_schema_check} ${_schemas}/${name}.cpp)
+        set_tests_properties(data_schema_rejects_${name} PROPERTIES WILL_FAIL TRUE)
+        add_test(NAME data_schema_explains_${name} COMMAND ${_schema_check} ${_schemas}/${name}.cpp)
+        set_tests_properties(data_schema_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+    endforeach()
 endif()
 
 # Image check of nnh_add_game(... IMAGES ...) (spec 004 FR-3, AC-4): run the script on fixture images.
@@ -440,7 +479,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg remote tilemap)
+    foreach(name path save asset_index wav ogg remote tilemap data)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

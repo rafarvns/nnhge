@@ -21,5 +21,14 @@ int remote_target(const std::uint8_t* data, std::size_t size);
 /// fixed (so mutations reach the content checks); an accepted file is copied into a map with extra room and
 /// every query, the draw-time tile expansion and a few edits run on it. Inputs over 256 KiB are only validated.
 int tilemap_target(const std::uint8_t* data, std::size_t size);
+/// Converted data assets `NNHD` (spec 014, fuzz_data.cpp), against a fixed schema with every field kind: validated
+/// as given, then with the header's size, CRC and fingerprint fixed (so mutations reach the body); every fixed input
+/// is applied into a guarded struct (apply must stay in bounds even on files the validator refuses), and an accepted
+/// one is applied and its values checked against the schema's rules.
+int data_target(const std::uint8_t* data, std::size_t size);
+/// For the mini-fuzz: whether `data`, with its header fixed as data_target does, is accepted.
+bool data_fixed_accepted(const std::uint8_t* data, std::size_t size);
+/// A valid file of data_target's schema with every field set, written to `out`; its size (0 if `capacity` is short).
+std::size_t data_seed(std::uint8_t* out, std::size_t capacity);
 
 } // namespace nnh::fuzz

@@ -151,7 +151,10 @@ spec; the order below is a proposal.
   item, a level's settings) in their own files in the assets folder — a readable text format written by hand —
   whose shape is a C++ struct the game declares; the build checks every file against it, the game loads them by
   path or name, values change without recompiling, and they can reference each other (an enemy's drop is an item)
-  and textures or sounds
+  and textures or sounds — [spec 014](../specs/014-data-assets/spec.md), **in progress, stages 0–2 done**
+  (2026-11-22: `<nnh/data.hpp>` value types and the `NNH_DATA_*` schema macros, the schema check, fingerprint and
+  description, the converted format's validator and apply, fuzzed; loading, the converter and the build steps
+  follow)
 - [ ] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
   every one with a tag, cheap to compare (hashed at build time)
 - [ ] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets

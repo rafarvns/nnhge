@@ -6,6 +6,17 @@
 #include "test.hpp"
 
 using nnh::detail::crc32;
+using nnh::detail::crc32_update;
+
+NNH_TEST(crc32_update_continues_a_checksum_in_pieces) {
+    // Like zlib's crc32(crc, buf, len): start from 0, feed pieces, get the one-shot value.
+    std::uint32_t crc = crc32_update(0, "1234", 4);
+    crc = crc32_update(crc, "", 0);
+    crc = crc32_update(crc, "56789", 5);
+    CHECK(crc == 0xCBF43926u);
+    CHECK(crc32_update(0, "a", 1) == crc32("a", 1));
+    CHECK(crc32_update(0, nullptr, 0) == 0u);
+}
 
 NNH_TEST(crc32_matches_the_standard_check_value) {
     CHECK(crc32("123456789", 9) == 0xCBF43926u);

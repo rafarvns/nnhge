@@ -159,6 +159,33 @@ NNH_TEST(tilemap_target_survives_mutated_inputs) {
     CHECK(nnh::mem::tag_stats(nnh::detail::tilemap_memory_tag()).count == 0); // every map was freed
 }
 
+NNH_TEST(data_target_survives_mutated_inputs) {
+    // A file with every field kind set, with 1-4 bytes changed and sometimes cut. The target fixes the header itself,
+    // so mutants reach the body; many are accepted and then applied and checked (counted here to prove the deep path
+    // runs). Random short inputs too.
+    std::uint8_t seed[512];
+    const std::size_t size = nnh::fuzz::data_seed(seed, sizeof seed);
+    CHECK(size > 100);
+    CHECK(nnh::fuzz::data_fixed_accepted(seed, size));
+    nnh::fuzz::data_target(seed, size);
+    std::uint32_t state = 777;
+    int accepted = 0;
+    std::uint8_t buffer[512];
+    for (int i = 0; i < 6000; ++i) {
+        std::size_t n = size;
+        std::memcpy(buffer, seed, size);
+        if (i % 8 == 0) n = next(state) % (size + 1);
+        const int flips = 1 + static_cast<int>(next(state) % 4);
+        for (int k = 0; k < flips && n > 0; ++k) {
+            buffer[next(state) % n] ^= static_cast<std::uint8_t>(1 + next(state) % 255);
+        }
+        nnh::fuzz::data_target(buffer, n);
+        accepted += nnh::fuzz::data_fixed_accepted(buffer, n) ? 1 : 0;
+    }
+    CHECK(accepted > 100);
+    mutate_and_run(nnh::fuzz::data_target, nullptr, 0);
+}
+
 NNH_TEST(save_target_survives_mutated_inputs) {
     std::uint8_t file[64] = {};
     const char payload[] = "seed payload";

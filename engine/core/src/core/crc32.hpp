@@ -12,4 +12,9 @@ namespace nnh::detail {
 /// Never allocates; bitwise, table-free (about 8 shifts per byte: fine for files, not for hot loops).
 std::uint32_t crc32(const void* data, std::size_t size);
 
+/// Continues `crc` (the result of an earlier call, or 0 to start) with `size` more bytes, as zlib's
+/// crc32(crc, buf, len): crc32_update(crc32_update(0, a, n), b, m) is the checksum of a then b. Used by the
+/// data schema fingerprint, which is computed piece by piece.
+std::uint32_t crc32_update(std::uint32_t crc, const void* data, std::size_t size);
+
 } // namespace nnh::detail

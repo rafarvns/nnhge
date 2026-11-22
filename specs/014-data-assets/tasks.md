@@ -1,6 +1,6 @@
 # Tasks 014: Data assets
 
-Status: approved (2026-11-22, maintainer pre-approved); not started
+Status: approved (2026-11-22, maintainer pre-approved); in progress — stages 0–2 done
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -10,10 +10,19 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
 
 ## Stage 0 — baseline and toolchain probe
 
-- [ ] **T0.1** baseline numbers (Windows; 3 runs each): edit `examples/hello/main.cpp` → simulator and `.3dsx`
+- [x] **T0.1** baseline numbers (Windows; 3 runs each): edit `examples/hello/main.cpp` → simulator and `.3dsx`
   build times; clean engine build; `hello.exe` and `hello.3dsx` sizes and their Ninja step lists
   (`ninja -t commands hello`); `platformer` builds clean — files: this file (result) — covers III, AC-6
-- [ ] **T0.2** probe (scratch, not committed) — files: a 40-line `probe.cpp` — test: compiles and runs with WinLibs
+
+  **Result (2026-11-22, commit `b9e52bf`, maintainer's PC: WinLibs GCC 16.2 + ccache with every edit a miss /
+  devkitARM GCC 16.1 without ccache):** edit `examples/hello/main.cpp` → simulator (`pc-debug`, target `hello`)
+  1.71 / 1.66 / 1.67 s; → `.3dsx` (`3ds-release`, target `hello`) 2.67 / 2.64 / 2.62 s. Clean 3DS engine
+  (`nnh_core` + `nnh_platform_3ds`) 10.97 / 10.92 s; the rest of a clean `3ds-release` (examples, NNH Link, host
+  tool) 15.6 s, no warnings; 3DS no-op build 2.9 s. Sizes: Release `hello.3dsx` **261,284** bytes, `hello.elf`
+  2,487,084; `pc-release` `hello.exe` **276,599** bytes. Ninja step lists of target `hello` (`ninja -t commands`):
+  122 commands in `pc-debug` and `pc-release`, 116 in `3ds-release` (118 for `hello_3dsx`); kept in
+  `build/tmp/s014/hello_cmds_*_before.txt` for T7.8. `platformer` builds clean in both presets.
+- [x] **T0.2** probe (scratch, not committed) — files: a 40-line `probe.cpp` — test: compiles and runs with WinLibs
   GCC, devkitARM (`scripts/dkp.sh`), GCC 13 and clang 18 on VM 120: `using enum` in a constant lambda,
   `offsetof` on a standard-layout aggregate holding `String<N>` and `List<T, N>`, `&type_tag<T>` as a constant
   across two translation units, a `constinit` list head with static registrars. **Also the CMake spike**: an
@@ -21,47 +30,86 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
   custom command if needed) in `3ds-release`; measure a no-op build with it vs `BUILD_ALWAYS`; write the choice back
   into plan.md (D29 fallback) — covers FR-1, FR-3, III (risks)
 
+  **Result (2026-11-22): the language features work on both Windows compilers; the object dependency works, so D29's
+  main path is kept (no `BUILD_ALWAYS`).** Probe (two translation units, `-std=c++20 -Wall -Wextra -Werror -O2`):
+  WinLibs GCC 16.2 compiles and runs it (`nodes=2 same_tag=1 same_off=1 enum=6`); devkitARM GCC 16.1 compiles and
+  links it for the 3DS (`-specs=3dsx.specs`, libctru). Checked: `using enum` inside a `constexpr` lambda, `offsetof`
+  of a `List<float, 4>` member in a constant `Node`, `&type_tag<T>` in a constant expression and equal across the two
+  units, a `constinit` list head filled by static registrars in both units. GCC 13 and clang 18 on VM 120: **left to
+  the maintainer** (VMs are not started by agents for this task; the same probe is the first thing T9.1 runs).
+  CMake spike (`3ds-release` toolchain through `dkp.sh`, a console OBJECT library + an `ExternalProject` building the
+  same source for the host): a stamp custom command `DEPENDS $<TARGET_OBJECTS:schema_objs>`, added to the build
+  step with `ExternalProject_Add_StepDependencies(... build <stamp>)`. No-op build **0.31 s** (nothing runs) against
+  **1.27 s** with `BUILD_ALWAYS` (the build step, its install and the description step run every time). Editing a
+  header included by the schema source rebuilds the console object, the stamp, the host program and the
+  description; editing a game source unrelated to the schema runs no host step. Caveat for T7.3: the host program's
+  own sources (`tools/data_schema/schema_main.cpp`, core's pure registry files) are not in the console objects, so
+  they must be file dependencies of the build step as well.
+
 ## Stage 1 — declaring data types in C++ (pure, PC tests)
 
-- [ ] **T1.1** value types `String<N>`, `List<T, N>`, `Ref<T>`, `TextureRef`/`SoundRef`/`MusicRef` — files:
+- [x] **T1.1** value types `String<N>`, `List<T, N>`, `Ref<T>`, `TextureRef`/`SoundRef`/`MusicRef` — files:
   `engine/core/include/nnh/data.hpp` — test: `tests/data_assets/test_string_list.cpp`, `test_refs.cpp` (trivially
   copyable, standard layout, defaults, `assign` truncation at a code point, `==`, `push_back` past N, empty) —
   covers FR-2, FR-8
-- [ ] **T1.2** kind deduction and `FieldInfo` (`make_field`, every kind/width, arrays, lists, nested, options,
+- [x] **T1.2** kind deduction and `FieldInfo` (`make_field`, every kind/width, arrays, lists, nested, options,
   static_asserts with readable messages) — files: `engine/core/include/nnh/detail/data_schema.hpp` — test:
   `test_schema_declare.cpp`; ctest `data_schema_rejects_*`/`explains_*` on `tests/data_assets/compile_fail/*.cpp`
   (EXCLUDE_FROM_ALL objects built by the test) — covers FR-1, FR-2
-- [ ] **T1.3** macros `NNH_DATA_TYPE`/`STRUCT`/`ENUM`/`FIELD`, `Registrar`, registry lookups by tag and key, enum
+- [x] **T1.3** macros `NNH_DATA_TYPE`/`STRUCT`/`ENUM`/`FIELD`, `Registrar`, registry lookups by tag and key, enum
   name splitting — files: `data_schema.hpp`, `engine/core/src/data/schema_registry.{hpp,cpp}`,
   `enum_names.{hpp,cpp}` — test: `test_schema_registry.cpp`, `test_enum_names.cpp`, tests' schema
   `tests/data_assets/test_types.{hpp,cpp}` — covers FR-1, FR-2
-- [ ] **T1.4** registry check (duplicate key/type, unresolved nested/enum type, `Ref` to a keyless type, depth > 4,
+- [x] **T1.4** registry check (duplicate key/type, unresolved nested/enum type, `Ref` to a keyless type, depth > 4,
   reserved and malformed keys, type/enum counts), on local registries — files: `data/schema_check.cpp` — test:
   `test_schema_registry.cpp` — covers FR-1, FR-14
-- [ ] **T1.5** [P] fingerprint (canonical encoding, clamped ranges) — files: `data/schema_fingerprint.cpp`,
+- [x] **T1.5** [P] fingerprint (canonical encoding, clamped ranges) — files: `data/schema_fingerprint.cpp`,
   `data/data_format.hpp` — test: `test_fingerprint.cpp` (stable value pinned; changes with each covered property;
   unchanged by member order, default values and offsets) — covers FR-10
-- [ ] **T1.6** [P] description writer — files: `data/schema_write.{hpp,cpp}` — test: `test_schema_write.cpp`
+- [x] **T1.6** [P] description writer — files: `data/schema_write.{hpp,cpp}` — test: `test_schema_write.cpp`
   (exact text of the tests' schema) — covers FR-3
 
   Stage end: `ctest --preset pc-debug` green; PC Debug and Release build; `3ds-release` builds (the header compiles
   for the console).
 
+  **Result (2026-11-22):** unit tests in `tests/data_assets/` — `test_string_list.cpp` 11, `test_refs.cpp` 2,
+  `test_schema_declare.cpp` 15, `test_enum_names.cpp` 5, `test_schema_registry.cpp` 7, `test_schema_check.cpp` 30,
+  `test_fingerprint.cpp` 18 (Enemy pinned `0xFCEF3C32`), `test_schema_write.cpp` 5, plus `crc32_update` (1) in
+  `tests/core/test_crc32.cpp`; the tests' schema `test_types.{hpp,cpp}`. 25 compile-fail ctests:
+  `data_schema_accepts_good` and `data_schema_rejects_*`/`data_schema_explains_*` for unknown member, pointer,
+  double, int64, `std::string`, `.min` on a string, min > max, a field listed twice, not an aggregate, over 16 KiB,
+  65 fields, unknown enum name. ctest 176/176; `pc-debug`, `pc-release`, `3ds-release` without warnings; the tests'
+  schema compiles for the 3DS with devkitARM `-Werror`. Refinements: plan.md "Stage 1 refinements".
+
 ## Stage 2 — the converted format: validator and apply (pure)
 
-- [ ] **T2.1** test-only writer of `NNHD` buffers by field index (`seal()` fixes size and CRC) — files:
+- [x] **T2.1** test-only writer of `NNHD` buffers by field index (`seal()` fixes size and CRC) — files:
   `tests/data_assets/data_file.{hpp,cpp}` — test: used by T2.2–T2.4 — covers FR-10
-- [ ] **T2.2** bounded validator — files: `data/data_validate.{hpp,cpp}`, `data_format.hpp` — test:
+- [x] **T2.2** bounded validator — files: `data/data_validate.{hpp,cpp}`, `data_format.hpp` — test:
   `test_data_validate.cpp` (magic, version → `Unsupported`, size, CRC, fingerprint message, field order, every
   kind's bounds incl. `min`/`max`, UTF-8, list counts, trailing bytes, each limit + 1) — covers FR-10, FR-11, FR-14
-- [ ] **T2.3** apply through offsets (ints by width, strings zero-filled, enum values from the table, list counts,
+- [x] **T2.3** apply through offsets (ints by width, strings zero-filled, enum values from the table, list counts,
   nested, arrays of structs) — files: `data/data_apply.{hpp,cpp}` — test: `test_data_apply.cpp`,
   `test_data_layout.cpp` (two structs, different member order/padding, one schema → same bytes, same values) —
   covers FR-2, FR-10, FR-11
-- [ ] **T2.4** [P] fuzz target `data_target` (validate as is, then with size/CRC fixed; apply accepted buffers into
+- [x] **T2.4** [P] fuzz target `data_target` (validate as is, then with size/CRC fixed; apply accepted buffers into
   a struct of a schema with every kind) — files: `tests/fuzz/fuzz_data.cpp`, `libfuzzer_data.cpp`,
   `fuzz_targets.*`, `test_fuzz_smoke.cpp`, `tests/CMakeLists.txt` — test: mini-fuzz in `nnh_tests` (> 100 accepted
   mutants) — covers AC-5, X
+
+  **Result (2026-11-22):** `test_data_validate.cpp` 20, `test_data_apply.cpp` 10, `test_data_layout.cpp` 2,
+  `utf8_valid` 2 in `tests/text/test_utf8.cpp`, mini-fuzz `data_target_survives_mutated_inputs` (6 000 mutants of a
+  file with every kind, > 100 accepted, plus random short inputs); libFuzzer `fuzz_data` wired (clang only, not run
+  yet: T9.1). `nnh_tests` 1117/1117 (Debug), 1084/1084 (Release); ctest 176/176; `pc-debug`, `pc-release`,
+  `3ds-dev`, `3ds-release` without warnings. Opt-in: Release `hello.exe` 276,599 bytes and `hello.3dsx` 261,284,
+  both equal to T0.1, no data symbol in either (`nm`); `ninja -t commands hello` lists 9 more commands (131 / 125),
+  exactly the 9 new `nnh_core` sources compiled once for the library — hello's own steps are unchanged (T7.8 checks
+  again). Hand mutation testing of the validator, apply, fingerprint and description writer: 90 mutants, **84
+  killed**; the first run left 11 survivors, and tests were added for the 5 real ones (an enum missing from the
+  registry, an impossible integer width, an enum index equal to the name count, a buffer shorter than a header,
+  an unsigned full-range field in the description); the 6 left are equivalent (a read check repeated later,
+  `== 1` vs `!= 0` on a validated bool, the fingerprint memo, a marker for unknown types, depth guards and an
+  ignored element failure that change nothing observable). Refinements: plan.md "Stage 2 refinements".
 
 ## Stage 3 — the index and the loading API (fake platform)
 

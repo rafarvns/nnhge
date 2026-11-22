@@ -80,6 +80,31 @@ NNH_TEST(utf8_a_bad_byte_does_not_swallow_the_next_character) {
     CHECK(c[0] == kReplacementChar && c[1] == U'A');
 }
 
+NNH_TEST(utf8_valid_accepts_well_formed_text_of_a_given_length) {
+    using nnh::detail::utf8_valid;
+    CHECK(utf8_valid("", 0));
+    CHECK(utf8_valid(nullptr, 0));
+    CHECK(utf8_valid("abc", 3));
+    CHECK(utf8_valid("a\xC3\xA7\xE2\x82\xAC\xF0\x9F\x98\x80", 10)); // a, ç, €, emoji
+    CHECK(utf8_valid("a\0b", 3));                                   // NUL is valid UTF-8 (callers refuse it)
+    CHECK(utf8_valid("\xEF\xBF\xBF\xF4\x8F\xBF\xBF", 7));          // U+FFFF, U+10FFFF
+}
+
+NNH_TEST(utf8_valid_refuses_bad_sequences) {
+    using nnh::detail::utf8_valid;
+    CHECK(!utf8_valid("\x80", 1));             // continuation without a lead
+    CHECK(!utf8_valid("\xC3", 1));             // cut at the end of the slice
+    CHECK(!utf8_valid("\xC3\xA7", 1));         // cut by the length, not by a NUL
+    CHECK(!utf8_valid("\xC3" "A", 2));         // lead byte followed by a non-continuation
+    CHECK(!utf8_valid("\xC0\xAF", 2));         // overlong 2-byte
+    CHECK(!utf8_valid("\xE0\x80\xAF", 3));     // overlong 3-byte
+    CHECK(!utf8_valid("\xED\xA0\x80", 3));     // UTF-16 surrogate
+    CHECK(!utf8_valid("\xF0\x80\x80\x80", 4)); // overlong 4-byte
+    CHECK(!utf8_valid("\xF4\x90\x80\x80", 4)); // above U+10FFFF
+    CHECK(!utf8_valid("\xF5\x80\x80\x80", 4)); // impossible lead
+    CHECK(!utf8_valid("\xFF", 1));
+}
+
 NNH_TEST(utf8_random_bytes_always_end_at_the_terminator) {
     // Property: for any bytes, decoding visits the string once, ends exactly at '\0' and never past it.
     std::uint32_t seed = 2026;

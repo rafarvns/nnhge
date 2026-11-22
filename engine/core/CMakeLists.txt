@@ -14,8 +14,16 @@ add_library(nnh_core STATIC
     src/collision/grid_move.cpp
     src/collision/grid_query.cpp
     src/core/crc32.cpp
+    src/core/crc32_update.cpp
     src/crash/crash.cpp
     src/crash/report.cpp
+    src/data/data_apply.cpp
+    src/data/data_validate.cpp
+    src/data/enum_names.cpp
+    src/data/schema_check.cpp
+    src/data/schema_fingerprint.cpp
+    src/data/schema_registry.cpp
+    src/data/schema_write.cpp
     src/assets/asset_index.cpp
     src/audio/audio.cpp
     src/audio/mix.cpp
@@ -77,6 +85,7 @@ add_library(nnh_core STATIC
     src/text/font_texture.cpp
     src/text/layout.cpp
     src/text/utf8.cpp
+    src/text/utf8_valid.cpp
     src/tilemap/map_animations.cpp
     src/tilemap/map_build.cpp
     src/tilemap/map_collision.cpp

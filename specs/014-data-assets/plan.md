@@ -1,6 +1,6 @@
 # Plan 014: Data assets
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: approved (2026-11-22, maintainer pre-approved); in progress, stages 0–2 done (see the "Stage N refinements")
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D29 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`Result`, memory tags, logs), spec 007 (assets, per-file build steps, the asset index), spec 012 /
 D27 (`nnh-assetc`, host tools in cross presets, shared pure validators), spec 013 (console test scripts)
@@ -82,7 +82,8 @@ The spec chose option (a): the schema is C++ and the build reads it through a ho
     schema sources (`$<TARGET_OBJECTS:…>`), which Ninja already rebuilds exactly when a schema source or a header it
     includes changes. So an ordinary build of a data game pays nothing for the host program; a schema edit pays one
     host compile and link. (Fallback if the dependency on objects can't be expressed: `BUILD_ALWAYS` like
-    `nnh-assetc`, ~0.7 s per build on Windows — decided by the spike T0.2 with numbers.)
+    `nnh-assetc`, ~0.7 s per build on Windows — decided by the spike T0.2 with numbers: **not needed**, see "Stage 0
+    refinements" below.)
   - The program rewrites the description only when its content changes; CMake's Ninja custom commands have
     `restat = 1`, so editing a schema source without changing the schema (a comment, a default value) reconverts
     nothing.
@@ -98,6 +99,18 @@ The spec chose option (a): the schema is C++ and the build reads it through a ho
 - **Rejected**: a separate schema file with generated C++ (two places, generated code); parsing C++ headers (fragile);
   embedding the description in a section of the game's ELF/EXE and reading it back (needs ELF and PE readers, data
   conversion would wait for the game's link, and linker scripts may drop the section); loading TOML at run time.
+
+#### Stage 0 refinements (2026-11-22, implemented)
+
+- **The fallback is not needed: the host program's build step depends on the console objects** (spike T0.2, numbers
+  in [tasks.md](tasks.md)). The dependency goes through a stamp: `add_custom_command(OUTPUT <stamp> COMMAND cmake -E
+  touch <stamp> DEPENDS $<TARGET_OBJECTS:<game>_data_schema_objs>)` and `ExternalProject_Add_StepDependencies(<ep>
+  build <stamp>)`; no `BUILD_ALWAYS`. A no-op 3DS build of the spike: 0.31 s, against 1.27 s with `BUILD_ALWAYS`.
+- **The step also depends on the host program's own engine sources** (`tools/data_schema/schema_main.cpp` and the
+  pure core files it compiles), which are not in the console objects; otherwise an engine update would not rebuild
+  the program.
+- GCC 13 and clang 18 (VM 120) were not probed by the agent; the maintainer runs the probe there, and T9.1 repeats
+  it.
 
 ### What is a data file, when the keys are only known at build time
 
@@ -217,6 +230,46 @@ NNH_DATA_TYPE(Enemy, "enemy", NNH_DATA_FIELD(name), NNH_DATA_FIELD(hp, .min = 1,
 Not supported (a `static_assert`): pointers, references, `double`, 64-bit integers, plain `char`, `std::string` and
 other non-trivially-copyable members, arrays or lists of arrays/lists, unions.
 
+#### Stage 1 refinements (2026-11-22, implemented)
+
+Found while building the declaration side; the code is `engine/core/include/nnh/data.hpp`,
+`engine/core/include/nnh/detail/data_{schema,kinds,tables,macros}.hpp` and `engine/core/src/data/`.
+
+- **Type ids**: the existing `detail::type_id<T>()` (`nnh/detail/type_id.hpp`, the event bus's: the address of a
+  `static constexpr` member, one per type) is the tag; no second `type_tag` variable.
+- **Four detail headers instead of one**, to keep each under ~150 lines: records (`data_schema.hpp`: `FieldKind`,
+  `FieldShape`, `FieldInfo`, `TypeInfo`, `EnumInfo`, nodes, registrars), kind deduction (`data_kinds.hpp`), the
+  builders `make_field`/`make_type`/`make_enum` (`data_tables.hpp`) and the macros (`data_macros.hpp`).
+  `<nnh/data.hpp>` includes them at its end; it does not yet declare `load`/`count`/... (stage 3).
+- **Macro expansion**: each `NNH_DATA_TYPE`/`STRUCT`/`ENUM` becomes one struct named `nnh_data_type_<__COUNTER__>`
+  in an anonymous namespace (holding `Self`, the field array and the record) plus a node and its registrar. So
+  qualified names work (`NNH_DATA_TYPE(game::Enemy, ...)`), nothing is pasted from the type's name, and a trailing
+  `;` is consumed by a `static_assert(true, "")`. A type lists at least one field.
+- **Mistakes in field options** (`.min` on a string, a range with no value, a non-whole bound on an integer field)
+  and **a field listed twice** can't be `static_assert`s (the values are function arguments): the builders call a
+  never-defined function such as `data_error_min_or_max_on_a_field_that_is_not_a_number()` during constant
+  evaluation, and the compiler's error names it (the compile-fail ctests check the names). Also refused at compile
+  time: `const` members, arrays over 256 values, character types (`char`, `wchar_t`, `char8_t`...).
+- **`EnumInfo`** carries the enum's source file (for messages) and its values as `std::int64_t`; enums up to 32 bits.
+- **`List<T, N>`** exposes `items_offset()` (static, for the tables); `clear()` gives every used slot `T{}` back.
+- **Schema check** (`data/schema_check.{hpp,cpp}`, tests in `test_schema_check.cpp`): also refuses two types or two
+  enums with the same C++ name (the description refers to types by name), names over 63 characters (type, field, enum
+  and enum value names: bounds for the description reader), and the reserved key `t3x` (the 3DS texture outputs)
+  besides `png wav ogg tmj tsj nnhmap nnh_data`. Nesting depth is computed by bounded rounds over the registry (no
+  recursion), so a cycle — possible only in a damaged description — reads as too deep.
+- **Fingerprint** (`data/schema_fingerprint.{hpp,cpp}`): computed with a new streaming `detail::crc32_update`
+  (zlib semantics, declared in `core/crc32.hpp`, defined in `core/crc32_update.cpp`). A nested type is encoded as its own fingerprint, memoized per call, so the cost is
+  linear in the schema whatever its shape. Enum *values* and enum and struct *widths/sizes* are not covered (the file
+  stores a name's index; apply maps it through the game's table). The encoding starts with the text `NNHD-schema`
+  (change it if the encoding changes). Pinned in a test: the tests' `Enemy` is `0xFCEF3C32`.
+- **Description format** (version 1) is specified in `data/schema_write.hpp`: `enum <Name> <count> <names...>`,
+  `type <Name> <key|-> <fields> <fingerprint> <source>`, `field <name> <one|array N|list N> <kind...> [min v] [max v]
+  [required]`, enums then types sorted by name. `min`/`max` are written only when narrower than the member type's
+  range (floats with 17 significant digits, so they read back exactly); the type's fingerprint is written too, so the
+  reader can check it computes the same.
+- Tests: `tests/data_assets/` (the folder `tests/data/` holds fixtures); the test framework's cap `kMaxTests` rose from
+  1024 to 2048 (this stage passed 1024 tests).
+
 ### Events introduced
 
 | Event | Published by | Payload | Typical listeners |
@@ -268,6 +321,32 @@ bounded by the schema (depth ≤ 4 by construction): field indices in range and 
 **Apply** (`data_apply.cpp`) runs only on a validated buffer and writes through the compiled offsets: ints decoded
 to the member's width, strings copied and the rest of the buffer zeroed (loaded structs compare bytewise), enums
 through the game's value table, list counts into `List::count_`.
+
+#### Stage 2 refinements (2026-11-22, implemented)
+
+The code is `engine/core/src/data/{data_format,byte_reader,data_validate,data_apply}.*`; tests in
+`tests/data_assets/test_data_{validate,apply,layout}.cpp` with the test-only writer `data_file.{hpp,cpp}`; fuzzing in
+`tests/fuzz/fuzz_data.cpp` (`data_target`, libFuzzer `fuzz_data`).
+
+- **`validate_data(data, size, registry, type, fingerprint)`** takes the expected fingerprint (the loader computes it
+  once per type) and returns a `DataCheck {problem, reason}` like the map validator: `Damaged` (→ `Corrupted`),
+  `NewerVersion` (a newer format version or any flag → `Unsupported`), `Stale` (the fingerprint: "converted for
+  another version of the type: rebuild the assets" → `Corrupted`, the loader adds the type's name), `OverLimit` (over
+  64 KiB → `LimitReached`).
+- **The validator also checks `required`** in every struct value a file writes (the root, written sections, list and
+  array items): the converter guarantees it, the fingerprint covers it, and checking it costs one bit mask. A struct
+  the registry can't resolve (a game whose schema check didn't run) is `Damaged` ("the type's schema is incomplete").
+- **Every value takes at least one byte and a failed read stops the walk**, so validation is linear in the file size
+  whatever the schema (no 256⁴ loops on a truncated file).
+- **Apply is memory-safe on any input**, not only validated files: it clamps list counts and string lengths to the
+  member's capacity and stops at an unknown field index, enum index or nesting over 4. The fuzz target applies every
+  input, accepted or not, into a struct followed by guard bytes.
+- **Bounded UTF-8 check**: `detail::utf8_valid(text, size)` is declared in `text/utf8.hpp` and lives in its own
+  `text/utf8_valid.cpp`; the validator refuses NUL bytes separately. Likewise `crc32_update` lives in
+  `core/crc32_update.cpp`. Both are separate files, and `crc32()` and `next_codepoint()` are untouched, because the PC
+  link pulls whole objects from the static library: a first version that shared code with them made Release `hello.exe`
+  580 bytes larger (and `hello.3dsx` 44 bytes larger) without linking any data code. With the split, both sizes equal
+  T0.1's.
 
 ### Data index `.nnh_data` (version 1)
 

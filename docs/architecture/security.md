@@ -61,7 +61,11 @@ least one valid file.
   live in `tools/assetc/tests/fuzz_assetc.cpp` (`json_target`; `map_target`, a whole conversion of an in-memory map
   and tileset, whose accepted output must pass the validator), as a mini-fuzz in `nnh_assetc_tests` (8 000 JSON
   and 6 000 map/tileset mutants) and libFuzzer executables `fuzz_assetc_json`, `fuzz_assetc_map` (not run on
-  Linux yet: T8.1). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+  Linux yet: T8.1). Converted data assets `NNHD` of spec 014 (stage 2) are checked by `data/data_validate.*`
+  against the game's compiled schema (header, CRC, schema fingerprint, then every field index, value, string, enum
+  index and list count, linear in the file size); `data_target` validates as given and with the header fixed, applies
+  every input into a guarded struct (apply clamps counts and lengths even on refused files) and checks the values of
+  accepted ones; libFuzzer executable `fuzz_data`, not run on Linux yet (spec 014 T9.1). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
   for Ogg, where each run decodes; 12 000 mutations of three valid maps, one with animated tiles, for `.nnhmap`) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
   build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built

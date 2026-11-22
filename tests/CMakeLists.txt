@@ -232,6 +232,13 @@ if(TARGET platformer AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STR
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PLATFORMER_DEMO=replay;NNH_EXIT_AFTER_FRAMES=920"
         TIMEOUT 120)
 endif()
+# The animation example's self-check in the simulator (spec 016 AC-6): the verdict the console script waits for.
+if(TARGET animation AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME animation_self_check_pc COMMAND animation)
+    set_tests_properties(animation_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;ANIMATION_DEMO=check;NNH_EXIT_AFTER_FRAMES=610"
+        PASS_REGULAR_EXPRESSION "animation: PASS" FAIL_REGULAR_EXPRESSION "animation: FAIL" TIMEOUT 120)
+endif()
 # The tweens example's self-check in the simulator (spec 015 AC-5): the same verdict the console script waits for.
 if(TARGET tweens AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME tweens_self_check_pc COMMAND tweens)
@@ -242,6 +249,10 @@ endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 # The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
 target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/tweens/self_check.cpp)
+# The animation example's self-check (spec 016 T8.2): its golden checksum on every host compiler.
+target_sources(nnh_tests PRIVATE animation_example/test_self_check.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/animation/libraries.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/animation/self_check.cpp)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.

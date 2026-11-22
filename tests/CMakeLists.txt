@@ -6,7 +6,8 @@ target_include_directories(nnh_test_framework PUBLIC framework)
 target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 
 # Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
-add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp)
+add_library(nnh_fuzz_targets STATIC fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_sprite.cpp fuzz/fuzz_targets.cpp
+                                     fuzz/fuzz_tilemap.cpp)
 target_include_directories(nnh_fuzz_targets PUBLIC fuzz PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 
@@ -20,15 +21,18 @@ add_executable(nnh_tests
     animation/test_animator_reentrancy.cpp
     animation/test_animator_sequences.cpp
     animation/test_animator_states.cpp
+    animation/sprite_file.cpp
     animation/test_sprite_alloc.cpp
     animation/test_sprite_clips.cpp
     animation/test_sprite_frames.cpp
     animation/test_sprite_layout.cpp
     animation/test_sprite_library.cpp
+    animation/test_sprite_load.cpp
     animation/test_sprite_lifetime.cpp
     animation/test_sprite_markers.cpp
     animation/test_sprite_sequence.cpp
     animation/test_sprite_states.cpp
+    animation/test_sprite_validate.cpp
     app/test_data_folder.cpp
     app/test_frame_loop.cpp
     assets/test_asset_index.cpp
@@ -95,6 +99,7 @@ add_executable(nnh_tests
     fs/test_path.cpp
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
+    fuzz/test_fuzz_sprite.cpp
     gfx/test_draw_calls.cpp
     gfx/test_draw_list.cpp
     gfx/test_texture_rules.cpp
@@ -557,7 +562,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg remote tilemap data data_index)
+    foreach(name path save asset_index wav ogg remote tilemap data data_index sprite)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

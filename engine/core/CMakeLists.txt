@@ -14,12 +14,15 @@ add_library(nnh_core STATIC
     src/animation/animator_state.cpp
     src/animation/animator_walk.cpp
     src/animation/sprite_clips.cpp
+    src/animation/sprite_copy.cpp
     src/animation/sprite_frames.cpp
     src/animation/sprite_layout.cpp
     src/animation/sprite_library.cpp
+    src/animation/sprite_load.cpp
     src/animation/sprite_markers.cpp
     src/animation/sprite_sequence.cpp
     src/animation/sprite_states.cpp
+    src/animation/sprite_validate.cpp
     src/app/app.cpp
     src/app/data_folder.cpp
     src/collision/aabb.cpp

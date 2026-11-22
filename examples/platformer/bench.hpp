@@ -2,7 +2,9 @@
 // Benchmark for the spec 012 gate (decision D26): N full layers of 16x16 tiles scrolling diagonally on the
 // top screen (every cell drawn: up to 26 x 16 = 416 tiles per layer) plus M sprites. L/R change N, Y/X change
 // M. The bottom screen shows the frame time and the frames that missed 60 Hz since the last change. A starts
-// the automatic gate (gate.hpp): the target and the limit searches, logged, with the verdict on screen.
+// the automatic gate (gate.hpp): the target and the limit searches, logged, with the verdict on screen. B cycles
+// the camera zoom 1 → 0.5 → 2 (spec 018: set by hand with gfx::set_camera, no camera helper); at a zoom other than
+// 1 the gate only measures the limits.
 
 #include "art.hpp"
 #include "gate.hpp"
@@ -16,7 +18,7 @@ class Bench final : public nnh::Scene {
   public:
     static constexpr int kMaxLayers = 12;
     static constexpr int kMaxSprites = 2000;
-    static constexpr int kMaxTiles = kMaxLayers * 26 * 16; ///< for AppConfig::gfx.max_tiles
+    static constexpr int kMaxTiles = kMaxLayers * 51 * 31; ///< for AppConfig::gfx.max_tiles (full layers at zoom 0.5)
 
     /// Builds its map (kMaxLayers full layers on `art.tiles`). Starts with 4 layers and 300 sprites (the
     /// gate).
@@ -46,6 +48,7 @@ class Bench final : public nnh::Scene {
     int sprite_count_ = 300;
     nnh::Vec2 camera_{3, 5};
     nnh::Vec2 camera_speed_{1.3f, 0.7f};
+    float zoom_ = 1; ///< B: 1 → 0.5 → 2
     // Frame times since the counts last changed.
     double average_ms_ = 0;
     double worst_ms_ = 0;

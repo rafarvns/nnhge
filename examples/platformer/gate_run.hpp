@@ -10,6 +10,9 @@
 // the target while trials pass (the limit is the last count that passed) or, when the target failed, down
 // until one passes.
 
+#include <cstddef>
+#include <nnh/math.hpp>
+
 struct GateCounts {
     int layers = 0;
     int sprites = 0;
@@ -92,3 +95,17 @@ class GateRun {
     int layer_limit_ = 0;
     int sprite_limit_ = -1;
 };
+
+// ---- The bench's zoom (spec 018 T7.2): B cycles it; A at a zoom other than 1 runs the same trials to measure the
+// limits only (no pass threshold: zooming out is the game's cost choice).
+
+/// The zoom after `zoom`: 1 → 0.5 → 2 → 1.
+float next_bench_zoom(float zoom);
+/// The largest camera position the bench's wandering camera reaches at `zoom` (from 16, 16): (288, 96) at zoom 1, as
+/// before spec 018 (its screenshots stay the same); else the most that keeps the view on the 64 × 40-cell map.
+nnh::Vec2 bench_camera_max(float zoom);
+/// "bench: zoom 0.50 limits L layers (S sprites), N sprites (M layers)" (a sprite limit of -1 is "none").
+void format_zoom_limits(char* out, std::size_t size, float zoom, int layer_limit, int sprite_limit,
+                        GateCounts target);
+/// "bench: zoom 0.50 done".
+void format_zoom_done(char* out, std::size_t size, float zoom);

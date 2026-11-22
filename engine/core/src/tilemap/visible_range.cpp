@@ -2,6 +2,8 @@
 
 #include "tilemap/visible_range.hpp"
 
+#include "tilemap/zoom_edges.hpp"
+
 #include <cmath>
 #include <cstdint>
 
@@ -28,9 +30,27 @@ void axis_range(int origin, int tile, int screen, int cells, int& first, int& la
         clamp64(floor_div(static_cast<std::int64_t>(screen) - origin - 1, tile) + 1, 0, cells));
 }
 
+/// The zoomed view (zoom_q ≠ 65536): parallax around the zoomed view's centre, edges from zoom_edges.
+LayerView zoomed_range(const LayerPlacement& p, int zq, int tile_w, int tile_h, int map_w, int map_h) {
+    const float z = p.zoom;
+    const Vec2 shift = p.camera + (p.screen_size / z) * 0.5f - p.parallax_origin;
+    const float ox = std::floor((p.offset.x + shift.x * (1.0f - p.parallax.x) - p.camera.x) * z + 0.5f);
+    const float oy = std::floor((p.offset.y + shift.y * (1.0f - p.parallax.y) - p.camera.y) * z + 0.5f);
+    LayerView v;
+    v.zoom_q = zq;
+    if (!(ox > -kFar && ox < kFar && oy > -kFar && oy < kFar)) return v;
+    v.origin_x = static_cast<int>(ox);
+    v.origin_y = static_cast<int>(oy);
+    zoom_axis_range(v.origin_x, tile_w, zq, static_cast<int>(p.screen_size.x), map_w, v.x0, v.x1);
+    zoom_axis_range(v.origin_y, tile_h, zq, static_cast<int>(p.screen_size.y), map_h, v.y0, v.y1);
+    return v;
+}
+
 } // namespace
 
 LayerView visible_range(const LayerPlacement& p, int tile_w, int tile_h, int map_w, int map_h) {
+    const int zq = zoom_q(p.zoom);
+    if (zq != 65536) return zoomed_range(p, zq, tile_w, tile_h, map_w, map_h);
     const Vec2 shift = p.camera + p.screen_size * 0.5f - p.parallax_origin;
     const float ox = std::floor(p.offset.x + shift.x * (1.0f - p.parallax.x) - p.camera.x + 0.5f);
     const float oy = std::floor(p.offset.y + shift.y * (1.0f - p.parallax.y) - p.camera.y + 0.5f);

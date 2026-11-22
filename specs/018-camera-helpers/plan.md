@@ -1,6 +1,7 @@
 # Plan 018: Camera helpers
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: implemented, console check (T9.2) and Linux checks (T8.1) pending (2026-11-22); approved 2026-11-22
+(maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D33 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, profiler), spec 004 (`Camera2D`, the recorded draw list), spec 005 (text as sprites),
 spec 012 (tile batches, D26; the platformer and its gate), spec 013 (scripts), spec 015 (the determinism rules of the
@@ -507,3 +508,229 @@ Small decisions the plan would normally ask about; each takes the recommended op
 | XI | ✅ | Optional module; `Camera2D` by hand (with zoom) fully supported; camera and tilemap independent; `hello` links nothing of it |
 
 No constitution exception is requested. D33 amends D26 (see [decisions.md](../../docs/architecture/decisions.md)).
+
+## Stage 0 results
+
+Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM), before any change to the renderer.
+
+- `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 024 / 21 988 / 211 728; pc-debug 197 872 /
+  26 756 / 214 384; 3ds-release `hello.elf` 216 484 / 28 328 / 106 696 (`.3dsx` 261 864 bytes); 3ds-dev `hello.elf`
+  233 264 / 32 848 / 109 304.
+- Build times (3 runs): edit `examples/hello/main.cpp` → simulator (pc-debug) 1.64, 1.61, 1.54 s; → `.3dsx`
+  (3ds-release) 2.89, 2.85 s (a first run that reconfigured took 9.6 s); clean `nnh_core` (pc-debug, parallel) 5.95,
+  5.65, 5.73 s.
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU): `<nnh/gfx.hpp>` 768 preprocessed lines, 0.30–0.36 s.
+- T0.2: `tests/gfx/test_zoom1_regression.cpp` pinned at `0x276C0CD5` (19 items, 6 batches and 148–166 quads per frame
+  over three frames with fractional cameras on both screens; text with shadow and scale 2, sprites with every option,
+  two maps with 8×8 and 16×16 tiles, parallax, offsets, flips incl. diagonal, an animated tile).
+- T0.3: reference screenshots in `build/ref-018/` (not committed): `hello`, `sprites`, `scenes`, `text` at frame 30,
+  `tweens` at 60, platformer `PLATFORMER_DEMO=bench` and level 1 at 90 (pc-debug, offscreen SDL software renderer).
+  `build/ref-018/compare.sh` rebuilds and compares them byte for byte; the bench is compared on its top screen only
+  (its bottom screen shows measured frame times, which differ from run to run).
+
+## Stage 1–3 refinements and results
+
+- **`CameraRig::aim()`** (public, read-only): the last target plus the offset, the point the dead zone holds. The
+  plan's private `target_` slot is this value; `debug_draw` needs it for the green cross. The rig is 128 bytes as
+  planned (settings 84 + four `Vec2` + trauma + noise clock + flags).
+- **Smoothing below `kCameraMinSmoothing` (1/1024)** counts as misuse (the spec's "(0, 1]" has no smallest value a
+  Release build could clamp to); Release clamps to it, or to 1 for NaN. `max_shake` (negative or non-finite) was added
+  to the misuse list. Release keeps the previous value for a non-finite or negative dead zone, limits, offset, decay
+  and speed ≤ 0, and clamps zoom, smoothing above 1, speed above 1 and a negative gap.
+- **`snap()` places both axes**, also one that isn't followed: that is how a locked axis gets its position (a
+  horizontal shooter snaps once, then follows x only).
+- **The dead zone is clamped per axis at each update** (it depends on the zoom and the layout), with one warning per
+  rig in Debug/Development (`dead zone larger than the view`); Release clamps silently.
+- **The zoom range** lives in `camera_internal.hpp` until stage 4 adds `kMinCameraZoom`/`kMaxCameraZoom` to
+  `<nnh/gfx.hpp>`.
+- **Debug drawing**: the dead zone is drawn around the drawn (shaken) view's centre, so it sits where the player sees
+  it; the limits only when they meet the screen; the target cross on every driven screen (the renderer clips it). At
+  most 4 shape draws per screen.
+- **`set_layout`** changes layout and screen only (no validation needed; the primary top-left is kept).
+- The camera log channel `camera` is defined in `camera_rig.cpp` (linked only with the rig).
+- T3.4 (opt-in): after stage 3, pc-release `hello.exe` text/data/bss 130 024 / 21 988 / 211 728 and 3ds-release
+  `hello.elf` 216 484 / 28 328 / 106 696 — identical to stage 0; `nm` finds no camera symbol in either. The camera
+  objects reference no tilemap symbol and the tilemap objects no camera symbol (`nm -C` of the pc-release objects; the
+  camera's only outside references are `gfx::set_camera`, `gfx::draw_rect`, `gfx::draw_line` and the logger).
+- T3.5 (platformer step 1): `examples/platformer/level_camera.{hpp,cpp}` (Start alignment, limits `map.bounds()`, no
+  dead zone, no smoothing); `tests/platformer/test_level_camera.cpp` compares a frozen copy of `follow_camera()` with
+  the rig over a dense sweep (five worlds incl. smaller than the view and exactly the view; `update` and `snap`): no
+  mismatching bit. The ctest `platformer_replay_matches_script` passes and `nnh run platformer --pc --no-build --script
+  examples/platformer/tests/level.nnhs` → `nnh: PASS (73 lines)`, both with the **unchanged** checksum lines.
+
+## Stage 4 refinements and results
+
+- **The cameras moved out of `GfxState`** into their own `Camera2D g_cameras[2]` (`detail::gfx_cameras()`, reset with
+  the state at init and shutdown). With the zoom's default of 1 inside `GfxState`, the whole state (≈ 640 bytes) moved
+  from `.bss` to `.data` and grew `hello`'s file by as much; apart, only the two cameras (24 bytes) are in `.data`.
+- `DrawList::build` takes a `Camera2D`; the old `Vec2` form stays as a constrained template (zoom 1), so
+  `tests/gfx/test_draw_list.cpp` is unchanged and `build(screen, {}, ...)` still means a default camera.
+- `draw_list.cpp` is compiled with `-ffp-contract=off` (`_nnh_zoom_sources` in `engine/core/CMakeLists.txt`):
+  `snap((p − c) × z)` must never become a fused multiply-add.
+- `set_camera` in Release clamps silently (NaN → 1); the assert message exists only in Debug/Development.
+- `hello` after stage 4 (Release): 3DS text 216 612 (+128), data 28 352 (+24), bss 106 680 (−16), `.3dsx` 262 640;
+  PC text 130 232 (+208), data 22 020 (+32), bss 211 696 (−32). No camera symbol. Within the text budget (≤ 320 B
+  3DS, ≤ 512 B PC); the remaining stages add the tile path's zoomed branch.
+- T4.3: `test_zoom1_regression` passes unchanged; `build/ref-018/compare.sh`: every reference screenshot identical
+  (`hello`, `sprites`, `scenes`, `tweens`, `text`, and the platformer's bench and level 1).
+
+## Stage 5 refinements and results
+
+- **Tile edges in 16.16 fixed point.** `edge(i) = O + ((i × tile × zq + 32768) >> 16)` with `zq = round(zoom × 65536)`
+  (`tilemap/zoom_edges.hpp`), instead of a float product per edge. With float products a step could be one less than
+  `floor(tile × zoom)` when `tile × zoom` is a hair above an integer, which the two orientation bits can't express;
+  in integers every step is exactly `floor` or `floor + 1` by construction, for every zoom, and PC and 3DS compute the
+  same edges. For every zoom with at most 16 fractional bits (0.5, 0.75, 1.25, 1.5, 2, 3, …) this is exactly the
+  plan's `round_half_up(i × tile × z)`; other zooms are quantized to 1/65536 (invisible). The visible cells come from
+  the same integers (`zoom_axis_range`, one 64-bit division per axis and batch).
+- **Zoom 1 is decided on `zoom_q == 65536`**, so `visible_range` and `expand_tiles` take today's code for any zoom
+  within 1/131072 of 1 (sprites still use the exact float zoom).
+- **The destination size comes from the expand function** (`TileExpandResult::dst_w/dst_h`, filled by the tilemap's
+  `expand_batch` with the same fixed-point rule as the edges), not from gfx: gfx never computes the rounding, and the
+  code stays out of games that draw no tilemap. `detail::zoomed_tile_size` (gfx) became `detail::zoomed_size`
+  (tilemap, `zoom_edges.hpp`).
+- **The zoomed loop is its own file**, `tilemap/tile_expand_zoom.cpp` (`expand_zoomed`), called by `expand_tiles`
+  when the view's `zoom_q` isn't 65536; the zoom-1 loop is untouched. A row is taken back when the scratch fills
+  (`chunk`), resumed with `first_row`; when the frame's budget is the limit (`left < scratch`), tiles are dropped as at
+  zoom 1. `-ffp-contract=off` covers `draw_list.cpp`, `visible_range.cpp`, `tile_expand*.cpp` and `zoom_edges.cpp`.
+- `TileBatches::expand` takes a `Camera2D` and a `first_row` and returns `next_row` and the destination size;
+  `gfx_frame.cpp` loops `expand → draw_tiles` until `next_row` is −1 (one call at zoom ≥ 1).
+- PC backend: the fast path tests `(orient & 7) == 0`; the diagonal quad passes the pre-swapped rectangle. 3DS: `pos.w/h`
+  from `dst_w/dst_h` plus the bits. The conformance test checks zoom 2 texel by texel and that a widened quad and a
+  widened diagonal quad cover exactly 13 × 12 pixels; three hand mutants of the PC backend are killed.
+- `hello` after stage 5 (Release): 3DS text 216 748 (**+264** against stage 0, budget 320), data 28 352 (+24); PC text
+  130 732 (**+708**, budget 512: over). x86-64 code and 16-byte function alignment in the PE make the PC count about
+  2.7 times the ARM one; moving `zoomed_tile_size` out of line made both larger, moving the rounding to the tilemap side
+  saved 64 bytes (3DS). The 3DS budget, the one that matters for the console (constitution II), holds; the PC overrun
+  is recorded here as a deviation.
+- T5.6: `test_zoom1_regression` passes (dst = tile size at zoom 1); `build/ref-018/compare.sh`: platformer bench and
+  level 1 identical. The zoomed screenshots of the platformer bench (B cycles the zoom) are part of T7.2; the zoomed
+  tiles are first checked visually with `examples/camera` (stage 6).
+
+## Stage 6 refinements and results
+
+- **The zoom cycle is 1 → 1.5 → 2 → 3 → 0.5** (X): the spec's (0.5, 1, 2, 3) plus 1.5, so the console script can
+  photograph a fractional zoom (T6.4, T9.2 ask for `zoom15`; fractional zooms are where texel bleeding would show).
+- **L toggles a 24-pixel gap** in the tall world (the gap is a setting, FR-10; 0 by default so the square is
+  continuous across the screens in the screenshot).
+- **Files**: `main.cpp`, `world.{hpp,cpp}` (the map built in code: 2 × 2 rooms of 40 × 24 tiles = 1280 × 768 pixels,
+  the player's square, the automatic target), `camera_scene.{hpp,cpp}`, `hud.{hpp,cpp}`, `self_check.{hpp,cpp}`,
+  `self_check_scene.{hpp,cpp}`, `bench_scene.{hpp,cpp}`, `demos.hpp` (no `demos.cpp`: `demo_is` lives in `main.cpp`),
+  `art/make_art.py` → `assets/art/tiles.png` (64 × 64, eight 16 × 16 tiles with a one-pixel frame on the top and left
+  edges, so a seam would show as a doubled or a missing line). The log channel is `example` (the engine owns
+  `camera`). `max_tiles` 8192 (two layers on both screens at zoom 0.5).
+- **Self-check script** (600 updates): a target that runs, stops and teleports (with `snap`), a dead zone 48 × 32,
+  smoothing (0.25, 0.125), limits narrowed at 230 and restored at 400, trauma at 60, 260 and 470, zooms 2 / 0.5 /
+  1.5, an offset, the tall-world layout from 300, the bottom screen from 520, limits cleared at 560. Every factor of
+  the target path is a short binary fraction, so the path is exact and the example's own `.cpp` needs no
+  `-ffp-contract=off`. Golden `0x5201E6CF` (pc-debug and pc-release); ctest `camera_self_check_pc`.
+- **Bench** (PC simulator, Debug): `camera: bench avg 0.0013 ms worst 0.0043 ms per pair (target < 0.05 ms) PASS`.
+- **Screenshots read back** (`CAMERA_DEMO=zoom1|zoom2|zoom05|tall|two`, and the script's `zoom15`, `shake`, `tall`,
+  `two`): no gap or doubled line between tiles at 0.5, 1.5 and 2 (the clear colour never shows through; at 1.5 the
+  frame lines are one or two pixels wide, the documented uneven texel size); in the tall world the square stands in
+  the doorway across the two screens, the brick rows continue from the top screen to the bottom one 40 pixels in; the
+  marker lands under the touch; two views show the automatic target at zoom 0.5 below.
+- `nnh run camera --pc --no-build --script examples/camera/tests/check.nnhs` → `nnh: PASS (86 lines, frames
+  1–1623)`, twice.
+
+## Stage 7 refinements and results
+
+- **Platformer step 2** (`level_camera.{hpp,cpp}`): dead zone 32 × 48 screen pixels, smoothing (1, 0.15) — y only, so
+  runs stay crisp and jumps don't jerk the view —, `max_shake` (4, 6), map limits with Start alignment; a look-ahead
+  of 32 pixels in the facing direction that moves 1 pixel per frame when the player turns (`look_ahead_step`, the
+  rig's offset); a landing at full fall speed (6 px/frame, `kHardLandingSpeed`) adds trauma 0.5 (`landing_trauma`).
+  Tests: the frozen old camera against a rig configured as in step 1 (kept), the step 2 settings, the settling at the
+  edges, the look-ahead (64 frames for a full turn), the landing threshold.
+- **`restart()` assigns a fresh rig.** The first regeneration of the replay lines passed standalone
+  (`PLATFORMER_DEMO=replay`) but `level.nnhs` failed at frame 360: the script plays level 1 before the replay, and the
+  shake's noise clock (which `stop_shake()` and `snap()` don't reset) had advanced, so the replay's landing shake
+  sampled other noise. A new `CameraRig` in `restart()` (trauma 0, noise clock 0) makes every restart — and the
+  replay — start the same. Documented in `docs/api/camera.md` ("assign a fresh rig").
+- **New replay lines** (`examples/platformer/tests/level.nnhs`, regenerated in the same commit as the feel): frame 60
+  is unchanged (the camera is still at the level's left/bottom edge), then `120 … sum 712D6080` … `840 … sum
+  23D5768C`, `replay: done 900 frames sum 7CA9B256: 60 Hz PASS`. ctest `platformer_replay_matches_script` passes and
+  `nnh run platformer --pc --no-build --script examples/platformer/tests/level.nnhs` → `nnh: PASS (74 lines)`.
+- **Bench zoom** (T7.2): B cycles 1 → 0.5 → 2 (`next_bench_zoom`), the bench sets `Camera2D` by hand (no rig, XI);
+  map 64 × 40 cells; the wandering camera's range is (288, 96) at zoom 1 — spec 012's, so the bench screenshot is
+  identical (`compare.sh`) — and keeps the view on the map at the other zooms (`bench_camera_max`); `max_tiles` =
+  12 × 51 × 31 (full layers at zoom 0.5; the scratch is unchanged, only the budget grows). A at zoom ≠ 1 runs the same
+  trials, measure only: `bench: zoom Z limits L layers (300 sprites), S sprites (4 layers)` then `bench: zoom Z done`
+  (`format_zoom_limits`/`format_zoom_done`, unit-tested), and the screens say MEASURED instead of a verdict.
+- **`zoom_gate.nnhs`** (T7.3) with `--pc`: `nnh: PASS (50 lines, frames 1–18101)`; zoom 1: `bench: PASS 4 layers + 300
+  sprites, avg 16.7 ms, worst 17.6 ms` (limits 12 layers, 2000 sprites: the PC's maximum); zoom 0.5: limits 12 layers,
+  1500 sprites; zoom 2: limits 3 layers, 200 sprites. The PC's zoom-2 numbers are an artefact of the simulator's
+  renderer (scaled texture copies cost more there than 1:1 copies; zoom 2 draws a quarter of the tiles: 408 for 4
+  layers); the console numbers are the ones that count (stage 9). Screenshots read back: zoom 0.5 and 2 without seams.
+- T7.4: `hello` as in stage 5 (Release 3DS text 216 748, PC 130 732; no camera symbol); `build/ref-018/compare.sh`:
+  every reference screenshot identical after stage 7 (platformer level 1 too: at frame 90 the camera is still at the
+  level's edge).
+
+## Stage 8: Linux checks (left to the maintainer)
+
+Not run in this session (the maintainer runs VM 120). What to compare on GCC 13, GCC 14 and clang 18 (ASan/UBSan):
+`nnh_tests` and ctest pass; `noise_golden_values` (six bit patterns in `tests/camera/test_camera_noise.cpp`),
+`zoom_1_draws_the_same_items_batches_and_quads_as_before_zoom` (`0x276C0CD5`) and
+`the_camera_self_check_reaches_the_golden_checksum` (`0x5201E6CF`) pass unchanged.
+
+## Stage 9: console run (prepared)
+
+T9.1 was done on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development builds
+(`3ds-dev`) of `camera`, `platformer` and `hello` build without a warning; `scripts/check_release_strings.sh
+build/3ds-release/examples/camera/camera.elf` → ok (the Release `camera.elf` has no `camera_debug_draw` and none of
+the Debug-only strings; the misuse error text stays, as FR-15 wants a Release log). 3ds-release `camera.elf` text
+256 716; 3ds-dev `hello.elf` text 233 560 (stage 0: 233 264).
+
+T9.2, on an Old 3DS, nobody touching it after Y. Three runs, each: open the Homebrew Launcher, press **Y**, then on the
+PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs and screenshots in `build/logs/`):
+
+1. `build/pc-debug/tools/nnh/nnh run camera --script examples/camera/tests/check.nnhs` (about 30 s). Expected, as on
+   the PC: `camera: zoom 1.50`, `2.00`, `3.00`, `0.50`, `1.00`; `camera: mode tall world`, `camera: marker at …`,
+   `camera: mode two views`, `camera: mode single view`; `camera: self-check started`; `camera: 60 sum C1C4E2C9`,
+   `120 sum 50E077AD`, `180 sum 6FE473D5`, `240 sum FBE97331`, `300 sum FFE1EC52`, `360 sum 27C62865`,
+   `420 sum 3F549B0D`, `480 sum E3526DCC`, `540 sum CDCE34AF`, `camera: PASS 5201E6CF`; `camera: bench avg X ms worst
+   Y ms per pair (target < 0.05 ms) PASS`; `nnh: PASS (86 lines, …)`. Then read the screenshots `zoom15`, `zoom05`,
+   `zoom2`, `tall` (top and bottom): no seams between tiles, no texel bleeding (a stray line of the neighbouring
+   tile's colour at a tile's edge; if seen at 1.5 or 0.5, apply the plan's mitigation), the square continuous across
+   the screens in `tall`.
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (about 40 s). Expected:
+   `replay: 60 level1 x 121 y 242 coins 1 sum 0CF7E4CE`, `120 … sum 712D6080`, `180 … sum B81241F7`,
+   `240 … sum 334BB1A5`, `300 … sum 47219250`, `360 … sum CC2AA785`, `420 … sum 27D1EDDA`, `480 … sum A8162475`,
+   `540 … sum 1100B98D`, `600 … sum 8E234F2C`, `660 bonus … sum CFF54129`, `720 … sum A1A13061`, `780 … sum 8607A3AD`,
+   `840 … sum 23D5768C`, `replay: done 900 frames sum 7CA9B256: 60 Hz PASS`; `nnh: PASS`.
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/zoom_gate.nnhs` (up to about
+   7.5 minutes). Expected: `bench: PASS 4 layers + 300 sprites, …` (zoom 1: spec 012's gate still passes), `bench:
+   zoom 0.50 limits L layers (300 sprites), S sprites (4 layers)`, `bench: zoom 0.50 done`, `bench: zoom 2.00 limits
+   …`, `bench: zoom 2.00 done`, `nnh: PASS`. Record L and S at both zooms here and in `docs/api/tilemap.md#zoom`.
+
+Results: pending (fill in "Stage 9 results": verdicts, the bench number per pair, the limits, the log folders).
+
+## Mutation testing
+
+66 hand mutants (`build/ref-018/mutants.txt`, applied one at a time by a script: rebuild the test program, run the
+whole `nnh_tests` — or `nnh_conformance_pc` for the PC backend —, restore the file) of `src/camera/*`,
+`tilemap/zoom_edges.*`, `tile_expand_zoom.cpp`, the zoomed parts of `visible_range.cpp`, `draw_list.cpp`,
+`tile_batches.cpp`, `gfx_frame.cpp`, `map_draw.cpp`, `Tilemap::bounds()`, the platformer's `level_camera.cpp` and the
+example's self-check script: **64/66 killed** on the first run. The two survivors exposed test gaps, closed with
+new checks: a dead zone lying entirely before the view must clamp to size 0, not a negative size
+(`zone_axis_clamps_only_what_passes_the_view`), and the debug dead zone must be drawn in screen pixels at zoom 2
+(`debug_draw_shows_the_dead_zone_in_screen_pixels_at_any_zoom`); both mutants are killed now (**66/66**). Plus three
+mutants of the PC tile backend (no pre-swapped diagonal rectangle, widen bit ignored, tile size instead of the
+destination size): 3/3 killed by the conformance test. Covered among others: dead-zone edges and point zones, the
+fraction-1 assignment, the 1/64 snap, small-world alignment, both clamps, smoothstep, hash and lattice values, the
+noise step, trauma² and its decay and clamp, zoom about the centre, the tall-world inset and gap, pixel snap,
+conversions, the 16.16 edge rounding, the visible range's first/last cells, widen/taller bits, chunk rollback and
+resume, zoomed parallax, sprite/pivot/rect/line zoom, `ignore_camera`, the chunk flag, the destination size, the
+camera reset at init, the look-ahead and the landing threshold.
+
+## Stage 10 results
+
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs): `<nnh/camera.hpp>` 956 preprocessed lines,
+  0.30–0.33 s; `<nnh/gfx.hpp>` 779 lines (+11 for the zoom), 0.31–0.33 s (stage 0: 768 lines, 0.30–0.36 s). The
+  camera header costs what `gfx.hpp` costs (`<cstdint>`, `build.hpp`, `gfx.hpp`).
+- Build times (3 runs): edit `hello` → simulator 1.63, 1.58, 1.68 s (stage 0: 1.54–1.64); → `.3dsx` 2.83, 2.91 s (a
+  first run with a reconfigure 5.4 s); clean `nnh_core` (pc-debug, parallel) 5.98, 5.67, 5.85 s (stage 0: 5.65–5.95).
+- `hello` Release: 3DS text 216 748 (+264), data 28 352 (+24), bss 106 680 (−16), `.3dsx` 262 156; PC text 130 732
+  (+708, over the 512 budget, see stage 5), no camera symbol.
+- `nnh_tests` (pc-debug): 1849 tests, 0 failures; ctest pc-debug 258/258, pc-release 252/252; every example script
+  passes with `--pc` (`input`, `tweens`, `animation`, `actions`, `data`, `camera`, platformer `level`, `gate`,
+  `zoom_gate`). Note: the test runner's `kMaxTests` is 2048 (199 left).

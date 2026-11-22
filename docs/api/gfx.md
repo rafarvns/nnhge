@@ -81,7 +81,37 @@ nnh::gfx::draw(nnh::Screen::Top, hud_icon, {4, 4}, {.ignore_camera = true}); // 
 ```
 
 Each screen has a `Camera2D`: its `position` is the world point shown at the screen's top-left corner.
-Draws are shifted by it unless they set `ignore_camera`. Both cameras start at (0, 0) at `init()`.
+Draws are shifted by it unless they set `ignore_camera`. Both cameras start at (0, 0), zoom 1, at `init()`. The
+camera at the end of the frame places the whole frame. For following, dead zones, limits, shake and the two screens
+as one tall world, use the optional camera helper [`nnh::CameraRig`](camera.md); setting `Camera2D` by hand stays
+fully supported.
+
+### Zoom
+
+```cpp
+nnh::gfx::set_camera(nnh::Screen::Top, {.position = {100, 40}, .zoom = 2});   // 200 × 120 world pixels shown
+```
+
+`Camera2D::zoom` (default 1, `kMinCameraZoom` 0.5 to `kMaxCameraZoom` 4) scales every camera-relative draw on that
+screen: a draw lands at `(world − position) × zoom` screen pixels, so `position` stays the world point at the
+top-left corner and the screen shows `screen size / zoom` world pixels. To zoom about another point (the view's
+centre), move `position` too — `CameraRig` does it for you.
+
+| Draw | At zoom `z` |
+|------|-------------|
+| sprites, text | position, size and pivot × `z` (rotation, flips, tint unchanged) |
+| `fill_rect`, `draw_rect` | both corners × `z`, rounded (touching rectangles stay touching); outlines stay **1 pixel** thick |
+| `draw_line` | both ends × `z`; 1 pixel thick |
+| tile layers (`draw_tilemap`) | each tile's **edges** rounded, so tiles never gap or overlap; visible cells follow the zoomed view ([tilemap.md](tilemap.md#zoom)) |
+| `ignore_camera` draws, debug text, the overlay | never zoomed |
+
+Zoom 1 draws exactly what an unzoomed camera draws. Integer zooms (2, 3, 4) are pixel-exact: each texel becomes an
+exact square. Fractional zooms are allowed (smooth zoom tweens work) and give uneven pixel sizes (some texels one
+pixel wider), as in any pixel-art renderer. Positions are computed by the engine, so the simulator and the 3DS put
+every zoomed draw on the same pixels. Zooming out multiplies the visible tiles (zoom 0.5: about four times), within
+`max_tiles`.
+
+A zoom outside 0.5–4 asserts in Debug/Development; Release clamps it (NaN → 1).
 
 ## Text
 
@@ -97,7 +127,7 @@ Fixed at `nnh::init()` through `AppConfig::gfx` (allocated once, memory tag `gfx
 |-------|---------|-------|------|
 | `max_draws` | 2048 | 16–65535 | draws per frame, both screens; about 136 bytes each (~280 KB by default) |
 | `max_textures` | 128 | ≥ 4 | textures loaded at once; about 32 bytes each |
-| `max_tiles` | 0 | 0–65535 | tile quads per frame, both screens, drawn by `gfx::draw_tilemap` ([tilemap.md](tilemap.md#drawing)). 0 = no tilemap drawing and no memory for it; otherwise ~20 KB once, and on 3DS ~192 bytes of `Linear` per tile (citro2d's buffer). A full layer of 16×16 tiles on the top screen is up to 26 × 16 = 416 |
+| `max_tiles` | 0 | 0–65535 | tile quads per frame, both screens, drawn by `gfx::draw_tilemap` ([tilemap.md](tilemap.md#drawing)). 0 = no tilemap drawing and no memory for it; otherwise ~20 KB once, and on 3DS ~192 bytes of `Linear` per tile (citro2d's buffer). A full layer of 16×16 tiles on the top screen is up to 26 × 16 = 416 at zoom 1, 51 × 31 = 1581 at zoom 0.5 |
 
 ```cpp
 nnh::init({.title = "Bullet Hell", .gfx = {.max_draws = 8192}});

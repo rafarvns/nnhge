@@ -75,6 +75,21 @@ add_executable(nnh_tests
     audio/test_voice_table.cpp
     audio/test_wav_reader.cpp
     build/test_flavor.cpp
+    camera/test_camera_apply.cpp
+    camera/test_camera_convert.cpp
+    camera/test_camera_debug.cpp
+    camera/test_camera_dead_zone.cpp
+    camera/test_camera_follow.cpp
+    camera/test_camera_layouts.cpp
+    camera/test_camera_limits.cpp
+    camera/test_camera_misuse.cpp
+    camera/test_camera_noise.cpp
+    camera/test_camera_shake.cpp
+    camera/test_camera_smoothing.cpp
+    camera/test_camera_snap.cpp
+    camera/test_camera_update.cpp
+    camera/test_camera_value.cpp
+    camera/test_camera_zoom.cpp
     collision/test_aabb.cpp
     collision/test_cells_touching.cpp
     collision/test_contacts.cpp
@@ -126,14 +141,18 @@ add_executable(nnh_tests
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
     fuzz/test_fuzz_sprite.cpp
+    gfx/test_camera_zoom_clamp.cpp
     gfx/test_draw_calls.cpp
     gfx/test_draw_list.cpp
+    gfx/test_draw_list_zoom.cpp
     gfx/test_texture_rules.cpp
     gfx/test_texture_table.cpp
     gfx/test_tile_batches.cpp
     gfx/test_tile_submit.cpp
     gfx/test_textures.cpp
+    gfx/test_tile_chunks.cpp
     gfx/test_images.cpp
+    gfx/test_zoom1_regression.cpp
     input/test_dpad_mirror.cpp
     input/test_input_queries.cpp
     input/test_input_state.cpp
@@ -157,9 +176,11 @@ add_executable(nnh_tests
     text/test_builtin_font.cpp
     tilemap/test_code_vs_file.cpp
     tilemap/test_map_animations.cpp
+    tilemap/test_map_bounds.cpp
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
     tilemap/test_map_draw.cpp
+    tilemap/test_map_draw_zoom.cpp
     tilemap/test_map_edit_after_load.cpp
     tilemap/test_map_layout.cpp
     tilemap/test_map_load.cpp
@@ -172,8 +193,11 @@ add_executable(nnh_tests
     tilemap/test_map_validate_content.cpp
     tilemap/test_tile_animation.cpp
     tilemap/test_tile_expand.cpp
+    tilemap/test_tile_expand_zoom.cpp
     tilemap/test_tilemap_alloc.cpp
     tilemap/test_visible_range.cpp
+    tilemap/test_visible_range_zoom.cpp
+    tilemap/test_zoom_edges.cpp
     simulator/test_audio_mixer_pc.cpp
     simulator/test_remote_address.cpp
     simulator/test_sim_layout.cpp
@@ -271,7 +295,7 @@ target_include_directories(nnh_tests PRIVATE ${_3ds_src})
 # 60 Hz meter, player physics) are pure files of the example, tested like core logic.
 set(_platformer ${PROJECT_SOURCE_DIR}/examples/platformer)
 target_sources(nnh_tests PRIVATE
-    platformer/test_camera_follow.cpp
+    platformer/test_level_camera.cpp
     platformer/test_coin_book.cpp
     platformer/test_frame_meter.cpp
     platformer/test_gate_run.cpp
@@ -279,7 +303,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_player_sprite.cpp
     platformer/test_replay_run.cpp
     platformer/test_replay_script.cpp
-    ${_platformer}/camera_follow.cpp
+    ${_platformer}/level_camera.cpp
     ${_platformer}/coin_book.cpp
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp
@@ -311,6 +335,13 @@ if(TARGET tweens AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;TWEENS_DEMO=check;NNH_EXIT_AFTER_FRAMES=610"
         PASS_REGULAR_EXPRESSION "tweens: PASS B44CA3F6" FAIL_REGULAR_EXPRESSION "tweens: FAIL" TIMEOUT 120)
 endif()
+# The camera example's self-check in the simulator (spec 018 AC-6): the verdict the console script waits for.
+if(TARGET camera AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME camera_self_check_pc COMMAND camera)
+    set_tests_properties(camera_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;CAMERA_DEMO=check;NNH_EXIT_AFTER_FRAMES=615"
+        PASS_REGULAR_EXPRESSION "camera: PASS 5201E6CF" FAIL_REGULAR_EXPRESSION "camera: FAIL" TIMEOUT 120)
+endif()
 # The data example's self-check in the simulator (spec 014 T8.3): the line the console script expects.
 if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME data_self_check_pc COMMAND data)
@@ -331,6 +362,8 @@ target_sources(nnh_tests PRIVATE animation_example/test_self_check.cpp
 add_executable(nnh_actions_bench EXCLUDE_FROM_ALL actions/bench_actions.cpp)
 target_include_directories(nnh_actions_bench PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
 target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
+# The camera example's self-check (spec 018 T6.2): its golden checksum on every host compiler.
+target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)

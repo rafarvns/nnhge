@@ -115,16 +115,23 @@ grid.outside = nnh::collision::Cell::Solid;                       // wall the le
 const nnh::MapObject spawn = level.object(level.find_object("spawn"));
 const char* title = level.properties().get_string("title", "");
 
+nnh::CameraRig camera{{.dead_zone = nnh::CameraSettings::centered_zone(32, 48)}};   // <nnh/camera.hpp>
+camera.set_limits(level.bounds());                                // never show past the map's edges
+camera.snap(player);
+
 // each frame
 const auto moved = nnh::collision::move(grid, player, velocity * dt);
+camera.update(player);                                            // after moving the player
+camera.apply();
 nnh::gfx::draw_tilemap(nnh::Screen::Top, level);                  // every visible layer, draw layer 0
 ```
 
 The map owns its tileset textures (loaded from the image names it carries) and frees them with it. A loaded map
 has no spare room: to add objects or properties in code later, ask for it with `LoadTilemapOptions`
 ([tilemap.md](../api/tilemap.md#loading-a-converted-map)). `max_tiles` must cover every layer drawn in a frame,
-about 416 per full layer of 16×16 tiles on the top screen; an Old 3DS draws 4 such layers plus 300 sprites at
-60 Hz.
+about 416 per full layer of 16×16 tiles on the top screen (about four times that at camera zoom 0.5); an Old 3DS
+draws 4 such layers plus 300 sprites at 60 Hz. The camera (dead zone, smoothing, limits from `level.bounds()`,
+shake, zoom, both screens as one tall world): [camera.md](../api/camera.md).
 
 ## 9. What the build refuses
 

@@ -56,10 +56,11 @@ How it is built (`engine/core/src/gfx/`, `engine/core/src/tilemap/`):
 
 ## Zoom (D33)
 
-> Status: **design** ([spec 018](../../specs/018-camera-helpers/spec.md), [plan 018](../../specs/018-camera-helpers/plan.md),
-> decision D33). Not built yet: today `Camera2D` has only a position.
+> Status: **implemented** on PC, 3DS and the fake platform ([spec 018](../../specs/018-camera-helpers/spec.md),
+> [plan 018](../../specs/018-camera-helpers/plan.md), decision D33); console check (screenshots, the zoomed gate)
+> pending. API: [gfx.md](../api/gfx.md#zoom), [tilemap.md](../api/tilemap.md#zoom).
 
-`Camera2D` gains a `zoom` (0.5–4, default 1). Core applies it when it builds a screen's pass, so platforms keep
+`Camera2D` has a `zoom` (0.5–4, default 1). Core applies it when it builds a screen's pass, so platforms keep
 receiving screen pixels:
 
 - A camera-relative draw lands at `(world − position) × zoom`; `position` is still the world point at the screen's
@@ -67,11 +68,21 @@ receiving screen pixels:
   thick. `ignore_camera` draws and the debug pass are never zoomed. At zoom 1 every value is today's (multiplying by 1
   is exact).
 - Tile layers snap each tile's **edges**, not its size: `edge(i) = O + round(i × tile × zoom)` from the layer's origin
-  `O` (snapped once, as today), so tiles never gap or overlap. A batch tells the platform the destination tile size
+  `O` (snapped once, as at zoom 1), so tiles never gap or overlap. The edges are computed in integers from the zoom in
+  16.16 fixed point (`tilemap/zoom_edges.hpp`), so every step is exactly `floor(tile × zoom)` or one more and PC and
+  3DS compute the same edges; at zoom 1 the unzoomed loop runs (`tilemap/tile_expand.cpp`), the zoomed one is
+  `tilemap/tile_expand_zoom.cpp`. A batch tells the platform the destination tile size
   (`dst_w`, `dst_h` = `floor(tile × zoom)`) and a quad marks with two orientation bits the tiles one pixel wider or
   taller. Integer zooms are pixel-exact; fractional zooms give uneven texel sizes.
 - Visible cells follow the zoomed view (zoom 0.5 shows about four times the tiles, within `max_tiles`). A batch larger
-  than the 1600-quad scratch is expanded and sent in row chunks (several `draw_tiles` calls, in order).
+  than the 1600-quad scratch is expanded and sent in row chunks (several `draw_tiles` calls, in order): the expand
+  function stops at a row end and reports the next row, `gfx_frame.cpp` loops. The destination tile size comes from
+  the expand function too (`TileExpandResult::dst_w/dst_h`), so the rounding lives in one place.
+- The cameras live apart from the rest of the graphics state (`detail::gfx_cameras()`), so the zoom's default of 1
+  doesn't move that state from `.bss` to `.data`. The zoomed arithmetic (`draw_list.cpp`, `visible_range.cpp`,
+  `tile_expand*.cpp`, `zoom_edges.cpp`) is compiled with `-ffp-contract=off`.
+- The optional camera helper `nnh::CameraRig` ([camera.md](../api/camera.md)) zooms about the view's centre and writes
+  `Camera2D` with `apply()`; games may set `Camera2D` by hand.
 - Platforms: the 3DS draws each quad at the destination size with the same texture coordinates; the PC copies to the
   destination rectangle (a diagonal flip with unequal sides uses a pre-swapped rectangle); the fake platform records
   the zoomed items, batches and quads for tests.
@@ -102,7 +113,7 @@ SDL's default renderer, which is enough for 2D (3D will need a GPU device).
 ## Coordinates and names
 
 - 2D works in **screen pixels**, (0, 0) top-left, y down, `float` positions (`nnh::Vec2`).
-- Each screen has a **`Camera2D`** (a position subtracted from camera-relative draws; a zoom is designed in
+- Each screen has a **`Camera2D`** (a position subtracted from camera-relative draws and a zoom, see
   [Zoom (D33)](#zoom-d33)). A 3D camera, 3D
   vectors and matrices will be separate types next to these, never a renamed 2D type.
 - The final position of a sprite is rounded to whole pixels on both systems, so pixel art stays sharp

@@ -3,10 +3,11 @@
 // tests/gfx/test_draw_list.cpp.
 //
 // Draw calls record commands during the frame; at its end, build() turns the commands of one screen
-// into a pass: camera applied, positions rounded to whole pixels, textures resolved, ordered by layer
+// into a pass: camera (position and zoom) applied, positions rounded to whole pixels, textures resolved, ordered by layer
 // then call. build() doesn't consume the list, so a pass can be built twice (stereo: once per eye).
 
 #include <cstdint>
+#include <type_traits>
 
 #include "gfx/texture_table.hpp"
 #include "nnh/gfx.hpp"
@@ -64,9 +65,17 @@ public:
     int capacity() const { return capacity_; }
 
     /// Writes the pass for `screen` to `out` (at least capacity() long). Tile batch commands make no item: each
-    /// becomes a split point in `splits` (at most `split_capacity`; without storage they are skipped).
-    BuildResult build(Screen screen, Vec2 camera, const TextureTable& textures, platform::DrawItem2D* out,
+    /// becomes a split point in `splits` (at most `split_capacity`; without storage they are skipped). Draws that
+    /// don't ignore the camera land at (position − camera.position) × camera.zoom, sizes and pivots × zoom (D33).
+    BuildResult build(Screen screen, Camera2D camera, const TextureTable& textures, platform::DrawItem2D* out,
                       int out_capacity, TileSplit* splits = nullptr, int split_capacity = 0) const;
+    /// The same at zoom 1 (a template, so `build(screen, {}, ...)` still means a default Camera2D).
+    template <typename V>
+        requires std::is_same_v<V, Vec2>
+    BuildResult build(Screen screen, V camera, const TextureTable& textures, platform::DrawItem2D* out,
+                      int out_capacity, TileSplit* splits = nullptr, int split_capacity = 0) const {
+        return build(screen, Camera2D{camera, 1}, textures, out, out_capacity, splits, split_capacity);
+    }
 
 private:
     DrawCommand* storage_ = nullptr;

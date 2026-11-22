@@ -123,3 +123,10 @@ never through `#ifdef` in game code.
   implemented. It amends D26's "a tile drawn unscaled" and "one `draw_tiles` call per batch" (several calls when a
   zoomed-out batch exceeds the scratch); at zoom 1 nothing D26 measured changes. The rendering page has a design
   section ([rendering.md](rendering.md#zoom-d33)).
+- 2026-11-22: D33 implemented (spec 018 stages 4–5; console check pending). Within it: the tile edges are computed
+  in integers from the zoom in 16.16 fixed point (with a float product per edge a step could fall one pixel short of
+  `floor(tile × zoom)`, which the two orientation bits can't express); the destination tile size comes from the
+  expand function (`TileExpandResult::dst_w/dst_h`), so gfx never repeats the rounding; the zoomed expansion has its
+  own file (`tile_expand_zoom.cpp`) and the zoom-1 loop is untouched; the cameras moved out of `GfxState` so the
+  zoom's default doesn't move that state to `.data`. `hello` grew 264 bytes of text on the 3DS (budget 320), 708 on
+  PC (budget 512, recorded as a deviation) (plan 018, "Stage 4" and "Stage 5 refinements and results").

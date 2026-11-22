@@ -37,7 +37,7 @@ void TileBatches::forget(const void* source) {
     }
 }
 
-TileBatches::Quads TileBatches::expand(int index, Screen screen, Vec2 camera) {
+TileBatches::Quads TileBatches::expand(int index, Screen screen, Camera2D camera, int first_row) {
     const TileBatchRecord* r = get(index);
     if (r == nullptr) return {};
     const int left = max_tiles_ - tiles_;
@@ -45,7 +45,10 @@ TileBatches::Quads TileBatches::expand(int index, Screen screen, Vec2 camera) {
     request.source = r->source;
     request.arg = r->arg;
     request.screen = screen;
-    request.camera = r->ignore_camera ? Vec2{} : camera;
+    request.camera = r->ignore_camera ? Vec2{} : camera.position;
+    request.zoom = r->ignore_camera ? 1.0f : camera.zoom;
+    request.first_row = first_row;
+    request.chunk = !(left < scratch_capacity_);
     request.offset = r->offset;
     request.clock = r->clock;
     request.out = scratch_;
@@ -53,7 +56,7 @@ TileBatches::Quads TileBatches::expand(int index, Screen screen, Vec2 camera) {
     const TileExpandResult result = r->expand(request);
     tiles_ += result.written;
     dropped_ += result.dropped;
-    return {scratch_, result.written};
+    return {scratch_, result.written, result.next_row, result.dst_w, result.dst_h};
 }
 
 } // namespace nnh::detail

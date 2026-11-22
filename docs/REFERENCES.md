@@ -74,6 +74,15 @@ Projects to study (learn from them; check licenses before reusing any code). Res
 - **Godot Resources** — exported properties saved as text `.tres` in the repository and as binary `.res` in the
   game: the same text-in-repo, binary-in-game split as spec 014:
   https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html
+- **Godot Camera2D** — drag margins (our dead zone), position smoothing, `limit_*`, zoom, offset, editor drawing of
+  margins and limits; our camera helper follows its ideas (spec 018; no code copied):
+  https://docs.godotengine.org/en/stable/classes/class_camera2d.html
+- **Unity Cinemachine** — the Framing Transposer's dead zone and damping, Confiner 2D, Impulse for shakes (spec 018):
+  https://docs.unity3d.com/Packages/com.unity.cinemachine@2.10/manual/index.html
+- **Squirrel Eiserloh, "Math for Game Programmers: Juicing Your Cameras With Math"** (GDC 2016) — trauma in [0, 1],
+  shake = trauma², linear decay, smooth noise instead of random values, shake added to a copy of the camera; our
+  trauma shake and seeded value noise are written from the talk (spec 018):
+  http://www.mathforgameprogrammers.com/gdc2016/GDC2016_Eiserloh_Squirrel_JuicingYourCameras.pdf
 - **TOML 1.0** (MIT-licensed specification) — the syntax our data files are a strict subset of; our reader is our
   own (no code from TOML libraries): https://toml.io/en/v1.0.0
 

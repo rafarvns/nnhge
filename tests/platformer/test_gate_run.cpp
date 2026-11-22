@@ -4,6 +4,8 @@
 #include "platformer/gate_run.hpp"
 #include "test.hpp"
 
+#include <cstring>
+
 namespace {
 
 constexpr double kGood = 16.0;
@@ -192,4 +194,30 @@ NNH_TEST(gate_ignores_frames_once_done) {
     CHECK(gate.done());
     CHECK(gate.trials() == 3);
     CHECK(gate.passed());
+}
+
+// Spec 018 T7.2: the bench's zoom (B) and the measure-only gate's lines at a zoom other than 1.
+
+NNH_TEST(bench_zoom_cycles_1_half_2) {
+    CHECK(next_bench_zoom(1) == 0.5f && next_bench_zoom(0.5f) == 2 && next_bench_zoom(2) == 1);
+    CHECK(next_bench_zoom(3) == 1); // anything else goes back to 1
+}
+
+NNH_TEST(the_bench_camera_range_is_unchanged_at_zoom_1_and_fits_the_map_zoomed) {
+    CHECK(bench_camera_max(1) == (nnh::Vec2{288, 96})); // the spec 012 bench's range (its screenshots stay the same)
+    const nnh::Vec2 half = bench_camera_max(0.5f), twice = bench_camera_max(2);
+    CHECK(half.x >= 16 && half.y >= 16 && half.x + 800 <= 64 * 16 && half.y + 480 <= 40 * 16);
+    CHECK(twice.x + 200 <= 64 * 16 && twice.y + 120 <= 40 * 16);
+}
+
+NNH_TEST(a_measure_only_gate_logs_its_limits_and_done_with_the_zoom) {
+    char line[128];
+    format_zoom_limits(line, sizeof line, 0.5f, 2, 700, {4, 300});
+    CHECK(std::strcmp(line, "bench: zoom 0.50 limits 2 layers (300 sprites), 700 sprites (4 layers)") == 0);
+    format_zoom_limits(line, sizeof line, 2, 12, 2000, {4, 300});
+    CHECK(std::strcmp(line, "bench: zoom 2.00 limits 12 layers (300 sprites), 2000 sprites (4 layers)") == 0);
+    format_zoom_limits(line, sizeof line, 0.5f, 0, -1, {4, 300});
+    CHECK(std::strcmp(line, "bench: zoom 0.50 limits 0 layers (300 sprites), none (4 layers)") == 0);
+    format_zoom_done(line, sizeof line, 0.5f);
+    CHECK(std::strcmp(line, "bench: zoom 0.50 done") == 0);
 }

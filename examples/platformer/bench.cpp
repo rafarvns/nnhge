@@ -4,13 +4,16 @@
 #include <nnh/debug.hpp>
 #include <nnh/gfx.hpp>
 #include <nnh/input.hpp>
+#include <nnh/log.hpp>
 #include <nnh/time.hpp>
 #include <utility>
 
+NNH_LOG_CHANNEL_EXTERN(platformer);
+
 namespace {
 
-constexpr int kMapW = 48; // cells: 768 x 384 px, room to scroll
-constexpr int kMapH = 24;
+constexpr int kMapW = 64; // cells: 1024 x 640 px, room to scroll at zoom 0.5 (zoom 1 keeps spec 012's range)
+constexpr int kMapH = 40;
 constexpr float kScreenW = 400 - 16;
 constexpr float kScreenH = 240 - 16;
 constexpr double kMissedMs = 1.5 * 1000.0 / 60.0; // a frame that missed its 60 Hz slot
@@ -78,7 +81,7 @@ void Bench::set_counts(int layers, int sprites) {
 }
 
 void Bench::start_gate() {
-    gate_.start();
+    gate_.start(zoom_);
     show_verdict_ = false;
     set_counts(gate_.counts().layers, gate_.counts().sprites);
 }
@@ -89,6 +92,12 @@ void Bench::manual_controls() {
     if (input::pressed(Button::A)) {
         start_gate();
         return;
+    }
+    if (input::pressed(Button::B)) {
+        zoom_ = next_bench_zoom(zoom_);
+        NNH_LOG_INFO(platformer, "bench: zoom %.2f", static_cast<double>(zoom_));
+        set_counts(layer_count_, sprite_count_);
+        show_verdict_ = false;
     }
     const int layers =
         layer_count_ + (input::pressed(Button::R) ? 1 : 0) - (input::pressed(Button::L) ? 1 : 0);
@@ -110,9 +119,10 @@ void Bench::update() {
         manual_controls();
     }
     // The camera wanders over the map at sub-pixel speeds: layers are almost never cell-aligned (worst case).
-    bounce(camera_.x, camera_speed_.x, 16, kMapW * 16 - 400 - 80);
-    bounce(camera_.y, camera_speed_.y, 16, kMapH * 16 - 240 - 48);
-    nnh::gfx::set_camera(nnh::Screen::Top, {camera_});
+    const nnh::Vec2 far = bench_camera_max(zoom_);
+    bounce(camera_.x, camera_speed_.x, 16, far.x);
+    bounce(camera_.y, camera_speed_.y, 16, far.y);
+    nnh::gfx::set_camera(nnh::Screen::Top, {camera_, zoom_});
     for (int i = 0; i < sprite_count_; ++i) {
         bounce(sprites_[i].x, sprites_[i].vx, 0, kScreenW);
         bounce(sprites_[i].y, sprites_[i].vy, 0, kScreenH);
@@ -149,6 +159,7 @@ void Bench::draw_stats() const {
     nnh::debug::printf(bottom, 12, 12, "TILE BENCHMARK (spec 012 gate)");
     nnh::debug::printf(bottom, 12, 12 + 2 * line, "layers  %2d  (16x16, full)   L/R", layer_count_);
     nnh::debug::printf(bottom, 12, 12 + 3 * line, "sprites %4d                Y/X", sprite_count_);
+    nnh::debug::printf(bottom, 12, 12 + 4 * line, "zoom    %.2f                B", static_cast<double>(zoom_));
     nnh::debug::printf(bottom, 12, 12 + 5 * line, "frame   %5.1f ms  (%.0f FPS)", average_ms_,
                        average_ms_ > 0 ? 1000.0 / average_ms_ : 0.0);
     nnh::debug::printf(bottom, 12, 12 + 6 * line, "worst   %5.1f ms", worst_ms_);

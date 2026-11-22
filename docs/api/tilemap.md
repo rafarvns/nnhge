@@ -214,6 +214,7 @@ validator `load_tilemap` runs, so a converted map always passes the loader's che
 | `void set_tile(layer, x, y, Tile)` | changes one cell; seen by the next draw and collision query; outside the map: ignored |
 | `void fill(layer, x, y, w, h, Tile)` | `set_tile` over a block, clipped to the map |
 | `Rect cell_rect(x, y)` | the world rectangle of any cell (also outside) |
+| `Rect bounds()` | the map's world rectangle `{0, 0, width() × tile_width(), height() × tile_height()}` (`{}` for an empty map): camera limits in one line, `rig.set_limits(map.bounds())` ([camera.md](camera.md#limits)) |
 | `bool world_to_cell(Vec2, int& x, int& y)` | floor of world / tile size (negative positions go down: −0.5 → −1); true inside the map. `x`, `y` are set even outside (clamped to ±2^30; 0 for NaN) |
 
 `Tile{id, flip_x, flip_y, flip_diagonal}`: id 0 is empty (its flips are dropped); flips follow Tiled (diagonal swaps
@@ -265,6 +266,24 @@ layer and then call order (as [gfx.md](gfx.md#order-layers)), so sprites can sit
   4 full layers of 16×16 tiles on the top screen + 300 sprites run at avg 16.7 ms, worst 17.4 ms, 0 missed frames
   of 600. The limits at 60 Hz: **6 layers** with 300 sprites (7 miss frames), **600 sprites** with 4 layers (Release
   is expected to be the same or faster; not measured separately).
+
+### Zoom
+
+With a camera zoom (`Camera2D::zoom`, 0.5–4, [gfx.md](gfx.md#zoom); decision D33) tile layers stay seamless: the
+layer's origin is rounded once (`round((world origin − camera) × zoom)`) and every tile's **edges** are rounded from
+it, `edge(i) = origin + round(i × tile × zoom)` (computed in 16.16 fixed point, the same on every system), so tiles
+never gap or overlap. A tile is `floor(tile × zoom)` pixels or one more; at integer zooms (2, 3, 4) every tile is
+exactly `tile × zoom` and each texel an exact square, at fractional zooms texel sizes vary by one pixel. A parallax-1
+layer stays on sprites at the same world position (exactly at integer zooms, within one pixel otherwise). Parallax
+uses the zoomed view's centre (`camera + screen_size / zoom / 2`), so a fixed layer (parallax 0) zooms about the
+view's centre too.
+
+The visible cells follow the zoomed view: zoom 0.5 shows about four times the tiles of zoom 1 (a full 16×16 layer on
+the top screen: 51 × 31 = 1581 tiles), zoom 2 about a quarter (at most 14 × 9). Size `AppConfig::gfx.max_tiles` for the smallest
+zoom your game uses. A layer larger than the engine's 1600-tile scratch (only below zoom 1) is drawn in several
+calls, row by row, in order; nothing else changes. How many layers fit at 60 Hz at zooms 0.5 and 2 on an Old 3DS:
+measured by `examples/platformer/tests/zoom_gate.nnhs` (B in the platformer's bench cycles the zoom) — results in
+[plan 018, stage 9](../../specs/018-camera-helpers/plan.md) (console run pending).
 
 ## Collision
 

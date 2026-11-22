@@ -66,8 +66,13 @@ void draw_2d(Screen screen, const DrawItem2D* items, int count);
 inline constexpr std::uint8_t kTileOrientDiagonal = 1;
 inline constexpr std::uint8_t kTileOrientFlipY = 2;
 inline constexpr std::uint8_t kTileOrientFlipX = 4;
+/// Zoom (decision D33): this quad is drawn one pixel wider than TileBatch2D::dst_w / taller than dst_h, so the
+/// zoomed tiles of a layer meet without gaps or overlaps. Never set at zoom 1 or at integer zooms.
+inline constexpr std::uint8_t kTileOrientWiden = 8;
+inline constexpr std::uint8_t kTileOrientTaller = 16;
 
-/// One tile of a batch: a tile_w x tile_h square of the texture drawn unscaled at a whole-pixel position.
+/// One tile of a batch: the tile_w x tile_h square of the texture at (src_x, src_y), drawn at a whole-pixel
+/// position with the batch's destination size dst_w x dst_h (plus one pixel per kTileOrientWiden/Taller bit).
 struct TileQuad2D {
     std::int16_t x = 0; ///< destination top-left, screen pixels
     std::int16_t y = 0;
@@ -76,11 +81,13 @@ struct TileQuad2D {
     std::uint8_t orient = 0; ///< kTileOrient* bits
 };
 
-/// Same-size tiles of one texture, from one map layer (spec 012, decision D26).
+/// Same-size tiles of one texture, from one map layer (spec 012, decision D26; zoom: D33).
 struct TileBatch2D {
     TextureHandle texture = 0;
-    int tile_w = 0; ///< pixels, 8..64
+    int tile_w = 0; ///< source size in texture pixels, 8..64
     int tile_h = 0;
+    int dst_w = 0; ///< destination size on screen: floor(tile_w × zoom) — tile_w at zoom 1 (camera zoom, D33)
+    int dst_h = 0;
     Color color{};          ///< tint for every tile (white = unchanged), alpha = opacity
     std::uint8_t layer = 0; ///< 0..15, as DrawItem2D
     const TileQuad2D* quads = nullptr;
@@ -88,7 +95,8 @@ struct TileBatch2D {
 };
 
 /// Draws the quads of `batch` on `screen`, in order, clipped to it; nearest sampling, so whole-pixel
-/// positions and exact source rectangles give seamless tiles. Called by core between draw_2d() calls of a
+/// positions and exact source rectangles give seamless tiles. Each quad covers exactly
+/// {x, y, dst_w + widen, dst_h + taller} (the diagonal flip transposes the source into that rectangle). Called by core between draw_2d() calls of a
 /// screen (draw order = call order). Must not allocate, and must be done with `batch.quads` when it returns
 /// (core reuses the buffer).
 void draw_tiles(Screen screen, const TileBatch2D& batch);

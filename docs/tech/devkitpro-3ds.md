@@ -83,7 +83,13 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
   `right = v` of its bottom row, `top = u` of its left column and `bottom = u` of its right column shows the
   tile transposed; the mirrors then apply to that, as Tiled does. **Confirmed on an Old 3DS XL** (spec 012
   T3.9, 2026-11-21): `examples/platformer`'s flip test shows all 8 orientations as the PC screenshot (the PC
-  side is verified pixel by pixel), with no seams under a scrolling camera.
+  side is verified pixel by pixel), with no seams under a scrolling camera. **Zoom** (spec 018, D33): each quad
+  is drawn `dst_w` (+1 with `kTileOrientWiden`) by `dst_h` (+1 with `kTileOrientTaller`) with the same texture
+  coordinates (the source is still the `tile_w × tile_h` square; the diagonal flip's transposed texcoords work for a
+  non-square destination); `GPU_NEAREST` makes integer zooms exact texel squares. Texel bleeding at fractional
+  zooms (the PICA200's limited texcoord precision) is checked by the console screenshots of
+  `examples/camera/tests/check.nnhs` (zoom 1.5 and 0.5; pending); if it shows, the plan's mitigation insets the
+  source by 1/256 texel only when the destination isn't the tile size.
 - **Tile cost** (Old 3DS XL, Development build, `examples/platformer`'s bench, `tests/gate.nnhs`): 4 full
   layers of 16×16 tiles on the top screen + 300 sprites run at avg 16.7 ms, worst 17.4 ms, 0 missed frames of
   600; the limits at 60 Hz are **6 layers** with 300 sprites and **600 sprites** with 4 layers. No fallback of

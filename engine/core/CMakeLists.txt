@@ -77,7 +77,6 @@ add_library(nnh_core STATIC
     src/fs/save_format.cpp
     src/gfx/draw2d.cpp
     src/gfx/draw_text.cpp
-    src/gfx/draw_list.cpp
     src/gfx/gfx.cpp
     src/gfx/gfx_frame.cpp
     src/gfx/image_registry_default.cpp
@@ -125,9 +124,7 @@ add_library(nnh_core STATIC
     src/tilemap/map_validate.cpp
     src/tilemap/map_validate_content.cpp
     src/tilemap/tile_animation.cpp
-    src/tilemap/tile_expand.cpp
     src/tilemap/tilemap.cpp
-    src/tilemap/visible_range.cpp
     src/time/clock.cpp
     src/time/fixed_step.cpp
 )
@@ -181,6 +178,35 @@ set(_nnh_actions_sources
 target_sources(nnh_core PRIVATE ${_nnh_actions_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_actions_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# Camera helpers (spec 018): every float operation of the rig lives in these files; no fused multiply-add, so the
+# followed and shaken positions have the same bits on every compiler and on the 3DS (FR-12).
+set(_nnh_camera_sources
+    src/camera/camera_apply.cpp
+    src/camera/camera_debug.cpp
+    src/camera/camera_follow.cpp
+    src/camera/camera_layout.cpp
+    src/camera/camera_limits.cpp
+    src/camera/camera_rig.cpp
+    src/camera/camera_shake.cpp
+    src/camera/camera_update.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_camera_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_camera_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# Zoomed drawing (spec 018, D33): positions × zoom, then rounded; no fused multiply-add, so PC and 3DS put every
+# zoomed draw on the same pixels.
+set(_nnh_zoom_sources
+    src/gfx/draw_list.cpp
+    src/tilemap/tile_expand.cpp
+    src/tilemap/tile_expand_zoom.cpp
+    src/tilemap/visible_range.cpp
+    src/tilemap/zoom_edges.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_zoom_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_zoom_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)

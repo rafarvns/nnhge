@@ -657,3 +657,45 @@ killed at first; the 4 survivors were real gaps (next-on-finish on a looping cli
 during the pending entry, the clip-order check of the validator, an off-centre pivot under flips) and each got a test
 (`a_looping_state_never_moves_on_by_itself`, `a_clip_changed_by_the_entry_callback_gets_none_of_the_updates_time`,
 `clips_must_own_their_frames_in_order`, `flipping_mirrors_an_off_centre_pivot_inside_the_region`): 24/24 killed.
+
+## Console bench refinement (2026-11-22)
+
+**Measured.** First run of `examples/animation`'s bench on an Old 3DS (Development build, GCC 16 `-O2`): 512 animators
+avg **0.892 ms**, worst **1.389 ms** per frame, over the 0.5 ms target: ≈ 1.7 µs (≈ 470 cycles at 268 MHz) per
+animator. Behaviour was right (self-check `512F027F`, the PC's).
+
+**What was hot.** No division or 64-bit helper was on the update path (`__aeabi_idiv` only in the silent cycle skip,
+`__aeabi_l2d/l2f` only in `progress()`; `advance()`'s `% 4096` compiles to shifts). The cost was calls and memory:
+
+- an update made ≈ 7 out-of-line calls before its first compare: `update` → `run` → `notice_scratch()`,
+  `library()` → `sprite_serial_live()` (Development), `walk()` → `clip_frame()` → `clip()` → `sprite_clip_index()`,
+  each a separate object file (no LTO), so nothing was inlined; a request made `library()` → `sprite_serial_live()`;
+- the fields an update reads and writes sat at bytes 24–60 of the 64-byte animator (the callback came first), so every
+  update touched both 32-byte ARM11 cache lines of its animator; 512 animators are 32 KB, twice the Old 3DS's 16 KB
+  L1 data cache, so each line is a miss to FCRAM every frame (and a write-back).
+
+**Changes** (behaviour unchanged: every test passes as it was, self-check checksum still `512F027F`; 64 bytes on 3DS,
+80 on PC as before):
+
+- `run()` has a fast path: no pending entry → add the time; if it stays inside the current frame, return, with no
+  `AnimPass`, no `walk()` and no call. Crossings take the old loop (time already added).
+- Inline in the internal headers: `Access::library()` (the misuse cases moved to an out-of-line `library_misuse()`),
+  `clip()`, `clip_frame()`, `notice_scratch()` (the scratch is `detail::g_notice_scratch`),
+  `sprite_serial_live()` (the live table is `detail::g_sprite_live`), `sprite_cycle_length()` and
+  `sprite_clip_index()` (`sprite_sequence.hpp`, still pure).
+- The animator's members are reordered: what `update()`/`request()` touch first (`block_`, times, clip, step,
+  cycles, remainder, serial, state bytes, flags: exactly 32 bytes on 3DS), then the queue and the callback, read only
+  when a clip ends or a notice fires. Private members only: no API change, but the layout changes (rebuild games).
+- `sprite_resolve_rule()` ranks the rules in one pass (stopping at an exact rule) instead of four scans; the same rule
+  wins (new test `of_two_rules_of_the_same_shape_the_first_wins`).
+
+**Results.** PC microbenchmark (the bench's workload, 512 animators × 20 000 frames, pc-release, same machine): avg
+21.6–22.6 µs → 12.2–12.9 µs per frame (best 18.3 → 9.1 µs), the same frames and notices (identical checksum of every
+frame and notice count). 3DS Development code: the common update is now ≈ 60 instructions with no call (a request
+with no change ≈ 25). The console number after the change is pending a re-run (`nnh run animation --script
+examples/animation/tests/check.nnhs`, the "animation bench:" line); the target itself is the maintainer's call.
+
+**Not done (options).** If a game's animators must fit one cache line each, the array must be 32-byte aligned (an
+8-byte aligned `new[]` puts the hot half across two lines in 3 cases out of 4): `alignas(32)` on `SpriteAnimator`
+would guarantee it but pads every entity that embeds one, so it's left to the maintainer. Caching the current frame's
+duration in the animator would save the clip and clip-frame reads but has no room in the 32 hot bytes.

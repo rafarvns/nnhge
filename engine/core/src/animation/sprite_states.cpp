@@ -10,12 +10,21 @@ using namespace detail::spritefmt;
 namespace detail {
 
 TransitionEntry sprite_resolve_rule(const TransitionEntry* rules, int count, std::uint8_t from, std::uint8_t to) {
-    const std::uint8_t shapes[4][2] = {{from, to}, {from, kAnyState}, {kAnyState, to}, {kAnyState, kAnyState}};
-    for (const auto& shape : shapes) {
-        for (int i = 0; i < count; ++i) {
-            if (rules[i].from == shape[0] && rules[i].to == shape[1]) return rules[i];
+    // One pass (it runs on requests, every frame in games): rank from→to 0, from→any 1, any→to 2, any→any 3; the
+    // first rule of the best rank wins, as if each shape were searched in turn.
+    int best = -1;
+    int best_rank = 4;
+    for (int i = 0; i < count && best_rank != 0; ++i) {
+        const TransitionEntry& r = rules[i];
+        const int from_rank = r.from == from ? 0 : (r.from == kAnyState ? 2 : 4);
+        const int to_rank = r.to == to ? 0 : (r.to == kAnyState ? 1 : 4);
+        const int rank = from_rank + to_rank;
+        if (rank < best_rank) {
+            best_rank = rank;
+            best = i;
         }
     }
+    if (best >= 0) return rules[best];
     return {from, to, kNow, 0};
 }
 

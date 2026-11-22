@@ -312,7 +312,8 @@ public:
 
 private:
     friend struct SpriteAnimatorAccess;
-    SpriteCallback callback_{};
+    // What update() and request() touch comes first: the first 32 bytes on 3DS (one ARM11 cache line when the
+    // animator is 32-byte aligned); the callback and the queue are read only when a notice fires or a clip ends.
     const detail::SpriteBlock* block_ = nullptr;
     std::int32_t elapsed_ = 0;    ///< ticks into the current frame
     std::int32_t speed_ = 4096;   ///< ticks per update
@@ -322,13 +323,14 @@ private:
     std::uint16_t cycles_ = 0;    ///< cycles completed
     std::uint16_t remainder_ = 0; ///< advance(): sub-tick carry
     std::uint16_t serial_ = 0;    ///< the library's serial (lifetime check)
-    std::uint8_t queue_[kSpriteMaxQueue] = {};
     std::uint8_t queue_size_ = 0;
     std::uint8_t state_ = 0xFF;
     std::uint8_t previous_ = 0xFF;
     std::uint8_t pending_ = 0xFF; ///< a state waiting for the end of the clip
     std::uint8_t flags_ = 0;
     std::uint8_t changes_ = 0;    ///< counts commands that change the clip (re-entrancy)
+    std::uint8_t queue_[kSpriteMaxQueue] = {};
+    SpriteCallback callback_{};
 };
 
 static_assert(sizeof(void*) != 4 || sizeof(SpriteAnimator) <= 64, "nnh::SpriteAnimator is 64 bytes on 3DS");

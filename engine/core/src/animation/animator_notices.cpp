@@ -12,13 +12,7 @@ using Access = SpriteAnimatorAccess;
 
 namespace detail {
 
-namespace {
-NoticeScratch g_scratch; // 512 B + 8, .bss: linked only with the module
-} // namespace
-
-NoticeScratch& notice_scratch() {
-    return g_scratch;
-}
+NoticeScratch g_notice_scratch; // 512 B + 8, .bss: linked only with the module
 
 void animator_recover_after_crash() {
     notice_scratch().callbacks_running = 0;

@@ -27,8 +27,16 @@ SpriteNotices Access::run(SpriteAnimator& a, std::int32_t ticks) {
     if (library(a, nullptr).block == nullptr || (a.flags_ & kAnimPaused) != 0 || a.clip_ == kNoClip) {
         return {s.items, 0};
     }
-    Pass p;
     bool time_used = false; // added once; a callback that changes the clip drops the rest of it
+    if ((a.flags_ & kAnimEntryPending) == 0) {
+        // Most updates: nothing entered by a command, the time stays inside the current frame. No pass, no walk.
+        time_used = true;
+        if (a.state_ != kNoState) a.state_time_ = saturated_add(a.state_time_, ticks);
+        if ((a.flags_ & kAnimFinished) != 0) return {s.items, 0};
+        a.elapsed_ = saturated_add(a.elapsed_, ticks);
+        if (a.elapsed_ < clip_frame(a).duration) return {s.items, 0};
+    }
+    Pass p;
     for (int depth = 0;;) {
         p.changes = a.changes_;
         if ((a.flags_ & kAnimEntryPending) != 0) fire_entry(a, p);

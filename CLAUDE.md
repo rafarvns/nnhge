@@ -83,20 +83,15 @@ debug text uses it too ([api/text.md](docs/api/text.md)). Assets (spec 007; demo
 assets), `audio::play` voices with volume/pan/pitch/priority, groups and master, `SoundFinished`; streamed
 `music::play`/`crossfade` with loop points and fades, `MusicFinished`; Ogg via
 vendored `third_party/stb_vorbis`; PC output via SDL 3 + a software mixer, 3DS via ndsp; demo
-`examples/audio` ([api/audio.md](docs/api/audio.md)). Collision (spec 012 stage 1, pure; depends only on
-`<nnh/math.hpp>`): `<nnh/collision.hpp>` — `overlaps`/`contains`/`intersection`/`separation` on boxes;
-`collision::move` sweeps a box through a `Grid` the game describes (`grid_view` over its own `Cell` array, or a
-callback), x then y, solid and one-way cells, no tunnelling; `contacts`, `cells_touching`
-([api/collision.md](docs/api/collision.md)). Tilemaps (spec 012 stages 2–6: built in code, drawn, loaded from `.nnhmap`, made in
-Tiled, animated tiles): `<nnh/tilemap.hpp>` — `Tilemap::create` (one block, tag `tilemap`, fixed capacities), tilesets,
-tile layers, `set_tile`/`fill`, world↔cell, objects, typed properties, `collision_grid()` for `collision::move`,
-`set_tile_animation` (clock: `TilemapDrawOptions::animation_time`, default `frame_count()` at 60 Hz);
-`load_tilemap("levels/level1", {extras})` validates a converted map (fuzzed) and owns its tileset textures; the
-build converts Tiled `.tmj` files in `ASSETS` into `.nnhmap` with `nnh-assetc` (D27; depfile per map; refusals
-print `file: reason`; fixtures and `map_convert_*` ctests in `tests/data/maps/`);
-`gfx::draw_tilemap` draws tile batches (D26: contract `draw_tiles`, only visible cells, Tiled parallax and flips,
-needs `AppConfig::gfx.max_tiles`, 0 by default); demo `examples/platformer` (level 1 made in Tiled, a bonus level built in
-code, scenes + events, a replay checked against the console; [api/tilemap.md](docs/api/tilemap.md)).
+`examples/audio` ([api/audio.md](docs/api/audio.md)). Collision and tilemaps (spec 012, implemented; demo
+`examples/platformer`): `<nnh/collision.hpp>` (pure, only `<nnh/math.hpp>`) — box queries, `collision::move`
+through a `Grid` the game describes (its own `Cell` array or a callback; solid and one-way cells, no tunnelling),
+`contacts`, `cells_touching` ([api/collision.md](docs/api/collision.md)); `<nnh/tilemap.hpp>` — `Tilemap::create`
+(one block, fixed capacities), tilesets, layers, `set_tile`/`fill`, objects, typed properties, animated tiles,
+`collision_grid()`; `load_tilemap("levels/level1")` loads a map the build converted from a Tiled `.tmj` in `ASSETS`
+(`nnh-assetc`, D27; refusals print `file: reason`; fixtures in `tests/data/maps/`); `gfx::draw_tilemap` draws tile
+batches (D26, needs `AppConfig::gfx.max_tiles`, 0 by default; Old 3DS: 4 full layers + 300 sprites at 60 Hz)
+([api/tilemap.md](docs/api/tilemap.md), guide [levels.md](docs/guides/levels.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in

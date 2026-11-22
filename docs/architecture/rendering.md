@@ -24,8 +24,10 @@ layers, and the core submits the 2D list in two slices around the 3D pass. The 2
 
 ## Tile layers (batches)
 
-> Status: **implemented** on PC, 3DS and the fake platform (spec 012 stage 3, decision D26); the Old 3DS
-> benchmark gate (how many full layers at 60 Hz) is pending.
+> Status: **implemented** on PC, 3DS and the fake platform (spec 012, decision D26). Measured on an Old 3DS XL
+> (2026-11-21, `examples/platformer` bench): **4 full layers of 16×16 tiles on the top screen + 300 sprites** at
+> avg 16.7 ms, worst 17.4 ms, no missed frame of 600; limits 6 layers (with 300 sprites) or 600 sprites (with 4
+> layers). None of D26's fallbacks was needed. API: [tilemap.md](../api/tilemap.md#drawing).
 
 A tilemap layer is recorded as **one command per (map layer, tileset)**, sorted with the sprites by layer and
 call order, so sprites can sit between map layers. When the sorted pass reaches it, core sends the sprites
@@ -44,7 +46,9 @@ How it is built (`engine/core/src/gfx/`, `engine/core/src/tilemap/`):
   tiles changed by `set_tile` after the draw call — computes the layer's snapped origin and visible cells
   (`tilemap/visible_range.cpp`, Tiled's centre-based parallax) and writes quads (`tilemap/tile_expand.cpp`:
   one id test, one table read, one 10-byte write per cell) into one shared scratch of 1600 quads, within the
-  frame's remaining `max_tiles`.
+  frame's remaining `max_tiles`. Animated tiles (`tilemap/tile_animation.cpp`) resolve the current frame of the
+  batch's tileset once per batch, from an opaque clock gfx carries for the batch (the frame count at 60 Hz by
+  default), so the simulator and the console show the same frame on the same frame number.
 - A map destroyed after its draw call forgets its batches (`Tilemap::reset`); a tileset whose texture is gone
   is skipped with an assert, like sprites.
 - Memory: nothing when `max_tiles` is 0 (the default); otherwise ~20 KB once (64 batch records and the

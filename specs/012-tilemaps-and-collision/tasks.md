@@ -1,7 +1,8 @@
 # Tasks 012: Tilemaps and collision
 
-Status: approved (2026-11-21); stages 0–6 done (2026-11-21; T3.9 passed on the Old 3DS XL); stage 7 T7.1–T7.3 done
-(2026-11-22), T7.4 prepared; next: T7.4 on the console, then stage 8
+Status: implemented (2026-11-22): stages 0–6 done (T3.9 passed on the Old 3DS XL), stage 7 T7.1–T7.3 and stage 8
+T8.2–T8.7 done. **Still pending with the maintainer:** T7.4 (prepared, not run: `level.nnhs` on the Old 3DS); T8.1 (Linux,
+sanitizers, fuzzing) done on VM 120
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -350,21 +351,49 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
 
 ## Stage 8 — verification and docs
 
-- [ ] **T8.1** Linux on VM 120: gcc build + ctest; clang ASan/UBSan for `nnh_tests` and `nnh_assetc_tests`;
+- [x] **T8.1** Linux on VM 120: gcc build + ctest; clang ASan/UBSan for `nnh_tests` and `nnh_assetc_tests`;
   `fuzz_tilemap`, `fuzz_assetc_json`, `fuzz_assetc_map` 60 s each without a crash; `3ds-release` there with the
   host-built converter — covers AC-3, FR-10
-- [ ] **T8.2** `docs/api/collision.md` and `docs/api/tilemap.md` (API, limits, memory formula and examples,
+  - Done on VM 120 (2026-11-22), except `3ds-release` there (not run; the Windows `3ds-dev`/`3ds-release` builds
+    use the same host-built converter). gcc 14 `pc-debug`: ctest 151/151; it showed three `-Wdangling-reference`
+    false positives (a reference into the map buffer taken through a temporary `MapView`), silenced by naming the
+    view (`map_tiles.cpp`, `test_map_writer.cpp`). clang 18 ASan/UBSan: `nnh_tests` 1002/1002, `nnh_assetc_tests`
+    101/101, `nnh_tool_tests` 156/156, clean. libFuzzer 60 s each, empty corpus: `fuzz_tilemap` 1.83 M runs cov 66,
+    `fuzz_assetc_json` 1.25 M runs cov 425, `fuzz_assetc_map` 475 k runs cov 775; `fuzz_tilemap` again 120 s seeded
+    with the converted `good`, `good_check` and `level1` maps: cov 831, ft 1737. No crash anywhere.
+- [x] **T8.2** `docs/api/collision.md` and `docs/api/tilemap.md` (API, limits, memory formula and examples,
   `max_tiles`, benchmark number) + header comments — covers AC-5, FR-11, AC-4
-- [ ] **T8.3** [P] guide `docs/guides/levels.md`: a level in Tiled for NNHGE (settings: CSV, finite,
+- [x] **T8.3** [P] guide `docs/guides/levels.md`: a level in Tiled for NNHGE (settings: CSV, finite,
   orthogonal; `solid`/`one_way`/`collision`; objects; parallax; what the build refuses) and the same in code —
   covers AC-5
-- [ ] **T8.4** [P] architecture and tech docs: `rendering.md` (tile batches, from design to implemented),
+- [x] **T8.4** [P] architecture and tech docs: `rendering.md` (tile batches, from design to implemented),
   `decisions.md` (D26, D27 confirmed), `project-structure.md` (`tools/assetc`), `security.md` (new parsers),
   `docs/tech/cmake.md` (map step, host tools, `NNH_ASSETC`, `NNH_HOST_CXX`), `devkitpro-3ds.md` (citro2d quads),
   `docs/api/gfx.md`, `app.md`, `assets.md` (`.tmj` assets) — covers AC-5
-- [ ] **T8.5** [P] `CLAUDE.md` (modules, layout, build), `README.md` status, `docs/REFERENCES.md` (Tiled format) —
+- [x] **T8.5** [P] `CLAUDE.md` (modules, layout, build), `README.md` status, `docs/REFERENCES.md` (Tiled format) —
   covers AC-5
-- [ ] **T8.6** build budgets: one game `.cpp` edit (PC, 3DS), one map edit, clean engine; ROADMAP baseline table —
+- [x] **T8.6** build budgets: one game `.cpp` edit (PC, 3DS), one map edit, clean engine; ROADMAP baseline table —
   covers III
-- [ ] **T8.7** `docs/ROADMAP.md` M7 checkbox and benchmark line; spec, plan, tasks status → implemented;
+- [x] **T8.7** `docs/ROADMAP.md` M7 checkbox and benchmark line; spec, plan, tasks status → implemented;
   `specs/README.md` — covers AC-5
+
+  **Result (2026-11-22, T8.2–T8.7):** docs checked against the code; `docs_tool.py check` 0 broken links; pc-debug
+  1002/1002 unit tests, ctest 151/151; `3ds-release` builds without warnings.
+  - **T8.2**: status → implemented and the Old 3DS benchmark in [tilemap.md](../../docs/api/tilemap.md#drawing),
+    `<nnh/tilemap.hpp>` (`draw_tilemap`), `<nnh/app.hpp>` (`max_tiles`: ~20 KB, not ~22); stale "stage 3" and
+    "later a tilemap's grid" header comments fixed.
+  - **T8.3**: new guide [levels.md](../../docs/guides/levels.md) (files, map settings, tilesets, collision, layers
+    and parallax, animations, objects and properties, loading, the build's refusals with the fixtures' messages,
+    the same level in code), linked from getting-started, README, tilemap.md and assets.md.
+  - **T8.4**: rendering.md (gate result, animated tiles), decisions.md (D26/D27 confirmed; D26's quads are 10 bytes,
+    not 12), project-structure.md (`tests/data/`, shared pure tilemap files), security.md (threat row for Tiled files,
+    T8.1 noted), cmake.md (converter check cost, build-speed line), devkitpro-3ds.md (flips confirmed on hardware,
+    tile cost), gfx.md (benchmark, SELECT twice to reach it), app.md (`FixedStep` exists: the "planned" line was
+    false), assets.md.
+  - **T8.5**: CLAUDE.md (one shorter paragraph for collision + tilemaps), README (status, guide, budgets sentence),
+    REFERENCES.md (Tiled JSON format, gids, parallax).
+  - **T8.6**: measured on Windows (three runs each), in the [ROADMAP](../../docs/ROADMAP.md) table: `hello` edit →
+    simulator 1.41–1.52 s, `.3dsx` 2.61–2.78 s; platformer `.cpp` edit → simulator 1.73 s, `.3dsx` 3.92–4.07 s; map
+    edit → PC 0.92–0.95 s (conversion 0.21–0.23 s), `.3dsx` 3.21–3.30 s; clean 3DS engine 11.4 s. A game with maps
+    pays ~1 s on every 3DS build for the host converter's up-to-date check.
+  - **T8.7**: ROADMAP M7 ticked; spec, plan, tasks and specs/README → implemented, with T7.4 and T8.1 still open.

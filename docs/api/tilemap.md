@@ -4,9 +4,10 @@ Header: `<nnh/tilemap.hpp>` · Uses: [collision.md](collision.md), [texture.md](
 [memory.md](memory.md), [assets.md](assets.md) · Spec: [012](../../specs/012-tilemaps-and-collision/spec.md)
 (FR-0…FR-7, FR-11)
 
-> Status: spec 012 **stage 7** — maps are **built in code**, queried, edited, collided against and **drawn**
-> (`gfx::draw_tilemap`, PC and 3DS; the Old 3DS gate passed), with **animated tiles**, and **made in Tiled**: the
-> build converts `.tmj` files into `.nnhmap` assets (`nnh-assetc`) that `load_tilemap` loads. Example:
+> Status: **implemented** (spec 012) — maps are **built in code**, queried, edited, collided against and **drawn**
+> (`gfx::draw_tilemap`, PC and 3DS; an Old 3DS XL draws 4 full 16×16 layers + 300 sprites at 60 Hz), with
+> **animated tiles**, and **made in Tiled**: the build converts `.tmj` files into `.nnhmap` assets (`nnh-assetc`)
+> that `load_tilemap` loads. Guide: [Levels in Tiled](../guides/levels.md). Example:
 > [`examples/platformer`](../../examples/platformer/main.cpp): level 1 made in Tiled
 > (`assets/levels/level1.tmj` + `assets/tiles/world.tsj`, written by `art/make_level.py`; parallax backdrops, a
 > `collision` layer, one-way planks, animated water, coins, a spawn point and a door as objects, `title`/`music`
@@ -260,6 +261,10 @@ layer and then call order (as [gfx.md](gfx.md#order-layers)), so sprites can sit
   asserts with the fix. Each batch also takes one of `max_draws`; at most 64 batches per frame. No allocation.
   A tileset whose texture was destroyed is skipped (assert). `gfx::stats()` has `tiles_last_frame`, `max_tiles`,
   `dropped_tiles`.
+- **Measured on an Old 3DS XL** (2026-11-21, Development build, the platformer's bench and `tests/gate.nnhs`):
+  4 full layers of 16×16 tiles on the top screen + 300 sprites run at avg 16.7 ms, worst 17.4 ms, 0 missed frames
+  of 600. The limits at 60 Hz: **6 layers** with 300 sprites (7 miss frames), **600 sprites** with 4 layers (Release
+  is expected to be the same or faster; not measured separately).
 
 ## Collision
 

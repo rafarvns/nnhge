@@ -81,9 +81,13 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
   swaps the corner texcoords). Tiled's **diagonal flip** uses tex3ds' rotated sub-texture rule: when
   `top < bottom`, a corner reads `(u, v) = (top|bottom, left|right)`, so `left = v` of the tile's top row,
   `right = v` of its bottom row, `top = u` of its left column and `bottom = u` of its right column shows the
-  tile transposed; the mirrors then apply to that, as Tiled does. **Not yet confirmed on hardware**: the
-  stage-3 gate compares `examples/platformer`'s flip test on the console with the PC screenshot (the PC side
-  is verified pixel by pixel).
+  tile transposed; the mirrors then apply to that, as Tiled does. **Confirmed on an Old 3DS XL** (spec 012
+  T3.9, 2026-11-21): `examples/platformer`'s flip test shows all 8 orientations as the PC screenshot (the PC
+  side is verified pixel by pixel), with no seams under a scrolling camera.
+- **Tile cost** (Old 3DS XL, Development build, `examples/platformer`'s bench, `tests/gate.nnhs`): 4 full
+  layers of 16×16 tiles on the top screen + 300 sprites run at avg 16.7 ms, worst 17.4 ms, 0 missed frames of
+  600; the limits at 60 Hz are **6 layers** with 300 sprites and **600 sprites** with 4 layers. No fallback of
+  decision D26 (a tighter vertex loop, pre-rendered chunks) was needed.
 - **Textures from pixels** (`texture_create_rgba`, used for the built-in font): `C3D_TexInit(w, h,
   GPU_RGBA8)` in linear memory, then the CPU writes the GPU layout itself: 8×8 tiles left to right, rows
   of tiles from the **top** of the image, Morton (Z) order inside a tile with rows top-down too, each

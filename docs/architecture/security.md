@@ -5,7 +5,8 @@ card. Players trust that a game made with NNHGE won't. These rules make the engi
 (constitution article X).
 
 > Status: **implemented** (spec 002): confined files, atomic saves, bounded parsers, fuzzing, CI hardening;
-> NNH Link (spec 011) and the console remote (spec 013) below.
+> NNH Link (spec 011), the console remote (spec 013) and the two map readers of spec 012 (the run-time
+> `.nnhmap` validator and the build-time Tiled converter) below.
 > API: [docs/api/fs.md](../api/fs.md).
 
 ## Threat model (what we protect against)
@@ -15,6 +16,7 @@ card. Players trust that a game made with NNHGE won't. These rules make the engi
 | Writing outside the game's folder | bug in game or engine, malicious path in data | confined file access (below) |
 | Corrupted save after power loss | battery dies mid-write | atomic saves with backup |
 | Crash or memory corruption from bad data | corrupted/modified save, asset or downloaded file | bounded parsers + fuzz tests |
+| A hostile level file in a game's sources | a downloaded or shared Tiled map (`.tmj`/`.tsj`) built by `nnh-assetc` on the developer's PC | bounded JSON reader, images only from inside the assets folder, every output checked by the run-time validator; both fuzzed ([below](#bounded-parsers-and-fuzzing-spec-002)) |
 | Malicious code reaching users | compromised dependency or CI | pinned hashes, pinned actions, least privilege |
 | Code pushed to a console over the network | NNH Link | pairing, mutual authentication, a MAC on every message, LAN only (spec 011, D24; [guide](../guides/nnh-link.md#safety)) |
 | A game reading commands from the network | the console remote (`nnh run --script`, spec 013, D28) | Debug/Development only (no code in Release, checked); the game opens the connection to the PC that started it (simulator: loopback only); fixed-size messages, every field checked, bounded reads; fuzzed ([below](#console-remote-spec-013)) |
@@ -52,14 +54,14 @@ least one valid file.
   a sorted table, frames inside the animated tile's tileset, 1–32 frames of ≥ 1 ms), then copies every accepted
   map, runs every query, the draw-time tile expansion at two animation times and a few edits (animations too) on
   it; libFuzzer executable `fuzz_tilemap`, not run
-  on Linux yet). The build-time Tiled converter `nnh-assetc` (spec 012 stage 5, `tools/assetc/`) reads external
+  on Linux yet: spec 012 T8.1). The build-time Tiled converter `nnh-assetc` (spec 012 stage 5, `tools/assetc/`) reads external
   JSON with its own bounded reader (`json*.cpp`: document ≤ 64 MiB, nesting ≤ 32, ≤ 8 Mi values, numbers ≤ 64
   characters and finite, strings valid UTF-8 with paired surrogates), reads only files inside the assets folder
   for images (tilesets may sit anywhere), and checks every map it writes with the run-time validator; its targets
   live in `tools/assetc/tests/fuzz_assetc.cpp` (`json_target`; `map_target`, a whole conversion of an in-memory map
   and tileset, whose accepted output must pass the validator), as a mini-fuzz in `nnh_assetc_tests` (8 000 JSON
   and 6 000 map/tileset mutants) and libFuzzer executables `fuzz_assetc_json`, `fuzz_assetc_map` (not run on
-  Linux yet). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+  Linux yet: T8.1). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
   for Ogg, where each run decodes; 12 000 mutations of three valid maps, one with animated tiles, for `.nnhmap`) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
   build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built

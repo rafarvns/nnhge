@@ -9,7 +9,8 @@ examples and tests.
 engine/
   core/include/nnh/<module>.hpp              public API, one header per module (what games include)
   core/src/<module>/<concept>.cpp|.hpp       core implementation, internal headers (a pure file there may be
-                                             shared with a host tool, e.g. remote/remote_wire.cpp with tools/nnh)
+                                             shared with a host tool, e.g. remote/remote_wire.cpp with tools/nnh,
+                                             tilemap/map_format.hpp, map_layout, map_validate* with tools/assetc)
   core/src/core/                             engine-wide internal state shared by modules; pure helpers with no
                                              engine includes that host tools compile too (crc32)
   core/contract/nnh/platform/<area>.hpp      platform contract (what each platform library implements)
@@ -21,6 +22,8 @@ tests/
   framework/                                 the tiny test framework
   <module>/test_<concept>.cpp                mirrors engine/core/src/<module>/
   platform_conformance/                      contract tests, linked against every platform
+  data/<kind>/                               test inputs (images, sounds, asset lists, package; maps: Tiled
+                                             fixtures good.tmj and bad_*.tmj for the converter's ctests)
   <example>/test_<concept>.cpp               an example's pure logic, compiled from examples/<example>/
                                              (tests/platformer: the benchmark's gate, camera, coins, player,
                                              replay; replay_matches_script.cmake checks tests/level.nnhs)

@@ -118,9 +118,9 @@ struct TilesetDesc {
 
 struct TileLayerDesc {
     const char* name = "";
-    Vec2 offset{};          ///< drawing only (stage 3): collision and coordinates ignore it
-    Vec2 parallax{1, 1};    ///< drawing only (stage 3)
-    float opacity = 1;      ///< 0..1, drawing only (stage 3)
+    Vec2 offset{};          ///< pixels, drawing only: collision and coordinates ignore it
+    Vec2 parallax{1, 1};    ///< drawing only, as Tiled (1 scrolls with the camera, 0 stays on screen)
+    float opacity = 1;      ///< 0..1, drawing only
     bool visible = true;
     bool collision = false; ///< every non-empty tile of this layer is solid
 };
@@ -326,7 +326,8 @@ struct TilemapDrawOptions {
 /// and opacity 0 draw nothing. Needs AppConfig::gfx.max_tiles > 0 (asserts otherwise); tiles past it are
 /// dropped (assert in Debug/Development). Each batch also takes one of AppConfig::gfx.max_draws. Only inside
 /// a frame. No allocation. Asserts on an unknown `map_layer` and on a tileset whose texture was destroyed
-/// (that tileset is skipped).
+/// (that tileset is skipped). Cost: only visible cells are expanded (≤ 416 per full 16×16 layer on the top
+/// screen); an Old 3DS draws 4 such layers + 300 sprites at 60 Hz (limits: 6 layers, or 600 sprites).
 void draw_tilemap(Screen screen, const Tilemap& map, const TilemapDrawOptions& options = {});
 
 } // namespace gfx

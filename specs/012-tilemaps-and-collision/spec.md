@@ -1,7 +1,8 @@
 # Spec 012: Tilemaps and collision
 
-Status: approved (2026-11-21, with every proposed answer below; amended the same day: code first, Tiled optional —
-NNHGE has no editor, so everything works through the C++ API)
+Status: implemented (2026-11-22; T7.4, the console run of `level.nnhs`, is still pending with the
+maintainer — see [tasks.md](tasks.md)). Approved 2026-11-21, with every proposed answer
+below; amended the same day: code first, Tiled optional — NNHGE has no editor, so everything works through the C++ API
 Author: NNHGE maintainers · Date: 2026-11-21
 Depends on: [spec 004](../004-2d-graphics/spec.md) (textures, draws, layers, cameras),
 [spec 007](../007-assets-and-romfs/spec.md) (assets and build-time conversion), [spec 002](../002-core-foundation/spec.md)

@@ -62,6 +62,24 @@ edit `examples/hello/main.cpp` → simulator 1.66–2.07 s before, 1.77–2.04 s
 host tool) 12.7 → 13.1 s; no-op build 2.0 → 1.9 s. Release `hello.3dsx` 261,112 → 261,260 bytes (+148: the remote
 is compiled out). All within budget; the simulator edit is close to its 2 s limit both before and after.
 
+Spec 012 finished (2026-11-22, same machine; before = the numbers above, after = collision, tilemaps, the converter
+and `examples/platformer` with a Tiled level; three edits each):
+
+| Measurement | Budget | Result |
+|-------------|--------|--------|
+| Edit `examples/hello/main.cpp` → simulator | < 2 s | 1.41–1.52 s (1.77–2.04 s after spec 013) |
+| Edit `examples/hello/main.cpp` → `.3dsx` | < 5 s | 2.61–2.78 s (2.93–2.97 s) |
+| Edit a `.cpp` of a game with maps (`platformer/hud.cpp`) → simulator | < 2 s | 1.73 s (4.7 s the first time) |
+| Edit a `.cpp` of a game with maps → `.3dsx` | < 5 s | 3.92–4.07 s: ~1 s of it is the host converter's up-to-date check (`ExternalProject`) |
+| Edit a map (`level1.tmj`, 128×20, 5 tile layers) → simulator's assets | — | 0.92–0.95 s; the conversion alone 0.21–0.23 s |
+| Edit a map → `.3dsx` | < 5 s | 3.21–3.30 s |
+| Clean 3DS engine (`nnh_core` + `nnh_platform_3ds`, no ccache) | < 30 s | 11.4 s (11.7 s); the rest (8 examples, NNH Link, host tool) 16.2 s (13.1 s: the platformer is new) |
+| 3DS no-op build | — | 2.9 s (1.9 s): `hello` alone 1.8 s, `platformer` 2.8 s (the converter check) |
+
+Release `hello.3dsx` 261,260 → 261,284 bytes (+24 since spec 013's measurement); `platformer.3dsx`
+365,632 bytes (romfs with the level and art included). All within budget; a game with maps pays ~1 s on every 3DS
+build for the converter's check, and its `.3dsx` edit (≈ 4 s) is the closest to a limit.
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -116,7 +134,7 @@ is compiled out). All within budget; the simulator edit is close to its 2 s limi
 - [ ] Later (spec 013 non-goals): drive games started by NNH Link; record and replay a player's session
 
 ## M7 — Game structure
-- [ ] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (approved; stage 1 done: pure `<nnh/collision.hpp>`, [api/collision.md](api/collision.md); stage 2 done: maps built in code, `<nnh/tilemap.hpp>`, [api/tilemap.md](api/tilemap.md); stage 3 done on PC and 3DS builds: `gfx::draw_tilemap` as tile batches (D26), `AppConfig::gfx.max_tiles`, `examples/platformer` skeleton with a tile benchmark; the Old 3DS gate passed: 4 layers + 300 sprites with no missed frame, limits 6 layers / 600 sprites; stage 4 done: `load_tilemap` of converted `.nnhmap` assets, a bounded validator fuzzed by `tilemap_target`; stage 5 done: the Tiled converter in `nnh-assetc` — `.tmj` assets become `.nnhmap` at build time with a depfile, bounded JSON reader, refusals naming the file, every output checked by the run-time validator, fuzz targets `fuzz_assetc_json`/`fuzz_assetc_map`; stage 6 done: animated tiles — `Tilemap::set_tile_animation`, Tiled `animation` arrays converted, validated and fuzzed, drawn by the frame count at 60 Hz (`TilemapDrawOptions::animation_time`), animated water in the example; stage 7 done on PC: `examples/platformer` plays level 1 made in Tiled (`assets/levels/level1.tmj`, parallax, a `collision` layer, one-way planks, animated water, coins and a door as objects, properties) and the bonus level built in code, as scenes talking through events, plus a replay whose checksums are checked against `tests/level.nnhs` by ctest; next: T7.4, `tests/level.nnhs` on the Old 3DS, then stage 8)
+- [x] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (implemented 2026-11-22): pure `<nnh/collision.hpp>` (box queries, `collision::move` through any grid, one-way cells, no tunnelling; [api/collision.md](api/collision.md)); `<nnh/tilemap.hpp>` — maps built in code or drawn in Tiled (`.tmj` assets converted by `nnh-assetc` at build time, D27, and loaded with `load_tilemap`; bounded and fuzzed readers), objects, properties, animated tiles, a collision grid ([api/tilemap.md](api/tilemap.md), guide [Levels in Tiled](guides/levels.md)); `gfx::draw_tilemap` as tile batches (D26). **Old 3DS XL: 4 full 16×16 layers + 300 sprites at 60 Hz (avg 16.7 ms, worst 17.4 ms, 0 missed of 600); limits 6 layers / 600 sprites.** `examples/platformer`: level 1 from Tiled, the bonus level in code, a replay checked against `tests/level.nnhs`. Still with the maintainer: T7.4 (`tests/level.nnhs` on the Old 3DS); Linux, ASan/UBSan and the three libFuzzer targets ran clean on the build VM
 - [ ] Entities/components, tweens, scene transitions (scenes and saves: done)
 
 ### Features in the spirit of Godot and Unity

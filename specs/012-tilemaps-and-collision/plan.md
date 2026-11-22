@@ -1,6 +1,7 @@
 # Plan 012: Tilemaps and collision
 
-Status: approved (2026-11-21, with every proposed answer below)
+Status: implemented (2026-11-22; T7.4 pending with the maintainer). Approved 2026-11-21, with every proposed
+answer below; what changed while building it is in the "Stage N refinements" sections
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D26, D27 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (memory tags, `Result`, logs), spec 004 (textures, draw list, cameras), spec 007 (assets, build steps)
 

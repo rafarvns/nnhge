@@ -158,7 +158,10 @@ it over as an argument; inside it is exported in MSYS form (`/c/...`, or `/home/
 MSYS's CMake misreads `C:/...` as a list. Paths given with `-D` inside `dkp.sh` must use that form too
 (`-DNNH_ASSETC=/e/.../nnh-assetc.exe`). The first build of the tool takes about 9 s on Windows (host compiler
 detection; under 1 s on Linux), then a check of its sources about 0.7 s on Windows / 0.15 s on Linux
-(`BUILD_ALWAYS`: the sub-build's own Ninja decides what is stale, header changes included).
+(`BUILD_ALWAYS`: the sub-build's own Ninja decides what is stale, header changes included). That check runs on
+every 3DS build of a game with maps: measured on Windows (2026-11-22), a no-op build of `platformer` takes 2.8 s
+against 1.8 s for `hello`, and a map edit costs one conversion (`level1.tmj`, 128×20 with 5 tile layers: 0.2 s)
+plus the romfs and `.3dsx` (3.2–3.3 s in all). Numbers in the [ROADMAP](../ROADMAP.md) table.
 
 ```sh
 scripts/dkp.sh cmake --build --preset 3ds-release --target nnh_assetc   # build it for the host explicitly
@@ -212,7 +215,9 @@ keep one step per image). Platform flags: `-march=armv6k -mtune=mpcore -mfloat-a
 
 ## Build speed
 
-- Ninja + ccache (auto-detected) → incremental game rebuild ≈ 1.3 s PC, 1.4 s 3DS (baseline in ROADMAP).
+- Ninja + ccache (auto-detected) → incremental game rebuild ≈ 1.4 s PC, 2.6 s 3DS for `hello` (2026-11-22;
+  history in the ROADMAP's build-time table). On the maintainer's machine devkitPro's MSYS2 has no ccache, so clean
+  3DS builds compile everything.
 - The engine is a static library; game builds compile only game sources.
 - Keep public headers light (see [cpp.md](cpp.md)). Measure before/after any build change:
   `time cmake --build --preset pc-debug` after touching one game `.cpp`.

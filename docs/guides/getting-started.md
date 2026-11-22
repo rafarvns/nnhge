@@ -76,7 +76,9 @@ nnh_add_game(mygame
     ICON icon.png)   # optional, 48x48
 ```
 
-and `add_subdirectory(mygame)` it from the top-level `CMakeLists.txt`. A standalone project template
+and `add_subdirectory(mygame)` it from the top-level `CMakeLists.txt`. Images, sounds and levels go in an
+assets folder (`ASSETS assets`, [api/assets.md](../api/assets.md)); levels can be drawn in Tiled
+([Levels in Tiled](levels.md)) or built in code ([api/tilemap.md](../api/tilemap.md)). A standalone project template
 (engine as a dependency) comes with the `nnh` CLI. To give it to players — a `.3dsx`, or a `.cia` with
 a banner for the HOME Menu, installed over the network with FBI — see
 [Distributing your game](packaging.md).

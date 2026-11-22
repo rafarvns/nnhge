@@ -19,6 +19,12 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   `third_party/stb_vorbis` (spec 008; version and hash in its README): https://github.com/nothings/stb
 - **libsndfile / python-soundfile** — used only by `make_sounds.py` scripts to encode the test and example
   sounds (not shipped): https://python-soundfile.readthedocs.io
+- **Tiled** (Thorbjørn Lindeijer; GPL editor, its file formats are documented and free to read) — the map editor
+  whose JSON map (`.tmj`) and tileset (`.tsj`) formats `nnh-assetc` converts (spec 012, read with our own JSON
+  reader; nothing of Tiled is shipped or needed to build). Format reference (Tiled 1.10, also 1.9's `class`):
+  https://doc.mapeditor.org/en/stable/reference/json-map-format/ · flip bits in gids:
+  https://doc.mapeditor.org/en/stable/reference/global-tile-ids/ · parallax (centre-based scrolling, parallax
+  origin): https://doc.mapeditor.org/en/stable/manual/layers/#parallax-scrolling-factor
 
 ## Engines and frameworks (design inspiration)
 - **Butano** (GBA, modern C++, zlib) — best model for API style and documentation quality; no exceptions/RTTI,

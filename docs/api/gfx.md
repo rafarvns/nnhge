@@ -113,6 +113,9 @@ the message. Each tile batch (one per map layer and tileset) also takes one of `
 `gfx::stats()` returns `draws_last_frame`, `max_draws`, `dropped_draws`, `textures`, `max_textures` and
 `texture_bytes` (the game's textures: the built-in font has its own slot and memory tag), plus
 `tiles_last_frame`, `max_tiles` and `dropped_tiles` (since `init()`); the debug overlay shows them too (the
-tiles line only when `max_tiles > 0`). How many tile layers fit at 60 Hz: the benchmark of
-[`examples/platformer`](../../examples/platformer/main.cpp) (SELECT on the console, `PLATFORMER_DEMO=bench` on PC); A there runs its automatic gate, which finds the limits
-by itself (`PLATFORMER_DEMO=gate`, or the script `examples/platformer/tests/gate.nnhs` with `nnh run`).
+tiles line only when `max_tiles > 0`). How many tile layers fit at 60 Hz (an Old 3DS XL: **4 full layers of
+16×16 tiles on the top screen + 300 sprites**, avg 16.7 ms, worst 17.4 ms, no missed frame of 600; limits 6 layers
+with 300 sprites, or 600 sprites with 4 layers): the benchmark of
+[`examples/platformer`](../../examples/platformer/main.cpp) (SELECT twice on the console, after level 1 and the
+bonus level; `PLATFORMER_DEMO=bench` on PC); A there runs its automatic gate, which finds the limits by itself
+(`PLATFORMER_DEMO=gate`, or the script `examples/platformer/tests/gate.nnhs` with `nnh run`).

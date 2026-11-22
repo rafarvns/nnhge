@@ -130,7 +130,8 @@ std::string props(const MapView& v, int first, int count) {
 NNH_TEST(writer_output_passes_the_engine_validator) {
     std::vector<std::uint8_t> bytes = written(sample());
     CHECK(nnh::detail::validate_map(bytes.data(), bytes.size()).ok());
-    const fmt::Header& h = MapView{bytes.data()}.header();
+    const MapView view{bytes.data()};
+    const fmt::Header& h = view.header();
     CHECK(h.file_size == bytes.size());
     CHECK(h.width == 4 && h.height == 2 && h.tile_width == 16 && h.tile_height == 16);
     CHECK(h.parallax_origin_x == 8 && h.parallax_origin_y == -2);
@@ -138,7 +139,8 @@ NNH_TEST(writer_output_passes_the_engine_validator) {
 
 NNH_TEST(writer_capacities_equal_counts) {
     std::vector<std::uint8_t> bytes = written(sample());
-    const fmt::Header& h = MapView{bytes.data()}.header();
+    const MapView view{bytes.data()};
+    const fmt::Header& h = view.header();
     CHECK(h.tilesets == 2 && h.tilesets_cap == 2 && h.tile_layers == 2 && h.tile_layers_cap == 2);
     CHECK(h.object_layers == 1 && h.object_layers_cap == 1 && h.objects == 2 && h.objects_cap == 2);
     CHECK(h.tile_ids == 12 && h.tile_ids_cap == 12 && h.tile_props == 2 && h.tile_props_cap == 2);

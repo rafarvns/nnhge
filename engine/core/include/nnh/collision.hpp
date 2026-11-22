@@ -1,7 +1,8 @@
 #pragma once
 /// @file nnh/collision.hpp
 /// Collision on plain values: box queries, and moving a box through a grid of solid cells the game
-/// describes (an array, a function, or later a tilemap's collision grid). Depends only on <nnh/math.hpp>.
+/// describes (an array, a function, or a map's Tilemap::collision_grid() from <nnh/tilemap.hpp>). Depends
+/// only on <nnh/math.hpp>.
 /// Nothing here allocates, keeps state or needs nnh::init(): every function is safe per frame.
 /// See docs/api/collision.md.
 ///

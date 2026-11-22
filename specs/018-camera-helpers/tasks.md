@@ -54,20 +54,20 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 
 ## Stage 2: shake, layouts, conversions, misuse (pure)
 
-- [ ] **T2.1** Noise: the integer hash, lattice values in [-1, 1], smoothstep interpolation, 16.16 noise clock;
+- [x] **T2.1** Noise: the integer hash, lattice values in [-1, 1], smoothstep interpolation, 16.16 noise clock;
   golden values for a few (seed, axis, time) triples; continuity bound per tick. Files: `camera/camera_shake.cpp`.
   Test: `tests/camera/test_camera_noise.cpp`. Covers FR-8, FR-12.
-- [ ] **T2.2** Trauma: `add_trauma` (clamp, NaN/negative misuse), decay to exactly 0, shake from the decayed trauma
+- [x] **T2.2** Trauma: `add_trauma` (clamp, NaN/negative misuse), decay to exactly 0, shake from the decayed trauma
   (`trauma() == 0` ⇒ `position() == followed()`), `max_shake / zoom` bound, same/different seeds, `stop_shake`,
   `snap` keeps the shake, shake inside limits / clamp off / small-world axis. Files: `camera_shake.cpp`,
   `camera_update.cpp`. Test: `tests/camera/test_camera_shake.cpp`. Covers FR-5, FR-8.
-- [ ] **T2.3** Layouts and conversions: Single top/bottom, TallWorld (combined view, bottom at `+ (40 / zoom,
+- [x] **T2.3** Layouts and conversions: Single top/bottom, TallWorld (combined view, bottom at `+ (40 / zoom,
   240 / zoom + gap)`, combined limits and dead zone, a point crossing the screens continuously), `drives`,
   `camera(s)`, `view(s)`, `to_world`/`to_screen` round trips (both screens × both layouts × zooms 0.5, 1, 2, 3),
   pixel snap (applied camera only), layout change keeps the top-left, two rigs as two views. Files:
   `camera/camera_layout.cpp`. Test: `tests/camera/test_camera_layouts.cpp`, `test_camera_convert.cpp`. Covers FR-10,
   FR-11, FR-13.
-- [ ] **T2.4** [P] Misuse: every case of FR-15 asserts (assert hook); the Release path clamps or ignores and logs one
+- [x] **T2.4** [P] Misuse: every case of FR-15 asserts (assert hook); the Release path clamps or ignores and logs one
   error per rig; profile scope `camera` in `update`. Files: `camera_rig.cpp`, `camera_update.cpp`. Test:
   `tests/camera/test_camera_misuse.cpp`. Covers FR-15.
 - [ ] **T2.5** Stage end: `ctest --preset pc-debug`; the same on VM 120 (GCC 13/14, clang 18): every camera test,

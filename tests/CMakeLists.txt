@@ -75,9 +75,14 @@ add_executable(nnh_tests
     audio/test_voice_table.cpp
     audio/test_wav_reader.cpp
     build/test_flavor.cpp
+    camera/test_camera_convert.cpp
     camera/test_camera_dead_zone.cpp
     camera/test_camera_follow.cpp
+    camera/test_camera_layouts.cpp
     camera/test_camera_limits.cpp
+    camera/test_camera_misuse.cpp
+    camera/test_camera_noise.cpp
+    camera/test_camera_shake.cpp
     camera/test_camera_smoothing.cpp
     camera/test_camera_snap.cpp
     camera/test_camera_update.cpp

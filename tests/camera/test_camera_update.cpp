@@ -1,6 +1,7 @@
 // update() advances exactly one 60 Hz frame (spec 018 FR-12): never by wall time; not calling it freezes the rig.
 
 #include "camera_fixture.hpp"
+#include "nnh/profile.hpp"
 
 using cam_test::same_bits;
 using nnh::CameraRig;
@@ -31,6 +32,23 @@ NNH_TEST(not_calling_update_freezes_the_camera) {
     (void)rig.camera(nnh::Screen::Top); // queries don't advance it
     (void)rig.view(nnh::Screen::Top);
     CHECK(same_bits(rig.position(), p) && rig.trauma() == t);
+}
+
+NNH_TEST(update_is_a_profile_scope_named_camera) {
+    if (!nnh::build::kDevToolsEnabled) return; // the profiler is compiled out of Release
+    cam_test::restart();
+    CameraRig rig;
+    CHECK(nnh::frame());
+    for (int i = 0; i < 3; ++i) rig.update(Vec2{1, 2});
+    CHECK(nnh::frame());
+    nnh::profile::ScopeStats stats[nnh::profile::kMaxScopes];
+    const int n = nnh::profile::slowest(stats, nnh::profile::kMaxScopes);
+    int calls = 0;
+    for (int i = 0; i < n; ++i) {
+        if (std::strcmp(stats[i].name, "camera") == 0) calls = stats[i].calls;
+    }
+    CHECK(calls == 3);
+    nnh::shutdown();
 }
 
 NNH_TEST(a_rig_never_snapped_moves_from_the_origin) {

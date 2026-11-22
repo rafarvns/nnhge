@@ -215,7 +215,8 @@ spec; the order below is a proposal.
   `examples/actions`: playfield, controls screen, bench (PC: 64 actions × 4 slots in 0.026 ms) and a self-check
   script (`tests/check.nnhs`)
 - [ ] **Camera helpers** (Godot Camera2D, Cinemachine): follow with smoothing and a dead zone, map limits, shake,
-  zoom, the two screens as one tall world or two views
+  zoom, the two screens as one tall world or two views — [spec 018](../specs/018-camera-helpers/spec.md) (approved 2026-11-22,
+  maintainer pre-approved recommendations; plan next)
 - [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels and layout boxes built
   in code, focus moved with the D-Pad and touch on the bottom screen; menus without drawing rectangles by hand
 - [ ] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System): emitters configured by a C++

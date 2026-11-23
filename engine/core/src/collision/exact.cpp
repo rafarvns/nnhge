@@ -35,10 +35,10 @@ Segment make_segment(Vec2 from, Vec2 to) {
     s.sy = sign_of(s.dy);
     s.ax = s.sx < 0 ? -s.dx : s.dx;
     s.ay = s.sy < 0 ? -s.dy : s.dy;
+    s.from = from;
+    s.to = to;
     return s;
 }
-
-float to_fraction(Ratio t) { return static_cast<float>(t.n / t.a); }
 
 float along(double p, double d, Ratio t) { return static_cast<float>(p + d * t.n / t.a); }
 

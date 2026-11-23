@@ -12,6 +12,11 @@ float ray_length(Vec2 from, Vec2 to);
 /// raycast_boxes.cpp). The view and points must have been checked.
 bool any_box_on_ray(const BoxView& boxes, Vec2 from, Vec2 to, const QueryFilter& filter);
 
+/// raycast(grid, ...) and raycast(boxes, ...) without their misuse checks (raycast_grid.cpp, raycast_boxes.cpp):
+/// the world raycast checks its inputs once and makes one segment for both.
+bool first_cell_hit(const Grid& grid, const Segment& s, RayHit& hit, const QueryFilter& filter);
+bool first_box_hit(const BoxView& boxes, const Segment& s, RayHit& hit, const QueryFilter& filter);
+
 /// A hit of something containing the start: fraction 0, point `from`, normal (0, 0).
 inline RayHit inside_hit(Vec2 from) {
     RayHit h;

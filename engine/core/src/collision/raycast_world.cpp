@@ -18,9 +18,11 @@ bool sight_inputs_ok(const Grid& grid, Vec2 from, Vec2 to) {
 
 bool raycast(const Grid& grid, const BoxView& boxes, Vec2 from, Vec2 to, RayHit& hit, const QueryFilter& filter) {
     if (!detail::view_ok(boxes, "raycast") || !detail::grid_ok(grid, "raycast")) return false; // no half answers
+    if (!detail::point_ok(from, "raycast") || !detail::point_ok(to, "raycast")) return false;
+    const detail::Segment s = detail::make_segment(from, to); // checked once, shared by both halves
     RayHit cell_hit, box_hit;
-    const bool cell = raycast(grid, from, to, cell_hit, filter);
-    const bool box = raycast(boxes, from, to, box_hit, filter);
+    const bool cell = detail::first_cell_hit(grid, s, cell_hit, filter);
+    const bool box = detail::first_box_hit(boxes, s, box_hit, filter);
     if (!cell && !box) return false;
     hit = cell && (!box || !(box_hit.fraction < cell_hit.fraction)) ? cell_hit : box_hit;
     return true;

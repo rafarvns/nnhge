@@ -13,10 +13,11 @@ int cells_crossed(const Grid& grid, Vec2 from, Vec2 to, CellCrossing* cells, int
         return 0;
     }
     detail::GridWalk walk(grid, detail::make_segment(from, to), grid.outside == Cell::Empty);
-    detail::WalkCell c;
     int total = 0;
-    while (walk.next(c)) {
-        if (total < capacity) cells[total] = {c.x, c.y, detail::cell_at(grid, c.x, c.y), detail::to_fraction(c.t)};
+    while (const detail::WalkCell* c = walk.step()) {
+        if (total < capacity) {
+            cells[total] = {c->x, c->y, detail::cell_at(grid, c->x, c->y), detail::to_fraction(c->t)};
+        }
         ++total;
     }
     return total;

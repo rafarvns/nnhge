@@ -99,6 +99,7 @@ add_executable(nnh_tests
     collision/test_contacts.cpp
     collision/test_exact.cpp
     collision/test_grid_walk.cpp
+    collision/test_grid_walk_lattice.cpp
     collision/test_grid.cpp
     collision/test_grid_move.cpp
     collision/test_hit_list.cpp
@@ -109,6 +110,7 @@ add_executable(nnh_tests
     collision/test_ray_box.cpp
     collision/test_raycast_all_grid.cpp
     collision/test_raycast_boxes.cpp
+    collision/test_raycast_boxes_scan.cpp
     collision/test_raycast_grid.cpp
     collision/test_raycast_world.cpp
     core/test_crc32.cpp

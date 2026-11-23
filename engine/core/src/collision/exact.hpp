@@ -32,12 +32,13 @@ struct Segment {
     double dx = 0, dy = 0;
     double ax = 0, ay = 0; ///< |dx|, |dy|
     int sx = 0, sy = 0;    ///< −1, 0, 1
+    Vec2 from{}, to{};     ///< the float inputs (the lattice paths read their bits)
 };
 Segment make_segment(Vec2 from, Vec2 to);
 inline bool zero_length(const Segment& s) { return s.sx == 0 && s.sy == 0; }
 
-/// `t` rounded once to float.
-float to_fraction(Ratio t);
+/// `t` rounded once to float (inline: one division, nothing to contract).
+inline float to_fraction(Ratio t) { return static_cast<float>(t.n / t.a); }
 /// p + d·t, rounded once to float.
 float along(double p, double d, Ratio t);
 inline float clamp_to(float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); }

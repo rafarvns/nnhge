@@ -785,9 +785,11 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    0x2 tile 2 boxes 0`, `under: cell 10,7 empty layers 0x0 tile 4 boxes 1`, `under: cell 15,5 one-way layers 0x1 tile
    3 boxes 0`, `queries: self-check started`, `queries: 1024 sum 36C6AD9D`, `queries: 2048 sum 6A48E776`,
    `queries: 3072 sum F9B05D2F`, `queries: 4096 sum C8724E5B`, **`queries: PASS 4ACAA177`**, then `queries bench:
-   rays avg X ms worst Y ms (target < 2 ms) PASS`, `queries bench: points avg X ms, Z us per box (target <= 0.1 us)
-   PASS`, `queries bench: move unfiltered X us filtered Y us`; `nnh: PASS (99 lines, …)` (a bench line saying FAIL
-   fails the run: see "Console bench refinement"). Record X, Y, Z and the move
+   rays avg X ms worst Y ms (target < 2 ms) PASS`, `queries bench: rays split grid G ms (start S ms, 6.5 cells per
+   ray) boxes B ms`, `queries bench: points avg X ms, Z us per box (target <= 0.1 us) PASS`, `queries bench: move
+   unfiltered X us filtered Y us`, `queries bench: PASS`; `nnh: PASS (102 lines, …)` (a missed target makes the last
+   line `queries bench: FAIL (rays|points)`, which fails the run after every number is logged: see "Console bench
+   refinement (round 2)"). Record X, Y, Z, the split and the move
    numbers here and in `docs/api/collision.md#limits-and-costs`. Then read the screenshots `first`, `pool`, `water`,
    `all`, `cast`, `touch` (top and bottom): the same pictures as the PC's (`build/logs/queries-*` from a `--pc` run).
    If the rays line says FAIL, apply risk 1's mitigations in order.
@@ -871,12 +873,116 @@ PASS (`96FE8943`); 3ds-release and 3ds-dev without a warning; 3ds-release `hello
 ray).
 
 **`check.nnhs`** now has `fail-on "ms) FAIL"` and `fail-on "us) FAIL"`: a bench line over its target fails the console
-run (checked on the PC with a scratch script failing on `ms) PASS`: `nnh: FAIL … matched`, exit 1).
+run (checked on the PC with a scratch script failing on `ms) PASS`: `nnh: FAIL … matched`, exit 1). Replaced in round
+2 by one verdict line after every bench number.
 
 Subnormal box fields: "size > 0" and the key order are now IEEE's on every system (the 3DS's VFP flushed subnormal
 operands of the old float compares to zero); results for such inputs were never guaranteed (Determinism), and nothing
 else changes. **Not changed:** `move`'s own code (spec 012: `floorf`/`ceilf` calls and float divisions per sweep);
 the targets (the maintainer sets them from the next console run).
+
+## Console bench refinement (round 2)
+
+**Second console run** (same Old 3DS, Development `-O2`, GCC 16, after the first refinement): still correct
+(`queries: PASS 4ACAA177` = the PC's) but `queries bench: rays avg 5.996 ms worst 6.983 ms (target < 2 ms) FAIL`
+(was 14.1 ms); the points bench wasn't reached (the script stopped at the first FAIL line).
+
+**Bench and script** (commit "queries bench splits the rays"): the rays phase also times, outside the judged time,
+the same 128 rays against the grid alone, against the boxes alone, and cut to 1/4 px (the walk's setup and its first
+cell), and counts the cells the walk visits up to the hit (`cells_crossed` up to the hit cell):
+`queries bench: rays split grid G ms (start S ms, C cells per ray) boxes B ms`, per frame. After the move line comes
+the verdict, `queries bench: PASS` or `queries bench: FAIL (rays, points)`; `check.nnhs` now has
+`fail-on "queries bench: FAIL"` (instead of `ms) FAIL` / `us) FAIL`) and expects `rays avg`, `points avg`, then
+`queries bench: PASS`, so one console run logs all numbers and still fails on a missed target (checked on the PC with a
+scratch copy failing on `queries bench: PASS`: `nnh: FAIL … matched`, exit 1, after the move line). The split and the
+verdict share a frame with the line before them, so they are logged but not expected on their own (an `expect`
+matches from the frame after the previous match). pc-debug's split: grid 0.27 ms, start 0.10 ms, 6.5 cells per ray,
+boxes 0.69–0.73 ms: on the PC the boxes are about 70 % of the rays' time; the console line will say how the 6 ms split
+there.
+
+**What was still hot** (3ds-dev `arm-none-eabi-objdump -dr`, per path; counts are of the code executed on that path):
+
+- **Box slab path** (≈ 10 % of the ray × box pairs, 6.5 per ray, 1.67 hits per ray): `raycast` called `box_hit()`,
+  which called `slab_cast()` (195 instructions, 12 `vmrs`, 7 `vmul.f64`, 26 `ldm`/`stm`: its `Interval` and `Ratio`
+  structs went through the stack), then, for every box hit, `memset` of a 44-byte `RayHit`, an out-of-line
+  `to_fraction` (a `vdiv.f64`), `along` (another), and a 44-byte copy into the best hit.
+- **Grid walk per step**: `advance()` (190 instructions: 2 `vmul.f64` + 2 `vmrs` for the line order and the end
+  test, `vcvt`/`vmla`/`vcvt.f64`/`vsub.f64` to recompute the crossed line), a call to `push()` (76 instructions,
+  `ldm`/`stm` of the Ratio), then `next()` copied the 40-byte `WalkCell`.
+- **Grid walk start, per ray**: `start()` with `fixed_cell`/`moving_cell` (`first_cell()`: `floorf` call and a
+  `vdiv.f32` per axis, plus fix-up compares: 6 `vmrs` and 4 `vmul.f64` in `start` alone, 12 calls), two `vdiv.f64`
+  for the step bound (`cells_along`).
+- **Per call**: the world raycast checked view, grid and both points, then each half checked again (7 out-of-line
+  checks) and made its own segment (2 `make_segment`, each with 2 `vmrs`).
+
+**Changes** (no API change; every result the same bits):
+
+- **Lattice grid walk** (`lattice.hpp`, `grid_walk_lattice.cpp`): when the segment's ends, the grid's origin and cell
+  size are multiples of 1/256 px with |v| < 2^14 px (`to_lattice()` reads the float's bits: integer only), and a
+  clipped walk starts strictly inside the grid, the walk runs in integers of 1/256 px. Start cells by
+  `floor`/`ceil` division (one `__aeabi_idivmod` per axis; no `floorf`, no `vdiv`, no step bound: these segments
+  cross at most a_x/size_x + a_y/size_y + 3 lines, within the double path's bound). Per step: the line order is
+  `n_x · a_y` against `n_y · a_x` in int64, kept incrementally (`cross += size · a_other` on the crossed axis), the
+  end test `n < a` is an int compare, and the queued Ratio is `{n · 2^-8, a}` (one `vcvt.f64.s32` + one `vmul.f64`,
+  no `vmrs`). Why the cells are the same: on these inputs every grid edge the walk meets is exact in float
+  (|edge| < 2^15 px), every difference of the double path is exact and every product is < 2^48 units, so the double
+  path's compares are the integer compares and its Ratio values are exactly `n · 2^-8`. Other inputs take the double
+  path unchanged; `GridWalk(..., WalkPath::Double)` forces it (tests).
+- **Walk interface**: `GridWalk::step()` returns a pointer to the queued cell (no 40-byte copy); `push()` is inline in
+  the header (both paths push per step). `raycast`, `raycast_all` and `cells_crossed` use `step()`.
+- **Box slab path** (`raycast_boxes.cpp`): past the bounding-box reject, `enters()` makes only the three ratio
+  compares that choose the entry, the exit and enter < exit, plus the inside sign, in scalars (no struct on the
+  stack, no call). The reject already proves the rest of `slab_cast()`'s checks: a box with x below the segment's max
+  x has, for a + axis, `lo − p < a`, for a − axis `p − lo > 0`; a box reaching past the min x has `hi > min x`; so
+  each moving axis enters before t = 1 and leaves after t = 0, and a still axis is strictly inside its slab.
+  `slab_cast()` itself is unchanged (box casts use it).
+- **First hit built once**: `raycast(boxes)` keeps the best entry (index, box, Ratio, face, inside, fraction) and
+  builds the `RayHit` at the end. A later entry is compared exactly first (`compare(t, best) ≥ 0` → it can't round
+  to a smaller fraction), so the division is made only for an exactly earlier one, and then the float fractions
+  decide as before (ties: the lowest index). A best fraction of 0 ends the scan (nothing rounds below 0).
+  `to_fraction()` is inline.
+- **World raycast**: checks the view, the grid and both points once, makes one segment and runs the unchecked
+  halves (`detail::first_cell_hit`, `detail::first_box_hit`). Misuse still asserts and returns false.
+- **Segment** carries its float ends (`from`, `to`) for the lattice test and the hit's start point.
+
+**ARM evidence** (3ds-dev objects, before → after):
+
+| Path | Before | After |
+|------|--------|-------|
+| Grid step (one line crossed) | `advance()` + `push()` call + 40-byte copy: ≈ 150 instructions, 2 `vmul.f64`, 2 `vmrs`, 1 call, 2 `ldm`/`stm` | `advance_lattice()`, `push` inlined, no copy: ≈ 65 instructions, 1 `vcvt.f64.s32` + 1 `vmul.f64`, 0 `vmrs`, 0 calls |
+| Grid walk start, per ray | `start()`: 2 × `first_cell()` (`floorf` call, `vdiv.f32`), fix-ups, 2 `vdiv.f64`, ≥ 6 `vmrs`, 12 calls | 4 × `to_lattice` per axis (integer), 2 `__aeabi_idivmod`, 0 VFP |
+| Box past the reject | `box_hit` → `slab_cast`: ≈ 16 `vmrs`, 7 `vmul.f64`, 38 `ldm`/`stm`; per hit `memset`, 2 calls with `vdiv.f64` | `enters()`: 98 instructions on all paths, the diagonal path 6 `vmul.f64`, 4 `vmrs`, 0 `ldm`/`stm`, 0 calls; per hit only an exact compare, a `vdiv.f64` only for an earlier hit; the RayHit once per ray |
+| World raycast, per ray | 7 checks, 2 `make_segment` | 4 checks, 1 `make_segment` |
+
+No `vfma`/`vfms`/`vfnma` in any query object (3ds-release); 3ds-dev `queries.elf` text 291 120 → 297 860 (the two
+walk paths), `hello.elf` unchanged (3ds-release 201 188 / 28 352 / 106 680, 3ds-dev 217 992).
+
+**PC** (pc-release scratch program `build/r2/ubench.cpp`: the bench's 7680 rays against the room's walls as a cell
+array and through a callback, the 64 boxes, both; best of 15 runs per figure, three rounds; ns per ray, old → new
+`nnh_core`): grid 206–269 → 163–218, grid by callback 230–275 → 175–228, boxes 712–847 → 651–803, grid + boxes
+986–1178 → 850–1042; the answers' checksum `4A79D22F` in both. The example's bench in pc-dev (before / after, same
+machine): rays 0.241 → 0.173 / 0.180 ms, split grid 0.065 → 0.047 / 0.048, start 0.028 → 0.022 / 0.023, boxes
+0.151 → 0.115 / 0.119; points 0.0089 → 0.0092 / 0.0103 µs per box and moves 0.32–0.39 µs (untouched code, noise).
+x86 doesn't pay for `vmrs` and the stack copies the way the ARM11 does; the table above is the evidence for the 3DS.
+
+**Checks:** `nnh_tests` 2022/2022: new `the_lattice_walk_equals_the_double_walk_cell_for_cell` (6000 lattice rays on
+five layouts with corner, on-line, axis-aligned and clipped rays: every WalkCell field bit for bit; 3949 on the
+integer path, 40 891 cells), `the_lattice_walk_is_used_only_where_its_integers_are_exact` (±2^14, off-lattice,
+subnormal, zero length, clipped from outside or on the edge, odd cell size, far origin) and
+`rays_against_boxes_equal_the_slab_test_box_by_box` (6000 rays, lattice and not, 24 boxes with zero widths,
+duplicates for ties, rays through box corners, flush starts, masks, the ignore index, inside starts: `raycast`,
+`raycast_all` and `line_of_sight` against `slab_cast()` box by box); mutants caught: the walk's end test `>=` → `>`,
+the x-on-tie entry rule, enter < exit → ≤, the early stop; unchanged and passing: the 5000-ray exact references,
+`the_queries_self_check_reaches_the_golden_checksum` (`0x4ACAA177`), `collision_grid_regression_*`; ctest pc-debug
+264/264, pc-release 257/257; `check.nnhs --pc` PASS (102 lines), `level.nnhs --pc` PASS (`96FE8943`); 3ds-release and
+3ds-dev without a warning.
+
+**Console run** (Homebrew Launcher open, press Y): `build/pc-debug/tools/nnh/nnh run queries --script
+examples/queries/tests/check.nnhs`. Expected: every line of "Stage 10" run 1 as before (`queries: PASS 4ACAA177`),
+then `queries bench: rays avg X ms … PASS|FAIL`, `queries bench: rays split grid G ms (start S ms, 6.5 cells per ray)
+boxes B ms`, `queries bench: points avg …`, `queries bench: move unfiltered …`, and `queries bench: PASS` (or
+`FAIL (…)`, which fails the run with every number logged). If rays still miss 2 ms, G and B say which half to work
+on next (grid: (G − S) / 6.5 per step; boxes: B / 64 per box).
 
 ## Stage 11 results
 

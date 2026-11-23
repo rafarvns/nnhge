@@ -48,7 +48,9 @@ only when the console reports them to the game. In Luma3DS: hold **SELECT** whil
 enable **"Set developer UNITINFO"** (development only; turn it off for normal use). Without it, Luma3DS
 shows its own exception screen and saves a dump in `sdmc:/luma/dumps/arm11/` — open it on the PC with
 Luma3DS's `luma3ds_exception_dump_parser`. Try it with the foundation example: hold L + R and press A
-(an assert), or add a deliberate null write to test CPU faults.
+(an assert) or B (a write through a null pointer, a real CPU fault). Scripted:
+`nnh run foundation --script examples/foundation/tests/cpu_fault.nnhs` passes when the engine's fatal line arrives
+(with UNITINFO); without UNITINFO Luma3DS takes the fault and the script fails.
 
 To turn a crash address into a source line: `arm-none-eabi-addr2line -e <game>.elf -f -C <pc>`
 (from `C:\devkitPro\devkitARM\bin`; use the `.elf` next to the `.3dsx`).

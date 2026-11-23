@@ -1,0 +1,14 @@
+# CPU-fault crash screen on the 3DS (spec 002, ROADMAP "CPU-fault crash screen with UNITINFO").
+# Before: Luma3DS "Set developer UNITINFO" on (hold SELECT while powering on). Then Homebrew Launcher -> Y and
+#   build/pc-debug/tools/nnh/nnh run foundation --script examples/foundation/tests/cpu_fault.nnhs
+# The demo writes through a null pointer (L+R+B). With UNITINFO the engine's handler logs a fatal line and shows its
+# crash screen (registers, last log lines; crash.txt on the SD card); without it Luma3DS shows its own screen and no
+# fatal line arrives, so the expect below fails. The game stops answering after the fault, so nothing follows it.
+wait 60
+screenshot before
+press L
+press R
+wait 2
+tap B
+# The warning and the fatal line come on the same frame, so only the fatal one is expected.
+expect "The CPU stopped on an invalid operation" 60

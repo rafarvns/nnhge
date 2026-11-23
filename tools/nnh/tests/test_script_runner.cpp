@@ -190,6 +190,35 @@ NNH_TEST(runner_fails_on_a_fatal_line) {
     CHECK(c.noted("FAIL at t.nnhs:1: the game logged a fatal error: [f5"));
 }
 
+// A crash test (examples/foundation/tests/cpu_fault.nnhs) expects the fatal line itself: only an expected one passes.
+NNH_TEST(runner_passes_when_the_expected_line_is_the_fatal_one) {
+    ScriptRunner r = runner_for("wait 5\nexpect \"CPU stopped\" 30\n");
+    FakeConsole c(r);
+    r.start();
+    c.run(8);
+    c.log("Data abort: The CPU stopped on an invalid operation", 'F');
+    CHECK(r.verdict() == Verdict::Pass);
+}
+
+NNH_TEST(runner_fails_when_an_expected_fatal_line_comes_before_the_scripts_end) {
+    ScriptRunner r = runner_for("wait 5\nexpect \"CPU stopped\" 30\ntap A\n");
+    FakeConsole c(r);
+    r.start();
+    c.run(8);
+    c.log("Data abort: The CPU stopped on an invalid operation", 'F');
+    CHECK(r.verdict() == Verdict::Fail);
+    CHECK(c.noted("the game stopped at a fatal error before the script's end"));
+}
+
+NNH_TEST(runner_still_fails_on_a_fatal_line_an_expect_does_not_name) {
+    ScriptRunner r = runner_for("wait 5\nexpect \"CPU stopped\" 30\n");
+    FakeConsole c(r);
+    r.start();
+    c.run(8);
+    c.log("assert failed: x", 'F');
+    CHECK(r.verdict() == Verdict::Fail);
+}
+
 NNH_TEST(runner_fails_on_late_input_with_its_line) {
     ScriptRunner r = runner_for("# comment\ntap A\n");
     FakeConsole c(r);

@@ -4,6 +4,8 @@
 // - the debug overlay (SELECT + L or F1), with a profiled scope
 // - a save file that counts how many times the program ran (survives restarts and power loss)
 // - a deliberate crash: hold L + R and press A (or set NNH_DEMO_CRASH_AT_FRAME=<n> on PC for automation)
+// - a deliberate CPU fault: hold L + R and press B (a write through a null pointer; on a 3DS the engine's crash
+//   screen shows it only with Luma3DS "Set developer UNITINFO", see docs/guides/debugging-on-3ds.md)
 
 #include <cstdint>
 #include <cstdlib>
@@ -54,6 +56,13 @@ void busy_work() {
     for (int i = 0; i < 20000; ++i) x = x + static_cast<std::uint32_t>(i);
 }
 
+/// A real CPU fault (not an assert): the store goes through a pointer the compiler can't prove null.
+void fault_now() {
+    volatile std::uint32_t* volatile target = nullptr;
+    NNH_LOG_WARN(demo, "deliberate CPU fault: writing through a null pointer");
+    *target = 0xDEADu;
+}
+
 std::uint64_t crash_frame_from_env() {
     const char* value = std::getenv("NNH_DEMO_CRASH_AT_FRAME");
     return value != nullptr ? std::strtoull(value, nullptr, 10) : 0;
@@ -81,6 +90,10 @@ int main() {
                                  nnh::input::pressed(nnh::Button::A);
         NNH_VERIFY(!crash_combo && nnh::frame_count() != crash_at, "deliberate crash from the demo (frame %llu)",
                    static_cast<unsigned long long>(nnh::frame_count()));
+        if (nnh::input::held(nnh::Button::L) && nnh::input::held(nnh::Button::R) &&
+            nnh::input::pressed(nnh::Button::B)) {
+            fault_now();
+        }
         if (nnh::input::pressed(nnh::Button::Start)) break;
 
         nnh::debug::print(nnh::Screen::Top, 8, 8, "NNHGE core foundation", nnh::colors::yellow);
@@ -91,7 +104,8 @@ int main() {
         nnh::debug::printf(nnh::Screen::Top, 8, 8 + 3 * line, "time %.1f s", nnh::time::now().seconds());
         nnh::debug::print(nnh::Screen::Top, 8, 8 + 5 * line, "SELECT+L / F1: overlay");
         nnh::debug::print(nnh::Screen::Top, 8, 8 + 6 * line, "L+R+A: deliberate crash");
-        nnh::debug::print(nnh::Screen::Top, 8, 8 + 7 * line, "START: exit");
+        nnh::debug::print(nnh::Screen::Top, 8, 8 + 7 * line, "L+R+B: deliberate CPU fault");
+        nnh::debug::print(nnh::Screen::Top, 8, 8 + 8 * line, "START: exit");
     }
     nnh::shutdown();
     return 0;

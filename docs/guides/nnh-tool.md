@@ -199,7 +199,7 @@ no matching line in frames 1-42`. After the verdict, `nnh` still shows the log f
 | Exit code (with `--script`) | Meaning |
 |-----------------------------|---------|
 | 0 | PASS |
-| 1 | FAIL: an `expect` timed out, a `fail-on` matched, a level-F line, an input that arrived late, a message the console rejected or dropped, a screenshot that failed, a control the console doesn't have, or the game closed before `end` |
+| 1 | FAIL: an `expect` timed out, a `fail-on` matched, a level-F line (unless the current `expect` names it and nothing of the script follows: a crash test), an input that arrived late, a message the console rejected or dropped, a screenshot that failed, a control the console doesn't have, or the game closed before `end` |
 | 2 | could not run: a bad command line or script, `--release`, the build failed, nothing built (`--no-build`), no console found, no log connection within 10 s, a simulator that closed without connecting, no answer to `Hello` within 10 s of the game's last log line (a Release or older build), another protocol version |
 
 Without `--script`, `nnh run` exits as before: 0 when the game ran (on the console) or the simulator's own

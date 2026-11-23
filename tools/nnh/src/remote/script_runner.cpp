@@ -283,7 +283,8 @@ void ScriptRunner::check_end() {
 void ScriptRunner::script_line(const std::string& line, std::uint32_t frame, char level) {
     if (!attached_) return;
     const Segment& seg = segments_[segment_];
-    if (level == 'F') {
+    const bool expected = seg.until.command == Command::Expect && log_matches(seg.until.text, line);
+    if (level == 'F' && !expected) { // a crash test expects its fatal line; any other fatal line fails
         finish(Verdict::Fail, seg.until.line, "the game logged a fatal error: " + line);
         return;
     }
@@ -301,6 +302,15 @@ void ScriptRunner::script_line(const std::string& line, std::uint32_t frame, cha
         pump(true); // anything of this segment not sent yet goes now (the console reports it late)
         ++segment_;
         begin_segment(frame + 1);
+        if (level == 'F') { // the game stopped: it passes only when nothing of the script is left
+            const Segment& next = segments_[segment_];
+            if (next.until.command == Command::End && next.events.empty() && next.length == 0) {
+                finish(Verdict::Pass, 0, "");
+            } else {
+                finish(Verdict::Fail, next.until.line,
+                       "the game stopped at a fatal error before the script's end: " + line);
+            }
+        }
     }
 }
 

@@ -53,4 +53,8 @@ bool bindings_fixed_accepted(const std::uint8_t* data, std::size_t size);
 /// A valid blob for bindings_target's set (whole, part, invert and cleared entries); its size (0 if short).
 std::size_t bindings_seed(std::uint8_t* out, std::size_t capacity);
 
+/// Worlds (spec 020, fuzz_world_ops.cpp): the first byte picks tags per entity (0..8); every next 8 bytes are an
+/// operation and its argument, run on an nnh::World and on the reference model at once; a difference aborts.
+int world_ops_target(const std::uint8_t* data, std::size_t size);
+
 } // namespace nnh::fuzz

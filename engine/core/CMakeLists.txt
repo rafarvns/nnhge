@@ -243,6 +243,21 @@ set(_nnh_pool_sources
     src/pool/pool_scene.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_pool_sources})
+# Entities, components and tags (spec 020, D35): integer-only, built on the pools' slot tables.
+set(_nnh_entities_sources
+    src/entities/block_layout.cpp
+    src/entities/tags_find.cpp
+    src/entities/world_components.cpp
+    src/entities/world_create.cpp
+    src/entities/world_destroy.cpp
+    src/entities/world_flush.cpp
+    src/entities/world_lifetime.cpp
+    src/entities/world_scene.cpp
+    src/entities/world_spawn.cpp
+    src/entities/world_stats.cpp
+    src/entities/world_tags.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_entities_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

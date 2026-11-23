@@ -63,70 +63,70 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 2: worlds — creation, entities, components, storage views (pure)
 
-- [ ] **T2.1** World layout: pure function from a description to offsets and total (header, kind table, type ids,
+- [x] **T2.1** World layout: pure function from a description to offsets and total (header, kind table, type ids,
   entity records `8 + 4·tags + 2·n` rounded to 4, bitmaps, queue, per-kind data with `cap + 1` slots aligned to
   `alignof(T)`, owner, four bitmaps). Files: `src/entities/block_layout.{hpp,cpp}`. Test:
   `tests/entities/test_block_layout.cpp` (an `alignas(32)` kind, 1 and 32 kinds, the 1024 × 8 × 4 example ≈ 64 KB plus
   components, as in plan.md). Covers FR-9, II.
-- [ ] **T2.2** `component<T>(capacity[, hook])`, `WorldDesc`, `World::create` (every `InvalidArgument` case: entities
+- [x] **T2.2** `component<T>(capacity[, hook])`, `WorldDesc`, `World::create` (every `InvalidArgument` case: entities
   0/65 536, tags 9, no kind, 33 kinds, a kind twice, a kind capacity 0 or above `max_entities`; `OutOfMemory`), the
   block (tag `entities`), `T{}` in every slot, destructor, move, empty/moved-from; `detail::WorldHot` and the inline
   kind lookup. Files: `engine/core/include/nnh/entities.hpp`, `detail/world_layout.hpp`, `src/entities/world_create.cpp`,
   `world_lifetime.cpp`, `world_internal.hpp`, CMake `_nnh_entities_sources`. Test:
   `tests/entities/test_world_create.cpp` (also a non-movable kind and a `Counted` kind balancing). Covers FR-9, FR-10,
   FR-23.
-- [ ] **T2.3** `spawn`, `alive`: lowest free entity slot, zeroed record, full → null + miss + assert, stale after
+- [x] **T2.3** `spawn`, `alive`: lowest free entity slot, zeroed record, full → null + miss + assert, stale after
   destroy (with T3.1) and the forged-handle case. Files: `src/entities/world_spawn.cpp`. Test:
   `tests/entities/test_spawn.cpp`. Covers FR-11, FR-2.
-- [ ] **T2.4** `add<T>` (with and without value), `get<T>` (inline: meta compare, record slot, typed address), `has<T>`,
+- [x] **T2.4** `add<T>` (with and without value), `get<T>` (inline: meta compare, record slot, typed address), `has<T>`,
   `remove<T>` without hooks for now, `at<T>`; add twice (assert, existing unchanged), kind full (assert, miss),
   unregistered kind (assert, null), stable addresses across other spawns/adds/removes, component quarantine. Files:
   `entities.hpp`, `src/entities/world_components.cpp`. Test: `tests/entities/test_components.cpp`. Covers FR-10, FR-12,
   FR-2.
-- [ ] **T2.5** [P] `Storage<T>`: `data`, `extent`, `stride`, `is_live`, `owner`, `slot_of`, `get`, `items()`, count,
+- [x] **T2.5** [P] `Storage<T>`: `data`, `extent`, `stride`, `is_live`, `owner`, `slot_of`, `get`, `items()`, count,
   capacity, `KindStats`; `WorldStats`. Files: `entities.hpp`, `detail/world_layout.hpp`, `src/entities/world_stats.cpp`.
   Test: `tests/entities/test_storage.cpp`. Covers FR-15, FR-24.
 
 ## Stage 3: destroy, hooks, flush, clear, iteration (pure)
 
-- [ ] **T3.1** `destroy`: step 1 hooks in registration order with every component attached, step 2 components `T{}`
+- [x] **T3.1** `destroy`: step 1 hooks in registration order with every component attached, step 2 components `T{}`
   and quarantined, tags zeroed, handle stale; dying flag; FIFO queue for destroys from hooks (each entity once, no
   recursion: a 1000-long hook chain with constant stack depth); `remove<T>` runs its hook (component readable),
   `remove` from its own hook and on a dying entity → false; destroy of the hooked entity from a `remove` hook processed
   after; hooks that spawn; add to a dying entity asserts. Files: `src/entities/world_destroy.cpp`,
   `world_components.cpp`. Test: `tests/entities/test_destroy_hooks.cpp`. Covers FR-13.
-- [ ] **T3.2** `flush`, `clear`, `clearing`: quarantine of entities and dirty kinds, clear in ascending slot order with
+- [x] **T3.2** `flush`, `clear`, `clearing`: quarantine of entities and dirty kinds, clear in ascending slot order with
   hooks, `spawn` → null (no assert) while clearing, first-load slots after clear (generations differ), extents back to
   0. Files: `src/entities/world_flush.cpp`. Test: `tests/entities/test_flush_clear.cpp`. Covers FR-14.
-- [ ] **T3.3** `each<A, B...>`: the first kind's ascending slots (extent snapshotted), the fold over the other kinds,
+- [x] **T3.3** `each<A, B...>`: the first kind's ascending slots (extent snapshotted), the fold over the other kinds,
   fresh skipping (only when `any_fresh_`), live word reloaded after each callback, the iteration guard, the outermost
   end clearing fresh words; `entities()` range with the same rules; `flush` inside asserts. Files: `entities.hpp`,
   `detail/world_layout.hpp`, `world_flush.cpp`. Test: `tests/entities/test_each.cpp` (one/two/three kinds, the order
   rule with A rarer and with B rarer, destroy/remove/spawn/add of self, earlier and later entities, into holes, nested
   `each`, `break` out of `entities()`). Covers FR-15, FR-14.
-- [ ] **T3.4** Reference model: `tests/entities/world_model.hpp` (plain arrays, linear searches, the plan's rules
+- [x] **T3.4** Reference model: `tests/entities/world_model.hpp` (plain arrays, linear searches, the plan's rules
   written the obvious way, including the hook queue and quarantine) and `test_world_model.cpp`: 50 seeded sequences
   of 5000 operations (spawn, destroy, add/remove of three kinds with hooks that destroy and spawn, flush, clear,
   iterations with destroys inside) compared after every operation (handles, liveness, component values, visiting
   orders, stats), and `events::stats()` unchanged. Covers FR-13..FR-15, FR-19, FR-21.
-- [ ] **T3.5** [P] Misuse sweep (FR-23's list: assert hook in Debug, harmless in the Release path) and cost: the
+- [x] **T3.5** [P] Misuse sweep (FR-23's list: assert hook in Debug, harmless in the Release path) and cost: the
   allocation counter unchanged over 100 000 operations after creation, no log line in the normal path; destroying a
   world from inside its own hook (busy: freed by the outermost operation). Files: tests only, fixes where needed. Test:
   `tests/entities/test_world_misuse.cpp`. Covers FR-22, FR-23.
 
 ## Stage 4: tags (pure)
 
-- [ ] **T4.1** `Tag`, `tag()` (literal and sized buffer, `constexpr`: `case` labels and `static_assert` against FNV-1a
+- [x] **T4.1** `Tag`, `tag()` (literal and sized buffer, `constexpr`: `case` labels and `static_assert` against FNV-1a
   test vectors), `tags_distinct` (true, a duplicate, `Tag::None`; one `static_assert`, the rest as values). Files:
   `entities.hpp`. Test: `tests/entities/test_tags.cpp` (part 1). Covers FR-16.
-- [ ] **T4.2** `add_tag`, `remove_tag`, `has_tag`: stale → false, `Tag::None` asserts, already there → false, full →
+- [x] **T4.2** `add_tag`, `remove_tag`, `has_tag`: stale → false, `Tag::None` asserts, already there → false, full →
   assert; tags gone after destroy; `tags_per_entity` 0 (every add asserts). Files: `src/entities/world_tags.cpp`. Test:
   `test_tags.cpp` (part 2). Covers FR-17.
-- [ ] **T4.3** `find`, `first`: record scans specialised for 1..8 tags (a template instantiated per count in the
+- [x] **T4.3** `find`, `first`: record scans specialised for 1..8 tags (a template instantiated per count in the
   `.cpp`), ascending order, total beyond capacity, null + 0 counts, null + capacity > 0 asserts; `each_tagged` with
   destroys and spawns inside. The model (T3.4) gains tags and `find`. Files: `src/entities/tags_find.cpp`,
   `entities.hpp`. Test: `tests/entities/test_find.cpp`, `test_world_model.cpp`. Covers FR-17, FR-21.
-- [ ] **T4.4** [P] Fuzz: `tests/fuzz/fuzz_world_ops.cpp` turns bytes into operations against the model (mini-fuzz in
+- [x] **T4.4** [P] Fuzz: `tests/fuzz/fuzz_world_ops.cpp` turns bytes into operations against the model (mini-fuzz in
   `nnh_tests`, libFuzzer with `NNH_BUILD_FUZZERS`). Files: `tests/fuzz/*`, `tests/CMakeLists.txt`. Covers X, FR-21.
 
 ## Stage 5: scene binding, interop, the golden script

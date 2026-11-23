@@ -699,3 +699,38 @@ change.
   standard container (`build/ref-020/inccheck.sh`); 8199 preprocessed lines, 0.43–0.47 s (`<nnh/result.hpp>`'s
   `<utility>` is most of it, as for `tween.hpp`). ctest pc-debug 264/264, pc-release 257/257, 3ds-release without a
   warning; `hello` sizes and `nm` lists equal stage 0's on pc-release and 3ds-release.
+
+## Stage 2–4 refinements and results
+
+- **Files** as planned (`detail/world_layout.hpp`, `entities.hpp`, `src/entities/block_layout.{hpp,cpp}`,
+  `world_create.cpp`, `world_lifetime.cpp`, `world_spawn.cpp`, `world_components.cpp`, `world_destroy.cpp`,
+  `world_flush.cpp`, `world_tags.cpp`, `tags_find.cpp`, `world_scene.cpp`, `world_stats.cpp`, `world_internal.hpp`).
+  Each kind's `KindHot` embeds the pools' `SlotTable` (one implementation of lowest free, quarantine and fresh).
+- **The dying flag is a fourth entity bitmap** (in `WorldCold`), not bit 17 of the meta word: the meta compare of
+  `get`/`alive`/`live_record` stays one load and one compare with no mask, and a dying entity still reads as live
+  (its hooks see their data; a queued entity stays `alive` until processed, risk 5). Per entity this is 4 bitmap bits
+  (0.5 B) instead of 3.
+- **The record's slot field** is a `u16` array right after the tags; a record is `2 + tags + ⌈kinds / 2⌉` words.
+- **`add()` returns `kAddedExisting | slot`** from the out-of-line part when the entity already has the kind, so
+  `add(e, value)` leaves the existing component unchanged and the kind is looked up once per call.
+- **A world destroyed inside its own iteration or hook** (misuse): Debug/Development assert before anything changes;
+  Release marks the block doomed (`kPendingDoomed`), runs no more hooks, and the outermost operation or iteration end
+  frees it (every object destroyed). Move-assigning over a busy world reports the same misuse first.
+- **Empty worlds**: commands assert; `get`/`has`/`alive`/`destroy`/`remove`/`has_tag`/stats answer "nothing".
+  `get<T>` of an unregistered kind asserts (FR-10) and answers null.
+- **`clear()` inside a hook** asserts and is ignored, like inside an iteration (it would destroy entities whose hooks
+  are running); `clear()` keeps the stats (peak and misses are since creation).
+- **Reference model** (`tests/entities/world_model.hpp`, driver `model_driver.{hpp,cpp}`): three kinds whose hooks
+  destroy (queued), remove another kind or spawn with an add; operations: spawn, destroy, add, remove, flush, clear,
+  `each<MA>` with destroys inside, `each<MB, MA>` with removes and spawns inside, `each<MA, MB, MC>`, tags,
+  `find`/`first`, `each_tagged` with destroys, `entities()` with spawns. The whole state (liveness and generation per
+  slot, every component slot's liveness, owner and value, extents, tags) is compared after every operation:
+  `world_equals_the_reference_model_on_50_seeded_sequences` (50 × 5000 operations, tags 1..8), one run without tags,
+  and `world_operations_publish_no_events` (2000 operations with the engine shut down: any publish would assert).
+  The fuzz target `fuzz_world_ops` runs the same driver (mini-fuzz: 200 random inputs of up to 4 KiB; libFuzzer
+  executable `fuzz_world_ops` with `NNH_BUILD_FUZZERS`).
+- Tests: `test_block_layout`, `test_world_create`, `test_spawn`, `test_components`, `test_storage`,
+  `test_destroy_hooks` (including the 1000-long chain), `test_flush_clear`, `test_each`, `test_world_misuse` (100 000
+  operations with no allocation and no log line; the doomed world), `test_world_model`, `test_tags`, `test_find`,
+  `test_fuzz_world_ops`. `nnh_tests` 2155 (pc-debug), 2115 (pc-release); ctest pc-debug 264/264, pc-release 257/257;
+  3ds-release without a warning; `hello` sizes and `nm` equal stage 0's.

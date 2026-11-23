@@ -8,6 +8,10 @@ namespace nnh::collision::detail {
 /// |to − from| in float: the only square root of the queries (ray_distance.cpp, -fno-math-errno: one instruction).
 float ray_length(Vec2 from, Vec2 to);
 
+/// True as soon as one box passing `filter` is crossed by from → to, starts inside excluded (line of sight;
+/// raycast_boxes.cpp). The view and points must have been checked.
+bool any_box_on_ray(const BoxView& boxes, Vec2 from, Vec2 to, const QueryFilter& filter);
+
 /// A hit of something containing the start: fraction 0, point `from`, normal (0, 0).
 inline RayHit inside_hit(Vec2 from) {
     RayHit h;

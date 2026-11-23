@@ -212,13 +212,17 @@ endif()
 # multiply-add, so PC and 3DS give the same hits bit for bit. Each file is linked only by a game that calls it.
 set(_nnh_query_sources
     src/collision/box_cast.cpp
+    src/collision/cells_crossed.cpp
     src/collision/exact.cpp
+    src/collision/grid_walk.cpp
     src/collision/hit_list.cpp
     src/collision/layers.cpp
     src/collision/point_queries.cpp
     src/collision/query_check.cpp
     src/collision/ray_box.cpp
     src/collision/raycast_boxes.cpp
+    src/collision/raycast_grid.cpp
+    src/collision/raycast_world.cpp
 )
 # The queries' only square root: -fno-math-errno makes std::sqrt one instruction (no call into libm).
 set(_nnh_query_sqrt_source src/collision/ray_distance.cpp)

@@ -93,17 +93,23 @@ add_executable(nnh_tests
     collision/test_aabb.cpp
     collision/test_box_cast.cpp
     collision/test_box_view.cpp
+    collision/test_cells_crossed.cpp
     collision/test_cells_touching.cpp
     collision/test_contacts.cpp
     collision/test_exact.cpp
+    collision/test_grid_walk.cpp
     collision/test_grid.cpp
     collision/test_grid_move.cpp
     collision/test_hit_list.cpp
     collision/test_layers.cpp
     collision/test_one_way.cpp
     collision/test_point_queries.cpp
+    collision/test_query_misuse.cpp
     collision/test_ray_box.cpp
+    collision/test_raycast_all_grid.cpp
     collision/test_raycast_boxes.cpp
+    collision/test_raycast_grid.cpp
+    collision/test_raycast_world.cpp
     core/test_crc32.cpp
     core/test_name_hash.cpp
     crash/test_assert.cpp

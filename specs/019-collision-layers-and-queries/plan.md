@@ -544,3 +544,52 @@ Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   `camera` (`CAMERA_DEMO=zoom1`) at 30, platformer `PLATFORMER_DEMO=bench` (top screen only) and level 1 at 90.
   `build/ref-019/compare.sh` takes them again into `now/` and compares the pixels.
 - T0.5: `kMaxTests` 4096; `nnh_tests` 1853 tests.
+
+## Stage 1–3 refinements and results
+
+- **The segment is held in `double`** (`detail::Segment`): `d = to − from` is the exact difference of the two
+  floats, not a rounded float `d`; a zero `d` is still exactly `to == from`. Every ratio is `n / |d|` with `n` a
+  difference of floats in `double` (`detail::Ratio`), compared by cross products (`detail::compare`).
+- **Ordering between hits uses the reported float fraction**, stable: the first hit of a view is the lowest index
+  among the smallest fractions, `raycast_all`/`box_cast_all` sort by fraction keeping scan order on ties, and
+  `raycast(grid, boxes)` lets the cell win when the fractions are equal. The exact ratios decide everything inside
+  one box test and the grid walk (entry face, corners, start cell, touching); since rounding is monotone, two hits
+  ordered by exact ratio never come out in the opposite order. This keeps `raycast` equal to `raycast_all(...)[0]`.
+- **The grid walk** (`grid_walk.{hpp,cpp}`) is a small iterator with a queue of three cells (a corner pushes the
+  x-neighbour, the y-neighbour and the diagonal). A start or clip cell is found from a float guess corrected by
+  exact comparisons (at most a few steps), so it always agrees with the walk's own edges. A clip that touches the
+  grid's rectangle **only at one of its corners** still visits the grid's corner cell beside it (the corner rule):
+  the exact reference found this case (a ray passing diagonally outside the grid's corner), and the clip accepts
+  `enter == exit` for it. The walk takes at most `4 + |dx|/w + |dy|/h` lines (≤ 2^26) and stops at the ±2^30
+  index saturation, so absurd inputs end and never overflow.
+- **One-way outside**: the walk clips whenever the outside can't block (Empty; OneWay for a ray not going down or
+  with `ignore_one_way`). A downward ray with a OneWay outside walks the outside cells one by one (no lookup: they
+  are all `outside`) instead of skipping runs; documented as the cost.
+- **Hit points**: a cell entered exactly at a grid corner reports the corner itself (both coordinates exact), not a
+  rounded `from + t·d`; this covers the corner's side cells and the diagonal.
+- **Box casts**: the contact position starts from `T.x − B.w` (float) and steps down by growing ulps until
+  `p + B.w ≤ T.x` in float (as `move`'s `place_before`), then is kept between the cast's start and end; moving
+  the other way it is exactly `T.x + T.w` as `overlaps()` sums it. It is flush (`overlaps()` false) and one ulp
+  further overlaps (tested on non-lattice values); for lattice values it is the exact contact, not the largest float
+  that would still be flush. A zero-length cast touches nothing, even from inside (as a zero-length ray).
+- **Misuse**: `raycast(grid, boxes)` checks both inputs before either query (no half answer); `line_of_sight`
+  returns **false** on misuse in Release (it never claims a clear view it couldn't check). An `ignore` index out of
+  range ignores nothing. Boxes with non-finite fields are never candidates (`detail::passes`).
+- **API note**: `raycast(Grid, ...)` and `raycast(BoxView, ...)` overloads make a bare `{}` first argument ambiguous;
+  callers write `collision::Grid{}` or `collision::BoxView{}` (documented).
+- **Fused operations**: GCC uses `vmla.f32` on the 3DS even with `-ffp-contract=off`; VFPv2's `vmla`/`vmls` are
+  *chained* (the product is rounded before the add), so they give the bits of `vmul` + `vadd`. The check
+  (`build/ref-019/fp_check.sh`) looks for the fused `vfma`/`vfms`/`vfnma`/`vfnms` (3DS) and `vfmadd`/`vfmsub` (PC):
+  none in any query object. T2.4: `ray_distance.cpp` is `sqrtss` on pc-release and `vsqrt.f32` on 3ds-release, no
+  call.
+- **Tests** (stage 1–3): `test_layers`, `test_box_view`, `test_hit_list`, `test_point_queries`, `test_exact`,
+  `test_ray_box`, `test_raycast_boxes`, `test_box_cast`, `test_grid_walk` (with `ray_reference.hpp`: the walk equals
+  the integer reference cell for cell and fraction for fraction on 5000 seeded rays clipped and 5000 with outside
+  cells, over four cell layouts with negative and fractional origins, ≥ 300 rays through corners each),
+  `test_cells_crossed`, `test_raycast_grid` (first hit == first solid cell of `cells_crossed` on 5000 rays),
+  `test_raycast_all_grid`, `test_raycast_world`, `test_query_misuse` (22 misuse cases; 10 000 mixed queries with no
+  allocation and no `init()`). `nnh_tests` 1967 tests.
+- T3.7: `hello` Release unchanged (PC text 130 732, 3DS text 201 188) and no query symbol in either (`nm`). Each
+  query object needs only its own helpers (`nm -u`): `point_queries` → `query_check`, `aabb`, `grid`;
+  `raycast_boxes`/`box_cast` → `exact`, `ray_box`, `hit_list`, `ray_distance`; `raycast_grid`/`cells_crossed` →
+  `grid_walk`, `exact`, `grid`; `raycast_world` → the ray files.

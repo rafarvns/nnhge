@@ -82,7 +82,7 @@ refinements", as in plans 012–018.
 
 ## Stage 3: rays against grids (pure)
 
-- [ ] **T3.1** The grid walk: line-on-axis (nothing), clip when `outside` can't block, start cell by direction
+- [x] **T3.1** The grid walk: line-on-axis (nothing), clip when `outside` can't block, start cell by direction
   (entered through a face or inside), steps with exact comparisons, corners (x-neighbour, y-neighbour, diagonal at
   the same fraction), stop before `t ≥ 1`, saturation. An exact reference (`ray_reference.hpp`: lattice coordinates
   ×256 in `int64`, every cell of the bounding range tested against the segment's interior, corner side cells added,
@@ -90,23 +90,23 @@ refinements", as in plans 012–018.
   negative/fractional and cells 8×8, 16×16, 12×20, 24×10; plus a sampling check. Files:
   `src/collision/grid_walk.{hpp,cpp}`, `tests/collision/ray_reference.hpp`. Test: `tests/collision/test_grid_walk.cpp`
   (8 octants, 4 axis cases, edges, faces, corners, 10 000-px rays, far outside clipped). Covers FR-9.
-- [ ] **T3.2** `cells_crossed`: the walk with kinds and entry fractions, buffer contract, clip only for an `Empty`
+- [x] **T3.2** `cells_crossed`: the walk with kinds and entry fractions, buffer contract, clip only for an `Empty`
   outside, outside cells listed otherwise. Files: `src/collision/cells_crossed.cpp`. Test:
   `tests/collision/test_cells_crossed.cpp`. Covers FR-11.
-- [ ] **T3.3** `raycast` on a grid: solid, one-way (top going down, corner going down, from below and the side pass),
+- [x] **T3.3** `raycast` on a grid: solid, one-way (top going down, corner going down, from below and the side pass),
   `ignore_one_way`, inside a solid cell with/without `hit_from_inside`, inside a one-way cell (never), `outside`
   Solid/Empty/OneWay, flush points and normals, lookup count = cells visited (counting callback). Files:
   `src/collision/raycast_grid.cpp`. Test: `tests/collision/test_raycast_grid.cpp`; over the 5000 seeded rays, the
   first hit equals the first blocking cell of `cells_crossed`. Covers FR-8, FR-9.
-- [ ] **T3.4** `raycast_all` on a grid (a piercing laser: every blocking cell in walk order, overflow, counting).
+- [x] **T3.4** `raycast_all` on a grid (a piercing laser: every blocking cell in walk order, overflow, counting).
   Files: `raycast_grid.cpp`. Test: `tests/collision/test_raycast_all_grid.cpp`. Covers FR-11.
-- [ ] **T3.5** Grid + boxes and line of sight: nearest of both, cell wins a tie (a box flush behind a wall), absent
+- [x] **T3.5** Grid + boxes and line of sight: nearest of both, cell wins a tie (a box flush behind a wall), absent
   grid/boxes, `line_of_sight` (clear, a cell, a box, viewer excluded by `ignore` and by layers, start inside never
   counts). Files: `src/collision/raycast_world.cpp`. Test: `tests/collision/test_raycast_world.cpp`. Covers FR-12.
-- [ ] **T3.6** [P] Misuse sweep over every query (FR-17's list: assert hook in Debug, false/0/`Empty` cell in the
+- [x] **T3.6** [P] Misuse sweep over every query (FR-17's list: assert hook in Debug, false/0/`Empty` cell in the
   Release path, nothing read), no allocation over 10 000 mixed queries, no `init()`. Files: tests only. Test:
   `tests/collision/test_query_misuse.cpp`. Covers FR-17.
-- [ ] **T3.7** Stage end: ctest; opt-in check: `hello` Release sizes against T0.1 (identical) and `nm` (no query
+- [x] **T3.7** Stage end: ctest; opt-in check: `hello` Release sizes against T0.1 (identical) and `nm` (no query
   symbol) on PC and 3DS; a test object using one query links only its own files (`nm` of the test map). Files:
   plan.md ("Stage 3 results"). Covers FR-18, AC-8.
 

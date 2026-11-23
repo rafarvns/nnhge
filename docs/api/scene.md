@@ -88,6 +88,14 @@ animations), and cleared silently right after its `on_exit()`. Nothing to update
 [architecture/scenes.md](../architecture/scenes.md#scene-attachments-d30). Destroying a scene while such a set is
 still attached to it stops the game with an error, like destroying a scene on the stack.
 
+## Worlds and pools bound to a scene
+
+An `nnh::World` or `nnh::Pool` bound to a scene (`world_.bind(*this)`, `nnh::Pool<Bullet, 32> bullets_{*this};`)
+is flushed right before the scene's `update()`, only while the scene is on top (a pause menu freezes it), and cleared
+right after its `on_exit()` (a world's remove hooks run; spawns are refused meanwhile), so a level entered again starts
+empty. Bind a world before the tween sets its hooks use. See [api/entities.md](entities.md#scene-binding) and
+[api/pool.md](pool.md#scene-binding).
+
 ## Input contexts bound to a scene
 
 `controls.bind_context(Ctx::Menu, *this)` in a scene's `on_enter()` enables that [action](actions.md) context exactly

@@ -100,6 +100,26 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   `collision_layers` (spec 019): https://doc.mapeditor.org/en/stable/manual/custom-properties/
 - **TOML 1.0** (MIT-licensed specification) — the syntax our data files are a strict subset of; our reader is our
   own (no code from TOML libraries): https://toml.io/en/v1.0.0
+- **EnTT** (Michele Caini, MIT) — entities as an index and a version recycled with the version incremented, components
+  in sparse sets with pointer stability on request (`in_place_delete`): our worlds take the stable variant, with
+  16 + 16-bit handles and lowest-free reuse (spec 020, D35); ideas only, no code:
+  https://skypjack.github.io/entt/md_docs_2md_2entity.html · https://skypjack.github.io/2019-05-06-ecs-baf-part-3/
+- **flecs** (Sander Mertens) and **Bevy** — archetype tables (components move between them; rejected for a 2D
+  homebrew game) and Bevy's opt-in sparse-set storage for components added and removed often:
+  https://ajmmertens.medium.com/building-an-ecs-2-archetypes-and-vectorization-fe21690805f9 ·
+  https://bevy-cheatbook.github.io/patterns/component-storage.html
+- **Godot groups and `queue_free`** — `add_to_group`, `get_nodes_in_group`, `call_group` (our tags,
+  `find`, `each_tagged`) and deferred deletion (our destroy is immediate with the slot quarantined until a flush):
+  https://docs.godotengine.org/en/stable/tutorials/scripting/groups.html
+- **Unity tags and `ObjectPool<T>`** — `CompareTag` without string allocation, `FindGameObjectsWithTag`;
+  `Get`/`Release` with an Editor-only double-release check (ours: by generation, in every build) and growth up to a
+  maximum (ours: fixed): https://docs.unity3d.com/ScriptReference/Pool.ObjectPool_1-ctor.html
+- **Robert Nystrom, *Game Programming Patterns*** — Component, Object Pool and Data Locality (spec 020):
+  https://gameprogrammingpatterns.com/object-pool.html · https://gameprogrammingpatterns.com/data-locality.html
+- **Richard Fabian, *Data-Oriented Design*** (existence-based processing, a table per kind) and **Niklas Gray
+  (Bitsquid), "Building a data-oriented entity system"** (index + generation handles over fixed arrays):
+  https://www.dataorienteddesign.com/dodbook/ ·
+  http://bitsquid.blogspot.com/2014/08/building-data-oriented-entity-system.html
 
 ## Real-world 3DS engine write-ups
 - Silent Hill 2 → 3DS (C engine on libctru + citro3d, offline asset packer, linear-memory budgeting):

@@ -169,7 +169,13 @@ preprocessed lines (`<cstdint>`), 0.28–0.34 s alone. Details: plan 019, "Stage
 
 ## M7 — Game structure
 - [x] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (implemented 2026-11-22): pure `<nnh/collision.hpp>` (box queries, `collision::move` through any grid, one-way cells, no tunnelling; [api/collision.md](api/collision.md)); `<nnh/tilemap.hpp>` — maps built in code or drawn in Tiled (`.tmj` assets converted by `nnh-assetc` at build time, D27, and loaded with `load_tilemap`; bounded and fuzzed readers), objects, properties, animated tiles, a collision grid ([api/tilemap.md](api/tilemap.md), guide [Levels in Tiled](guides/levels.md)); `gfx::draw_tilemap` as tile batches (D26). **Old 3DS XL: 4 full 16×16 layers + 300 sprites at 60 Hz (avg 16.7 ms, worst 17.4 ms, 0 missed of 600); limits 6 layers / 600 sprites.** `examples/platformer`: level 1 from Tiled, the bonus level in code, a replay checked against `tests/level.nnhs`. Still with the maintainer: T7.4 (`tests/level.nnhs` on the Old 3DS); Linux, ASan/UBSan and the three libFuzzer targets ran clean on the build VM
-- [ ] Entities/components, scene transitions (scenes, saves and tweens: done) — [spec 020](../specs/020-entities/spec.md) (approved 2026-11-23; plan and D35 done, implementation next)
+- [ ] Scene transitions (scenes, saves and tweens: done)
+- [x] Entities/components — [spec 020](../specs/020-entities/spec.md), **implemented 2026-11-23, console check
+  pending** (T10.2): `<nnh/entities.hpp>` — a `World` in one block, the game's plain structs as components in
+  stable-slot arrays per kind, 32-bit generational handles that detect stale use, `each<A, B...>` in the first kind's
+  slot order, destroy anywhere with remove hooks (D35); storage views read in place by spec 019's box views
+  ([api/entities.md](api/entities.md)); `examples/entities` (showcase, a 100 000-operation self-check, the AC-7
+  bench); the platformer's coins, turrets and sparkles are entities
 
 ### Features in the spirit of Godot and Unity
 
@@ -194,8 +200,11 @@ spec; the order below is a proposal.
   bestiary and shop with a self-check whose checksum the console must match (`examples/data/tests/check.nnhs`,
   `nnh: PASS` in the simulator). Editing a data file runs no C++ compile: 0.8 s to the simulator, 3.7 s to the
   `.3dsx` (table above)
-- [ ] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
-  every one with a tag, cheap to compare (hashed at build time) — [spec 020](../specs/020-entities/spec.md) (approved 2026-11-23; plan and D35 done, implementation next)
+- [x] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
+  every one with a tag, cheap to compare (hashed at build time) — [spec 020](../specs/020-entities/spec.md),
+  **implemented 2026-11-23, console check pending**: `nnh::tag("enemy")` (FNV-1a, `constexpr`, a `case` label),
+  `tags_distinct`, up to 8 tags per entity, `find`/`first`/`each_tagged` (Godot's groups)
+  ([api/entities.md](api/entities.md#tags-and-groups))
 - [x] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets
   ignore their shooter, coins only the player), on top of spec 012's collision —
   [spec 019](../specs/019-collision-layers-and-queries/spec.md), **implemented 2026-11-23**; Old 3DS check passed:
@@ -268,8 +277,11 @@ spec; the order below is a proposal.
   a self-check (`tests/check.nnhs`) and a bench (PC Debug: 128 rays + 64 boxes ≈ 1 ms per frame, point queries
   0.05 µs per box). The platformer's level 1 got two turrets with line of sight whose bullets move by rays (in the
   replay's checksum)
-- [ ] **Object pools** (Unity ObjectPool): fixed-size pools for bullets, particles and enemies, with handles that
-  detect stale use — [spec 020](../specs/020-entities/spec.md) (approved 2026-11-23; plan and D35 done, implementation next)
+- [x] **Object pools** (Unity ObjectPool): fixed-size pools for bullets, particles and enemies, with handles that
+  detect stale use — [spec 020](../specs/020-entities/spec.md), **implemented 2026-11-23, console check pending**:
+  `<nnh/pool.hpp>` — `Pool<T, N>` (no allocation) and `Pool<T>::create(n)` (one block), lowest free slot, released
+  slots quarantined until a flush, bound to a scene through D30 ([api/pool.md](api/pool.md)); the platformer's
+  bullets and the example's ship use them
 - [ ] **Live values in the simulator** (in place of Unity's Inspector, without an editor): an API to watch and tweak
   a game's values on the debug overlay (`watch`, sliders driven by buttons), pause and step one frame
 - [ ] **Hot reload of assets in the simulator** (both engines): a changed image, map or data file reloads in the

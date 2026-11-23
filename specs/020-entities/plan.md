@@ -1,6 +1,6 @@
 # Plan 020: Entities, tags and object pools
 
-Status: approved (2026-11-23, by the maintainer)
+Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer) — console T10.2 and Linux T9.1 pending
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D35 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, `Result`, tagged memory, profiler), spec 001 (scenes; the bus for the game's own
 events), spec 015 (D30 scene attachments, `TweenSet`, `Setter`), spec 016 (`SpriteAnimator` and its inline
@@ -871,3 +871,112 @@ the measurement with margin. No result changed: every golden holds (`C8FB9A41`, 
   the replay at 312 differ **only on the bottom screen's HUD** (the entity count; the replay panel's checksum), their
   top screens are pixel-identical. `hello` sizes and `nm` equal stage 0's. ctest pc-debug 265/265, pc-release 257/257,
   3ds-release without a warning; `nnh_tests` 2183.
+
+## Mutation testing
+
+100 hand mutants (`build/ref-020/mutants.py`, applied one at a time by `build/ref-020/mutate.py`: rebuild
+`nnh_tests`, run all of it, restore the file) of the slot bitmaps (12), the pool's inline operations, iteration and
+sources (20), the world's layout, ranges and header (16), the world's sources — add, remove, hooks, destroy and its
+queue, flush, clear, spawn, tags, find, lifetime, scene binding, creation, the block layout (40) — and the platformer's
+coins, turrets, sparkles, level world and replay words (12): **82/100 killed** on the first run (pc-debug).
+
+- **Release-path** (2): `add(e, value)` overwriting an existing component and `world_add` returning "refused" instead of
+  the existing slot are only observable where asserts are compiled out; both killed in pc-release by
+  `add_twice_asserts_and_keeps_the_existing_component` (`build/ref-020/mutants_rel.py`).
+- **Test gaps, closed** (12): pool `each` not re-reading the live word after the callback, not skipping fresh slots
+  (and `any_fresh` never set), fresh marks not cleared at the end of an iteration (the first new test missed it: the
+  stale mark has to sit in a word loaded after the next newcomer), `is_live` without its range check; the entity and
+  storage ranges not re-reading the live word (`each_tagged` was protected by the zeroed tags); `Storage::slot_of`
+  without its range check (an empty view); the destroy queue LIFO instead of FIFO (needs two destroys from one hook:
+  the model's hooks destroy at most one); a world's destructor not running hooks; the turrets' state word without a
+  stuck bullet's countdown; a sparkle's velocity; a taken coin's centre. New tests:
+  `pool_each_does_not_visit_what_its_callback_released_later_in_the_word`,
+  `pool_each_does_not_visit_an_acquire_landing_in_a_later_word_of_the_extent`,
+  `pool_fresh_marks_end_with_their_iteration`, `pool_is_live_is_false_far_out_of_range` (each on both forms),
+  `entities_and_storage_ranges_skip_what_the_loop_destroyed_or_removed_later`,
+  `an_empty_storage_view_and_out_of_range_handles_answer_nothing`,
+  `two_destroys_from_one_hook_are_processed_in_call_order`, `destroying_a_world_runs_the_remove_hooks_of_what_is_left`,
+  `the_state_word_follows_a_stuck_bullet_frame_by_frame`, `each_sparkle_moves_by_its_own_velocity`, and a centre
+  check in `coins_a_box_takes_the_coin_it_overlaps`. All twelve mutants are killed now (rounds 2 and 3).
+- **Equivalent** (4): the hint word not advanced by `find_free` (it only starts scans lower: cost); `destroy` calling
+  `run_hook` for kinds without a hook (it returns at once: cost); `first()` not stopping at the first match (it
+  writes only one entity; the total is unused: cost); a turret's bullet counting any box it hits as the player (only
+  the player's body is on `layers::kPlayer`, the one layer of `kBulletMask` that is a body).
+
+Final: **96/100 killed**, 4 equivalent; `nnh_tests` 2197 tests (pc-debug), every source restored (`git status`
+clean for `engine/` and `examples/` after each round).
+
+## Stage 10 checks (T10.1, on the PC)
+
+`scripts/dkp.sh cmake --build --preset 3ds-release` and `--preset 3ds-dev` (all targets, `entities` and
+`platformer` included) build without a warning. 3ds-release `hello.elf` 201 012 / 28 352 / 106 680 and 3ds-dev
+`hello.elf` text 217 728, as in stage 0; the T7.6 table still describes the objects (no code change since). The console
+run itself (T10.2) is the maintainer's: commands and expected lines in "Stage 10: console run (prepared)" above.
+
+## Stage 11 results
+
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs): `<nnh/entities.hpp>` 8517 preprocessed lines,
+  0.44–0.50 s; `<nnh/pool.hpp>` 8199 lines, 0.44–0.48 s; references `<nnh/tween.hpp>` 8413 lines, 0.45–0.48 s, and
+  `<nnh/events.hpp>` 7636 lines, 0.42–0.44 s. Within budget (no slower than `tween.hpp`).
+- **The 10-`each` TU** (`build/ref-020/tu_with.cpp`: 10 distinct `each<...>` lists and 40 `get<T>` over 8 kinds;
+  `-O0 -g`): +0.28 s for the ten `each` lists, +0.1 s for the 40 `get`s, **+0.31–0.37 s together** against the
+  plan's 0.3 s budget (three interleaved runs; this machine's noise is about ±0.1 s). Slightly over: one instantiation
+  chain per distinct list (`each` → `each_in` → `detail::each_with` with an index sequence) plus debug info; not
+  changed in this session (it would mean merging the two levels or making the loop untyped, which costs the ARM
+  path). Games list few distinct combinations per file.
+- Build times: edit `examples/entities/arena.cpp` → simulator 2.11–2.20 s (a tiny `hud.cpp` 2.11–2.14 s; for
+  comparison `queries/hud.cpp` 2.02–2.07 s and `hello` 1.73–2.01 s today: the link, not the templates); → `.3dsx`
+  4.86 s (a first run 6.6 s); clean `nnh_core` (pc-debug, parallel) 8.2–8.4 s (stage 0: 7.4 s; 14 new sources).
+- `.text` (3ds-release): `platformer.elf` 316 876 → 347 116 (+30 KB: the world, the pool, the sparkles and their
+  tween set), `entities.elf` 264 392; 3ds-dev `entities.elf` 286 908. `hello` unchanged in every preset
+  (pc-release 130 572 / 22 020 / 211 696; 3ds-release 201 012 / 28 352 / 106 680), `nm` lists equal stage 0's.
+- Final: `nnh_tests` 2197 (pc-debug), ctest pc-debug 265/265, pc-release 257/257; 3ds-release and 3ds-dev without a
+  warning; `docs_tool.py check` 0 broken links.
+
+## Stage 9: Linux checks (left to the lead)
+
+Not run in this session (VM 120 is the lead's). What to compare on GCC 13, GCC 14 and clang 18 (ASan/UBSan):
+`nnh_tests` and ctest pass; these tests hold their values unchanged: `world_equals_the_reference_model_on_50_seeded_sequences`
+(and `..._without_tags`, `world_model_runs_are_repeatable`), `the_entities_self_check_reaches_the_golden_checksum`
+(`0xC8FB9A41`; checkpoints `723FB297`, `3BB094CB`, `58530BE8`, `21AD333D`, `DC95F672`, `C5CFA4B7`, `284AFBEE`,
+`F1272C58`, `45824FCC`), ctest `entities_self_check_pc` and `platformer_replay_matches_script` (`B2418A28`).
+ASan/UBSan matter most for `test_pool*` (the `Counted` balance), `test_destroy_hooks` (the 1000-long chain, hooks that
+destroy and spawn), `test_world_misuse` (the world destroyed from its own hook, Release path) and
+`an_animator_component_updates_in_place_and_may_destroy_its_entity` (a callback running while its own component is
+destroyed and re-made). libFuzzer: `fuzz_world_ops` (`-DNNH_BUILD_FUZZERS=ON`, clang), 10 minutes; any byte string is a
+valid input (the first byte picks the tag count, then 8 bytes per operation).
+
+## Stage 10: console run (prepared)
+
+T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development builds of `entities` and
+`platformer` (`scripts/dkp.sh cmake --build --preset 3ds-dev --target entities_3dsx platformer_3dsx`) build without a
+warning; the ARM table of "Stage 7 ARM pre-check" still describes `bench.o` and the module's objects; 3ds-release
+`hello.elf` 201 012 / 28 352 / 106 680 as in stage 0 (results in "Stage 10 checks" below).
+
+T10.2, on an Old 3DS, nobody touching it after Y. Three runs, each: open the Homebrew Launcher, press **Y**, then on the
+PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs and screenshots in `build/logs/`):
+
+1. `build/pc-debug/tools/nnh/nnh run entities --script examples/entities/tests/check.nnhs` (about 45 s). Expected, as on
+   the PC: `filter: enemy found 10`, `filter: flying found 4`, `freeze: flying 4`, `unfreeze: 4`,
+   `filter: coin found 8`, `filter: none found 0`, `destroyed: slot 13 gen 1 tags coin`,
+   `destroyed: slot 9 gen 1 tags enemy,flying`, `destroyed: slot 4 gen 1 tags enemy`, `touch: nothing at 60,200`,
+   `target lost (stale handle slot 1 gen 1)`, `pool: full, misses 29`, `entities: self-check started`,
+   `entities: 10000 sum 723FB297`, `20000 … 3BB094CB`, `30000 … 58530BE8`, `40000 … 21AD333D`, `50000 … DC95F672`,
+   `60000 … C5CFA4B7`, `70000 … 284AFBEE`, `80000 … F1272C58`, `90000 … 45824FCC`, `100000 … C8FB9A41`,
+   **`entities: PASS C8FB9A41`**, `entities: showcase, 20 entities`, `entities bench: started`, then one line per
+   phase — `entities bench: each avg X ms worst Y ms (target < 0.5 ms) PASS|FAIL`, `spawn … (target < 1.0 ms)`,
+   `find … (target < 0.1 ms)`, `get … (target < 0.5 ms)`, `storage get … (information)`, `pool … (target < 0.3 ms)` —
+   and the verdict `entities bench: PASS` or `entities bench: FAIL (<names>)`. **Expected from the ARM pre-check:**
+   every logic line and the self-check equal the PC's; the bench verdict likely `FAIL (get, pool)` (maybe `find`),
+   which fails the run (`nnh: FAIL … fail-on "entities bench: FAIL"`) after every number is logged. Record every number
+   here; T10.3 then applies risk 1's remaining mitigations, or the maintainer sets the budgets from the measurement
+   with margin (AC-7). Read the screenshots `showcase`, `filter-enemy`, `touch`, `stale`, `full-pool`, `self-check`,
+   `bench` (top and bottom): the same pictures as a `--pc` run's.
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (about 40 s). Expected:
+   `replay: 60 level1 x 121 y 242 coins 1 sum 720BE2BE`, `120 … 0330ACD0`, `180 … BA334AA2`, `240 … 74731BB8`,
+   `300 … 421D79BE`, `360 … 4955DE42`, `420 … CC4B644A`, `480 … 4E9131BA`, `540 … F2718034`, `600 … A8292126`,
+   `660 bonus … D76BB2E3`, `720 … 2AFED843`, `780 … FE036A4F`, `840 … FC1690D6`,
+   `replay: done 900 frames sum B2418A28: 60 Hz PASS`; `nnh: PASS (79 lines, …)`. With run 1's self-check passing, a
+   mismatch here would be the game's (sparkle tweens, the bound world), not the module's.
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (about 2.5 min).
+   Expected: `bench: PASS 4 layers + 300 sprites, …` (spec 012's gate still passes); `nnh: PASS`.

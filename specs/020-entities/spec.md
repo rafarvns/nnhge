@@ -1,6 +1,6 @@
 # Spec 020: Entities, tags and object pools
 
-Status: approved (2026-11-23, by the maintainer: every open question below takes its recommended answer)
+Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer) — console T10.2 and Linux T9.1 pending
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 002](../002-core-foundation/spec.md) (asserts, logs, `Result`, tagged memory, profiling),
 [spec 001](../001-event-bus-and-scenes/spec.md) (scenes; the event bus for the game's own events) and the scene

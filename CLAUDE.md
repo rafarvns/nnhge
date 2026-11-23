@@ -99,6 +99,15 @@ tunnelling, no corner leaks) and boxes, `cells_crossed`, `line_of_sight`, `box_c
 `boxes_overlapping`, `cell_at`; no allocation, the same bits everywhere ([api/collision.md](docs/api/collision.md)).
 Tilemaps: layer sets per `collision` layer and solid/one-way tile (Tiled `collision_layers`), `collision_grid(mask)`
 ([api/tilemap.md](docs/api/tilemap.md#collision-layers)). The platformer uses layered coins and turrets.
+Entities, tags and object pools (spec 020, implemented, console check pending; D35; demo `examples/entities`):
+`<nnh/pool.hpp>` — `Pool<T, N>` (inline, no allocation) and `Pool<T>::create(n)` (one block), `Handle<T>` (16-bit slot
++ 16-bit generation: stale use detected), lowest free slot, released slots quarantined until `flush()`, `items()`/`each`
+in slot order ([api/pool.md](docs/api/pool.md)); `<nnh/entities.hpp>` — `World::create(desc, kinds)` (one block),
+`component<T>(cap[, remove hook])` over the game's plain structs in stable-slot arrays, `spawn`/`destroy` (hooks first,
+destroys from hooks queued), `add/get/has/remove<T>`, `each<A, B...>` (first kind's slot order, safe destroy/spawn
+inside), `storage<T>()` views (box views read bodies in place, `owner(slot)`), tags `nnh::tag("enemy")` with
+`find`/`first`/`each_tagged`; both bind to a scene through D30 (flush before update, clear after `on_exit`)
+([api/entities.md](docs/api/entities.md)). The platformer's coins, turrets and sparkles are entities, its bullets a pool.
 Tweens and timers (spec 015, implemented; demo `examples/tweens`): `<nnh/tween.hpp>` — 19
 libm-free easings (same bits everywhere), `nnh::Timer`, `TweenSet` (float/Vec2/Color by pointer or setter, loops,
 yoyo, sequences, `after`/`every`, callbacks or your own finish events) on the frame clock (`Frames`/`FrameTime` in

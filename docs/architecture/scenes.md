@@ -64,18 +64,21 @@ for this ([decision D30](decisions.md)), so scenes never depend on the modules t
   through the same exit path. Clearing after `on_exit()` also discards what `on_exit()` itself started.
 - Nodes run in attach order. A node attached during a pass waits for the next pass (its epoch is that pass);
   detaching during a pass is safe (the pass keeps a cursor). One pass runs at a time.
-- The `Scene` destructor checks that nothing is still attached (a bound set must not outlive its scene: make it a
-  member of the scene).
+- The `Scene` destructor checks that nothing is still attached (a bound set, world or pool must not outlive its
+  scene: make it a member of the scene).
 
 A second user is input actions ([api/actions.md](../api/actions.md#contexts-and-scenes)): a context bound with
 `ActionSet::bind_context(ctx, scene)` carries one node that only listens for `AfterExit`, which ends the binding, so a
 binding lasts one stay on the stack. Whether the context is on is decided when the set is evaluated, right after input
 (`scenes::top() == scene`): `BeforeUpdate` comes after that evaluation and would be one frame late (decision D32).
 
-> Status: design ([spec 020](../../specs/020-entities/spec.md), decision D35). Two more users will bind through the same
-> notifications: a **pool or world bound to a scene** is flushed on `BeforeUpdate` and cleared (remove hooks run,
-> spawns refused) on `AfterExit`. [Plan 020](../../specs/020-entities/plan.md#scene-binding-and-the-d30-proof-fr-18)
-> shows why that clear can't call into a scene that has left.
+Two more users bind through the same notifications ([spec 020](../../specs/020-entities/spec.md), decision D35): a
+**pool or world bound to a scene** ([api/pool.md](../api/pool.md#scene-binding),
+[api/entities.md](../api/entities.md#scene-binding)) is flushed on `BeforeUpdate` and cleared (remove hooks run,
+spawns refused) on `AfterExit`; its node lives in the pool object (inline pools), in the pool's block or in the
+world's block. [Plan 020](../../specs/020-entities/plan.md#scene-binding-and-the-d30-proof-fr-18) shows why that clear
+can't call into a scene that has left, and its tests check it (exit, the hooks, then the next scene's `on_enter`).
+Because nodes run in attach order, bind a world **before** the tween sets its hooks use.
 
 Internal API: `engine/core/src/scene/scene_attachments.hpp` (`scene_attach`, `scene_detach`, `scene_notify`).
 Cost for a scene with nothing attached: one pointer and a null check per frame and per exit; a game with scenes but

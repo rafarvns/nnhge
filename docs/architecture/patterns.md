@@ -14,7 +14,7 @@ here once accepted.
 | **Facade** | public headers `<nnh/*.hpp>` | Games see a small, stable API; platform and internals stay hidden. |
 | **Bridge (link-time)** | `engine/core/contract/nnh/platform/*.hpp` + one backend per target | Core depends on an interface; the backend is chosen by the build, so there is no `virtual` cost. |
 | **RAII handles** | `Subscription`, textures, sounds | Resources and subscriptions are released automatically; no manual cleanup lists. |
-| **Object Pool** | bullets, particles, entities: `<nnh/pool.hpp>` and `<nnh/entities.hpp>` (design: [spec 020](../../specs/020-entities/spec.md), D35) | No heap allocation per frame; predictable memory on 3DS. |
+| **Object Pool** | bullets, particles, entities: `<nnh/pool.hpp>` ([api/pool.md](../api/pool.md)) and `<nnh/entities.hpp>` ([api/entities.md](../api/entities.md)), spec 020, D35 | No heap allocation per frame; predictable memory on 3DS. |
 | **Command** | input actions (later) | Map buttons to actions, enable remapping and replays. |
 
 ### Example: Bridge without virtual

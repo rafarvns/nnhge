@@ -1,6 +1,6 @@
 # Tasks 020: Entities, tags and object pools
 
-Status: approved (2026-11-23, by the maintainer)
+Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer) — console T10.2 and Linux T9.1 pending
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -236,11 +236,11 @@ plan.md as "Stage N refinements", as in plans 012–019.
   `tests/platformer/test_replay_run.cpp`. Test: ctest `platformer_replay_matches_script`; `level.nnhs --pc` → PASS; a PC
   screenshot (`PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=<frame chosen here>`) read back: a coin's sparkles and the
   entity count on the HUD (frame recorded in plan.md). Covers AC-4 step 2.
-- [ ] **T8.3** [P] Mutation pass as in plan 019: hand mutants of `src/pool/*`, `src/entities/*`, the inline headers,
+- [x] **T8.3** [P] Mutation pass as in plan 019: hand mutants of `src/pool/*`, `src/entities/*`, the inline headers,
   `coins`, `turrets`, `sparkles` and the replay word, one at a time with the whole `nnh_tests` (and pc-release for
   Release-path mutants); survivors become tests or are argued equivalent. Files: plan.md ("Mutation testing"). Covers
   VI.
-- [ ] **T8.4** Opt-in and regression: `hello` sizes and `nm` equal T0.1; AC-8 comparison (bench, `camera`, `queries`,
+- [x] **T8.4** Opt-in and regression: `hello` sizes and `nm` equal T0.1; AC-8 comparison (bench, `camera`, `queries`,
   `sprites`, `scenes` identical; level 1 may differ by the HUD count only); every example's script passes with `--pc`
   (`gate.nnhs` included); `.text` growth of the platformer and `examples/entities` recorded; build times of an
   `examples/entities` edit (simulator < 2 s, `.3dsx` < 5 s). Files: plan.md ("Stage 8 results"). Covers FR-25, AC-8,
@@ -248,14 +248,14 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the AC-2
+- [ ] **T9.1** (left to the lead: see plan.md "Stage 9") On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the AC-2
   golden, the model comparisons and the platformer's replay are identical on all three (they are test assertions);
   ASan/UBSan clean over the `Counted` balance tests, the model sequences and the destroy-in-hook chains; libFuzzer
   `fuzz_world_ops` 10 minutes, clean. Files: tasks.md (results). Covers I, X, FR-21, AC-1, AC-2.
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
+- [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
   builds of `examples/entities` and `examples/platformer` without a warning; T7.6's table still true; `hello.elf`
   sizes as in T0.1. Files: plan.md ("Stage 10: console run (prepared)": commands and every expected line). Covers
   AC-8, II.
@@ -275,20 +275,20 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** `docs/api/pool.md` (handles and stale use, the two forms, acquire/release, quarantine and flush,
+- [x] **T11.1** (the Old 3DS costs are added after T10.2) `docs/api/pool.md` (handles and stale use, the two forms, acquire/release, quarantine and flush,
   iteration rules, raw access, binding, costs measured in T10.2, the wrap limit, misuse) and `docs/api/entities.md`
   (worlds, components and kinds, `component<T>` and hooks, destroy and the hook queue, iteration rules, storage views,
   tags and `tags_distinct`, Godot groups as `each_tagged`, binding and the "world before tween sets" rule with
   `clearing()`, the box-view, animator and tween patterns, the `EnemyDefeated` event pattern, determinism, memory
   formula, costs, misuse); header comments (allocates? per-frame safe? misuse?). Covers VIII, AC-9.
-- [ ] **T11.2** Other pages: `docs/api/scene.md` and `docs/architecture/scenes.md` (attachment users: bound pools and
+- [x] **T11.2** Other pages: `docs/api/scene.md` and `docs/architecture/scenes.md` (attachment users: bound pools and
   worlds), `docs/architecture/patterns.md` (Object Pool row → the module), `docs/REFERENCES.md` (EnTT, flecs, Bevy,
   Godot, Unity, *Game Programming Patterns*, Fabian, Bitsquid), `CLAUDE.md` (layout paragraph: pools, entities,
   `examples/entities`); `python -I scripts/docs_tool.py check` → 0 broken links. Covers AC-9.
-- [ ] **T11.3** `docs/architecture/decisions.md`: D35 change-log note "implemented" with any stage refinements.
+- [x] **T11.3** `docs/architecture/decisions.md`: D35 change-log note "implemented" with any stage refinements.
   Covers AC-9.
-- [ ] **T11.4** Final measurements (header cost of `pool.hpp` and `entities.hpp` against T0.1's references, the
+- [x] **T11.4** Final measurements (header cost of `pool.hpp` and `entities.hpp` against T0.1's references, the
   10-`each` TU, build times, `hello` sizes) in plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.5** `docs/ROADMAP.md`: "Entities/components", "Tags and groups" and "Object pools" checkboxes.
-- [ ] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2
+- [x] **T11.5** `docs/ROADMAP.md`: "Entities/components", "Tags and groups" and "Object pools" checkboxes.
+- [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2
   pending").

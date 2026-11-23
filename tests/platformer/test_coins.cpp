@@ -45,6 +45,7 @@ NNH_TEST(coins_a_box_takes_the_coin_it_overlaps) {
     TakenCoin taken[4] = {};
     CHECK(collect_coins(t.world, {95, 55, 10, 14}, kMask, taken, 4) == 1);
     CHECK(taken[0].entity == t.a && taken[0].value == 1);
+    CHECK(taken[0].centre == nnh::Vec2(106, 56)); // the box's centre: the sparkles burst there
     CHECK(!t.world.alive(t.a) && t.world.alive(t.b));
 }
 

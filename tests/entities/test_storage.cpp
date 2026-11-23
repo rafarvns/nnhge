@@ -53,3 +53,14 @@ NNH_TEST(storage_view_stays_valid_across_spawns_and_destroys) {
     const nnh::KindStats s = pos.stats();
     CHECK(s.peak == 10 && s.capacity == 16);
 }
+
+NNH_TEST(an_empty_storage_view_and_out_of_range_handles_answer_nothing) {
+    const nnh::Storage<Pos> none;
+    World w = world_test::make_world(8);
+    const Entity e = w.spawn();
+    w.add<Pos>(e);
+    CHECK(none.get(e) == nullptr && none.slot_of(e) == -1 && none.count() == 0 && none.data() == nullptr);
+    const nnh::Storage<Pos> pos = w.storage<Pos>();
+    CHECK(pos.slot_of(nnh::detail::make_handle<World>(60000, 1)) == -1);
+    CHECK(pos.get(nnh::detail::make_handle<World>(8, 1)) == nullptr);
+}

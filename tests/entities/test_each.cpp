@@ -149,3 +149,31 @@ NNH_TEST(nested_each_and_the_entities_range) {
     }
     CHECK(seen.n == 3 && seen.slots[0] == 1);
 }
+
+// Mutation testing (plan 020 T8.3) found these gaps.
+
+NNH_TEST(entities_and_storage_ranges_skip_what_the_loop_destroyed_or_removed_later) {
+    World w = world_test::make_world();
+    Entity es[6];
+    for (Entity& e : es) {
+        e = w.spawn();
+        w.add<Pos>(e);
+    }
+    int visits = 0;
+    for (Entity e : w.entities()) {
+        ++visits;
+        if (e.slot() + 1 < 6) w.destroy(es[e.slot() + 1]);
+    }
+    CHECK(visits == 3);
+    World v = world_test::make_world();
+    for (Entity& e : es) {
+        e = v.spawn();
+        v.add<Pos>(e);
+    }
+    visits = 0;
+    for (auto [e, p] : v.storage<Pos>().items()) {
+        ++visits;
+        if (e.slot() + 1 < 6) v.remove<Pos>(es[e.slot() + 1]);
+    }
+    CHECK(visits == 3);
+}

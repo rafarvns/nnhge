@@ -90,3 +90,14 @@ NNH_TEST(a_cleared_world_leaves_no_sparkle_tween_running) {
     f.world.clear(); // a level restart: the Spark hook kills each tween
     CHECK(f.tweens.active() == 0 && f.count() == 0);
 }
+
+NNH_TEST(each_sparkle_moves_by_its_own_velocity) {
+    // Mutation testing (plan 020 T8.3): the four directions, exactly (short binary fractions).
+    Fixture f;
+    f.sparkles.burst({100, 50});
+    f.frames(4);
+    const nnh::Vec2 want[4] = {{97, 45}, {103, 45}, {98.5f, 43}, {101.5f, 43}};
+    int i = 0;
+    for (auto [e, s] : f.world.storage<Spark>().items()) CHECK(i < 4 && s.position == want[i++]);
+    CHECK(i == 4);
+}

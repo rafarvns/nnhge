@@ -220,3 +220,42 @@ NNH_TEST(adding_to_a_dying_entity_asserts_or_is_refused) {
     add_in_hook = false; // the final clear runs the hook again
     CHECK(r.value().storage<Pos>().count() == 0);
 }
+
+// Mutation testing (plan 020 T8.3) found these gaps.
+
+NNH_TEST(two_destroys_from_one_hook_are_processed_in_call_order) {
+    static char order[8];
+    static int n = 0;
+    static Entity b{}, c{};
+    n = 0;
+    const ComponentDesc kinds[] = {nnh::component<Hp>(4, [](World& w, Entity, Hp& hp) {
+        if (n < 8) order[n++] = static_cast<char>('a' + hp.value);
+        if (hp.value == 0) {
+            w.destroy(b); // queued first
+            w.destroy(c); // queued second
+        }
+    })};
+    auto r = World::create({.max_entities = 4}, kinds);
+    World& w = r.value();
+    const Entity a = w.spawn();
+    b = w.spawn();
+    c = w.spawn();
+    w.add<Hp>(a, {0});
+    w.add<Hp>(b, {1});
+    w.add<Hp>(c, {2});
+    w.destroy(a);
+    CHECK(n == 3 && order[0] == 'a' && order[1] == 'b' && order[2] == 'c');
+}
+
+NNH_TEST(destroying_a_world_runs_the_remove_hooks_of_what_is_left) {
+    static int hooks = 0;
+    hooks = 0;
+    {
+        const ComponentDesc kinds[] = {nnh::component<Hp>(4, [](World&, Entity, Hp&) { ++hooks; })};
+        auto r = World::create({.max_entities = 4}, kinds);
+        World& w = r.value();
+        w.add<Hp>(w.spawn());
+        w.add<Hp>(w.spawn());
+    }
+    CHECK(hooks == 2);
+}

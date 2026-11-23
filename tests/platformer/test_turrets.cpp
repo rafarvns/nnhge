@@ -196,3 +196,13 @@ NNH_TEST(the_state_word_follows_bullets_and_hits) {
     a.book.restart();
     CHECK(a.book.state() != b.book.state() && a.book.hits() == 0 && !a.active(0));
 }
+
+NNH_TEST(the_state_word_follows_a_stuck_bullet_frame_by_frame) {
+    // Mutation testing (plan 020 T8.3): a stuck bullet keeps its position; only its countdown changes.
+    World w;
+    w.book.shoot({40, 24}, {100, 0});
+    w.update({300, 48, 12, 14}); // stuck on the wall
+    const std::uint32_t before = w.book.state();
+    w.update({300, 48, 12, 14});
+    CHECK(w.bullet(0).position == Vec2(128, 24) && w.book.state() != before);
+}

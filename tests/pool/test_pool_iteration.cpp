@@ -119,3 +119,47 @@ NNH_TEST(pool_flush_inside_an_iteration_asserts_or_is_ignored) {
     pool.flush();
     CHECK(pool.acquire().handle.slot() == 0);
 }
+
+// Mutation testing (plan 020 T8.3) found these gaps.
+
+POOL_CASE(pool_each_does_not_visit_what_its_callback_released_later_in_the_word, Item, 8) {
+    fill(pool, 6);
+    int visits = 0;
+    pool.each([&](nnh::Handle<Item> h, Item&) {
+        ++visits;
+        if (h.slot() + 1 < 6) pool.release(pool.handle_at(h.slot() + 1));
+    });
+    CHECK(visits == 3); // 0, 2, 4
+}
+
+POOL_CASE(pool_each_does_not_visit_an_acquire_landing_in_a_later_word_of_the_extent, Item, 64) {
+    fill(pool, 41);
+    pool.release(pool.handle_at(33));
+    pool.flush(); // the only hole: slot 33, in word 1, inside the extent
+    int visits = 0;
+    bool first = true;
+    pool.each([&](nnh::Handle<Item>, Item&) {
+        ++visits;
+        if (first) CHECK(pool.acquire().handle.slot() == 33); // lands where the loop hasn't loaded yet
+        first = false;
+    });
+    CHECK(visits == 40);
+}
+
+POOL_CASE(pool_fresh_marks_end_with_their_iteration, Item, 64) {
+    fill(pool, 33); // slots 0..32: word 1 holds slot 32
+    pool.each([&](nnh::Handle<Item> h, Item&) {
+        if (h.slot() == 0) pool.acquire(); // slot 33 (word 1): fresh during this iteration only
+    });
+    int visits = 0;
+    pool.each([&](nnh::Handle<Item> h, Item&) {
+        ++visits;
+        if (h.slot() == 0) pool.acquire(); // slot 34: fresh; word 1 is read after this, and slot 33 is old now
+    });
+    CHECK(visits == 34);
+}
+
+POOL_CASE(pool_is_live_is_false_far_out_of_range, Item, 8) {
+    fill(pool, 8);
+    CHECK(!pool.is_live(8) && !pool.is_live(1 << 20) && !pool.handle_at(1 << 20));
+}

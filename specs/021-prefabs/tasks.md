@@ -124,13 +124,13 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 5: map objects, data assets, the golden script
 
-- [ ] **T5.1** Fixture map: `make_fixtures.py` writes `tests/data/maps/good_prefabs.tmj` (layers `things` and `more`;
+- [x] **T5.1** Fixture map: `make_fixtures.py` writes `tests/data/maps/good_prefabs.tmj` (layers `things` and `more`;
   objects: `coin` rectangle with int `value` 5, `coin` point, `walker` point, `walker` with `prefab` = `flying_walker`,
   `door`, `spawn` point, an empty type, `prefab` = `coinn` (misspelt), `prefab` as an int, one `coin` in `more`); CMake
   converts it to `good_prefabs.nnhmap` for `nnh_tests` and adds `map_convert_accepts_good_prefabs`. Files:
   `tests/data/maps/make_fixtures.py`, `good_prefabs.tmj`, `tests/CMakeLists.txt`. Test: the converter test passes.
   Covers AC-3.
-- [ ] **T5.2** `spawn_map_objects` / `check_map_objects`: map order, `prefab` property first, else the type; skipped
+- [x] **T5.2** `spawn_map_objects` / `check_map_objects`: map order, `prefab` property first, else the type; skipped
   (door, spawn, empty type), unknown explicit names (log line `object <id> "<name>" (layer <layer>): no prefab
   "<name>"` caught by the log hook, assert in Debug, Release path logs only), the non-string `prefab`; the layer filter;
   placement from point and rectangle objects (`Rect` gets w, h unless `keep_size`; `Vec2` gets the top-left);
@@ -138,21 +138,21 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
   = the spawn's summary without spawning, logging or asserting; restart after `clear()` gives the first load's slots;
   the type cache (equal pointers, and equal text at different pointers). Files: `src/prefabs/prefab_map.cpp`. Test:
   `tests/prefabs/test_map_objects.cpp`, `test_placement.cpp` (part 2). Covers FR-9, FR-6, FR-7, AC-3.
-- [ ] **T5.3** [P] Data-asset values: a prefab per `Enemy` asset of spec 014's test game, named `data::name<Enemy>(i)`,
+- [x] **T5.3** [P] Data-asset values: a prefab per `Enemy` asset of spec 014's test game, named `data::name<Enemy>(i)`,
   registered in a loop; spawned components equal `data::load`'s struct (and a converted struct the test builds from
   it); spawning reads no file (the fs call counter). An object-level check: no `src/prefabs/*` object references a
   `data` or `tilemap` symbol except `prefab_map.o` (tilemap). Files: tests only. Test:
   `tests/prefabs/test_data_values.cpp`; the check in `build/ref-021/linkcheck.sh`. Covers FR-10, FR-16, AC-3.
-- [ ] **T5.4** Self-check (AC-2): `examples/prefabs/self_check.{hpp,cpp}` (pure: plan's kinds A–E, two worlds of 1024
+- [x] **T5.4** Self-check (AC-2): `examples/prefabs/self_check.{hpp,cpp}` (pure: plan's kinds A–E, two worlds of 1024
   × 4 tags, a `WhenFull::Miss` library of 16 prefabs with variants, hooks and placements, the hand side's flattened
   table written independently, 50 000 operations, per-step handle comparison, full-state hashes every 1000 steps and
   after clears, checkpoints every 10 000); golden values from pc-debug in `kPrefabsCheckGolden`, equal in pc-release.
   Files: `examples/prefabs/self_check.*`, `tests/prefabs_example/test_self_check.cpp`, `tests/CMakeLists.txt`. Test:
   the unit test against the goldens. Covers AC-2, FR-5, FR-13.
-- [ ] **T5.5** [P] Fuzz: `tests/fuzz/fuzz_prefab_ops.cpp` drives the self-check's operation set from bytes (prefab side
+- [x] **T5.5** [P] Fuzz: `tests/fuzz/fuzz_prefab_ops.cpp` drives the self-check's operation set from bytes (prefab side
   vs hand side must agree after every operation); mini-fuzz in `nnh_tests`, libFuzzer with `NNH_BUILD_FUZZERS`. Files:
   `tests/fuzz/*`, `tests/CMakeLists.txt`. Covers X, FR-13.
-- [ ] **T5.6** Stage end: ctest pc-debug and pc-release; 3ds-release without a warning; `hello` sizes and `nm` equal
+- [x] **T5.6** Stage end: ctest pc-debug and pc-release; 3ds-release without a warning; `hello` sizes and `nm` equal
   T0.1; `compare.sh` (every reference identical). Files: plan.md ("Stage 3–5 results"). Covers FR-16, AC-8.
 
 ## Stage 6: the platformer adopts prefabs (same play)

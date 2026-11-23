@@ -125,8 +125,9 @@ Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSour
     if (count > 0 && !match_overrides(world, entries, n, overrides, count, by_entry, kinds, extra, extras))
         return refuse_kind(*b);
     bool placed = source != nullptr && source->has_position;
-    if (placed && r->place_entry == kNoPlacement) {
-        prefab_misuse("PrefabLibrary::spawn(): a position for a prefab without a placement member (ignored)");
+    if (placed && r->place_entry == kNoPlacement) { // from a map: normal (the hook still gets the position)
+        if (source->object == nullptr)
+            prefab_misuse("PrefabLibrary::spawn(): a position for a prefab without a placement member (ignored)");
         placed = false;
     }
     void* at[kMaxPrefabEntries];

@@ -1,0 +1,194 @@
+{
+ "type": "map",
+ "version": "1.10",
+ "tiledversion": "1.10.2",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "infinite": false,
+ "width": 8,
+ "height": 4,
+ "tilewidth": 16,
+ "tileheight": 16,
+ "nextlayerid": 3,
+ "nextobjectid": 15,
+ "tilesets": [],
+ "layers": [
+  {
+   "id": 1,
+   "type": "objectgroup",
+   "name": "things",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "objects": [
+    {
+     "id": 1,
+     "name": "coin_a",
+     "type": "coin",
+     "x": 16,
+     "y": 32,
+     "width": 12,
+     "height": 10,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "value",
+       "type": "int",
+       "value": 5
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "name": "coin_b",
+     "type": "coin",
+     "x": 40,
+     "y": 8,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 3,
+     "name": "w1",
+     "type": "walker",
+     "x": 64,
+     "y": 48,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 4,
+     "name": "w2",
+     "type": "walker",
+     "x": 80,
+     "y": 16,
+     "width": 16,
+     "height": 16,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "prefab",
+       "type": "string",
+       "value": "flying_walker"
+      }
+     ]
+    },
+    {
+     "id": 5,
+     "name": "door",
+     "type": "door",
+     "x": 96,
+     "y": 0,
+     "width": 16,
+     "height": 32,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "to",
+       "type": "string",
+       "value": "next"
+      }
+     ]
+    },
+    {
+     "id": 6,
+     "name": "spawn",
+     "type": "spawn",
+     "x": 8,
+     "y": 8,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 7,
+     "name": "marker",
+     "type": "",
+     "x": 24,
+     "y": 24,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 12,
+     "name": "coin",
+     "type": "coin",
+     "x": 48,
+     "y": 40,
+     "width": 12,
+     "height": 12,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "prefab",
+       "type": "string",
+       "value": "coinn"
+      }
+     ]
+    },
+    {
+     "id": 13,
+     "name": "w3",
+     "type": "walker",
+     "x": 32,
+     "y": 48,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "prefab",
+       "type": "int",
+       "value": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "type": "objectgroup",
+   "name": "more",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "objects": [
+    {
+     "id": 14,
+     "name": "coin_c",
+     "type": "coin",
+     "x": 104,
+     "y": 40,
+     "width": 8,
+     "height": 8,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "value",
+       "type": "int",
+       "value": 2
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

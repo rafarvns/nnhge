@@ -57,4 +57,8 @@ std::size_t bindings_seed(std::uint8_t* out, std::size_t capacity);
 /// operation and its argument, run on an nnh::World and on the reference model at once; a difference aborts.
 int world_ops_target(const std::uint8_t* data, std::size_t size);
 
+/// Prefabs (spec 021, fuzz_prefab_ops.cpp): every 4 bytes are one operation of the prefabs self-check
+/// (examples/prefabs/self_check.hpp), run on a prefab-spawning world and its hand-written twin; a difference aborts.
+int prefab_ops_target(const std::uint8_t* data, std::size_t size);
+
 } // namespace nnh::fuzz

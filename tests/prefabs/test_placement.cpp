@@ -2,7 +2,7 @@
 // member; an override of the placement kind is constructed first and the position wins; a position for a prefab
 // without a placement member asserts and the spawn goes on without it.
 
-#include "prefab_fixture.hpp"
+#include "map_fixture.hpp"
 
 using nnh::Entity;
 using nnh::Prefab;
@@ -60,3 +60,37 @@ NNH_TEST(a_position_without_a_placement_member_asserts_and_is_ignored) {
     g_w = nullptr;
 }
 
+// ---- Part 2 (T5.2): positions from map objects ----
+
+NNH_TEST(a_rectangle_object_sizes_a_rect_member_unless_the_prefab_keeps_its_size) {
+    PrefabLibrary lib = make_library();
+    must_add(lib, "sized", {.place = nnh::place(&Body::box)}, Body{{0, 0, 4, 4}, 1});
+    must_add(lib, "kept", {.place = nnh::place(&Body::box, true)}, Body{{0, 0, 4, 4}, 1});
+    must_add(lib, "point", {.place = nnh::place(&Mover::at)}, Mover{{}, {1, 1}});
+    nnh::Tilemap map = code_map();
+    add_object(map, "a", "sized", {10, 20, 30, 40});
+    add_object(map, "b", "kept", {11, 21, 30, 40});
+    add_object(map, "c", "sized", {12, 22, 0, 0}, nnh::ObjectShape::Point);
+    add_object(map, "d", "point", {13, 23, 30, 40});
+    World w = make_world();
+    CHECK(lib.spawn_map_objects(w, map).spawned == 4);
+    const nnh::Rect a = w.get<Body>(Entity::from_bits(0x00010000u))->box;
+    const nnh::Rect b = w.get<Body>(Entity::from_bits(0x00010001u))->box;
+    const nnh::Rect c = w.get<Body>(Entity::from_bits(0x00010002u))->box;
+    const Vec2 d = w.get<Mover>(Entity::from_bits(0x00010003u))->at;
+    CHECK(a.x == 10 && a.y == 20 && a.w == 30 && a.h == 40);
+    CHECK(b.x == 11 && b.y == 21 && b.w == 4 && b.h == 4);
+    CHECK(c.x == 12 && c.y == 22 && c.w == 4 && c.h == 4);
+    CHECK(d.x == 13 && d.y == 23);
+}
+
+NNH_TEST(a_map_object_spawns_a_prefab_without_a_placement_member_with_its_position_in_the_hook_only) {
+    PrefabLibrary lib = make_library();
+    static Vec2 seen{};
+    must_add(lib, "marker", {.on_spawn = [](World&, Entity, const nnh::SpawnInfo& info) { seen = info.position; }},
+             Coin{1});
+    nnh::Tilemap map = code_map();
+    add_object(map, "m", "marker", {5, 6, 0, 0}, nnh::ObjectShape::Point);
+    World w = make_world();
+    CHECK(lib.spawn_map_objects(w, map).spawned == 1 && seen.x == 5 && seen.y == 6); // no assert: maps may do this
+}

@@ -751,3 +751,40 @@ change. Scripts in `build/ref-021/` (not committed).
   3ds-release without a warning; `nnh_tests` 2285; `hello` sizes and `nm` equal stage 0's; `level.nnhs --pc` PASS
   (`B2418A28`), `entities/tests/check.nnhs --pc` PASS (`C8FB9A41`). (One stage-3 run's pc-debug links failed with
   "ld: memory exhausted" while another build was running on the machine; the rerun was clean.)
+
+## Stage 5 refinements and results
+
+- **Fixture** `tests/data/maps/good_prefabs.tmj`, written by `make_fixtures.py` (`prefab_map()`): layer `things` with
+  a `coin` rectangle (`value` 5), a `coin` point, a `walker` point, a `walker` whose `prefab` is `flying_walker`, a
+  `door`, a `spawn` point, an object with an empty type, object 12 `"coin"` with `prefab` = `coinn`, object 13 with an
+  int `prefab`; layer `more` with one `coin`. Converted for `nnh_tests` (`good_prefabs.nnhmap`) and checked by the
+  ctest `map_convert_accepts_good_prefabs`.
+- **Map objects** (`prefab_map.cpp`, 112 lines): an object with any `prefab` property is explicit (a non-string one is
+  the level error `object <id> "<name>" (layer <layer>): property "prefab" is not a string`); the type → prefab
+  lookup is memoised per call by the type string's pointer (`detail::TypeCache`, tested directly with equal text at
+  two pointers). The level error's text is also the assert's message, so a Debug run's last line names the object.
+  **Refinement:** a map object whose prefab has **no placement member** spawns without a position and without an
+  assert (its hook still gets the position in `SpawnInfo`); from code, a position without a placement member still
+  asserts. `check_map_objects` counts nothing in the library's stats.
+- **Data values** (`test_data_values.cpp`): one prefab per `Enemy` of spec 014's test game (`enemies/bat`,
+  `enemies/goblin`), plus a `Health` struct converted from it; spawned components equal `data::load`'s bytes; the
+  fake platform's `fs_calls` and `asset_reads` don't move while spawning.
+- **Self-check** (`examples/prefabs/check_kinds.hpp`, `self_check_defs.cpp` (the hand table), `self_check_sides.{hpp,
+  cpp}` (`Side<true>` through the library, `Side<false>` by hand, the same hook code), `self_check.{hpp,cpp}`). The
+  kinds' "no padding" is asserted by sizes (`std::has_unique_object_representations` is false for float members).
+  The hand side decides "room" exactly as the world does: a kind has a free slot iff live + quarantined < capacity,
+  and live + quarantined = (live at the last flush) + (slots taken since): both sides keep that count, so the hand
+  side's all-or-nothing matches the reservation without reading engine internals. Each step compares the result
+  words, the sides' running sums (every handle a spawn or hook returned, every visit) and their miss counts; every
+  1000 steps and after each clear, a full-state hash (live handles and tags, each kind's live slots, owners and bytes).
+  Reached: 27 419 spawns, 3152 misses (kinds B and E full), 4006 spawns from hooks, 510 copies destroyed by their own
+  hook, 1567 spawns from D's remove hook, 23 392 overrides, 8801 positions, 25 clears, 180 642 visits, 75 state
+  checks, 661 live at most. A one-value mistake in the hand table fails at step 1000. **Golden `0x7BB7901E`**
+  (checkpoints `3EBCC2FD`, `821C8B95`, `CC194CA2`, `C8360424`, `7BB7901E`), pc-debug and pc-release.
+- **Fuzz** `tests/fuzz/fuzz_prefab_ops.cpp`: every 4 bytes are one self-check operation (`PrefabsSelfCheck::apply`);
+  mini-fuzz `prefab_ops_target_survives_random_inputs` (100 inputs up to 8 KiB), libFuzzer `fuzz_prefab_ops` with
+  `NNH_BUILD_FUZZERS`. The self-check's sources are compiled into `nnh_fuzz_targets` (which `nnh_tests` links).
+- T5.6: ctest pc-debug 266/266, pc-release 258/258; 3ds-release without a warning; `nnh_tests` 2305; `hello` sizes and
+  `nm` equal stage 0's; `compare.sh` every reference identical; `level.nnhs --pc` and `entities/check.nnhs --pc` PASS;
+  `linkcheck.sh` (3ds-release objects): no prefab object refers to a data symbol, only `prefab_map.o` refers to tilemap
+  symbols, and no other object refers to `prefab_map`'s functions.

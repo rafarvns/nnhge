@@ -8,8 +8,12 @@ target_compile_features(nnh_test_framework PUBLIC cxx_std_20)
 # Fuzz target bodies, shared by the unit tests (mini-fuzz) and the libFuzzer executables below.
 add_library(nnh_fuzz_targets STATIC fuzz/fuzz_bindings.cpp fuzz/fuzz_data.cpp fuzz/fuzz_data_index.cpp fuzz/fuzz_sprite.cpp
                                      fuzz/fuzz_targets.cpp fuzz/fuzz_tilemap.cpp fuzz/fuzz_world_ops.cpp
-                                     entities/model_driver.cpp)
-target_include_directories(nnh_fuzz_targets PUBLIC fuzz entities PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
+                                     entities/model_driver.cpp fuzz/fuzz_prefab_ops.cpp
+                                     ${PROJECT_SOURCE_DIR}/examples/prefabs/self_check.cpp
+                                     ${PROJECT_SOURCE_DIR}/examples/prefabs/self_check_defs.cpp
+                                     ${PROJECT_SOURCE_DIR}/examples/prefabs/self_check_sides.cpp)
+target_include_directories(nnh_fuzz_targets PUBLIC fuzz entities PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src
+                                                                         ${PROJECT_SOURCE_DIR}/examples)
 target_link_libraries(nnh_fuzz_targets PUBLIC nnh::core nnh::platform_fake)
 
 # Unit tests: nnh::core driven through the fake platform.
@@ -175,6 +179,7 @@ add_executable(nnh_tests
     fs/test_save.cpp
     fuzz/test_fuzz_smoke.cpp
     fuzz/test_fuzz_sprite.cpp
+    fuzz/test_fuzz_prefab_ops.cpp
     fuzz/test_fuzz_world_ops.cpp
     gfx/test_camera_zoom_clamp.cpp
     gfx/test_draw_calls.cpp
@@ -206,8 +211,10 @@ add_executable(nnh_tests
     pool/test_slot_bits.cpp
     prefabs/test_add.cpp
     prefabs/test_all_or_nothing.cpp
+    prefabs/test_data_values.cpp
     prefabs/test_library_create.cpp
     prefabs/test_library_layout.cpp
+    prefabs/test_map_objects.cpp
     prefabs/test_names.cpp
     prefabs/test_overrides.cpp
     prefabs/test_placement.cpp
@@ -444,6 +451,10 @@ target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SO
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
+# The prefabs example's self-check (spec 021 T5.4, AC-2): prefab spawns against hand-written ones, golden checksum.
+set(_prefabs_example ${PROJECT_SOURCE_DIR}/examples/prefabs)
+# (Its sources are compiled into nnh_fuzz_targets, which nnh_tests links: the fuzz target drives the same operations.)
+target_sources(nnh_tests PRIVATE prefabs_example/test_self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)
@@ -719,6 +730,8 @@ file(WRITE ${_maps_out}/bad_too_many_objects.tmj
        \"layers\": [{\"type\": \"objectgroup\", \"name\": \"things\", \"objects\": [${_objects}{\"id\": 1, \"x\": 0, \"y\": 0}]}]}\n")
 add_test(NAME map_convert_accepts_good
     COMMAND nnh_assetc map ${_maps}/good.tmj ${_maps_out}/good_check.nnhmap --assets ${_maps})
+add_test(NAME map_convert_accepts_good_prefabs
+    COMMAND nnh_assetc map ${_maps}/good_prefabs.tmj ${_maps_out}/good_prefabs_check.nnhmap --assets ${_maps})
 add_test(NAME map_convert_accepts_good_collision_layers
     COMMAND nnh_assetc map ${_maps}/good_collision_layers.tmj ${_maps_out}/good_collision_layers_check.nnhmap
             --assets ${_maps})
@@ -823,8 +836,16 @@ add_custom_command(OUTPUT ${_maps_out}/good_collision_layers.nnhmap
     DEPFILE ${_maps_out}/good_collision_layers.nnhmap.d
     COMMENT "Map tests/data/maps/good_collision_layers.tmj"
     VERBATIM)
+# The prefab objects fixture (spec 021 T5.1), loaded by tests/prefabs/test_map_objects.cpp.
+add_custom_command(OUTPUT ${_maps_out}/good_prefabs.nnhmap
+    COMMAND nnh_assetc map ${_maps}/good_prefabs.tmj ${_maps_out}/good_prefabs.nnhmap
+            --assets ${_maps} --depfile ${_maps_out}/good_prefabs.nnhmap.d
+    DEPENDS ${_maps}/good_prefabs.tmj nnh_assetc
+    DEPFILE ${_maps_out}/good_prefabs.nnhmap.d
+    COMMENT "Map tests/data/maps/good_prefabs.tmj"
+    VERBATIM)
 add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap ${_maps_out}/level1.nnhmap
-                                        ${_maps_out}/good_collision_layers.nnhmap)
+                                        ${_maps_out}/good_collision_layers.nnhmap ${_maps_out}/good_prefabs.nnhmap)
 add_dependencies(nnh_tests nnh_test_maps)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_MAPS_DIR="${_maps_out}")
 
@@ -878,7 +899,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name path save asset_index wav ogg remote tilemap data data_index sprite bindings world_ops)
+    foreach(name path save asset_index wav ogg remote tilemap data data_index sprite bindings world_ops prefab_ops)
         add_executable(fuzz_${name} fuzz/libfuzzer_${name}.cpp)
         target_link_libraries(fuzz_${name} PRIVATE nnh_fuzz_targets)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)

@@ -34,23 +34,25 @@ Entity refuse_kind(PrefabBlock& b) {
     return {};
 }
 
-/// Overrides matched to the entries (`by_entry[i]`: the override for entry i, or −1); the others are appended to
-/// `kinds` after the `n` entries (`extra`). False when one names a kind the world doesn't store.
+/// Overrides matched to the entries (bit i of `matched`: entry i has one, `by_entry[i]` which; no array clearing, no
+/// memset call); the others are appended to `kinds` after the `n` entries (`extra`). False when one names a kind the
+/// world doesn't store.
 bool match_overrides(World& world, const PrefabEntry* entries, int n, const ComponentValue* overrides, int count,
-                     std::int8_t* by_entry, int* kinds, const ComponentValue** extra, int& extras) {
-    for (int i = 0; i < n; ++i) by_entry[i] = -1;
+                     std::uint32_t& matched, std::int8_t* by_entry, int* kinds, const ComponentValue** extra,
+                     int& extras) {
     for (int j = 0; j < count; ++j) {
         const ComponentValue& v = overrides[j];
         int at = -1;
         for (int i = 0; i < n && at < 0; ++i)
             if (entries[i].id == v.id) at = i;
-        bool twice = at >= 0 && by_entry[at] >= 0;
+        bool twice = at >= 0 && ((matched >> at) & 1u) != 0;
         for (int k = 0; k < extras && !twice; ++k) twice = extra[k]->id == v.id;
         if (twice) {
             prefab_misuse("PrefabLibrary::spawn_with(): a kind overridden twice (the second is ignored)");
             continue;
         }
         if (at >= 0) {
+            matched |= 1u << at;
             by_entry[at] = static_cast<std::int8_t>(j);
             continue;
         }
@@ -119,10 +121,11 @@ Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSour
     const int n = r->entries;
     int kinds[kMaxPrefabEntries];
     if (world_kinds_of(world, &entries[0].id, sizeof(PrefabEntry), n, kinds) >= 0) return refuse_kind(*b);
+    std::uint32_t matched = 0;
     std::int8_t by_entry[kMaxPrefabEntries];
     const ComponentValue* extra[kMaxPrefabEntries];
     int extras = 0;
-    if (count > 0 && !match_overrides(world, entries, n, overrides, count, by_entry, kinds, extra, extras))
+    if (count > 0 && !match_overrides(world, entries, n, overrides, count, matched, by_entry, kinds, extra, extras))
         return refuse_kind(*b);
     bool placed = source != nullptr && source->has_position;
     if (placed && r->place_entry == kNoPlacement) { // from a map: normal (the hook still gets the position)
@@ -139,12 +142,21 @@ Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSour
     }
     if (why == ReserveRefusal::TagsDropped)
         prefab_misuse("PrefabLibrary::spawn(): more prefab tags than the world's tags_per_entity (the first kept)");
-    for (int i = 0; i < n; ++i) {
-        const PrefabEntry& entry = entries[i];
-        const void* from = count > 0 && by_entry[i] >= 0 ? overrides[by_entry[i]].value
-                                                         : b->values + (entry.value & kValueOffset);
-        if (entry.destroy != nullptr) entry.destroy(at[i]); // the slot's T{}, as add<T>(e, value)
-        entry.copy(at[i], from);
+    // Each component: the slot's T{} destroyed (types with a destructor), then a copy, as add<T>(e, value) does.
+    const unsigned char* const values = b->values; // a local: the copy calls can't make it reload
+    if (matched == 0) {
+        for (int i = 0; i < n; ++i) {
+            const PrefabEntry& entry = entries[i];
+            if (entry.destroy != nullptr) entry.destroy(at[i]);
+            entry.copy(at[i], values + (entry.value & kValueOffset));
+        }
+    } else {
+        for (int i = 0; i < n; ++i) {
+            const PrefabEntry& entry = entries[i];
+            const bool own = ((matched >> i) & 1u) != 0;
+            if (entry.destroy != nullptr) entry.destroy(at[i]);
+            entry.copy(at[i], own ? overrides[by_entry[i]].value : values + (entry.value & kValueOffset));
+        }
     }
     for (int k = 0; k < extras; ++k) {
         if (extra[k]->destroy != nullptr) extra[k]->destroy(at[n + k]);

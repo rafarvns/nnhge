@@ -1,0 +1,5 @@
+name = "Imp"
+hp = 5
+speed = 1.5
+size = 8
+color = "#E04040"

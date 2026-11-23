@@ -25,7 +25,11 @@ std::uint32_t table_probe(const PrefabBlock& b, std::uint32_t hash) {
 
 namespace {
 
-Prefab find_hash(const PrefabBlock* b, std::uint32_t hash) {
+// Inlined into each find (plan 021 T7.6: no call between the hash and the probe).
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((always_inline))
+#endif
+inline Prefab find_hash(const PrefabBlock* b, std::uint32_t hash) {
     if (b == nullptr) return {};
     // The first probe straight-line: a hit or an empty slot ends most finds without entering the loop.
     const std::uint32_t mask = b->table_mask;

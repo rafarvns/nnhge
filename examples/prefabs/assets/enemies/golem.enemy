@@ -1,0 +1,5 @@
+name = "Golem"
+hp = 20
+speed = 0.25
+size = 20
+color = "#8C7A6A"

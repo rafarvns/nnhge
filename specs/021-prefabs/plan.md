@@ -814,3 +814,59 @@ change. Scripts in `build/ref-021/` (not committed).
   ms, missed 1/299`; three later runs: PASS). `compare.sh`: level 1 at 90, the replay at 64 and 312 and the bench
   identical. ctest pc-debug 266/266, pc-release 258/258; 3ds-release without a warning; `nnh_tests` 2308; `hello`
   unchanged.
+
+## Stage 7 refinements and results
+
+- **Files** as planned except: `art/make_art.py` writes only the 4-tile `assets/tiles/room.png` (floor, wall, door, rug)
+  and `art/make_room.py` the room (`assets/rooms/room.tmj`, 25 × 15 tiles, 15 objects); the self-check is split into
+  `check_kinds.hpp`, `self_check_defs.cpp`, `self_check_sides.{hpp,cpp}` and `self_check.{hpp,cpp}` (stage 5); there is
+  no separate `components`/`tags` source (headers only). `PREFABS_DEMO` = `showcase` (default) | `check` | `bench`.
+- **The room** (`room.{hpp,cpp}`): 64 entities, 2 tags each; kinds Body (`Rect box` — the placement member — and a
+  colour), Walker (16: the kind whose budget the touches exhaust), Bob (remove hook kills its tween), Coin, Stats. The
+  library (`WhenFull::Miss`): `walker`, `flying_walker` (variant: + Bob, a faster Walker in place, tag `flying`, hook
+  starting a yoyo tween through a handle-capturing setter), `coin` (hook: `value` from the object, gold when > 1), and
+  the roster (`roster.cpp`: one prefab per `assets/enemies/*.enemy` — beetle, golem, imp, wisp — named
+  `enemies/<name>`). `~Room()` clears the world before the tween set goes (members go in reverse order).
+- **Log lines**: `map: spawned 14 skipped 1 unknown 0 misses 0` (logged in frame 0, before a script can read it: the
+  script expects it after its restarts), `selected: <name> kinds <list> tags <list>`, `spawned: <name> slot n gen g at
+  x,y tags a,b`, `missed: <name> (misses N)`. Controls as decision 11.
+- **ctests**: `prefabs_self_check_pc` (`PREFABS_DEMO=check`, 60 frames → `prefabs: PASS 7BB7901E` at frame 26) and
+  `prefabs_check_script_pc` (`nnh run prefabs --pc --no-build --script examples/prefabs/tests/check.nnhs`, the
+  console script played in the simulator; `RESOURCE_LOCK nnh_remote_port`).
+- **Screenshots read back** (the script's, pc-debug): the room (walkers, two flyers lifted over their shadows, five
+  coins and the gold one, the door), the variant spawned by a touch, the beetle and the gold override at the centre,
+  the walker budget's miss on the HUD (`spawns 37 misses 1 entities 23/64`), the self-check's PASS, the bench lines.
+- **PC bench** (pc-dev, x86, two runs; not representative of the console): spawn 0.046–0.048 ms (hand 0.043, ratio
+  1.06–1.11), overrides 0.051 ms, map 0.106–0.108 ms, find 0.028–0.029 ms; all PASS.
+- T7.7: `nnh run prefabs --pc --no-build --script examples/prefabs/tests/check.nnhs` → `nnh: PASS (114 lines, frames
+  1-1389)`, twice (once by hand, once as the ctest).
+
+### Stage 7 ARM pre-check (T7.6)
+
+`arm-none-eabi-objdump -drC` of the 3ds-dev objects (`examples/prefabs/.../bench.o`, `src/prefabs/*.o`,
+`src/entities/world_reserve.o`; devkitARM GCC, `-O2`), common paths counted by hand from the listings
+(`build/ref-021/dis7b/`). Cycles: ≈ 1.9 per instruction (spec 020's console calibration), cache misses aside.
+
+| Hot path | First build | Found | Fixed | After |
+|----------|-------------|-------|-------|-------|
+| `prefab_spawn`, before the reservation (handle, record, empty-world check, one `world_kinds_of` call) | ≈ 65 + the kinds call (≈ 35 for 3 ids) | — | — | ≈ 100 |
+| `world_reserve`, 3 kinds and 2 tags | ≈ 210 (entity `find_free` straight-line ≈ 22, per kind find ≈ 23, per kind take ≈ 25, tags, the addresses) | the plan's ≈ 140 was low: each kind's take is the shared `attach_component` (live, fresh test, owner, slot field, mask) | none (it is exactly `world_add`'s bookkeeping minus its per-call checks) | ≈ 210 |
+| copies, per entry | 16 + the copy function; `b->values` reloaded per entry (the indirect calls could alias it); the override test per entry; a `memset` call clearing `by_entry[]` when overriding | the reload; the per-entry test; the `memset` | values in a local, separate loops with and without overrides, a 32-bit "overridden" mask instead of clearing an array | 14 + the copy (`Body` 8, `Big` 12 — `ldm`/`stm`, `Velocity` 4); no `memset`/`memcpy` |
+| tail (spawns counter, hook test, return) | ≈ 15 | — | — | ≈ 15 |
+| `find(const char*)` | the one-pass hash inlined (GCC turns `× 0x01000193` into 5 shift-adds: ≈ 8 instructions per byte, a dependent chain), then a **call** to the probe (28 instructions) | the call | the probe `always_inline`d into each `find` (49 instructions in all, no call, no stack) | ≈ 9 × 8 + 20 |
+| `spawn_map_objects`, per object | `map.object(i)` out of line (a 40-byte struct through the stack), a `type("prefab")` lookup, the type cache, a `SpawnSource` on the stack, the spawn | — (the tilemap's calls are the plan's risk 2) | — | ≈ 540 with the hook's `get_int` and `get<Coin>` |
+
+No `vmrs`, no `__aeabi_*`, no `memcpy`/`memset` on any of these paths after the fix; spec 020's `World::spawn()` (109)
+and `world_add` (143) are unchanged and `examples/entities`' `bench.o` is byte-identical to stage 0's.
+
+**Expected at the console (T10.2)** — per entity: prefab spawn ≈ 100 + 210 + 14 × 3 + 27 + 15 ≈ 410 instructions,
+hand-written ≈ 65 (`spawn`) + 3 × (92 + ≈ 20 inline) + 2 × 35 (`add_tag`) ≈ 470, `destroy` ≈ 350 in both:
+
+| AC-7 workload | Estimate | Target | Verdict |
+|---------------|----------|--------|---------|
+| 256 prefab spawns + destroys + flush | ≈ 1.3–1.4 ms; hand ≈ 1.45–1.55 ms; ratio ≈ 0.9 | < 2 ms, ≤ 1.25 | PASS expected |
+| the same with an override and a position | ≈ 1.45–1.6 ms (+ the override match ≈ 25, the wrapper's `SpawnSource`, the Rect stores) | < 2.2 ms | PASS expected |
+| 512 map objects | ≈ 2.0–2.6 ms (memory: the map's object and property arrays are walked in order) | < 4 ms | PASS expected, moderate margin |
+| 1000 `find` by run-time name | ≈ 0.40–0.48 ms (≈ 9 × 7 cycles of hash chain + ≈ 40 of probe and loop) | < 0.5 ms | **at risk** (risk 1: unroll the hash, `{index, hash >> 16}` table pairs) |
+
+No result changed: the self-check's `7BB7901E`, spec 020's `C8FB9A41` and the platformer's `B2418A28` hold.

@@ -174,41 +174,41 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 7: `examples/prefabs` (PC)
 
-- [ ] **T7.1** Art and room: `art/make_art.py` (original tiles: walls, floor, door), `art/make_room.py` →
+- [x] **T7.1** Art and room: `art/make_art.py` (original tiles: walls, floor, door), `art/make_room.py` →
   `assets/rooms/room.tmj` (6 `walker`, 2 `walker` objects with `prefab` = `flying_walker`, 5 `coin`, 1 `coin` with
   `value` 5, 1 `door`), `data_types.cpp` (`EnemyData`: hp, speed, size, colour), `assets/enemies/*.enemy` (4 enemies).
   Files: `examples/prefabs/art/*`, `assets/*`, `data_types.cpp`, `CMakeLists.txt` (`ASSETS`, `DATA_SCHEMA`),
   `examples/CMakeLists.txt`. Test: builds; the converters accept the files. Covers AC-5.
-- [ ] **T7.2** Room and library: `components.hpp`, `tags.hpp` (`static_assert(tags_distinct(...))`), `room.{hpp,cpp}`:
+- [x] **T7.2** Room and library: `components.hpp`, `tags.hpp` (`static_assert(tags_distinct(...))`), `room.{hpp,cpp}`:
   world (bound to the showcase scene, before its tween set), library (`WhenFull::Miss`: `walker`, `flying_walker`
   variant with a `Bob` kind, a `flying` tag and a hook starting a bob tween, `coin` with a hook reading `value` and
   colouring gold when > 1), `spawn_map_objects` logging `map: spawned N skipped N unknown N misses N`; walkers move and
   turn at walls; `roster.{hpp,cpp}` registers one prefab per `EnemyData` asset in a loop; `room_draw`, `hud` (library
   stats, the last map summary, the roster). Test: PC screenshot `PREFABS_DEMO=showcase` (the room with its variant and
   gold coin) read back. Covers AC-5, FR-4, FR-6, FR-9, FR-10, FR-11.
-- [ ] **T7.3** Touch spawns and selection: the bottom screen shows the room through a `Camera2D`; a touch spawns the
+- [x] **T7.3** Touch spawns and selection: the bottom screen shows the room through a `Camera2D`; a touch spawns the
   selected prefab at the world point (placement) logging `spawned: <name> slot n gen g at x,y tags a,b`; L/R cycle the
   selection logging `selected: <name> kinds <list> tags <list>` (the debug line, kinds named by the example's
   `kind_id` table); A spawns the gold coin by override (`Coin{5}`) at the room's centre; a full walker kind logs
   `missed: walker (misses N)`; X restarts (`clear()` + map spawn: the same map line). Files: `showcase_scene.*`,
   `room.cpp`, `hud.cpp`, `main.cpp`, `demos.hpp`. Test: PC screenshots (a variant spawned, the override, the full-kind
   miss) read back; log lines in a `--pc` run. Covers AC-5, FR-7, FR-8, FR-11.
-- [ ] **T7.4** Self-check scene: SELECT runs T5.4's script, 2000 operations per frame, logging `prefabs: <n> sum
+- [x] **T7.4** Self-check scene: SELECT runs T5.4's script, 2000 operations per frame, logging `prefabs: <n> sum
   <checksum>` and `prefabs: PASS <checksum>` / `prefabs: FAIL ...`; `PREFABS_DEMO=check` starts in it; ctest
   `prefabs_self_check_pc`. Files: `self_check_scene.*`, `main.cpp`, `tests/CMakeLists.txt`. Test: ctest. Covers AC-2,
   AC-6.
-- [ ] **T7.5** [P] Bench (AC-7): `bench.{hpp,cpp}` (the four workloads, pure; the hand-written spawn reference on
+- [x] **T7.5** [P] Bench (AC-7): `bench.{hpp,cpp}` (the four workloads, pure; the hand-written spawn reference on
   alternate frames; the code-built 512-object map; the 128-prefab library and its shuffled names) and
   `bench_scene.{hpp,cpp}` (300 frames each, profile scopes, one line per workload with the spawn line's hand time and
   ratio, then the verdict; Debug: `not judged (Debug)`); Y runs it, `PREFABS_DEMO=bench` starts in it. Files:
   `examples/prefabs/bench*`. Test: a pc-dev run logs every line and PASS. Covers AC-7.
-- [ ] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of
+- [x] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of
   `bench.cpp`, `src/prefabs/*` and `src/entities/world_reserve.cpp`, `world_spawn.cpp`, `world_components.cpp`; for each
   AC-7 hot path record instructions, calls, stack reloads, `vmrs`, `__aeabi_*`, `memcpy`/`memset`, and compare with
   plan.md's ARM11 table (prefab spawn ≈ 260 per entity, `find` one-pass hash and a straight-line first probe, spec
   020's `world_add` ≈ 92 and `spawn` ≈ 65 unchanged). Fix what differs (no result changes: every golden holds). Files:
   plan.md ("Stage 7 ARM pre-check": the table). Covers AC-7, II.
-- [ ] **T7.7** The script `examples/prefabs/tests/check.nnhs`: SELECT → every checkpoint and PASS line; the showcase's
+- [x] **T7.7** The script `examples/prefabs/tests/check.nnhs`: SELECT → every checkpoint and PASS line; the showcase's
   map line; fixed touches with expected `spawned:` lines; L/R with expected `selected:` lines; A (override); touches to
   `missed: walker`; X (restart, the same map line); screenshots (room, variant, override, miss); Y → the bench lines and
   `prefabs bench: PASS`; `fail-on "prefabs: FAIL"`, `fail-on "prefabs bench: FAIL"`, `fail-on "] E "`. Test:

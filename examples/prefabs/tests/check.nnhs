@@ -1,0 +1,114 @@
+# Spec 021 AC-5/AC-6/AC-7, automatic (spec 013): the room made in Tiled (its map summary), the self-check (prefab
+# spawns against hand-written ones: its checksum lines must be the PC's bit for bit), then the showcase again: a touch
+# spawning the flying_walker variant, a roster enemy registered from a data asset, the gold coin by component override,
+# touches past the walker kind's budget until a miss, a restart (the same map line), and the bench (AC-7's targets) and
+# its verdict.
+# PC:      nnh run prefabs --pc --script examples/prefabs/tests/check.nnhs
+# Console: nnh run prefabs --script examples/prefabs/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines below are the PC's (pc-debug). The showcase's lines change only if the room, the prefabs or the
+# moves below change; the checksum lines only if the script in self_check.cpp or the prefabs/entities modules change:
+# then run `PREFABS_DEMO=check NNH_EXIT_AFTER_FRAMES=60 build/pc-debug/examples/prefabs/prefabs.exe`, copy its lines
+# here and the values into kPrefabsCheckGolden/kPrefabsCheckpoints (self_check.hpp).
+fail-on "] E "
+fail-on "prefabs: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "prefabs bench: FAIL"
+
+# (The first map line is logged in frame 0, before the script starts: the restarts below expect it.)
+wait 30
+screenshot room
+
+# The self-check (SELECT): 50 000 operations, a checksum every 10 000, then the verdict.
+tap SELECT
+expect "prefabs: self-check started" 20
+expect "prefabs: 10000 sum 3EBCC2FD" 60
+expect "prefabs: 20000 sum 821C8B95" 60
+expect "prefabs: 30000 sum CC194CA2" 60
+expect "prefabs: 40000 sum C8360424" 60
+expect "prefabs: 50000 sum 7BB7901E" 60
+expect "prefabs: PASS 7BB7901E" 30
+wait 5
+screenshot self-check
+
+# Back to the showcase (SELECT): the room again, from its map. The bottom screen shows the room from world x 40.
+tap SELECT
+expect "map: spawned 14 skipped 1 unknown 0 misses 0" 20
+wait 10
+tap R
+expect "selected: flying_walker kinds Body,Walker,Bob tags enemy,flying" 10
+touch 80 64
+expect "spawned: flying_walker slot 14 gen 1 at 120,64 tags enemy,flying" 5
+wait 3
+untouch
+wait 20
+screenshot variant
+tap R
+expect "selected: coin kinds Body,Coin tags coin" 10
+wait 3
+tap R
+expect "selected: enemies/beetle kinds Body,Walker,Stats tags enemy,roster" 10
+touch 120 100
+expect "spawned: enemies/beetle slot 15 gen 1 at 160,100 tags enemy,roster" 5
+wait 3
+untouch
+wait 5
+# A: the coin prefab with Coin{5} for this copy only: gold.
+tap A
+expect "spawned: coin slot 16 gen 1 at 196,116 tags coin" 10
+wait 5
+screenshot override
+
+# The walker kind holds 16: 8 from the map, the flying walker and the beetle above, six more, then a miss.
+tap L
+wait 3
+tap L
+wait 3
+tap L
+expect "selected: walker kinds Body,Walker tags enemy" 10
+touch 30 40
+expect "spawned: walker slot 17 gen 1 at 70,40 tags enemy" 5
+untouch
+wait 3
+touch 60 40
+expect "spawned: walker slot 18 gen 1 at 100,40 tags enemy" 5
+untouch
+wait 3
+touch 90 40
+expect "spawned: walker slot 19 gen 1 at 130,40 tags enemy" 5
+untouch
+wait 3
+touch 120 40
+expect "spawned: walker slot 20 gen 1 at 160,40 tags enemy" 5
+untouch
+wait 3
+touch 150 40
+expect "spawned: walker slot 21 gen 1 at 190,40 tags enemy" 5
+untouch
+wait 3
+touch 180 40
+expect "spawned: walker slot 22 gen 1 at 220,40 tags enemy" 5
+untouch
+wait 3
+touch 210 40
+expect "missed: walker (misses 1)" 5
+untouch
+wait 5
+screenshot miss
+
+# X: clear() and the map's objects again: the first load's slots.
+tap X
+expect "map: spawned 14 skipped 1 unknown 0 misses 0" 10
+wait 10
+
+# The bench (Y): 4 phases of 300 frames, one line each, then the verdict.
+tap Y
+expect "prefabs bench: started" 20
+expect "prefabs bench: spawn avg" 400
+expect "prefabs bench: overrides avg" 400
+expect "prefabs bench: map avg" 400
+expect "prefabs bench: find avg" 400
+expect "prefabs bench: PASS" 30
+wait 10
+screenshot bench
+end

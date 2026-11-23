@@ -1,0 +1,9 @@
+# Assert crash screen on the 3DS (spec 002): L+R+A fails an NNH_VERIFY; the engine logs a fatal line and shows its
+# red crash screen (START returns to the Homebrew Launcher). No Luma3DS setting needed.
+#   build/pc-debug/tools/nnh/nnh run foundation --script examples/foundation/tests/assert_crash.nnhs
+wait 60
+press L
+press R
+wait 2
+tap A
+expect "deliberate crash from the demo" 60

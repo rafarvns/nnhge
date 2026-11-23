@@ -52,7 +52,10 @@ shows its own exception screen and saves a dump in `sdmc:/luma/dumps/arm11/` —
 Luma3DS's `luma3ds_exception_dump_parser`. Try it with the foundation example: hold L + R and press A
 (an assert) or B (a write through a null pointer, a real CPU fault). Scripted:
 `nnh run foundation --script examples/foundation/tests/cpu_fault.nnhs` passes when the engine's fatal line arrives
-(with UNITINFO); without UNITINFO Luma3DS takes the fault and the script fails.
+(with UNITINFO); without UNITINFO Luma3DS takes the fault and the script fails. `assert_crash.nnhs` does the
+same for an assert (no Luma3DS setting needed). Under `nnh run`/3dslink stdout goes to the PC, so the crash screen
+writes straight to libctru's text console device, not through `printf` (which sent it to the PC and left the
+screens black until 2026-11-22).
 
 To turn a crash address into a source line: `arm-none-eabi-addr2line -e <game>.elf -f -C <pc>`
 (from `C:\devkitPro\devkitARM\bin`; use the `.elf` next to the `.3dsx`).

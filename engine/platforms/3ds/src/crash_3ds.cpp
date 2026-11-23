@@ -6,8 +6,10 @@
 
 #include <3ds.h>
 
-#include <cstdio>
+#include <sys/iosupport.h>
+
 #include <cstdlib>
+#include <cstring>
 
 #include "nnh/platform/crash.hpp"
 
@@ -43,6 +45,13 @@ const char* exception_name(ERRF_ExceptionType type) {
     crash_show(fault.kind, "");
 }
 
+/// Writes to the text console consoleInit() selected, through its device: under 3dslink, stdout's descriptor
+/// is dup2()ed onto the log socket (app_3ds.cpp), so printf would send the crash screen to the PC instead.
+void console_write(const char* text) {
+    const devoptab_t* console = devoptab_list[STD_OUT];
+    if (console != nullptr && console->write_r != nullptr) console->write_r(_REENT, nullptr, text, std::strlen(text));
+}
+
 } // namespace
 
 void crash_install_hooks(CpuFaultHandler handler) {
@@ -59,9 +68,11 @@ void crash_show(const char* top, const char* bottom) {
     consoleInit(GFX_TOP, &top_console);
     consoleInit(GFX_BOTTOM, &bottom_console);
     consoleSelect(&top_console);
-    std::printf("\x1b[41m\x1b[2J\x1b[1;1H%s", top); // red background
+    console_write("\x1b[41m\x1b[2J\x1b[1;1H"); // red background
+    console_write(top);
     consoleSelect(&bottom_console);
-    std::printf("\x1b[2J\x1b[1;1H%s", bottom);
+    console_write("\x1b[2J\x1b[1;1H");
+    console_write(bottom);
 
     while (aptMainLoop()) {
         hidScanInput();

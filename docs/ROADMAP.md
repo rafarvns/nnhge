@@ -198,7 +198,7 @@ spec; the order below is a proposal.
   every one with a tag, cheap to compare (hashed at build time)
 - [x] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets
   ignore their shooter, coins only the player), on top of spec 012's collision —
-  [spec 019](../specs/019-collision-layers-and-queries/spec.md), **implemented 2026-11-23, console check pending**:
+  [spec 019](../specs/019-collision-layers-and-queries/spec.md), **implemented 2026-11-23**; Old 3DS check passed:
   `collision::Layers` (32 bits, the game's own enum), `detects(mask, layers)`, box views over the game's own arrays
   (structs by member pointer, no copies), `QueryFilter` (mask, ignore index); tilemap layer sets on `collision` layers
   and solid/one-way tiles, from code or a Tiled `collision_layers` flag enum, and `Tilemap::collision_grid(mask)` (D34:
@@ -259,7 +259,7 @@ spec; the order below is a proposal.
   allocation while searching
 - [x] **Raycasts and shape queries** (Godot RayCast2D, Unity Physics2D.Raycast): line of sight, "what's under
   this point", against tiles and boxes, filtered by layers — [spec 019](../specs/019-collision-layers-and-queries/spec.md),
-  **implemented 2026-11-23, console check pending**: rays from → to against grids (an exact Amanatides & Woo walk:
+  **implemented 2026-11-23**; Old 3DS check passed: rays from → to against grids (an exact Amanatides & Woo walk:
   no tunnelling at any length, no leak between diagonal walls, one-way cells from above) and box views (slab test),
   first hit / all hits / `cells_crossed`, `line_of_sight`, box casts (two movers by relative motion), `boxes_at`,
   `boxes_overlapping`, `cell_at`; the same bits on every system (exact `double` decisions, results rounded once;

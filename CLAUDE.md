@@ -92,7 +92,7 @@ through a `Grid` the game describes (its own `Cell` array or a callback; solid a
 (`nnh-assetc`, D27; refusals print `file: reason`; fixtures in `tests/data/maps/`); `gfx::draw_tilemap` draws tile
 batches (D26, needs `AppConfig::gfx.max_tiles`, 0 by default; Old 3DS: 4 full layers + 300 sprites at 60 Hz)
 ([api/tilemap.md](docs/api/tilemap.md), guide [levels.md](docs/guides/levels.md)).
-Collision layers and queries (spec 019, implemented, console check pending; D34; demo `examples/queries`): in
+Collision layers and queries (spec 019, implemented; D34; demo `examples/queries`): in
 `<nnh/collision.hpp>` — `Layers` (32 bits, the game's own enum), `detects(mask, layers)`, `box_view(...)` over the
 game's own arrays (structs by member pointer), `QueryFilter`; `raycast`/`raycast_all` against grids (exact walk: no
 tunnelling, no corner leaks) and boxes, `cells_crossed`, `line_of_sight`, `box_cast`, `boxes_at`,

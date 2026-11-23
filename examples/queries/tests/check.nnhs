@@ -1,7 +1,7 @@
 # Spec 019 AC-5/AC-6/AC-7, automatic (spec 013): the playground's ray moved with the stick (first-hit lines), the
 # water bit of the mask toggled (the ray passes the pool), the three modes (screenshots), one-way cells ignored,
 # touches on the bottom screen (what is under each point), then the self-check, whose checksum lines must be the
-# PC's bit for bit, then the bench (rays < 2 ms per frame, points <= 0.1 us per box, moves recorded).
+# PC's bit for bit, then the bench (rays < 6 ms per frame, points <= 0.15 us per box, moves recorded).
 # PC:      nnh run queries --pc --script examples/queries/tests/check.nnhs
 # Console: nnh run queries --script examples/queries/tests/check.nnhs   (Homebrew Launcher open, press Y)
 #

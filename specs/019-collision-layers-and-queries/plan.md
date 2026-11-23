@@ -1,7 +1,7 @@
 # Plan 019: Collision layers and queries
 
-Status: approved (2026-11-22, maintainer pre-approved); **implemented 2026-11-23** (stages 0–8, 11), console T10.2 and
-Linux T9.1 pending
+Status: approved (2026-11-22, maintainer pre-approved); **implemented 2026-11-23** (stages 0–8, 11), T9.1 (VM 120) and
+T10.2 (Old 3DS XL) passed
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D34 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, profiler), spec 012 (`<nnh/collision.hpp>`: `Rect` rules, `Grid`, `Cell`, `move`,
 `cells_touching`; `<nnh/tilemap.hpp>`: the map block, `collision_grid()`, properties, the Tiled converter, D26/D27),
@@ -998,3 +998,15 @@ on next (grid: (G − S) / 6.5 per step; boxes: B / 64 per box).
   (`queries.elf`, Release).
 - Final: `nnh_tests` 2014 tests, `nnh_assetc_tests` 265; ctest pc-debug 264/264, pc-release 257/257; 3ds-release and
   3ds-dev without a warning; `docs_tool.py check` 0 broken links.
+
+#### Stage 10 results (2026-11-23, Old 3DS XL, Development)
+
+- `queries/tests/check.nnhs`: logic identical to the PC from the first run (`queries: PASS 4ACAA177`, every `under:`
+  and first-hit line). Bench: rays 14.141 ms (first run) → 5.996 ms (round 1) → **4.837 ms** avg, 5.701 ms worst
+  (round 2; split grid 2.031 ms, start 0.862 ms, 6.5 cells per ray, boxes 2.314 ms); points 0.5565 → **0.1177 µs** per
+  box; `move` 10.83 / 10.98 µs. The maintainer chose (2026-11-23) to set the budgets from the measurement: rays < 6 ms,
+  points ≤ 0.15 µs per box. Final run: `queries bench: PASS`, `nnh: PASS (102 lines)`.
+- `platformer/tests/level.nnhs`: `replay: done 900 frames sum 96FE8943: 60 Hz PASS (level1 worst 19.9 ms, missed
+  0/599; bonus worst 18.4 ms, missed 0/299)` with the turrets.
+- `platformer/tests/gate.nnhs`: `bench: PASS 4 layers + 300 sprites, avg 16.7 ms, worst 17.4 ms, missed 0 of 600
+  frames`; limits 6 layers / 600 sprites as before.

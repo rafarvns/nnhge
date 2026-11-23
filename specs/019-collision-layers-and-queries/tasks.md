@@ -1,8 +1,7 @@
 # Tasks 019: Collision layers and queries
 
-Status: approved (2026-11-22, maintainer pre-approved); stages 0–8 and 11 done 2026-11-23; T9.1 passed on VM 120;
-T10.2 (Old 3DS, the maintainer) pending, T10.2 prepared in plan.md "Stage 10: console run (prepared)"; first console
-run correct but slow, T10.3 (bench refinement) and its round 2 done 2026-11-23, console re-run pending
+Status: implemented (2026-11-23): T9.1 passed on VM 120, T10.2 passed on the Old 3DS XL (see plan.md "Stage 10
+results").
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -253,10 +252,11 @@ refinements", as in plans 012–018.
   builds of `examples/queries` and `examples/platformer`; `objdump` of `ray_distance.cpp.o` (3DS: `vsqrt.f32`, no
   call); `hello.elf` size recorded. Files: plan.md ("Stage 10: console run (prepared)": commands and every expected
   line). Covers FR-16, AC-8.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run queries --script examples/queries/tests/check.nnhs` → every `queries: <n> sum`
      line and `queries: PASS` equal the PC's, every `under:` and first-hit line as on the PC, the bench lines (rays
-     < 2 ms; points per box ≤ 0.1 µs; the move numbers recorded); screenshots read back;
+     < 6 ms; points per box ≤ 0.15 µs, the budgets set from the measurement on 2026-11-23; the move numbers
+     recorded); screenshots read back;
   2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` → the regenerated
      replay lines, `60 Hz PASS`;
   3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS`

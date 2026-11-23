@@ -25,12 +25,7 @@ int world_add(WorldHot& w, int kind, Entity e) {
         world_misuse("World::add<T>(): the kind is full (raise its capacity in nnh::component<T>())");
         return -1;
     }
-    const bool iterating = w.iterating > 0;
-    k.slots.take(slot, iterating);
-    if (iterating) w.pending = static_cast<std::uint32_t>(w.pending | kPendingFresh);
-    k.owner[slot] = static_cast<std::uint16_t>(entity);
-    slots[kind] = static_cast<std::uint16_t>(slot);
-    r[1] |= 1u << kind;
+    attach_component(w, kind, entity, r, slot);
     return slot;
 }
 

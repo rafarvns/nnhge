@@ -252,6 +252,7 @@ set(_nnh_entities_sources
     src/entities/world_destroy.cpp
     src/entities/world_flush.cpp
     src/entities/world_lifetime.cpp
+    src/entities/world_reserve.cpp
     src/entities/world_scene.cpp
     src/entities/world_spawn.cpp
     src/entities/world_stats.cpp

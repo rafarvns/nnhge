@@ -667,3 +667,26 @@ change. Scripts in `build/ref-021/` (not committed).
   C8FB9A41`), pc-release 257/257; `level.nnhs --pc` → `nnh: PASS (79 lines, frames 1-1553)` with
   `replay: done 900 frames sum B2418A28: 60 Hz PASS`; `entities/tests/check.nnhs --pc` → `nnh: PASS (112 lines)`.
   `nnh_tests` 2199 tests; `kMaxTests` 4096: no change needed.
+
+## Stage 1 results
+
+- **T1.1** `take_entity(w, slot)` and `attach_component(w, kind, entity, record, slot)` are inline in
+  `world_internal.hpp`; `World::spawn()` and `world_add()` call them. The 3ds-dev disassembly of `world_add` is
+  byte-identical to stage 0's (143 instructions); `World::spawn()` differs by one operand order (`cmp r0, ip` for
+  `cmp ip, r0`), still 109 instructions; `bench.o` of `examples/entities` identical. So spec 020's T7.6 common paths
+  (`world_add` ≈ 92, `spawn` ≈ 65) and console numbers stand.
+- **T1.2/T1.3** `src/entities/entities_internal.hpp` (`world_kind_of`, `ReserveRefusal`, `world_reserve`,
+  `world_component`) and `world_reserve.cpp` (61 lines). `world_reserve` finds every free slot first (`find_free`
+  only moves a hint past full words), then takes them with the shared helpers and writes the tags into the new record;
+  extra tags past the world's `tags_per_entity` are dropped (the prefab module asserts before). 3ds-dev: 264
+  instructions in all (21 stack accesses, mostly the slow paths' saves; the common path is read in T7.6).
+- Tests: `tests/entities/test_world_reserve.cpp` (10): `world_kind_of` on 3 and 32 kinds (= `kind_index<T>`, empty
+  world and null id → −1), `world_component`, the twin-world sequences (20 seeds × 2000 operations of spawns with
+  0–3 kinds in any order and 0–2 tags, destroys, removes, flushes, clears and spawns inside `each`, on kinds of 48 /
+  30 / 12 so full kinds and full worlds happen; every record word, bitmap, counter, owner and component byte compared
+  after each operation), a reservation inside a remove hook, and the refusals `Empty`, `WorldFull` (spawn miss + 1),
+  `KindFull` (the first full kind in call order, its misses + 1), `Clearing` (no counter), each leaving the rest of
+  the world byte-identical.
+- T1.4: ctest pc-debug 265/265, pc-release 257/257; 3ds-release and 3ds-dev without a warning; `nnh_tests` 2209;
+  `hello` sizes and `nm` lists equal stage 0's; `level.nnhs --pc` PASS (`B2418A28`), `entities/tests/check.nnhs --pc`
+  PASS (`C8FB9A41`).

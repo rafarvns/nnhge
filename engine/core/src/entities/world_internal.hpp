@@ -48,6 +48,30 @@ inline unsigned char* component_at(const WorldHot& w, int kind, int slot) {
 }
 inline bool world_busy(const WorldHot& w) { return w.iterating > 0 || w.cold->hook_depth > 0; }
 
+/// Marks free entity `slot` (from find_free) live — fresh during an iteration — and returns its handle. Its record
+/// already says "no kind, no tag" (create() and every destroy leave it so). Shared by spawn() and world_reserve()
+/// (spec 021): one piece of bookkeeping.
+inline Entity take_entity(WorldHot& w, int slot) {
+    const bool iterating = w.iterating > 0;
+    w.entities.take(slot, iterating);
+    if (iterating) w.pending = static_cast<std::uint32_t>(w.pending | kPendingFresh);
+    std::uint32_t* r = record_at(w, static_cast<std::uint32_t>(slot));
+    r[0] |= kEntityLive;
+    return make_handle<World>(static_cast<std::uint32_t>(slot), r[0] & 0xFFFFu);
+}
+/// Gives entity `entity` (record `r`) kind `kind`'s free `slot` (from find_free): live (fresh during an iteration),
+/// owned, in the record's slot field and kinds mask. The slot keeps its T{}. Shared by world_add() and
+/// world_reserve() (spec 021).
+inline void attach_component(WorldHot& w, int kind, int entity, std::uint32_t* r, int slot) {
+    KindHot& k = w.kinds[kind];
+    const bool iterating = w.iterating > 0;
+    k.slots.take(slot, iterating);
+    if (iterating) w.pending = static_cast<std::uint32_t>(w.pending | kPendingFresh);
+    k.owner[slot] = static_cast<std::uint16_t>(entity);
+    record_slots(w, r)[kind] = static_cast<std::uint16_t>(slot);
+    r[1] |= 1u << kind;
+}
+
 /// Destroys the component and leaves a T{} (the record's slot already cleared), quarantining its slot. Inline: destroy
 /// runs it for every component (plan 020, console bench refinement).
 inline void detach_component(WorldHot& w, int kind, int slot) {

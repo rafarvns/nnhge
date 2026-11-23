@@ -31,21 +31,21 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 1: the world's all-or-nothing reservation (entities-internal, pure)
 
-- [ ] **T1.1** Shared bookkeeping: inline `take_entity(w, slot)` and `attach_component(w, kind, entity, record, slot)`
+- [x] **T1.1** Shared bookkeeping: inline `take_entity(w, slot)` and `attach_component(w, kind, entity, record, slot)`
   in `world_internal.hpp`; `World::spawn()` and `world_add()` rewritten over them. No new test: spec 020's whole suite,
   the self-check `C8FB9A41` and the replay `B2418A28` are the test (run before and after). Files:
   `engine/core/src/entities/world_internal.hpp`, `world_spawn.cpp`, `world_components.cpp`. Covers FR-16.
-- [ ] **T1.2** `world_kind_of(world, type id)` (straight compares for the first four kinds, then a scan; empty world
+- [x] **T1.2** `world_kind_of(world, type id)` (straight compares for the first four kinds, then a scan; empty world
   −1) and `world_component(world, kind, slot)`. Files: `engine/core/src/entities/entities_internal.hpp`,
   `world_reserve.cpp`, CMake `_nnh_entities_sources`. Test: `tests/entities/test_world_reserve.cpp` (part 1: every
   registered kind, kind 5 of 32, unregistered → −1, equal to `kind_index<T>`). Covers FR-5, FR-14.
-- [ ] **T1.3** `world_reserve`: entity + one slot per kind + tags, all or nothing; refusals `Empty`, `Clearing` (no
+- [x] **T1.3** `world_reserve`: entity + one slot per kind + tags, all or nothing; refusals `Empty`, `Clearing` (no
   counter), `WorldFull` (spawn misses + 1), `KindFull` with the first full kind (its misses + 1); nothing else changes
   on a refusal (records, bitmaps, extents, counts compared before/after); during an iteration the slots are fresh and
   not visited; inside a remove hook allowed. Test: `test_world_reserve.cpp` (part 2): twin worlds on 20 seeded
   sequences of 2000 operations — reserve + plain copies vs `spawn` + `add<T>(e, value)` + `add_tag` — equal handles,
   slots, bytes, tags, stats; plus each refusal case. Covers FR-5, FR-8.
-- [ ] **T1.4** Stage end: ctest pc-debug and pc-release; 3ds-release without a warning; 3ds-dev `world_add`/`spawn`
+- [x] **T1.4** Stage end: ctest pc-debug and pc-release; 3ds-release without a warning; 3ds-dev `world_add`/`spawn`
   instruction counts equal T0.1's (± 2); `hello` sizes and `nm` equal T0.1. Files: plan.md ("Stage 1 results").
   Covers FR-16, II.
 

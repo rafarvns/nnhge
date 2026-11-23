@@ -278,7 +278,7 @@ spec; the order below is a proposal.
   0.05 µs per box). The platformer's level 1 got two turrets with line of sight whose bullets move by rays (in the
   replay's checksum)
 - [x] **Object pools** (Unity ObjectPool): fixed-size pools for bullets, particles and enemies, with handles that
-  detect stale use — [spec 020](../specs/020-entities/spec.md), **implemented 2026-11-23, console check pending**:
+  detect stale use — [spec 020](../specs/020-entities/spec.md), **implemented 2026-11-23**, passed on the Old 3DS:
   `<nnh/pool.hpp>` — `Pool<T, N>` (no allocation) and `Pool<T>::create(n)` (one block), lowest free slot, released
   slots quarantined until a flush, bound to a scene through D30 ([api/pool.md](api/pool.md)); the platformer's
   bullets and the example's ship use them

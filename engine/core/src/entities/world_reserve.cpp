@@ -19,7 +19,35 @@ int world_kind_of(const World& world, TypeId id) {
     return -1;
 }
 
-Entity world_reserve(World& world, const int* kinds, int count, std::uint16_t* slots, const Tag* tags, int tag_count,
+int world_kinds_of(const World& world, const TypeId* first_id, std::size_t stride, int count, int* out) {
+    const WorldHot* w = WorldAccess::hot(world);
+    if (w == nullptr) return count > 0 ? 0 : -1;
+    const TypeId* ids = w->ids; // the ids past kind_count are null: no count check for the first four
+    const auto* at = reinterpret_cast<const unsigned char*>(first_id);
+    for (int i = 0; i < count; ++i, at += stride) {
+        const TypeId id = *reinterpret_cast<const TypeId*>(at);
+        int k = -1;
+        if (id == nullptr) {
+            return i;
+        } else if (ids[0] == id) {
+            k = 0;
+        } else if (ids[1] == id) {
+            k = 1;
+        } else if (ids[2] == id) {
+            k = 2;
+        } else if (ids[3] == id) {
+            k = 3;
+        } else {
+            for (int j = 4; j < w->kind_count; ++j)
+                if (ids[j] == id) k = j;
+            if (k < 0) return i;
+        }
+        out[i] = k;
+    }
+    return -1;
+}
+
+Entity world_reserve(World& world, const int* kinds, int count, void** components, const Tag* tags, int tag_count,
                      ReserveRefusal& why, int* full_kind) {
     WorldHot* w = WorldAccess::hot(world);
     if (w == nullptr) {
@@ -36,6 +64,7 @@ Entity world_reserve(World& world, const int* kinds, int count, std::uint16_t* s
         why = ReserveRefusal::WorldFull;
         return {};
     }
+    int slots[kMaxKinds];
     for (int i = 0; i < count; ++i) {
         SlotTable& table = w->kinds[kinds[i]].slots;
         const int slot = table.find_free();
@@ -45,14 +74,17 @@ Entity world_reserve(World& world, const int* kinds, int count, std::uint16_t* s
             if (full_kind != nullptr) *full_kind = kinds[i];
             return {};
         }
-        slots[i] = static_cast<std::uint16_t>(slot);
+        slots[i] = slot;
     }
     const Entity e = take_entity(*w, entity);
     std::uint32_t* r = record_at(*w, static_cast<std::uint32_t>(entity));
-    for (int i = 0; i < count; ++i) attach_component(*w, kinds[i], entity, r, slots[i]);
+    for (int i = 0; i < count; ++i) {
+        attach_component(*w, kinds[i], entity, r, slots[i]);
+        components[i] = component_at(*w, kinds[i], slots[i]);
+    }
     const int n = tag_count < w->tags ? tag_count : w->tags;
     for (int i = 0; i < n; ++i) r[2 + i] = static_cast<std::uint32_t>(tags[i]); // a new record has no tag
-    why = ReserveRefusal::None;
+    why = n < tag_count ? ReserveRefusal::TagsDropped : ReserveRefusal::None;
     return e;
 }
 

@@ -268,6 +268,7 @@ set(_nnh_prefabs_sources
     src/prefabs/library_layout.cpp
     src/prefabs/library_queries.cpp
     src/prefabs/prefab_flatten.cpp
+    src/prefabs/prefab_spawn.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_prefabs_sources})
 add_library(nnh::core ALIAS nnh_core)

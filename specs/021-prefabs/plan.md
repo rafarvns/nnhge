@@ -717,3 +717,37 @@ change. Scripts in `build/ref-021/` (not committed).
   animation, gfx, pool or a standard container (`build/ref-021/inccheck.sh`); 8919 preprocessed lines, 0.44–0.49 s
   (`<nnh/entities.hpp>` 8555 lines, 0.47–0.49 s in the same session). ctest pc-debug 265/265, pc-release 257/257;
   3ds-release without a warning; `nnh_tests` 2241; `hello` sizes and `nm` lists equal stage 0's.
+
+## Stage 3–4 refinements and results
+
+- **Variants** (`prefab_flatten.cpp`): the base's entries keep their positions (so an inherited placement's entry
+  index stays valid); an own value of a base kind replaces that entry, the others are appended in call order; the
+  base's tags come first, then the own ones with duplicates dropped; the hook chain links to the nearest base with a
+  hook of its own (`hook_base`), its length counts every hook in it. A placement given by a variant for an inherited
+  kind can't be size-checked (inherited values' sizes aren't stored); `place()` makes valid offsets anyway.
+- **The reservation's interface changed inside the entities module** (still internal, no public change):
+  `world_reserve` writes each reserved component's **address** (`void** components`) instead of its slot number (the
+  prefab module only needs addresses: no `world_component` call per copy), and reports
+  `ReserveRefusal::TagsDropped` when it kept fewer tags than asked (the prefab module asserts on it; Release keeps the
+  first ones). `world_kinds_of(world, first_id, stride, count, out)` resolves a prefab's entries in one call (straight
+  compares for the first four kinds, then a scan) instead of one `world_kind_of` call per entry.
+- **Spawn** (`prefab_spawn.cpp`, 190 lines): checks (empty library, null or foreign prefab, empty world), the entries'
+  kinds in one call, overrides matched to entries (a kind twice asserts, the second ignored; an override-only kind is
+  appended after the entries), the position check, one `world_reserve`, then per entry `destroy` (types with a
+  destructor) and `copy` from the stored value or the override, the override-only kinds, the placement member, the
+  spawn counter, the hook chain base first. Refusals: clearing → null, nothing counted; a full capacity → a library
+  miss (and the world's own counter, inside the reservation), `WhenFull::Assert` logs `spawn of prefab "<name>": ...`
+  (`#<index>` in Release) and asserts; a kind the world doesn't store → a miss and an assert whatever `WhenFull` says.
+- **A library destroyed inside its own hook**: the destructor and move-assignment report it before changing anything
+  (Debug stops there with the block still the library's); Release marks the block doomed, the chain stops, and the
+  outermost spawn frees it.
+- Tests: `test_variants` (10), `test_spawn` (8: twin worlds byte-identical, lowest free and quarantined slots, only the
+  prefab's kinds and tags, no event with the engine shut down, spawns inside `each` and from a remove hook, several
+  libraries and worlds, `Counted`), `test_overrides` (5), `test_placement` (4), `test_spawn_hooks` (5),
+  `test_all_or_nothing` (7), `test_prefab_misuse` (3: the misuse list; 100 000 spawns/destroys with no allocation and
+  no log line; the library destroyed from its own nested hook). `test_world_reserve` gained the address and
+  dropped-tag case and `world_kinds_of`.
+- Stage ends: ctest pc-debug 265/265, pc-release 257/257 (prefab tests in both: the Release paths of every misuse),
+  3ds-release without a warning; `nnh_tests` 2285; `hello` sizes and `nm` equal stage 0's; `level.nnhs --pc` PASS
+  (`B2418A28`), `entities/tests/check.nnhs --pc` PASS (`C8FB9A41`). (One stage-3 run's pc-debug links failed with
+  "ld: memory exhausted" while another build was running on the machine; the rerun was clean.)

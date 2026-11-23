@@ -82,41 +82,41 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 3: variants (pure)
 
-- [ ] **T3.1** Flattening: entries replaced in place by kind, others appended in call order, inherited entries share
+- [x] **T3.1** Flattening: entries replaced in place by kind, others appended in call order, inherited entries share
   the base's values (owner bit; destroyed once), tags united (duplicates dropped, 9 → `LimitReached`), placement
   inherited or replaced, base null or of this library (else `InvalidArgument`). Files: `src/prefabs/prefab_flatten.cpp`,
   `library_add.cpp`. Test: `tests/prefabs/test_variants.cpp` (part 1; `Counted`: no copy for shared values, one
   destruction each). Covers FR-4.
-- [ ] **T3.2** Hook chains: own hook + link to the nearest hooked base, chain length ≤ 8 (9th → `LimitReached`), variant
+- [x] **T3.2** Hook chains: own hook + link to the nearest hooked base, chain length ≤ 8 (9th → `LimitReached`), variant
   of a variant of a variant; queries on variants (`kinds`, `tags`, `value<T>` reads the shared value). Files:
   `prefab_flatten.cpp`, `library_queries.cpp`. Test: `test_variants.cpp` (part 2; the chain's order is checked in
   stage 4 when hooks run). Covers FR-4, FR-11.
 
 ## Stage 4: spawning (pure)
 
-- [ ] **T4.1** `spawn(world, prefab)`: handle checks, kinds per entry (`world_kind_of`), `world_reserve`, copies in
+- [x] **T4.1** `spawn(world, prefab)`: handle checks, kinds per entry (`world_kind_of`), `world_reserve`, copies in
   entry order (destroy the slot's `T{}` when the type has a destructor, then copy), stats; returns the entity. Files:
   `src/prefabs/prefab_spawn.cpp`, `prefabs.hpp`. Test: `tests/prefabs/test_spawn.cpp` (twin worlds by hand: handles,
   slots, values, tags; lowest free slots; quarantined slots skipped; `events::stats()` unchanged; only the prefab's
   kinds and tags). Covers FR-5, FR-12, FR-13.
-- [ ] **T4.2** Overrides: `spawn_with` (replace an entry's value: constructed once, `Counted`; add a kind not in the
+- [x] **T4.2** Overrides: `spawn_with` (replace an entry's value: constructed once, `Counted`; add a kind not in the
   prefab, appended after the entries), the array form's duplicate kind asserts and the second is ignored; compile-time
   refusals (duplicate type, bare `Vec2`) documented in the test file. Files: `prefab_spawn.cpp`, `prefabs.hpp`. Test:
   `tests/prefabs/test_overrides.cpp` (twin worlds). Covers FR-7.
-- [ ] **T4.3** Placement: `spawn(world, p, at)` and `spawn_with(world, p, at, ...)` into a `Vec2` member and a `Rect`
+- [x] **T4.3** Placement: `spawn(world, p, at)` and `spawn_with(world, p, at, ...)` into a `Vec2` member and a `Rect`
   member (x, y only), the override of the placement kind (position wins), a position without placement asserts and
   the spawn continues without it. Files: `prefab_spawn.cpp`. Test: `tests/prefabs/test_placement.cpp` (part 1; the
   map sources in T5.2). Covers FR-7.
-- [ ] **T4.4** Hooks: `SpawnInfo` (position or none), the chain base first (call log), hooks that spawn (this library
+- [x] **T4.4** Hooks: `SpawnInfo` (position or none), the chain base first (call log), hooks that spawn (this library
   and another), destroy another entity, destroy the new entity (stale handle returned, the twin world agrees), add and
   remove components; spawns inside `each` (not visited) and from a world's remove hook. Files: `prefab_spawn.cpp`.
   Test: `tests/prefabs/test_spawn_hooks.cpp`. Covers FR-6, FR-4.
-- [ ] **T4.5** All or nothing: full world, full first/middle/override-only kind, unregistered kind (always asserts),
+- [x] **T4.5** All or nothing: full world, full first/middle/override-only kind, unregistered kind (always asserts),
   inside `clear()` (null, no miss, no assert); `WhenFull::Assert` (assert hook + error log naming the prefab) vs
   `WhenFull::Miss` (quiet); misses in the library's stats and in the world's (spawn misses / that kind's misses);
   nothing created on any refusal (counts, extents, records). Files: `prefab_spawn.cpp`. Test:
   `tests/prefabs/test_all_or_nothing.cpp`. Covers FR-8, FR-11.
-- [ ] **T4.6** [P] Misuse and cost: null/foreign handle, empty/moved-from library, a world that doesn't store a kind,
+- [x] **T4.6** [P] Misuse and cost: null/foreign handle, empty/moved-from library, a world that doesn't store a kind,
   more prefab tags than the world holds (assert; Release keeps the first), the library destroyed from its own hook
   (Debug: assert before anything changes; Release: freed when the outermost spawn returns); the allocation counter
   unchanged over 100 000 spawns/destroys after creation; no log line in the normal path. Files: tests, fixes where

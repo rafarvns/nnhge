@@ -100,6 +100,34 @@ std::uint32_t hash_string(const char* text);
 /// Frees the block after destroying the values its entries own.
 void library_teardown(PrefabBlock* b);
 
+/// Where a copy comes from (prefab_spawn.cpp, prefab_map.cpp): a position, and for a map object its size and itself.
+struct SpawnSource {
+    bool has_position = false;
+    bool rect_size = false; ///< a rectangle map object: a Rect member also gets `size` (unless keep_size)
+    Vec2 position{};
+    Vec2 size{};
+    const MapObject* object = nullptr;
+    int object_index = -1;
+};
+
+/// The spawn (FR-5..FR-8): checks, kinds, overrides, the world's reservation, copies, placement, hooks.
+Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
+                    const ComponentValue* overrides, int count);
+
+/// A map call's type → prefab memo (FR-9), keyed by the type string's pointer: a map stores equal strings once, so
+/// one lookup per distinct type; equal text at another pointer is only a second lookup, never a wrong answer.
+struct TypeCache {
+    const char* text = nullptr;
+    Prefab prefab{};
+    Prefab find(const PrefabLibrary& library, const char* type) {
+        if (type != text) {
+            text = type;
+            prefab = library.find(type);
+        }
+        return prefab;
+    }
+};
+
 /// A registration worked out before anything is written (library_add.cpp, prefab_flatten.cpp).
 struct PrefabPlan {
     std::uint32_t hash = 0;

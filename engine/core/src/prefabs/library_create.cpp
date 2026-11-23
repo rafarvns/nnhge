@@ -91,12 +91,13 @@ Result<PrefabLibrary> PrefabLibrary::create(const PrefabLibraryDesc& desc) {
 PrefabLibrary::~PrefabLibrary() {
     detail::PrefabBlock* b = block_;
     if (b == nullptr) return;
-    block_ = nullptr;
-    if (b->spawn_depth > 0) { // Debug stops here; Release frees it when the outermost spawn returns
+    if (b->spawn_depth > 0) { // Debug stops here, the library untouched; Release frees it after the outermost spawn
         detail::prefab_misuse("nnh::PrefabLibrary destroyed inside one of its own spawn hooks");
+        block_ = nullptr;
         b->doomed = true;
         return;
     }
+    block_ = nullptr;
     detail::library_teardown(b);
 }
 
@@ -104,6 +105,8 @@ PrefabLibrary::PrefabLibrary(PrefabLibrary&& other) noexcept : block_(other.bloc
 
 PrefabLibrary& PrefabLibrary::operator=(PrefabLibrary&& other) noexcept {
     if (this == &other) return *this;
+    if (block_ != nullptr && block_->spawn_depth > 0) // Debug stops here, the library untouched
+        detail::prefab_misuse("nnh::PrefabLibrary replaced inside one of its own spawn hooks");
     PrefabLibrary old; // its destructor frees the replaced block
     old.block_ = block_;
     block_ = other.block_;

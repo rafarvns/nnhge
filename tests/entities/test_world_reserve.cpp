@@ -78,13 +78,13 @@ struct Order {
 
 /// By reservation, then plain copies into the reserved slots.
 Entity spawn_reserved(World& a, const Order& o) {
-    std::uint16_t slots[3];
+    void* slots[3];
     ReserveRefusal why{};
     int full = -1;
     const Entity e = nnh::detail::world_reserve(a, o.kinds, o.count, slots, o.tags, o.tag_count, why, &full);
     CHECK((e && why == ReserveRefusal::None) || (!e && why != ReserveRefusal::None));
     for (int i = 0; e && i < o.count; ++i) {
-        void* p = nnh::detail::world_component(a, o.kinds[i], slots[i]);
+        void* p = slots[i];
         if (o.kinds[i] == 0) *static_cast<Pos*>(p) = {o.v, o.v + 1};
         if (o.kinds[i] == 1) *static_cast<Vel*>(p) = {o.v + 2, o.v + 3};
         if (o.kinds[i] == 2) *static_cast<Hp*>(p) = {o.v + 4};
@@ -214,7 +214,7 @@ NNH_TEST(world_reserve_inside_a_remove_hook_is_allowed) {
     const nnh::ComponentDesc kinds[] = {nnh::component<Pos>(8, [](World& w, Entity, Pos&) {
                                             if (w.clearing()) return; // the world's own end
                                             const int k[1] = {0};
-                                            std::uint16_t s[1];
+                                            void* s[1];
                                             ReserveRefusal why{};
                                             made = nnh::detail::world_reserve(*world, k, 1, s, nullptr, 0, why, nullptr);
                                         }),
@@ -233,7 +233,7 @@ NNH_TEST(world_reserve_inside_a_remove_hook_is_allowed) {
 NNH_TEST(world_reserve_refuses_an_empty_world) {
     World w;
     const int k[1] = {0};
-    std::uint16_t s[1];
+    void* s[1];
     ReserveRefusal why{};
     CHECK(!nnh::detail::world_reserve(w, k, 1, s, nullptr, 0, why, nullptr));
     CHECK(why == ReserveRefusal::Empty);
@@ -247,7 +247,7 @@ NNH_TEST(world_reserve_refuses_a_full_world_and_counts_a_spawn_miss) {
         w->spawn();
     }
     const int k[2] = {0, 1};
-    std::uint16_t s[2];
+    void* s[2];
     ReserveRefusal why{};
     int full = 99;
     CHECK(!nnh::detail::world_reserve(a, k, 2, s, nullptr, 0, why, &full));
@@ -267,7 +267,7 @@ NNH_TEST(world_reserve_refuses_the_first_full_kind_and_takes_nothing) {
         w->add<Hp>(e);
     }
     const int k[3] = {0, 2, 1}; // Hp (2) is the first full kind in this order
-    std::uint16_t s[3];
+    void* s[3];
     ReserveRefusal why{};
     int full = -1;
     CHECK(!nnh::detail::world_reserve(a, k, 3, s, nullptr, 0, why, &full));
@@ -283,7 +283,7 @@ NNH_TEST(world_reserve_inside_clear_refuses_without_counting) {
     static ReserveRefusal seen = ReserveRefusal::None;
     const nnh::ComponentDesc kinds[] = {nnh::component<Pos>(4, [](World&, Entity, Pos&) {
         const int k[1] = {0};
-        std::uint16_t s[1];
+        void* s[1];
         if (nnh::detail::world_reserve(*world, k, 1, s, nullptr, 0, seen, nullptr)) seen = ReserveRefusal::None;
     })};
     World w = static_cast<World&&>(World::create({.max_entities = 4}, kinds).value());
@@ -295,10 +295,39 @@ NNH_TEST(world_reserve_inside_clear_refuses_without_counting) {
     world = nullptr;
 }
 
+NNH_TEST(world_reserve_gives_each_components_address_and_reports_dropped_tags) {
+    World w = world_test::make_world(4, 4, 1);
+    const int k[2] = {1, 2};
+    void* at[2];
+    ReserveRefusal why{};
+    const Entity e = nnh::detail::world_reserve(w, k, 2, at, kTags, 2, why, nullptr);
+    CHECK(e && why == ReserveRefusal::TagsDropped);
+    CHECK(at[0] == w.get<Vel>(e) && at[1] == w.get<Hp>(e) && w.has_tag(e, kTags[0]) && !w.has_tag(e, kTags[1]));
+}
+
+NNH_TEST(world_kinds_of_maps_a_strided_list_of_ids) {
+    World w = world_test::make_world();
+    struct Entry {
+        nnh::detail::TypeId id;
+        int pad[3];
+    };
+    const Entry list[3] = {{nnh::detail::type_id<Hp>(), {}}, {nnh::detail::type_id<Pos>(), {}},
+                           {nnh::detail::type_id<K<1>>(), {}}};
+    int out[3] = {-9, -9, -9};
+    CHECK(nnh::detail::world_kinds_of(w, &list[0].id, sizeof(Entry), 2, out) == -1 && out[0] == 2 && out[1] == 0);
+    CHECK(nnh::detail::world_kinds_of(w, &list[0].id, sizeof(Entry), 3, out) == 2);
+    World big = make_32(std::make_integer_sequence<int, 32>{});
+    const nnh::detail::TypeId ids[3] = {nnh::detail::type_id<K<30>>(), nnh::detail::type_id<K<2>>(), nullptr};
+    CHECK(nnh::detail::world_kinds_of(big, ids, sizeof ids[0], 2, out) == -1 && out[0] == 30 && out[1] == 2);
+    CHECK(nnh::detail::world_kinds_of(big, ids, sizeof ids[0], 3, out) == 2); // a null id is no kind
+    CHECK(nnh::detail::world_kinds_of(World{}, ids, sizeof ids[0], 1, out) == 0);
+    CHECK(nnh::detail::world_kinds_of(World{}, ids, sizeof ids[0], 0, out) == -1);
+}
+
 NNH_TEST(world_reserve_writes_its_tags_in_order_and_no_kind_is_allowed) {
     World w = world_test::make_world(4, 4, 4);
     const Tag tags[3] = {kTags[2], kTags[0], kTags[3]};
-    std::uint16_t s[1];
+    void* s[1];
     ReserveRefusal why{};
     const Entity e = nnh::detail::world_reserve(w, nullptr, 0, s, tags, 3, why, nullptr);
     CHECK(e && why == ReserveRefusal::None);

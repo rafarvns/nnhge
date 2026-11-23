@@ -90,4 +90,21 @@ bool take_bool(Properties& props, const char* name, const std::string& where, bo
     return true;
 }
 
+bool check_collision_layers(const Properties& props, const std::string& where, const char* zero_hint,
+                            std::string& error) {
+    for (const Property& p : props) {
+        if (p.name != "collision_layers") continue;
+        if (p.type != PropertyType::Int) {
+            error = where + ": property \"collision_layers\" must be an integer (the layer bits; in Tiled an enum " +
+                    "with \"allow multiple values\" saved as a number)";
+            return false;
+        }
+        if (p.integer == 0) {
+            error = where + ": property \"collision_layers\" must not be 0: " + zero_hint;
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace nnh::assetc

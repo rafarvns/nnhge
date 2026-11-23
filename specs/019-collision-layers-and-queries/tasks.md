@@ -138,17 +138,17 @@ refinements", as in plans 012–018.
 
 ## Stage 5: Tiled `collision_layers` in the converter
 
-- [ ] **T5.1** `check_collision_layers`: an int (a flag enum saved as a number carries `propertytype`, accepted) and
+- [x] **T5.1** `check_collision_layers`: an int (a flag enum saved as a number carries `propertytype`, accepted) and
   ≠ 0, on tile layers and on tiles, kept as a property; refusals `file: layer "water": property "collision_layers"
   must be an integer` and `... must not be 0: untick collision instead` (exact text in the test). Fixtures (generated
   by `make_fixtures.py`): `good_collision_layers.tmj`, `bad_collision_layers_type.tmj`, `bad_collision_layers_zero.tmj`.
   Files: `tools/assetc/src/tiled_properties.{hpp,cpp}`, `tiled_layer_data.cpp`, `tiled_tileset.cpp`,
   `tests/data/maps/*`, `tools/assetc/CMakeLists.txt` (0.4.0). Test: `tools/assetc/tests/test_tiled_collision_layers.cpp`.
   Covers FR-7.
-- [ ] **T5.2** End to end: the good fixture converted by the build and loaded has the expected layer and tile sets and
+- [x] **T5.2** End to end: the good fixture converted by the build and loaded has the expected layer and tile sets and
   filtered grids. Files: tests only (`tests/tilemap/load_fixture.hpp` reuse). Test:
   `test_map_load_collision_layers.cpp` (part 2). Covers FR-6, AC-3.
-- [ ] **T5.3** [P] Old maps: `good.tmj` and `level1.tmj` convert to the same bytes as T0.3 (SHA-256); the libFuzzer
+- [x] **T5.3** [P] Old maps: `good.tmj` and `level1.tmj` convert to the same bytes as T0.3 (SHA-256); the libFuzzer
   map target of `nnh-assetc` gets a seed with the property. Files: plan.md ("Stage 5 results"). Covers FR-7, AC-3.
 
 ## Stage 6: the platformer's swap (same play)

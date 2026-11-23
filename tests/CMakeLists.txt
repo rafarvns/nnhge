@@ -657,6 +657,9 @@ file(WRITE ${_maps_out}/bad_too_many_objects.tmj
        \"layers\": [{\"type\": \"objectgroup\", \"name\": \"things\", \"objects\": [${_objects}{\"id\": 1, \"x\": 0, \"y\": 0}]}]}\n")
 add_test(NAME map_convert_accepts_good
     COMMAND nnh_assetc map ${_maps}/good.tmj ${_maps_out}/good_check.nnhmap --assets ${_maps})
+add_test(NAME map_convert_accepts_good_collision_layers
+    COMMAND nnh_assetc map ${_maps}/good_collision_layers.tmj ${_maps_out}/good_collision_layers_check.nnhmap
+            --assets ${_maps})
 foreach(case "infinite|bad_infinite.tmj: infinite maps aren't supported"
              "isometric|bad_isometric.tmj: isometric maps aren't supported"
              "hexagonal|bad_hexagonal.tmj: hexagonal maps aren't supported"
@@ -678,7 +681,9 @@ foreach(case "infinite|bad_infinite.tmj: infinite maps aren't supported"
              "diagonal_non_square|bad_diagonal_non_square.tmj: layer .ground.: cell [(]1, 0[)] is flipped diagonally, which needs square tiles"
              "animation|bad_animation.tmj: tile 1: animation frame 1: .tileid. must be a whole number from 0 to 7"
              "compressed|bad_compressed.tmj: layer .ground.: compressed layer data [(]zlib[)] isn't supported: save the layer format as CSV"
-             "broken_json|bad_broken_json.tmj: line 3, column 19: expected ',' or '}'")
+             "broken_json|bad_broken_json.tmj: line 3, column 19: expected ',' or '}'"
+             "collision_layers_type|bad_collision_layers_type.tmj: layer .water.: property .collision_layers. must be an integer"
+             "collision_layers_zero|bad_collision_layers_zero.tmj: layer .water.: property .collision_layers. must not be 0: untick collision instead")
     string(REPLACE "|" ";" case "${case}")
     list(GET case 0 name)
     list(GET case 1 expected)
@@ -748,7 +753,16 @@ add_custom_command(OUTPUT ${_maps_out}/level1.nnhmap
     DEPFILE ${_maps_out}/level1.nnhmap.d
     COMMENT "Map examples/platformer/assets/levels/level1.tmj (tests)"
     VERBATIM)
-add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap ${_maps_out}/level1.nnhmap)
+# The collision layers fixture (spec 019 T5.2), loaded by test_map_load_collision_layers.cpp.
+add_custom_command(OUTPUT ${_maps_out}/good_collision_layers.nnhmap
+    COMMAND nnh_assetc map ${_maps}/good_collision_layers.tmj ${_maps_out}/good_collision_layers.nnhmap
+            --assets ${_maps} --depfile ${_maps_out}/good_collision_layers.nnhmap.d
+    DEPENDS ${_maps}/good_collision_layers.tmj nnh_assetc
+    DEPFILE ${_maps_out}/good_collision_layers.nnhmap.d
+    COMMENT "Map tests/data/maps/good_collision_layers.tmj"
+    VERBATIM)
+add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap ${_maps_out}/level1.nnhmap
+                                        ${_maps_out}/good_collision_layers.nnhmap)
 add_dependencies(nnh_tests nnh_test_maps)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_MAPS_DIR="${_maps_out}")
 

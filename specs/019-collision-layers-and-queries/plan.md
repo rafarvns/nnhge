@@ -614,3 +614,38 @@ Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   `objdump -d` is identical to stage 0's on pc-release and 3ds-release (`build/ref-019/map_collision.*.stage4.dis`);
   `compare.sh`: every reference screenshot identical. `nnh_tests` 1991 tests; ctest pc-debug 258/258, pc-release
   252/252; 3ds-release builds without a warning.
+
+## Stage 5 refinements and results
+
+- `check_collision_layers(props, where, zero_hint, error)` (`tiled_properties.{hpp,cpp}`), called after
+  `collision`/`solid`/`one_way` are taken from tile layers and tiles. The refusals:
+  `<file>: layer "water": property "collision_layers" must be an integer (the layer bits; in Tiled an enum with
+  "allow multiple values" saved as a number)`, `<file>: layer "water": property "collision_layers" must not be 0:
+  untick collision instead`, and for a tile `<file>: tile 1: ... must not be 0: remove solid or one_way instead` (a
+  tile has no `collision` flag to untick). A flag enum saved as a number is an `int` with a `propertytype`: accepted;
+  saved as a string (an enum without "save as number") it is refused as not an integer.
+- **Fixtures are written by hand** like the other Tiled fixtures (`make_fixtures.py` only makes PNGs):
+  `good_collision_layers.tmj` (bits world 1, water 2, plank 4, boat 8: a "water" layer on boat, a solid tile on
+  water and a one-way tile on world | plank, as Tiled writes a flag enum), `bad_collision_layers_type.tmj`,
+  `bad_collision_layers_zero.tmj`; ctests `map_convert_accepts_good_collision_layers` and
+  `map_convert_{rejects,explains}_collision_layers_{type,zero}`.
+- T5.2: the good fixture is converted by the tests' build (`good_collision_layers.nnhmap`) and loaded by
+  `test_map_load_collision_layers.cpp`: the expected layer and tile sets, `collision_layers_at` unions, filtered
+  grids for world, boat and water, the property still readable.
+- T5.3: `nnh-assetc` 0.4.0 converts `good.tmj` and `level1.tmj` to the same bytes as 0.3.0 (SHA-256 as in stage 0).
+  The converter's map fuzz seed (`kMapSeed`/`kSetSeed` in `tools/assetc/tests/test_fuzz_assetc.cpp`, also the seed
+  for the libFuzzer `fuzz_assetc_map`) carries `collision_layers` on a layer and on a tile.
+
+## Stage 6 refinements and results
+
+- `examples/platformer/layers.hpp` puts the layers in a namespace (`layers::kWorld`, `kPlayer`, `kCoin`, `kEnemy`,
+  `kEnemyBullet`, `kPlayerMask = kWorld | kCoin`, `kBulletMask = kWorld | kPlayer`): `kPlayer` alone would clash
+  with the platformer's draw-layer enum.
+- `CoinBook::Coin` gained `layers` (`kCoin`; `kNoLayers` once taken: the `taken_` array is gone, `taken(i)` reads the
+  layers); `collect(box, mask, taken, capacity)` is one `boxes_overlapping` over `box_view(coins_, count_,
+  &Coin::bounds, &Coin::layers)` into a local buffer of `kCapacity` indices, so every overlapped coin is taken even
+  past the caller's capacity, as before. `LevelPlay` moves the player through `collision_grid(layers::kPlayerMask)`
+  (outside Solid as before) and collects with the same mask.
+- T6.2: ctest `platformer_replay_matches_script` passes and `nnh run platformer --pc --no-build --script
+  examples/platformer/tests/level.nnhs` → `nnh: PASS (74 lines, frames 1–1553)`, both with the **unchanged**
+  checksum lines; `compare.sh`: level 1 and the bench identical.

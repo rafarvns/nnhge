@@ -136,7 +136,8 @@ bool read_tile_layer(json::Ref layer, const Map& map, const std::string& file, C
     if (!f.ok() || !read_settings(layer, f, out)) return ctx.fail(file, f.error());
     std::string error;
     if (!read_properties(layer.get("properties"), where, out.properties, error) ||
-        !take_bool(out.properties, "collision", where, out.collision, error)) {
+        !take_bool(out.properties, "collision", where, out.collision, error) ||
+        !check_collision_layers(out.properties, where, "untick collision instead", error)) {
         return ctx.fail(file, error);
     }
     std::vector<std::uint32_t> gids;

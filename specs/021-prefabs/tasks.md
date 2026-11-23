@@ -1,6 +1,6 @@
 # Tasks 021: Prefabs
 
-Status: approved-ready (2026-11-23: written from the approved spec; waiting for the maintainer's approval of the plan)
+Status: approved (2026-11-23 by the maintainer, with the plan's six decisions as recommended)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the

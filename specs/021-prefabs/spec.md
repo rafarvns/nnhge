@@ -269,7 +269,7 @@ doesn't use prefabs pays nothing, and entities keep working without them.
   3DS (FR-13); the example and scripts run in the simulator and on the console.
 - **II** — one block per library sized at creation; the plan states the bytes per prefab, per entry and per stored value
   (expected: a few tens of bytes per prefab plus 16 per entry plus the values; 128 prefabs with 4 components of 16
-  bytes each well under 16 KB); costs measured on an Old 3DS (AC-7).
+  bytes each about 26 KB on the 3DS, as the plan computes); costs measured on an Old 3DS (AC-7).
 - **III** — one light header over the entities header (no standard containers or `<functional>`), templates limited to
   registration and typed overrides; `hello` unaffected; build times measured (AC-8).
 - **IV** — no engine events for spawns (FR-12); the game's events and hooks cover them; state is queried.

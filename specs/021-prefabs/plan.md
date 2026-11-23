@@ -1,6 +1,6 @@
 # Plan 021: Prefabs
 
-Status: approved-ready (2026-11-23: written from the approved spec; waiting for the maintainer's approval of the plan)
+Status: approved (2026-11-23 by the maintainer, with the plan's six decisions as recommended)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D36 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds, `ComponentDesc`, tags, handles, quarantine, `SmallFunction` hooks; D35), spec 002
 (asserts, logs, `Result`, tagged memory, profiler), spec 012 (`Tilemap`, `MapObject`, `Properties`; the converter and

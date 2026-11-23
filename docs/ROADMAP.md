@@ -132,7 +132,9 @@ results" and "Stage 10 results".
 - [x] Event bus + scenes ([spec 001](../specs/001-event-bus-and-scenes/spec.md)): `<nnh/events.hpp>`, `ButtonPressed`/`ButtonReleased`, `<nnh/scene.hpp>` + `nnh::run()`, `examples/scenes` (2026-11-17)
 - [x] `examples/scenes` run on a real 3DS (2026-11-17)
 - [x] Input ([spec 003](../specs/003-full-input/spec.md)): Circle Pad, C-Stick/ZL/ZR (New 3DS), touch, opt-in Circle Pad → D-Pad mirror, `TouchStarted`/`TouchEnded`; PC keyboard, mouse = touch, gamepad with hot-plug; `examples/input` — verified on PC and an Old 3DS XL (2026-11-18)
-- [ ] C-Stick and ZL/ZR on a real New 3DS (and measure the C-Stick range) — maintainer, when one is available
+- [ ] C-Stick and ZL/ZR on a real New 3DS (and measure the C-Stick range) — **open for anyone with a New 3DS / New 2DS**
+  (the maintainer has only an Old 3DS XL; 2026-11-22). `examples/input` shows both; a `.nnhs` script can drive them
+  (`nnh` refuses C-Stick/ZL/ZR commands on an Old 3DS, so the same script needs the New model).
 
 ## M2 — 2D graphics
 - [x] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md): `<nnh/texture.hpp>` (`IMAGES` in `nnh_add_game`), `gfx::draw`/shapes/layers/`Camera2D`, draw list ready for 3D passes and stereo, `examples/sprites` — verified on PC and an Old 3DS XL (2026-11-18)

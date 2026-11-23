@@ -259,6 +259,17 @@ set(_nnh_entities_sources
     src/entities/world_tags.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_entities_sources})
+# Prefabs (spec 021, D36): libraries of flattened prototypes spawned into worlds. Only prefab_map.cpp includes
+# <nnh/tilemap.hpp>, so a game that spawns from code only links no tilemap code.
+set(_nnh_prefabs_sources
+    src/prefabs/library_add.cpp
+    src/prefabs/library_create.cpp
+    src/prefabs/library_find.cpp
+    src/prefabs/library_layout.cpp
+    src/prefabs/library_queries.cpp
+    src/prefabs/prefab_flatten.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_prefabs_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

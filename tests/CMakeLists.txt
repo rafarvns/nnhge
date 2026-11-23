@@ -204,6 +204,11 @@ add_executable(nnh_tests
     pool/test_pool_runtime.cpp
     pool/test_pool_scene.cpp
     pool/test_slot_bits.cpp
+    prefabs/test_add.cpp
+    prefabs/test_library_create.cpp
+    prefabs/test_library_layout.cpp
+    prefabs/test_names.cpp
+    prefabs/test_queries.cpp
     remote/test_remote_input.cpp
     remote/test_remote_reader.cpp
     remote/test_remote_records.cpp

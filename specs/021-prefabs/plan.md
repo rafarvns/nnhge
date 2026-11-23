@@ -690,3 +690,30 @@ change. Scripts in `build/ref-021/` (not committed).
 - T1.4: ctest pc-debug 265/265, pc-release 257/257; 3ds-release and 3ds-dev without a warning; `nnh_tests` 2209;
   `hello` sizes and `nm` lists equal stage 0's; `level.nnhs --pc` PASS (`B2418A28`), `entities/tests/check.nnhs --pc`
   PASS (`C8FB9A41`).
+
+## Stage 2 refinements and results
+
+- **Files** as planned: `include/nnh/prefabs.hpp`, `include/nnh/detail/prefab_values.hpp` (`KindId`/`kind_id<T>()`,
+  `ComponentValue`/`component_value<T>()`, `Placement`/`place<C, M>()`, the copy/destroy function templates,
+  `distinct_types<T...>()`), `src/prefabs/prefab_internal.hpp` (`PrefabEntry`, `PrefabRecord`, `PrefabBlock`,
+  `PrefabPlan`, `PrefabAccess`, log channel and memory tag `prefabs`), `library_layout.{hpp,cpp}`,
+  `library_create.cpp`, `library_find.cpp`, `library_add.cpp`, `prefab_flatten.cpp`, `library_queries.cpp`.
+- **Overload resolution of `add` and `spawn_with`.** The variadic forms are constrained (`requires`) to class types
+  that are not `ComponentValue` (and, for the first `spawn_with` form, not `Vec2`), so `add(name, options, list, n)`
+  and `spawn_with(world, p, at_ptr, list, n)` always pick the array forms. Consequence (documented): a prefab value
+  must be a class type (`int` alone is not a component value; wrap it in a struct).
+- **Duplicate override types** are a `static_assert` through `detail::distinct_types<T...>()`.
+- **Placement checks:** a placement member past its component's end is `InvalidArgument` when the component's value
+  is the registration's own (the size is known there); `place()` can't produce one anyway.
+- **Records** are 72 bytes on the 3DS and 80 on 64-bit hosts, entries 16 / 32, as planned (`static_assert`-like
+  checks in `test_library_layout.cpp`); the plan's example (128 prefabs × 4 values of 16 bytes) is 26 624 bytes plus
+  the header on the 3DS.
+- **Stamps** come from a counter in `library_create.cpp` (1..65 535, wrapping to 1).
+- Tests (`tests/prefabs/`, 32): `test_library_layout` (5), `test_library_create` (6), `test_names` (6: FNV vectors,
+  1000 names, the three `find` forms, `"costarring"`/`"liquid"` — a real FNV-1a 32 collision — refused, names found
+  on a shared slot and across the table's wrap-around, a full library of 128), `test_add` (10: order, tags, placement,
+  hook, `Counted` balance, each refusal with the block's hash unchanged, alignment, the array form), `test_queries` (5).
+- T2.6: a TU including only `<nnh/prefabs.hpp>` pulls 59 headers, none of tilemap, data, collision, tween,
+  animation, gfx, pool or a standard container (`build/ref-021/inccheck.sh`); 8919 preprocessed lines, 0.44–0.49 s
+  (`<nnh/entities.hpp>` 8555 lines, 0.47–0.49 s in the same session). ctest pc-debug 265/265, pc-release 257/257;
+  3ds-release without a warning; `nnh_tests` 2241; `hello` sizes and `nm` lists equal stage 0's.

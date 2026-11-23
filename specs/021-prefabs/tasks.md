@@ -51,32 +51,32 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 2: the library — creation, names, registration, queries (pure)
 
-- [ ] **T2.1** Block layout: pure function from a description and the flavour (names or not) to offsets and total
+- [x] **T2.1** Block layout: pure function from a description and the flavour (names or not) to offsets and total
   (header, hashes, table = power of two ≥ 2 × prefabs, records, names, entries, values aligned to 16). Files:
   `engine/core/src/prefabs/library_layout.{hpp,cpp}`, `prefab_internal.hpp`. Test:
   `tests/prefabs/test_library_layout.cpp` (1 and 1024 prefabs, 0 entries, the 128 × 4 × 16 example ≈ 26 KB as in
   plan.md, PC and 3DS-sized records via `sizeof` checks). Covers FR-1, II.
-- [ ] **T2.2** `PrefabLibraryDesc`, `PrefabLibrary::create` (capacities 0/1025/−1, entries −1/65 536, value bytes −1 /
+- [x] **T2.2** `PrefabLibraryDesc`, `PrefabLibrary::create` (capacities 0/1025/−1, entries −1/65 536, value bytes −1 /
   over 1 MiB → `InvalidArgument`; allocation failure → `OutOfMemory`), the stamp, destructor, move, moved-from (queries
   answer nothing, commands assert), tag `prefabs`. Files: `engine/core/include/nnh/prefabs.hpp`,
   `detail/prefab_values.hpp`, `src/prefabs/library_create.cpp`, CMake `_nnh_prefabs_sources`. Test:
   `tests/prefabs/test_library_create.cpp` (block size = layout via tag stats). Covers FR-1, FR-15.
-- [ ] **T2.3** Names: `prefab_name` (constexpr, sized), the one-pass run-time hash (equal to `detail::fnv1a32` on the
+- [x] **T2.3** Names: `prefab_name` (constexpr, sized), the one-pass run-time hash (equal to `detail::fnv1a32` on the
   FNV test vectors and on 1000 generated names), the open-addressing table (insert, probe, wrap-around at the end of
   the table, full at `max_prefabs`), `find` (three forms, unknown → null). Files: `src/prefabs/library_find.cpp`. Test:
   `tests/prefabs/test_names.cpp` (with two hand-found colliding probes: different names landing on the same table slot).
   Covers FR-3, FR-14.
-- [ ] **T2.4** Registration without variants: `add(name, options, values...)` and the array form; `component_value<T>`,
+- [x] **T2.4** Registration without variants: `add(name, options, values...)` and the array form; `component_value<T>`,
   `place<C, M>`; checks before writes (name, duplicate hash, a kind twice, 33 entries, 9 tags, `kNoTag` inside, the
   placement kind not among the entries, capacities with alignment); values copy-constructed in call order; names kept
   in Debug/Development (31 bytes). Files: `src/prefabs/library_add.cpp`, `prefabs.hpp`, `detail/prefab_values.hpp`.
   Test: `tests/prefabs/test_add.cpp` (block hash unchanged after each refusal; `Counted` copies at registration only
   and destructions at the library's end; a hook-only prefab; a commented list of the compile-time refusals: not
   copyable, `alignas(32)`, a non-Vec2/Rect member). Covers FR-2, FR-3, FR-15.
-- [ ] **T2.5** [P] Queries and stats: `count`, `capacity`, `valid` (null, out of range, another library's stamp),
+- [x] **T2.5** [P] Queries and stats: `count`, `capacity`, `valid` (null, out of range, another library's stamp),
   `name` (Debug/Development; Release path `""`), `kinds`, `tags`, `has<T>`, `value<T>`, `stats()`. Files:
   `src/prefabs/library_queries.cpp`. Test: `tests/prefabs/test_queries.cpp`. Covers FR-11, FR-3.
-- [ ] **T2.6** Stage end: ctest; include check (a TU including only `<nnh/prefabs.hpp>` preprocesses without
+- [x] **T2.6** Stage end: ctest; include check (a TU including only `<nnh/prefabs.hpp>` preprocesses without
   `tilemap`, `data`, `collision`, `tween`, `animation`, `gfx` or a standard container header; `build/ref-021/inccheck.sh`);
   `hello` sizes equal T0.1. Files: plan.md ("Stage 2 results"). Covers FR-16, III.
 

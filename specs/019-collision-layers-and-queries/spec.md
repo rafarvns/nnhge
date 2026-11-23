@@ -1,7 +1,7 @@
 # Spec 019: Collision layers and queries
 
 Status: approved (2026-11-22, maintainer pre-approved recommendations: every open question below is answered with the
-recommended answer)
+recommended answer); **implemented 2026-11-23**, console check (T10.2) and Linux runs (T9.1) pending
 Author: NNHGE maintainers · Date: 2026-11-22
 Depends on: [spec 012](../012-tilemaps-and-collision/spec.md) (`<nnh/collision.hpp>`: boxes, `Grid`, `Cell`,
 `move`, `cells_touching`; `<nnh/tilemap.hpp>`: collision layers, solid/one-way tiles, `collision_grid()`, properties,

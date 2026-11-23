@@ -61,8 +61,19 @@ NNH_TEST(the_player_out_of_range_is_not_seen) {
     World w;
     TurretBook book;
     book.add({0, 0, 16, 16});
-    book.update(w.g.grid, {300, 0, 12, 14}); // 300 px away: beyond kRangeX
-    CHECK(!book.turret(0).sees);
+    book.add({300, 0, 16, 16});
+    book.update(w.g.grid, {300, 0, 12, 14}); // 300 px right of turret 0, on turret 1
+    CHECK(!book.turret(0).sees && book.turret(1).sees);
+    book.update(w.g.grid, {0, 0, 12, 14}); // 300 px left of turret 1
+    CHECK(book.turret(0).sees && !book.turret(1).sees);
+}
+
+NNH_TEST(planks_never_hide_the_player_below_either) {
+    World w;
+    TurretBook book;
+    book.add({202, 0, 16, 16});              // centre (210, 8): above the plank of row 2 (not on a grid line)
+    book.update(w.g.grid, {204, 48, 12, 14}); // centre (210, 55): below it, straight down through its top
+    CHECK(book.turret(0).sees);
 }
 
 NNH_TEST(a_turret_fires_every_90_frames_while_it_sees) {
@@ -86,6 +97,8 @@ NNH_TEST(bullets_aim_in_eight_directions) {
     CHECK(TurretBook::aim({50, 50}) == Vec2(1.375f, 1.375f));
     CHECK(TurretBook::aim({-50, 40}) == Vec2(-1.375f, 1.375f));
     CHECK(TurretBook::aim({30, -45}) == Vec2(1.375f, -1.375f));
+    CHECK(TurretBook::aim({100, 39}) == Vec2(2, 0) && TurretBook::aim({100, 45}) == Vec2(1.375f, 1.375f));
+    CHECK(TurretBook::aim({39, 100}) == Vec2(0, 2) && TurretBook::aim({45, -100}) == Vec2(1.375f, -1.375f));
 }
 
 NNH_TEST(a_fast_bullet_stops_flush_at_a_one_cell_wall) {

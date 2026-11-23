@@ -1,6 +1,7 @@
 # Tasks 019: Collision layers and queries
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: approved (2026-11-22, maintainer pre-approved); stages 0–8 and 11 done 2026-11-23; T9.1 (VM 120, the lead)
+and T10.2 (Old 3DS, the maintainer) pending, T10.2 prepared in plan.md "Stage 10: console run (prepared)"
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -224,7 +225,7 @@ refinements", as in plans 012–018.
   `level.nnhs --pc` → PASS; a PC screenshot (`PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=<frame chosen here>`) read
   back: a turret's sight line to the player and a bullet stopped flush at a wall (frame recorded in plan.md). Covers
   AC-4 step 2.
-- [ ] **T8.3** [P] Mutation pass as in plan 018: hand mutants of `src/collision/*` (new files), the tilemap's masked
+- [x] **T8.3** [P] Mutation pass as in plan 018: hand mutants of `src/collision/*` (new files), the tilemap's masked
   rule, slots and loader, the converter check, the coin book and turrets, applied one at a time with the whole
   `nnh_tests`; survivors become tests. Files: plan.md ("Mutation testing"). Covers VI.
 - [x] **T8.4** Opt-in and regression: `hello` sizes against T0.1 (identical; no query or `grid_cell_masked` symbol),
@@ -257,20 +258,20 @@ refinements", as in plans 012–018.
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** `docs/api/collision.md` (layers and masks with the detection rule and a layer-enum pattern, box views
+- [x] **T11.1** `docs/api/collision.md` (layers and masks with the detection rule and a layer-enum pattern, box views
   incl. the custom-view case, filters, rays with the traversal rules and a picture of the corner rule, first/all
   hits, cells crossed, line of sight, box casts and the two-movers recipe, point and box queries, determinism, costs
   measured in T10.2, misuse, the cell/box corner note) and header comments (allocates? per-frame safe? misuse?).
   Covers VIII, AC-9.
-- [ ] **T11.2** Other pages: `docs/api/tilemap.md` (collision layer sets, `collision_grid(mask)` and its 8 masks,
+- [x] **T11.2** Other pages: `docs/api/tilemap.md` (collision layer sets, `collision_grid(mask)` and its 8 masks,
   `collision_layers_at`, the memory formula's new term, the `collision_layers` row of the Tiled table, the
   "set in code doesn't change collision" pitfall), `docs/guides/levels.md` (a `collision_layers` flag enum step by
   step, bits 0..30), `docs/REFERENCES.md` (Godot, Unity, Box2D, Tiled's custom enums, Amanatides & Woo), `CLAUDE.md`
   (layout paragraph: queries, `examples/queries`); `python -I scripts/docs_tool.py check` → 0 broken links. Covers
   AC-9.
-- [ ] **T11.3** `docs/architecture/decisions.md`: D34 change-log note "implemented" with any stage refinements.
+- [x] **T11.3** `docs/architecture/decisions.md`: D34 change-log note "implemented" with any stage refinements.
   Covers AC-9.
 - [ ] **T11.4** Final measurements (header cost of `collision.hpp` and `tilemap.hpp`, build times, `hello` sizes) in
   plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.5** `docs/ROADMAP.md`: "Collision layers and masks" and "Raycasts and shape queries" checkboxes.
-- [ ] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.5** `docs/ROADMAP.md`: "Collision layers and masks" and "Raycasts and shape queries" checkboxes.
+- [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").

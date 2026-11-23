@@ -1,6 +1,7 @@
 # Plan 019: Collision layers and queries
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: approved (2026-11-22, maintainer pre-approved); **implemented 2026-11-23** (stages 0–8, 11), console T10.2 and
+Linux T9.1 pending
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D34 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, profiler), spec 012 (`<nnh/collision.hpp>`: `Rect` rules, `Grid`, `Cell`, `move`,
 `cells_touching`; `<nnh/tilemap.hpp>`: the map block, `collision_grid()`, properties, the Tiled converter, D26/D27),
@@ -724,3 +725,74 @@ Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   reference screenshot identical (level 1 at frame 90 too: the turrets are off screen); `hello` Release unchanged
   (PC text 130 732, 3DS text 201 188) with no query or `grid_cell_masked` symbol; `nnh_tests` 2011 tests, ctest
   pc-debug 264/264, pc-release 257/257, 3ds-release without a warning.
+
+## Mutation testing
+
+86 hand mutants (`build/ref-019/mutants.txt`, applied one at a time by `build/ref-019/mutate.py`: rebuild the test
+program — `nnh_tests`, or `nnh_assetc_tests` for the converter —, run all of it, restore the file) of every new
+collision file (layers, views, misuse checks, hit list, point queries, exact predicates, slab test, rays on boxes,
+distance, box casts, the grid walk, rays on grids, cells crossed, grid + boxes and line of sight), the collision
+header's `detects`, the tilemap's masked rule, slots, sets, loader, runtime area and `add_tile_layer`, the converter's
+check, the coin book, the turrets and the replay's checksum word: **70/86 killed** on the first run (pc-debug).
+
+- **Release-path** (2): `bad_layer` returning `kAllLayers` and the out-of-masks log not remembered once per map are
+  only observable where asserts are compiled out; both are killed by the same tests in pc-release
+  (`build/ref-019/mutants_release.txt`: 2/2).
+- **Test gaps, closed** (6): a box with a NaN y passing the filter (`boxes_without_area_or_with_nan_fields_never_pass`
+  got the case); the box cast's step-down to flush removed (`the_contact_stays_flush_when_the_subtraction_rounds_up`:
+  37.3f − 0.2507f rounds to a float that overlaps by one ulp); a clipped walk not stopping when it leaves the grid
+  (`a_clipped_walk_stops_when_it_leaves_the_grid`, through `GridWalk::steps_left()`); the turrets' range check on the
+  left, the horizontal/diagonal threshold of `aim`, and line of sight not ignoring planks (the first version of
+  `planks_never_hide_the_player_below_either` looked straight down a grid line, where nothing is ever crossed: moved
+  2 px). All six are killed now (`mutants2.txt`, `mutants3.txt`).
+- **Equivalent** (8): loosening the rays' bounding-box prefilter (it only skips work; two mutants that *tighten* it
+  are killed); the clamp of a box hit's other coordinate and of a cast's contact position to their spans (defensive:
+  rounding of in-range floats can't leave the span); the backward correction of the walk's start cell (`>` → `>=`:
+  the forward correction takes it back); `start()` reporting "more cells" after a corner-only clip (the step guard
+  stops the walk one step later); the clip choice for a horizontal ray with a one-way outside (cost only: such cells
+  never block it); a corner hit's point through `along()` instead of the corner (equal on exact corners).
+
+Final: **78/86 killed**, 8 equivalent, plus 2 tightened prefilter mutants and the re-runs killed; `nnh_tests` 2014
+tests.
+
+## Stage 9: Linux checks (left to the lead)
+
+Not run in this session (VM 120 is the lead's). What to compare on GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests`,
+`nnh_assetc_tests` and ctest pass; these tests hold their pinned values unchanged:
+`collision_grid_regression_*` (T0.2: `0x698EB725`/`0xE419AD3C`, `0x852ED0F6`/`0xA6D13AF0`, `0x2E9EDC46`/`0x8761516F`,
+`0x6EA3F8C6`/`0xB2975DBA`), `the_walk_equals_the_exact_reference_on_5000_rays_*` (zero mismatches) and
+`the_queries_self_check_reaches_the_golden_checksum` (`0x4ACAA177`, checkpoints `36C6AD9D`, `6A48E776`, `F9B05D2F`,
+`C8724E5B`); ctest `queries_self_check_pc` and `platformer_replay_matches_script`. libFuzzer: `fuzz_tilemap` (its
+corpus can start from `map_file::layered()`, the seed with `collision_layers`) and `fuzz_assetc_map` (seed: `kMapSeed`
+'\0' `kSetSeed` of `tools/assetc/tests/test_fuzz_assetc.cpp`, which now carries `collision_layers`), 10 minutes each.
+
+## Stage 10: console run (prepared)
+
+T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` builds without a warning (every stage end);
+`ray_distance.o` on 3ds-release is `vsqrt.f32` with no call, and no query object has a fused `vfma`/`vfms`
+(`build/ref-019/fp_check.sh`; VFPv2's chained `vmla` is allowed); 3ds-release `hello.elf` text 201 188 / data 28 352 /
+bss 106 680, as in stage 0.
+
+T10.2, on an Old 3DS, nobody touching it after Y. Three runs, each: open the Homebrew Launcher, press **Y**, then on the
+PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs and screenshots in `build/logs/`):
+
+1. `build/pc-debug/tools/nnh/nnh run queries --script examples/queries/tests/check.nnhs` (about 30 s). Expected, as on
+   the PC: `queries: first hit cell 6,9 solid fraction 0.5909 normal 0,-1` (after the stick moves), `queries: first
+   hit none` (water bit off), the same first-hit line again (water back on), `queries: mode all`, `queries: mode
+   cast`, `queries: mode first`, `queries: one-way ignored`, `queries: one-way blocks`, `under: cell 7,9 solid layers
+   0x2 tile 2 boxes 0`, `under: cell 10,7 empty layers 0x0 tile 4 boxes 1`, `under: cell 15,5 one-way layers 0x1 tile
+   3 boxes 0`, `queries: self-check started`, `queries: 1024 sum 36C6AD9D`, `queries: 2048 sum 6A48E776`,
+   `queries: 3072 sum F9B05D2F`, `queries: 4096 sum C8724E5B`, **`queries: PASS 4ACAA177`**, then `queries bench:
+   rays avg X ms worst Y ms (target < 2 ms) PASS`, `queries bench: points avg X ms, Z us per box (target <= 0.1 us)
+   PASS`, `queries bench: move unfiltered X us filtered Y us`; `nnh: PASS (96 lines, …)`. Record X, Y, Z and the move
+   numbers here and in `docs/api/collision.md#limits-and-costs`. Then read the screenshots `first`, `pool`, `water`,
+   `all`, `cast`, `touch` (top and bottom): the same pictures as the PC's (`build/logs/queries-*` from a `--pc` run).
+   If the rays line says FAIL, apply risk 1's mitigations in order.
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (about 40 s). Expected:
+   `replay: 60 level1 x 121 y 242 coins 1 sum 523AEFC6`, `120 … sum 22B6BC70`, `180 … sum 19701BA9`,
+   `240 … sum 26C330BF`, `300 … sum BF913379`, `360 … sum FEAD39C1`, `420 … sum 66CE9E1D`, `480 … sum 1FD5F55A`,
+   `540 … sum 3C20AAFF`, `600 … sum ED6F8521`, `660 bonus … sum F183ED9C`, `720 … sum 37D753F0`,
+   `780 … sum CF176580`, `840 … sum 01FDC889`, `replay: done 900 frames sum 96FE8943: 60 Hz PASS`; `nnh: PASS (76
+   lines, …)`. A mismatch with the self-check of run 1 passing would be a game bug, not an engine one (risk 8).
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (about 2.5 min).
+   Expected: `bench: PASS 4 layers + 300 sprites, …` (spec 012's gate still passes); `nnh: PASS`.

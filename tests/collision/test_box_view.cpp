@@ -113,12 +113,13 @@ NNH_TEST(the_filter_skips_the_ignored_index_only) {
 }
 
 NNH_TEST(boxes_without_area_or_with_nan_fields_never_pass) {
-    const Rect boxes[5] = {{0, 0, 0, 1}, {0, 0, 1, -1}, {kNan, 0, 1, 1}, {0, 0, 1, kNan}, {0, 0, 2, 3}};
-    const BoxView v = collision::box_view(boxes, 5);
+    const Rect boxes[6] = {{0, 0, 0, 1}, {0, 0, 1, -1}, {kNan, 0, 1, 1}, {0, 0, 1, kNan}, {0, kNan, 1, 1},
+                           {0, 0, 2, 3}};
+    const BoxView v = collision::box_view(boxes, 6);
     Rect box{};
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 5; ++i)
         CHECK(!collision::detail::passes(v, {}, i, box));
-    CHECK(collision::detail::passes(v, {}, 4, box) && same(box, boxes[4]));
+    CHECK(collision::detail::passes(v, {}, 5, box) && same(box, boxes[5]));
 }
 
 NNH_TEST(views_buffers_points_and_grids_are_checked) {

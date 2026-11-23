@@ -135,3 +135,10 @@ never through `#ifdef` in game code.
   per-mask context slot, strided box views, exact `double` predicates for rays and casts), from plan 019,
   pre-approved by the maintainer; design only until spec 019 stages 1–4 are implemented. `collision::Grid` and the
   `.nnhmap` format are unchanged.
+- 2026-11-23: D34 implemented (spec 019 stages 1–8; console check and Linux runs pending). `collision_grid()` and
+  `map_collision.cpp` untouched (pinned regression hash, identical disassembly); the runtime area is 132 + 4 × (tile
+  ids + 1) bytes; an unused mask slot is one holding `kAllLayers`; `add_tile_layer` refuses an empty set. Within the
+  exact predicates: the segment is held in `double` (exact differences of the float inputs), ordering between hits
+  uses the reported float fraction (stable), a clip that only touches the grid's corner still visits the corner cell
+  beside it, a cell hit at a grid corner reports the corner exactly, and VFPv2's chained `vmla` is allowed (plan 019,
+  "Stage 1–3", "Stage 4 refinements and results").

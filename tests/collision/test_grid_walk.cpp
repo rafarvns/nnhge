@@ -138,6 +138,19 @@ NNH_TEST(a_far_segment_is_clipped_to_the_grid) {
     CHECK(cells.size() == 126 && cells[63].x == 0 && cells.front().x == -63 && cells.back().x == 62);
 }
 
+NNH_TEST(a_clipped_walk_stops_when_it_leaves_the_grid) {
+    const collision::Grid g = empty_grid(3, 2);
+    GridWalk w(g, make_segment({8, 8}, {1000000, 8}), true);
+    WalkCell c;
+    int n = 0;
+    while (w.next(c)) ++n;
+    CHECK(n == 3 && w.steps_left() > 60000); // 62 504 lines allowed, 3 taken: no walk to the far end
+    GridWalk corner(g, make_segment({1000080, -1000000}, {-1000000, 1000080}), true); // only the corner (48, 32)
+    int m = 0;
+    while (corner.next(c)) ++m;
+    CHECK(m == 1 && c.x == 2 && c.y == 1 && corner.steps_left() > 100000);
+}
+
 NNH_TEST(a_clip_through_a_grid_corner_keeps_the_cell_beside_it) {
     const collision::Grid g = empty_grid(4, 4);
     // Enters the grid exactly at (0, 16), between rows 0 and 1, going right and down.

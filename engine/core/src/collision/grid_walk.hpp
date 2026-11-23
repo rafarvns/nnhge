@@ -31,6 +31,9 @@ public:
     /// The next cell, in order; false when the walk is over.
     bool next(WalkCell& cell);
 
+    /// Lines the walk may still cross before it gives up (tests: a clipped walk stops when it leaves the grid).
+    long long steps_left() const { return steps_left_; }
+
     float edge_x(int line) const { return x_.edge(line); }
     float edge_y(int line) const { return y_.edge(line); }
 

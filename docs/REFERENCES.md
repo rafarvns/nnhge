@@ -83,6 +83,21 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   shake = trauma², linear decay, smooth noise instead of random values, shake added to a copy of the camera; our
   trauma shake and seeded value noise are written from the talk (spec 018):
   http://www.mathforgameprogrammers.com/gdc2016/GDC2016_Eiserloh_Squirrel_JuicingYourCameras.pdf
+- **Godot physics layers and queries** — 32 layers, "layer = what I am, mask = what I scan", one-way detection; our
+  `collision::Layers`, `detects` and `QueryFilter` follow it (spec 019; no code copied):
+  https://docs.godotengine.org/en/stable/tutorials/physics/physics_introduction.html#collision-layers-and-masks ·
+  `RayCast2D` and `PhysicsRayQueryParameters2D` (`target_position`, `exclude`, `hit_from_inside`):
+  https://docs.godotengine.org/en/stable/classes/class_physicsrayqueryparameters2d.html
+- **Unity layers and Physics2D queries** — the layer collision matrix (a non-goal: masks say the same per value),
+  `Physics2D.Raycast`/`RaycastNonAlloc` into a caller array, `queriesStartInColliders`, `OverlapPoint`/`OverlapBox`,
+  `BoxCast` (spec 019): https://docs.unity3d.com/ScriptReference/Physics2D.Raycast.html
+- **Box2D** (MIT) — category/mask bits with a symmetric rule (our documented variant), ray casts reporting a fraction
+  and ignoring shapes that contain the origin (spec 019; ideas only, no code): https://box2d.org/documentation/md_simulation.html
+- **John Amanatides and Andrew Woo, "A Fast Voxel Traversal Algorithm for Ray Tracing"** (Eurographics 1987) —
+  visiting every cell a ray crosses, in order; our grid walk is written from the paper, with exact ratio comparisons
+  instead of accumulated `tMax` (spec 019): http://www.cse.yorku.ca/~amana/research/grid.pdf
+- **Tiled custom enums** — "allow multiple values" saved as a number stores flags as bits, which is how a level sets
+  `collision_layers` (spec 019): https://doc.mapeditor.org/en/stable/manual/custom-properties/
 - **TOML 1.0** (MIT-licensed specification) — the syntax our data files are a strict subset of; our reader is our
   own (no code from TOML libraries): https://toml.io/en/v1.0.0
 

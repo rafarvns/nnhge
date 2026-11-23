@@ -44,6 +44,15 @@ NNH_TEST(the_contact_position_is_flush_and_one_ulp_further_overlaps) {
     CHECK(collision::overlaps(at(box, {collision::detail::step_down(hit.point.x), hit.point.y}), kWall[0]));
 }
 
+NNH_TEST(the_contact_stays_flush_when_the_subtraction_rounds_up) {
+    // 37.3f − 0.2507f rounds to a float whose sum with 0.2507f is above 37.3f: the contact steps down until flush.
+    const nnh::Rect target[1] = {{37.3f, -5, 10, 10}};
+    const nnh::Rect box{0, 0, 0.2507f, 1};
+    RayHit hit;
+    CHECK(collision::box_cast(collision::box_view(target, 1), box, {100, 0}, hit) && hit.normal == Vec2(-1, 0));
+    CHECK(hit.point.x + box.w <= target[0].x && !collision::overlaps(at(box, hit.point), target[0]));
+}
+
 NNH_TEST(a_cast_into_a_corner_reports_the_x_face) {
     const Rect box{80, 20, 10, 10}; // its bottom-right corner (90, 30) moves to the wall's corner (100, 40)
     RayHit hit;

@@ -17,7 +17,8 @@ namespace {
 struct Fixture {
     nnh::TweenSet tweens{{.tweens = 64}};
     World world = static_cast<World&&>(level::create_world(&tweens).value());
-    Sparkles sparkles{world, tweens};
+    level::LevelPrefabs prefabs = static_cast<level::LevelPrefabs&&>(level::create_level_prefabs(&tweens).value());
+    Sparkles sparkles{world, prefabs};
 
     int count() { return world.storage<Spark>().count(); }
     void frames(int n) {

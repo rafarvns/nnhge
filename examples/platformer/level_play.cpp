@@ -23,6 +23,12 @@ nnh::World make_world(nnh::TweenSet* tweens) {
     return static_cast<nnh::World&&>(world.value());
 }
 
+level::LevelPrefabs make_prefabs(nnh::TweenSet* tweens) {
+    auto prefabs = level::create_level_prefabs(tweens);
+    NNH_VERIFY(prefabs.ok(), "the level's prefabs: out of memory");
+    return static_cast<level::LevelPrefabs&&>(prefabs.value());
+}
+
 bool door_target(const char* to, Demo& out) {
     if (std::strcmp(to, "level1") == 0) {
         out = Demo::Level1;
@@ -38,7 +44,7 @@ bool door_target(const char* to, Demo& out) {
 
 LevelPlay::LevelPlay(const Art& art, const nnh::Tilemap& map, nnh::Scene& scene)
     : art_(art), map_(map), camera_(level_camera_settings(map.bounds())), world_(make_world(&tweens_)),
-      world_bound_(bind_world(scene)), tweens_(scene, {.tweens = 128}) {
+      world_bound_(bind_world(scene)), tweens_(scene, {.tweens = 128}), prefabs_(make_prefabs(&tweens_)) {
     turrets_.bullets().bind(scene);
     grid_ = map.collision_grid(layers::kPlayerMask); // the player's view of the level (spec 019)
     grid_.outside = nnh::collision::Cell::Solid; // walls the level in (and a floor under the pits)
@@ -72,25 +78,15 @@ void LevelPlay::read_objects() {
     }
 }
 
-/// The level's things in the order of the first load: the player, then the map's coins and turrets in object order.
+/// The level's things in the order of the first load: the player, then the map's coin and turret objects in object
+/// order, by prefab (doors and the spawn point are skipped types: read_objects() reads them).
 void LevelPlay::spawn_things() {
     world_.clear();
     player_entity_ = world_.spawn();
     world_.add<level::Body>(player_entity_, {player_.box(), layers::kPlayer});
     world_.add_tag(player_entity_, level::kPlayerTag);
-    coin_count_ = 0;
-    for (int i = 0; i < map_.object_count(); ++i) {
-        const nnh::MapObject o = map_.object(i);
-        if (std::strcmp(o.type, "coin") == 0) {
-            if (spawn_coin(world_, o.bounds, o.properties.get_int("value", 1))) {
-                ++coin_count_;
-            } else {
-                NNH_LOG_WARN(platformer, "more than %d coins: the rest are left out", level::kMaxCoins);
-            }
-        } else if (std::strcmp(o.type, "turret") == 0 && !TurretBook::spawn_turret(world_, o.bounds)) {
-            NNH_LOG_WARN(platformer, "more than %d turrets: the rest are left out", level::kMaxTurrets);
-        }
-    }
+    prefabs_.library.spawn_map_objects(world_, map_);
+    coin_count_ = world_.storage<level::Coin>().count();
 }
 
 void LevelPlay::restart() {

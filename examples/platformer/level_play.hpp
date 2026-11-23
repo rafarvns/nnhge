@@ -6,18 +6,21 @@
 // layer named "front" over them.
 //
 // The player, the coins and the turrets are entities of one nnh::World (spec 020, level_world.hpp) bound to the level's
-// scene with the turrets' bullet pool: flushed before each update, emptied when the level is left. A restart is
-// World::clear() plus the same spawns (the player, then the map's objects in order), so every slot is the first load's.
+// scene with the turrets' bullet pool: flushed before each update, emptied when the level is left. Coins, turrets and
+// sparkles are the level's prefabs (spec 021, level_prefabs.hpp): the map's objects name them by type. A restart is
+// World::clear() plus the same spawns (the player, then the map's objects in order: spawn_map_objects), so every slot
+// is the first load's.
 // A taken coin bursts into sparkles (sparkles.hpp) faded by the level's tween set, bound after the world.
 //
-// It reads the map's objects: a point named "spawn"; objects of type "coin" (property `value`, 1 if absent);
-// objects of type "door" (property `to`: "level1" or "bonus"); objects of type "turret" (turrets.hpp: they look
-// at the player and shoot slow bullets moved by rays; a hit flashes the player and publishes PlayerHit).
+// It reads the map's objects: a point named "spawn" and objects of type "door" (property `to`: "level1" or "bonus")
+// itself; objects of type "coin" (property `value`, 1 if absent) and "turret" (turrets.hpp: they look at the player
+// and shoot slow bullets moved by rays; a hit flashes the player and publishes PlayerHit) are prefabs.
 
 #include "art.hpp"
 #include "coins.hpp"
 #include "game_events.hpp"
 #include "layers.hpp"
+#include "level_prefabs.hpp"
 #include "player.hpp"
 #include "player_sprite.hpp"
 #include "replay_run.hpp"
@@ -76,7 +79,8 @@ class LevelPlay {
     nnh::World world_;      ///< the player, coins, turrets and sparkles (level_world.hpp)
     bool world_bound_;      ///< initialised between world_ and tweens_: the world is bound before the set
     nnh::TweenSet tweens_;  ///< the sparkles' fades, bound to the level scene after the world
-    Sparkles sparkles_{world_, tweens_};
+    level::LevelPrefabs prefabs_; ///< coin, turret, spark (level_prefabs.hpp)
+    Sparkles sparkles_{world_, prefabs_};
     nnh::Entity player_entity_{};
     TurretBook turrets_{world_};
     int coin_count_ = 0; ///< coins at the start

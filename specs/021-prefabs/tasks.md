@@ -157,12 +157,12 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 6: the platformer adopts prefabs (same play)
 
-- [ ] **T6.1** `level_prefabs.{hpp,cpp}`: the library (`coin`, `turret`, `spark` as plan.md describes; the coin's hook
+- [x] **T6.1** `level_prefabs.{hpp,cpp}`: the library (`coin`, `turret`, `spark` as plan.md describes; the coin's hook
   reads `value`, the spark's hook starts the fade through the tween set it captures). Test:
   `tests/platformer/test_level_prefabs.cpp` (the three prefabs' kinds, tags, values and placements; a coin from a map
   object equals the old `spawn_coin` result on a twin world; a spark equals the old `burst`'s entity, tween included).
   Files: `examples/platformer/level_prefabs.*`, `CMakeLists.txt`, `tests/CMakeLists.txt`. Covers AC-4.
-- [ ] **T6.2** Swap: `LevelPlay` owns the library; `spawn_things()` = `clear()`, the player by hand,
+- [x] **T6.2** Swap: `LevelPlay` owns the library; `spawn_things()` = `clear()`, the player by hand,
   `spawn_map_objects`; `coin_count_` from the coin storage; `Sparkles::burst` by `spawn_with(..., at, Velocity{v})`;
   `spawn_coin`, `TurretBook::spawn_turret` and the `strcmp` dispatch removed (doors and the spawn point stay in
   `read_objects`). `test_coins.cpp`, `test_turrets.cpp`, `test_sparkles.cpp` keep every case and expected result,

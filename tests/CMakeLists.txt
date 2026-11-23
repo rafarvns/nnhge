@@ -360,6 +360,7 @@ target_include_directories(nnh_tests PRIVATE ${_3ds_src})
 set(_platformer ${PROJECT_SOURCE_DIR}/examples/platformer)
 target_sources(nnh_tests PRIVATE
     platformer/test_level_camera.cpp
+    platformer/test_level_prefabs.cpp
     platformer/test_coins.cpp
     platformer/test_frame_meter.cpp
     platformer/test_gate_run.cpp
@@ -371,6 +372,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_turrets.cpp
     ${_platformer}/level_camera.cpp
     ${_platformer}/coins.cpp
+    ${_platformer}/level_prefabs.cpp
     ${_platformer}/level_world.cpp
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp

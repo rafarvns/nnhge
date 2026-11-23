@@ -24,15 +24,6 @@ std::uint32_t bits(float v) {
 
 } // namespace
 
-nnh::Entity TurretBook::spawn_turret(nnh::World& world, nnh::Rect box) {
-    if (world.storage<level::Turret>().count() >= level::kMaxTurrets) return {};
-    const nnh::Entity e = world.spawn();
-    world.add<level::Body>(e, {box, layers::kEnemy});
-    world.add<level::Turret>(e);
-    world.add_tag(e, level::kTurretTag);
-    return e;
-}
-
 void TurretBook::restart() {
     bullets_.clear();
     hits_ = 0;

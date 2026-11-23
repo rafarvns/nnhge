@@ -1,14 +1,12 @@
 #pragma once
 // The coins of a level (spec 020 AC-4 step 1; before: the coin book): entities with a Body on layers::kCoin and a
-// Coin value, tagged "coin". Taking them is one collision::boxes_overlapping over the world's whole body storage with
-// the player's mask: the player's and the turrets' bodies are on other layers, free slots on none, so only coins pass.
-// A taken coin's entity is destroyed; a level restart is World::clear() plus the same spawns (tested in
+// Coin value, tagged "coin", spawned from the map's `coin` objects by the level's `coin` prefab (level_prefabs.hpp,
+// spec 021). Taking them is one collision::boxes_overlapping over the world's whole body storage with the player's
+// mask: the player's and the turrets' bodies are on other layers, free slots on none, so only coins pass. A taken
+// coin's entity is destroyed; a level restart is World::clear() plus the same spawns (tested in
 // tests/platformer/test_coins.cpp).
 
 #include "level_world.hpp"
-
-/// Spawns a coin. Null when the level already has level::kMaxCoins coins.
-nnh::Entity spawn_coin(nnh::World& world, nnh::Rect bounds, int value);
 
 /// A coin taken by collect_coins().
 struct TakenCoin {

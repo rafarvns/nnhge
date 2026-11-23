@@ -4,6 +4,7 @@
 // bound here: update() flushes it first, so the first free bullet is the first one the old book would have used.
 
 #include "../collision/ascii_grid.hpp"
+#include "platformer/level_prefabs.hpp"
 #include "platformer/level_world.hpp"
 #include "platformer/turrets.hpp"
 #include "test.hpp"
@@ -28,13 +29,17 @@ const char* const kRows[] = {
 struct World {
     AsciiGrid g{kRows, 6};
     nnh::World world = static_cast<nnh::World&&>(level::create_world().value());
+    level::LevelPrefabs prefabs = static_cast<level::LevelPrefabs&&>(level::create_level_prefabs(nullptr).value());
     nnh::Entity player = world.spawn();
     TurretBook book{world};
     World() {
         g.grid.outside = nnh::collision::Cell::Solid;
         world.add<level::Body>(player, {{}, layers::kPlayer});
     }
-    nnh::Entity add(Rect box) { return TurretBook::spawn_turret(world, box); }
+    /// A turret where a map's `turret` object would put it (the level's prefab, spec 021).
+    nnh::Entity add(Rect box) {
+        return prefabs.library.spawn_with(world, prefabs.turret, level::Body{box, layers::kEnemy});
+    }
     /// One frame with the player's box at `p` (LevelPlay writes the player's body once per frame).
     void update(Rect p) {
         world.get<level::Body>(player)->box = p;

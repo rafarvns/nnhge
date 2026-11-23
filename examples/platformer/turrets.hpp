@@ -1,7 +1,8 @@
 #pragma once
 // The platformer's turrets (spec 019 AC-4 step 2; spec 020 AC-4 step 1), pure (collision queries and the level's world:
 // tested in tests/platformer/test_turrets.cpp). Turrets are entities of the level's world (a Body on layers::kEnemy and
-// a level::Turret, tagged "turret"); bullets come from a pool of 16 (the lowest free slot, as the old "first inactive
+// a level::Turret, tagged "turret", spawned from the map's `turret` objects by the level's prefab: level_prefabs.hpp,
+// spec 021); bullets come from a pool of 16 (the lowest free slot, as the old "first inactive
 // bullet"). Each frame a turret looks at the player (line_of_sight from its centre to the player's, through the
 // level's grid with one-way planks ignored, within a range box); while it sees the player it fires a slow bullet every
 // 90 frames in one of 8 fixed directions (short binary fractions: exact sums, no sqrt). A bullet moves by a ray each
@@ -36,8 +37,6 @@ class TurretBook {
     /// `world` (a level::create_world() world) must outlive the book.
     explicit TurretBook(nnh::World& world) : world_(world) {}
 
-    /// Spawns a turret (its box: a 16 x 16 cell). Null when the level already has level::kMaxTurrets.
-    static nnh::Entity spawn_turret(nnh::World& world, nnh::Rect box);
     /// Back to the start: no bullets, no hits (the turrets themselves are spawned again by the level's restart).
     void restart();
     /// One frame: sight, firing, bullets moved through `grid` and the world's bodies. `player` is the player's entity

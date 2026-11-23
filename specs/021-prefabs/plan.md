@@ -788,3 +788,29 @@ change. Scripts in `build/ref-021/` (not committed).
   `nm` equal stage 0's; `compare.sh` every reference identical; `level.nnhs --pc` and `entities/check.nnhs --pc` PASS;
   `linkcheck.sh` (3ds-release objects): no prefab object refers to a data symbol, only `prefab_map.o` refers to tilemap
   symbols, and no other object refers to `prefab_map`'s functions.
+
+## Stage 6 refinements and results
+
+- **Files**: `examples/platformer/level_prefabs.{hpp,cpp}` (`level::LevelPrefabs{library, coin, turret, spark}`,
+  `create_level_prefabs(TweenSet*)`, `kSparkFadeFrames`): `coin` = `Body{{0, 0, 12, 12}, kCoin}` (placement
+  `&Body::box`) + `Coin{1}`, tag `coin`, hook `value ← get_int("value", 1)`; `turret` = `Body{{0, 0, 16, 16}, kEnemy}`
+  (placement `&Body::box`) + `Turret{}`, tag `turret`; `spark` = `Spark{{}, 1, {}}` (placement `&Spark::position`) +
+  `Velocity{}`, tag `fx`, hook starting the fade. The stored boxes have a size (12 × 12, 16 × 16) instead of the plan's
+  `{}` so code spawns (the tests) get a sensible box; every map coin and turret is a rectangle object, whose size the
+  placement writes, so the bytes are unchanged.
+- `LevelPlay` owns the library (a member after the tween set); `spawn_things()` = `clear()`, the player by hand,
+  `spawn_map_objects(world_, map_)`, `coin_count_` from the coin storage. `spawn_coin`, `TurretBook::spawn_turret` and
+  the `strcmp` dispatch are gone; `read_objects()` still reads the spawn point and the doors (skipped types).
+  `Sparkles(world, prefabs)`: `burst` = 4 × `spawn_with(world, spark, at, Velocity{v})`.
+- Tests: `test_level_prefabs.cpp` (3: the prefabs' kinds, tags, values; map coins and a turret equal the old
+  hand-written spawns on a twin world — the turret by members, `Turret` has padding; a sparkle equals the old `burst`'s
+  entity with its fade, frame by frame until it is destroyed — the two tween sets' serials normalised). `test_coins`,
+  `test_turrets`, `test_sparkles` keep every case and expected result, spawning through the library (coins and turrets
+  by override, as map objects place them); "coins past their capacity" now asserts in Debug/Development (the level's
+  library keeps `WhenFull::Assert`) and still leaves the 128 coins alone.
+- **The golden lines are unchanged**: ctest `platformer_replay_matches_script` passes and `level.nnhs --pc` →
+  `nnh: PASS (79 lines, frames 1-1553)` with the unchanged `replay: done 900 frames sum B2418A28: 60 Hz PASS` (two runs
+  right after heavy builds reported `60 Hz FAIL` with the same `B2418A28` — a host frame-time spike, `bonus worst 41.7
+  ms, missed 1/299`; three later runs: PASS). `compare.sh`: level 1 at 90, the replay at 64 and 312 and the bench
+  identical. ctest pc-debug 266/266, pc-release 258/258; 3ds-release without a warning; `nnh_tests` 2308; `hello`
+  unchanged.

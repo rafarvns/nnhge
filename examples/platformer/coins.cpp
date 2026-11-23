@@ -1,14 +1,5 @@
 #include "coins.hpp"
 
-nnh::Entity spawn_coin(nnh::World& world, nnh::Rect bounds, int value) {
-    if (world.storage<level::Coin>().count() >= level::kMaxCoins) return {};
-    const nnh::Entity e = world.spawn();
-    world.add<level::Body>(e, {bounds, layers::kCoin});
-    world.add<level::Coin>(e, {value});
-    world.add_tag(e, level::kCoinTag);
-    return e;
-}
-
 int collect_coins(nnh::World& world, nnh::Rect box, nnh::collision::Layers mask, TakenCoin* taken, int capacity) {
     namespace collision = nnh::collision;
     const nnh::Storage<level::Body> bodies = world.storage<level::Body>();

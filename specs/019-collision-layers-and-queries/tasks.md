@@ -153,13 +153,13 @@ refinements", as in plans 012–018.
 
 ## Stage 6: the platformer's swap (same play)
 
-- [ ] **T6.1** Layers and coins: `layers.hpp` (`kWorld = kDefaultLayer`, `kPlayer`, `kCoin`, `kEnemy`,
+- [x] **T6.1** Layers and coins: `layers.hpp` (`kWorld = kDefaultLayer`, `kPlayer`, `kCoin`, `kEnemy`,
   `kEnemyBullet`, `kPlayerMask`); `CoinBook::Coin` gets `layers` (`kCoin`), `collect(box, mask, ...)` =
   `boxes_overlapping` over `box_view(coins_, count_, &Coin::bounds, &Coin::layers)` with the player's mask, taken coins
   get `kNoLayers` (the `taken_` array goes), `restart()` puts `kCoin` back. Files: `examples/platformer/layers.hpp`,
   `coin_book.{hpp,cpp}`, `level_play.cpp`. Test: `tests/platformer/test_coin_book.cpp` (same results as before on its
   cases, mask without `kCoin` takes nothing, order ascending). Covers AC-4 step 1, FR-3.
-- [ ] **T6.2** The player moves through `map.collision_grid(kPlayerMask)` (outside Solid as today). Files:
+- [x] **T6.2** The player moves through `map.collision_grid(kPlayerMask)` (outside Solid as today). Files:
   `level_play.cpp`. Test: ctest `platformer_replay_matches_script` passes with **unchanged** lines; `nnh run
   platformer --pc --no-build --script examples/platformer/tests/level.nnhs` → PASS; AC-8 comparison (level 1 and the
   bench identical). Files: plan.md ("Stage 6 results"). Covers AC-4 step 1, FR-6, FR-18.

@@ -32,7 +32,7 @@ bool door_target(const char* to, Demo& out) {
 
 LevelPlay::LevelPlay(const Art& art, const nnh::Tilemap& map)
     : art_(art), map_(map), camera_(level_camera_settings(map.bounds())) {
-    grid_ = map.collision_grid();
+    grid_ = map.collision_grid(layers::kPlayerMask); // the player's view of the level (spec 019)
     grid_.outside = nnh::collision::Cell::Solid; // walls the level in (and a floor under the pits)
     layer_count_ = map.tile_layer_count() < kMaxLayers ? map.tile_layer_count() : kMaxLayers;
     for (int i = 0; i < layer_count_; ++i) {
@@ -97,7 +97,7 @@ void LevelPlay::update(const PlayerInput& input, bool doors) {
 
 void LevelPlay::take_coins() {
     int taken[8];
-    const int count = coins_.collect(player_.box(), taken, 8);
+    const int count = coins_.collect(player_.box(), layers::kPlayerMask, taken, 8);
     for (int i = 0; i < count && i < 8; ++i)
         nnh::events::publish(CoinCollected{coins_.coin(taken[i]).value});
 }

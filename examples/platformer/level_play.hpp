@@ -1,6 +1,7 @@
 #pragma once
-// Playing one level, whatever made its map (Tiled file or code): the player against the map's collision grid,
-// an nnh::CameraRig following it (clamped to the map), coins collected by overlap, doors to another demo. Its tile
+// Playing one level, whatever made its map (Tiled file or code): the player against the map's collision grid
+// filtered by its mask (layers.hpp, spec 019), an nnh::CameraRig following it (clamped to the map), coins
+// collected by a layered overlap query, doors to another demo. Its tile
 // layers draw around the player: parallax layers behind, then the ground, then coins and the player, then a
 // layer named "front" over them.
 //
@@ -10,6 +11,7 @@
 #include "art.hpp"
 #include "coin_book.hpp"
 #include "game_events.hpp"
+#include "layers.hpp"
 #include "player.hpp"
 #include "player_sprite.hpp"
 #include "replay_run.hpp"

@@ -734,3 +734,36 @@ change.
   operations with no allocation and no log line; the doomed world), `test_world_model`, `test_tags`, `test_find`,
   `test_fuzz_world_ops`. `nnh_tests` 2155 (pc-debug), 2115 (pc-release); ctest pc-debug 264/264, pc-release 257/257;
   3ds-release without a warning; `hello` sizes and `nm` equal stage 0's.
+
+## Stage 5 refinements and results
+
+- **Pool binding** (`pool_scene.cpp`): `PoolCore::node` holds the `SceneAttachment` (checked by `static_assert`s);
+  `BeforeUpdate` flushes, `AfterExit` calls the typed `clear_fn`. **World binding** (`world_scene.cpp`): the node is
+  in `WorldCold`; `bind()` records the World object (`owner`), which can't move while bound, and the notification
+  calls `flush()`/`clear()` on it, so hooks get the game's own World.
+- `scene.hpp`'s destructor check now names "a bound TweenSet, World or Pool".
+- **D30 proof as tests** (`test_world_scene.cpp`): `XhhE` call order (on_exit, the two remaining hooks of the exit
+  clear, then the next scene's on_enter); spawns refused in the exit clear; a hook's `scenes::replace` during the exit
+  clear is queued (the next scene enters, then the request replaces it); a world bound before a `TweenSet` sees the
+  tween still running in its hooks, one bound after sees it already cleared (kill of a stale handle is harmless); a
+  scene destroyed with an outliving world attached stops the game (NNH_VERIFY, every flavor); a bound world doesn't
+  move. `test_pool_scene.cpp`: the same for pools (flush right before update, frozen under a pushed scene, cleared
+  after on_exit, empty on re-entry, a bound run-time pool doesn't move and detaches when destroyed).
+- **Interop** (`test_interop.cpp`): `boxes_overlapping`, `boxes_at` and `raycast` over `storage<Body>()` with live,
+  quarantined and free slots report only live bodies and `owner()` maps the index back; an animator component whose
+  notice callback destroys its own entity; a handle-capturing `Setter` stops writing after destroy; a pointer tween
+  killed by the kind's remove hook. **Found while writing it:** a callback stored *inside* the component it destroys
+  (an animator's `on_notice` lambda) loses its captures once `destroy()` returns (the slot now holds a fresh `T{}`):
+  copy what it needs first and destroy last, or destroy after `update()` from its returned notices. Documented in
+  `docs/api/entities.md` (pitfalls).
+- **Self-check** (`examples/entities/self_check.{hpp,cpp}`): kinds A (16 B), B (8 B, remove hook destroying by value or
+  spawning with an A), C (4 B); 4 tags per entity, six tags; a run-time `Pool<Item>` of 256. 32 operation kinds by
+  FNV-1a of (seed, step, salt): spawns with up to 3 kinds and 2 tags (live limit 700), destroys, adds/removes of B and
+  C, `each<A>` with destroys inside, `each<B, A>` with removes and spawns inside, `each<A, B, C>`, tags,
+  `find`/`first`, `each_tagged` with destroys, pool acquire/release/`items()` with releases inside/flush, world
+  flushes, rarely `clear()`; a flush of both every 50 operations keeps room (a full world asserts). Reached: 17 825
+  spawns, 2879 destroys, 988 destroys and 297 spawns from hooks, 50 clears, 830 889 visits, 3125 finds, 9242 pool
+  acquires, 133 pool misses, 700 live at most. Golden `0xC8FB9A41` (checkpoints `723FB297`, `3BB094CB`, `58530BE8`,
+  `21AD333D`, `DC95F672`, `C5CFA4B7`, `284AFBEE`, `F1272C58`, `45824FCC`, `C8FB9A41`), pc-debug and pc-release.
+- T5.5: ctest pc-debug 264/264, pc-release 257/257, 3ds-release without a warning, `nnh_tests` 2175; `hello` sizes and
+  `nm` equal stage 0's; `compare.sh`: every reference screenshot identical.

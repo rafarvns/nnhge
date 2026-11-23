@@ -152,8 +152,10 @@ add_executable(nnh_tests
     entities/test_destroy_hooks.cpp
     entities/test_each.cpp
     entities/test_find.cpp
+    entities/test_interop.cpp
     entities/test_flush_clear.cpp
     entities/test_world_misuse.cpp
+    entities/test_world_scene.cpp
     entities/test_world_model.cpp
     entities/world_fixture.cpp
     events/test_capacities.cpp
@@ -199,6 +201,7 @@ add_executable(nnh_tests
     pool/test_pool.cpp
     pool/test_pool_iteration.cpp
     pool/test_pool_runtime.cpp
+    pool/test_pool_scene.cpp
     pool/test_slot_bits.cpp
     remote/test_remote_input.cpp
     remote/test_remote_reader.cpp
@@ -416,6 +419,8 @@ target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
 target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
 # The queries example's self-check (spec 019 T7.3, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
+# The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
+target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)

@@ -131,30 +131,30 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 5: scene binding, interop, the golden script
 
-- [ ] **T5.1** Pool binding: node bytes in the inline pool (`static_assert` against the internal struct), the node in
+- [x] **T5.1** Pool binding: node bytes in the inline pool (`static_assert` against the internal struct), the node in
   the run-time pool's block, `Pool(Scene&)`, `bind`, notify (`BeforeUpdate` → flush, `AfterExit` → clear), moving a
   bound run-time pool asserts and moves nothing. `scene.hpp`'s destructor message names "a bound TweenSet, World or
   Pool". Files: `src/pool/pool_scene.cpp`, `pool.hpp`, `engine/core/include/nnh/scene.hpp`. Test:
   `tests/pool/test_pool_scene.cpp` (flushed before the scene's update and only on top, frozen under a pushed scene,
   cleared after `on_exit`, empty on re-entry). Covers FR-18.
-- [ ] **T5.2** World binding: `bind`, notify, the D30 proof as tests: hooks run right after `on_exit` and before the
+- [x] **T5.2** World binding: `bind`, notify, the D30 proof as tests: hooks run right after `on_exit` and before the
   next scene's `on_enter` (call log), no events published (bus stats), `spawn` refused in the exit clear, a hook
   requesting a scene change is queued, attach order with a bound `TweenSet` (world first: hooks kill tweens, then the
   set clears; world second: `kill` on stale handles is harmless), destroying a scene with a world still attached
   asserts, moving a bound world asserts. Files: `src/entities/world_scene.cpp`. Test:
   `tests/entities/test_world_scene.cpp`. Covers FR-18, FR-19, AC-3.
-- [ ] **T5.3** Interop (no include between modules): a `collision::box_view` over `storage<Body>()` with live, free and
+- [x] **T5.3** Interop (no include between modules): a `collision::box_view` over `storage<Body>()` with live, free and
   quarantined slots — `boxes_overlapping`, `boxes_at` and `raycast` report only live bodies, `owner(index)` gives
   their entities; a `SpriteAnimator` component updated in place with a callback capturing `[this]` that destroys its
   entity; a tween writing a component through a `Setter` capturing `[&world, e]` stops writing after `destroy`; a
   pointer-targeted tween killed by the kind's remove hook. Files: tests only. Test: `tests/entities/test_interop.cpp`.
   Covers FR-20, AC-3.
-- [ ] **T5.4** Self-check (AC-2): `examples/entities/self_check.{hpp,cpp}` (pure: the plan's 100 000-operation script
+- [x] **T5.4** Self-check (AC-2): `examples/entities/self_check.{hpp,cpp}` (pure: the plan's 100 000-operation script
   on a 1024-entity world and a 256-slot run-time pool, FNV-1a over handles, visits, `find` results and stats,
   checkpoints every 10 000); golden values from pc-debug in `kEntitiesCheckGolden`, equal in pc-release. Files:
   `examples/entities/self_check.{hpp,cpp}`, `tests/entities_example/test_self_check.cpp`, `tests/CMakeLists.txt`.
   Test: the unit test against the goldens. Covers AC-2, FR-21.
-- [ ] **T5.5** Stage end: ctest; opt-in: `hello` sizes and `nm` (no pool/world symbol) equal T0.1 on PC and 3DS
+- [x] **T5.5** Stage end: ctest; opt-in: `hello` sizes and `nm` (no pool/world symbol) equal T0.1 on PC and 3DS
   (3ds-release built without a warning); AC-8 comparison (every reference identical). Files: plan.md ("Stage 1–5
   results"). Covers FR-25, AC-8.
 

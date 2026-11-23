@@ -39,8 +39,9 @@ public:
     virtual ~Scene() {
         // One check (one message) keeps every game scene's destructor small (D30's cost budget).
         NNH_VERIFY(!on_stack_ && pending_ == 0 && attachments_ == nullptr,
-                   "scene destroyed while still on the scene stack (or waiting to be pushed), or with a TweenSet "
-                   "still attached: keep scene objects alive until they are popped, bound sets inside them");
+                   "scene destroyed while still on the scene stack (or waiting to be pushed), or with a bound "
+                   "TweenSet, World or Pool still attached: keep scene objects alive until they are popped, bound "
+                   "objects inside them");
     }
     Scene(const Scene&) = delete;
     Scene& operator=(const Scene&) = delete;
@@ -60,7 +61,7 @@ public:
 private:
     friend class detail::SceneStack;
     friend struct detail::SceneAccess;
-    detail::SceneAttachment* attachments_ = nullptr; // objects bound to this scene (D30), e.g. a TweenSet
+    detail::SceneAttachment* attachments_ = nullptr; // objects bound to this scene (D30): TweenSet, World, Pool
     bool on_stack_ = false;
     std::uint8_t pending_ = 0; // queued push/replace requests that point here
 };

@@ -28,8 +28,16 @@ class GridWalk {
 public:
     GridWalk(const Grid& grid, const Segment& s, bool clip);
 
-    /// The next cell, in order; false when the walk is over.
-    bool next(WalkCell& cell);
+    /// The next cell, in order; false when the walk is over. Inline: called per cell.
+    bool next(WalkCell& cell) {
+        while (read_ == queued_) {
+            if (done_) return false;
+            read_ = queued_ = 0;
+            advance();
+        }
+        cell = queue_[read_++];
+        return true;
+    }
 
     /// Lines the walk may still cross before it gives up (tests: a clipped walk stops when it leaves the grid).
     long long steps_left() const { return steps_left_; }
@@ -64,6 +72,7 @@ private:
     bool clip_ = false;
     bool done_ = false;
     int i_ = 0, j_ = 0;
+    Ratio tx_{}, ty_{}; ///< where the segment meets the next x / y line (kept per step: only the crossed one changes)
     long long steps_left_ = 0;
     WalkCell queue_[3];
     int queued_ = 0, read_ = 0;

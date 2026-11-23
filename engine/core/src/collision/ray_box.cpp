@@ -33,7 +33,7 @@ SlabHit slab_cast(const Segment& s, Slab x, Slab y) {
     const bool x_enters = ix.moving && (!iy.moving || compare(ix.in, iy.in) >= 0);
     const Ratio enter = x_enters ? ix.in : iy.in;
     const Ratio exit = !ix.moving ? iy.out : (!iy.moving || compare(ix.out, iy.out) <= 0 ? ix.out : iy.out);
-    if (!(compare(enter, exit) < 0 && compare(enter, kRatioOne) < 0 && exit.n > 0)) return r;
+    if (!(compare(enter, exit) < 0 && before_end(enter) && exit.n > 0)) return r;
     r.hit = true;
     if (enter.n < 0) {
         r.inside = true;

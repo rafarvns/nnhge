@@ -48,13 +48,6 @@ CellRange cell_range(const Grid& grid, Rect box) {
             last_cell(grid.origin.y, grid.cell_h, box.y + box.h)};
 }
 
-Cell cell_at(const Grid& grid, int x, int y) {
-    if (x < 0 || y < 0 || x >= grid.width || y >= grid.height) return grid.outside;
-    if (grid.cells) return grid.cells[y * grid.width + x];
-    if (grid.cell) return grid.cell(grid.context, x, y);
-    return grid.outside;
-}
-
 } // namespace detail
 
 } // namespace nnh::collision

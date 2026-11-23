@@ -1,7 +1,8 @@
 # Tasks 019: Collision layers and queries
 
 Status: approved (2026-11-22, maintainer pre-approved); stages 0–8 and 11 done 2026-11-23; T9.1 passed on VM 120;
-T10.2 (Old 3DS, the maintainer) pending, T10.2 prepared in plan.md "Stage 10: console run (prepared)"
+T10.2 (Old 3DS, the maintainer) pending, T10.2 prepared in plan.md "Stage 10: console run (prepared)"; first console
+run correct but slow, T10.3 (bench refinement) done 2026-11-23, console re-run pending
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -261,6 +262,11 @@ refinements", as in plans 012–018.
   3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS`
      (spec 012's gate still passes).
   Files: plan.md ("Stage 10 results": verdicts, bench numbers, log paths). Covers AC-4, AC-6, AC-7.
+  First run: correct (`PASS 4ACAA177`, replay `96FE8943`) but rays 14.1 ms and 0.56 µs per box → T10.3.
+- [x] **T10.3** Console bench refinement (risk 1): find the cost in the 3ds-dev disassembly and remove it without
+  changing a result (integer box scans on order keys, inline exact compare, cached walk lines, no per-cell `memset`
+  or calls); `check.nnhs` fails on a bench FAIL line. Tests: `tests/collision/test_box_keys.cpp`; every golden
+  unchanged. Files: plan.md ("Console bench refinement"). Then T10.2 run 1 again on the console.
 
 ## Stage 11: docs, roadmap, status
 

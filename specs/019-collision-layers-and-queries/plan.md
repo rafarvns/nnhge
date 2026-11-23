@@ -786,7 +786,8 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    3 boxes 0`, `queries: self-check started`, `queries: 1024 sum 36C6AD9D`, `queries: 2048 sum 6A48E776`,
    `queries: 3072 sum F9B05D2F`, `queries: 4096 sum C8724E5B`, **`queries: PASS 4ACAA177`**, then `queries bench:
    rays avg X ms worst Y ms (target < 2 ms) PASS`, `queries bench: points avg X ms, Z us per box (target <= 0.1 us)
-   PASS`, `queries bench: move unfiltered X us filtered Y us`; `nnh: PASS (96 lines, …)`. Record X, Y, Z and the move
+   PASS`, `queries bench: move unfiltered X us filtered Y us`; `nnh: PASS (99 lines, …)` (a bench line saying FAIL
+   fails the run: see "Console bench refinement"). Record X, Y, Z and the move
    numbers here and in `docs/api/collision.md#limits-and-costs`. Then read the screenshots `first`, `pool`, `water`,
    `all`, `cast`, `touch` (top and bottom): the same pictures as the PC's (`build/logs/queries-*` from a `--pc` run).
    If the rays line says FAIL, apply risk 1's mitigations in order.
@@ -798,6 +799,84 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    lines, …)`. A mismatch with the self-check of run 1 passing would be a game bug, not an engine one (risk 8).
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (about 2.5 min).
    Expected: `bench: PASS 4 layers + 300 sprites, …` (spec 012's gate still passes); `nnh: PASS`.
+
+## Console bench refinement
+
+**First console run** (Old 3DS XL, Development = `-O2`, ARM11 268 MHz, VFPv2, GCC 16): correct everywhere
+(`queries: PASS 4ACAA177` = the PC's; platformer replay `96FE8943`, 60 Hz PASS) but slow: `rays avg 14.141 ms worst
+15.415 ms` (target < 2 ms; plan estimate ≈ 1.7 ms), `points avg 36.471 ms, 0.5565 us per box` (target ≤ 0.1 µs, ≈ 150
+cycles per box test), `move unfiltered 11.33 us filtered 11.02 us` (PC Debug ≈ 0.9 µs).
+
+**Causes** (from `arm-none-eabi-objdump -dr` of the 3ds-dev collision objects; no soft-float helper and no `__aeabi_*`
+division in any hot loop, no out-of-line `memcpy` call):
+
+- **VFP compares everywhere per box.** VFPv2 has no compare-to-register: each float test is `vcmp` + `vmrs APSR` +
+  branch, and `vmrs` stalls the ARM pipeline until the VFP result (whose add latency is 8 cycles) is ready. The filter
+  `passes()` made 6 of them per box (`w > 0`, `h > 0`, four `v - v == 0` finiteness tests with a `vsub` each); the
+  point test was an out-of-line call to spec 012's `contains()` (4 more); the ray's bounding-box reject recomputed the
+  segment's min/max per box and made 8 more, after spilling 8 floats.
+- **The box was copied twice through the stack**: `memcpy` into a `Rect` became 4 `ldr`, `stmia`/`ldm`/`stm`, then 4
+  `vldr`; plus a `mul` per box for each stride.
+- **Grid walk per cell:** three out-of-line `compare()` calls (one against `kRatioOne`), both axes' next line recomputed
+  every step (int → float → double each), `push()` zeroing the 40-byte cell with a `memset` call, `next()` and spec
+  012's `cell_at()` out of line. Per ray: `__aeabi_d2lz` for the step bound and a double division to seed the start
+  cell.
+- The bench measures only `run_frame()` (hash, ray setup, the queries, one profile scope); logging happens at phase
+  ends. Debug-only work in Development is one misuse check per query call (not per box). The numbers are honest.
+
+**Changes** (results unchanged; no API change):
+
+- `box_view.hpp`: the scans read each field's 32-bit pattern (`BoxCursor`, byte offsets, no `mul`) and test
+  finiteness and "size > 0" on the bits; `order_key()` maps a finite float to a signed integer with the same order
+  (−0 = +0). Every box scan (`boxes_at`, `boxes_overlapping`, `raycast`/`raycast_all`/line of sight on boxes,
+  `box_cast`/`box_cast_all`) first rejects on the x and y keys alone (left/above the point, past the segment's or the
+  cast's far side), then the filter, then validity; a float sum `x + w` is made only for a box that starts at or
+  before the near side (a box starting after it has `x + w > near` already: `w > 0`, round to nearest). All tests are
+  ANDed, so the order changes only the time. Early exits rather than branch-free `&` chains: on PC the `&` version was
+  slower (6.2 → 8.3 ns per point box) and the ARM11 is single-issue with a short mispredict.
+- `box_cast` gained the same reject: a target whose x key is above `float(max x + w)` starts beyond the exact reach.
+- `exact.hpp`: `compare()` inline, `before_end(t)` = `t.n < t.a` for `compare(t, kRatioOne) < 0` (× 1 is exact).
+- `GridWalk` keeps the next line of each axis (`tx_`, `ty_`) and recomputes only the crossed one; `push()` sets each
+  field (no `memset`); `next()` inline; the step bound converts through `int` (≤ 2^26; no `__aeabi_d2lz`); the start
+  cell's guess at t0 = 0 is `p` itself (no double division). `cell_at()` moved inline into `grid_internal.hpp` (spec
+  012's `move`, `cells_touching` use it too: integer code only, their results unchanged).
+
+**ARM evidence** (3ds-dev objects, before → after):
+
+| Hot path | Before | After |
+|----------|--------|-------|
+| `boxes_at`, per box | 88 instructions (67 + `contains()` 21), 10 `vcmp`/`vmrs`, 4 `vsub`, 2 `mul`, 1 call, 2 stack copies | 11–17 instructions for the ~75 % rejected on the keys, 0 VFP; others ≈ 40, 2 `vadd` + 2 `vmrs` only past the filter |
+| `raycast(BoxView)`, per box | 6 `vmrs` (filter) + call to `box_hit` (8 `vmrs` before its reject, 8 float spills) | 7 instructions per key reject, 0 VFP for the ≈ 60 % past the far side; a float sum for the ≈ 30 % before the near side; slab test (inline `compare`) for ≈ 10 % |
+| Grid walk, per cell | calls: `next`, `advance`, 3 × `compare`, `push`, `memset`, `cell_at`, the cell callback | calls: `advance`, `push`, the callback; 1 inline compare (2 `vmul.f64`, 1 `vmrs`) + 1 `vmrs`; 2 `vcvt` instead of 4 |
+| Per ray | `__aeabi_d2lz`, `along()` (double division) per moving axis | neither |
+
+Share of the bench's ray × box pairs (a scratch count over 60 frames, 491 520 pairs): 60 % rejected by the far keys,
+30 % need one float sum, 10 % reach the slab test.
+
+**PC** (pc-release, a scratch program looping over the bench's workloads, linked against the old and the new
+`nnh_core`; ns per call, three runs of each, final code): grid ray 428–443 → 296–313; ray against 64 boxes
+1209–1243 → 779–815; point test per box 8.2–8.5 → 6.1–7.1; box cast against 256 boxes 9366–9527 → 2745–3149. The example's bench in
+pc-dev (vsync-bound CPU clock, two runs): rays 0.466/0.376 → 0.248/0.242 ms, points 0.0107/0.0116 → 0.0101/0.0095 µs per
+box, moves unchanged (0.34–0.39 µs). x86 compares are cheap, so the PC gain is small; the ARM gain is in the table.
+
+**Checks:** `nnh_tests` 2019/2019 (5 new tests in `tests/collision/test_box_keys.cpp`: keys and bit tests against the
+float operations, the cursor, the scans against `contains()`/`overlaps()` on a half-pixel lattice with −0 and
+overflowing sums); unchanged and passing: the 5000-ray exact references,
+`the_queries_self_check_reaches_the_golden_checksum` (`0x4ACAA177`), `collision_grid_regression_*`; ctest pc-debug 264/264 and pc-release 257/257 (with
+`queries_self_check_pc` and `platformer_replay_matches_script`); `check.nnhs --pc` PASS (99 lines), `level.nnhs --pc`
+PASS (`96FE8943`); 3ds-release and 3ds-dev without a warning; 3ds-release `hello.elf` unchanged (201 188 / 28 352 /
+106 680), 3ds-dev `hello.elf` too (217 992); 3ds-dev `queries.elf` text 289 568 → 291 120. No `__aeabi_*`,
+`memcpy`, `floorf` or `ceilf` reference left in `grid_walk`, `raycast_boxes`, `raycast_grid`, `ray_box`,
+`point_queries`, `box_cast` (the start cell's `first_cell()` in `grid.cpp` still calls `floorf`, once per axis per
+ray).
+
+**`check.nnhs`** now has `fail-on "ms) FAIL"` and `fail-on "us) FAIL"`: a bench line over its target fails the console
+run (checked on the PC with a scratch script failing on `ms) PASS`: `nnh: FAIL … matched`, exit 1).
+
+Subnormal box fields: "size > 0" and the key order are now IEEE's on every system (the 3DS's VFP flushed subnormal
+operands of the old float compares to zero); results for such inputs were never guaranteed (Determinism), and nothing
+else changes. **Not changed:** `move`'s own code (spec 012: `floorf`/`ceilf` calls and float divisions per sweep);
+the targets (the maintainer sets them from the next console run).
 
 ## Stage 11 results
 

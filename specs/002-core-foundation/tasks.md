@@ -1,6 +1,6 @@
 # Tasks 002: Core foundation
 
-Status: implemented (2026-11-17); verified on a real 3DS (CPU-fault test with UNITINFO still to do)
+Status: implemented (2026-11-17); verified on a real 3DS (CPU-fault test with UNITINFO passed 2026-11-22)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each stage ends green: PC + 3DS build, tests, CI, docs updated (nnh-docs). `[P]` = parallelizable.
@@ -64,7 +64,11 @@ mutation check passed. Times: edit game `.cpp` → PC 1.3 s, `.3dsx` 2.1 s; clea
 - [x] **T9.3** CI check: Release `.elf` has no trace/assert strings (AC-5); size budget measured
 - [x] **T9.4** `docs/guides/debugging-on-3ds.md` (GDB via Luma3DS, UNITINFO, Luma dumps)
 - [x] **T9.5** run on 3DS: logs over 3dslink, overlay, save counter, crash screen, `crash.txt` — verified by the
-  maintainer on hardware (2026-11-17). Still to do: a CPU-fault test with Luma3DS "Set developer UNITINFO".
+  maintainer on hardware (2026-11-17). CPU-fault test with Luma3DS developer UNITINFO (`use_dev_unitinfo = 1`,
+  Luma3DS 13.5): passed 2026-11-22 on the Old 3DS XL with `examples/foundation/tests/cpu_fault.nnhs` — the engine's
+  handler logged `Data abort: The CPU stopped on an invalid operation` and showed the red crash screen with the
+  registers. The first run showed a black screen: under `nnh run` stdout is the 3dslink socket, so the screen's
+  `printf` went to the PC; it now writes to libctru's console device (`assert_crash.nnhs` checks the assert path).
   Deviation: no dedicated console conformance runner; on 3DS the contract is exercised by `hello` and
   `foundation`. A conformance runner for consoles is deferred to the next platform work.
 - [x] **T9.6** build-time baseline update in ROADMAP; architecture pages "Status: implemented"; ROADMAP checkboxes; spec/plan/tasks → implemented

@@ -124,7 +124,8 @@ results" and "Stage 10 results".
 - [x] File safety: confined `nnh::fs`, atomic saves, fuzzed parsers (stage 7)
 - [x] CI hardening: least-privilege permissions, actions pinned by SHA, release-strings check, fuzz job (stage 9)
 - [x] Foundation verified on a real 3DS (3dslink logs, overlay, save counter, crash screen, crash.txt) — 2026-11-17
-- [ ] CPU-fault crash screen on 3DS with Luma3DS "Set developer UNITINFO" — maintainer, later
+- [x] CPU-fault crash screen on 3DS with Luma3DS developer UNITINFO — passed on the Old 3DS XL (2026-11-22,
+  `examples/foundation/tests/cpu_fault.nnhs`; it also fixed a black crash screen under `nnh run`)
 - [x] Development builds started by 3dslink **without `-s`** no longer hang: the log connection gives up after 1 s and the game runs without logs (fixed and verified on an Old 3DS XL, 2026-11-18)
 
 ## M1b — Events, scenes, input

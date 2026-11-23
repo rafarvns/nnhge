@@ -41,10 +41,11 @@ double cells_along(const GridWalk::Axis& ax) {
 
 } // namespace
 
-GridWalk::GridWalk(const Grid& grid, const Segment& s, bool clip) : clip_(clip) {
+GridWalk::GridWalk(const Grid& grid, const Segment& s, bool clip, WalkPath path) : clip_(clip) {
     x_ = {s.px, s.ax, s.sx, grid.origin.x, grid.cell_w, grid.width};
     y_ = {s.py, s.ay, s.sy, grid.origin.y, grid.cell_h, grid.height};
-    done_ = !start(s);
+    lattice_ = path == WalkPath::Any && !zero_length(s) && lattice_inputs(grid, s);
+    done_ = lattice_ ? !start_lattice(s) : !start(s);
 }
 
 bool GridWalk::start(const Segment& s) {
@@ -92,25 +93,6 @@ bool GridWalk::clip_to_grid(Ratio& t0) const {
     if (compare(enter, exit) > 0 || !before_end(enter)) return false;
     t0 = enter;
     return true;
-}
-
-void GridWalk::push(int x, int y, Ratio t, bool face_x, bool face_y, bool corner) {
-    if (clip_ && !in_grid(x, y)) return;
-    WalkCell& c = queue_[queued_++];
-    c.x = x; // every field set (no `c = {}`: a memset call per cell on the 3DS)
-    c.y = y;
-    c.t = t;
-    c.face_x = face_x;
-    c.face_y = face_y;
-    c.inside = false;
-    c.corner = corner;
-    c.corner_point = {};
-    if (corner) {
-        // The corner both lines meet at: the x line between this cell's column and the walk's, the same for y.
-        const int cx = face_x ? (x_.s > 0 ? x : x + 1) : (x_.s > 0 ? x + 1 : x);
-        const int cy = face_y ? (y_.s > 0 ? y : y + 1) : (y_.s > 0 ? y + 1 : y);
-        c.corner_point = {x_.edge(cx), y_.edge(cy)};
-    }
 }
 
 void GridWalk::advance() {

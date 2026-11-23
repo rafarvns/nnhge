@@ -2,7 +2,7 @@
 
 Status: approved (2026-11-22, maintainer pre-approved); stages 0–8 and 11 done 2026-11-23; T9.1 passed on VM 120;
 T10.2 (Old 3DS, the maintainer) pending, T10.2 prepared in plan.md "Stage 10: console run (prepared)"; first console
-run correct but slow, T10.3 (bench refinement) done 2026-11-23, console re-run pending
+run correct but slow, T10.3 (bench refinement) and its round 2 done 2026-11-23, console re-run pending
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -267,6 +267,13 @@ refinements", as in plans 012–018.
   changing a result (integer box scans on order keys, inline exact compare, cached walk lines, no per-cell `memset`
   or calls); `check.nnhs` fails on a bench FAIL line. Tests: `tests/collision/test_box_keys.cpp`; every golden
   unchanged. Files: plan.md ("Console bench refinement"). Then T10.2 run 1 again on the console.
+  Second console run: still correct, rays 6.0 ms (points not reached: the script stopped at the first FAIL) → round 2.
+- [x] **T10.3 round 2** The bench logs a split of the rays (grid, the walk's start, boxes, cells per ray) and a
+  verdict line after every number, `check.nnhs` fails on the verdict; the grid walk steps in integers on the 1/256 px
+  lattice (same cells and Ratio values), the slab test of a box past the reject is inline with three compares and the
+  first hit is built once, the world raycast checks and makes its segment once. Tests:
+  `tests/collision/test_grid_walk_lattice.cpp`, `tests/collision/test_raycast_boxes_scan.cpp`; every golden
+  unchanged. Files: plan.md ("Console bench refinement (round 2)"). Then T10.2 run 1 again on the console.
 
 ## Stage 11: docs, roadmap, status
 

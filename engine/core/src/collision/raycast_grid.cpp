@@ -51,32 +51,37 @@ bool inputs_ok(const Grid& grid, Vec2 from, Vec2 to, const char* who) {
 
 } // namespace
 
-bool raycast(const Grid& grid, Vec2 from, Vec2 to, RayHit& hit, const QueryFilter& filter) {
-    if (!inputs_ok(grid, from, to, "raycast")) return false;
-    const detail::Segment s = detail::make_segment(from, to);
-    detail::GridWalk walk(grid, s, outside_inert(grid, s, filter));
-    detail::WalkCell c;
-    while (walk.next(c)) {
-        const Cell kind = detail::cell_at(grid, c.x, c.y);
-        if (kind != Cell::Empty && cell_hit(walk, s, c, kind, from, filter, hit)) {
-            hit.distance = hit.fraction * detail::ray_length(from, to);
+namespace detail {
+
+bool first_cell_hit(const Grid& grid, const Segment& s, RayHit& hit, const QueryFilter& filter) {
+    GridWalk walk(grid, s, outside_inert(grid, s, filter));
+    while (const WalkCell* c = walk.step()) {
+        const Cell kind = cell_at(grid, c->x, c->y);
+        if (kind != Cell::Empty && cell_hit(walk, s, *c, kind, s.from, filter, hit)) {
+            hit.distance = hit.fraction * ray_length(s.from, s.to);
             return true;
         }
     }
     return false;
 }
 
+} // namespace detail
+
+bool raycast(const Grid& grid, Vec2 from, Vec2 to, RayHit& hit, const QueryFilter& filter) {
+    if (!inputs_ok(grid, from, to, "raycast")) return false;
+    return detail::first_cell_hit(grid, detail::make_segment(from, to), hit, filter);
+}
+
 int raycast_all(const Grid& grid, Vec2 from, Vec2 to, RayHit* hits, int capacity, const QueryFilter& filter) {
     if (!inputs_ok(grid, from, to, "raycast_all") || !detail::buffer_ok(hits, capacity, "raycast_all")) return 0;
     const detail::Segment s = detail::make_segment(from, to);
     detail::GridWalk walk(grid, s, outside_inert(grid, s, filter));
-    detail::WalkCell c;
     RayHit hit;
     float length = -1;
     int total = 0;
-    while (walk.next(c)) {
-        const Cell kind = detail::cell_at(grid, c.x, c.y);
-        if (kind == Cell::Empty || !cell_hit(walk, s, c, kind, from, filter, hit)) continue;
+    while (const detail::WalkCell* c = walk.step()) {
+        const Cell kind = detail::cell_at(grid, c->x, c->y);
+        if (kind == Cell::Empty || !cell_hit(walk, s, *c, kind, from, filter, hit)) continue;
         if (length < 0) length = detail::ray_length(from, to);
         hit.distance = hit.fraction * length;
         total = detail::insert_hit(hits, capacity, total, hit); // walk order is fraction order

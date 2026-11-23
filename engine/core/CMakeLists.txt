@@ -219,6 +219,7 @@ set(_nnh_query_sources
     src/collision/cells_crossed.cpp
     src/collision/exact.cpp
     src/collision/grid_walk.cpp
+    src/collision/grid_walk_lattice.cpp
     src/collision/hit_list.cpp
     src/collision/layers.cpp
     src/collision/point_queries.cpp

@@ -2,6 +2,11 @@
 // the segment's bounding box (exact: it only drops boxes the segment can't reach). The reject is integer first
 // (order keys, box_view.hpp), before the filter: a box starting at or past the segment's far side never needs a
 // float; one starting at or before its near side needs its float sum x + w, as the slab test computes it.
+//
+// Past the reject the slab test (ray_box.hpp's rules) is entered inline (enters()): the reject already proved what
+// slab_cast() would check first (each moving axis enters before t = 1 and leaves after t = 0, a still axis is
+// strictly inside its slab), so only the three ratio compares that choose the entry and the exit remain. A first-hit
+// ray keeps the best entry and builds its RayHit once, at the end (plan "Console bench refinement (round 2)").
 
 #include "collision/box_view.hpp"
 #include "collision/hit_list.hpp"
@@ -43,45 +48,74 @@ bool reaches(const Bounds& s, const detail::BoxBits& box) {
     return detail::order_key(box.y) > s.ky0 || detail::from_bits(box.y) + detail::from_bits(box.h) > s.y0;
 }
 
-/// Box `box` (past may_reach) hit by from → to: fills everything but the distance and the index.
-bool box_hit(const detail::Segment& s, Vec2 from, Rect box, bool from_inside, RayHit& hit) {
-    const detail::SlabHit h = detail::slab_cast(s, detail::slab_x(box), detail::slab_y(box));
-    if (!h.hit || (h.inside && !from_inside)) return false;
-    if (h.inside) {
-        hit = detail::inside_hit(from);
-        return true;
-    }
-    const float x1 = box.x + box.w;
-    const float y1 = box.y + box.h;
-    hit = {};
-    hit.fraction = detail::to_fraction(h.t);
-    hit.normal = detail::face_normal(s, h.face_x);
-    if (h.face_x) {
-        hit.point = {s.sx > 0 ? box.x : x1, detail::clamp_to(detail::along(s.py, s.dy, h.t), box.y, y1)};
-    } else {
-        hit.point = {detail::clamp_to(detail::along(s.px, s.dx, h.t), box.x, x1), s.sy > 0 ? box.y : y1};
-    }
+/// Where a ray enters a box.
+struct Entry {
+    detail::Ratio t{};   ///< kRatioZero when inside
+    bool face_x = false; ///< entered through an x face (also on a corner tie)
+    bool inside = false; ///< the start is strictly inside
+};
+
+/// The numerators of the ray's entry and exit parameters in a box's slab on one moving axis (ray_box.cpp's
+/// axis_interval; the denominator is the axis' |d|).
+void slab_of(double p, int s, double lo, double hi, double& in, double& out) {
+    in = s > 0 ? lo - p : p - hi;
+    out = s > 0 ? hi - p : p - lo;
+}
+
+/// slab_cast(s, slab_x(r), slab_y(r)) for a box past the reject (from 0 < t < 1 and the still axis' check
+/// already hold): the later entry (x on a tie) before the earlier exit; inside when it enters before t = 0. In
+/// scalars (a Ratio chosen by a condition went through the stack on the 3DS); each test is compare()'s, with its
+/// products: compare(p, q) < 0 ⇔ p.n · q.a < q.n · p.a.
+bool enters(const detail::Segment& s, const Rect& r, Entry& e) {
+    double in_x = 0, out_x = 0, in_y = 0, out_y = 0;
+    if (s.sx != 0) slab_of(s.px, s.sx, r.x, static_cast<double>(r.x + r.w), in_x, out_x);
+    if (s.sy != 0) slab_of(s.py, s.sy, r.y, static_cast<double>(r.y + r.h), in_y, out_y);
+    const double ax = s.ax, ay = s.ay;
+    const bool x_enters = s.sx != 0 && (s.sy == 0 || !(in_x * ay < in_y * ax));   // compare(in_x, in_y) >= 0
+    const bool x_exits = s.sx != 0 && (s.sy == 0 || !(out_x * ay > out_y * ax));  // compare(out_x, out_y) <= 0
+    const double enter_n = x_enters ? in_x : in_y, enter_a = x_enters ? ax : ay;
+    const double exit_n = x_exits ? out_x : out_y, exit_a = x_exits ? ax : ay;
+    if (!(enter_n * exit_a < exit_n * enter_a)) return false; // compare(enter, exit) < 0
+    e.inside = enter_n < 0;
+    e.t = e.inside ? detail::kRatioZero : detail::Ratio{enter_n, enter_a};
+    e.face_x = x_enters;
     return true;
 }
 
-/// One scan of the view in index order: calls `found(i, hit)` for each box the ray hits; stops when it returns
-/// true.
+/// The RayHit of entry `e` into box `box` (all but the distance and the index), as the slab test's callers build it.
+RayHit hit_of(const detail::Segment& s, const Rect& box, const Entry& e, float fraction) {
+    if (e.inside) return detail::inside_hit(s.from);
+    RayHit hit;
+    hit.fraction = fraction;
+    hit.normal = detail::face_normal(s, e.face_x);
+    const float x1 = box.x + box.w;
+    const float y1 = box.y + box.h;
+    if (e.face_x) {
+        hit.point = {s.sx > 0 ? box.x : x1, detail::clamp_to(detail::along(s.py, s.dy, e.t), box.y, y1)};
+    } else {
+        hit.point = {detail::clamp_to(detail::along(s.px, s.dx, e.t), box.x, x1), s.sy > 0 ? box.y : y1};
+    }
+    return hit;
+}
+
+float fraction_of(const Entry& e) { return e.inside ? 0.0f : detail::to_fraction(e.t); }
+
+/// One scan of the view in index order: calls `found(i, box, entry)` for each box the ray enters (starts inside
+/// only with `from_inside`); stops when it returns true.
 template <typename Found>
-void scan(const BoxView& boxes, const detail::Segment& s, Vec2 from, Vec2 to, const QueryFilter& filter,
-          bool from_inside, Found found) {
-    const Bounds b = bounds_of(from, to);
+void scan(const BoxView& boxes, const detail::Segment& s, const QueryFilter& filter, bool from_inside, Found found) {
+    const Bounds b = bounds_of(s.from, s.to);
     const QueryFilter f = filter; // locals: what `found` writes can't alias them
     const int count = boxes.count;
     detail::BoxCursor cursor(boxes);
     detail::BoxBits box;
-    RayHit hit;
+    Entry e;
     for (int i = 0; i < count; ++i, cursor.next()) {
         if (cursor.x_key() >= b.kx1 || cursor.y_key() >= b.ky1) continue; // x ≥ max x or y ≥ max y
-        if (!detail::candidate(cursor, f, i, box) || !reaches(b, box) ||
-            !box_hit(s, from, detail::to_rect(box), from_inside, hit)) {
-            continue;
-        }
-        if (found(i, hit)) return;
+        if (!detail::candidate(cursor, f, i, box) || !reaches(b, box)) continue;
+        const Rect r = detail::to_rect(box);
+        if (!enters(s, r, e) || (e.inside && !from_inside)) continue;
+        if (found(i, r, e)) return;
     }
 }
 
@@ -97,26 +131,40 @@ bool any_box_on_ray(const BoxView& boxes, Vec2 from, Vec2 to, const QueryFilter&
     const Segment s = make_segment(from, to);
     if (zero_length(s)) return false;
     bool any = false;
-    scan(boxes, s, from, to, filter, false, [&any](int, const RayHit&) { return any = true; });
+    scan(boxes, s, filter, false, [&any](int, const Rect&, const Entry&) { return any = true; });
     return any;
+}
+
+bool first_box_hit(const BoxView& boxes, const Segment& s, RayHit& hit, const QueryFilter& filter) {
+    if (zero_length(s)) return false;
+    int best = -1;
+    Rect best_box{};
+    Entry best_entry;
+    float best_fraction = 0;
+    scan(boxes, s, filter, filter.hit_from_inside, [&](int i, const Rect& r, const Entry& e) {
+        // Ties at one fraction go to the lowest index. A later entry that isn't exactly earlier can't round to a
+        // smaller fraction (rounding keeps the order), so the division is made only for an exactly earlier one.
+        if (best >= 0 && compare(e.t, best_entry.t) >= 0) return false;
+        const float fraction = fraction_of(e);
+        if (best >= 0 && !(fraction < best_fraction)) return false;
+        best = i;
+        best_box = r;
+        best_entry = e;
+        best_fraction = fraction;
+        return fraction == 0; // nothing rounds below 0: the rest of the view can't win
+    });
+    if (best < 0) return false;
+    hit = hit_of(s, best_box, best_entry, best_fraction);
+    hit.box = best;
+    hit.distance = hit.fraction * ray_length(s.from, s.to);
+    return true;
 }
 
 } // namespace detail
 
 bool raycast(const BoxView& boxes, Vec2 from, Vec2 to, RayHit& hit, const QueryFilter& filter) {
     if (!inputs_ok(boxes, from, to, "raycast")) return false;
-    const detail::Segment s = detail::make_segment(from, to);
-    if (detail::zero_length(s)) return false;
-    bool found = false;
-    scan(boxes, s, from, to, filter, filter.hit_from_inside, [&](int i, const RayHit& candidate) {
-        if (found && !(candidate.fraction < hit.fraction)) return false; // ties: the lowest index
-        hit = candidate;
-        hit.box = i;
-        found = true;
-        return false;
-    });
-    if (found) hit.distance = hit.fraction * detail::ray_length(from, to);
-    return found;
+    return detail::first_box_hit(boxes, detail::make_segment(from, to), hit, filter);
 }
 
 int raycast_all(const BoxView& boxes, Vec2 from, Vec2 to, RayHit* hits, int capacity, const QueryFilter& filter) {
@@ -125,8 +173,8 @@ int raycast_all(const BoxView& boxes, Vec2 from, Vec2 to, RayHit* hits, int capa
     if (detail::zero_length(s)) return 0;
     const float length = detail::ray_length(from, to);
     int total = 0;
-    scan(boxes, s, from, to, filter, filter.hit_from_inside, [&](int i, const RayHit& candidate) {
-        RayHit h = candidate;
+    scan(boxes, s, filter, filter.hit_from_inside, [&](int i, const Rect& r, const Entry& e) {
+        RayHit h = hit_of(s, r, e, fraction_of(e));
         h.box = i;
         h.distance = h.fraction * length;
         total = detail::insert_hit(hits, capacity, total, h);

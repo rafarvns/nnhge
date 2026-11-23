@@ -14,8 +14,9 @@ class Hud {
     void attach();
     void detach();
 
-    /// Title (map property `title`), `about`, coins and score, the map's `music` property, from y 10 to ~90.
-    void draw(const nnh::Tilemap& map, const char* about) const;
+    /// Title (map property `title`), `about`, coins and score, the level's live entities (spec 020), the map's
+    /// `music` property, from y 10 to ~90.
+    void draw(const nnh::Tilemap& map, const char* about, int entities) const;
     /// The controls, at the bottom.
     void draw_controls() const;
 

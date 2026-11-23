@@ -14,6 +14,7 @@ nnh::Entity spawn_coin(nnh::World& world, nnh::Rect bounds, int value);
 struct TakenCoin {
     nnh::Entity entity{};
     int value = 0;
+    nnh::Vec2 centre{}; ///< of its box
 };
 
 /// Takes every coin `box` overlaps (shared area > 0: touching edges don't count) when `mask` detects coins, in

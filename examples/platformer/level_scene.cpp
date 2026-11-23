@@ -34,7 +34,7 @@ void LevelScene::update() {
 
 void LevelScene::draw() {
     play_.draw();
-    hud_.draw(map_, about_);
+    hud_.draw(map_, about_, play_.entity_count());
     if (replay_.running() || replay_.finished()) {
         replay_.draw_banner();
         replay_.draw_panel(104);

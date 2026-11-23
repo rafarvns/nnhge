@@ -37,14 +37,18 @@ struct ReplaySample {
     nnh::collision::Sides touching{};
     int coins = 0; ///< coins collected in the level so far
     std::uint32_t turrets = 0; ///< the turrets' state word (TurretBook::state(), spec 019): every ray they cast
+    int entities = 0;          ///< live entities of the level's world (spec 020: the sparkles come and go)
+    std::uint32_t handles = 0; ///< FNV-1a of their slots (the handles' slot halves), ascending: every spawn and destroy
 };
 
 inline constexpr std::uint32_t kChecksumStart = 2166136261u; ///< FNV-1a's offset basis
 
 /// FNV-1a over the sample's words (box x, box y, camera x, camera y as float bits; touching sides as bits
-/// left 1, right 2, ceiling 4, floor 8; coins; the turrets' word), each as 4 little-endian bytes: the same on
-/// every system.
+/// left 1, right 2, ceiling 4, floor 8; coins; the turrets' word; the live entities; their handles' hash), each as 4
+/// little-endian bytes: the same on every system.
 std::uint32_t checksum_add(std::uint32_t sum, const ReplaySample& sample);
+/// One word into an FNV-1a sum, as 4 little-endian bytes.
+std::uint32_t checksum_word(std::uint32_t sum, std::uint32_t word);
 
 /// What recording a frame finished.
 struct ReplayProgress {

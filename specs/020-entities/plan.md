@@ -845,3 +845,29 @@ personalities); lowest-bit scans are `rsb`/`and`/`clz`/`rsb`. The other `memset`
 spawned, not per element. **Expected at the console (T10.2):** `each` and `spawn` PASS, `find` marginal, `get` and
 `pool` FAIL — the plan's risk 1; T10.3 then applies the remaining mitigations, and AC-7's rule sets the budgets from
 the measurement with margin. No result changed: every golden holds (`C8FB9A41`, the platformer's `96FE8943`).
+
+## Stage 8 refinements and results
+
+- **Sparkles** (`examples/platformer/sparkles.{hpp,cpp}`, `level::Spark` + `level::Velocity`, tag `"fx"`): four per
+  taken coin at its centre (`TakenCoin` gained `centre`), velocities (±0.75, −1.25) and (±0.375, −1.75), faded 1 → 0
+  over 24 frames by the level's bound `TweenSet` (128 tweens) through a `Setter` capturing `[World*, Entity]`; the
+  fade's `on_finish` destroys the sparkle. **Spark's remove hook always kills its fade**, not "unless `clearing()`"
+  as T8.1 worded it: killing is cleanup, not an effect, and a restart is a `clear()` (with "unless clearing", a restart
+  would leave fades running on free slots; decision 13's "so a restart leaves no tween" is what holds).
+  `LevelPlay` binds world → tween set (a member initialised between them) → bullet pool.
+- **The sample's new words**: `entities` (live count) and `handles` — **the FNV-1a of the live entities' slots**, not
+  of their full handles (deviation from decision 13's "handles' bits"). The script's replay and the standalone replay
+  gave different sums with full handles: a restart clears the world but never resets generations (stale handles from
+  before it must stay stale), so generations carry whatever was played before the replay. The live slots of each
+  frame are the same whatever came before and change with every spawn and destroy.
+- **New replay lines** (`level.nnhs`, in the same commit): `60 … 720BE2BE`, `120 … 0330ACD0`, `180 … BA334AA2`,
+  `240 … 74731BB8`, `300 … 421D79BE`, `360 … 4955DE42`, `420 … CC4B644A`, `480 … 4E9131BA`, `540 … F2718034`,
+  `600 … A8292126`, `660 bonus … D76BB2E3`, `720 … 2AFED843`, `780 … FE036A4F`, `840 … FC1690D6`,
+  `replay: done 900 frames sum B2418A28: 60 Hz PASS`. **The x, y and coins columns are unchanged on all 14 lines.**
+  ctest `platformer_replay_matches_script` passes; `level.nnhs --pc` → `nnh: PASS (79 lines, frames 1-1553)`.
+- **Screenshot** (`PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=64`, read back): the first coin's sparkles under the
+  player, `coins 1 / 47`, `entities 53` (50 at the start − 1 coin + 4 sparkles).
+- T8.4 (AC-8): `compare.sh` — hello, sprites, scenes, camera, queries and the bench identical; level 1 at frame 90 and
+  the replay at 312 differ **only on the bottom screen's HUD** (the entity count; the replay panel's checksum), their
+  top screens are pixel-identical. `hello` sizes and `nm` equal stage 0's. ctest pc-debug 265/265, pc-release 257/257,
+  3ds-release without a warning; `nnh_tests` 2183.

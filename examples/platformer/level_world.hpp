@@ -10,6 +10,7 @@
 #include <nnh/entities.hpp>
 #include <nnh/math.hpp>
 #include <nnh/result.hpp>
+#include <nnh/tween.hpp>
 
 namespace level {
 
@@ -27,17 +28,30 @@ struct Turret {
     bool sees = false;
     int cooldown = 0;
 };
+/// A coin's sparkle (sparkles.hpp, spec 020 AC-4 step 2): faded by a tween, destroyed when the fade ends.
+struct Spark {
+    nnh::Vec2 position{};
+    float alpha = 0;
+    nnh::TweenHandle fade{};
+};
+/// Pixels per frame.
+struct Velocity {
+    nnh::Vec2 v{};
+};
 
 inline constexpr nnh::Tag kPlayerTag = nnh::tag("player");
 inline constexpr nnh::Tag kCoinTag = nnh::tag("coin");
 inline constexpr nnh::Tag kTurretTag = nnh::tag("turret");
-static_assert(nnh::tags_distinct(kPlayerTag, kCoinTag, kTurretTag));
+inline constexpr nnh::Tag kFxTag = nnh::tag("fx");
+static_assert(nnh::tags_distinct(kPlayerTag, kCoinTag, kTurretTag, kFxTag));
 
 inline constexpr int kMaxEntities = 256;
 inline constexpr int kMaxCoins = 128;
 inline constexpr int kMaxTurrets = 4;
+inline constexpr int kMaxSparks = 96;
 
-/// A level's world: Body, Coin and Turret kinds, two tags per entity. Fails only when out of memory.
-nnh::Result<nnh::World> create_world();
+/// A level's world: Body, Coin, Turret, Spark and Velocity kinds, two tags per entity. Spark's remove hook kills its
+/// fade in `tweens` (when given: bind the world before that set). Fails only when out of memory.
+nnh::Result<nnh::World> create_world(nnh::TweenSet* tweens = nullptr);
 
 } // namespace level

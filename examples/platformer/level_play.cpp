@@ -17,8 +17,8 @@ constexpr nnh::Screen kTop = nnh::Screen::Top;
 // Draw layers, back to front.
 enum DrawLayer : int { kBackdrop = 0, kGround = 2, kThings = 3, kPlayer = 4, kFront = 5 };
 
-nnh::World make_world() {
-    auto world = level::create_world();
+nnh::World make_world(nnh::TweenSet* tweens) {
+    auto world = level::create_world(tweens);
     NNH_VERIFY(world.ok(), "the level's world: out of memory");
     return static_cast<nnh::World&&>(world.value());
 }
@@ -37,8 +37,8 @@ bool door_target(const char* to, Demo& out) {
 } // namespace
 
 LevelPlay::LevelPlay(const Art& art, const nnh::Tilemap& map, nnh::Scene& scene)
-    : art_(art), map_(map), camera_(level_camera_settings(map.bounds())), world_(make_world()) {
-    world_.bind(scene);
+    : art_(art), map_(map), camera_(level_camera_settings(map.bounds())), world_(make_world(&tweens_)),
+      world_bound_(bind_world(scene)), tweens_(scene, {.tweens = 128}) {
     turrets_.bullets().bind(scene);
     grid_ = map.collision_grid(layers::kPlayerMask); // the player's view of the level (spec 019)
     grid_.outside = nnh::collision::Cell::Solid; // walls the level in (and a floor under the pits)
@@ -50,6 +50,13 @@ LevelPlay::LevelPlay(const Art& art, const nnh::Tilemap& map, nnh::Scene& scene)
             draw_layer_[i] = map.layer_parallax(i).x != 1 ? kBackdrop : kGround;
     }
     read_objects();
+}
+
+// D30 runs attachments in attach order: the world's exit clear (its Spark hooks kill their fades) comes before the
+// tween set's own clear.
+bool LevelPlay::bind_world(nnh::Scene& scene) {
+    world_.bind(scene);
+    return true;
 }
 
 void LevelPlay::read_objects() {
@@ -116,6 +123,7 @@ void LevelPlay::update(const PlayerInput& input, bool doors) {
         return;
     }
     world_.get<level::Body>(player_entity_)->box = box; // the player's body: the one per-frame write
+    sparkles_.update();
     take_coins();
     const int hits = turrets_.hits();
     turrets_.update(grid_, player_entity_); // after the player: they aim at this frame's position
@@ -130,7 +138,10 @@ void LevelPlay::take_coins() {
     TakenCoin taken[8];
     const int count = collect_coins(world_, player_.box(), layers::kPlayerMask, taken, 8);
     collected_ += count;
-    for (int i = 0; i < count && i < 8; ++i) nnh::events::publish(CoinCollected{taken[i].value});
+    for (int i = 0; i < count && i < 8; ++i) {
+        nnh::events::publish(CoinCollected{taken[i].value});
+        sparkles_.burst(taken[i].centre);
+    }
 }
 
 void LevelPlay::enter_doors() {
@@ -149,7 +160,18 @@ ReplaySample LevelPlay::sample() {
         .camera = camera_.position(),
         .touching = player_.touching(),
         .coins = collected_,
-        .turrets = turrets_.state()};
+        .turrets = turrets_.state(),
+        .entities = world_.count(),
+        .handles = handle_hash()};
+}
+
+// The slots, not the generations: a restart clears the world but never resets generations (stale handles from
+// before it must stay stale), so they carry whatever was played before the replay; the live slots of each frame are
+// the same whatever came before, and they change with every spawn and destroy.
+std::uint32_t LevelPlay::handle_hash() {
+    std::uint32_t sum = kChecksumStart;
+    for (const nnh::Entity e : world_.entities()) sum = checksum_word(sum, static_cast<std::uint32_t>(e.slot()));
+    return sum;
 }
 
 void LevelPlay::draw() {
@@ -163,6 +185,7 @@ void LevelPlay::draw() {
     });
     draw_doors();
     draw_turrets();
+    draw_sparkles();
     sprite_.draw(kTop, art_.player, player_.feet(), kPlayer);
     if (turrets_.flash() > 0 && (turrets_.flash() / 2) % 2 == 0) // hit: the player blinks red
         nnh::gfx::fill_rect(kTop, player_.box(), nnh::rgba(255, 40, 40, 140), {.layer = kFront});
@@ -185,6 +208,14 @@ void LevelPlay::draw_turrets() {
         const nnh::Vec2 c = b.stuck > 0 ? b.position + b.normal * 1.5f : b.position;
         gfx::fill_rect(kTop, {c.x - 1.5f, c.y - 1.5f, 3, 3}, nnh::rgb(255, 230, 90), {.layer = kPlayer});
     }
+}
+
+void LevelPlay::draw_sparkles() {
+    world_.each<level::Spark>([](nnh::Entity, level::Spark& s) {
+        const auto a = static_cast<std::uint8_t>(s.alpha * 255.0f);
+        nnh::gfx::fill_rect(kTop, {s.position.x - 1, s.position.y - 1, 3, 3}, nnh::rgba(255, 244, 160, a),
+                            {.layer = kPlayer});
+    });
 }
 
 void LevelPlay::draw_doors() const {

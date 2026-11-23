@@ -8,6 +8,7 @@
 // The player, the coins and the turrets are entities of one nnh::World (spec 020, level_world.hpp) bound to the level's
 // scene with the turrets' bullet pool: flushed before each update, emptied when the level is left. A restart is
 // World::clear() plus the same spawns (the player, then the map's objects in order), so every slot is the first load's.
+// A taken coin bursts into sparkles (sparkles.hpp) faded by the level's tween set, bound after the world.
 //
 // It reads the map's objects: a point named "spawn"; objects of type "coin" (property `value`, 1 if absent);
 // objects of type "door" (property `to`: "level1" or "bonus"); objects of type "turret" (turrets.hpp: they look
@@ -20,6 +21,7 @@
 #include "player.hpp"
 #include "player_sprite.hpp"
 #include "replay_run.hpp"
+#include "sparkles.hpp"
 #include "turrets.hpp"
 
 #include <nnh/camera.hpp>
@@ -44,6 +46,8 @@ class LevelPlay {
 
     /// What the frame left, for the replay's checksum.
     ReplaySample sample();
+    /// Live entities of the level's world (the HUD shows it).
+    int entity_count() const { return world_.count(); }
 
   private:
     struct Door {
@@ -57,6 +61,9 @@ class LevelPlay {
     void enter_doors();
     void draw_doors() const;
     void draw_turrets();
+    void draw_sparkles();
+    bool bind_world(nnh::Scene& scene);
+    std::uint32_t handle_hash(); ///< FNV-1a of the live entities' slots, ascending
 
     const Art& art_;
     const nnh::Tilemap& map_;
@@ -66,7 +73,10 @@ class LevelPlay {
     nnh::Vec2 spawn_{};
     nnh::CameraRig camera_; ///< follows the player (spec 018), see level_camera.hpp
     float look_ahead_ = 0;  ///< the camera's offset x: ahead of the player, eased when it turns
-    nnh::World world_; ///< the player, coins and turrets (level_world.hpp)
+    nnh::World world_;      ///< the player, coins, turrets and sparkles (level_world.hpp)
+    bool world_bound_;      ///< initialised between world_ and tweens_: the world is bound before the set
+    nnh::TweenSet tweens_;  ///< the sparkles' fades, bound to the level scene after the world
+    Sparkles sparkles_{world_, tweens_};
     nnh::Entity player_entity_{};
     TurretBook turrets_{world_};
     int coin_count_ = 0; ///< coins at the start

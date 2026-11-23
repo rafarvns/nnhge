@@ -4,13 +4,7 @@
 
 namespace {
 
-std::uint32_t add_word(std::uint32_t sum, std::uint32_t word) {
-    for (int i = 0; i < 4; ++i) {
-        sum ^= (word >> (8 * i)) & 0xFFu;
-        sum *= 16777619u; // FNV prime
-    }
-    return sum;
-}
+std::uint32_t add_word(std::uint32_t sum, std::uint32_t word) { return checksum_word(sum, word); }
 
 std::uint32_t bits_of(float value) {
     std::uint32_t bits;
@@ -19,6 +13,14 @@ std::uint32_t bits_of(float value) {
 }
 
 } // namespace
+
+std::uint32_t checksum_word(std::uint32_t sum, std::uint32_t word) {
+    for (int i = 0; i < 4; ++i) {
+        sum ^= (word >> (8 * i)) & 0xFFu;
+        sum *= 16777619u; // FNV prime
+    }
+    return sum;
+}
 
 PlayerInput replay_input(const ReplayStep* steps, int count, int frame) {
     for (int i = 0; i < count; ++i) {
@@ -42,7 +44,9 @@ std::uint32_t checksum_add(std::uint32_t sum, const ReplaySample& sample) {
     sum = add_word(sum, bits_of(sample.camera.y));
     sum = add_word(sum, sides);
     sum = add_word(sum, static_cast<std::uint32_t>(sample.coins));
-    return add_word(sum, sample.turrets);
+    sum = add_word(sum, sample.turrets);
+    sum = add_word(sum, static_cast<std::uint32_t>(sample.entities)); // spec 020 AC-4 step 2
+    return add_word(sum, sample.handles);
 }
 
 ReplayRun::ReplayRun(const ReplaySegment* segments, int count) {

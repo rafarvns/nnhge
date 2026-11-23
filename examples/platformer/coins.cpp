@@ -21,7 +21,8 @@ int collect_coins(nnh::World& world, nnh::Rect box, nnh::collision::Layers mask,
         const nnh::Entity e = bodies.owner(found[i]);
         const level::Coin* coin = world.get<level::Coin>(e);
         if (coin == nullptr) continue; // something else on the coin layer: not a coin
-        if (taken_count < capacity) taken[taken_count] = {e, coin->value};
+        const nnh::Rect b = bodies.data()[found[i]].box;
+        if (taken_count < capacity) taken[taken_count] = {e, coin->value, {b.x + b.w * 0.5f, b.y + b.h * 0.5f}};
         ++taken_count;
         world.destroy(e); // its body goes to Body{}: no query finds it again
     }

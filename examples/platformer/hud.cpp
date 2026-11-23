@@ -37,7 +37,7 @@ void Hud::on_restart(const LevelRestarted& e) {
     score_ = 0;
 }
 
-void Hud::draw(const nnh::Tilemap& map, const char* about) const {
+void Hud::draw(const nnh::Tilemap& map, const char* about, int entities) const {
     namespace gfx = nnh::gfx;
     const nnh::Properties props = map.properties(); // the map's own (FR-6)
     gfx::draw_text(kBottom, {12, 10}, props.get_string("title", "A LEVEL"),
@@ -48,6 +48,8 @@ void Hud::draw(const nnh::Tilemap& map, const char* about) const {
     gfx::draw_text(kBottom, {12, 50}, text, {.scale = 2});
     std::snprintf(text, sizeof text, hits_ > 0 ? "score %d   hits %d" : "score %d", score_, hits_);
     gfx::draw_text(kBottom, {12, 72}, text);
+    std::snprintf(text, sizeof text, "entities %d", entities);
+    gfx::draw_text(kBottom, {308, 72}, text, {.color = nnh::rgb(150, 220, 160), .align = nnh::TextAlign::Right});
     if (props.has("music")) {
         std::snprintf(text, sizeof text, "music: \"%s\" (a map property)", props.get_string("music"));
         gfx::draw_text(kBottom, {12, 84}, text, {.color = nnh::rgb(150, 160, 180)});

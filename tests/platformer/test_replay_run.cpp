@@ -24,7 +24,7 @@ ReplayRun two_segments() {
 
 ReplaySample sample() {
     return {.box = {37, 162.5f, 10, 14}, .camera = {0, 80}, .touching = {.floor = true}, .coins = 3,
-            .turrets = 0x0BADF00Du};
+            .turrets = 0x0BADF00Du, .entities = 7, .handles = 0x01234567u};
 }
 
 /// Records `frames` frames of `ms` each; returns the last progress.
@@ -57,8 +57,9 @@ NNH_TEST(replay_input_is_idle_past_the_last_step) {
 }
 
 NNH_TEST(replay_checksum_is_fnv1a_of_the_sample_words) {
-    // Python: FNV-1a over struct.pack('<I', w) of [f32(37), f32(162.5), f32(0), f32(80), 8, 3, 0x0BADF00D].
-    CHECK(checksum_add(kChecksumStart, sample()) == 0x57DED014u);
+    // Python: FNV-1a over struct.pack('<I', w) of [f32(37), f32(162.5), f32(0), f32(80), 8, 3, 0x0BADF00D, 7,
+    // 0x01234567].
+    CHECK(checksum_add(kChecksumStart, sample()) == 0x5807D4BBu);
 }
 
 NNH_TEST(replay_checksum_sees_a_one_ulp_change_of_a_position) {
@@ -83,6 +84,12 @@ NNH_TEST(replay_checksum_sees_the_sides_coins_and_camera) {
     CHECK(checksum_add(kChecksumStart, s) != base);
     s = sample();
     s.turrets ^= 1u; // spec 019: the turrets' state word
+    CHECK(checksum_add(kChecksumStart, s) != base);
+    s = sample();
+    s.entities = 8; // spec 020: the live entities and their handles
+    CHECK(checksum_add(kChecksumStart, s) != base);
+    s = sample();
+    s.handles ^= 0x10000u;
     CHECK(checksum_add(kChecksumStart, s) != base);
 }
 

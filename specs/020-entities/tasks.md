@@ -221,13 +221,13 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 8: the platformer's sparkles, opt-in checks
 
-- [ ] **T8.1** Sparkles, pure: `sparkles.{hpp,cpp}` (4 per coin at its centre, fixed velocities of short binary
+- [x] **T8.1** Sparkles, pure: `sparkles.{hpp,cpp}` (4 per coin at its centre, fixed velocities of short binary
   fractions, tag `"fx"`, `Spark{position, alpha, fade}` + `Velocity`, faded over 24 frames by a `TweenSet` through a
   `Setter` capturing `[this, e]` that writes only while `alive(e)`, `on_finish` destroys the sparkle, `Spark`'s hook
   kills its tween unless `clearing()`). Files: `examples/platformer/sparkles.*`, `level_world.*`. Test:
   `tests/platformer/test_sparkles.cpp` (spawned count, faded and gone after 24 updates, slots reused only after a
   flush, a clear leaves no tween running). Covers AC-4 step 2, FR-13, FR-20.
-- [ ] **T8.2** Sparkles in the level: taking a coin bursts it; the level scene's `TweenSet` bound after the world; the
+- [x] **T8.2** Sparkles in the level: taking a coin bursts it; the level scene's `TweenSet` bound after the world; the
   HUD shows the world's live count; `ReplaySample::entities` and `::handles` join the checksum after the turrets' word.
   Regenerate the replay lines with `PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=920
   build/pc-debug/examples/platformer/platformer.exe` and copy them into `examples/platformer/tests/level.nnhs`, header

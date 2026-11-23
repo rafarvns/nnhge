@@ -347,6 +347,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_player_sprite.cpp
     platformer/test_replay_run.cpp
     platformer/test_replay_script.cpp
+    platformer/test_sparkles.cpp
     platformer/test_turrets.cpp
     ${_platformer}/level_camera.cpp
     ${_platformer}/coins.cpp
@@ -357,6 +358,7 @@ target_sources(nnh_tests PRIVATE
     ${_platformer}/player_sprite.cpp
     ${_platformer}/replay_run.cpp
     ${_platformer}/replay_script.cpp
+    ${_platformer}/sparkles.cpp
     ${_platformer}/turrets.cpp)
 # The replay played twice gives the same log (spec 012 T7.3, FR-10): the simulator's checksum lines must be the ones
 # the console script expects (written from an earlier PC run). Release logs no info lines, so Debug/Development only.

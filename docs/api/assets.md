@@ -106,9 +106,9 @@ Sprite animation ([animation.md](animation.md), spec 016, D31) reads Aseprite's 
 | the slice `pivot` | every frame's pivot: its first key's `pivot` (relative to the key's `bounds`) or the bottom-centre of its `bounds`; without it, top-left |
 | `meta.image`, `meta.size` | must name the PNG beside the export and match its size |
 
-Tag colours and user data, layers and other slices are ignored. The pivot point is read relative to the slice's
-bounds, as Aseprite shows a slice's centre; this was not confirmed against a real export yet — if your pivots land
-off by the slice's position, report it.
+Tag colours and user data, layers and other slices are ignored. The pivot point is relative to the slice's
+bounds, as Aseprite stores and exports it (its exporter writes the key's pivot as stored; its editor draws it at the
+bounds' origin plus the pivot).
 
 **Errors** stop the build with `file:line: reason`, for example:
 

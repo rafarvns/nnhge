@@ -31,6 +31,15 @@ NNH_TEST(aseprite_pivot_slice_with_a_pivot_point) {
     CHECK(m.has_pivot && m.pivot_x == 8 && m.pivot_y == 15); // bounds origin + pivot
 }
 
+// The example of Aseprite's CLI docs (docs/cli.md, --list-slices): a 16x16 slice at x 80 with its pivot at its centre.
+// Aseprite stores the pivot relative to the bounds and writes it as stored (doc_exporter.cpp), so it is (88, 8).
+NNH_TEST(aseprite_docs_slice_example_puts_the_pivot_at_the_slice_centre) {
+    const SpriteModel m = sliced(R"({"name": "pivot", "color": "#0000ffff", "keys": [{"frame": 0,
+        "bounds": {"x": 80, "y": 0, "w": 16, "h": 16}, "center": {"x": 2, "y": 2, "w": 12, "h": 12},
+        "pivot": {"x": 8, "y": 8}}]})");
+    CHECK(m.has_pivot && m.pivot_x == 88 && m.pivot_y == 8);
+}
+
 NNH_TEST(aseprite_pivot_slice_without_a_pivot_uses_its_bottom_centre) {
     const SpriteModel m = sliced(R"({"name": "hitbox", "keys": [{"frame": 0, "bounds": {"x": 0, "y": 0, "w": 2, "h": 2}}]},
         {"name": "pivot", "keys": [{"frame": 0, "bounds": {"x": 3, "y": 2, "w": 9, "h": 14}}]})");

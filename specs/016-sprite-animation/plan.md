@@ -550,7 +550,10 @@ ASan/UBSan, libFuzzer).
 ## Risks and alternatives
 
 - **Aseprite details not confirmed by a real export.** The repeat type, directions and ping-pong counting are
-  confirmed from Aseprite's source. The slice pivot's origin is inferred (relative to bounds). The fixtures follow
+  confirmed from Aseprite's source. The slice pivot's origin was inferred (relative to bounds); **confirmed from
+  Aseprite's source on 2026-11-22**: `doc_exporter.cpp` writes `sliceKey->pivot()` as stored and `editor.cpp` draws it
+  at `pivot + bounds().origin()` (test `aseprite_docs_slice_example_puts_the_pivot_at_the_slice_centre`, with the CLI
+  docs' own example). The fixtures follow
   that, and the docs ask users to report a mismatch. If the maintainer has Aseprite, one real export added to
   `tests/data/aseprite/` (T7.3) closes this. A wrong guess only shifts the pivot, and fixing it is one line in
   `aseprite_slices.cpp`.

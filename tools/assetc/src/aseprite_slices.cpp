@@ -40,8 +40,8 @@ bool read_aseprite_slices(json::Ref root, const std::string& file, SpriteModel& 
             if (!pivot.is_object() || !p.ok()) {
                 return fail(problem, file, pivot.line(), pivot.is_object() ? p.error() : "\"pivot\" must be an object");
             }
-            // ASSUMPTION (spec 016 plan, risk 1): a key's pivot is relative to its bounds, as `center` is in
-            // Aseprite's docs; not confirmed by a real export. If it turns out absolute, drop the `+ x`/`+ y` here.
+            // A key's pivot is relative to its bounds: Aseprite's exporter writes `sliceKey->pivot()` as stored
+            // (src/app/doc_exporter.cpp) and its editor draws it at `pivot + bounds().origin()` (editor.cpp).
             model.pivot_x = x + px, model.pivot_y = y + py;
         } else {
             model.pivot_x = x + w / 2; // bottom-centre of the slice

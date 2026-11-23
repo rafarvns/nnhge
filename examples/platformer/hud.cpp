@@ -11,11 +11,13 @@ constexpr nnh::Screen kBottom = nnh::Screen::Bottom;
 
 void Hud::attach() {
     coin_sub_ = nnh::events::subscribe<&Hud::on_coin>(this);
+    hit_sub_ = nnh::events::subscribe<&Hud::on_hit>(this);
     restart_sub_ = nnh::events::subscribe<&Hud::on_restart>(this);
 }
 
 void Hud::detach() {
     coin_sub_.reset();
+    hit_sub_.reset();
     restart_sub_.reset();
 }
 
@@ -24,8 +26,13 @@ void Hud::on_coin(const CoinCollected& e) {
     score_ += e.value;
 }
 
+void Hud::on_hit(const PlayerHit& e) {
+    hits_ = e.hits;
+}
+
 void Hud::on_restart(const LevelRestarted& e) {
     coins_ = 0;
+    hits_ = 0;
     total_ = e.coins;
     score_ = 0;
 }
@@ -39,7 +46,7 @@ void Hud::draw(const nnh::Tilemap& map, const char* about) const {
     char text[48];
     std::snprintf(text, sizeof text, "coins %d / %d", coins_, total_);
     gfx::draw_text(kBottom, {12, 50}, text, {.scale = 2});
-    std::snprintf(text, sizeof text, "score %d", score_);
+    std::snprintf(text, sizeof text, hits_ > 0 ? "score %d   hits %d" : "score %d", score_, hits_);
     gfx::draw_text(kBottom, {12, 72}, text);
     if (props.has("music")) {
         std::snprintf(text, sizeof text, "music: \"%s\" (a map property)", props.get_string("music"));

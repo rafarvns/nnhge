@@ -89,7 +89,10 @@ void TurretBook::move_bullets(const collision::Grid& grid) {
         }
         const nnh::Vec2 to = b.position + b.velocity;
         collision::RayHit hit;
-        if (!collision::raycast(grid, bodies, b.position, to, hit, {.mask = layers::kBulletMask})) {
+        // hit_from_inside: the player may have run into the bullet since its last step (both move: a bullet
+        // inside the player's box is a hit, not something to ignore).
+        const collision::QueryFilter filter{.mask = layers::kBulletMask, .hit_from_inside = true};
+        if (!collision::raycast(grid, bodies, b.position, to, hit, filter)) {
             b.position = to;
         } else if (hit.box == 0) { // the player
             ++hits_;

@@ -1017,6 +1017,28 @@
        "value": "bonus"
       }
      ]
+    },
+    {
+     "height": 16,
+     "id": 50,
+     "name": "turret",
+     "rotation": 0,
+     "type": "turret",
+     "visible": true,
+     "width": 16,
+     "x": 496,
+     "y": 224
+    },
+    {
+     "height": 16,
+     "id": 51,
+     "name": "turret",
+     "rotation": 0,
+     "type": "turret",
+     "visible": true,
+     "width": 16,
+     "x": 640,
+     "y": 240
     }
    ],
    "opacity": 1,
@@ -1058,7 +1080,7 @@
   }
  ],
  "nextlayerid": 7,
- "nextobjectid": 50,
+ "nextobjectid": 52,
  "orientation": "orthogonal",
  "parallaxoriginx": 200,
  "parallaxoriginy": 200,

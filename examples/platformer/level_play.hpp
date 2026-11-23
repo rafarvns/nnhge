@@ -6,7 +6,8 @@
 // layer named "front" over them.
 //
 // It reads the map's objects: a point named "spawn"; objects of type "coin" (property `value`, 1 if absent);
-// objects of type "door" (property `to`: "level1" or "bonus").
+// objects of type "door" (property `to`: "level1" or "bonus"); objects of type "turret" (turrets.hpp: they look
+// at the player and shoot slow bullets moved by rays; a hit flashes the player and publishes PlayerHit).
 
 #include "art.hpp"
 #include "coin_book.hpp"
@@ -15,6 +16,7 @@
 #include "player.hpp"
 #include "player_sprite.hpp"
 #include "replay_run.hpp"
+#include "turrets.hpp"
 
 #include <nnh/camera.hpp>
 #include <nnh/tilemap.hpp>
@@ -48,6 +50,7 @@ class LevelPlay {
     void take_coins();
     void enter_doors();
     void draw_doors() const;
+    void draw_turrets() const;
 
     const Art& art_;
     const nnh::Tilemap& map_;
@@ -58,6 +61,7 @@ class LevelPlay {
     nnh::CameraRig camera_; ///< follows the player (spec 018), see level_camera.hpp
     float look_ahead_ = 0;  ///< the camera's offset x: ahead of the player, eased when it turns
     CoinBook coins_;
+    TurretBook turrets_;
     Door doors_[kMaxDoors] = {};
     int door_count_ = 0;
     bool in_door_ = false;

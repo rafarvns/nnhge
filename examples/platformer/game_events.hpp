@@ -17,6 +17,11 @@ struct LevelRestarted {
     int coins; ///< coins in the level
 };
 
+/// A turret's bullet reached the player (published by a level, counted by its HUD; spec 019).
+struct PlayerHit {
+    int hits; ///< hits in the level so far
+};
+
 /// Request: switch to `demo` (published by a level's door and by the replay; handled by Demos).
 struct ShowDemo {
     Demo demo;

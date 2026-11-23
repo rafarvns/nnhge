@@ -6,7 +6,8 @@
 // A bullet moves by a ray each frame against the level's grid and the "bodies" — the player and the turrets in one
 // struct view — filtered by the bullets' mask (layers::kBulletMask), so turrets never stop their own bullets: it stops
 // flush on the first wall it meets however fast it goes, stays there 45 frames, then goes; one reaching the player
-// counts a hit and flashes the player for 20 frames. Bullets never move the player.
+// (or that the player ran into: a start inside counts) counts a hit and flashes the player for 20 frames. Bullets
+// never move the player.
 
 #include "layers.hpp"
 

@@ -1,7 +1,9 @@
 // platformer: tilemaps and collision (spec 012). Four demos, each a scene (SELECT: the next one):
 //   level 1      a level made in Tiled (assets/levels/level1.tmj, converted by the build): parallax
 //   backdrops,
-//                a collision layer, one-way planks, animated water, coins, a spawn point, a door, properties;
+//                a collision layer, one-way planks, animated water, coins, a spawn point, a door, properties,
+//                and two turrets that watch the player (line of sight) and shoot bullets moved by rays (spec 019:
+//                collision layers and queries; the player, coins and bullets have layers: layers.hpp);
 //   bonus level  the same kind of level built entirely in code (bonus_level.cpp), no file and no editor;
 //   benchmark    full tile layers + sprites, with the automatic 60 Hz gate (A);
 //   flip test    Tiled's 8 tile orientations next to sprite flips.

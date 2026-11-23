@@ -9,7 +9,8 @@
     hills      parallax 0.5 x 1       (a near backdrop)
     ground     property collision     (every tile solid)
     platforms                         (one-way planks, flowers, the door's arch)
-    things     objects: spawn (point), coin (rectangles, int value), door (rectangle, string to = "bonus")
+    things     objects: spawn (point), coin (rectangles, int value), door (rectangle, string to = "bonus"),
+               turret (16x16 rectangles, spec 019)
     front      opacity 0.85           (bushes, grass tufts, the water: drawn over the player)
     map properties: title, music (a string the game shows; the example has no music files)
 
@@ -45,6 +46,7 @@ COINS = [  # (from, to, row)
 FLOWERS = [6, 13, 24, 32, 40, 57, 66, 82, 92, 103, 110, 118]
 BUSHES = [16, 29, 46, 72, 86, 106, 114]
 TUFTS = [2, 15, 22, 33, 39, 56, 69, 80, 94, 101, 117, 125]
+TURRETS = [(31, 14), (40, 15)]  # cells (spec 019): on the ground on both sides of a pit; they shoot at the player
 SPAWN = (3, 16)  # cell whose bottom centre the player's feet start on
 DOOR = (122, 14)  # top-left cell of a 1x2 door; the arch around it is dark bricks
 CLOUDS = [(2, 4, 7), (10, 13, 6), (18, 19, 9), (26, 28, 7), (34, 36, 6), (42, 43, 8), (50, 53, 7),
@@ -165,6 +167,9 @@ def things_layer(layer_id):
     dx, dy = DOOR
     objects.append(rect_object(next_id, "door", "door", dx * TILE, dy * TILE, TILE, 2 * TILE,
                                [prop("to", "string", "bonus")]))
+    for tx, ty in TURRETS:
+        next_id += 1
+        objects.append(rect_object(next_id, "turret", "turret", tx * TILE, ty * TILE, TILE, TILE))
     layer = {"draworder": "topdown", "id": layer_id, "name": "things", "objects": objects, "opacity": 1,
              "type": "objectgroup", "visible": True, "x": 0, "y": 0}
     return layer, next_id + 1

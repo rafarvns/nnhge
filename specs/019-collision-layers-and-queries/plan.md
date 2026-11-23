@@ -687,3 +687,40 @@ Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   the touch marked on both screens with `cell 7,9 solid, layers 0x2` / `tile 2 "water"`.
 - `nnh run queries --pc --no-build --script examples/queries/tests/check.nnhs` → `nnh: PASS (96 lines, frames
   1–1561)`, twice.
+
+## Stage 8 refinements and results
+
+- **Turrets** (`examples/platformer/turrets.{hpp,cpp}`, `TurretBook`): up to 4 turrets and 16 bullets; sight within a
+  range box of ±192 × ±120 px by `line_of_sight` (one-way ignored) from the turret's centre to the player's; a shot
+  when the cooldown is 0 while seen, then every 90 frames; 8 directions (`aim`: horizontal or vertical when the other
+  axis is under 2/5 of it, else a diagonal of 1.375 px per axis per frame); bullets moved by
+  `raycast(grid, bodies, pos, pos + vel, hit, {.mask = kBulletMask, .hit_from_inside = true})`, the bodies being the
+  player (index 0) and the turrets in one struct view. **`hit_from_inside` is on**: both the player and the bullet
+  move, and a player running into a bullet put it inside his box before the bullet's next step, which the default
+  filter ignores (the first run counted no hit at all); this is the two-movers case of FR-13, and a start inside the
+  player is a hit. A public `shoot(from, velocity)` lets the tests fire fast bullets. Tests:
+  `tests/platformer/test_turrets.cpp` (sight through a gap, a wall hides, planks don't, out of range, the 90-frame
+  period, 8 directions, a 100 px/frame bullet stops flush at a one-cell wall, a bullet falling on a plank stops on it,
+  a hit and the flash, a player running into a bullet, bullets pass turrets, the state word).
+- **Level 1**: turrets at cells (31, 14) and (40, 15), on the ground on both sides of the second pit (`make_level.py`
+  `TURRETS`, `level1.tmj` regenerated: only the two objects added). `LevelPlay` reads objects of type `turret`,
+  updates the book after the player (and the coins), publishes `PlayerHit{hits}` (the HUD shows "hits N"), draws the
+  turrets (a red eye and the sight line while seeing), the bullets (3 × 3, a stuck one just outside its wall along
+  the normal) and a red blink on the player while flashing. `ReplaySample::turrets` (= `TurretBook::state()`) is the
+  checksum's seventh word, in the bonus level too (its book is empty). Two placements were tried first ((56, 15),
+  then on the stone steps): their bullets all ended in the player, so no screenshot showed one stopped at a wall.
+- **New replay lines** (`examples/platformer/tests/level.nnhs`, in the same commit): `60 … sum 523AEFC6`,
+  `120 … 22B6BC70`, `180 … 19701BA9`, `240 … 26C330BF`, `300 … BF913379`, `360 … FEAD39C1`, `420 … 66CE9E1D`,
+  `480 … 1FD5F55A`, `540 … 3C20AAFF`, `600 … ED6F8521`, `660 bonus … F183ED9C`, `720 … 37D753F0`,
+  `780 … CF176580`, `840 … 01FDC889`, `replay: done 900 frames sum 96FE8943: 60 Hz PASS`. **The x, y and coins
+  columns are unchanged on every line.** The turrets see the player from about frame 170, four bullets hit him in
+  level 1 (`hits 4` on the HUD), and two stop on walls: at (560, 248) on the ground's right face (normal (1, 0)) at
+  frame 309, and at (928, 248) on the stone steps' left face at frame 585.
+- **Screenshot** (`PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=312`, read back): both turrets' sight lines to the
+  player in mid-jump over the pit, and a bullet stopped flush on the right face of the ground at the pit's edge.
+- T8.2/T8.4: ctest `platformer_replay_matches_script` passes; every example script passes with `--pc`
+  (`input`, `animation`, `actions`, `tweens`, `data`, `camera`, `queries`, platformer `level` (76 lines) and `gate`:
+  `bench: PASS 4 layers + 300 sprites, avg 16.7 ms, worst 16.9 ms, missed 0 of 600 frames`); `compare.sh`: every
+  reference screenshot identical (level 1 at frame 90 too: the turrets are off screen); `hello` Release unchanged
+  (PC text 130 732, 3DS text 201 188) with no query or `grid_cell_masked` symbol; `nnh_tests` 2011 tests, ctest
+  pc-debug 264/264, pc-release 257/257, 3ds-release without a warning.

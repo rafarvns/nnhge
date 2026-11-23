@@ -212,7 +212,7 @@ refinements", as in plans 012–018.
   a state checksum word. Files: `examples/platformer/turrets.{hpp,cpp}`, `tests/CMakeLists.txt`. Test:
   `tests/platformer/test_turrets.cpp` (sight through a gap / blocked / planks ignored, cooldown, directions, a fast
   bullet stops at a one-cell wall, hits the player, ignores turrets, state word). Covers AC-4 step 2.
-- [ ] **T8.2** Turrets in level 1: two `turret` objects in `art/make_level.py` (regenerated `level1.tmj`) where the
+- [x] **T8.2** Turrets in level 1: two `turret` objects in `art/make_level.py` (regenerated `level1.tmj`) where the
   replay run passes them; `level_play` reads them, updates the book after the player, draws turrets (shapes), the
   sight line when seen, bullets (a 3×3 square behind the hit point, along the normal), the player's flash; the HUD
   shows hits; `ReplaySample::turrets` joins the checksum. Regenerate the replay lines with `PLATFORMER_DEMO=replay
@@ -227,7 +227,7 @@ refinements", as in plans 012–018.
 - [ ] **T8.3** [P] Mutation pass as in plan 018: hand mutants of `src/collision/*` (new files), the tilemap's masked
   rule, slots and loader, the converter check, the coin book and turrets, applied one at a time with the whole
   `nnh_tests`; survivors become tests. Files: plan.md ("Mutation testing"). Covers VI.
-- [ ] **T8.4** Opt-in and regression: `hello` sizes against T0.1 (identical; no query or `grid_cell_masked` symbol),
+- [x] **T8.4** Opt-in and regression: `hello` sizes against T0.1 (identical; no query or `grid_cell_masked` symbol),
   AC-8 comparison of every reference screenshot (the bench and `camera` identical; level 1 is allowed to differ by the
   turrets only), `gate.nnhs --pc` and the other examples' scripts unchanged and passing. Files: plan.md ("Stage 8
   results"). Covers FR-18, AC-8.

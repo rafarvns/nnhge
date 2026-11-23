@@ -123,6 +123,14 @@ NNH_TEST(a_bullet_hits_the_player_and_flashes_it_without_moving_it) {
     CHECK(book.flash() == TurretBook::kFlashFrames - 1);
 }
 
+NNH_TEST(a_player_running_into_a_bullet_is_hit) {
+    World w;
+    TurretBook book;
+    book.shoot({70, 55}, {-2, 0});
+    book.update(w.g.grid, {66, 48, 12, 14}); // the bullet is inside the player's box at the start of its step
+    CHECK(book.hits() == 1 && !book.bullet(0).active);
+}
+
 NNH_TEST(bullets_pass_through_turrets) {
     World w;
     TurretBook book;

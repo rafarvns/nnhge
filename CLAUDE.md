@@ -114,7 +114,7 @@ Input actions (spec 017, implemented; demo `examples/actions`): `<nnh/actions.hp
 touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
 frame (D32 after-input hook), listen/conflicts/reset for a controls screen, `NNHB` overrides saved with `nnh::save`
 ([api/actions.md](docs/api/actions.md)).
-Camera helpers (spec 018, implemented, console check pending; D33; demo `examples/camera`): `<nnh/camera.hpp>` —
+Camera helpers (spec 018, implemented; D33; demo `examples/camera`): `<nnh/camera.hpp>` —
 `nnh::CameraRig`, a 128-byte value per view: `update(target)` once per frame after moving the target (one 60 Hz
 frame, bit-identical on PC and 3DS), `apply()` writes `Camera2D`; dead zone in screen pixels, per-frame smoothing,
 limits (`set_limits(map.bounds())`), seeded trauma shake, zoom about the centre, `CameraLayout::TallWorld` (both

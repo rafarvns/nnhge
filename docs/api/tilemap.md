@@ -282,8 +282,11 @@ The visible cells follow the zoomed view: zoom 0.5 shows about four times the ti
 the top screen: 51 × 31 = 1581 tiles), zoom 2 about a quarter (at most 14 × 9). Size `AppConfig::gfx.max_tiles` for the smallest
 zoom your game uses. A layer larger than the engine's 1600-tile scratch (only below zoom 1) is drawn in several
 calls, row by row, in order; nothing else changes. How many layers fit at 60 Hz at zooms 0.5 and 2 on an Old 3DS:
-measured by `examples/platformer/tests/zoom_gate.nnhs` (B in the platformer's bench cycles the zoom) — results in
-[plan 018, stage 9](../../specs/018-camera-helpers/plan.md) (console run pending).
+measured by `examples/platformer/tests/zoom_gate.nnhs` (B in the platformer's bench cycles the zoom): at zoom 0.5, **2
+full 16×16 layers** with 300 sprites (4 layers don't fit); at zoom 2, **12 layers** (the most the bench has) with 300
+sprites, or 900 sprites with 4 layers; zoom 1 is unchanged (6 layers / 600 sprites). Details in
+[plan 018, stage 9](../../specs/018-camera-helpers/plan.md). At zoom 0.5 the 3DS and the PC pick different texel
+columns when minifying (no gaps; thin tile borders may show in fragments on the console).
 
 ## Collision
 

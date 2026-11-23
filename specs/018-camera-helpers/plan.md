@@ -1,6 +1,6 @@
 # Plan 018: Camera helpers
 
-Status: implemented, console check (T9.2) and Linux checks (T8.1) pending (2026-11-22); approved 2026-11-22
+Status: implemented (2026-11-22; T8.1 passed on VM 120, T9.2 on the Old 3DS XL); approved 2026-11-22
 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D33 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, profiler), spec 004 (`Camera2D`, the recorded draw list), spec 005 (text as sprites),
@@ -702,7 +702,20 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    zoom 0.50 limits L layers (300 sprites), S sprites (4 layers)`, `bench: zoom 0.50 done`, `bench: zoom 2.00 limits
    …`, `bench: zoom 2.00 done`, `nnh: PASS`. Record L and S at both zooms here and in `docs/api/tilemap.md#zoom`.
 
-Results: pending (fill in "Stage 9 results": verdicts, the bench number per pair, the limits, the log folders).
+#### Stage 9 results (2026-11-22, Old 3DS XL, Development)
+
+- `camera/tests/check.nnhs`: `nnh: PASS (86 lines)`; every checkpoint and `camera: PASS 5201E6CF` equal the PC's;
+  bench 16 pairs per frame, **0.0315 ms** avg, 0.0413 ms worst per pair (target < 0.05 ms) PASS. Screenshots
+  (`build/logs/camera-20261122-221548/`): zoom 1, 1.5, 2 and tall world without seams. At zoom 0.5 there are no gaps
+  either, but the 3DS keeps fragments of the tiles' 1-pixel border lines that the PC drops (both minify by nearest
+  sampling and pick different texel columns: the plan's second risk). Cosmetic; the 1/256-texel source inset is the
+  candidate fix if a game needs clean minified pixel art.
+- `platformer/tests/level.nnhs`: `nnh: PASS (74 lines)`; the 15 regenerated replay lines equal the PC's,
+  `replay: done 900 frames sum 7CA9B256: 60 Hz PASS (level1 worst 19.0 ms, missed 0/599; bonus worst 19.4 ms, missed
+  0/299)`.
+- `platformer/tests/zoom_gate.nnhs`: `nnh: PASS (50 lines)`. Zoom 1: 4 layers + 300 sprites PASS (avg 16.7 ms, worst
+  17.7 ms, missed 0/600), limits 6 layers / 600 sprites (as before). **Zoom 0.5: 2 full layers with 300 sprites; 4
+  layers don't fit.** **Zoom 2: 12 layers (the most the bench has) with 300 sprites; 900 sprites with 4 layers.**
 
 ## Mutation testing
 

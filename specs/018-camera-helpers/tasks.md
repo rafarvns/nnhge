@@ -1,6 +1,6 @@
 # Tasks 018: Camera helpers
 
-Status: implemented, console check (T9.2) pending (2026-11-22; T8.1 passed on VM 120); approved 2026-11-22
+Status: implemented (2026-11-22; T8.1 passed on VM 120, T9.2 on the Old 3DS XL); approved 2026-11-22
 (maintainer pre-approved)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
@@ -207,7 +207,7 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
 - [x] **T9.1** (done on the PC; plan.md "Stage 9: console run (prepared)") Builds and strings: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development builds of
   `examples/camera` and `examples/platformer`; `scripts/check_release_strings.sh` on the Release `camera.elf` (no
   camera debug strings); `hello.elf` size recorded. Covers FR-14, AC-8.
-- [ ] **T9.2** (prepared: commands and expected lines in plan.md "Stage 9: console run (prepared)") Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T9.2** (prepared: commands and expected lines in plan.md "Stage 9: console run (prepared)") Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run camera --script examples/camera/tests/check.nnhs` → every sum line equals
      the PC's, `camera: PASS`, bench < 0.05 ms per pair; screenshots (zoom 2, 0.5, 1.5, tall world) read back: no
      seams, no texel bleeding (else the plan's mitigation);
@@ -215,6 +215,7 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
   3. `nnh run platformer --script examples/platformer/tests/zoom_gate.nnhs` → `bench: PASS` at zoom 1 and the
      measured limits at 0.5 and 2.
   Files: plan.md ("Stage 9 results": verdicts, bench numbers, limits, log paths). Covers AC-4, AC-6, AC-7.
+  **Passed 2026-11-22** (plan.md "Stage 9 results").
 
 ## Stage 10: docs, roadmap, status
 

@@ -221,8 +221,8 @@ spec; the order below is a proposal.
   overrides saved with `nnh::save` (`NNHB`, fuzzed), Old 3DS fallbacks ([api/actions.md](api/actions.md)).
   `examples/actions`: playfield, controls screen, bench (PC: 64 actions × 4 slots in 0.026 ms) and a self-check
   script (`tests/check.nnhs`)
-- [x] **Camera helpers** (Godot Camera2D, Cinemachine) — [spec 018](../specs/018-camera-helpers/spec.md), implemented,
-  console check pending: `<nnh/camera.hpp>`, a `CameraRig` value per view that follows a point or a box with an
+- [x] **Camera helpers** (Godot Camera2D, Cinemachine) — [spec 018](../specs/018-camera-helpers/spec.md), implemented;
+  Old 3DS check passed (2 camera pairs well under 0.05 ms; zoom 0.5: 2 full layers at 60 Hz, zoom 2: 12): `<nnh/camera.hpp>`, a `CameraRig` value per view that follows a point or a box with an
   offset, a dead zone in screen pixels and per-frame smoothing, stays inside limits (`Tilemap::bounds()`), shakes from
   seeded trauma, zooms about its centre, drives one screen or both as one tall world (two rigs = two views), converts
   screen ↔ world points and draws its dead zone and limits; frame-deterministic, 128 bytes, no allocation

@@ -767,3 +767,26 @@ change.
   `21AD333D`, `DC95F672`, `C5CFA4B7`, `284AFBEE`, `F1272C58`, `45824FCC`, `C8FB9A41`), pc-debug and pc-release.
 - T5.5: ctest pc-debug 264/264, pc-release 257/257, 3ds-release without a warning, `nnh_tests` 2175; `hello` sizes and
   `nm` equal stage 0's; `compare.sh`: every reference screenshot identical.
+
+## Stage 6 refinements and results
+
+- **Files**: `level_world.{hpp,cpp}` (`level::Body`, `Coin`, `Turret`; tags `"player"`, `"coin"`, `"turret"` with
+  `static_assert(tags_distinct(...))`; `create_world()`: 256 entities, Body 256, Coin 128, Turret 4, 2 tags);
+  `coins.{hpp,cpp}` (was `coin_book.*`: `spawn_coin`, `collect_coins` → `TakenCoin{entity, value}` in ascending body
+  slot); `turrets.{hpp,cpp}` keeps the name `TurretBook` but owns only the bullets (`Pool<Bullet, 16>`, no `active`
+  flag), hits and flash: turrets are entities (`spawn_turret`), `update(grid, player_entity)` reads the player's Body,
+  flushes the pool first (a no-op when bound) and maps a ray's `hit.box` to the player through
+  `storage<Body>().owner()`; `state()` hashes `each<Turret>` then the pool's `items()`.
+- `LevelPlay(art, map, scene)` creates the world and binds it and the bullet pool to the level scene. The map's coins
+  and turrets are no longer stored at construction: `restart()` = `spawn_things()` (`clear()`, the player's entity
+  with its Body on `kPlayer`, then coins and turrets in object order) + the turrets' restart. The player's Body is
+  written once per frame after it moves (the value the old book copied into its body array). `draw()` and `sample()`
+  lost their `const` (iterations hold a guard in the world).
+- `test_coin_book.cpp` → `test_coins.cpp`: the eleven cases over the world, plus "other bodies in the storage are
+  ignored". `test_turrets.cpp`: every case kept on a world with a player entity; two new: bullets pass coins, and a
+  released bullet's slot is reused by the next frame's shot (the old "first inactive bullet").
+- **T6.3: the golden lines are byte-identical.** ctest `platformer_replay_matches_script` passes and `nnh run platformer
+  --pc --no-build --script examples/platformer/tests/level.nnhs` → `nnh: PASS (76 lines, frames 1-1553)` with the
+  **unchanged** `level.nnhs` (last line `replay: done 900 frames sum 96FE8943: 60 Hz PASS`); `compare.sh`: level 1 at
+  frame 90, the replay at 312 and the bench identical. ctest pc-debug 264/264, pc-release 257/257, 3ds-release without
+  a warning; `nnh_tests` 2178.

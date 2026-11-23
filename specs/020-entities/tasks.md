@@ -160,18 +160,18 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 6: the platformer's swap (same play)
 
-- [ ] **T6.1** Level world and coins: `level_world.{hpp,cpp}` (`Body`, `Coin`, `Turret` components, tags `"player"`,
+- [x] **T6.1** Level world and coins: `level_world.{hpp,cpp}` (`Body`, `Coin`, `Turret` components, tags `"player"`,
   `"coin"`, `"turret"` with `static_assert(nnh::tags_distinct(...))`, the description); `coins.{hpp,cpp}` replaces
   `coin_book.*`: `spawn_coin`, `collect_coins` = `boxes_overlapping` over the body storage with the player's mask,
   `owner` → value → destroy, ascending; `test_coin_book.cpp` becomes `test_coins.cpp` with the same cases and expected
   results. Files: `examples/platformer/level_world.*`, `coins.*`, `CMakeLists.txt`, `tests/platformer/test_coins.cpp`,
   `tests/CMakeLists.txt`. Covers AC-4 step 1.
-- [ ] **T6.2** Turrets: turret entities (`Body{box, kEnemy}` + `Turret`), bullets in `Pool<Bullet, 16>` (flushed at the
+- [x] **T6.2** Turrets: turret entities (`Body{box, kEnemy}` + `Turret`), bullets in `Pool<Bullet, 16>` (flushed at the
   start of `update()`), bodies read through a box view of the body storage, a hit mapped by `owner` to the player
   entity; `state()` over `each<Turret>` then the pool's `items()`; `test_turrets.cpp` keeps every case (tests that fire
   between updates adapted for quarantine, as plan risk 6 says). Files: `examples/platformer/turrets.{hpp,cpp}`,
   `tests/platformer/test_turrets.cpp`. Covers AC-4 step 1.
-- [ ] **T6.3** `LevelPlay`: the world created and bound to the level scene (`LevelScene` passes `*this`), the turrets'
+- [x] **T6.3** `LevelPlay`: the world created and bound to the level scene (`LevelScene` passes `*this`), the turrets'
   pool bound too; the player is an entity whose body is written once per frame; restart = `clear()` + spawns (player,
   then map objects in order); coins and turrets drawn from the world in slot order. Files: `level_play.{hpp,cpp}`,
   `level_scene.{hpp,cpp}`. Test: ctest `platformer_replay_matches_script` passes with **unchanged** lines;

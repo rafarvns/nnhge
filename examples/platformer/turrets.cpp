@@ -24,23 +24,17 @@ std::uint32_t bits(float v) {
 
 } // namespace
 
-void TurretBook::clear() {
-    count_ = 0;
-    restart();
-}
-
-bool TurretBook::add(nnh::Rect box) {
-    if (count_ >= kMaxTurrets) return false;
-    turrets_[count_++] = {box, false, 0};
-    return true;
+nnh::Entity TurretBook::spawn_turret(nnh::World& world, nnh::Rect box) {
+    if (world.storage<level::Turret>().count() >= level::kMaxTurrets) return {};
+    const nnh::Entity e = world.spawn();
+    world.add<level::Body>(e, {box, layers::kEnemy});
+    world.add<level::Turret>(e);
+    world.add_tag(e, level::kTurretTag);
+    return e;
 }
 
 void TurretBook::restart() {
-    for (Turret& t : turrets_) {
-        t.sees = false;
-        t.cooldown = 0;
-    }
-    for (Bullet& b : bullets_) b = {};
+    bullets_.clear();
     hits_ = 0;
     flash_ = 0;
 }
@@ -56,9 +50,9 @@ nnh::Vec2 TurretBook::aim(nnh::Vec2 d) {
 }
 
 void TurretBook::look(const collision::Grid& grid, nnh::Vec2 target) {
-    for (int i = 0; i < count_; ++i) {
-        Turret& t = turrets_[i];
-        const nnh::Vec2 eye = centre(t.box);
+    // Ascending Turret slots = spawn order = the map's object order among turrets (the old book's index order).
+    world_.each<level::Turret, level::Body>([&](nnh::Entity, level::Turret& t, level::Body& body) {
+        const nnh::Vec2 eye = centre(body.box);
         const nnh::Vec2 d = target - eye;
         const bool in_range = d.x <= kRangeX && d.x >= -kRangeX && d.y <= kRangeY && d.y >= -kRangeY;
         t.sees = in_range && collision::line_of_sight(grid, eye, target, {.ignore_one_way = true});
@@ -67,24 +61,20 @@ void TurretBook::look(const collision::Grid& grid, nnh::Vec2 target) {
             shoot(eye, aim(d));
             t.cooldown = kFirePeriod;
         }
-    }
+    });
 }
 
 bool TurretBook::shoot(nnh::Vec2 from, nnh::Vec2 velocity) {
-    for (Bullet& b : bullets_) {
-        if (b.active) continue;
-        b = {from, velocity, {}, 0, true};
-        return true;
-    }
-    return false;
+    return static_cast<bool>(bullets_.acquire({from, velocity, {}, 0}).handle);
 }
 
-void TurretBook::move_bullets(const collision::Grid& grid) {
-    const collision::BoxView bodies = collision::box_view(bodies_, 1 + count_, &Body::box, &Body::layers);
-    for (Bullet& b : bullets_) {
-        if (!b.active) continue;
+void TurretBook::move_bullets(const collision::Grid& grid, nnh::Entity player) {
+    const nnh::Storage<level::Body> storage = world_.storage<level::Body>();
+    const collision::BoxView bodies =
+        collision::box_view(storage.data(), storage.extent(), &level::Body::box, &level::Body::layers);
+    for (auto [h, b] : bullets_.items()) {
         if (b.stuck > 0) {
-            b.active = --b.stuck > 0;
+            if (--b.stuck == 0) bullets_.release(h);
             continue;
         }
         const nnh::Vec2 to = b.position + b.velocity;
@@ -94,10 +84,10 @@ void TurretBook::move_bullets(const collision::Grid& grid) {
         const collision::QueryFilter filter{.mask = layers::kBulletMask, .hit_from_inside = true};
         if (!collision::raycast(grid, bodies, b.position, to, hit, filter)) {
             b.position = to;
-        } else if (hit.box == 0) { // the player
+        } else if (hit.box >= 0 && storage.owner(hit.box) == player) {
             ++hits_;
             flash_ = kFlashFrames;
-            b.active = false;
+            bullets_.release(h);
         } else { // a wall: flush on its face
             b.position = hit.point;
             b.normal = hit.normal;
@@ -106,23 +96,23 @@ void TurretBook::move_bullets(const collision::Grid& grid) {
     }
 }
 
-void TurretBook::update(const collision::Grid& grid, nnh::Rect player) {
+void TurretBook::update(const collision::Grid& grid, nnh::Entity player) {
+    bullets_.flush(); // the bullets released last frame are free again (bound: already done by the scene)
     if (flash_ > 0) --flash_;
-    bodies_[0] = {player, layers::kPlayer};
-    for (int i = 0; i < count_; ++i) bodies_[1 + i] = {turrets_[i].box, layers::kEnemy};
-    look(grid, centre(player));
-    move_bullets(grid);
+    const level::Body* body = world_.get<level::Body>(player);
+    if (body == nullptr) return;
+    look(grid, centre(body->box));
+    move_bullets(grid, player);
 }
 
-std::uint32_t TurretBook::state() const {
+std::uint32_t TurretBook::state() {
     std::uint32_t sum = 2166136261u;
     sum = add_word(sum, static_cast<std::uint32_t>(hits_));
     sum = add_word(sum, static_cast<std::uint32_t>(flash_));
-    for (int i = 0; i < count_; ++i) {
-        sum = add_word(sum, (turrets_[i].sees ? 0x100u : 0u) | static_cast<std::uint32_t>(turrets_[i].cooldown));
-    }
-    for (const Bullet& b : bullets_) {
-        if (!b.active) continue;
+    world_.each<level::Turret>([&](nnh::Entity, level::Turret& t) {
+        sum = add_word(sum, (t.sees ? 0x100u : 0u) | static_cast<std::uint32_t>(t.cooldown));
+    });
+    for (auto [h, b] : bullets_.items()) {
         sum = add_word(sum, bits(b.position.x));
         sum = add_word(sum, bits(b.position.y));
         sum = add_word(sum, static_cast<std::uint32_t>(b.stuck));

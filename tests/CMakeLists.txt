@@ -340,7 +340,7 @@ target_include_directories(nnh_tests PRIVATE ${_3ds_src})
 set(_platformer ${PROJECT_SOURCE_DIR}/examples/platformer)
 target_sources(nnh_tests PRIVATE
     platformer/test_level_camera.cpp
-    platformer/test_coin_book.cpp
+    platformer/test_coins.cpp
     platformer/test_frame_meter.cpp
     platformer/test_gate_run.cpp
     platformer/test_player.cpp
@@ -349,7 +349,8 @@ target_sources(nnh_tests PRIVATE
     platformer/test_replay_script.cpp
     platformer/test_turrets.cpp
     ${_platformer}/level_camera.cpp
-    ${_platformer}/coin_book.cpp
+    ${_platformer}/coins.cpp
+    ${_platformer}/level_world.cpp
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp
     ${_platformer}/player.cpp

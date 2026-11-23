@@ -3,7 +3,7 @@
 #include <nnh/input.hpp>
 
 LevelScene::LevelScene(Demo demo, const Art& art, const nnh::Tilemap& map, const char* about, Replay& replay)
-    : demo_(demo), map_(map), about_(about), replay_(replay), play_(art, map) {}
+    : demo_(demo), map_(map), about_(about), replay_(replay), play_(art, map, *this) {}
 
 void LevelScene::on_enter() {
     hud_.attach();

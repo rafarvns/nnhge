@@ -5,12 +5,16 @@
 // layers draw around the player: parallax layers behind, then the ground, then coins and the player, then a
 // layer named "front" over them.
 //
+// The player, the coins and the turrets are entities of one nnh::World (spec 020, level_world.hpp) bound to the level's
+// scene with the turrets' bullet pool: flushed before each update, emptied when the level is left. A restart is
+// World::clear() plus the same spawns (the player, then the map's objects in order), so every slot is the first load's.
+//
 // It reads the map's objects: a point named "spawn"; objects of type "coin" (property `value`, 1 if absent);
 // objects of type "door" (property `to`: "level1" or "bonus"); objects of type "turret" (turrets.hpp: they look
 // at the player and shoot slow bullets moved by rays; a hit flashes the player and publishes PlayerHit).
 
 #include "art.hpp"
-#include "coin_book.hpp"
+#include "coins.hpp"
 #include "game_events.hpp"
 #include "layers.hpp"
 #include "player.hpp"
@@ -19,6 +23,7 @@
 #include "turrets.hpp"
 
 #include <nnh/camera.hpp>
+#include <nnh/entities.hpp>
 #include <nnh/tilemap.hpp>
 
 class LevelPlay {
@@ -26,8 +31,8 @@ class LevelPlay {
     static constexpr int kMaxLayers = 8;
     static constexpr int kMaxDoors = 4;
 
-    /// `art` and `map` must outlive it.
-    LevelPlay(const Art& art, const nnh::Tilemap& map);
+    /// `art` and `map` must outlive it; its world and bullets are bound to `scene` (the level's scene, its owner).
+    LevelPlay(const Art& art, const nnh::Tilemap& map, nnh::Scene& scene);
 
     /// The player back at the spawn point, every coin back; publishes LevelRestarted.
     void restart();
@@ -35,10 +40,10 @@ class LevelPlay {
     /// into the water, moves the camera. With `doors`, walking into a door publishes ShowDemo (once).
     void update(const PlayerInput& input, bool doors);
     /// The top screen: map layers, coins, doors, the player.
-    void draw() const;
+    void draw();
 
     /// What the frame left, for the replay's checksum.
-    ReplaySample sample() const;
+    ReplaySample sample();
 
   private:
     struct Door {
@@ -47,10 +52,11 @@ class LevelPlay {
     };
 
     void read_objects();
+    void spawn_things();
     void take_coins();
     void enter_doors();
     void draw_doors() const;
-    void draw_turrets() const;
+    void draw_turrets();
 
     const Art& art_;
     const nnh::Tilemap& map_;
@@ -60,8 +66,11 @@ class LevelPlay {
     nnh::Vec2 spawn_{};
     nnh::CameraRig camera_; ///< follows the player (spec 018), see level_camera.hpp
     float look_ahead_ = 0;  ///< the camera's offset x: ahead of the player, eased when it turns
-    CoinBook coins_;
-    TurretBook turrets_;
+    nnh::World world_; ///< the player, coins and turrets (level_world.hpp)
+    nnh::Entity player_entity_{};
+    TurretBook turrets_{world_};
+    int coin_count_ = 0; ///< coins at the start
+    int collected_ = 0;
     Door doors_[kMaxDoors] = {};
     int door_count_ = 0;
     bool in_door_ = false;

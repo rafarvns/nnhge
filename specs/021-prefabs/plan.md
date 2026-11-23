@@ -640,3 +640,30 @@ No constitution exception is requested. D36 is new (see [decisions.md](../../doc
 gets a dated note (an entities-internal reservation for prefabs, no public change); the patterns page gains the
 Prototype row. One AC-7 target is flagged at risk and keeps the spec's measurement-with-margin fallback; the spec's
 memory expectation is corrected above.
+
+## Stage 0 results
+
+Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), at `fda2e9e`, before any spec 021
+change. Scripts in `build/ref-021/` (not committed).
+
+- `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 572 / 22 020 / 211 696; pc-debug 198 464 /
+  26 756 / 214 352; 3ds-release `hello.elf` 201 012 / 28 352 / 106 680 (`.3dsx` 246 400 bytes); 3ds-dev `hello.elf`
+  217 728 / 32 872 / 109 288 (`.3dsx` 267 844). `nm -C` lists saved as `build/ref-021/hello.{pc,3ds}.nm` (2966 and
+  1364 symbols). All equal spec 020's final numbers.
+- `.text` of 3ds-release ELFs: `platformer.elf` 350 048, `entities.elf` 271 024.
+- Build times (3 runs, `btime.sh`): edit `examples/entities/arena.cpp` → simulator (pc-debug) 2.49, 2.03, 1.97 s;
+  → `.3dsx` (3ds-release) 4.78, 4.79, 4.91 s; clean `nnh_core` (pc-debug, parallel) 7.9 s.
+- Header cost (`hcost.sh`, `g++ -std=c++20 -fsyntax-only` of a one-line TU, 6 runs): `<nnh/entities.hpp>` 8555
+  preprocessed lines, 0.45–0.53 s.
+- 3ds-dev disassembly (`fcount.py`, whole functions, slow paths included; the stage 1 guard): `World::spawn()` 109
+  instructions (2 stack accesses, no call on the common path), `detail::world_add` 143 (2 stack accesses). Spec 020's
+  common-path counts (`spawn` ≈ 65, `world_add` ≈ 92) are the same code. `bench.o` of `examples/entities` saved
+  (`dis0/bench_entities.dis`): its inline `get`/`Storage::get`/`each`/pool paths don't include anything stage 1 touches.
+- T0.2: reference screenshots in `build/ref-021/ref/`: `hello`, `sprites`, `scenes` at 30, `camera`
+  (`CAMERA_DEMO=zoom1`) and `queries` (`QUERIES_DEMO=all`) at 30, `entities` (showcase) at 30, platformer
+  `PLATFORMER_DEMO=bench` at 90 (top screen compared), level 1 at 90, `PLATFORMER_DEMO=replay` at 312 and at 64 (the
+  first sparkles). `compare.sh` retakes them into `now/`: all identical twice.
+- T0.3: ctest pc-debug 265/265 (`platformer_replay_matches_script`, `entities_self_check_pc` → `entities: PASS
+  C8FB9A41`), pc-release 257/257; `level.nnhs --pc` → `nnh: PASS (79 lines, frames 1-1553)` with
+  `replay: done 900 frames sum B2418A28: 60 Hz PASS`; `entities/tests/check.nnhs --pc` → `nnh: PASS (112 lines)`.
+  `nnh_tests` 2199 tests; `kMaxTests` 4096: no change needed.

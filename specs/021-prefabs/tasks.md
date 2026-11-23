@@ -14,18 +14,18 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 0: baseline
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
   (3ds-release, 3ds-dev) sizes (`size` text/data/bss) and `nm -C` lists (`build/ref-021/`); edit
   `examples/entities/arena.cpp` → simulator and `.3dsx` times (the reference for the prefabs example's edit); clean
   `nnh_core`; preprocessed lines and `-fsyntax-only` time of a one-line TU including `<nnh/entities.hpp>` (the
   reference for `<nnh/prefabs.hpp>`); `.text` of the platformer's and `entities`' 3ds-release ELFs; 3ds-dev
   `world_add`/`spawn` instruction counts (`arm-none-eabi-objdump -drC`, the stage 1 guard). Files: plan.md ("Stage 0
   results"). Covers III, FR-16, AC-8.
-- [ ] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-021/ref/` (not committed): `hello`, `sprites`,
+- [x] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-021/ref/` (not committed): `hello`, `sprites`,
   `scenes`, `camera` (`CAMERA_DEMO=zoom1`), `queries` (`QUERIES_DEMO=all`), `entities` (showcase at 30), platformer
   `PLATFORMER_DEMO=bench` (top screen), level 1 at frame 90, `PLATFORMER_DEMO=replay` at 312 and at 64 (sparkles);
   `build/ref-021/compare.sh` retakes them into `now/` and compares. Files: plan.md (list and frames). Covers AC-8.
-- [ ] **T0.3** [P] Goldens today: ctest `platformer_replay_matches_script` passes with last line
+- [x] **T0.3** [P] Goldens today: ctest `platformer_replay_matches_script` passes with last line
   `replay: done 900 frames sum B2418A28: 60 Hz PASS`; ctest `entities_self_check_pc` → `entities: PASS C8FB9A41`;
   `nnh_tests` count (raise `kMaxTests` only if fewer than 400 are left). Files: plan.md. Covers AC-4, FR-16, VI.
 

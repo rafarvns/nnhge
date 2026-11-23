@@ -59,26 +59,26 @@ refinements", as in plans 012–018.
 
 ## Stage 2: rays against boxes, box casts (pure)
 
-- [ ] **T2.1** Exact predicates: segment setup, ratio comparison by cross products in `double`, fraction and point
+- [x] **T2.1** Exact predicates: segment setup, ratio comparison by cross products in `double`, fraction and point
   rounding (face coordinate exact, other axis clamped to the face), one-ulp float steps on the bit pattern. Files:
   `src/collision/exact.{hpp,cpp}`. Test: `tests/collision/test_exact.cpp` (ties exact where float division would
   round apart, monotone fractions, lattice exactness bound, steps across powers of two and zero). Covers FR-8, FR-16.
-- [ ] **T2.2** Slab test of one box: entry per face, normals, corner entry (x face), corner touch and edge graze
+- [x] **T2.2** Slab test of one box: entry per face, normals, corner entry (x face), corner touch and edge graze
   (miss), zero size, NaN fields (miss), start inside, start flush on a face going in (fraction 0) or out (miss).
   Files: `src/collision/ray_box.{hpp,cpp}`. Test: `tests/collision/test_ray_box.cpp`. Covers FR-10.
-- [ ] **T2.3** `raycast`/`raycast_all` on a view: filter, ignore, inside with and without `hit_from_inside`, nearest
+- [x] **T2.3** `raycast`/`raycast_all` on a view: filter, ignore, inside with and without `hit_from_inside`, nearest
   with ties to the lowest index, all hits sorted, overflow keeps the nearest, counting. Files:
   `src/collision/raycast_boxes.cpp`. Test: `tests/collision/test_raycast_boxes.cpp`. Covers FR-8, FR-10, FR-11.
-- [ ] **T2.4** [P] Distance: `detail::ray_length` with `std::sqrt(float)` in its own file compiled with
+- [x] **T2.4** [P] Distance: `detail::ray_length` with `std::sqrt(float)` in its own file compiled with
   `-fno-math-errno`; `distance = fraction × length`. Check: `objdump -d` of `ray_distance.cpp.o` on pc-release
   (`sqrtss`, no call) and 3ds-release (`vsqrt.f32`, no call), and no fused multiply-add in any `_nnh_query_sources`
   object (plan 015's check). Files: `src/collision/ray_distance.cpp`, CMake. Test: `test_raycast_boxes.cpp` (3-4-5
   distances exact). Covers FR-16.
-- [ ] **T2.5** `box_cast`/`box_cast_all`: grown target in `double` numerators, each face, flush contact position
+- [x] **T2.5** `box_cast`/`box_cast_all`: grown target in `double` numerators, each face, flush contact position
   (`overlaps` false at it, true one ulp further), corner tie, sliding along a face (miss), overlapping at the start,
   zero-size cast box, relative motion of two movers, all contacts sorted. Files: `src/collision/box_cast.cpp`. Test:
   `tests/collision/test_box_cast.cpp`. Covers FR-13.
-- [ ] **T2.6** Stage end: ctest. Covers VI.
+- [x] **T2.6** Stage end: ctest. Covers VI.
 
 ## Stage 3: rays against grids (pure)
 

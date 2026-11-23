@@ -211,14 +211,21 @@ endif()
 # Collision layers and queries (spec 019, D34): exact decisions in double, results rounded once to float; no fused
 # multiply-add, so PC and 3DS give the same hits bit for bit. Each file is linked only by a game that calls it.
 set(_nnh_query_sources
+    src/collision/box_cast.cpp
+    src/collision/exact.cpp
     src/collision/hit_list.cpp
     src/collision/layers.cpp
     src/collision/point_queries.cpp
     src/collision/query_check.cpp
+    src/collision/ray_box.cpp
+    src/collision/raycast_boxes.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_query_sources})
+# The queries' only square root: -fno-math-errno makes std::sqrt one instruction (no call into libm).
+set(_nnh_query_sqrt_source src/collision/ray_distance.cpp)
+target_sources(nnh_core PRIVATE ${_nnh_query_sources} ${_nnh_query_sqrt_source})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_query_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+    set_source_files_properties(${_nnh_query_sqrt_source} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)

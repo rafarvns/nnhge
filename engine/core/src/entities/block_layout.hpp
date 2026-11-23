@@ -16,7 +16,8 @@ struct KindLayout {
 };
 
 struct WorldLayout {
-    std::size_t hot = 0, cold = 0, kind_hot = 0, kind_cold = 0, ids = 0;
+    std::size_t hot = 0, cold = 0, kind_hot = 0, kind_cold = 0;
+    std::size_t kind_data = 0;      ///< kinds + 1 data pointers (the last null: the spare kind of get<T>)
     std::size_t records = 0;        ///< max_entities × record_words words
     std::size_t entity_bitmaps = 0; ///< 4 × words: live, quarantine, fresh, dying
     std::size_t queue = 0;          ///< u16 per entity: the destroy queue's links

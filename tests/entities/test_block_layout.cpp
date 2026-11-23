@@ -24,9 +24,9 @@ NNH_TEST(world_layout_record_holds_meta_kinds_tags_and_a_slot_per_kind) {
     const ComponentDesc kinds[] = {nnh::component<Pos>(8), nnh::component<Vel>(8), nnh::component<Hp>(8)};
     const WorldLayout l = world_layout({.max_entities = 10, .tags_per_entity = 4}, kinds, 3);
     CHECK(l.slots_word == 6);   // meta, kinds, 4 tags
-    CHECK(l.record_words == 8); // + 3 u16 slots rounded up to 2 words
+    CHECK(l.record_words == 8); // + 3 u16 slots and the spare one (always kNoSlot): 2 words
     const WorldLayout none = world_layout({.max_entities = 10, .tags_per_entity = 0}, kinds, 2);
-    CHECK(none.slots_word == 2 && none.record_words == 3);
+    CHECK(none.slots_word == 2 && none.record_words == 4); // 2 slots + the spare: 2 words
 }
 
 NNH_TEST(world_layout_aligns_every_part_to_its_type) {
@@ -47,20 +47,20 @@ NNH_TEST(world_layout_of_one_and_of_thirty_two_kinds) {
     ComponentDesc many[32];
     for (ComponentDesc& d : many) d = nnh::component<Pos>(4);
     const WorldLayout l32 = world_layout({.max_entities = 4, .tags_per_entity = 0}, many, 32);
-    CHECK(l32.record_words == 2 + 16);
+    CHECK(l32.record_words == 2 + 17); // 32 slots + the spare
     const WorldLayout l1 = world_layout({.max_entities = 4, .tags_per_entity = 0}, many, 1);
-    CHECK(l1.record_words == 3);
+    CHECK(l1.record_words == 3); // 1 slot + the spare
     CHECK(l1.total < l32.total);
 }
 
-NNH_TEST(world_layout_of_1024_entities_8_kinds_4_tags_is_about_64_kb_besides_components) {
+NNH_TEST(world_layout_of_1024_entities_8_kinds_4_tags_is_about_68_kb_besides_components) {
     ComponentDesc kinds[8];
     for (ComponentDesc& d : kinds) d = nnh::component<Hp>(1024);
     const WorldLayout l = world_layout({.max_entities = 1024, .tags_per_entity = 4}, kinds, 8);
     const std::size_t components = 8 * 1025 * sizeof(Hp);
     const std::size_t bookkeeping = l.total - components;
-    // Per entity: (2 + 4 + 4) words of record + 4 bitmap bits + a 2-byte queue link; per component slot 2 B owner and
-    // 4 bitmap bits; plus the header, the kind table and the ids.
-    CHECK(l.record_words == 10);
-    CHECK(bookkeeping > 60 * 1024 && bookkeeping < 66 * 1024);
+    // Per entity: (2 + 4 + 5) words of record (8 slots and the spare) + 4 bitmap bits + a 2-byte queue link; per
+    // component slot 2 B owner and 4 bitmap bits; plus the header and the kind tables.
+    CHECK(l.record_words == 11);
+    CHECK(bookkeeping > 64 * 1024 && bookkeeping < 70 * 1024);
 }

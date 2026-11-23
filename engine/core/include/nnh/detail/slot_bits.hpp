@@ -52,7 +52,7 @@ struct SlotTable {
         for (int w = hint; w < words; ++w) {
             const std::uint32_t free = ~(live[w] | quarantine[w]);
             if (free == 0) continue;
-            hint = w;
+            if (w != hint) hint = w; // the common case (the hint word has room) stores nothing
             const int slot = (w << 5) + lowest_bit(free);
             return slot < capacity ? slot : -1;
         }

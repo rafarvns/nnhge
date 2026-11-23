@@ -15,7 +15,7 @@ WorldLayout world_layout(const WorldDesc& desc, const ComponentDesc* kinds, int 
     WorldLayout l{};
     const std::size_t entities = static_cast<std::size_t>(desc.max_entities);
     l.slots_word = 2 + desc.tags_per_entity;
-    l.record_words = l.slots_word + (count + 1) / 2;
+    l.record_words = l.slots_word + (count + 2) / 2; // + a spare slot field, always kNoSlot (get<T> of an unknown kind)
     l.entity_words = words_for(desc.max_entities);
     l.align = alignof(KindCold) > alignof(WorldHot) ? alignof(KindCold) : alignof(WorldHot);
     std::size_t at = 0;
@@ -23,8 +23,8 @@ WorldLayout world_layout(const WorldDesc& desc, const ComponentDesc* kinds, int 
     at = l.cold = align_up(at + sizeof(WorldHot), alignof(WorldCold));
     at = l.kind_hot = align_up(at + sizeof(WorldCold), alignof(KindHot));
     at = l.kind_cold = align_up(at + sizeof(KindHot) * static_cast<std::size_t>(count), alignof(KindCold));
-    at = l.ids = align_up(at + sizeof(KindCold) * static_cast<std::size_t>(count), alignof(TypeId));
-    at = l.records = align_up(at + sizeof(TypeId) * static_cast<std::size_t>(count), 4);
+    at = l.kind_data = align_up(at + sizeof(KindCold) * static_cast<std::size_t>(count), alignof(void*));
+    at = l.records = align_up(at + sizeof(void*) * static_cast<std::size_t>(count + 1), 4);
     at = l.entity_bitmaps = at + 4 * entities * static_cast<std::size_t>(l.record_words);
     at = l.queue = at + 4 * 4 * static_cast<std::size_t>(l.entity_words);
     at += 2 * entities;

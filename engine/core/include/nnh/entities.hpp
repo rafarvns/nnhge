@@ -12,7 +12,7 @@
 /// struct Body { nnh::Rect box; nnh::collision::Layers layers = nnh::collision::kNoLayers; };
 /// struct Velocity { nnh::Vec2 v; };
 /// const nnh::ComponentDesc kinds[] = {nnh::component<Body>(256), nnh::component<Velocity>(256)};
-/// nnh::World world = nnh::World::create({.max_entities = 256}, kinds).value();
+/// nnh::World world = std::move(nnh::World::create({.max_entities = 256}, kinds).value()); // check it in real code
 /// nnh::Entity e = world.spawn();
 /// world.add<Body>(e, {{10, 10, 16, 16}, kEnemy});
 /// world.add<Velocity>(e, {{1, 0}});
@@ -32,6 +32,7 @@
 #include "nnh/detail/small_function.hpp"
 #include "nnh/detail/type_id.hpp"
 #include "nnh/detail/world_layout.hpp"
+#include "nnh/detail/world_ranges.hpp"
 #include "nnh/result.hpp"
 
 namespace nnh {
@@ -143,80 +144,6 @@ struct KindStats {
 
 namespace detail {
 
-/// One component of an iteration over a kind: `for (auto [entity, body] : bodies.items())`.
-template <typename T>
-struct StorageItem {
-    Entity entity;
-    T& component;
-};
-
-inline Entity entity_at(const WorldHot& w, int slot) {
-    return make_handle<World>(static_cast<std::uint32_t>(slot), record_at(w, static_cast<std::uint32_t>(slot))[0] & 0xFFFFu);
-}
-
-/// The range of Storage::items(): ascending component slots, FR-15's rules.
-template <typename T>
-class StorageRange {
-public:
-    StorageRange(WorldHot* w, int kind) : w_(w), kind_(kind), guard_(w) {}
-    class iterator {
-    public:
-        StorageItem<T> operator*() const {
-            const KindHot& k = w_->kinds[kind_];
-            return {entity_at(*w_, k.owner[cursor_.slot()]), static_cast<T*>(k.data)[cursor_.slot()]};
-        }
-        iterator& operator++() {
-            cursor_.next();
-            return *this;
-        }
-        bool operator!=(const iterator& o) const { return cursor_.slot() != o.cursor_.slot(); }
-
-    private:
-        friend class StorageRange;
-        iterator() = default;
-        iterator(WorldHot* w, int kind)
-            : w_(w), kind_(kind), cursor_(w, &w->kinds[kind].slots, words_for(w->kinds[kind].slots.extent)) {}
-        WorldHot* w_ = nullptr;
-        int kind_ = 0;
-        BitCursor cursor_;
-    };
-    iterator begin() const { return w_ != nullptr ? iterator(w_, kind_) : iterator(); }
-    iterator end() const { return iterator(); }
-
-private:
-    WorldHot* w_;
-    int kind_;
-    IterationGuard guard_;
-};
-
-/// The range of World::entities(): every live entity in ascending slots, FR-15's rules.
-class EntityRange {
-public:
-    explicit EntityRange(WorldHot* w) : w_(w), guard_(w) {}
-    class iterator {
-    public:
-        Entity operator*() const { return entity_at(*w_, cursor_.slot()); }
-        iterator& operator++() {
-            cursor_.next();
-            return *this;
-        }
-        bool operator!=(const iterator& o) const { return cursor_.slot() != o.cursor_.slot(); }
-
-    private:
-        friend class EntityRange;
-        iterator() = default;
-        explicit iterator(WorldHot* w) : w_(w), cursor_(w, &w->entities, words_for(w->entities.extent)) {}
-        WorldHot* w_ = nullptr;
-        BitCursor cursor_;
-    };
-    iterator begin() const { return w_ != nullptr ? iterator(w_) : iterator(); }
-    iterator end() const { return iterator(); }
-
-private:
-    WorldHot* w_;
-    IterationGuard guard_;
-};
-
 inline constexpr int kAddedExisting = 0x10000; ///< world_add(): the entity already had the kind
 
 int world_add(WorldHot& w, int kind, Entity e); ///< a slot, kAddedExisting | slot, or −1
@@ -227,12 +154,16 @@ bool world_has_tag(const WorldHot& w, Entity e, Tag t);
 
 /// A view of one kind's storage (FR-15), with the kind lookup done once: a plain array other modules read in place
 /// (`collision::box_view(bodies.data(), bodies.extent(), &Body::box, &Body::layers)`; a result's box index is a slot,
-/// `owner(index)` its entity). Non-live slots hold T{}. Valid for the world's life; cheap to copy.
+/// `owner(index)` its entity). Non-live slots hold T{}. Valid for the world's life; cheap to copy. Its get() is the
+/// fastest lookup by handle: it keeps the world's record layout in the view (no kind scan, no header loads).
 template <typename T>
 class Storage {
 public:
     Storage() = default;
-    Storage(detail::WorldHot* w, int kind) : w_(w), kind_(kind) {}
+    Storage(detail::WorldHot* w, int kind)
+        : w_(w), kind_(kind), records_(w->records), record_words_(static_cast<std::uint32_t>(w->record_words)),
+          entities_(static_cast<std::uint32_t>(w->entities.capacity)),
+          slot_field_(static_cast<std::uint32_t>(2 * w->slots_word + kind)), data_(static_cast<T*>(w->kinds[kind].data)) {}
 
     T* data() const { return w_ != nullptr ? static_cast<T*>(k().data) : nullptr; }
     /// One past the highest slot used since the last clear().
@@ -245,16 +176,17 @@ public:
     Entity owner(int slot) const { return is_live(slot) ? detail::entity_at(*w_, k().owner[slot]) : Entity{}; }
     /// The slot of `e`'s component, or −1 when `e` is stale or lacks T.
     int slot_of(Entity e) const {
-        if (w_ == nullptr) return -1;
-        const std::uint32_t* r = detail::live_record(*w_, e);
-        if (r == nullptr) return -1;
-        const std::uint16_t s = detail::record_slots(*w_, const_cast<std::uint32_t*>(r))[kind_];
+        const std::uint32_t slot = e.bits() & 0xFFFFu; // an empty view has entities_ 0: every handle is out of range
+        if (slot >= entities_) return -1;
+        const std::uint32_t* r = records_ + slot * record_words_;
+        if (r[0] != ((e.bits() >> 16) | detail::kEntityLive)) return -1;
+        const std::uint16_t s = reinterpret_cast<const std::uint16_t*>(r)[slot_field_];
         return s == detail::kNoSlot ? -1 : s;
     }
-    /// As World::get<T>, without the kind lookup.
+    /// As World::get<T>, without the kind lookup or a load of the world's header.
     T* get(Entity e) const {
         const int s = slot_of(e);
-        return s < 0 ? nullptr : static_cast<T*>(k().data) + s;
+        return s < 0 ? nullptr : data_ + s;
     }
     /// Every live component in ascending slots: `for (auto [entity, component] : view.items())` (FR-15's rules).
     detail::StorageRange<T> items() const { return detail::StorageRange<T>(w_, kind_); }
@@ -270,6 +202,12 @@ private:
     const detail::KindHot& k() const { return w_->kinds[kind_]; }
     detail::WorldHot* w_ = nullptr;
     int kind_ = 0;
+    // The world's record layout, fixed for its life (the block never moves): what get() reads.
+    const std::uint32_t* records_ = nullptr;
+    std::uint32_t record_words_ = 0;
+    std::uint32_t entities_ = 0;
+    std::uint32_t slot_field_ = 0; ///< index of this kind's u16 slot field from the record's start
+    T* data_ = nullptr;
 };
 
 /// Entities with components and tags, in one block of tagged memory sized at creation (FR-9). Nothing allocates
@@ -340,13 +278,20 @@ public:
     /// `e`'s T, or null (stale entity, no T). Constant time: no search. The address never changes while it exists.
     template <typename T>
     T* get(Entity e) {
-        if (hot_ == nullptr) return nullptr;
-        const int k = kind<T>();
-        if (k < 0) return nullptr;
-        std::uint32_t* r = detail::live_record(*hot_, e);
+        const detail::WorldHot* w = hot_;
+        if (w == nullptr) return nullptr;
+        // Straight-line and call-free in Release (the assert's call is [[noreturn]]): every header field is read
+        // before a branch, so a loop of lookups keeps them in registers (plan 020, ARM pre-check). An unknown kind
+        // reads the records' spare slot field (always kNoSlot): null without a branch of its own.
+        int k = detail::kind_index<T>(*w);
+        NNH_ASSERT(k >= 0, "nnh::World::get<T>(): a component kind the world doesn't store");
+        if (k < 0) k = w->kind_count;
+        T* const data = static_cast<T*>(w->kind_data[k]);
+        const int slots_word = w->slots_word;
+        std::uint32_t* r = detail::live_record(*w, e);
         if (r == nullptr) return nullptr;
-        const std::uint16_t s = detail::record_slots(*hot_, r)[k];
-        return s == detail::kNoSlot ? nullptr : static_cast<T*>(hot_->kinds[k].data) + s;
+        const std::uint16_t s = reinterpret_cast<const std::uint16_t*>(r + slots_word)[k];
+        return s == detail::kNoSlot ? nullptr : data + s;
     }
     template <typename T>
     const T* get(Entity e) const {
@@ -472,41 +417,12 @@ private:
             detail::world_misuse("use of an empty or moved-from nnh::World");
             return;
         }
-        detail::WorldHot& w = *hot_;
         const int ka = kind<A>();
         const int kb[] = {kind<B>()..., 0};
         if (ka < 0) return;
         for (int i = 0; i < static_cast<int>(sizeof...(B)); ++i)
             if (kb[i] < 0) return;
-        const detail::KindHot& a = w.kinds[ka];
-        void* const bdata[] = {w.kinds[kb[I]].data..., nullptr};
-        const std::uint32_t* const bfresh[] = {w.kinds[kb[I]].slots.fresh..., nullptr};
-        (void)bdata;
-        (void)bfresh;
-        A* const adata = static_cast<A*>(a.data);
-        detail::IterationGuard guard(&w);
-        const int words = detail::words_for(a.slots.extent);
-        for (int word = 0; word < words; ++word) {
-            std::uint32_t bits = a.slots.live[word];
-            if ((w.pending & detail::kPendingFresh) != 0) bits &= ~a.slots.fresh[word];
-            while (bits != 0) {
-                const int s = (word << 5) + detail::lowest_bit(bits);
-                bits &= bits - 1;
-                const std::uint32_t owner = a.owner[s];
-                std::uint32_t* r = detail::record_at(w, owner);
-                [[maybe_unused]] const std::uint16_t* slots = detail::record_slots(w, r);
-                [[maybe_unused]] const std::uint16_t bs[] = {slots[kb[I]]..., 0};
-                bool ok = ((bs[I] != detail::kNoSlot) && ... && true);
-                if constexpr (sizeof...(B) > 0) {
-                    if (ok && (w.pending & detail::kPendingFresh) != 0)
-                        ok = (!detail::bit_set(bfresh[I], bs[I]) && ...);
-                }
-                if (ok) {
-                    fn(detail::make_handle<World>(owner, r[0] & 0xFFFFu), adata[s], static_cast<B*>(bdata[I])[bs[I]]...);
-                }
-                bits &= a.slots.live[word]; // destroyed or removed by the callback: not visited
-            }
-        }
+        detail::each_with<A, B...>(*hot_, ka, kb, fn, std::index_sequence<I...>{});
     }
 
     detail::WorldHot* hot_ = nullptr;

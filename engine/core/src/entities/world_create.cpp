@@ -83,9 +83,10 @@ WorldHot* build(const WorldDesc& desc, const ComponentDesc* kinds, int count, co
         ::new (static_cast<void*>(w->kinds + k)) KindHot{};
         ::new (static_cast<void*>(w->cold->kinds + k)) KindCold{};
     }
-    auto* ids = reinterpret_cast<TypeId*>(bytes + l.ids);
-    for (int k = 0; k < count; ++k) ids[k] = kinds[k].id;
-    w->ids = ids;
+    for (int k = 0; k < count; ++k) w->ids[k] = kinds[k].id;
+    auto* kind_data = reinterpret_cast<void**>(bytes + l.kind_data);
+    kind_data[count] = nullptr;
+    w->kind_data = kind_data;
     w->kind_count = count;
     w->records = reinterpret_cast<std::uint32_t*>(bytes + l.records);
     w->record_words = l.record_words;
@@ -99,7 +100,10 @@ WorldHot* build(const WorldDesc& desc, const ComponentDesc* kinds, int count, co
     w->entities.capacity = desc.max_entities;
     w->cold->queue_next = reinterpret_cast<std::uint16_t*>(bytes + l.queue);
     init_records(*w);
-    for (int k = 0; k < count; ++k) init_kind(*w, l, bytes, k, kinds[k]);
+    for (int k = 0; k < count; ++k) {
+        init_kind(*w, l, bytes, k, kinds[k]);
+        kind_data[k] = w->kinds[k].data;
+    }
     return w;
 }
 

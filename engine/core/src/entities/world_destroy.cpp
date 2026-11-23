@@ -35,7 +35,7 @@ void process(World& world, WorldHot& w, std::uint32_t slot) {
     const Entity e = make_handle<World>(slot, r[0] & 0xFFFFu);
     for (int k = 0; k < w.kind_count; ++k) { // step 1: hooks, data intact
         if ((w.pending & kPendingDoomed) != 0) return;
-        if ((r[1] >> k & 1u) == 0) continue;
+        if ((r[1] >> k & 1u) == 0 || !w.cold->kinds[k].hook) continue; // no call for kinds without a hook
         run_hook(world, w, k, record_slots(w, r)[k], e);
     }
     if ((w.pending & kPendingDoomed) != 0) return;
@@ -47,7 +47,8 @@ void process(World& world, WorldHot& w, std::uint32_t slot) {
         detach_component(w, k, s);
     }
     r[1] = 0;
-    for (int i = 0; i < w.tags; ++i) r[2 + i] = 0;
+    for (int i = 0; i < w.tags; ++i)
+        if (r[2 + i] != 0) r[2 + i] = 0; // conditional: no memset call per destroy (plan 020 ARM pre-check)
     r[0] = next_generation(r[0] & 0xFFFFu); // stale from now on
     w.entities.retire(static_cast<int>(slot));
     w.cold->dying[slot >> 5] &= ~(1u << (slot & 31));

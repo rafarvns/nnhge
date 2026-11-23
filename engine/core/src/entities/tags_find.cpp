@@ -4,9 +4,18 @@
 
 #include "entities/world_internal.hpp"
 
+#include <utility>
+
 namespace nnh {
 namespace detail {
 namespace {
+
+/// Whether one of a record's N tag words is `t`: N compares unrolled, no branch per word (plan 020 ARM pre-check: a
+/// short-circuit loop here cost about 35 instructions per record on the ARM11).
+template <std::size_t... I>
+inline bool tagged(const std::uint32_t* r, std::uint32_t t, std::index_sequence<I...>) {
+    return ((r[I] == t) || ...);
+}
 
 template <int N>
 int scan(const WorldHot& w, std::uint32_t t, Entity* out, int capacity, bool first_only) {
@@ -15,9 +24,7 @@ int scan(const WorldHot& w, std::uint32_t t, Entity* out, int capacity, bool fir
     const int extent = w.entities.extent;
     int total = 0;
     for (int slot = 0; slot < extent; ++slot, r += stride) {
-        bool hit = false;
-        for (int i = 0; i < N; ++i) hit = hit || r[i] == t;
-        if (!hit) continue;
+        if (!tagged(r, t, std::make_index_sequence<N>{})) continue;
         if (total < capacity) out[total] = entity_at(w, slot);
         ++total;
         if (first_only) break;

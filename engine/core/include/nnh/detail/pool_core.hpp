@@ -65,7 +65,7 @@ struct PoolOps {
         }
         const bool iterating = c.iterating > 0;
         c.slots.take(slot, iterating);
-        c.any_fresh = c.any_fresh || iterating;
+        if (iterating) c.any_fresh = true; // no store in the common case
         c.meta[slot] |= kSlotLive;
         return slot;
     }

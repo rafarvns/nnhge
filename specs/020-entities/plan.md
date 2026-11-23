@@ -790,3 +790,58 @@ change.
   **unchanged** `level.nnhs` (last line `replay: done 900 frames sum 96FE8943: 60 Hz PASS`); `compare.sh`: level 1 at
   frame 90, the replay at 312 and the bench identical. ctest pc-debug 264/264, pc-release 257/257, 3ds-release without
   a warning; `nnh_tests` 2178.
+
+## Stage 7 refinements and results
+
+- **Files** as planned, except `components.hpp` also holds the arena's collision bits and the `Bullet` of the pool, and
+  `arena_draw.{hpp,cpp}` draws both screens. `ENTITIES_DEMO` = `showcase` (default) | `check` | `bench`.
+- **The arena** (`arena.{hpp,cpp}`): 64 entities, 3 tags each; kinds Body (remove hook: an explosion entity, tag
+  `"fx"`, where an enemy or a coin was, unless `clearing()`), Velocity, Bob (remove hook kills its tween), Coin,
+  Missile, Explosion; the ship, 6 walkers, 4 flyers (a yoyo tween writes `Bob::offset` through a `Setter` capturing
+  `[World*, Entity]`), 8 coins, a missile; bullets in `Pool<Bullet, 32>`, one per frame while A is held, moved up 3 px
+  and stopped by `boxes_at` over the body storage (the enemy hit is destroyed). **Binding order** world → tween set →
+  pool: the world is bound by a member initialised between `world_` and `tweens_` (`bound_`), because a `TweenSet`
+  binds itself in its constructor.
+- **Controls added to the plan's list:** B "zaps" the missile's target (`zap: slot n gen g`), so the stale-handle path
+  has a deterministic trigger for the console script (the target can also die from a bullet or a touch); L/R freeze by
+  adding/removing a `"frozen"` tag with `each_tagged` (the movement skips frozen entities).
+- **Log lines** (each in its own frame where the script expects it): `entities: showcase, 20 entities`,
+  `filter: <tag> found N`, `freeze: <tag> N`, `unfreeze: N`, `destroyed: slot n gen g tags enemy,flying`,
+  `touch: nothing at x,y`, `zap: ...` + `target lost (stale handle slot n gen g)` (same frame: only the second is
+  expected), `pool: full, misses N` (when A is released after a hold that missed).
+- **Self-check scene**: 2000 operations per frame, one checkpoint line per frame, the verdict in the frame after the
+  last checkpoint; ctest `entities_self_check_pc` (`ENTITIES_DEMO=check`, 70 frames) → `entities: PASS C8FB9A41`.
+- **Bench** (`bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}`): six phases of 300 frames (`each`, `spawn`, `find`, `get`,
+  `storage get` (information), `pool`), then the verdict in the next frame. **A Debug build reports the numbers but
+  doesn't judge them** (`not judged (Debug)`): unoptimised code says nothing about the console, and the pc-debug
+  `get` sat at 0.39–0.50 ms, which made the `--pc` script flaky. Development and Release judge.
+- **PC numbers** (pc-dev, two runs): each 0.009–0.010 ms, spawn 0.045–0.046 ms, find 0.012 ms, get 0.055–0.060 ms,
+  storage get 0.042–0.047 ms, pool 0.021 ms; all PASS. (x86 at 4+ GHz: the console's numbers are the ones that count.)
+- **Screenshots read back** (the script's, pc-debug): the start; the enemy filter (10 entities outlined); a coin and a
+  flyer just destroyed (two explosion squares); the HUD's `target lost (stale handle slot 1 gen 1)` with the missile's
+  line to its new target; the bullet column with the pool full (`bullets 32/32 ... misses`); the self-check's PASS;
+  the bench's lines. `nnh run entities --pc --no-build --script examples/entities/tests/check.nnhs` →
+  `nnh: PASS (112 lines, frames 1-2101)`, twice.
+
+### Stage 7 ARM pre-check (T7.6)
+
+`arm-none-eabi-objdump -drC` of the 3ds-dev objects (`bench.o`, `src/entities/*.o`, `src/pool/*.o`; GCC of devkitARM,
+`-O2`), counted on the common path of each AC-7 hot loop. Cycle estimates use spec 019's console calibration
+(≈ 2.2 cycles per instruction on these loops, 268 MHz) and ignore cache misses (the Old 3DS has no L2: 1024 random
+records of 44 bytes don't fit the 16 KB L1).
+
+| AC-7 workload | First build | Found | Fixed | After | Estimate | Target |
+|---------------|-------------|-------|-------|-------|----------|--------|
+| `each<Body, Velocity>`, per entity | 30 instructions, 3 stack reloads, 0 calls, 0 `vmrs`, scan by `clz` | the second kind's fresh-bitmap pointer kept live (register pressure) | load it only when something is fresh | 27 instructions, 2 stack reloads, 4 `vldr` + 2 `vadd` + 2 `vstr`, 0 calls, 0 `vmrs` | ≈ 0.23 ms | < 0.5 ms |
+| `get<Body>(handle)`, per lookup | 43 instructions; the world header re-read and the kind ids rescanned through a pointer on every call; an ordinary call (`world_misuse`) inside the loop blocked hoisting | the misuse call; the ids pointer; a branch on the kind | `NNH_ASSERT` (its call is `[[noreturn]]`; nothing in Release); ids inline in `WorldHot`; records get a spare slot field (always `kNoSlot`) so an unknown kind needs no branch; header fields read before any branch | 37 instructions (GCC still sinks the header loads into the branches) | ≈ 3.0 ms | **< 0.5 ms: expected FAIL** (risk 1) |
+| `Storage<Body>::get`, per lookup (information) | ≈ 30 instructions | header re-read per call | the view caches the record layout (records, stride, capacity, slot field index, data) | 19 instructions | ≈ 1.6 ms | — |
+| `find` over 1024 × 4 tags, per record | ≈ 35 instructions: the per-count `scan<N>` kept a short-circuit loop per record | not unrolled | `index_sequence` fold over the N tag words | 16 instructions (4 × `ldr`/`cmp`/`beq` + loop) | ≈ 0.13 ms | **< 0.1 ms: at risk** |
+| pool acquire + release, per pair | ≈ 95 instructions | stores of unchanged values (`any_fresh`, the hint word) | conditional stores | ≈ 90 instructions (hint scan 14, take 42, release with its handle check and `T{}` 36) | ≈ 0.75 ms | **< 0.3 ms: expected FAIL** (risk 1) |
+| 256 × (spawn, 3 adds, 2 tags) + destroys + flush | out of line per operation as planned; `destroy` called `run_hook` for kinds without a hook, and zeroed the tag words with a `memset` call | a call per component and a `memset` per entity | hook test inline; tags cleared by conditional word stores | see below | ≈ 0.85 ms | < 1 ms (little margin) |
+
+No `__aeabi_*` division, `memcpy` or `vmrs` in any of these loops (`bench.o` references only the C++ unwind
+personalities); lowest-bit scans are `rsb`/`and`/`clz`/`rsb`. The other `memset` calls GCC made from zeroing loops
+(`SlotTable::reset`, `end_iteration`, `pool_init_inline`) are in `clear()`, creation and the end of an iteration that
+spawned, not per element. **Expected at the console (T10.2):** `each` and `spawn` PASS, `find` marginal, `get` and
+`pool` FAIL — the plan's risk 1; T10.3 then applies the remaining mitigations, and AC-7's rule sets the budgets from
+the measurement with margin. No result changed: every golden holds (`C8FB9A41`, the platformer's `96FE8943`).

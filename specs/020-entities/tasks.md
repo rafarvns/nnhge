@@ -181,38 +181,38 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 7: `examples/entities` (PC)
 
-- [ ] **T7.1** Example core: components, tags (`static_assert(tags_distinct(...))`), the arena on the top screen
+- [x] **T7.1** Example core: components, tags (`static_assert(tags_distinct(...))`), the arena on the top screen
   (walls as shapes), walkers (`Body` + `Velocity`, `"enemy"`), flyers (+ a `Bob` driven by the scene's bound
   `TweenSet` through a handle-capturing setter, `"enemy"`, `"flying"`), coins (`"coin"`); the ship (Circle Pad/D-Pad)
   firing bullets from `Pool<Bullet, 32>` (A; HUD live/capacity/misses); movement by `each<Body, Velocity>`; the world
   and pool bound to the showcase scene (world before the tween set). Files: `examples/entities/*`,
   `examples/CMakeLists.txt`. Test: builds; PC screenshot `ENTITIES_DEMO=showcase` read back. Covers AC-5, FR-15,
   FR-18.
-- [ ] **T7.2** Homing missile and tags: the missile keeps its target's `Entity`; when it goes stale the HUD and log say
+- [x] **T7.2** Homing missile and tags: the missile keeps its target's `Entity`; when it goes stale the HUD and log say
   `target lost (stale handle slot n gen g)` and it retargets with `first(kEnemy)`; X cycles the filter (none → enemy →
   flying → coin) highlighting `find`'s entities and logging `filter: <tag> found N`; L/R freeze/unfreeze the group with
   `each_tagged`. Files: `showcase_scene.cpp`, `arena.cpp`, `hud.cpp`. Test: PC screenshots (tag highlight, stale
   retarget) read back. Covers AC-5, FR-2, FR-17.
-- [ ] **T7.3** Touch to destroy: the bottom screen shows the arena through a hand-set `Camera2D`; a touch becomes a
+- [x] **T7.3** Touch to destroy: the bottom screen shows the arena through a hand-set `Camera2D`; a touch becomes a
   world point, `boxes_at` over the body storage picks the entity, which is destroyed (its `Body` hook spawns an
   `Explosion` unless `clearing()`), logging `destroyed: slot n gen g tags enemy,flying`; the HUD lists `WorldStats`
   and per-kind stats. Files: `showcase_scene.cpp`, `arena.cpp`, `hud.cpp`. Test: PC screenshot `touch` and the log lines
   in a `--pc` run. Covers AC-5, FR-13, FR-20, FR-24.
-- [ ] **T7.4** Self-check scene: SELECT runs T5.4's script, 2000 operations per frame, logging
+- [x] **T7.4** Self-check scene: SELECT runs T5.4's script, 2000 operations per frame, logging
   `entities: <n> sum <checksum>` and `entities: PASS <checksum>` / `entities: FAIL ...`; `ENTITIES_DEMO=check` starts
   in it; ctest `entities_self_check_pc`. Files: `self_check_scene.{hpp,cpp}`, `main.cpp`, `tests/CMakeLists.txt`. Test:
   ctest. Covers AC-2, AC-6.
-- [ ] **T7.5** [P] Bench (AC-7): `bench.{hpp,cpp}` (the five workloads, pure) and `bench_scene.{hpp,cpp}` (300 frames
+- [x] **T7.5** [P] Bench (AC-7): `bench.{hpp,cpp}` (the five workloads, pure) and `bench_scene.{hpp,cpp}` (300 frames
   each, profile scopes, one line per workload `entities bench: <name> avg X ms worst Y ms (target < Z ms) PASS|FAIL`,
   `get` through `Storage<T>::get` logged for information, then the verdict line `entities bench: PASS` or
   `entities bench: FAIL (<names>)`); Y runs it, `ENTITIES_DEMO=bench` starts in it. Files: `examples/entities/bench*`.
   Test: PC run logs every line. Covers AC-7.
-- [ ] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -dr` of the 3ds-dev objects of
+- [x] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -dr` of the 3ds-dev objects of
   `bench.cpp` and the module; for each AC-7 hot loop record instructions per element, calls, `vmrs`, `ldm`/`stm` of
   stack structs, `__aeabi_*`, `memcpy`/`memset` — expected per plan.md's ARM11 table: none of those in `each`, `get`,
   `find`'s inner loop or the pool pair; lowest-bit scans as `clz`. Fix what differs (no result changes: every golden
   holds). Files: plan.md ("Stage 7 ARM pre-check": the table). Covers AC-7, II.
-- [ ] **T7.7** The script `examples/entities/tests/check.nnhs`: SELECT → every checkpoint and PASS line; fixed touches
+- [x] **T7.7** The script `examples/entities/tests/check.nnhs`: SELECT → every checkpoint and PASS line; fixed touches
   with expected `destroyed:` lines, X cycles with expected `filter:` lines, a fire hold to `pool: full, misses N`, the
   missile's `target lost` line, screenshots (showcase, tag highlight, stale retarget, full pool, touch); Y → bench
   lines and `entities bench: PASS`; `fail-on "entities: FAIL"`, `fail-on "entities bench: FAIL"`, `fail-on "] E "`.

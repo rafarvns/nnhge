@@ -48,12 +48,13 @@ struct WorldHot {
     int slots_word = 0;    ///< word index of slot[] in a record (2 + tags)
     int tags = 0;          ///< tags per entity
     int kind_count = 0;
-    const TypeId* ids = nullptr; ///< kind_count type ids, in registration order
     KindHot* kinds = nullptr;
+    void* const* kind_data = nullptr; ///< each kind's data, then null: index kind_count is the spare kind
     SlotTable entities;
     int iterating = 0;
     std::uint8_t pending = 0;
     WorldCold* cold = nullptr;
+    TypeId ids[kMaxKinds] = {}; ///< kind_count type ids, in registration order (in the header: no pointer to chase)
 };
 
 inline std::uint32_t* record_at(const WorldHot& w, std::uint32_t slot) {
@@ -63,15 +64,19 @@ inline std::uint16_t* record_slots(const WorldHot& w, std::uint32_t* record) {
     return reinterpret_cast<std::uint16_t*>(record + w.slots_word);
 }
 
-/// The record of `e` when it is live, else null: one bound check, one load and one compare.
+/// The record of `e` when it is live, else null: one bound check, one load and one compare. The header's fields are
+/// read before any branch, so a loop of lookups keeps them in registers (plan 020, ARM pre-check).
 inline std::uint32_t* live_record(const WorldHot& w, Entity e) {
+    std::uint32_t* const records = w.records;
+    const std::uint32_t stride = static_cast<std::uint32_t>(w.record_words);
+    const std::uint32_t capacity = static_cast<std::uint32_t>(w.entities.capacity);
     const std::uint32_t slot = e.bits() & 0xFFFFu;
-    if (slot >= static_cast<std::uint32_t>(w.entities.capacity)) return nullptr;
-    std::uint32_t* r = record_at(w, slot);
+    std::uint32_t* const r = records + slot * stride; // only read below once the slot is known to be in range
+    if (slot >= capacity) return nullptr;
     return r[0] == ((e.bits() >> 16) | kEntityLive) ? r : nullptr;
 }
 
-/// The registration index of kind T in `w`, or −1. A scan of at most 32 ids (hoist it with World::storage<T>()).
+/// The registration index of kind T in `w`, or -1. A scan of at most 32 ids (hoist it with World::storage<T>()).
 template <typename T>
 int kind_index(const WorldHot& w) {
     const TypeId id = type_id<T>();

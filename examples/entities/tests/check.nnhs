@@ -1,0 +1,112 @@
+# Spec 020 AC-5/AC-6/AC-7, automatic (spec 013): the showcase's tag filters (find), a group frozen and unfrozen
+# (each_tagged), touches on the bottom screen that destroy a coin, a flyer and a walker (remove hooks spawn
+# explosions), the missile's target zapped (its handle goes stale and it retargets), the fire button held past the
+# bullet pool's 32; then the self-check, whose checksum lines must be the PC's bit for bit; then the bench (AC-7's five
+# targets) and its verdict.
+# PC:      nnh run entities --pc --script examples/entities/tests/check.nnhs
+# Console: nnh run entities --script examples/entities/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines below are the PC's (pc-debug). The showcase's lines change only if the arena or the moves below
+# change; the checksum lines only if the script in self_check.cpp or the pool/entities modules change: then run
+# `ENTITIES_DEMO=check NNH_EXIT_AFTER_FRAMES=70 build/pc-debug/examples/entities/entities.exe`, copy its lines here
+# and the values into kEntitiesCheckGolden/kEntitiesCheckpoints (self_check.hpp).
+fail-on "] E "
+fail-on "entities: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "entities bench: FAIL"
+
+wait 30
+screenshot showcase
+
+# Tag filters (X): none -> enemy -> flying -> coin -> none; L freezes the filtered group, R unfreezes.
+tap X
+expect "filter: enemy found 10" 10
+wait 5
+screenshot filter-enemy
+tap X
+expect "filter: flying found 4" 10
+wait 5
+tap L
+expect "freeze: flying 4" 10
+wait 5
+tap R
+expect "unfreeze: 4" 10
+wait 5
+tap X
+expect "filter: coin found 8" 10
+wait 5
+tap X
+expect "filter: none found 0" 10
+wait 5
+
+# Touches: the bottom screen shows the arena from world x 40. A coin, a flyer, a walker, then nothing.
+touch 84 184
+expect "destroyed: slot 13 gen 1 tags coin" 5
+wait 3
+untouch
+wait 10
+touch 156 144
+expect "destroyed: slot 9 gen 1 tags enemy,flying" 5
+wait 2
+screenshot touch
+untouch
+wait 10
+touch 128 103
+expect "destroyed: slot 4 gen 1 tags enemy" 5
+wait 3
+untouch
+wait 10
+touch 20 200
+expect "touch: nothing at 60,200" 5
+wait 3
+untouch
+wait 10
+
+# B zaps the missile's target: the missile finds its handle stale and chases the first enemy left.
+tap B
+expect "target lost (stale handle slot 1 gen 1)" 10
+wait 20
+screenshot stale
+
+# A held for 60 frames: one bullet per frame from a pool of 32, so the pool runs full and counts misses.
+press A
+wait 50
+screenshot full-pool
+wait 10
+release A
+expect "pool: full, misses 29" 10
+wait 10
+
+# The self-check (SELECT): 100 000 operations, a checksum every 10 000, then the verdict.
+tap SELECT
+expect "entities: self-check started" 20
+expect "entities: 10000 sum 723FB297" 30
+expect "entities: 20000 sum 3BB094CB" 30
+expect "entities: 30000 sum 58530BE8" 30
+expect "entities: 40000 sum 21AD333D" 30
+expect "entities: 50000 sum DC95F672" 30
+expect "entities: 60000 sum C5CFA4B7" 30
+expect "entities: 70000 sum 284AFBEE" 30
+expect "entities: 80000 sum F1272C58" 30
+expect "entities: 90000 sum 45824FCC" 30
+expect "entities: 100000 sum C8FB9A41" 30
+expect "entities: PASS C8FB9A41" 30
+wait 10
+screenshot self-check
+
+# Back to the showcase (SELECT), then the bench (Y): 6 phases of 300 frames, one line each, then the verdict.
+tap SELECT
+expect "entities: showcase, 20 entities" 20
+wait 5
+tap Y
+expect "entities bench: started" 20
+expect "entities bench: each avg" 400
+expect "entities bench: spawn avg" 400
+expect "entities bench: find avg" 400
+expect "entities bench: get avg" 400
+expect "entities bench: storage get avg" 400
+expect "entities bench: pool avg" 400
+expect "entities bench: PASS" 30
+wait 10
+screenshot bench
+end

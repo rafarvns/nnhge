@@ -37,24 +37,24 @@ refinements", as in plans 012–018.
 
 ## Stage 1: layers, views, filters, point and box queries (pure)
 
-- [ ] **T1.1** Public types: `Layers` and its constants, `layer(n)` (`static_assert`s in constant expressions;
+- [x] **T1.1** Public types: `Layers` and its constants, `layer(n)` (`static_assert`s in constant expressions;
   `detail::bad_layer` asserts at run time), `detects`, `BoxView` and the three `box_view` helpers (member-pointer
   template with the 32-bit `static_assert`), `QueryFilter`, `RayHit`, `CellCrossing`, every query declaration; CMake
   list `_nnh_query_sources` with `-ffp-contract=off`. Files: `engine/core/include/nnh/collision.hpp`,
   `src/collision/layers.cpp`, `engine/core/CMakeLists.txt`. Test: `tests/collision/test_layers.cpp`. Covers FR-1, FR-2.
-- [ ] **T1.2** Reading views and checking misuse: box/layers `i` by `memcpy`, `passes(filter, i)` (mask, ignore, no
+- [x] **T1.2** Reading views and checking misuse: box/layers `i` by `memcpy`, `passes(filter, i)` (mask, ignore, no
   area), view validation (null with count, strides, negative count), buffer validation, finite inputs, grid cell
   sizes; assert in Debug/Development, "no hits" in the Release path. Files: `src/collision/box_view.hpp`,
   `query_check.{hpp,cpp}`. Test: `tests/collision/test_box_view.cpp` (plain, parallel, structs with padding, layer
   field before/after the box, enum-typed field, absent layers = all layers, count 0, null items). Covers FR-3, FR-4,
   FR-17.
-- [ ] **T1.3** Hit list: capped insertion sorted by fraction, stable on ties, total returned, null + 0 counts; the
+- [x] **T1.3** Hit list: capped insertion sorted by fraction, stable on ties, total returned, null + 0 counts; the
   index variant for point/box queries. Files: `src/collision/hit_list.{hpp,cpp}`. Test:
   `tests/collision/test_hit_list.cpp`. Covers FR-11.
-- [ ] **T1.4** `boxes_at`, `boxes_overlapping`, `cell_at(grid, point)`. Files: `src/collision/point_queries.cpp`.
+- [x] **T1.4** `boxes_at`, `boxes_overlapping`, `cell_at(grid, point)`. Files: `src/collision/point_queries.cpp`.
   Test: `tests/collision/test_point_queries.cpp` (half-open edges, ascending order, mask, ignore, buffer contract,
   `outside` kinds, negative coordinates, saturation; `cells_touching` unchanged). Covers FR-14, FR-15.
-- [ ] **T1.5** Stage end: `ctest --preset pc-debug` (spec 012's collision tests unchanged and passing). Covers VI,
+- [x] **T1.5** Stage end: `ctest --preset pc-debug` (spec 012's collision tests unchanged and passing). Covers VI,
   FR-5.
 
 ## Stage 2: rays against boxes, box casts (pure)

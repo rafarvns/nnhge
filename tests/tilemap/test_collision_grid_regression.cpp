@@ -1,17 +1,17 @@
-// collision_grid() pinned before spec 019 changed the tilemap (T0.2, FR-5, FR-18, AC-3): the cells of collision_at
-// and of collision_grid() (looked up directly, and through collision::move, contacts and cells_touching of many
-// boxes) over loaded and code-built maps, before and after edits, hashed with FNV-1a. The golden values were
-// recorded on the code before any spec 019 change; they must never change.
-
-#include <cstdio>
-#include <cstring>
-#include <string>
-#include <utility>
+// collision_grid() pinned before spec 019 changed the tilemap (T0.2, FR-5, FR-18, AC-3): the cells of
+// collision_at and of collision_grid() (looked up directly, and through collision::move, contacts and
+// cells_touching of many boxes) over loaded and code-built maps, before and after edits, hashed with FNV-1a.
+// The golden values were recorded on the code before any spec 019 change; they must never change.
 
 #include "collision/grid_internal.hpp"
 #include "map_fixture.hpp"
 #include "nnh/collision.hpp"
 #include "tilemap/tilemap_internal.hpp"
+
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <utility>
 
 #ifndef NNH_TEST_MAPS_DIR
 #error "NNH_TEST_MAPS_DIR is set by tests/CMakeLists.txt"
@@ -53,7 +53,8 @@ std::string read_map(const char* name) {
     if (f == nullptr) return bytes;
     char buffer[4096];
     std::size_t got = 0;
-    while ((got = std::fread(buffer, 1, sizeof buffer, f)) > 0) bytes.append(buffer, got);
+    while ((got = std::fread(buffer, 1, sizeof buffer, f)) > 0)
+        bytes.append(buffer, got);
     std::fclose(f);
     return bytes;
 }
@@ -96,8 +97,8 @@ std::uint32_t moves_hash(const Tilemap& map) {
     };
     for (int i = 0; i < 400; ++i) {
         const Rect box{static_cast<float>(next() % 4096) / 4096 * world_w - 8,
-                       static_cast<float>(next() % 4096) / 4096 * world_h - 8, static_cast<float>(4 + next() % 28),
-                       static_cast<float>(4 + next() % 28)};
+                       static_cast<float>(next() % 4096) / 4096 * world_h - 8,
+                       static_cast<float>(4 + next() % 28), static_cast<float>(4 + next() % 28)};
         const Vec2 delta{static_cast<float>(static_cast<int>(next() % 513) - 256) / 4,
                          static_cast<float>(static_cast<int>(next() % 513) - 256) / 4};
         const collision::MoveOptions options{.drop_through = (i % 5) == 0};
@@ -123,8 +124,9 @@ std::uint32_t moves_hash(const Tilemap& map) {
     return h.sum;
 }
 
-/// 20 x 12 cells; two tilesets (ids 1..8 and 9..16); a back layer with marked tiles, a `collision` ground layer, a
-/// front layer with one-way and solid tiles from the second tileset, and a decoration layer without collision.
+/// 20 x 12 cells; two tilesets (ids 1..8 and 9..16); a back layer with marked tiles, a `collision` ground
+/// layer, a front layer with one-way and solid tiles from the second tileset, and a decoration layer without
+/// collision.
 struct CodeLevel {
     map_test::Engine engine;
     Tilemap map = map_test::make({.width = 20, .height = 12, .max_tile_layers = 4, .max_tile_ids = 32});
@@ -152,12 +154,12 @@ struct CodeLevel {
 };
 
 void edit(Tilemap& map) {
-    map.set_tile(1, 4, 11, tile(0));                 // a hole in the floor
-    map.fill(0, 3, 8, 2, 1, tile(1));                // part of the plank becomes plain
-    map.set_layer_collision(3, true);                // the decoration layer collides
-    map.set_layer_collision(1, false);               // the ground no longer does
-    map.set_tile_collision(5, Cell::OneWay);         // the decoration tiles become one-way
-    map.set_tile_collision(12, Cell::Empty);         // and the second set's solid tile goes
+    map.set_tile(1, 4, 11, tile(0));         // a hole in the floor
+    map.fill(0, 3, 8, 2, 1, tile(1));        // part of the plank becomes plain
+    map.set_layer_collision(3, true);        // the decoration layer collides
+    map.set_layer_collision(1, false);       // the ground no longer does
+    map.set_tile_collision(5, Cell::OneWay); // the decoration tiles become one-way
+    map.set_tile_collision(12, Cell::Empty); // and the second set's solid tile goes
     map.set_tile(2, 18, 2, tile(10));
 }
 

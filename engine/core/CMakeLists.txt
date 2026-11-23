@@ -208,6 +208,18 @@ target_sources(nnh_core PRIVATE ${_nnh_zoom_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_zoom_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Collision layers and queries (spec 019, D34): exact decisions in double, results rounded once to float; no fused
+# multiply-add, so PC and 3DS give the same hits bit for bit. Each file is linked only by a game that calls it.
+set(_nnh_query_sources
+    src/collision/hit_list.cpp
+    src/collision/layers.cpp
+    src/collision/point_queries.cpp
+    src/collision/query_check.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_query_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_query_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

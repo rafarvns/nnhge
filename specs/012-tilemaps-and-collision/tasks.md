@@ -320,7 +320,7 @@ Verifiable: `nnh_tests tilemap` green; a whole level can be built and collided a
     `hills` 0.5 × 1, `ground` with `collision`, `platforms` with planks marked `one_way` in the tileset, `things`
     with a `spawn` point, 47 `coin`s (`value`) and a `door` (`to`), `front` at 0.85 with the animated water and
     flipped tufts; properties `title`, `music`). The build converts it (28 KB `levels/level1.nnhmap`) on PC and 3DS;
-    `load_tilemap("levels/level1")` loads it with its own tileset texture. **Not opened in Tiled yet** (maintainer).
+    `load_tilemap("levels/level1")` loads it with its own tileset texture. Opened in Tiled 1.12.2 by the maintainer on 2026-11-22: no error, tileset image found, every layer and object shown.
   - **T7.2**: `level_play.*` (player through `collision_grid()` with `outside = Solid`, `follow_camera` clamped to
     the map on both axes, coins by `collision::overlaps` → `CoinCollected`, back to the spawn after the water →
     `LevelRestarted`, doors → `ShowDemo`), `level_scene.*` (buttons, or the replay), `hud.*` (score and coins from the

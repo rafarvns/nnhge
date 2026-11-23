@@ -31,8 +31,8 @@ effects in it (`NNH_ASSERT(load())` would skip `load()` in Release).
 4. The user dismisses it (3DS: START; PC: Enter, Esc or closing the window) and the program ends.
 
 Hardware faults are caught too: PC fatal signals (segmentation fault, abort, ...); on 3DS data/prefetch
-aborts and undefined instructions — when the console reports them to the game (Luma3DS
-"Set developer UNITINFO"); otherwise Luma3DS shows its own exception screen and saves a dump in
+aborts and undefined instructions — when the console reports them to the game (Luma3DS developer
+UNITINFO: `use_dev_unitinfo = 1` in `sd:/luma/config.ini` since v13, see [debugging on 3DS](../guides/debugging-on-3ds.md)); otherwise Luma3DS shows its own exception screen and saves a dump in
 `/luma/dumps/arm11/`.
 
 The full report is written to `crash.txt` in the game's data folder (previous one kept as

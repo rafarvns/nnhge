@@ -44,8 +44,10 @@ registers (for CPU faults) and the last 64 log lines. Press START to return to t
 Read the report on the PC by taking the SD card out, or over FTP (e.g. ftpd).
 
 **CPU faults** (bad pointer, misaligned access, undefined instruction) reach the engine's crash screen
-only when the console reports them to the game. In Luma3DS: hold **SELECT** while powering on →
-enable **"Set developer UNITINFO"** (development only; turn it off for normal use). Without it, Luma3DS
+only when the console reports them to the game: Luma3DS's **developer UNITINFO** must be on. Since Luma3DS v13 it is
+not in the boot menu any more: set `use_dev_unitinfo = 1` in `sd:/luma/config.ini` and reboot (before v13: hold
+**SELECT** while powering on → "Set developer UNITINFO"). Development only: while it is on, online features, amiibo
+and installing retail CIAs fail (error 0xD8E0806A), so set it back to `0` afterwards. Without it, Luma3DS
 shows its own exception screen and saves a dump in `sdmc:/luma/dumps/arm11/` — open it on the PC with
 Luma3DS's `luma3ds_exception_dump_parser`. Try it with the foundation example: hold L + R and press A
 (an assert) or B (a write through a null pointer, a real CPU fault). Scripted:

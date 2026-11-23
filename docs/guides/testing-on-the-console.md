@@ -166,7 +166,7 @@ final checksum and a verdict logged on the same frame in one line.
 **Testing a crash.** A fatal (`F`) line fails a script, except when the current `expect` names it and the script
 has nothing after it: the game is stopped on its crash screen, so that expect is the last line.
 `examples/foundation/tests/cpu_fault.nnhs` presses L + R + B (a null-pointer write) and expects the engine's
-"The CPU stopped on an invalid operation" line; on a 3DS this needs Luma3DS "Set developer UNITINFO"
+"The CPU stopped on an invalid operation" line; on a 3DS this needs Luma3DS developer UNITINFO
 ([debugging on 3DS](debugging-on-3ds.md)).
 
 ## Checking that the console plays like the PC

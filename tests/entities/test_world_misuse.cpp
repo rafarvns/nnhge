@@ -27,7 +27,7 @@ void find_with_a_negative_capacity() {
     Entity out[2];
     CHECK(g_w->find(nnh::tag("x"), out, -1) == 0);
 }
-void add_tag_none() { CHECK(!g_w->add_tag(g_e, nnh::Tag::None)); }
+void add_tag_none() { CHECK(!g_w->add_tag(g_e, nnh::kNoTag)); }
 void bind_twice_without_a_scene_stack() {
     nnh::Scene* none = nullptr;
     (void)none;

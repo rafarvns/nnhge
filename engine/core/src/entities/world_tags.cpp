@@ -7,7 +7,7 @@ namespace detail {
 
 bool world_has_tag(const WorldHot& w, Entity e, Tag t) {
     const std::uint32_t* r = live_record(w, e);
-    if (r == nullptr || t == Tag::None) return false;
+    if (r == nullptr || t == kNoTag) return false;
     for (int i = 0; i < w.tags; ++i)
         if (r[2 + i] == static_cast<std::uint32_t>(t)) return true;
     return false;
@@ -22,8 +22,8 @@ bool World::add_tag(Entity e, Tag t) {
     }
     std::uint32_t* r = detail::live_record(*hot_, e);
     if (r == nullptr) return false;
-    if (t == Tag::None) {
-        detail::world_misuse("World::add_tag(Tag::None)");
+    if (t == kNoTag) {
+        detail::world_misuse("World::add_tag(kNoTag)");
         return false;
     }
     int empty = -1;
@@ -40,7 +40,7 @@ bool World::add_tag(Entity e, Tag t) {
 }
 
 bool World::remove_tag(Entity e, Tag t) {
-    if (hot_ == nullptr || t == Tag::None) return false;
+    if (hot_ == nullptr || t == kNoTag) return false;
     std::uint32_t* r = detail::live_record(*hot_, e);
     if (r == nullptr) return false;
     for (int i = 0; i < hot_->tags; ++i) {

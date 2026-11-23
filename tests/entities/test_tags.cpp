@@ -1,5 +1,5 @@
 // Tags (spec 020 FR-16, FR-17; T4.1, T4.2): compile-time and run-time hashes equal (FNV-1a vectors), case labels,
-// tags_distinct; add_tag/remove_tag/has_tag, Tag::None, the per-entity limit, tags gone after destroy, 0 tags.
+// tags_distinct; add_tag/remove_tag/has_tag, nnh::kNoTag, the per-entity limit, tags gone after destroy, 0 tags.
 
 #include "nnh/detail/name_hash.hpp"
 #include "world_fixture.hpp"
@@ -48,7 +48,7 @@ NNH_TEST(tags_work_as_case_labels) {
 NNH_TEST(tags_distinct_refuses_duplicates_and_the_none_tag) {
     CHECK(nnh::tags_distinct(kEnemy, kCoin));
     CHECK(!nnh::tags_distinct(kEnemy, kCoin, kEnemy));
-    CHECK(!nnh::tags_distinct(kEnemy, Tag::None));
+    CHECK(!nnh::tags_distinct(kEnemy, nnh::kNoTag));
     CHECK(nnh::tags_distinct());
     CHECK(nnh::tags_distinct(kCoin));
 }
@@ -64,7 +64,7 @@ NNH_TEST(add_remove_and_has_tag) {
     CHECK(!w.remove_tag(e, kEnemy));
     CHECK(!w.has_tag(e, kEnemy) && w.has_tag(e, kFlying));
     CHECK(w.add_tag(e, kCoin)); // the freed word is reused
-    CHECK(!w.has_tag(e, Tag::None));
+    CHECK(!w.has_tag(e, nnh::kNoTag));
 }
 
 NNH_TEST(tags_of_stale_entities_answer_false) {
@@ -84,7 +84,7 @@ namespace {
 World* g_w = nullptr;
 Entity g_e{};
 void add_a_fifth_tag() { CHECK(!g_w->add_tag(g_e, nnh::tag("fifth"))); }
-void add_the_none_tag() { CHECK(!g_w->add_tag(g_e, Tag::None)); }
+void add_the_none_tag() { CHECK(!g_w->add_tag(g_e, nnh::kNoTag)); }
 void add_a_tag_without_tag_words() { CHECK(!g_w->add_tag(g_e, kEnemy)); }
 
 } // namespace

@@ -58,7 +58,7 @@ int find_in(const WorldHot* w, Tag t, Entity* out, int capacity, bool first_only
         world_misuse("World::find(): a negative capacity, or a null buffer with capacity > 0");
         return 0;
     }
-    if (w->tags == 0 || t == Tag::None) return 0;
+    if (w->tags == 0 || t == kNoTag) return 0;
     return kScans[w->tags](*w, static_cast<std::uint32_t>(t), out, capacity, first_only);
 }
 

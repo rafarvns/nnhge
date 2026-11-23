@@ -1,6 +1,6 @@
 # Tasks 020: Entities, tags and object pools
 
-Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer) — console T10.2 and Linux T9.1 pending
+Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer); Linux T9.1 and console T10.2 passed (2026-11-23)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -117,9 +117,9 @@ plan.md as "Stage N refinements", as in plans 012–019.
 ## Stage 4: tags (pure)
 
 - [x] **T4.1** `Tag`, `tag()` (literal and sized buffer, `constexpr`: `case` labels and `static_assert` against FNV-1a
-  test vectors), `tags_distinct` (true, a duplicate, `Tag::None`; one `static_assert`, the rest as values). Files:
+  test vectors), `tags_distinct` (true, a duplicate, `kNoTag`; one `static_assert`, the rest as values). Files:
   `entities.hpp`. Test: `tests/entities/test_tags.cpp` (part 1). Covers FR-16.
-- [x] **T4.2** `add_tag`, `remove_tag`, `has_tag`: stale → false, `Tag::None` asserts, already there → false, full →
+- [x] **T4.2** `add_tag`, `remove_tag`, `has_tag`: stale → false, `kNoTag` asserts, already there → false, full →
   assert; tags gone after destroy; `tags_per_entity` 0 (every add asserts). Files: `src/entities/world_tags.cpp`. Test:
   `test_tags.cpp` (part 2). Covers FR-17.
 - [x] **T4.3** `find`, `first`: record scans specialised for 1..8 tags (a template instantiated per count in the
@@ -248,7 +248,11 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** (left to the lead: see plan.md "Stage 9") On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the AC-2
+- [x] **T9.1** (2026-11-23, VM 120, after the optimisation round: GCC 13, GCC 14 and clang 18 ASan/UBSan ctest
+  264/264 each, no warning; `nnh_tests` 2199 under ASan with leaks on, clean; `fuzz_world_ops` 600 s, 202 016 runs,
+  cov 905, clean. The first run found a test's own 24-byte leak (a scene `new`ed and destroyed by a crash inside its
+  destructor: now static storage) and clang's -Wswitch on tags as `case` labels (`Tag::None` → `nnh::kNoTag`,
+  plan decision 9)) (left to the lead: see plan.md "Stage 9") On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the AC-2
   golden, the model comparisons and the platformer's replay are identical on all three (they are test assertions);
   ASan/UBSan clean over the `Counted` balance tests, the model sequences and the destroy-in-hook chains; libFuzzer
   `fuzz_world_ops` 10 minutes, clean. Files: tasks.md (results). Covers I, X, FR-21, AC-1, AC-2.
@@ -259,7 +263,8 @@ plan.md as "Stage N refinements", as in plans 012–019.
   builds of `examples/entities` and `examples/platformer` without a warning; T7.6's table still true; `hello.elf`
   sizes as in T0.1. Files: plan.md ("Stage 10: console run (prepared)": commands and every expected line). Covers
   AC-8, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** (2026-11-23, Old 3DS XL: run 1 logic and self-check equal the PC's, bench numbers in plan.md "Console
+  bench refinement"; `level.nnhs` PASS, worst 19.4 ms, missed 0; `gate.nnhs` PASS, limit 600 sprites) Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run entities --script examples/entities/tests/check.nnhs` → every
      `entities: <n> sum` line and `entities: PASS` equal the PC's, every `destroyed:`, `filter:`, `pool:` and
      `target lost` line as on the PC, the bench lines and the verdict (numbers recorded); screenshots read back;
@@ -268,7 +273,8 @@ plan.md as "Stage N refinements", as in plans 012–019.
   3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS`
      (spec 012's gate still passes).
   Files: plan.md ("Stage 10 results": verdicts, bench numbers, log paths). Covers AC-4, AC-6, AC-7.
-- [ ] **T10.3** (optimisation round done, see plan.md "Console bench refinement"; budgets after the next console run) (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
+- [x] **T10.3** (2026-11-23: one optimisation round, second console run, budgets set from it with ~25 % margin: each
+  < 0.6, spawn < 1.6, find < 0.2, get < 6, pool < 0.6 ms; see plan.md "Console bench refinement") (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risks 1–2 without changing a result (every golden holds), then T10.2 run 1 again; if still missed, the
   maintainer sets the budget from the measurement with margin, written in the spec's AC-7 and
   `docs/api/entities.md`/`pool.md` with the numbers. Files: plan.md ("Console bench refinement"). Covers AC-7.

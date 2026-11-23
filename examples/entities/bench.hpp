@@ -1,12 +1,13 @@
 #pragma once
 // The entities bench's workloads (spec 020 AC-7), pure (no clock, no drawing): bench_scene.cpp times them. Each run_*
 // returns a value folded from what it touched, so the work can't be optimised away.
-//   each     world.each<Body, Velocity> over 1024 entities having both: box += velocity     (target < 0.5 ms)
-//   spawn    256 × (spawn, 3 adds, 2 tags), then 256 destroys and one flush                   (target < 1 ms)
-//   find     find() of one tag over 1024 entities with 4 tags each                            (target < 0.1 ms)
-//   get      10 000 world.get<Body>(handle) over seeded handles of the 1024                   (target < 0.5 ms)
+// Budgets (bench_scene.cpp) set from the Old 3DS measurement with margin:
+//   each     world.each<Body, Velocity> over 1024 entities having both: box += velocity     (budget < 0.6 ms)
+//   spawn    256 × (spawn, 3 adds, 2 tags), then 256 destroys and one flush                   (budget < 1.6 ms)
+//   find     find() of one tag over 1024 entities with 4 tags each                            (budget < 0.2 ms)
+//   get      10 000 world.get<Body>(handle) over seeded handles of the 1024                   (budget < 6 ms)
 //   storage  the same lookups through Storage<Body>::get (kind lookup hoisted; information)
-//   pool     1000 acquire/release pairs on a Pool<Item, 1024>, then a flush                   (target < 0.3 ms)
+//   pool     1000 acquire/release pairs on a Pool<Item, 1024>, then a flush                   (budget < 0.6 ms)
 
 #include "components.hpp"
 

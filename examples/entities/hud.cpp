@@ -36,7 +36,7 @@ void draw_hud(Arena& arena, nnh::Tag filter, int found) {
     const nnh::PoolStats p = arena.bullets().stats();
     std::snprintf(text, sizeof text, "bullets %d/%d peak %d misses %d", p.live, p.capacity, p.peak, p.misses);
     line(48, text, p.misses > 0 ? nnh::rgb(255, 150, 120) : nnh::colors::white);
-    if (filter != nnh::Tag::None) {
+    if (filter != nnh::kNoTag) {
         std::snprintf(text, sizeof text, "filter %s: %d found", tag_name(filter), found);
     } else {
         std::snprintf(text, sizeof text, "filter: none");

@@ -1,6 +1,6 @@
 # Spec 020: Entities, tags and object pools
 
-Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer) — console T10.2 and Linux T9.1 pending
+Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer); Linux T9.1 and console T10.2 passed (2026-11-23)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 002](../002-core-foundation/spec.md) (asserts, logs, `Result`, tagged memory, profiling),
 [spec 001](../001-event-bus-and-scenes/spec.md) (scenes; the event bus for the game's own events) and the scene
@@ -291,7 +291,11 @@ it pays nothing.
   - 1000 pool acquire/release pairs plus a flush: **under 0.3 ms**.
   If a target is missed, the implementation is optimised first; if it is still missed, the budget is set from the first
   console measurement with margin, written in the spec and the docs with the measured numbers (the maintainer's policy
-  for benches, as in spec 019's AC-7). Per-operation costs are documented. Spec 012's tile gate and the platformer's
+  for benches, as in spec 019's AC-7). **Budgets set (2026-11-23)** from the Old 3DS measurement after one
+  optimisation round (avg: each 0.475, spawn 1.295, find 0.144, get 4.774, storage get 4.200, pool 0.441 ms), with
+  ~25 % margin: each **< 0.6 ms**, spawn **< 1.6 ms**, find **< 0.2 ms**, get **< 6 ms**, pool **< 0.6 ms**. The
+  get target was out of reach: 10 000 random lookups over 12 KB of records and 20 KB of components miss the 16 KB data
+  cache about twice each (~110 cycles per lookup at 19–33 instructions). Per-operation costs are documented. Spec 012's tile gate and the platformer's
   60 Hz replay verdict still pass.
 - **AC-8 Opt-in.** `examples/hello` builds with the same executable size as before on PC and 3DS; `examples/sprites`,
   `examples/scenes`, `examples/camera`, `examples/queries` and the platformer's benchmark keep their screenshots

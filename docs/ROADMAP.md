@@ -170,8 +170,8 @@ preprocessed lines (`<cstdint>`), 0.28–0.34 s alone. Details: plan 019, "Stage
 ## M7 — Game structure
 - [x] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (implemented 2026-11-22): pure `<nnh/collision.hpp>` (box queries, `collision::move` through any grid, one-way cells, no tunnelling; [api/collision.md](api/collision.md)); `<nnh/tilemap.hpp>` — maps built in code or drawn in Tiled (`.tmj` assets converted by `nnh-assetc` at build time, D27, and loaded with `load_tilemap`; bounded and fuzzed readers), objects, properties, animated tiles, a collision grid ([api/tilemap.md](api/tilemap.md), guide [Levels in Tiled](guides/levels.md)); `gfx::draw_tilemap` as tile batches (D26). **Old 3DS XL: 4 full 16×16 layers + 300 sprites at 60 Hz (avg 16.7 ms, worst 17.4 ms, 0 missed of 600); limits 6 layers / 600 sprites.** `examples/platformer`: level 1 from Tiled, the bonus level in code, a replay checked against `tests/level.nnhs`. Still with the maintainer: T7.4 (`tests/level.nnhs` on the Old 3DS); Linux, ASan/UBSan and the three libFuzzer targets ran clean on the build VM
 - [ ] Scene transitions (scenes, saves and tweens: done)
-- [x] Entities/components — [spec 020](../specs/020-entities/spec.md), **implemented 2026-11-23, console check
-  pending** (T10.2): `<nnh/entities.hpp>` — a `World` in one block, the game's plain structs as components in
+- [x] Entities/components — [spec 020](../specs/020-entities/spec.md), **implemented 2026-11-23**, passed on the Old 3DS and
+  on Linux (GCC 13/14, ASan, 10 min fuzz): `<nnh/entities.hpp>` — a `World` in one block, the game's plain structs as components in
   stable-slot arrays per kind, 32-bit generational handles that detect stale use, `each<A, B...>` in the first kind's
   slot order, destroy anywhere with remove hooks (D35); storage views read in place by spec 019's box views
   ([api/entities.md](api/entities.md)); `examples/entities` (showcase, a 100 000-operation self-check, the AC-7
@@ -202,7 +202,7 @@ spec; the order below is a proposal.
   `.3dsx` (table above)
 - [x] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
   every one with a tag, cheap to compare (hashed at build time) — [spec 020](../specs/020-entities/spec.md),
-  **implemented 2026-11-23, console check pending**: `nnh::tag("enemy")` (FNV-1a, `constexpr`, a `case` label),
+  **implemented 2026-11-23**, passed on the Old 3DS: `nnh::tag("enemy")` (FNV-1a, `constexpr`, a `case` label),
   `tags_distinct`, up to 8 tags per entity, `find`/`first`/`each_tagged` (Godot's groups)
   ([api/entities.md](api/entities.md#tags-and-groups))
 - [x] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets

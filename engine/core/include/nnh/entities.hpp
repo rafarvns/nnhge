@@ -43,8 +43,11 @@ struct MemTag; // <nnh/memory.hpp>
 // ---- Tags (FR-16) ----
 
 /// A tag: the FNV-1a 32 hash of its name (the hash of data paths and sprite names). Comparing tags is comparing
-/// integers; the engine stores no names. Tag::None (0) is never a tag.
-enum class Tag : std::uint32_t { None = 0 };
+/// integers; the engine stores no names. No enumerators, on purpose: tags are `case` labels, and an enum with one
+/// makes GCC and clang warn (-Wswitch, "case value not in enumerated type") on every such label.
+enum class Tag : std::uint32_t {};
+/// The empty tag (0): never a tag (add_tag refuses it; find answers nothing).
+inline constexpr Tag kNoTag{};
 
 /// The tag of a name, at compile time from a literal (`constexpr nnh::Tag kEnemy = nnh::tag("enemy");`, usable as a
 /// `case` label) or at run time from a string you read (a Tiled object's type): the same bits either way.
@@ -52,11 +55,11 @@ constexpr Tag tag(const char* name) { return Tag{detail::fnv1a32(name)}; }
 /// The tag of the first `size` bytes of `text` (not NUL-terminated buffers).
 constexpr Tag tag(const char* text, std::size_t size) { return Tag{detail::fnv1a32(text, size)}; }
 
-/// True when every tag differs from the others and from Tag::None — the way to rule out a hash collision among your
+/// True when every tag differs from the others and from kNoTag — the way to rule out a hash collision among your
 /// tags: `static_assert(nnh::tags_distinct(kEnemy, kCoin, kFlying));`.
 template <typename... Tags>
 constexpr bool tags_distinct(Tags... tags) {
-    const Tag list[] = {Tag::None, tags...};
+    const Tag list[] = {kNoTag, tags...};
     constexpr int n = static_cast<int>(sizeof...(Tags)) + 1;
     for (int i = 1; i < n; ++i)
         for (int j = 0; j < i; ++j)
@@ -349,7 +352,7 @@ public:
     // ---- Tags (FR-17) ----
 
     /// Adds `t` to live `e`. False when `e` is stale or already has it; asserts and returns false when `e` already
-    /// has the world's tags_per_entity tags, or for Tag::None.
+    /// has the world's tags_per_entity tags, or for kNoTag.
     bool add_tag(Entity e, Tag t);
     bool remove_tag(Entity e, Tag t);
     bool has_tag(Entity e, Tag t) const { return hot_ != nullptr && detail::world_has_tag(*hot_, e, t); }

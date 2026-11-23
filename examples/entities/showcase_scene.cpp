@@ -9,7 +9,7 @@
 namespace {
 
 constexpr nnh::Vec2 kBottomCamera{40, 0};
-constexpr nnh::Tag kFilters[] = {nnh::Tag::None, arena::kEnemy, arena::kFlying, arena::kCoin};
+constexpr nnh::Tag kFilters[] = {nnh::kNoTag, arena::kEnemy, arena::kFlying, arena::kCoin};
 
 nnh::Vec2 stick() {
     const nnh::Stick pad = nnh::input::circle_pad();
@@ -34,7 +34,7 @@ void ShowcaseScene::on_enter() {
 
 void ShowcaseScene::refresh_filter() {
     const nnh::Tag t = kFilters[filter_];
-    found_count_ = t == nnh::Tag::None ? 0 : arena_.find(t, found_, arena::kMaxEntities);
+    found_count_ = t == nnh::kNoTag ? 0 : arena_.find(t, found_, arena::kMaxEntities);
 }
 
 void ShowcaseScene::cycle_filter() {

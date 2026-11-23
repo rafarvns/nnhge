@@ -6,7 +6,7 @@
 
 namespace arena {
 
-/// `filter`: the tag cycled by X (Tag::None: no filter); `found`: find()'s total for it.
+/// `filter`: the tag cycled by X (kNoTag: no filter); `found`: find()'s total for it.
 void draw_hud(Arena& arena, nnh::Tag filter, int found);
 
 } // namespace arena

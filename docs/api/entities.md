@@ -154,11 +154,11 @@ if (nnh::collision::boxes_at(view, point, &hit, 1, {.mask = kEnemyLayer}) > 0) w
 time (a `constexpr` constant, a `case` label) or `nnh::tag(text, size)` at run time from a string the game read (a
 Tiled object's type), with the same bits. Comparing tags is comparing integers; the engine stores no names (Release
 binaries carry no tag strings). `static_assert(nnh::tags_distinct(kEnemy, kCoin, kFlying))` rules out a collision
-among your tags (and `Tag::None`, which is never a tag).
+among your tags (and `kNoTag`, which is never a tag).
 
 | Call | What |
 |------|------|
-| `add_tag(e, t)` | false when stale or already there; asserts when `e` has `tags_per_entity` tags, or for `Tag::None` |
+| `add_tag(e, t)` | false when stale or already there; asserts when `e` has `tags_per_entity` tags, or for `kNoTag` |
 | `remove_tag(e, t)`, `has_tag(e, t)` | |
 | `find(t, out, capacity)` | the live entities tagged `t` in ascending slots into `out`; returns the total (may exceed `capacity`; `nullptr, 0` just counts) |
 | `first(t)` | the lowest-slot one, or null |
@@ -204,9 +204,20 @@ registered (register the kinds you look up most first), a scan for the rest. For
 `storage<T>()` once: its `get` keeps the record layout in the view (19 ARM instructions against 33). Random lookups
 over more than the Old 3DS's 16 KB data cache are bound by memory, not instructions.
 `spawn`/`add`: one scan of a free bitmap from a hint word. Iterations: proportional to the first kind's extent. `find`:
-proportional to the entity extent × tags per entity. Old 3DS numbers (AC-7: `each<Body, Velocity>` over 1024, 256
-spawn/destroy rounds, `find` over 1024 × 4 tags, 10 000 `get`, the storage `get`) come from `examples/entities`'s
-bench (`entities bench: ...`) and are written here after the console run (spec 020 T10.2).
+proportional to the entity extent × tags per entity.
+
+Measured on an Old 3DS (Development build, `examples/entities` bench, average per frame):
+
+| Workload | Time | Per element |
+|---|---|---|
+| `each<Body, Velocity>` over 1024 entities, box += velocity | 0.48 ms | 0.46 µs |
+| 256 × (spawn, 3 `add`, 2 `add_tag`), 256 `destroy`, one `flush` | 1.30 ms | 5.1 µs per entity |
+| `find` of one tag over 1024 entities × 4 tags | 0.14 ms | 0.14 µs per entity |
+| 10 000 `get<Body>` on random handles | 4.77 ms | 0.48 µs |
+| the same through `storage<Body>().get` | 4.20 ms | 0.42 µs |
+
+Random lookups are bound by memory: here the handles reach 12 KB of records and 20 KB of bodies, and each lookup
+misses the cache about twice. Keep a frame's lookups few, or walk the kind you need with `each` or a storage view.
 
 ## Pitfalls
 
@@ -225,6 +236,6 @@ bench (`entities bench: ...`) and are written here after the console run (spec 0
 Asserts in Debug/Development, harmless in Release (nothing happens or nothing is answered): an unregistered kind, a
 null buffer with capacity > 0 or a negative capacity in `find`, `flush`/`clear` inside an iteration or a hook, moving
 a bound world, a command on an empty or moved-from world, `at` on a stale entity, adding to a dying entity,
-`add_tag(Tag::None)` or past `tags_per_entity`, `bind` twice or while iterating/clearing, destroying a world inside
+`add_tag(kNoTag)` or past `tags_per_entity`, `bind` twice or while iterating/clearing, destroying a world inside
 its own iteration or hook (Release frees it when the outermost operation ends, without more hooks). A full world
 asserts too: its capacity is the game's budget (pools are where "full" is normal).

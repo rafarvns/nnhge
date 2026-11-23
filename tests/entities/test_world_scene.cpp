@@ -10,6 +10,7 @@
 #include "world_fixture.hpp"
 
 #include <cstring>
+#include <new>
 
 using nnh::ComponentDesc;
 using nnh::Entity;
@@ -198,9 +199,11 @@ struct Bare : nnh::Scene {};
 World* g_outliving = nullptr;
 
 void destroy_a_scene_with_a_world_attached() {
-    auto* scene = new Bare;
+    // Static storage, not new/delete: the crash fires inside ~Scene, so a delete would never free (LeakSanitizer).
+    alignas(Bare) static unsigned char storage[sizeof(Bare)];
+    Bare* scene = ::new (static_cast<void*>(storage)) Bare;
     g_outliving->bind(*scene);
-    delete scene; // the world is not a member: still attached
+    scene->~Bare(); // the world is not a member: still attached
 }
 
 World* g_bound = nullptr;

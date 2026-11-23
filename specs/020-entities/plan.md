@@ -1,6 +1,6 @@
 # Plan 020: Entities, tags and object pools
 
-Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer) — console T10.2 and Linux T9.1 pending
+Status: implemented (2026-11-23; approved 2026-11-23 by the maintainer); Linux T9.1 and console T10.2 passed (2026-11-23)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D35 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, `Result`, tagged memory, profiler), spec 001 (scenes; the bus for the game's own
 events), spec 015 (D30 scene attachments, `TweenSet`, `Setter`), spec 016 (`SpriteAnimator` and its inline
@@ -162,7 +162,7 @@ using Entity = Handle<World>;
 enum class Tag : std::uint32_t { None = 0 };
 constexpr Tag tag(const char* name) { return Tag{detail::fnv1a32(name)}; }   ///< `case nnh::tag("enemy"):`
 constexpr Tag tag(const char* text, std::size_t size) { return Tag{detail::fnv1a32(text, size)}; }
-/// True when every tag differs from the others and from Tag::None: `static_assert(nnh::tags_distinct(kEnemy, kCoin))`.
+/// True when every tag differs from the others and from kNoTag: `static_assert(nnh::tags_distinct(kEnemy, kCoin))`.
 template <typename... Tags> constexpr bool tags_distinct(Tags... tags);
 
 // ---- Component kinds (FR-10) ----
@@ -277,7 +277,7 @@ outermost end clears dirty fresh words. `entities()`, `items()`, `each_tagged` u
 kind bitmaps; range objects hold the iteration guard (constructor +1, destructor −1), so `break` is safe. A
 callback that calls `flush()` asserts.
 
-**Tags.** A record holds `tags_per_entity` words, 0 = empty. `add_tag(e, t)`: stale → false; `t == Tag::None` →
+**Tags.** A record holds `tags_per_entity` words, 0 = empty. `add_tag(e, t)`: stale → false; `t == kNoTag` →
 assert, false; already there → false; full → assert, false. `remove_tag` writes 0. A destroyed entity's tags are
 zeroed in step 2, so `find` scans the records below the entity extent without a liveness test (dead and free records
 hold no tag) and counts every match; it writes the first `capacity` into `out`. `first` stops at the first match.
@@ -288,7 +288,7 @@ pool's) scratch slot `T{}` (slot `capacity`, never live, outside every extent) a
 
 **Misuse (FR-23)** — assert in Debug/Development, Release answers nothing: unregistered kind; null buffer with
 capacity > 0; negative capacity; `flush()` inside an iteration; moving a bound pool or world (nothing moves); using an
-empty or moved-from world/pool; `at` on a stale handle; adding to a dying entity; `add_tag(Tag::None)`; `bind` twice
+empty or moved-from world/pool; `at` on a stale handle; adding to a dying entity; `add_tag(kNoTag)`; `bind` twice
 or while iterating/clearing; destroying a world or run-time pool from inside its own iteration or hook (the block is
 freed by the outermost operation, as `TweenSet` does). Creation errors (`InvalidArgument`: capacities, tag count, 0 or
 more than 32 kinds, a kind listed twice, a kind capacity above `max_entities`; `OutOfMemory`) are `Result`s.
@@ -547,7 +547,7 @@ sequences (handles, liveness, components' values, tags, `find` results, iteratio
 | FR-13 | `test_destroy_hooks.cpp`: hooks in registration order with data intact (`get` of other kinds works), components `T{}` after, tags gone, handle stale; hooks that destroy others (FIFO, each once, a 1000-long chain without recursion: stack depth constant), hooks that spawn, `remove` from its own hook (false), `destroy` of the hooked entity from a `remove` hook (processed after), add to a dying entity (assert) |
 | FR-14 | `test_flush_clear.cpp`: flush, flush in `each` asserts, clear runs hooks in ascending slot order, `spawn` refused while `clearing()`, the first-load slots after clear (generations differ) |
 | FR-15 | `test_each.cpp`: one/two/three kinds, the first-kind order rule (A rarer than B, B rarer than A), destroy/remove/spawn/add inside (self, earlier, later, into holes), nested `each`; `test_storage.cpp`: views, `owner`, `slot_of`, `items()`, extent/stride, valid after spawns |
-| FR-16 | `test_tags.cpp`: `static_assert(nnh::tag("enemy") == ...)` (FNV-1a vector), `case` labels, run-time hash of a non-terminated buffer equals the literal's, `tags_distinct` true/false/with `Tag::None` (as values, and one `static_assert`) |
+| FR-16 | `test_tags.cpp`: `static_assert(nnh::tag("enemy") == ...)` (FNV-1a vector), `case` labels, run-time hash of a non-terminated buffer equals the literal's, `tags_distinct` true/false/with `kNoTag` (as values, and one `static_assert`) |
 | FR-17 | `test_tags.cpp`, `test_find.cpp`: add/remove/has, per-entity limit (assert), tags gone after destroy, `find` order, totals beyond capacity, null + 0 counts, null + capacity > 0 asserts, `first`, `each_tagged` with destroys and spawns inside, `tags_per_entity` 0 and 1..8 (each specialised loop) |
 | FR-18 | `test_pool_scene.cpp`, `test_world_scene.cpp`: flushed right before the bound scene's update and only on top (frozen under a pushed scene), cleared right after `on_exit` with hooks run and no events published (the bus stats), empty on re-entry, attach-order with a bound `TweenSet` (hooks before its clear), a hook that requests a scene change (queued), destroying a scene with a world still attached asserts, moving a bound world/pool asserts and moves nothing |
 | FR-19 | `test_world_scene.cpp`, `test_world_model.cpp`: `events::stats()` unchanged by every operation |
@@ -613,8 +613,9 @@ Small decisions the plan would normally ask about; each takes the recommended op
 7. **`spawn()` during `clear()` returns null without assert**; hooks test `clearing()` to skip effects.
 8. **`entities()`** (every live entity, ascending) is added for the platformer's handle hash and debugging; it obeys
    FR-15's rules.
-9. **`Tag` is `enum class Tag : std::uint32_t`**, `Tag::None` (0) is refused by `add_tag`; a name hashing to 0 is
-   caught by `tags_distinct`.
+9. **`Tag` is `enum class Tag : std::uint32_t {}`**, `nnh::kNoTag` (0) is refused by `add_tag`; a name hashing to 0 is
+   caught by `tags_distinct`. (It was `Tag::None` until stage 9: clang's -Wswitch, and GCC's, warn on every tag
+   used as a `case` label when the enum has an enumerator; an enum without one draws no warning.)
 10. **"Destroyed while bound"** (FR-23) is the scene destroyed with the object attached; destroying a bound object
     detaches it (as tween sets).
 11. **Iteration snapshots the first kind's extent**; newcomers are excluded by the fresh bitmap.
@@ -1040,3 +1041,13 @@ Checks: `nnh_tests` 2199 (pc-debug), ctest pc-debug 265/265 and pc-release 257/2
 `platformer_replay_matches_script` included), `check.nnhs --pc` PASS (112 lines), `level.nnhs --pc` PASS
 (`B2418A28`), 3ds-release and 3ds-dev without a warning, `hello` sizes and `nm` unchanged. pc-dev bench (x86, not
 representative): each 0.011, spawn 0.050, find 0.011, get 0.057, storage get 0.048, pool 0.023 ms.
+
+**Second console run** (same console, after the round; logic lines and `entities: PASS C8FB9A41` again equal the PC's):
+`each` 0.475 ms (worst 0.584), `spawn` 1.295 (1.397), `find` 0.144 (0.235), `get` 4.774 (4.932), `storage get`
+4.200 (4.338), `pool` 0.441 (0.518). Close to the expectations (find at the better end).
+
+**Budgets set** (AC-7, ~25 % over the averages, rounded): each < 0.6 ms, spawn < 1.6 ms, find < 0.2 ms, get < 6 ms,
+pool < 0.6 ms (`bench_scene.cpp`, the spec's AC-7, `docs/api/{entities,pool}.md`).
+
+**Third console run** (the budgets in): `entities bench: PASS` and `nnh: PASS (112 lines)`; numbers within 0.002 ms of
+the second run's (each 0.475, spawn 1.294, find 0.144, get 4.775, storage get 4.198, pool 0.441 ms).

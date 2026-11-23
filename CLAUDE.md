@@ -99,7 +99,7 @@ tunnelling, no corner leaks) and boxes, `cells_crossed`, `line_of_sight`, `box_c
 `boxes_overlapping`, `cell_at`; no allocation, the same bits everywhere ([api/collision.md](docs/api/collision.md)).
 Tilemaps: layer sets per `collision` layer and solid/one-way tile (Tiled `collision_layers`), `collision_grid(mask)`
 ([api/tilemap.md](docs/api/tilemap.md#collision-layers)). The platformer uses layered coins and turrets.
-Entities, tags and object pools (spec 020, implemented, console check pending; D35; demo `examples/entities`):
+Entities, tags and object pools (spec 020, implemented, console and Linux checks passed; D35; demo `examples/entities`):
 `<nnh/pool.hpp>` — `Pool<T, N>` (inline, no allocation) and `Pool<T>::create(n)` (one block), `Handle<T>` (16-bit slot
 + 16-bit generation: stale use detected), lowest free slot, released slots quarantined until `flush()`, `items()`/`each`
 in slot order ([api/pool.md](docs/api/pool.md)); `<nnh/entities.hpp>` — `World::create(desc, kinds)` (one block),

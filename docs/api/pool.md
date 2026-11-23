@@ -114,8 +114,8 @@ pool detaches it. Binding twice or inside an iteration asserts and is ignored.
 Everything after creation is integer code inline in the game's own code: no allocation, no `virtual`, no call per
 object. `get`/`alive`/`release`'s check: one bound check, one load, one compare. `acquire`: a scan of the free bitmap
 from a hint word (every word below it is full), at most `capacity / 32` words. Iterations: proportional to the
-extent. Old 3DS (Development): the bench's 1000 acquire/release pairs plus a flush are measured by
-`examples/entities` (`entities bench: pool ...`); the number goes here after the console run (spec 020 T10.2).
+extent. Old 3DS (Development, `examples/entities` bench): 1000 acquire/release pairs on a `Pool<Item, 1024>` plus a
+flush take 0.44 ms, about 0.44 µs per pair.
 
 ## Misuse
 

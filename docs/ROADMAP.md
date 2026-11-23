@@ -192,7 +192,7 @@ spec; the order below is a proposal.
 - [ ] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
   every one with a tag, cheap to compare (hashed at build time)
 - [ ] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets
-  ignore their shooter, coins only the player), on top of spec 012's collision
+  ignore their shooter, coins only the player), on top of spec 012's collision — [spec 019](../specs/019-collision-layers-and-queries/spec.md) (approved 2026-11-22; plan next)
 - [ ] **Prefabs** (Unity prefabs, Godot packed scenes): entity templates registered in code by name (a function or a
   set of components and values), spawned many times and overridden per copy; a Tiled object can name one
 - [ ] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
@@ -245,7 +245,7 @@ spec; the order below is a proposal.
 - [ ] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
   allocation while searching
 - [ ] **Raycasts and shape queries** (Godot RayCast2D, Unity Physics2D.Raycast): line of sight, "what's under
-  this point", against tiles and boxes, filtered by layers
+  this point", against tiles and boxes, filtered by layers — [spec 019](../specs/019-collision-layers-and-queries/spec.md) (approved 2026-11-22; plan next)
 - [ ] **Object pools** (Unity ObjectPool): fixed-size pools for bullets, particles and enemies, with handles that
   detect stale use
 - [ ] **Live values in the simulator** (in place of Unity's Inspector, without an editor): an API to watch and tweak

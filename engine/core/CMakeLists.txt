@@ -236,6 +236,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_query_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
     set_source_files_properties(${_nnh_query_sqrt_source} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
+# Object pools (spec 020, D35): integer-only; a game that includes <nnh/pool.hpp> links only what it calls.
+set(_nnh_pool_sources
+    src/pool/pool_core.cpp
+    src/pool/pool_runtime.cpp
+    src/pool/pool_scene.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_pool_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

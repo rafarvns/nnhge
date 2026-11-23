@@ -655,3 +655,47 @@ Small decisions the plan would normally ask about; each takes the recommended op
 No constitution exception is requested. D35 is new and D11 gets a dated note (see
 [decisions.md](../../docs/architecture/decisions.md)); two AC-7 targets are flagged at risk and keep the spec's
 measurement-with-margin fallback.
+
+## Stage 0 results
+
+Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), at `aca6e3e`, before any spec 020
+change.
+
+- `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 572 / 22 020 / 211 696; pc-debug 198 464 /
+  26 756 / 214 352; 3ds-release `hello.elf` 201 012 / 28 352 / 106 680 (`.3dsx` 246 400 bytes); 3ds-dev `hello.elf`
+  217 728 / 32 872 / 109 288. `nm -C` symbol lists saved as `build/ref-020/hello.{pc,3ds}.nm`.
+- `.text` of other 3ds-release ELFs: `platformer.elf` 316 876, `queries.elf` 275 860.
+- Build times: edit `examples/hello/main.cpp` → simulator (pc-debug) 1.77, 1.81 s (a first run 3.3 s); → `.3dsx`
+  (3ds-release) 3.12, 3.06 s; clean `nnh_core` (pc-debug, `ninja -t clean nnh_core`, parallel) 7.4 s.
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs; `build/ref-020/hcost.sh`): `<nnh/events.hpp>`
+  7636 preprocessed lines, 0.42–0.45 s; `<nnh/tween.hpp>` 8413 lines, 0.44–0.48 s; `<nnh/collision.hpp>` 691 lines,
+  0.30–0.32 s.
+- T0.2: reference screenshots in `build/ref-020/ref/` (not committed): `hello`, `sprites`, `scenes` at frame 30,
+  `camera` (`CAMERA_DEMO=zoom1`) and `queries` (`QUERIES_DEMO=all`) at 30, platformer `PLATFORMER_DEMO=bench` at 90
+  (top screen only: the bottom shows frame times), level 1 at 90 and `PLATFORMER_DEMO=replay` at 312.
+  `build/ref-020/compare.sh` retakes them into `now/` and compares (bytes; the bench's top screen by pixels).
+- T0.3: ctest `platformer_replay_matches_script` passes; the replay's last line is
+  `replay: done 900 frames sum 96FE8943: 60 Hz PASS`.
+- T0.4: `kMaxTests` 4096; `nnh_tests` 2022 tests: no change needed.
+
+## Stage 1 refinements and results
+
+- **`detail::SlotTable`** (`slot_bits.hpp`) holds a table's bitmap pointers and counters (capacity, extent, count, peak,
+  misses, hint) and its inline operations (`find_free`, `take`, `retire`, `flush`, `end_iteration`, `reset`); pools and,
+  in stage 2, each component kind embed one. Hint invariant: every word below it has no free slot; `flush()` lowers
+  it to the first word it frees. A capacity that is not a multiple of 32 needs no padding bits: the lowest free bit at
+  or past `capacity` means the table is full.
+- **`PoolApi<T, D>`** (CRTP over the form's `core()`) is the one implementation of both forms; `PoolOps<T>` holds the
+  typed inline operations on a `PoolCore`. The inline form's core points into its own arrays (`pool_init_inline`),
+  the run-time form's core is the start of its block.
+- **Empty pools**: commands (`acquire`, `items`, `each`, `at`, `flush`, `clear`, `bind`) assert (Release: log, answer
+  nothing); queries (`get`, `alive`, `release`, `count`, `capacity`, `stats`, `extent`, `data`, `is_live`,
+  `handle_at`) answer "nothing" without asserting, so a moved-from pool can still be destroyed and inspected.
+- **`clear()` inside an iteration** asserts and is ignored, like `flush()`; `clear()` also resets peak and misses.
+- Tests: `tests/pool/test_handle.cpp`, `test_slot_bits.cpp` (word boundaries, capacity 33, the naive reference on
+  10 000 seeded operations), `test_pool.cpp`, `test_pool_iteration.cpp`, `test_pool_runtime.cpp`; behaviour cases run
+  on both forms through `POOL_CASE` (`pool_fixture.hpp`). `nnh_tests` 2080 tests.
+- T1.6: a TU including only `<nnh/pool.hpp>` pulls 52 headers, none of collision, tween, animation, gfx, entities or a
+  standard container (`build/ref-020/inccheck.sh`); 8199 preprocessed lines, 0.43–0.47 s (`<nnh/result.hpp>`'s
+  `<utility>` is most of it, as for `tween.hpp`). ctest pc-debug 264/264, pc-release 257/257, 3ds-release without a
+  warning; `hello` sizes and `nm` lists equal stage 0's on pc-release and 3ds-release.

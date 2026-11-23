@@ -180,6 +180,11 @@ add_executable(nnh_tests
     log/test_ring.cpp
     math/test_vec2.cpp
     memory/test_memory.cpp
+    pool/test_handle.cpp
+    pool/test_pool.cpp
+    pool/test_pool_iteration.cpp
+    pool/test_pool_runtime.cpp
+    pool/test_slot_bits.cpp
     remote/test_remote_input.cpp
     remote/test_remote_reader.cpp
     remote/test_remote_records.cpp

@@ -14,34 +14,34 @@ plan.md as "Stage N refinements", as in plans 012–019.
 
 ## Stage 0: baseline
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
   (3ds-release, 3ds-dev) sizes (`size` text/data/bss) and `nm` symbol lists; edit `examples/hello/main.cpp` →
   simulator and `.3dsx` build times; clean `nnh_core` build; preprocessed line count and `-fsyntax-only` time of a
   one-line TU including `<nnh/events.hpp>`, `<nnh/tween.hpp>` and `<nnh/collision.hpp>` (the references for the new
   headers); `.text` of the platformer's and `queries`' 3ds-release ELFs. Files: plan.md ("Stage 0 results"). Covers
   III, FR-25, AC-8.
-- [ ] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-020/` (not committed): `hello`, `sprites`, `scenes`,
+- [x] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-020/` (not committed): `hello`, `sprites`, `scenes`,
   `camera` (`CAMERA_DEMO=zoom1`), `queries` (`QUERIES_DEMO=all`), platformer `PLATFORMER_DEMO=bench` (top screen),
   level 1 at frame 90 and `PLATFORMER_DEMO=replay` at frame 312; `build/ref-020/compare.sh` retakes them into `now/`
   and compares the PNGs. Files: plan.md (list and frames). Covers AC-8.
-- [ ] **T0.3** [P] The platformer's replay lines today: run `PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=920` and
+- [x] **T0.3** [P] The platformer's replay lines today: run `PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=920` and
   confirm they equal `examples/platformer/tests/level.nnhs` (ctest `platformer_replay_matches_script` passes); record
   the final `sum` in plan.md. Covers AC-4 step 1.
-- [ ] **T0.4** [P] Test runner capacity: count `nnh_tests` tests; raise `kMaxTests` only if fewer than 400 are left.
+- [x] **T0.4** [P] Test runner capacity: count `nnh_tests` tests; raise `kMaxTests` only if fewer than 400 are left.
   Files: `tests/framework/test_main.cpp` (if needed). Covers VI.
 
 ## Stage 1: handles, slot bits, pools (pure)
 
-- [ ] **T1.1** `Handle<T>`: null, packing, `from_bits`, `==`, `operator bool`, 4 bytes, trivially copyable;
+- [x] **T1.1** `Handle<T>`: null, packing, `from_bits`, `==`, `operator bool`, 4 bytes, trivially copyable;
   `detail::next_generation` (65 535 → 1, never 0). Files: `engine/core/include/nnh/detail/handle.hpp`,
   `detail/slot_bits.hpp` (generation part), `engine/core/CMakeLists.txt` (header list). Test:
   `tests/pool/test_handle.cpp`. Covers FR-1.
-- [ ] **T1.2** Slot bits: lowest free with a hint word (`~(live | quarantine)`), take (live, extent, fresh while
+- [x] **T1.2** Slot bits: lowest free with a hint word (`~(live | quarantine)`), take (live, extent, fresh while
   iterating), release to quarantine, flush of dirty words below the extent, lowest-bit scan (`31 − clz(x & −x)`),
   end-of-iteration fresh clear. Files: `detail/slot_bits.hpp`. Test: `tests/pool/test_slot_bits.cpp` (word
   boundaries 31/32/33, capacity not a multiple of 32, full, hint after releases and flushes, against a naive bit-array
   reference on 10 000 seeded operations). Covers FR-4, FR-5, FR-6, FR-22.
-- [ ] **T1.3** Inline `Pool<T, N>`: storage (`alignas(T)`, N + 1 slots: the last is the checked accessor's scratch),
+- [x] **T1.3** Inline `Pool<T, N>`: storage (`alignas(T)`, N + 1 slots: the last is the checked accessor's scratch),
   meta words, `acquire()`/`acquire(value)` (copy and move), `release`, `get`, `alive`, `at`, `flush`, `clear`, stats;
   free slots hold a constructed `T{}`. Files: `engine/core/include/nnh/pool.hpp`, `detail/pool_core.hpp`,
   `src/pool/pool_core.cpp`, `src/pool/pool_internal.hpp`, CMake `_nnh_pool_sources`. Test: `tests/pool/test_pool.cpp`
@@ -49,15 +49,15 @@ plan.md as "Stage N refinements", as in plans 012–019.
   frame takes another slot, flush, clear restarts at slot 0, stale/double release false, forged next-generation handle
   refused, `at` asserts / scratch `T{}` in the Release path, a `Counted` type balances, no allocation). Covers FR-2..FR-6,
   FR-8, FR-23.
-- [ ] **T1.4** Iteration and raw access: `items()` range with its guard, `each(fn)`, fresh bitmap (acquire during an
+- [x] **T1.4** Iteration and raw access: `items()` range with its guard, `each(fn)`, fresh bitmap (acquire during an
   iteration, also into a hole above the cursor, not visited), release of self/others during iteration, `break`,
   `flush()` inside an iteration asserts and is ignored; `data()`, `extent()`, `stride()`, `is_live`, `handle_at`.
   Files: `pool.hpp`, `detail/pool_core.hpp`. Test: `tests/pool/test_pool_iteration.cpp`. Covers FR-7, FR-6.
-- [ ] **T1.5** [P] Run-time `Pool<T>`: `create(capacity, tag)` (0, −1, 65 536 → `InvalidArgument`; allocation failure →
+- [x] **T1.5** [P] Run-time `Pool<T>`: `create(capacity, tag)` (0, −1, 65 536 → `InvalidArgument`; allocation failure →
   `OutOfMemory`), one block (tag `pool` by default; tag stats equal the computed size), move and moved-from (asserts,
   answers nothing), same behaviour as the inline form (the T1.3/T1.4 cases run on both through a typed test helper).
   Files: `src/pool/pool_runtime.cpp`. Test: `tests/pool/test_pool_runtime.cpp`. Covers FR-3, FR-23.
-- [ ] **T1.6** Stage end: ctest; include check (a TU including only `<nnh/pool.hpp>` preprocesses without
+- [x] **T1.6** Stage end: ctest; include check (a TU including only `<nnh/pool.hpp>` preprocesses without
   `collision`, `tween`, `animation`, `gfx`, `entities` or any standard container header); `hello` sizes equal T0.1.
   Files: plan.md ("Stage 1 results"). Covers FR-20, FR-25.
 

@@ -6,6 +6,7 @@
 #include "gfx/gfx_state.hpp"
 #include "log/engine_channels.hpp"
 #include "nnh/log.hpp"
+#include "tilemap/map_runtime.hpp"
 #include "tilemap/tilemap_internal.hpp"
 
 namespace nnh {
@@ -45,13 +46,14 @@ Result<Tilemap> Tilemap::create(const TilemapDesc& desc) {
     if (!check.ok) {
         return detail::map_refuse(check.limit ? ErrorCode::LimitReached : ErrorCode::InvalidArgument, check.reason);
     }
-    const std::uint32_t bytes = detail::map_layout(caps).total;
+    const std::uint32_t bytes = detail::map_block_bytes(caps);
     void* memory = mem::alloc(MemRegion::Heap, NNH_MEM_TAG_REF(tilemap), bytes, 8);
     if (memory == nullptr) return detail::map_refuse(ErrorCode::OutOfMemory, "no memory for the map");
     std::memset(memory, 0, bytes);
     Tilemap map;
     map.block_ = static_cast<std::uint8_t*>(memory);
     detail::init_map_block(map.block_, caps, desc.tile_width, desc.tile_height);
+    detail::init_map_runtime(map.block_);
     return map;
 }
 

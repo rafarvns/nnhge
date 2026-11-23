@@ -112,27 +112,27 @@ refinements", as in plans 012–018.
 
 ## Stage 4: layer sets on tilemaps
 
-- [ ] **T4.1** The runtime area (D34): layout, `map_block_bytes`, `init_map_runtime` (sets = default, slots unused),
+- [x] **T4.1** The runtime area (D34): layout, `map_block_bytes`, `init_map_runtime` (sets = default, slots unused),
   accessors; `create` and `tilemap_from_file` allocate and initialise it. Files: `src/tilemap/map_runtime.{hpp,cpp}`,
   `tilemap.cpp`, `map_load.cpp`, CMake. Test: `tests/tilemap/test_map_collision_layers.cpp` (part 1: defaults on
   created and loaded maps; memory tag grows by the formula); `test_collision_grid_regression.cpp` unchanged. Covers
   FR-6.
-- [ ] **T4.2** Sets in code: `set/layer_collision_layers`, `set/tile_collision_layers` (invalid layer/id/0 assert and
+- [x] **T4.2** Sets in code: `set/layer_collision_layers`, `set/tile_collision_layers` (invalid layer/id/0 assert and
   keep), `TileLayerDesc::collision_layers` in `add_tile_layer`, `collision_layers_at` (unions; empty, outside).
   Files: `src/tilemap/map_collision_layers.cpp`, `map_build.cpp`, `engine/core/include/nnh/tilemap.hpp`. Test:
   `test_map_collision_layers.cpp` (part 2). Covers FR-6.
-- [ ] **T4.3** `collision_grid(mask)`: slots (same mask = same context, never reused), `grid_cell_masked`,
+- [x] **T4.3** `collision_grid(mask)`: slots (same mask = same context, never reused), `grid_cell_masked`,
   `kAllLayers` → `collision_grid()`, out of slots (assert; Release unfiltered + one log). Files:
   `src/tilemap/map_filtered_grid.cpp`. Test: `tests/tilemap/test_filtered_grid.cpp` (masks that keep, drop or leave
   a one-way; masked == unmasked over 200 random maps with default sets; live edits; `move` and `cells_touching`
   through a filtered grid; grids survive moving the `Tilemap`). Covers FR-6, AC-3.
-- [ ] **T4.4** Loading: `collision_layers` int properties of tile layers and tiles → runtime sets after `copy_map`;
+- [x] **T4.4** Loading: `collision_layers` int properties of tile layers and tiles → runtime sets after `copy_map`;
   non-int or 0 → default + one warning per map; maps without it unchanged. Files: `src/tilemap/map_load_layers.cpp`,
   `map_load.cpp`. Test: `tests/tilemap/test_map_load_collision_layers.cpp` (hand-made `.nnhmap` blobs through
   `detail::tilemap_from_file`); fuzz seeds with the property for `fuzz_tilemap` (mini-fuzz in `nnh_tests`). Covers
   FR-6, FR-7, X.
-- [ ] **T4.5** [P] AC-8 comparison (`build/ref-019/compare.sh`): every reference screenshot identical. Covers AC-8.
-- [ ] **T4.6** Stage end: ctest (`test_collision_grid_regression.cpp` passes unchanged); `map_collision.cpp` not in
+- [x] **T4.5** [P] AC-8 comparison (`build/ref-019/compare.sh`): every reference screenshot identical. Covers AC-8.
+- [x] **T4.6** Stage end: ctest (`test_collision_grid_regression.cpp` passes unchanged); `map_collision.cpp` not in
   the diff and its `objdump -d` equal to T0.1's on both presets. Files: plan.md ("Stage 4 results"). Covers FR-18,
   AC-3, AC-7.
 

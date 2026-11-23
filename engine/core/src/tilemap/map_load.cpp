@@ -12,6 +12,7 @@
 #include "nnh/log.hpp"
 #include "nnh/texture.hpp"
 #include "tilemap/map_copy.hpp"
+#include "tilemap/map_runtime.hpp"
 #include "tilemap/map_validate.hpp"
 #include "tilemap/tilemap_internal.hpp"
 
@@ -84,12 +85,16 @@ Result<Tilemap> detail::tilemap_from_file(const void* data, std::size_t size, co
                            options.extra_string_bytes};
     const CapacityCheck room = loaded_capacities(file, extras, caps);
     if (!room.ok) return refuse(room.limit ? ErrorCode::LimitReached : ErrorCode::InvalidArgument, name, room.reason);
-    const std::uint32_t bytes = map_layout(caps).total;
+    const std::uint32_t bytes = map_block_bytes(caps);
     void* memory = mem::alloc(MemRegion::Heap, tilemap_memory_tag(), bytes, 8);
     if (memory == nullptr) return refuse(ErrorCode::OutOfMemory, name, "no memory for the map");
     std::memset(memory, 0, bytes);
-    copy_map(static_cast<const std::uint8_t*>(data), caps, static_cast<std::uint8_t*>(memory));
-    return TilemapAccess::adopt(static_cast<std::uint8_t*>(memory));
+    auto* block = static_cast<std::uint8_t*>(memory);
+    copy_map(static_cast<const std::uint8_t*>(data), caps, block);
+    init_map_runtime(block);
+    Tilemap map = TilemapAccess::adopt(block);
+    load_collision_layers(map, name);
+    return map;
 }
 
 void detail::release_map_textures(std::uint8_t* block) {

@@ -112,13 +112,17 @@ add_library(nnh_core STATIC
     src/tilemap/map_animations.cpp
     src/tilemap/map_build.cpp
     src/tilemap/map_collision.cpp
+    src/tilemap/map_collision_layers.cpp
     src/tilemap/map_copy.cpp
     src/tilemap/map_draw.cpp
+    src/tilemap/map_filtered_grid.cpp
     src/tilemap/map_layout.cpp
     src/tilemap/map_load.cpp
+    src/tilemap/map_load_layers.cpp
     src/tilemap/map_objects.cpp
     src/tilemap/map_properties.cpp
     src/tilemap/map_property_table.cpp
+    src/tilemap/map_runtime.cpp
     src/tilemap/map_strings.cpp
     src/tilemap/map_tiles.cpp
     src/tilemap/map_validate.cpp

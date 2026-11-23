@@ -97,6 +97,22 @@ void query_everything(Tilemap& map) {
     }
     const collision::MoveResult moved = collision::move(map.collision_grid(), {1, 1, 10, 14}, {300, 200});
     (void)moved;
+    // Collision layer sets (spec 019): every set readable, never 0 for a real layer or tile, filtered grids sane.
+    for (int layer = 0; layer < map.tile_layer_count(); ++layer) {
+        if (map.layer_collision_layers(layer) == collision::kNoLayers) std::abort();
+    }
+    for (int id = 1; id <= map.tile_id_count(); ++id) {
+        if (map.tile_collision_layers(id) == collision::kNoLayers) std::abort();
+    }
+    const collision::Grid filtered = map.collision_grid(collision::layer(1) | collision::layer(2));
+    for (int y = 0; y < map.height(); ++y) {
+        for (int x = 0; x < map.width(); ++x) {
+            const collision::Layers set = map.collision_layers_at(x, y);
+            if ((set == collision::kNoLayers) != (map.collision_at(x, y) == collision::Cell::Empty)) std::abort();
+            if (static_cast<int>(filtered.cell(filtered.context, x, y)) > 2) std::abort();
+        }
+    }
+    (void)collision::move(filtered, {1, 1, 10, 14}, {300, 200});
     expand_all(map, 0);
     expand_all(map, 0xFFFFFFFFFFull); // a late clock: frames wrap
 }

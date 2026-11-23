@@ -593,3 +593,24 @@ Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   query object needs only its own helpers (`nm -u`): `point_queries` → `query_check`, `aabb`, `grid`;
   `raycast_boxes`/`box_cast` → `exact`, `ray_box`, `hit_list`, `ray_distance`; `raycast_grid`/`cells_crossed` →
   `grid_walk`, `exact`, `grid`; `raycast_world` → the ray files.
+
+## Stage 4 refinements and results
+
+- As planned (D34): `map_runtime.{hpp,cpp}` (layout, `map_block_bytes`, `init_map_runtime`, accessors),
+  `map_collision_layers.cpp`, `map_filtered_grid.cpp`, `map_load_layers.cpp`; `create`/`tilemap_from_file`
+  allocate `map_block_bytes` and initialise the area; `add_tile_layer` stores `desc.collision_layers`.
+- **An unused slot is one whose mask is kAllLayers** (that mask never takes a slot: it returns
+  `collision_grid()`); `block_offset` is written when the slot is first taken.
+- **`add_tile_layer` refuses `collision_layers = kNoLayers`** with InvalidArgument ("collision_layers can't be
+  empty"): it returns a `Result`, so a refusal is the natural misuse path there (the setters assert and keep).
+- **The loader** reads `collision_layers` with the public `Properties` view after the copy: layers first, then every
+  tile with properties; a non-int or 0 value keeps the default with one warning per map
+  (`load_tilemap("<name>"): a collision_layers property isn't a non-zero int: ignored`). Its fuzz target now also
+  reads every set, checks `collision_layers_at` against `collision_at` (no layers ⇔ Empty) and moves through a
+  filtered grid; a fourth seed (`map_file::layered()`) carries the property on a layer, on a tile and a bad one.
+- The memory formula gains `132 + 4 × (max_tile_ids + 1)` bytes per map (default desc: 11 940 → 13 100); the two
+  tests that pinned the old block size (`test_map_build`, `test_map_edit_after_load`) now pin the new one.
+- T4.5/T4.6: `test_collision_grid_regression.cpp` passes unchanged; `map_collision.cpp` is not in the diff and its
+  `objdump -d` is identical to stage 0's on pc-release and 3ds-release (`build/ref-019/map_collision.*.stage4.dis`);
+  `compare.sh`: every reference screenshot identical. `nnh_tests` 1991 tests; ctest pc-debug 258/258, pc-release
+  252/252; 3ds-release builds without a warning.

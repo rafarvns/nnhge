@@ -132,7 +132,8 @@ NNH_TEST(tilemap_target_survives_mutated_inputs) {
     // changed and sometimes cut. The target fixes the size and CRC itself, so mutants reach the content checks;
     // some are even accepted and then copied, queried, drawn and edited (counted here to prove the deep path runs,
     // animated tiles included).
-    const map_file::Bytes seeds[] = {map_file::sample(), map_file::animated(), map_file::minimal()};
+    const map_file::Bytes seeds[] = {map_file::sample(), map_file::animated(), map_file::minimal(),
+                                     map_file::layered()};
     std::uint32_t state = 4242;
     int accepted = 0;
     int animated = 0;

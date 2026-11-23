@@ -192,13 +192,16 @@ add_executable(nnh_tests
     tilemap/test_collision_grid_regression.cpp
     tilemap/test_map_animations.cpp
     tilemap/test_map_bounds.cpp
+    tilemap/test_filtered_grid.cpp
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
+    tilemap/test_map_collision_layers.cpp
     tilemap/test_map_draw.cpp
     tilemap/test_map_draw_zoom.cpp
     tilemap/test_map_edit_after_load.cpp
     tilemap/test_map_layout.cpp
     tilemap/test_map_load.cpp
+    tilemap/test_map_load_collision_layers.cpp
     tilemap/test_map_objects.cpp
     tilemap/test_map_properties.cpp
     tilemap/map_file.cpp

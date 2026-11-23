@@ -43,20 +43,23 @@ const char* const kJsonSeeds[] = {
     R"([null,false,[[]],{"k":{"k":"😀"}},0.25,"tab\tquote\""])",
 };
 
-// A map using every feature the converter reads, and its tileset (the fuzz input is map '\0' tileset).
+// A map using every feature the converter reads (spec 019: collision_layers on a layer and a tile too), and its
+// tileset (the fuzz input is map '\0' tileset; also the seed to give the libFuzzer map target).
 const char kMapSeed[] = R"({"type":"map","orientation":"orthogonal","infinite":false,"width":3,"height":2,
 "tilewidth":16,"tileheight":16,"parallaxoriginx":4,"properties":[{"name":"music","value":"a"},
 {"name":"g","type":"float","value":1.5}],"tilesets":[{"firstgid":1,"source":"../tiles/set.tsj"},
 {"firstgid":20,"image":"../tiles/set.png","imagewidth":64,"imageheight":64,"tilewidth":16,"tileheight":16,
 "tilecount":16,"columns":4}],"layers":[{"type":"tilelayer","name":"a","width":3,"height":2,"opacity":0.5,
-"parallaxx":0.5,"data":[1,2147483650,536870915,20,0,35],"properties":[{"name":"collision","type":"bool","value":true}]},
+"parallaxx":0.5,"data":[1,2147483650,536870915,20,0,35],"properties":[{"name":"collision","type":"bool","value":true},
+{"name":"collision_layers","type":"int","propertytype":"Layers","value":6}]},
 {"type":"tilelayer","name":"b","encoding":"base64","data":"AQAAAAIAAAAAAAAAAAAAAAAAAAAUAACA"},
 {"type":"objectgroup","name":"o","objects":[{"id":1,"name":"spawn","x":1,"y":2,"point":true},
 {"id":2,"type":"coin","x":3,"y":4,"width":16,"height":16,"properties":[{"name":"v","type":"int","value":5}]}]}]})";
 const char kSetSeed[] = R"({"image":"set.png","imagewidth":64,"imageheight":64,"tilewidth":16,"tileheight":16,
 "tilecount":16,"columns":4,"tiles":[{"id":1,"properties":[{"name":"solid","type":"bool","value":true}],
 "animation":[{"tileid":1,"duration":100},{"tileid":5,"duration":50}]},
-{"id":2,"properties":[{"name":"one_way","type":"bool","value":true},{"name":"k","value":"x"}]},
+{"id":2,"properties":[{"name":"one_way","type":"bool","value":true},{"name":"k","value":"x"},
+{"name":"collision_layers","type":"int","value":2}]},
 {"id":9,"animation":[{"tileid":15,"duration":7}]}]})";
 
 // Data files (spec 014): every form the TOML-subset reader accepts.

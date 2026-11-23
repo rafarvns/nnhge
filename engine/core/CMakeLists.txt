@@ -112,13 +112,17 @@ add_library(nnh_core STATIC
     src/tilemap/map_animations.cpp
     src/tilemap/map_build.cpp
     src/tilemap/map_collision.cpp
+    src/tilemap/map_collision_layers.cpp
     src/tilemap/map_copy.cpp
     src/tilemap/map_draw.cpp
+    src/tilemap/map_filtered_grid.cpp
     src/tilemap/map_layout.cpp
     src/tilemap/map_load.cpp
+    src/tilemap/map_load_layers.cpp
     src/tilemap/map_objects.cpp
     src/tilemap/map_properties.cpp
     src/tilemap/map_property_table.cpp
+    src/tilemap/map_runtime.cpp
     src/tilemap/map_strings.cpp
     src/tilemap/map_tiles.cpp
     src/tilemap/map_validate.cpp
@@ -207,6 +211,29 @@ set(_nnh_zoom_sources
 target_sources(nnh_core PRIVATE ${_nnh_zoom_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_zoom_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# Collision layers and queries (spec 019, D34): exact decisions in double, results rounded once to float; no fused
+# multiply-add, so PC and 3DS give the same hits bit for bit. Each file is linked only by a game that calls it.
+set(_nnh_query_sources
+    src/collision/box_cast.cpp
+    src/collision/cells_crossed.cpp
+    src/collision/exact.cpp
+    src/collision/grid_walk.cpp
+    src/collision/hit_list.cpp
+    src/collision/layers.cpp
+    src/collision/point_queries.cpp
+    src/collision/query_check.cpp
+    src/collision/ray_box.cpp
+    src/collision/raycast_boxes.cpp
+    src/collision/raycast_grid.cpp
+    src/collision/raycast_world.cpp
+)
+# The queries' only square root: -fno-math-errno makes std::sqrt one instruction (no call into libm).
+set(_nnh_query_sqrt_source src/collision/ray_distance.cpp)
+target_sources(nnh_core PRIVATE ${_nnh_query_sources} ${_nnh_query_sqrt_source})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_query_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+    set_source_files_properties(${_nnh_query_sqrt_source} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)

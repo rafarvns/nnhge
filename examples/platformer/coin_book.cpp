@@ -1,7 +1,5 @@
 #include "coin_book.hpp"
 
-#include <nnh/collision.hpp>
-
 void CoinBook::clear() {
     count_ = 0;
     restart();
@@ -9,26 +7,26 @@ void CoinBook::clear() {
 
 bool CoinBook::add(nnh::Rect bounds, int value) {
     if (count_ >= kCapacity) return false;
-    coins_[count_] = {bounds, value};
-    taken_[count_] = false;
+    coins_[count_] = {bounds, value, layers::kCoin};
     ++count_;
     return true;
 }
 
 void CoinBook::restart() {
-    for (bool& taken : taken_)
-        taken = false;
+    for (int i = 0; i < count_; ++i)
+        coins_[i].layers = layers::kCoin;
     collected_ = 0;
 }
 
-int CoinBook::collect(nnh::Rect box, int* taken, int capacity) {
-    int found = 0;
-    for (int i = 0; i < count_; ++i) {
-        if (taken_[i] || !nnh::collision::overlaps(box, coins_[i].bounds)) continue;
-        taken_[i] = true;
+int CoinBook::collect(nnh::Rect box, nnh::collision::Layers mask, int* taken, int capacity) {
+    namespace collision = nnh::collision;
+    int found[kCapacity];
+    const collision::BoxView view = collision::box_view(coins_, count_, &Coin::bounds, &Coin::layers);
+    const int count = collision::boxes_overlapping(view, box, found, kCapacity, {.mask = mask});
+    for (int i = 0; i < count; ++i) {
+        coins_[found[i]].layers = collision::kNoLayers; // taken: on no layers, no query finds it again
         ++collected_;
-        if (found < capacity) taken[found] = i;
-        ++found;
+        if (i < capacity) taken[i] = found[i];
     }
-    return found;
+    return count;
 }

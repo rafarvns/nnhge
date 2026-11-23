@@ -1,6 +1,7 @@
 # Plan 019: Collision layers and queries
 
-Status: approved (2026-11-22, maintainer pre-approved)
+Status: approved (2026-11-22, maintainer pre-approved); **implemented 2026-11-23** (stages 0–8, 11), console T10.2 and
+Linux T9.1 pending
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D34 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (asserts, logs, profiler), spec 012 (`<nnh/collision.hpp>`: `Rect` rules, `Grid`, `Cell`, `move`,
 `cells_touching`; `<nnh/tilemap.hpp>`: the map block, `collision_grid()`, properties, the Tiled converter, D26/D27),
@@ -492,6 +493,8 @@ Small decisions the plan would normally ask about; each takes the recommended op
     sums), bodies = the player and the turrets in one struct view (turrets filtered out by the bullets' mask). The
     replay line format is unchanged (the turret state is in the sum only), so the ctest's regex holds.
 17. **AC-7's point-query target recast** to ≤ 0.1 µs per box tested (above); the ray target (2 ms) confirmed.
+    **Confirmed by the maintainer 2026-11-23**: the old target (256 queries × 256 boxes < 0.3 ms) is dropped, no
+    broadphase; the bench still runs the 256 × 256 workload and judges it per box tested. The spec's AC-7 says so.
 18. **Console stage:** three scripted runs, each started with Homebrew Launcher → Y (queries `check.nnhs`, platformer
     `level.nnhs`, platformer `gate.nnhs`); nothing else is asked of the maintainer.
 
@@ -513,3 +516,300 @@ Small decisions the plan would normally ask about; each takes the recommended op
 
 No constitution exception is requested. D34 is new (see [decisions.md](../../docs/architecture/decisions.md)); one
 acceptance target (AC-7's point queries) is recast and reported.
+
+## Stage 0 results
+
+Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), before any spec 019 change.
+
+- `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 732 / 22 020 / 211 696; pc-debug 198 816 /
+  26 756 / 214 352; 3ds-release `hello.elf` 201 188 / 28 352 / 106 680 (`.3dsx` 246 576 bytes); 3ds-dev `hello.elf`
+  217 992 / 32 872 / 109 288. (The 3DS text is smaller than plan 018's 216 748: the devkitARM on this machine was
+  updated since; every later number here is compared with these.)
+- Build times: edit `examples/hello/main.cpp` → simulator (pc-debug) 1.94, 1.50, 1.49 s; → `.3dsx` (3ds-release)
+  3.05, 2.71 s; clean `nnh_core` (pc-debug, `ninja -t clean nnh_core`, parallel) 5.34, 5.27, 5.26 s.
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs): `<nnh/collision.hpp>` 151 preprocessed
+  lines, 0.27–0.32 s; `<nnh/tilemap.hpp>` 8331 lines, 0.41–0.45 s.
+- `objdump -d` of `map_collision.cpp` (pc-release `.obj`, 3ds-release `.o`) saved as
+  `build/ref-019/map_collision.{pc,3ds}.before.dis` (360 and 320 lines; `build/ref-019/baseline.sh <suffix>` redoes it).
+- T0.2: `tests/tilemap/test_collision_grid_regression.cpp`, pinned on the unchanged code. Cells (every cell of the
+  map and a one-cell ring, `collision_at` checked equal to the grid's own lookup) and moves (400 boxes from an LCG
+  walk, each moved with outside Empty and Solid, plus `contacts` at the end and `cells_touching` at the start) over
+  `good.tmj` (cells `0x698EB725`, moves `0xE419AD3C`), the platformer's `level1.tmj` (converted by the tests' build,
+  `0x852ED0F6` / `0xA6D13AF0`), a 20 × 12 map built in code with four layers and two tilesets (`0x2E9EDC46` /
+  `0x8761516F`) and the same map after `set_tile`/`fill`/`set_layer_collision`/`set_tile_collision` edits
+  (`0x6EA3F8C6` / `0xB2975DBA`). Each case also checks that the map has solid (and, but for `good.tmj`, one-way) cells.
+- T0.3: converted with `nnh-assetc` 0.3.0: `good.nnhmap` SHA-256
+  `97d36d4c9a5b57194bdb93a0914e24af25474fd2ee65eeac4d2a78dac25299de`, `level1.nnhmap`
+  `d4199d18b278062d3792af150784bf2eeb25d3d9cd3e1d321234ad6102c792d1` (copies in `build/ref-019/`).
+- T0.4: reference screenshots in `build/ref-019/ref/` (not committed): `hello`, `sprites`, `scenes` at frame 30,
+  `camera` (`CAMERA_DEMO=zoom1`) at 30, platformer `PLATFORMER_DEMO=bench` (top screen only) and level 1 at 90.
+  `build/ref-019/compare.sh` takes them again into `now/` and compares the pixels.
+- T0.5: `kMaxTests` 4096; `nnh_tests` 1853 tests.
+
+## Stage 1–3 refinements and results
+
+- **The segment is held in `double`** (`detail::Segment`): `d = to − from` is the exact difference of the two
+  floats, not a rounded float `d`; a zero `d` is still exactly `to == from`. Every ratio is `n / |d|` with `n` a
+  difference of floats in `double` (`detail::Ratio`), compared by cross products (`detail::compare`).
+- **Ordering between hits uses the reported float fraction**, stable: the first hit of a view is the lowest index
+  among the smallest fractions, `raycast_all`/`box_cast_all` sort by fraction keeping scan order on ties, and
+  `raycast(grid, boxes)` lets the cell win when the fractions are equal. The exact ratios decide everything inside
+  one box test and the grid walk (entry face, corners, start cell, touching); since rounding is monotone, two hits
+  ordered by exact ratio never come out in the opposite order. This keeps `raycast` equal to `raycast_all(...)[0]`.
+- **The grid walk** (`grid_walk.{hpp,cpp}`) is a small iterator with a queue of three cells (a corner pushes the
+  x-neighbour, the y-neighbour and the diagonal). A start or clip cell is found from a float guess corrected by
+  exact comparisons (at most a few steps), so it always agrees with the walk's own edges. A clip that touches the
+  grid's rectangle **only at one of its corners** still visits the grid's corner cell beside it (the corner rule):
+  the exact reference found this case (a ray passing diagonally outside the grid's corner), and the clip accepts
+  `enter == exit` for it. The walk takes at most `4 + |dx|/w + |dy|/h` lines (≤ 2^26) and stops at the ±2^30
+  index saturation, so absurd inputs end and never overflow.
+- **One-way outside**: the walk clips whenever the outside can't block (Empty; OneWay for a ray not going down or
+  with `ignore_one_way`). A downward ray with a OneWay outside walks the outside cells one by one (no lookup: they
+  are all `outside`) instead of skipping runs; documented as the cost.
+- **Hit points**: a cell entered exactly at a grid corner reports the corner itself (both coordinates exact), not a
+  rounded `from + t·d`; this covers the corner's side cells and the diagonal.
+- **Box casts**: the contact position starts from `T.x − B.w` (float) and steps down by growing ulps until
+  `p + B.w ≤ T.x` in float (as `move`'s `place_before`), then is kept between the cast's start and end; moving
+  the other way it is exactly `T.x + T.w` as `overlaps()` sums it. It is flush (`overlaps()` false) and one ulp
+  further overlaps (tested on non-lattice values); for lattice values it is the exact contact, not the largest float
+  that would still be flush. A zero-length cast touches nothing, even from inside (as a zero-length ray).
+- **Misuse**: `raycast(grid, boxes)` checks both inputs before either query (no half answer); `line_of_sight`
+  returns **false** on misuse in Release (it never claims a clear view it couldn't check). An `ignore` index out of
+  range ignores nothing. Boxes with non-finite fields are never candidates (`detail::passes`).
+- **API note**: `raycast(Grid, ...)` and `raycast(BoxView, ...)` overloads make a bare `{}` first argument ambiguous;
+  callers write `collision::Grid{}` or `collision::BoxView{}` (documented).
+- **Fused operations**: GCC uses `vmla.f32` on the 3DS even with `-ffp-contract=off`; VFPv2's `vmla`/`vmls` are
+  *chained* (the product is rounded before the add), so they give the bits of `vmul` + `vadd`. The check
+  (`build/ref-019/fp_check.sh`) looks for the fused `vfma`/`vfms`/`vfnma`/`vfnms` (3DS) and `vfmadd`/`vfmsub` (PC):
+  none in any query object. T2.4: `ray_distance.cpp` is `sqrtss` on pc-release and `vsqrt.f32` on 3ds-release, no
+  call.
+- **Tests** (stage 1–3): `test_layers`, `test_box_view`, `test_hit_list`, `test_point_queries`, `test_exact`,
+  `test_ray_box`, `test_raycast_boxes`, `test_box_cast`, `test_grid_walk` (with `ray_reference.hpp`: the walk equals
+  the integer reference cell for cell and fraction for fraction on 5000 seeded rays clipped and 5000 with outside
+  cells, over four cell layouts with negative and fractional origins, ≥ 300 rays through corners each),
+  `test_cells_crossed`, `test_raycast_grid` (first hit == first solid cell of `cells_crossed` on 5000 rays),
+  `test_raycast_all_grid`, `test_raycast_world`, `test_query_misuse` (22 misuse cases; 10 000 mixed queries with no
+  allocation and no `init()`). `nnh_tests` 1967 tests.
+- T3.7: `hello` Release unchanged (PC text 130 732, 3DS text 201 188) and no query symbol in either (`nm`). Each
+  query object needs only its own helpers (`nm -u`): `point_queries` → `query_check`, `aabb`, `grid`;
+  `raycast_boxes`/`box_cast` → `exact`, `ray_box`, `hit_list`, `ray_distance`; `raycast_grid`/`cells_crossed` →
+  `grid_walk`, `exact`, `grid`; `raycast_world` → the ray files.
+
+## Stage 4 refinements and results
+
+- As planned (D34): `map_runtime.{hpp,cpp}` (layout, `map_block_bytes`, `init_map_runtime`, accessors),
+  `map_collision_layers.cpp`, `map_filtered_grid.cpp`, `map_load_layers.cpp`; `create`/`tilemap_from_file`
+  allocate `map_block_bytes` and initialise the area; `add_tile_layer` stores `desc.collision_layers`.
+- **An unused slot is one whose mask is kAllLayers** (that mask never takes a slot: it returns
+  `collision_grid()`); `block_offset` is written when the slot is first taken.
+- **`add_tile_layer` refuses `collision_layers = kNoLayers`** with InvalidArgument ("collision_layers can't be
+  empty"): it returns a `Result`, so a refusal is the natural misuse path there (the setters assert and keep).
+- **The loader** reads `collision_layers` with the public `Properties` view after the copy: layers first, then every
+  tile with properties; a non-int or 0 value keeps the default with one warning per map
+  (`load_tilemap("<name>"): a collision_layers property isn't a non-zero int: ignored`). Its fuzz target now also
+  reads every set, checks `collision_layers_at` against `collision_at` (no layers ⇔ Empty) and moves through a
+  filtered grid; a fourth seed (`map_file::layered()`) carries the property on a layer, on a tile and a bad one.
+- The memory formula gains `132 + 4 × (max_tile_ids + 1)` bytes per map (default desc: 11 940 → 13 100); the two
+  tests that pinned the old block size (`test_map_build`, `test_map_edit_after_load`) now pin the new one.
+- T4.5/T4.6: `test_collision_grid_regression.cpp` passes unchanged; `map_collision.cpp` is not in the diff and its
+  `objdump -d` is identical to stage 0's on pc-release and 3ds-release (`build/ref-019/map_collision.*.stage4.dis`);
+  `compare.sh`: every reference screenshot identical. `nnh_tests` 1991 tests; ctest pc-debug 258/258, pc-release
+  252/252; 3ds-release builds without a warning.
+
+## Stage 5 refinements and results
+
+- `check_collision_layers(props, where, zero_hint, error)` (`tiled_properties.{hpp,cpp}`), called after
+  `collision`/`solid`/`one_way` are taken from tile layers and tiles. The refusals:
+  `<file>: layer "water": property "collision_layers" must be an integer (the layer bits; in Tiled an enum with
+  "allow multiple values" saved as a number)`, `<file>: layer "water": property "collision_layers" must not be 0:
+  untick collision instead`, and for a tile `<file>: tile 1: ... must not be 0: remove solid or one_way instead` (a
+  tile has no `collision` flag to untick). A flag enum saved as a number is an `int` with a `propertytype`: accepted;
+  saved as a string (an enum without "save as number") it is refused as not an integer.
+- **Fixtures are written by hand** like the other Tiled fixtures (`make_fixtures.py` only makes PNGs):
+  `good_collision_layers.tmj` (bits world 1, water 2, plank 4, boat 8: a "water" layer on boat, a solid tile on
+  water and a one-way tile on world | plank, as Tiled writes a flag enum), `bad_collision_layers_type.tmj`,
+  `bad_collision_layers_zero.tmj`; ctests `map_convert_accepts_good_collision_layers` and
+  `map_convert_{rejects,explains}_collision_layers_{type,zero}`.
+- T5.2: the good fixture is converted by the tests' build (`good_collision_layers.nnhmap`) and loaded by
+  `test_map_load_collision_layers.cpp`: the expected layer and tile sets, `collision_layers_at` unions, filtered
+  grids for world, boat and water, the property still readable.
+- T5.3: `nnh-assetc` 0.4.0 converts `good.tmj` and `level1.tmj` to the same bytes as 0.3.0 (SHA-256 as in stage 0).
+  The converter's map fuzz seed (`kMapSeed`/`kSetSeed` in `tools/assetc/tests/test_fuzz_assetc.cpp`, also the seed
+  for the libFuzzer `fuzz_assetc_map`) carries `collision_layers` on a layer and on a tile.
+
+## Stage 6 refinements and results
+
+- `examples/platformer/layers.hpp` puts the layers in a namespace (`layers::kWorld`, `kPlayer`, `kCoin`, `kEnemy`,
+  `kEnemyBullet`, `kPlayerMask = kWorld | kCoin`, `kBulletMask = kWorld | kPlayer`): `kPlayer` alone would clash
+  with the platformer's draw-layer enum.
+- `CoinBook::Coin` gained `layers` (`kCoin`; `kNoLayers` once taken: the `taken_` array is gone, `taken(i)` reads the
+  layers); `collect(box, mask, taken, capacity)` is one `boxes_overlapping` over `box_view(coins_, count_,
+  &Coin::bounds, &Coin::layers)` into a local buffer of `kCapacity` indices, so every overlapped coin is taken even
+  past the caller's capacity, as before. `LevelPlay` moves the player through `collision_grid(layers::kPlayerMask)`
+  (outside Solid as before) and collects with the same mask.
+- T6.2: ctest `platformer_replay_matches_script` passes and `nnh run platformer --pc --no-build --script
+  examples/platformer/tests/level.nnhs` → `nnh: PASS (74 lines, frames 1–1553)`, both with the **unchanged**
+  checksum lines; `compare.sh`: level 1 and the bench identical.
+
+## Stage 7 refinements and results
+
+- **Files** as planned (`main.cpp`, `demos.hpp`, `room.{hpp,cpp}`, `queries_scene.{hpp,cpp}`, `query_draw.{hpp,cpp}`,
+  `hud.{hpp,cpp}`, `self_check{,_scene}.{hpp,cpp}`, `bench_scene.{hpp,cpp}`, `art/make_art.py` → `assets/art/tiles.png`
+  (64 × 16: wall, water, plank, floor), `tests/check.nnhs`). The room is 25 × 15 cells of 16 px (one top screen):
+  a `walls` collision layer on the default layer (the example's `bits::kWorld`), a `water` collision layer on
+  `kWater`, one-way planks (tile 3, default layer) on a plain layer, a floor layer; tiles carry a `name` property.
+  12 boxes on red / green / blue layers live in the game's own `Thing` array, read through
+  `box_view(things, 12, &Thing::box, &Thing::layers)`. The room's grid for a mask is
+  `collision_grid(mask & (kWorld | kWater))` (at most 4 masks on the map), outside Solid.
+- **Modes and logs**: X cycles first / all / cast (`queries: mode first|all|cast`); A / B / L / R toggle the water,
+  red, green, blue bits (`queries: mask 0x1D`); Y `queries: one-way ignored|blocks`; the first hit is logged whenever
+  its line changes (`queries: first hit cell 6,9 solid fraction 0.5909 normal 0,-1`, `... box 6 green ...`,
+  `queries: first hit none`), so a moving target logs a line per frame; a touch logs
+  `under: cell 7,9 solid layers 0x2 tile 2 boxes 0` (the cell's kind on the unfiltered map, `collision_layers_at`,
+  the topmost tile, the boxes under the point that pass the current mask). The HUD shows a shorter form.
+- **Cast mode** casts a 12 × 12 box centred on the emitter against the boxes only (box casts against grids are a
+  non-goal): the screenshot shows it flush against a box with the wall between ignored.
+- **Self-check**: 4096 rays and 512 casts as planned, against a 24 × 16 grid of 16 × 12 cells at (−8.5, 4.25)
+  (18 % solid, 10 % one-way), clipped (outside Empty) on even rays and walled (outside Solid) on odd ones, 64 boxes
+  (every 13th without width, every 11th on no layers), points on the 1/16 lattice, exactly on grid lines and
+  corners, off the lattice (/97, /89) and far away (±4000 px); a tenth of the rays vertical, horizontal, exactly
+  diagonal through corners or of zero length. It counts what it reaches (`Stats`): 2839 grid hits, 2176 box hits,
+  849 inside hits, 60 one-way hits, 3108 blocked sights, 391 cast hits. Golden `0x4ACAA177` (checkpoints
+  `36C6AD9D`, `6A48E776`, `F9B05D2F`, `C8724E5B`), pc-debug and pc-release; ctest `queries_self_check_pc`. On the
+  3DS `std::uint32_t` is `unsigned long`: the checksum's `mix` overloads got distinct names (`mix_float`, `mix_hit`)
+  so `mix(1u)` isn't ambiguous there.
+- **Bench** (PC simulator, Debug, `check.nnhs` run): `queries bench: rays avg 1.087 ms worst 1.937 ms (target < 2
+  ms) PASS`, `points avg 3.019 ms, 0.0461 us per box (target <= 0.1 us) PASS`, `move unfiltered 0.98 us filtered
+  1.04 us`; a second run 1.112 / 2.708 ms, 0.0452 µs, 0.87 / 0.81 µs. Unoptimised PC numbers: the console's are the
+  ones that count (stage 10).
+- **Screenshots read back** (`QUERIES_DEMO=first|all|cast|water|touch`, and the script's): the first hit flush on a
+  wall's left face with its normal; all hits with the crossed cells shaded, the wall and three boxes marked; the cast
+  box flush against a blue box; with the water bit off the ray goes over the pool to the target (`first hit none`);
+  the touch marked on both screens with `cell 7,9 solid, layers 0x2` / `tile 2 "water"`.
+- `nnh run queries --pc --no-build --script examples/queries/tests/check.nnhs` → `nnh: PASS (96 lines, frames
+  1–1561)`, twice.
+
+## Stage 8 refinements and results
+
+- **Turrets** (`examples/platformer/turrets.{hpp,cpp}`, `TurretBook`): up to 4 turrets and 16 bullets; sight within a
+  range box of ±192 × ±120 px by `line_of_sight` (one-way ignored) from the turret's centre to the player's; a shot
+  when the cooldown is 0 while seen, then every 90 frames; 8 directions (`aim`: horizontal or vertical when the other
+  axis is under 2/5 of it, else a diagonal of 1.375 px per axis per frame); bullets moved by
+  `raycast(grid, bodies, pos, pos + vel, hit, {.mask = kBulletMask, .hit_from_inside = true})`, the bodies being the
+  player (index 0) and the turrets in one struct view. **`hit_from_inside` is on**: both the player and the bullet
+  move, and a player running into a bullet put it inside his box before the bullet's next step, which the default
+  filter ignores (the first run counted no hit at all); this is the two-movers case of FR-13, and a start inside the
+  player is a hit. A public `shoot(from, velocity)` lets the tests fire fast bullets. Tests:
+  `tests/platformer/test_turrets.cpp` (sight through a gap, a wall hides, planks don't, out of range, the 90-frame
+  period, 8 directions, a 100 px/frame bullet stops flush at a one-cell wall, a bullet falling on a plank stops on it,
+  a hit and the flash, a player running into a bullet, bullets pass turrets, the state word).
+- **Level 1**: turrets at cells (31, 14) and (40, 15), on the ground on both sides of the second pit (`make_level.py`
+  `TURRETS`, `level1.tmj` regenerated: only the two objects added). `LevelPlay` reads objects of type `turret`,
+  updates the book after the player (and the coins), publishes `PlayerHit{hits}` (the HUD shows "hits N"), draws the
+  turrets (a red eye and the sight line while seeing), the bullets (3 × 3, a stuck one just outside its wall along
+  the normal) and a red blink on the player while flashing. `ReplaySample::turrets` (= `TurretBook::state()`) is the
+  checksum's seventh word, in the bonus level too (its book is empty). Two placements were tried first ((56, 15),
+  then on the stone steps): their bullets all ended in the player, so no screenshot showed one stopped at a wall.
+- **New replay lines** (`examples/platformer/tests/level.nnhs`, in the same commit): `60 … sum 523AEFC6`,
+  `120 … 22B6BC70`, `180 … 19701BA9`, `240 … 26C330BF`, `300 … BF913379`, `360 … FEAD39C1`, `420 … 66CE9E1D`,
+  `480 … 1FD5F55A`, `540 … 3C20AAFF`, `600 … ED6F8521`, `660 bonus … F183ED9C`, `720 … 37D753F0`,
+  `780 … CF176580`, `840 … 01FDC889`, `replay: done 900 frames sum 96FE8943: 60 Hz PASS`. **The x, y and coins
+  columns are unchanged on every line.** The turrets see the player from about frame 170, four bullets hit him in
+  level 1 (`hits 4` on the HUD), and two stop on walls: at (560, 248) on the ground's right face (normal (1, 0)) at
+  frame 309, and at (928, 248) on the stone steps' left face at frame 585.
+- **Screenshot** (`PLATFORMER_DEMO=replay NNH_EXIT_AFTER_FRAMES=312`, read back): both turrets' sight lines to the
+  player in mid-jump over the pit, and a bullet stopped flush on the right face of the ground at the pit's edge.
+- T8.2/T8.4: ctest `platformer_replay_matches_script` passes; every example script passes with `--pc`
+  (`input`, `animation`, `actions`, `tweens`, `data`, `camera`, `queries`, platformer `level` (76 lines) and `gate`:
+  `bench: PASS 4 layers + 300 sprites, avg 16.7 ms, worst 16.9 ms, missed 0 of 600 frames`); `compare.sh`: every
+  reference screenshot identical (level 1 at frame 90 too: the turrets are off screen); `hello` Release unchanged
+  (PC text 130 732, 3DS text 201 188) with no query or `grid_cell_masked` symbol; `nnh_tests` 2011 tests, ctest
+  pc-debug 264/264, pc-release 257/257, 3ds-release without a warning.
+
+## Mutation testing
+
+86 hand mutants (`build/ref-019/mutants.txt`, applied one at a time by `build/ref-019/mutate.py`: rebuild the test
+program — `nnh_tests`, or `nnh_assetc_tests` for the converter —, run all of it, restore the file) of every new
+collision file (layers, views, misuse checks, hit list, point queries, exact predicates, slab test, rays on boxes,
+distance, box casts, the grid walk, rays on grids, cells crossed, grid + boxes and line of sight), the collision
+header's `detects`, the tilemap's masked rule, slots, sets, loader, runtime area and `add_tile_layer`, the converter's
+check, the coin book, the turrets and the replay's checksum word: **70/86 killed** on the first run (pc-debug).
+
+- **Release-path** (2): `bad_layer` returning `kAllLayers` and the out-of-masks log not remembered once per map are
+  only observable where asserts are compiled out; both are killed by the same tests in pc-release
+  (`build/ref-019/mutants_release.txt`: 2/2).
+- **Test gaps, closed** (6): a box with a NaN y passing the filter (`boxes_without_area_or_with_nan_fields_never_pass`
+  got the case); the box cast's step-down to flush removed (`the_contact_stays_flush_when_the_subtraction_rounds_up`:
+  37.3f − 0.2507f rounds to a float that overlaps by one ulp); a clipped walk not stopping when it leaves the grid
+  (`a_clipped_walk_stops_when_it_leaves_the_grid`, through `GridWalk::steps_left()`); the turrets' range check on the
+  left, the horizontal/diagonal threshold of `aim`, and line of sight not ignoring planks (the first version of
+  `planks_never_hide_the_player_below_either` looked straight down a grid line, where nothing is ever crossed: moved
+  2 px). All six are killed now (`mutants2.txt`, `mutants3.txt`).
+- **Equivalent** (8): loosening the rays' bounding-box prefilter (it only skips work; two mutants that *tighten* it
+  are killed); the clamp of a box hit's other coordinate and of a cast's contact position to their spans (defensive:
+  rounding of in-range floats can't leave the span); the backward correction of the walk's start cell (`>` → `>=`:
+  the forward correction takes it back); `start()` reporting "more cells" after a corner-only clip (the step guard
+  stops the walk one step later); the clip choice for a horizontal ray with a one-way outside (cost only: such cells
+  never block it); a corner hit's point through `along()` instead of the corner (equal on exact corners).
+
+Final: **78/86 killed**, 8 equivalent, plus 2 tightened prefilter mutants and the re-runs killed; `nnh_tests` 2014
+tests.
+
+## Stage 9: Linux checks (left to the lead)
+
+Not run in this session (VM 120 is the lead's). What to compare on GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests`,
+`nnh_assetc_tests` and ctest pass; these tests hold their pinned values unchanged:
+`collision_grid_regression_*` (T0.2: `0x698EB725`/`0xE419AD3C`, `0x852ED0F6`/`0xA6D13AF0`, `0x2E9EDC46`/`0x8761516F`,
+`0x6EA3F8C6`/`0xB2975DBA`), `the_walk_equals_the_exact_reference_on_5000_rays_*` (zero mismatches) and
+`the_queries_self_check_reaches_the_golden_checksum` (`0x4ACAA177`, checkpoints `36C6AD9D`, `6A48E776`, `F9B05D2F`,
+`C8724E5B`); ctest `queries_self_check_pc` and `platformer_replay_matches_script`. libFuzzer: `fuzz_tilemap` (its
+corpus can start from `map_file::layered()`, the seed with `collision_layers`) and `fuzz_assetc_map` (seed: `kMapSeed`
+'\0' `kSetSeed` of `tools/assetc/tests/test_fuzz_assetc.cpp`, which now carries `collision_layers`), 10 minutes each.
+
+## Stage 10: console run (prepared)
+
+T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` builds without a warning (every stage end), and
+so do the Development (`3ds-dev`) builds of `queries`, `platformer` and `hello` (3ds-dev `hello.elf` text 217 992, as in
+stage 0; `queries.elf` text 289 568);
+`ray_distance.o` on 3ds-release is `vsqrt.f32` with no call, and no query object has a fused `vfma`/`vfms`
+(`build/ref-019/fp_check.sh`; VFPv2's chained `vmla` is allowed); 3ds-release `hello.elf` text 201 188 / data 28 352 /
+bss 106 680, as in stage 0.
+
+T10.2, on an Old 3DS, nobody touching it after Y. Three runs, each: open the Homebrew Launcher, press **Y**, then on the
+PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs and screenshots in `build/logs/`):
+
+1. `build/pc-debug/tools/nnh/nnh run queries --script examples/queries/tests/check.nnhs` (about 30 s). Expected, as on
+   the PC: `queries: first hit cell 6,9 solid fraction 0.5909 normal 0,-1` (after the stick moves), `queries: first
+   hit none` (water bit off), the same first-hit line again (water back on), `queries: mode all`, `queries: mode
+   cast`, `queries: mode first`, `queries: one-way ignored`, `queries: one-way blocks`, `under: cell 7,9 solid layers
+   0x2 tile 2 boxes 0`, `under: cell 10,7 empty layers 0x0 tile 4 boxes 1`, `under: cell 15,5 one-way layers 0x1 tile
+   3 boxes 0`, `queries: self-check started`, `queries: 1024 sum 36C6AD9D`, `queries: 2048 sum 6A48E776`,
+   `queries: 3072 sum F9B05D2F`, `queries: 4096 sum C8724E5B`, **`queries: PASS 4ACAA177`**, then `queries bench:
+   rays avg X ms worst Y ms (target < 2 ms) PASS`, `queries bench: points avg X ms, Z us per box (target <= 0.1 us)
+   PASS`, `queries bench: move unfiltered X us filtered Y us`; `nnh: PASS (96 lines, …)`. Record X, Y, Z and the move
+   numbers here and in `docs/api/collision.md#limits-and-costs`. Then read the screenshots `first`, `pool`, `water`,
+   `all`, `cast`, `touch` (top and bottom): the same pictures as the PC's (`build/logs/queries-*` from a `--pc` run).
+   If the rays line says FAIL, apply risk 1's mitigations in order.
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (about 40 s). Expected:
+   `replay: 60 level1 x 121 y 242 coins 1 sum 523AEFC6`, `120 … sum 22B6BC70`, `180 … sum 19701BA9`,
+   `240 … sum 26C330BF`, `300 … sum BF913379`, `360 … sum FEAD39C1`, `420 … sum 66CE9E1D`, `480 … sum 1FD5F55A`,
+   `540 … sum 3C20AAFF`, `600 … sum ED6F8521`, `660 bonus … sum F183ED9C`, `720 … sum 37D753F0`,
+   `780 … sum CF176580`, `840 … sum 01FDC889`, `replay: done 900 frames sum 96FE8943: 60 Hz PASS`; `nnh: PASS (76
+   lines, …)`. A mismatch with the self-check of run 1 passing would be a game bug, not an engine one (risk 8).
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (about 2.5 min).
+   Expected: `bench: PASS 4 layers + 300 sprites, …` (spec 012's gate still passes); `nnh: PASS`.
+
+## Stage 11 results
+
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs): `<nnh/collision.hpp>` 691 preprocessed lines
+  (stage 0: 151; `<cstdint>` is most of the growth), 0.28–0.34 s (0.27–0.32 s); `<nnh/tilemap.hpp>` 8477 lines
+  (8331), 0.42–0.46 s (0.41–0.45 s).
+- Build times: edit `hello` → simulator 1.53, 1.51, 1.56 s (stage 0: 1.49–1.94); → `.3dsx` 2.82 s (a first run that
+  reconfigured 6.5 s; stage 0: 2.71–3.05); clean `nnh_core` (pc-debug, parallel) 5.78, 5.64, 5.65 s (5.26–5.34: 16 new
+  collision files and 5 tilemap files).
+- `hello` sizes unchanged in every preset: pc-release 130 732 / 22 020 / 211 696, pc-debug 198 816 / 26 756 / 214 352,
+  3ds-release 201 188 / 28 352 / 106 680, 3ds-dev 217 992 / 32 872 / 109 288; no query, `grid_cell_masked` or
+  collision-layer symbol. The queries a game uses cost about 14 KB of 3DS text when it uses all of them
+  (`queries.elf`, Release).
+- Final: `nnh_tests` 2014 tests, `nnh_assetc_tests` 265; ctest pc-debug 264/264, pc-release 257/257; 3ds-release and
+  3ds-dev without a warning; `docs_tool.py check` 0 broken links.

@@ -1,5 +1,5 @@
 #pragma once
-// The levels' HUD on the bottom screen. It learns what happens from events only (CoinCollected,
+// The levels' HUD on the bottom screen. It learns what happens from events only (CoinCollected, PlayerHit,
 // LevelRestarted: the pattern of examples/scenes), and reads the level's name and music from the map's
 // properties.
 
@@ -21,11 +21,14 @@ class Hud {
 
   private:
     void on_coin(const CoinCollected& e);
+    void on_hit(const PlayerHit& e);
     void on_restart(const LevelRestarted& e);
 
     nnh::Subscription coin_sub_;
+    nnh::Subscription hit_sub_;
     nnh::Subscription restart_sub_;
     int coins_ = 0;
     int total_ = 0;
     int score_ = 0;
+    int hits_ = 0;
 };

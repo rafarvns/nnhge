@@ -5,7 +5,7 @@
 # So this file must also work standalone. Explicit source lists.
 
 cmake_minimum_required(VERSION 3.25)
-project(nnh_assetc VERSION 0.3.0 LANGUAGES CXX)
+project(nnh_assetc VERSION 0.4.0 LANGUAGES CXX)
 
 set(_nnh_root ${CMAKE_CURRENT_LIST_DIR}/../..)
 if(NOT COMMAND nnh_engine_options)
@@ -140,6 +140,7 @@ if(NNH_BUILD_TESTS)
         tests/test_tiled_map.cpp
         tests/test_tiled_objects.cpp
         tests/test_tiled_animations.cpp
+        tests/test_tiled_collision_layers.cpp
         tests/test_tiled_tileset.cpp
         tests/test_toml.cpp
         tests/test_toml_tables.cpp
@@ -161,7 +162,7 @@ if(NNH_BUILD_TESTS)
     add_test(NAME assetc_unit COMMAND nnh_assetc_tests)
 
     add_test(NAME assetc_version COMMAND nnh_assetc --version)
-    set_tests_properties(assetc_version PROPERTIES PASS_REGULAR_EXPRESSION "^nnh-assetc 0[.]3[.]0 [(]crc32 CBF43926[)]")
+    set_tests_properties(assetc_version PROPERTIES PASS_REGULAR_EXPRESSION "^nnh-assetc 0[.]4[.]0 [(]crc32 CBF43926[)]")
     add_test(NAME assetc_usage COMMAND nnh_assetc)
     set_tests_properties(assetc_usage PROPERTIES WILL_FAIL TRUE)
 endif()

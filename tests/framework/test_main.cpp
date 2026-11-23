@@ -11,7 +11,7 @@ struct Entry {
     nnh::test::TestFn fn;
 };
 
-constexpr int kMaxTests = 2048;
+constexpr int kMaxTests = 4096;
 Entry g_tests[kMaxTests];
 int g_count = 0;
 int g_failures = 0;

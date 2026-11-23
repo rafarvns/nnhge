@@ -190,6 +190,7 @@ packed. A map is converted again only when it, a tileset or an image it uses, or
 | tile animation (frames of the same tileset, durations in ms) | `tile_animation(id, ...)`; drawn animated |
 | tile layers in order: name, offset, parallax, opacity, visible, flips | tile layers in the same order |
 | layer property `collision` (bool) | `layer_collision(layer)` (not kept as a property) |
+| layer or tile property `collision_layers` (int, ≠ 0: a flag enum saved as a number) | `layer_collision_layers(layer)` / `tile_collision_layers(id)` (also kept as a property) — see [collision layers](#collision-layers) |
 | object layers; rectangles and points with id, name, type (or class), properties | object layers and objects in the same order |
 | property types bool, int, float, string; `color` (`#AARRGGBB`), `file` (path as written), `object` (its id) | bool, int, float, string, string, string, int |
 
@@ -201,7 +202,9 @@ tileset or of 0 ms (more than 256 animated tiles or 4096 frames in a map are ove
 the map's; images that are not a PNG inside the assets folder, whose size differs from what Tiled recorded or that
 are not textures (power-of-two sides from 8 to 1024); a tileset's columns or tile count that don't match its image
 (NNHGE keeps the margin on every side of the image); ellipse, polygon, polyline, text and tile objects, templates
-and rotated objects; `class` properties; layer tint colours; diagonal flips on non-square tiles; strings over 255
+and rotated objects; `class` properties; layer tint colours; diagonal flips on non-square tiles; a
+`collision_layers` property that isn't an integer or is 0 (`level1.tmj: layer "water": property "collision_layers"
+must not be 0: untick collision instead`); strings over 255
 bytes and anything over the [limits](#building-a-map). The converter checks the file it writes with the same
 validator `load_tilemap` runs, so a converted map always passes the loader's checks.
 
@@ -306,6 +309,44 @@ building. `collision_at(x, y)` answers for one cell; `collision_grid()` gives a 
 `cell` callback over the map) that reads the map live, so a `set_tile` is seen at once. The tilemap never calls
 collision itself: it only describes cells.
 
+### Collision layers
+
+Spec 019 gives a map's collision [layers](collision.md#layers-and-masks), so one map serves different kinds of movers
+(water that stops boats but not fish, planks only the player stands on):
+
+```cpp
+constexpr nnh::collision::Layers kWorld = nnh::collision::kDefaultLayer, kBoat = nnh::collision::layer(1);
+const int water = map.add_tile_layer({.name = "water", .collision = true, .collision_layers = kBoat}).value();
+map.set_tile_collision_layers(plank_id, kWorld);              // a one-way plank on the world layer only
+const collision::Grid boat_grid = map.collision_grid(kBoat);  // the water is solid here...
+const collision::Grid fish_grid = map.collision_grid(kWorld); // ...and not here
+```
+
+| Function | Does |
+|----------|------|
+| `set_layer_collision_layers(layer, set)` / `layer_collision_layers(layer)` | the set a `collision` tile layer's tiles are solid on (`TileLayerDesc::collision_layers` at creation); `kNoLayers` for an invalid layer |
+| `set_tile_collision_layers(id, set)` / `tile_collision_layers(id)` | the set a solid or one-way tile is solid / one-way on; `kNoLayers` for an unknown id |
+| `collision_layers_at(x, y)` | the union of the sets of every contribution to the cell (`collision` layers with a tile there, solid and one-way tiles there); `kNoLayers` for an empty cell or outside |
+| `collision_grid(mask)` | a grid seeing only the contributions on `mask`'s layers |
+
+- **Every set starts on `kDefaultLayer`**, so maps without layers and `collision_grid()` behave exactly as before (a
+  regression test pins it). A set is never 0: `add_tile_layer` refuses `collision_layers = kNoLayers`
+  (InvalidArgument) and the setters assert and keep the old set (untick `collision` instead).
+- **`collision_grid(mask)`**: a cell is **Solid** when a `collision` layer with a tile there, or a solid tile there,
+  is on a layer of `mask`; else **OneWay** when a one-way tile there is; else **Empty**. It reads the map live like
+  `collision_grid()` (edits and set changes are seen at once) and costs one more mask test per contribution. With
+  `kAllLayers` it **is** `collision_grid()`.
+- **8 masks per map.** The first call with a new mask registers it in the map (a const method writing the map's
+  runtime area: single-threaded, as the whole engine); a grid handed out earlier stays valid (slots are never
+  reused). A 9th distinct mask asserts; in Release it logs one error per map and returns the unfiltered grid (walls
+  stay walls). Masks are game constants (player, enemy, line of sight): building them from bits at run time can run
+  out.
+- **From Tiled**: an int property `collision_layers` on a tile layer or a tile. Make it a custom enum with "allow
+  multiple values" saved as a number for a checkbox per layer ([levels guide](../guides/levels.md#collision-layers));
+  Tiled sets bits 0–30. The converter refuses a non-integer or 0 value; a loaded map whose file holds one anyway
+  keeps the default set with one warning. `collision_layers` on a layer without `collision`, or on a tile without
+  `solid`/`one_way`, is accepted and does nothing.
+
 ## Objects
 
 ```cpp
@@ -351,17 +392,19 @@ bytes = 128 + 24·max_tilesets + 4·ids + align4(ids) + align4(6·tp)
       + 12·max_object_layers + 36·max_objects + 12·max_properties + align4(string_bytes)
 ```
 
-Cells dominate: 2 bytes per cell per layer **of capacity** (layers you never add still cost their cells).
+plus, after those bytes, a **runtime area** of `132 + 4·ids` bytes (collision layer sets and filtered-grid slots,
+spec 019, never written to a file). Cells dominate: 2 bytes per cell per layer **of capacity** (layers you never add
+still cost their cells).
 
-A **loaded** map's block is the `.nnhmap` file's size (its capacities are what it holds) plus its
+A **loaded** map's block is the `.nnhmap` file's size (its capacities are what it holds) plus the runtime area plus its
 `LoadTilemapOptions`: 40 + 2·width·height bytes per extra tile layer, 36 per extra object, 12 per extra property (+ 6
 per extra tile that may get properties, up to the tile ids) and the extra string bytes, each section 4-byte aligned.
 
 | Map | Bytes |
 |-----|-------|
-| 40×15, default desc | 11 940 (≈ 11.7 KiB) |
-| 240×30, 3 layers, 1 tileset of 128 ids, 40 objects, 60 properties, 1 KiB strings | 47 676 (≈ 46.6 KiB) |
-| 512×512, 4 layers, 2 tilesets, 1024 ids, other defaults | 2 108 132 (≈ 2.01 MiB) |
+| 40×15, default desc | 13 100 (≈ 12.8 KiB; 11 940 + the runtime area's 1160) |
+| 240×30, 3 layers, 1 tileset of 128 ids, 40 objects, 60 properties, 1 KiB strings | 48 324 (≈ 47.2 KiB) |
+| 512×512, 4 layers, 2 tilesets, 1024 ids, other defaults | 2 112 364 (≈ 2.01 MiB) |
 | Most cells allowed: 4 Mi (e.g. 4 × 1024×1024) | > 8 MiB |
 
 Tileset textures are separate (tag `textures`, `Linear`): a 256×256 RGBA8 sheet is 256 KiB. The Old 3DS has about
@@ -379,6 +422,9 @@ Tileset textures are separate (tag `textures`, `Linear`): a 256×256 RGBA8 sheet
 - Animations are per tile id, not per cell: two cells that should animate out of step need two tile ids.
 - A `collision` layer makes **every** non-empty tile solid, including decorative ones; mark individual tiles with
   `set_tile_collision` instead when only some should block (a one-way plank on a `collision` layer is solid).
+- Setting a `collision_layers` **property** in code (`set_int`) changes nothing (as `solid` isn't a property after
+  loading): use `set_layer_collision_layers` / `set_tile_collision_layers`.
+- `collision_grid(mask)` with more than 8 distinct masks on one map runs out of slots: keep masks constant.
 - `draw_tilemap` needs `AppConfig::gfx.max_tiles` sized for every layer you draw on both screens (≈ 416 per full
   16×16 top-screen layer, 336 on the bottom screen); check `gfx::stats().tiles_last_frame` or the debug overlay.
 - A parallax layer with the default parallax origin (0, 0) is shifted at camera (0, 0) (Tiled does the same): set

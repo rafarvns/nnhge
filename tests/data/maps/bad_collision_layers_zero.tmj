@@ -1,0 +1,9 @@
+{ "type": "map", "orientation": "orthogonal", "infinite": false, "width": 2, "height": 1,
+  "tilewidth": 16, "tileheight": 16,
+  "tilesets": [ { "firstgid": 1, "source": "tiles/good.tsj" } ],
+  "layers": [
+    { "type": "tilelayer", "name": "water", "width": 2, "height": 1, "data": [1, 0],
+      "properties": [ { "name": "collision", "type": "bool", "value": true },
+                      { "name": "collision_layers", "type": "int", "propertytype": "CollisionLayers", "value": 0 } ] }
+  ]
+}

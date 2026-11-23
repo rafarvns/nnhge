@@ -123,6 +123,9 @@ struct TileLayerDesc {
     float opacity = 1;      ///< 0..1, drawing only
     bool visible = true;
     bool collision = false; ///< every non-empty tile of this layer is solid
+    /// The collision layers those tiles are solid on while `collision` is on (spec 019); not 0 (add_tile_layer
+    /// refuses it). Tiled: the layer's int property `collision_layers`.
+    collision::Layers collision_layers = collision::kDefaultLayer;
 };
 
 struct ObjectDesc {
@@ -222,6 +225,29 @@ public:
     /// `outside` to wall the level in). Reads the map live, so edits are seen at once. Valid while the map
     /// lives (moving the Tilemap object is fine). Empty map: a grid of size 0.
     collision::Grid collision_grid() const;
+
+    /// Collision layers (spec 019): what each contribution to a cell's collision is solid (or one-way) on. Every
+    /// tile layer and tile id starts on collision::kDefaultLayer, so maps without layers behave as before.
+    /// The set a `collision` tile layer's tiles are solid on (Tiled: the layer's int property `collision_layers`).
+    /// Asserts (and keeps the old set in Release) on an invalid layer or kNoLayers: untick `collision` instead.
+    void set_layer_collision_layers(int layer, collision::Layers layers);
+    collision::Layers layer_collision_layers(int layer) const; ///< kNoLayers for an invalid layer
+    /// The set a solid or one-way tile id is solid / one-way on (Tiled: the tile's int property
+    /// `collision_layers`). Asserts (keeps the old set) on an unknown id or kNoLayers.
+    void set_tile_collision_layers(int tile_id, collision::Layers layers);
+    collision::Layers tile_collision_layers(int tile_id) const; ///< kNoLayers for an unknown id
+    /// The union of the sets of every contribution to cell (x, y): `collision` layers with a tile there, solid and
+    /// one-way tiles there. kNoLayers for a cell without collision or outside the map.
+    collision::Layers collision_layers_at(int x, int y) const;
+    /// A grid seeing only the contributions on `mask`'s layers: a cell is Solid when a `collision` layer with a
+    /// tile there or a solid tile there is on a layer of `mask`, else OneWay when such a one-way tile is, else
+    /// Empty. Live like collision_grid() (edits and set changes are seen at once), valid while the map lives;
+    /// kAllLayers gives collision_grid() itself. The first call with a new mask registers it in the map (a map
+    /// holds 8 masks; a 9th asserts, and in Release logs one error and gives the unfiltered grid). Never allocates.
+    /// @code
+    /// const collision::Grid boat_grid = map.collision_grid(kBoat); // water is solid for boats, not for fish
+    /// @endcode
+    collision::Grid collision_grid(collision::Layers mask) const;
 
     /// One frame of an animated tile: the tile shown and for how long.
     struct AnimationFrame {

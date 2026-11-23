@@ -123,7 +123,8 @@ bool read_tile(json::Ref tile, const std::string& file, Context& ctx, Tileset& o
     if (!read_animation(animation, where, out.tile_count, info.animation, error) ||
         !read_properties(tile.get("properties"), where, info.properties, error) ||
         !take_bool(info.properties, "solid", where, solid, error) ||
-        !take_bool(info.properties, "one_way", where, one_way, error)) {
+        !take_bool(info.properties, "one_way", where, one_way, error) ||
+        !check_collision_layers(info.properties, where, "remove solid or one_way instead", error)) {
         return ctx.fail(file, error);
     }
     if (solid && one_way) return ctx.fail(file, where + " is both solid and one_way: keep one");

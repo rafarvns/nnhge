@@ -4,6 +4,7 @@
 
 #include "gfx/gfx_state.hpp"
 #include "nnh/texture.hpp"
+#include "tilemap/map_runtime.hpp"
 #include "tilemap/map_strings.hpp"
 #include "tilemap/tilemap_internal.hpp"
 
@@ -72,6 +73,7 @@ Result<int> Tilemap::add_tile_layer(const TileLayerDesc& desc) {
     const detail::MapView v = detail::map_view(*this);
     if (v.base == nullptr) return invalid("add_tile_layer on an empty map");
     if (!detail::map_string_ok(desc.name)) return invalid("layer name over 255 bytes");
+    if (desc.collision_layers == collision::kNoLayers) return invalid("collision_layers can't be empty");
     Header& h = v.header();
     if (h.tile_layers >= h.tile_layers_cap) return full("max_tile_layers reached");
     const int name = detail::map_intern(v, desc.name);
@@ -88,6 +90,7 @@ Result<int> Tilemap::add_tile_layer(const TileLayerDesc& desc) {
     layer.parallax_y = desc.parallax.y;
     layer.opacity = std::clamp(desc.opacity, 0.0f, 1.0f);
     if (desc.collision) h.collision_layers = static_cast<std::uint16_t>(h.collision_layers | (1u << index));
+    detail::map_runtime(v.base).layer_sets[index] = desc.collision_layers;
     h.tile_layers += 1;
     return index;
 }

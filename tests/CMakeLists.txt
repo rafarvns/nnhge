@@ -91,11 +91,25 @@ add_executable(nnh_tests
     camera/test_camera_value.cpp
     camera/test_camera_zoom.cpp
     collision/test_aabb.cpp
+    collision/test_box_cast.cpp
+    collision/test_box_view.cpp
+    collision/test_cells_crossed.cpp
     collision/test_cells_touching.cpp
     collision/test_contacts.cpp
+    collision/test_exact.cpp
+    collision/test_grid_walk.cpp
     collision/test_grid.cpp
     collision/test_grid_move.cpp
+    collision/test_hit_list.cpp
+    collision/test_layers.cpp
     collision/test_one_way.cpp
+    collision/test_point_queries.cpp
+    collision/test_query_misuse.cpp
+    collision/test_ray_box.cpp
+    collision/test_raycast_all_grid.cpp
+    collision/test_raycast_boxes.cpp
+    collision/test_raycast_grid.cpp
+    collision/test_raycast_world.cpp
     core/test_crc32.cpp
     core/test_name_hash.cpp
     crash/test_assert.cpp
@@ -175,15 +189,19 @@ add_executable(nnh_tests
     system/test_system.cpp
     text/test_builtin_font.cpp
     tilemap/test_code_vs_file.cpp
+    tilemap/test_collision_grid_regression.cpp
     tilemap/test_map_animations.cpp
     tilemap/test_map_bounds.cpp
+    tilemap/test_filtered_grid.cpp
     tilemap/test_map_build.cpp
     tilemap/test_map_collision.cpp
+    tilemap/test_map_collision_layers.cpp
     tilemap/test_map_draw.cpp
     tilemap/test_map_draw_zoom.cpp
     tilemap/test_map_edit_after_load.cpp
     tilemap/test_map_layout.cpp
     tilemap/test_map_load.cpp
+    tilemap/test_map_load_collision_layers.cpp
     tilemap/test_map_objects.cpp
     tilemap/test_map_properties.cpp
     tilemap/map_file.cpp
@@ -303,6 +321,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_player_sprite.cpp
     platformer/test_replay_run.cpp
     platformer/test_replay_script.cpp
+    platformer/test_turrets.cpp
     ${_platformer}/level_camera.cpp
     ${_platformer}/coin_book.cpp
     ${_platformer}/frame_meter.cpp
@@ -310,7 +329,8 @@ target_sources(nnh_tests PRIVATE
     ${_platformer}/player.cpp
     ${_platformer}/player_sprite.cpp
     ${_platformer}/replay_run.cpp
-    ${_platformer}/replay_script.cpp)
+    ${_platformer}/replay_script.cpp
+    ${_platformer}/turrets.cpp)
 # The replay played twice gives the same log (spec 012 T7.3, FR-10): the simulator's checksum lines must be the ones
 # the console script expects (written from an earlier PC run). Release logs no info lines, so Debug/Development only.
 if(TARGET platformer AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -342,6 +362,13 @@ if(TARGET camera AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;CAMERA_DEMO=check;NNH_EXIT_AFTER_FRAMES=615"
         PASS_REGULAR_EXPRESSION "camera: PASS 5201E6CF" FAIL_REGULAR_EXPRESSION "camera: FAIL" TIMEOUT 120)
 endif()
+# The queries example's self-check in the simulator (spec 019 AC-6): the verdict the console script waits for.
+if(TARGET queries AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME queries_self_check_pc COMMAND queries)
+    set_tests_properties(queries_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;QUERIES_DEMO=check;NNH_EXIT_AFTER_FRAMES=90"
+        PASS_REGULAR_EXPRESSION "queries: PASS 4ACAA177" FAIL_REGULAR_EXPRESSION "queries: FAIL" TIMEOUT 120)
+endif()
 # The data example's self-check in the simulator (spec 014 T8.3): the line the console script expects.
 if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME data_self_check_pc COMMAND data)
@@ -364,6 +391,8 @@ target_include_directories(nnh_actions_bench PRIVATE ${PROJECT_SOURCE_DIR}/engin
 target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
 # The camera example's self-check (spec 018 T6.2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
+# The queries example's self-check (spec 019 T7.3, AC-2): its golden checksum on every host compiler.
+target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)
@@ -639,6 +668,9 @@ file(WRITE ${_maps_out}/bad_too_many_objects.tmj
        \"layers\": [{\"type\": \"objectgroup\", \"name\": \"things\", \"objects\": [${_objects}{\"id\": 1, \"x\": 0, \"y\": 0}]}]}\n")
 add_test(NAME map_convert_accepts_good
     COMMAND nnh_assetc map ${_maps}/good.tmj ${_maps_out}/good_check.nnhmap --assets ${_maps})
+add_test(NAME map_convert_accepts_good_collision_layers
+    COMMAND nnh_assetc map ${_maps}/good_collision_layers.tmj ${_maps_out}/good_collision_layers_check.nnhmap
+            --assets ${_maps})
 foreach(case "infinite|bad_infinite.tmj: infinite maps aren't supported"
              "isometric|bad_isometric.tmj: isometric maps aren't supported"
              "hexagonal|bad_hexagonal.tmj: hexagonal maps aren't supported"
@@ -660,7 +692,9 @@ foreach(case "infinite|bad_infinite.tmj: infinite maps aren't supported"
              "diagonal_non_square|bad_diagonal_non_square.tmj: layer .ground.: cell [(]1, 0[)] is flipped diagonally, which needs square tiles"
              "animation|bad_animation.tmj: tile 1: animation frame 1: .tileid. must be a whole number from 0 to 7"
              "compressed|bad_compressed.tmj: layer .ground.: compressed layer data [(]zlib[)] isn't supported: save the layer format as CSV"
-             "broken_json|bad_broken_json.tmj: line 3, column 19: expected ',' or '}'")
+             "broken_json|bad_broken_json.tmj: line 3, column 19: expected ',' or '}'"
+             "collision_layers_type|bad_collision_layers_type.tmj: layer .water.: property .collision_layers. must be an integer"
+             "collision_layers_zero|bad_collision_layers_zero.tmj: layer .water.: property .collision_layers. must not be 0: untick collision instead")
     string(REPLACE "|" ";" case "${case}")
     list(GET case 0 name)
     list(GET case 1 expected)
@@ -721,7 +755,25 @@ add_custom_command(OUTPUT ${_maps_out}/good.nnhmap
     DEPFILE ${_maps_out}/good.nnhmap.d
     COMMENT "Map tests/data/maps/good.tmj"
     VERBATIM)
-add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap)
+# The platformer's level 1, for the collision_grid() regression test (spec 019 T0.2).
+set(_platformer_assets ${PROJECT_SOURCE_DIR}/examples/platformer/assets)
+add_custom_command(OUTPUT ${_maps_out}/level1.nnhmap
+    COMMAND nnh_assetc map ${_platformer_assets}/levels/level1.tmj ${_maps_out}/level1.nnhmap
+            --assets ${_platformer_assets} --depfile ${_maps_out}/level1.nnhmap.d
+    DEPENDS ${_platformer_assets}/levels/level1.tmj nnh_assetc
+    DEPFILE ${_maps_out}/level1.nnhmap.d
+    COMMENT "Map examples/platformer/assets/levels/level1.tmj (tests)"
+    VERBATIM)
+# The collision layers fixture (spec 019 T5.2), loaded by test_map_load_collision_layers.cpp.
+add_custom_command(OUTPUT ${_maps_out}/good_collision_layers.nnhmap
+    COMMAND nnh_assetc map ${_maps}/good_collision_layers.tmj ${_maps_out}/good_collision_layers.nnhmap
+            --assets ${_maps} --depfile ${_maps_out}/good_collision_layers.nnhmap.d
+    DEPENDS ${_maps}/good_collision_layers.tmj nnh_assetc
+    DEPFILE ${_maps_out}/good_collision_layers.nnhmap.d
+    COMMENT "Map tests/data/maps/good_collision_layers.tmj"
+    VERBATIM)
+add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap ${_maps_out}/level1.nnhmap
+                                        ${_maps_out}/good_collision_layers.nnhmap)
 add_dependencies(nnh_tests nnh_test_maps)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_MAPS_DIR="${_maps_out}")
 

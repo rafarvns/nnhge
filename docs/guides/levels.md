@@ -71,6 +71,31 @@ on whole cells. The game moves boxes through `map.collision_grid()` with
 Tip: put the solid ground on a layer with `collision`, and one-way planks on another layer as tiles marked
 `one_way` (a one-way tile on a `collision` layer is solid).
 
+### Collision layers
+
+A level can collide differently for different movers (spec 019): water that stops boats but lets fish through, planks
+only the player stands on. Each collision layer and each `solid`/`one_way` tile carries a set of **collision
+layers**; the game asks for a grid that sees only some of them with `map.collision_grid(mask)`
+([tilemap.md](../api/tilemap.md#collision-layers)). Without anything set, everything is on the default layer (bit 0)
+and the level behaves as before. Set them in Tiled with a custom enum, once per project:
+
+1. **View > Custom Types Editor > Add Enum**, name it `CollisionLayers`. Add one value per layer, **in the order of
+   your game's bits**: the first value is bit 0, the second bit 1, … (for example `world`, `water`, `plank`, `boat`).
+   Keep `world` first: bit 0 is the engine's default layer, the one every tile is on until you say otherwise.
+2. Tick **Allow multiple values (flags)** and choose **Save as: Number**. Tiled then stores the ticked values as bits
+   (`world` + `boat` = 1 + 8 = 9), which is exactly what NNHGE reads. Tiled allows bits 0–30.
+3. On a **tile layer** with `collision`, add a property `collision_layers` of type `CollisionLayers` and tick the layers
+   its tiles are solid on (a `water` layer: `water`).
+4. On a **tile** marked `solid` or `one_way` (tileset editor), add `collision_layers` the same way (a plank only the
+   player stands on: `plank`).
+5. In the game, declare the same bits (`layer(0)` = `world`, `layer(1)` = `water`, …) and ask each mover's grid:
+   `map.collision_grid(kWorld | kBoat)` for a boat, `map.collision_grid(kWorld)` for a fish.
+
+A plain `int` property named `collision_layers` works too (without a Tiled project). The build refuses a
+`collision_layers` that isn't an integer (an enum saved as a string) or is 0 (`level1.tmj: layer "water": property
+"collision_layers" must not be 0: untick collision instead`). On a layer without `collision`, or a tile without
+`solid`/`one_way`, it is accepted and does nothing. It also stays readable as an ordinary property.
+
 ## 5. Layers, parallax and flips
 
 - **Tile layers** keep their order, name, offset, opacity, visibility, parallax factor and flipped tiles

@@ -92,6 +92,13 @@ through a `Grid` the game describes (its own `Cell` array or a callback; solid a
 (`nnh-assetc`, D27; refusals print `file: reason`; fixtures in `tests/data/maps/`); `gfx::draw_tilemap` draws tile
 batches (D26, needs `AppConfig::gfx.max_tiles`, 0 by default; Old 3DS: 4 full layers + 300 sprites at 60 Hz)
 ([api/tilemap.md](docs/api/tilemap.md), guide [levels.md](docs/guides/levels.md)).
+Collision layers and queries (spec 019, implemented, console check pending; D34; demo `examples/queries`): in
+`<nnh/collision.hpp>` — `Layers` (32 bits, the game's own enum), `detects(mask, layers)`, `box_view(...)` over the
+game's own arrays (structs by member pointer), `QueryFilter`; `raycast`/`raycast_all` against grids (exact walk: no
+tunnelling, no corner leaks) and boxes, `cells_crossed`, `line_of_sight`, `box_cast`, `boxes_at`,
+`boxes_overlapping`, `cell_at`; no allocation, the same bits everywhere ([api/collision.md](docs/api/collision.md)).
+Tilemaps: layer sets per `collision` layer and solid/one-way tile (Tiled `collision_layers`), `collision_grid(mask)`
+([api/tilemap.md](docs/api/tilemap.md#collision-layers)). The platformer uses layered coins and turrets.
 Tweens and timers (spec 015, implemented; demo `examples/tweens`): `<nnh/tween.hpp>` — 19
 libm-free easings (same bits everywhere), `nnh::Timer`, `TweenSet` (float/Vec2/Color by pointer or setter, loops,
 yoyo, sequences, `after`/`every`, callbacks or your own finish events) on the frame clock (`Frames`/`FrameTime` in
@@ -176,6 +183,8 @@ PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png bu
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs   # tile gate on the console (Development, HBL → Y): bench: PASS/FAIL
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs  # levels + replay on the console: checksums = PC's, 60 Hz PASS/FAIL
 build/pc-debug/tools/nnh/nnh run data [--pc] --script examples/data/tests/check.nnhs        # data assets: self-check checksum = PC's
+QUERIES_DEMO=all NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/queries.png build/pc-debug/examples/queries/queries.exe   # first|all|cast|water|touch|check|bench
+build/pc-debug/tools/nnh/nnh run queries [--pc] --script examples/queries/tests/check.nnhs  # rays, touches, self-check 4ACAA177, bench
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

@@ -106,6 +106,11 @@ no camera symbol in either. Edit `hello` → simulator 1.5–1.6 s, → `.3dsx` 
 preprocessed lines and 0.30–0.33 s alone (`<nnh/gfx.hpp>` 779 lines, 0.31–0.33 s). Details: plan 018, "Stage 0
 results" and "Stage 10 results".
 
+Spec 019 (collision layers and queries), 2026-11-23, same machine (devkitARM updated since spec 018: Release
+`hello.elf` text 201,188 at its stage 0): `hello` unchanged in every preset (no query symbol); edit `hello` →
+simulator 1.5–1.6 s, → `.3dsx` 2.8 s; clean `nnh_core` 5.3 → 5.7 s (21 new files); `<nnh/collision.hpp>` 151 → 691
+preprocessed lines (`<cstdint>`), 0.28–0.34 s alone. Details: plan 019, "Stage 0 results" and "Stage 11 results".
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -191,8 +196,16 @@ spec; the order below is a proposal.
   `.3dsx` (table above)
 - [ ] **Tags and groups** (Unity tags, Godot groups): mark entities and objects with names (`"enemy"`, `"coin"`), find
   every one with a tag, cheap to compare (hashed at build time)
-- [ ] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets
-  ignore their shooter, coins only the player), on top of spec 012's collision — [spec 019](../specs/019-collision-layers-and-queries/spec.md) (approved 2026-11-22; plan next)
+- [x] **Collision layers and masks** (Godot physics layers, Unity layers): which things can touch which (bullets
+  ignore their shooter, coins only the player), on top of spec 012's collision —
+  [spec 019](../specs/019-collision-layers-and-queries/spec.md), **implemented 2026-11-23, console check pending**:
+  `collision::Layers` (32 bits, the game's own enum), `detects(mask, layers)`, box views over the game's own arrays
+  (structs by member pointer, no copies), `QueryFilter` (mask, ignore index); tilemap layer sets on `collision` layers
+  and solid/one-way tiles, from code or a Tiled `collision_layers` flag enum, and `Tilemap::collision_grid(mask)` (D34:
+  a runtime area after the map's bytes; `collision_grid()` and the `.nnhmap` format unchanged)
+  ([api/collision.md](api/collision.md#layers-and-masks), [api/tilemap.md](api/tilemap.md#collision-layers)). The
+  platformer's coins are taken by a layered `boxes_overlapping` query and its player walks a filtered grid (replay
+  lines unchanged by the swap)
 - [ ] **Prefabs** (Unity prefabs, Godot packed scenes): entity templates registered in code by name (a function or a
   set of components and values), spawned many times and overridden per copy; a Tiled object can name one
 - [ ] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
@@ -244,8 +257,17 @@ spec; the order below is a proposal.
   with a version number and migration from older saves
 - [ ] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
   allocation while searching
-- [ ] **Raycasts and shape queries** (Godot RayCast2D, Unity Physics2D.Raycast): line of sight, "what's under
-  this point", against tiles and boxes, filtered by layers — [spec 019](../specs/019-collision-layers-and-queries/spec.md) (approved 2026-11-22; plan next)
+- [x] **Raycasts and shape queries** (Godot RayCast2D, Unity Physics2D.Raycast): line of sight, "what's under
+  this point", against tiles and boxes, filtered by layers — [spec 019](../specs/019-collision-layers-and-queries/spec.md),
+  **implemented 2026-11-23, console check pending**: rays from → to against grids (an exact Amanatides & Woo walk:
+  no tunnelling at any length, no leak between diagonal walls, one-way cells from above) and box views (slab test),
+  first hit / all hits / `cells_crossed`, `line_of_sight`, box casts (two movers by relative motion), `boxes_at`,
+  `boxes_overlapping`, `cell_at`; the same bits on every system (exact `double` decisions, results rounded once;
+  checked against an integer reference on 10 000 rays), no allocation ([api/collision.md](api/collision.md#rays)).
+  `examples/queries`: a room with water and planks, rays in three modes, mask toggles, a touch asking what is under it,
+  a self-check (`tests/check.nnhs`) and a bench (PC Debug: 128 rays + 64 boxes ≈ 1 ms per frame, point queries
+  0.05 µs per box). The platformer's level 1 got two turrets with line of sight whose bullets move by rays (in the
+  replay's checksum)
 - [ ] **Object pools** (Unity ObjectPool): fixed-size pools for bullets, particles and enemies, with handles that
   detect stale use
 - [ ] **Live values in the simulator** (in place of Unity's Inspector, without an editor): an API to watch and tweak

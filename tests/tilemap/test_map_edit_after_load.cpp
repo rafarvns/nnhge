@@ -72,10 +72,11 @@ NNH_TEST(load_options_cost_what_the_memory_formula_says) {
         const std::size_t before = map_bytes();
         Tilemap plain = load("levels/one");
         const std::size_t file_bytes = load_test::files().one.size();
-        CHECK(map_bytes() - before == file_bytes); // the block is the file
+        const std::size_t runtime = 132u + 4u * 9; // spec 019: the runtime area, a collision set per tile id
+        CHECK(map_bytes() - before == file_bytes + runtime); // the block is the file, then the runtime area
         const std::size_t with_plain = map_bytes();
         Tilemap roomy = load("levels/one", {.extra_tile_layers = 1, .extra_objects = 2});
-        CHECK(map_bytes() - with_plain == file_bytes + 2u * 4 * 8 + 40 + 2 * 36); // cells + layer + objects
+        CHECK(map_bytes() - with_plain == file_bytes + runtime + 2u * 4 * 8 + 40 + 2 * 36); // cells, layer, objects
     }
     nnh::shutdown();
 }

@@ -111,11 +111,25 @@ void add_animations(const MapView& v) {
     v.header().frames = 3;
 }
 
-Bytes sample_map(const char* image, bool animated) {
-    const MapCapacities caps{.width = 8, .height = 4, .tilesets = 1, .tile_ids = 8, .tile_props = 1,
+/// Spec 019: `collision_layers` on the back layer (6), on tile 5 (2), and a bad one (a float) on the ground layer.
+void add_collision_layers(const MapView& v) {
+    TileLayerEntry& back = v.tile_layers()[0];
+    add_property(v, {&back.properties_first, &back.properties_count}, "collision_layers", PropertyType::Int).value = 6;
+    TileLayerEntry& ground = v.tile_layers()[1];
+    const float bad = 2.5f;
+    PropertyEntry& p =
+        add_property(v, {&ground.properties_first, &ground.properties_count}, "collision_layers", PropertyType::Float);
+    std::memcpy(&p.value, &bad, sizeof bad);
+    const int entry = add_tile_props(v, 5);
+    TilePropsEntry& t = v.tile_props()[entry];
+    add_property(v, {&t.properties_first, &t.properties_count}, "collision_layers", PropertyType::Int).value = 2;
+}
+
+Bytes sample_map(const char* image, bool animated, bool layered = false) {
+    const MapCapacities caps{.width = 8, .height = 4, .tilesets = 1, .tile_ids = 8, .tile_props = layered ? 2 : 1,
                              .animations = animated ? 2 : 0, .animation_frames = animated ? 3 : 0,
-                             .tile_layers = 2, .object_layers = 1, .objects = 2, .properties = 5,
-                             .string_bytes = 128};
+                             .tile_layers = 2, .object_layers = 1, .objects = 2, .properties = layered ? 8 : 5,
+                             .string_bytes = layered ? 160 : 128};
     Bytes file(map_layout(caps).total);
     init_map_block(file.data(), caps, 16, 16);
     const MapView v = view(file);
@@ -128,6 +142,7 @@ Bytes sample_map(const char* image, bool animated) {
     PropertyEntry& music = add_property(v, {&h.properties_first, &h.properties_count}, "music", PropertyType::String);
     music.value = str(v, "theme");
     if (animated) add_animations(v);
+    if (layered) add_collision_layers(v);
     seal(file);
     return file;
 }
@@ -137,6 +152,8 @@ Bytes sample_map(const char* image, bool animated) {
 Bytes sample(const char* image) { return sample_map(image, false); }
 
 Bytes animated(const char* image) { return sample_map(image, true); }
+
+Bytes layered(const char* image) { return sample_map(image, false, true); }
 
 Bytes minimal() {
     const MapCapacities caps{.width = 1, .height = 1, .string_bytes = 1};

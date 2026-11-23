@@ -53,6 +53,10 @@ bool tileset_texture_alive(const Tilemap& map, int tileset);
 Result<Tilemap> tilemap_from_file(const void* data, std::size_t size, const LoadTilemapOptions& options,
                                   const char* name);
 
+/// Reads the `collision_layers` int properties of a loaded map's tile layers and tiles into its runtime sets
+/// (spec 019 FR-6); a non-int or 0 value is ignored with one warning per map naming `name` (map_load_layers.cpp).
+void load_collision_layers(Tilemap& map, const char* name);
+
 /// Frees the tileset textures load_tilemap loaded into the block (Tilemap::reset calls it).
 void release_map_textures(std::uint8_t* block);
 

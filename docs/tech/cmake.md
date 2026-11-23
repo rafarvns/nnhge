@@ -123,7 +123,7 @@ files `engine/core/src/remote/remote_wire.cpp` and `core/crc32.cpp` (spec 013: t
 the screenshots' PNG CRCs), with `engine/core/src` on its include path, so both ends share one implementation. With MinGW they link the C++ runtime statically (`-static`): Git for Windows puts an older `libstdc++-6.dll` first on the PATH, which made the test program fail to start (exit code 127, no output) as soon as it used `std::filesystem`.
 
 **nnh-assetc** (spec 012, decision D27): the asset converter the build runs on Tiled maps and Aseprite exports
-(spec 016: `nnh-assetc sprite`, version 0.3.0), so games with maps or exports need it in **every** preset, including cross ones that have no host compiler of their own.
+(spec 016: `nnh-assetc sprite`; version 0.4.0 since spec 019 checks `collision_layers`), so games with maps or exports need it in **every** preset, including cross ones that have no host compiler of their own.
 `cmake/nnh_host_tools.cmake` declares the target `nnh_assetc` everywhere, and `nnh_assetc_command(<cmd> <deps>)`
 gives an asset step the program to run and what to depend on:
 
@@ -179,7 +179,7 @@ plus the romfs and `.3dsx` (3.2–3.3 s in all). Numbers in the [ROADMAP](../ROA
 
 ```sh
 scripts/dkp.sh cmake --build --preset 3ds-release --target nnh_assetc   # build it for the host explicitly
-build/3ds-release/_host/assetc/nnh-assetc --version                       # nnh-assetc 0.3.0 (crc32 CBF43926)
+build/3ds-release/_host/assetc/nnh-assetc --version                       # nnh-assetc 0.4.0 (crc32 CBF43926)
 ```
 
 ### Data assets (DATA_SCHEMA)

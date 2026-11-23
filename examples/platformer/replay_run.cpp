@@ -41,7 +41,8 @@ std::uint32_t checksum_add(std::uint32_t sum, const ReplaySample& sample) {
     sum = add_word(sum, bits_of(sample.camera.x));
     sum = add_word(sum, bits_of(sample.camera.y));
     sum = add_word(sum, sides);
-    return add_word(sum, static_cast<std::uint32_t>(sample.coins));
+    sum = add_word(sum, static_cast<std::uint32_t>(sample.coins));
+    return add_word(sum, sample.turrets);
 }
 
 ReplayRun::ReplayRun(const ReplaySegment* segments, int count) {

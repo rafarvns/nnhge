@@ -18,4 +18,10 @@ bool read_properties(json::Ref array, const std::string& where, Properties& out,
 /// when it is there but not a bool.
 bool take_bool(Properties& props, const char* name, const std::string& where, bool& value, std::string& error);
 
+/// Checks a `collision_layers` property (spec 019 FR-7): an int (a Tiled flag enum saved as a number is one) other
+/// than 0. It stays a property (the engine reads it at load). `zero_hint` ends the message for 0 ("untick
+/// collision instead"). False with `error` set ("<where>: property \"collision_layers\" ...").
+bool check_collision_layers(const Properties& props, const std::string& where, const char* zero_hint,
+                            std::string& error);
+
 } // namespace nnh::assetc

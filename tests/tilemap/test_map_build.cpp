@@ -6,6 +6,7 @@
 #include "map_fixture.hpp"
 #include "nnh/memory.hpp"
 #include "tilemap/map_layout.hpp"
+#include "tilemap/map_runtime.hpp"
 #include "tilemap/tilemap_internal.hpp"
 
 using map_test::make;
@@ -38,20 +39,21 @@ NNH_TEST(a_map_is_one_block_under_the_tilemap_tag_sized_by_the_formula) {
     {
         Tilemap map = make({.width = 40, .height = 15});
         CHECK(map_blocks() == 1);
-        CHECK(map_bytes() - before == 11940); // the default capacities, by the formula in docs/api/tilemap.md
+        CHECK(map_bytes() - before == 13100); // the default capacities, by the formula in docs/api/tilemap.md
         const TilemapDesc desc{.width = 40, .height = 15};
-        CHECK(map_bytes() - before == nnh::detail::map_layout(nnh::detail::capacities_for(desc)).total);
+        CHECK(map_bytes() - before == nnh::detail::map_block_bytes(nnh::detail::capacities_for(desc)));
     }
     CHECK(map_bytes() == before);
     CHECK(map_blocks() == 0);
 }
 
 NNH_TEST(the_memory_examples_in_the_docs_are_exact) {
-    const auto bytes = [](const TilemapDesc& d) { return nnh::detail::map_layout(nnh::detail::capacities_for(d)).total; };
+    const auto bytes = [](const TilemapDesc& d) { return nnh::detail::map_block_bytes(nnh::detail::capacities_for(d)); };
     CHECK(bytes({.width = 240, .height = 30, .max_tile_layers = 3, .max_tilesets = 1, .max_tile_ids = 128,
-                 .max_object_layers = 1, .max_objects = 40, .max_properties = 60, .string_bytes = 1024}) == 47676);
+                 .max_object_layers = 1, .max_objects = 40, .max_properties = 60, .string_bytes = 1024}) ==
+          47676 + 132 + 4 * 129);
     CHECK(bytes({.width = 512, .height = 512, .max_tile_layers = 4, .max_tilesets = 2, .max_tile_ids = 1024}) ==
-          2108132);
+          2108132 + 132 + 4 * 1025);
 }
 
 NNH_TEST(a_map_is_freed_by_reset_and_becomes_empty) {

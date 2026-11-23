@@ -1,0 +1,96 @@
+# Spec 019 AC-5/AC-6/AC-7, automatic (spec 013): the playground's ray moved with the stick (first-hit lines), the
+# water bit of the mask toggled (the ray passes the pool), the three modes (screenshots), one-way cells ignored,
+# touches on the bottom screen (what is under each point), then the self-check, whose checksum lines must be the
+# PC's bit for bit, then the bench (rays < 2 ms per frame, points <= 0.1 us per box, moves recorded).
+# PC:      nnh run queries --pc --script examples/queries/tests/check.nnhs
+# Console: nnh run queries --script examples/queries/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines below are the PC's (pc-debug). The first-hit and "under:" lines change only if the room, the
+# moves below or the queries change; the checksum lines only if the script in self_check.cpp or the collision module's
+# arithmetic changes: then run `QUERIES_DEMO=check NNH_EXIT_AFTER_FRAMES=90 build/pc-debug/examples/queries/queries.exe`,
+# copy its lines here and kQueriesCheckGolden into self_check.hpp (and the checkpoints into
+# tests/queries_example/test_self_check.cpp).
+fail-on "] E "
+fail-on "queries: FAIL"
+
+# First hit: the target starts at (330, 200); the ray stops flush on a wall's left face.
+wait 30
+screenshot first
+# The stick moves the target 2 px per frame: left 90 frames, then down 8.
+stick circle -1 0
+wait 90
+stick circle 0 0
+wait 5
+stick circle 0 -1
+wait 8
+stick circle 0 0
+wait 10
+expect "queries: first hit cell 6,9 solid fraction 0.5909 normal 0,-1" 1
+screenshot pool
+
+# Without the water bit the ray goes over the pool ("queries: mask 0x1D" comes in the same frame, just before).
+tap A
+expect "queries: first hit none" 10
+wait 10
+screenshot water
+tap A
+expect "queries: first hit cell 6,9 solid fraction 0.5909 normal 0,-1" 10
+wait 10
+
+# The modes (X): all hits with the cells crossed, then a box cast, then back.
+tap X
+expect "queries: mode all" 10
+wait 10
+screenshot all
+tap X
+expect "queries: mode cast" 10
+wait 10
+screenshot cast
+tap X
+expect "queries: mode first" 10
+wait 10
+tap Y
+expect "queries: one-way ignored" 10
+wait 10
+tap Y
+expect "queries: one-way blocks" 10
+wait 10
+
+# What is under a touch: the bottom screen shows the room from world x 40.
+touch 72 152
+expect "under: cell 7,9 solid layers 0x2 tile 2 boxes 0" 5
+wait 5
+untouch
+wait 10
+touch 132 124
+expect "under: cell 10,7 empty layers 0x0 tile 4 boxes 1" 5
+wait 5
+untouch
+wait 10
+touch 210 82
+expect "under: cell 15,5 one-way layers 0x1 tile 3 boxes 0" 5
+wait 5
+screenshot touch
+untouch
+wait 10
+
+# The self-check (SELECT): 4096 rays and 512 box casts, a checksum every 1024 rays, then the verdict.
+tap SELECT
+expect "queries: self-check started" 20
+expect "queries: 1024 sum 36C6AD9D" 60
+expect "queries: 2048 sum 6A48E776" 60
+expect "queries: 3072 sum F9B05D2F" 60
+expect "queries: 4096 sum C8724E5B" 60
+expect "queries: PASS 4ACAA177" 60
+wait 10
+screenshot self-check
+
+# The bench (SELECT): about 20 s; PASS or FAIL against the targets, the move times recorded.
+tap SELECT
+expect "queries bench: started" 20
+expect "queries bench: rays avg" 700
+expect "queries bench: points avg" 400
+expect "queries bench: move unfiltered" 400
+wait 10
+screenshot bench
+end

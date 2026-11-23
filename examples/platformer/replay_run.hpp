@@ -36,12 +36,14 @@ struct ReplaySample {
     nnh::Vec2 camera{}; ///< the top screen's camera
     nnh::collision::Sides touching{};
     int coins = 0; ///< coins collected in the level so far
+    std::uint32_t turrets = 0; ///< the turrets' state word (TurretBook::state(), spec 019): every ray they cast
 };
 
 inline constexpr std::uint32_t kChecksumStart = 2166136261u; ///< FNV-1a's offset basis
 
 /// FNV-1a over the sample's words (box x, box y, camera x, camera y as float bits; touching sides as bits
-/// left 1, right 2, ceiling 4, floor 8; coins), each as 4 little-endian bytes: the same on every system.
+/// left 1, right 2, ceiling 4, floor 8; coins; the turrets' word), each as 4 little-endian bytes: the same on
+/// every system.
 std::uint32_t checksum_add(std::uint32_t sum, const ReplaySample& sample);
 
 /// What recording a frame finished.

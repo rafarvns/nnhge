@@ -166,7 +166,7 @@ refinements", as in plans 012–018.
 
 ## Stage 7: `examples/queries` (PC)
 
-- [ ] **T7.1** Example core: original tileset from `art/make_art.py` (wall, water, plank, floor; tile properties
+- [x] **T7.1** Example core: original tileset from `art/make_art.py` (wall, water, plank, floor; tile properties
   `name`), the room built in code (25 × 15 tiles of 16 px: a `walls` collision layer on `kWorld`, a `water` collision
   layer on `kWater`, one-way planks on `kWorld`), 12 boxes on three layers (red, green, blue), a fixed emitter and a
   target moved by Circle Pad / D-Pad; modes (X): first hit, all hits with the cells crossed shaded, box cast; Y
@@ -176,13 +176,13 @@ refinements", as in plans 012–018.
   `examples/CMakeLists.txt`. Test: builds; PC screenshots of the five presets (`NNH_EXIT_AFTER_FRAMES`,
   `NNH_SCREENSHOT`) read back: crossed cells under the ray, the hit flush on the wall with its normal, the water
   passed with its bit off, the cast box flush against a box. Covers AC-5, FR-8..FR-13.
-- [ ] **T7.2** The bottom screen: the room through `Camera2D{position (40, 0)}`, a touch → `world = position +
+- [x] **T7.2** The bottom screen: the room through `Camera2D{position (40, 0)}`, a touch → `world = position +
   touch`, marked on both screens; the HUD lists the cell (x, y, kind, `collision_layers_at`), the tile id and its
   properties, and the boxes containing the point (`boxes_at`); logs `under: cell 5,7 solid layers 0x1 tile 3 boxes 2`
   on each touch, and `queries: first hit cell 12,6 solid fraction 0.4375 normal -1,0` (or `box 3 ...`, `none`) when
   the first hit changes. Files: `queries_scene.cpp`, `hud.{hpp,cpp}`. Test: PC screenshot `touch`; the log lines in a
   `--pc` run. Covers AC-5, FR-14.
-- [ ] **T7.3** Self-check (AC-2): `self_check.{hpp,cpp}` (pure: a fixed array grid with solid and one-way cells, 64
+- [x] **T7.3** Self-check (AC-2): `self_check.{hpp,cpp}` (pure: a fixed array grid with solid and one-way cells, 64
   boxes on layers from the hash, 4096 rays — `raycast` grid/boxes/both, `raycast_all` grid and boxes with capacity
   8, `cells_crossed` with capacity 32, `line_of_sight`, filters from the hash — then 512 box casts; FNV-1a over every
   result's bits; a checkpoint every 1024 rays); golden values from the simulator in `kQueriesCheckGolden`;
@@ -190,13 +190,13 @@ refinements", as in plans 012–018.
   `queries: FAIL ...`. Files: `examples/queries/self_check.{hpp,cpp}`, `self_check_scene.{hpp,cpp}`,
   `tests/queries_example/test_self_check.cpp`, `tests/CMakeLists.txt`. Test: the unit test against the goldens;
   ctest `queries_self_check_pc`. Covers AC-2, AC-6, FR-16.
-- [ ] **T7.4** [P] Bench (AC-7): `bench_scene` on the room's filtered grid + 64 boxes: 128 first-hit rays of 0–400 px
+- [x] **T7.4** [P] Bench (AC-7): `bench_scene` on the room's filtered grid + 64 boxes: 128 first-hit rays of 0–400 px
   per frame for 600 frames, then 256 point queries over 256 boxes per frame, then 64 `move`s per frame through
   `collision_grid()` and through a filtered grid; profile scopes; logs `queries bench: rays avg X ms worst Y ms
   (target < 2 ms) PASS|FAIL`, `queries bench: points avg X ms, Z us per box (target <= 0.1 us) PASS|FAIL`,
   `queries bench: move unfiltered X us filtered Y us`. Files: `examples/queries/bench_scene.{hpp,cpp}`. Test: PC run
   logs the lines. Covers AC-7.
-- [ ] **T7.5** The script `examples/queries/tests/check.nnhs`: screenshots of each mode (set by presses), a mask
+- [x] **T7.5** The script `examples/queries/tests/check.nnhs`: screenshots of each mode (set by presses), a mask
   toggle that lets the ray pass the water (expect the first-hit line), stick moves with the expected first-hit lines,
   touches at fixed bottom-screen points with their expected `under:` lines, SELECT → every `queries: <n> sum` line
   and `queries: PASS`, then the bench lines; `fail-on "queries: FAIL"`, `fail-on "] E "`. Test: `nnh run queries --pc
@@ -204,7 +204,7 @@ refinements", as in plans 012–018.
 
 ## Stage 8: the platformer's turrets, opt-in checks
 
-- [ ] **T8.1** Turrets, pure: `TurretBook` (≤ 4 turrets, ≤ 16 bullets): line of sight each frame within a range box
+- [x] **T8.1** Turrets, pure: `TurretBook` (≤ 4 turrets, ≤ 16 bullets): line of sight each frame within a range box
   (`line_of_sight` through the line-of-sight grid with `ignore_one_way`), fire every 90 frames while seen, 8 fixed
   directions of short binary fractions toward the player, bullets moved by `raycast(bullet_grid, bodies, pos, pos +
   vel, hit, {.mask = kBulletMask})` (bodies = the player and the turrets in one struct view: turrets filtered out by

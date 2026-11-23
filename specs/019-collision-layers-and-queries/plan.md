@@ -649,3 +649,41 @@ Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
 - T6.2: ctest `platformer_replay_matches_script` passes and `nnh run platformer --pc --no-build --script
   examples/platformer/tests/level.nnhs` → `nnh: PASS (74 lines, frames 1–1553)`, both with the **unchanged**
   checksum lines; `compare.sh`: level 1 and the bench identical.
+
+## Stage 7 refinements and results
+
+- **Files** as planned (`main.cpp`, `demos.hpp`, `room.{hpp,cpp}`, `queries_scene.{hpp,cpp}`, `query_draw.{hpp,cpp}`,
+  `hud.{hpp,cpp}`, `self_check{,_scene}.{hpp,cpp}`, `bench_scene.{hpp,cpp}`, `art/make_art.py` → `assets/art/tiles.png`
+  (64 × 16: wall, water, plank, floor), `tests/check.nnhs`). The room is 25 × 15 cells of 16 px (one top screen):
+  a `walls` collision layer on the default layer (the example's `bits::kWorld`), a `water` collision layer on
+  `kWater`, one-way planks (tile 3, default layer) on a plain layer, a floor layer; tiles carry a `name` property.
+  12 boxes on red / green / blue layers live in the game's own `Thing` array, read through
+  `box_view(things, 12, &Thing::box, &Thing::layers)`. The room's grid for a mask is
+  `collision_grid(mask & (kWorld | kWater))` (at most 4 masks on the map), outside Solid.
+- **Modes and logs**: X cycles first / all / cast (`queries: mode first|all|cast`); A / B / L / R toggle the water,
+  red, green, blue bits (`queries: mask 0x1D`); Y `queries: one-way ignored|blocks`; the first hit is logged whenever
+  its line changes (`queries: first hit cell 6,9 solid fraction 0.5909 normal 0,-1`, `... box 6 green ...`,
+  `queries: first hit none`), so a moving target logs a line per frame; a touch logs
+  `under: cell 7,9 solid layers 0x2 tile 2 boxes 0` (the cell's kind on the unfiltered map, `collision_layers_at`,
+  the topmost tile, the boxes under the point that pass the current mask). The HUD shows a shorter form.
+- **Cast mode** casts a 12 × 12 box centred on the emitter against the boxes only (box casts against grids are a
+  non-goal): the screenshot shows it flush against a box with the wall between ignored.
+- **Self-check**: 4096 rays and 512 casts as planned, against a 24 × 16 grid of 16 × 12 cells at (−8.5, 4.25)
+  (18 % solid, 10 % one-way), clipped (outside Empty) on even rays and walled (outside Solid) on odd ones, 64 boxes
+  (every 13th without width, every 11th on no layers), points on the 1/16 lattice, exactly on grid lines and
+  corners, off the lattice (/97, /89) and far away (±4000 px); a tenth of the rays vertical, horizontal, exactly
+  diagonal through corners or of zero length. It counts what it reaches (`Stats`): 2839 grid hits, 2176 box hits,
+  849 inside hits, 60 one-way hits, 3108 blocked sights, 391 cast hits. Golden `0x4ACAA177` (checkpoints
+  `36C6AD9D`, `6A48E776`, `F9B05D2F`, `C8724E5B`), pc-debug and pc-release; ctest `queries_self_check_pc`. On the
+  3DS `std::uint32_t` is `unsigned long`: the checksum's `mix` overloads got distinct names (`mix_float`, `mix_hit`)
+  so `mix(1u)` isn't ambiguous there.
+- **Bench** (PC simulator, Debug, `check.nnhs` run): `queries bench: rays avg 1.087 ms worst 1.937 ms (target < 2
+  ms) PASS`, `points avg 3.019 ms, 0.0461 us per box (target <= 0.1 us) PASS`, `move unfiltered 0.98 us filtered
+  1.04 us`; a second run 1.112 / 2.708 ms, 0.0452 µs, 0.87 / 0.81 µs. Unoptimised PC numbers: the console's are the
+  ones that count (stage 10).
+- **Screenshots read back** (`QUERIES_DEMO=first|all|cast|water|touch`, and the script's): the first hit flush on a
+  wall's left face with its normal; all hits with the crossed cells shaded, the wall and three boxes marked; the cast
+  box flush against a blue box; with the water bit off the ray goes over the pool to the target (`first hit none`);
+  the touch marked on both screens with `cell 7,9 solid, layers 0x2` / `tile 2 "water"`.
+- `nnh run queries --pc --no-build --script examples/queries/tests/check.nnhs` → `nnh: PASS (96 lines, frames
+  1–1561)`, twice.

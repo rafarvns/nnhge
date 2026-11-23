@@ -321,6 +321,7 @@ target_sources(nnh_tests PRIVATE
     platformer/test_player_sprite.cpp
     platformer/test_replay_run.cpp
     platformer/test_replay_script.cpp
+    platformer/test_turrets.cpp
     ${_platformer}/level_camera.cpp
     ${_platformer}/coin_book.cpp
     ${_platformer}/frame_meter.cpp
@@ -328,7 +329,8 @@ target_sources(nnh_tests PRIVATE
     ${_platformer}/player.cpp
     ${_platformer}/player_sprite.cpp
     ${_platformer}/replay_run.cpp
-    ${_platformer}/replay_script.cpp)
+    ${_platformer}/replay_script.cpp
+    ${_platformer}/turrets.cpp)
 # The replay played twice gives the same log (spec 012 T7.3, FR-10): the simulator's checksum lines must be the ones
 # the console script expects (written from an earlier PC run). Release logs no info lines, so Debug/Development only.
 if(TARGET platformer AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -360,6 +362,13 @@ if(TARGET camera AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;CAMERA_DEMO=check;NNH_EXIT_AFTER_FRAMES=615"
         PASS_REGULAR_EXPRESSION "camera: PASS 5201E6CF" FAIL_REGULAR_EXPRESSION "camera: FAIL" TIMEOUT 120)
 endif()
+# The queries example's self-check in the simulator (spec 019 AC-6): the verdict the console script waits for.
+if(TARGET queries AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME queries_self_check_pc COMMAND queries)
+    set_tests_properties(queries_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;QUERIES_DEMO=check;NNH_EXIT_AFTER_FRAMES=90"
+        PASS_REGULAR_EXPRESSION "queries: PASS 4ACAA177" FAIL_REGULAR_EXPRESSION "queries: FAIL" TIMEOUT 120)
+endif()
 # The data example's self-check in the simulator (spec 014 T8.3): the line the console script expects.
 if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME data_self_check_pc COMMAND data)
@@ -382,6 +391,8 @@ target_include_directories(nnh_actions_bench PRIVATE ${PROJECT_SOURCE_DIR}/engin
 target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
 # The camera example's self-check (spec 018 T6.2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
+# The queries example's self-check (spec 019 T7.3, AC-2): its golden checksum on every host compiler.
+target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)

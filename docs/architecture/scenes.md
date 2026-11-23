@@ -72,6 +72,11 @@ A second user is input actions ([api/actions.md](../api/actions.md#contexts-and-
 binding lasts one stay on the stack. Whether the context is on is decided when the set is evaluated, right after input
 (`scenes::top() == scene`): `BeforeUpdate` comes after that evaluation and would be one frame late (decision D32).
 
+> Status: design ([spec 020](../../specs/020-entities/spec.md), decision D35). Two more users will bind through the same
+> notifications: a **pool or world bound to a scene** is flushed on `BeforeUpdate` and cleared (remove hooks run,
+> spawns refused) on `AfterExit`. [Plan 020](../../specs/020-entities/plan.md#scene-binding-and-the-d30-proof-fr-18)
+> shows why that clear can't call into a scene that has left.
+
 Internal API: `engine/core/src/scene/scene_attachments.hpp` (`scene_attach`, `scene_detach`, `scene_notify`).
 Cost for a scene with nothing attached: one pointer and a null check per frame and per exit; a game with scenes but
 no bound set links only `scene_notify()` (+176 bytes of code on the 3DS, measured in

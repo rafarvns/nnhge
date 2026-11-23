@@ -1,7 +1,7 @@
 # Tasks 019: Collision layers and queries
 
-Status: approved (2026-11-22, maintainer pre-approved); stages 0–8 and 11 done 2026-11-23; T9.1 (VM 120, the lead)
-and T10.2 (Old 3DS, the maintainer) pending, T10.2 prepared in plan.md "Stage 10: console run (prepared)"
+Status: approved (2026-11-22, maintainer pre-approved); stages 0–8 and 11 done 2026-11-23; T9.1 passed on VM 120;
+T10.2 (Old 3DS, the maintainer) pending, T10.2 prepared in plan.md "Stage 10: console run (prepared)"
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -235,10 +235,16 @@ refinements", as in plans 012–018.
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests`, `nnh_assetc_tests` and ctest
+- [x] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests`, `nnh_assetc_tests` and ctest
   pass; the regression hash (T0.2), the 5000-ray reference comparison and the AC-2 self-check golden are identical on
   all three (they are test assertions); libFuzzer `libfuzzer_tilemap` and the assetc map target run 10 minutes each
   with the new seeds, clean. Files: tasks.md (results). Covers I, X, FR-16, AC-1, AC-2, AC-3.
+
+  **Result (2026-11-23, VM 120, merge 0950b62):** GCC 13 and GCC 14 build without warnings and pass ctest 263/263
+  (`nnh_script_pc_smoke` skipped: it needs a `pc-dev` folder); clang 18 ASan/UBSan ctest 263/263, `nnh_tests`
+  2014/2014 and `nnh_assetc_tests` 265/265 with leak checks on. libFuzzer 600 s each, seeded (`fuzz_tilemap` with the
+  5 converted `.nnhmap` files of the GCC build, `fuzz_assetc_map` with the 25 `tests/data/maps/*.tmj`): `fuzz_tilemap`
+  cov 789 → 968, `fuzz_assetc_map` cov 1137 → 1768, no crash.
 
 ## Stage 10: console check (the only steps on the 3DS)
 

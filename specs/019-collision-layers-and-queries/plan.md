@@ -768,7 +768,9 @@ corpus can start from `map_file::layered()`, the seed with `collision_layers`) a
 
 ## Stage 10: console run (prepared)
 
-T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` builds without a warning (every stage end);
+T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` builds without a warning (every stage end), and
+so do the Development (`3ds-dev`) builds of `queries`, `platformer` and `hello` (3ds-dev `hello.elf` text 217 992, as in
+stage 0; `queries.elf` text 289 568);
 `ray_distance.o` on 3ds-release is `vsqrt.f32` with no call, and no query object has a fused `vfma`/`vfms`
 (`build/ref-019/fp_check.sh`; VFPv2's chained `vmla` is allowed); 3ds-release `hello.elf` text 201 188 / data 28 352 /
 bss 106 680, as in stage 0.
@@ -796,3 +798,18 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    lines, …)`. A mismatch with the self-check of run 1 passing would be a game bug, not an engine one (risk 8).
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (about 2.5 min).
    Expected: `bench: PASS 4 layers + 300 sprites, …` (spec 012's gate still passes); `nnh: PASS`.
+
+## Stage 11 results
+
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs): `<nnh/collision.hpp>` 691 preprocessed lines
+  (stage 0: 151; `<cstdint>` is most of the growth), 0.28–0.34 s (0.27–0.32 s); `<nnh/tilemap.hpp>` 8477 lines
+  (8331), 0.42–0.46 s (0.41–0.45 s).
+- Build times: edit `hello` → simulator 1.53, 1.51, 1.56 s (stage 0: 1.49–1.94); → `.3dsx` 2.82 s (a first run that
+  reconfigured 6.5 s; stage 0: 2.71–3.05); clean `nnh_core` (pc-debug, parallel) 5.78, 5.64, 5.65 s (5.26–5.34: 16 new
+  collision files and 5 tilemap files).
+- `hello` sizes unchanged in every preset: pc-release 130 732 / 22 020 / 211 696, pc-debug 198 816 / 26 756 / 214 352,
+  3ds-release 201 188 / 28 352 / 106 680, 3ds-dev 217 992 / 32 872 / 109 288; no query, `grid_cell_masked` or
+  collision-layer symbol. The queries a game uses cost about 14 KB of 3DS text when it uses all of them
+  (`queries.elf`, Release).
+- Final: `nnh_tests` 2014 tests, `nnh_assetc_tests` 265; ctest pc-debug 264/264, pc-release 257/257; 3ds-release and
+  3ds-dev without a warning; `docs_tool.py check` 0 broken links.

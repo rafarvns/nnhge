@@ -106,6 +106,11 @@ no camera symbol in either. Edit `hello` → simulator 1.5–1.6 s, → `.3dsx` 
 preprocessed lines and 0.30–0.33 s alone (`<nnh/gfx.hpp>` 779 lines, 0.31–0.33 s). Details: plan 018, "Stage 0
 results" and "Stage 10 results".
 
+Spec 019 (collision layers and queries), 2026-11-23, same machine (devkitARM updated since spec 018: Release
+`hello.elf` text 201,188 at its stage 0): `hello` unchanged in every preset (no query symbol); edit `hello` →
+simulator 1.5–1.6 s, → `.3dsx` 2.8 s; clean `nnh_core` 5.3 → 5.7 s (21 new files); `<nnh/collision.hpp>` 151 → 691
+preprocessed lines (`<cstdint>`), 0.28–0.34 s alone. Details: plan 019, "Stage 0 results" and "Stage 11 results".
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`

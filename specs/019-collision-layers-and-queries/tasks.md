@@ -242,7 +242,7 @@ refinements", as in plans 012–018.
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
+- [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
   builds of `examples/queries` and `examples/platformer`; `objdump` of `ray_distance.cpp.o` (3DS: `vsqrt.f32`, no
   call); `hello.elf` size recorded. Files: plan.md ("Stage 10: console run (prepared)": commands and every expected
   line). Covers FR-16, AC-8.
@@ -271,7 +271,7 @@ refinements", as in plans 012–018.
   AC-9.
 - [x] **T11.3** `docs/architecture/decisions.md`: D34 change-log note "implemented" with any stage refinements.
   Covers AC-9.
-- [ ] **T11.4** Final measurements (header cost of `collision.hpp` and `tilemap.hpp`, build times, `hello` sizes) in
+- [x] **T11.4** Final measurements (header cost of `collision.hpp` and `tilemap.hpp`, build times, `hello` sizes) in
   plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
 - [x] **T11.5** `docs/ROADMAP.md`: "Collision layers and masks" and "Raycasts and shape queries" checkboxes.
 - [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").

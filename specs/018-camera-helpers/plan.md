@@ -602,7 +602,7 @@ Measured 2026-11-22 on the maintainer's Windows machine (WinLibs GCC, devkitARM)
   130 732 (**+708**, budget 512: over). x86-64 code and 16-byte function alignment in the PE make the PC count about
   2.7 times the ARM one; moving `zoomed_tile_size` out of line made both larger, moving the rounding to the tilemap side
   saved 64 bytes (3DS). The 3DS budget, the one that matters for the console (constitution II), holds; the PC overrun
-  is recorded here as a deviation.
+  is a deviation, **accepted by the maintainer** (2026-11-22).
 - T5.6: `test_zoom1_regression` passes (dst = tile size at zoom 1); `build/ref-018/compare.sh`: platformer bench and
   level 1 identical. The zoomed screenshots of the platformer bench (B cycles the zoom) are part of T7.2; the zoomed
   tiles are first checked visually with `examples/camera` (stage 6).
@@ -743,7 +743,7 @@ camera reset at init, the look-ahead and the landing threshold.
 - Build times (3 runs): edit `hello` → simulator 1.63, 1.58, 1.68 s (stage 0: 1.54–1.64); → `.3dsx` 2.83, 2.91 s (a
   first run with a reconfigure 5.4 s); clean `nnh_core` (pc-debug, parallel) 5.98, 5.67, 5.85 s (stage 0: 5.65–5.95).
 - `hello` Release: 3DS text 216 748 (+264), data 28 352 (+24), bss 106 680 (−16), `.3dsx` 262 156; PC text 130 732
-  (+708, over the 512 budget, see stage 5), no camera symbol.
+  (+708, over the 512 budget, see stage 5; accepted by the maintainer), no camera symbol.
 - `nnh_tests` (pc-debug): 1849 tests, 0 failures; ctest pc-debug 258/258, pc-release 252/252; every example script
   passes with `--pc` (`input`, `tweens`, `animation`, `actions`, `data`, `camera`, platformer `level`, `gate`,
   `zoom_gate`). Note: the test runner's `kMaxTests` is 2048 (199 left).

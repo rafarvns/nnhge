@@ -16,7 +16,7 @@ void recover(nnh::World& world) {
     for (int i = 0; i < nnh::detail::words_for(w->entities.capacity); ++i) w->cold->dying[i] = 0;
     for (int k = 0; k < w->kind_count; ++k)
         for (int i = 0; i < nnh::detail::words_for(w->kinds[k].slots.capacity); ++i) w->kinds[k].removing[i] = 0;
-    if (nnh::build::kAssertsEnabled) w->pending = static_cast<std::uint8_t>(w->pending & ~nnh::detail::kPendingDoomed);
+    if (nnh::build::kAssertsEnabled) w->pending = static_cast<std::uint32_t>(w->pending & ~nnh::detail::kPendingDoomed);
     nnh::detail::world_end_iteration(*w);
 }
 

@@ -199,7 +199,10 @@ operations, golden `C8FB9A41`) passes on every host compiler and must on the con
 
 After creation nothing allocates, logs in the normal path or calls `virtual` functions; per-kind construct, destroy and
 hook functions are plain function pointers called once per component created or destroyed. `get` and `alive`: a
-bound check, one load and one compare (plus a scan of at most 32 kind ids for `get`; `Storage<T>::get` skips it).
+bound check, one load and one compare, plus the kind lookup for `get` — one compare each for the first four kinds
+registered (register the kinds you look up most first), a scan for the rest. For loops of lookups take
+`storage<T>()` once: its `get` keeps the record layout in the view (19 ARM instructions against 33). Random lookups
+over more than the Old 3DS's 16 KB data cache are bound by memory, not instructions.
 `spawn`/`add`: one scan of a free bitmap from a hint word. Iterations: proportional to the first kind's extent. `find`:
 proportional to the entity extent × tags per entity. Old 3DS numbers (AC-7: `each<Body, Velocity>` over 1024, 256
 spawn/destroy rounds, `find` over 1024 × 4 tags, 10 000 `get`, the storage `get`) come from `examples/entities`'s

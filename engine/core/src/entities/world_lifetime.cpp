@@ -34,7 +34,7 @@ void world_end_iteration(WorldHot& w) {
     if ((w.pending & kPendingFresh) != 0) {
         w.entities.end_iteration();
         for (int k = 0; k < w.kind_count; ++k) w.kinds[k].slots.end_iteration();
-        w.pending = static_cast<std::uint8_t>(w.pending & ~kPendingFresh);
+        w.pending = static_cast<std::uint32_t>(w.pending & ~kPendingFresh);
     }
     world_finish(w);
 }
@@ -56,7 +56,7 @@ World::~World() {
         detail::world_misuse("nnh::World destroyed inside its own iteration or remove hook");
         hot_ = nullptr;
         detail::world_unbind(*w);
-        w->pending = static_cast<std::uint8_t>(w->pending | detail::kPendingDoomed); // freed when it ends
+        w->pending = static_cast<std::uint32_t>(w->pending | detail::kPendingDoomed); // freed when it ends
         return;
     }
     detail::world_unbind(*w);

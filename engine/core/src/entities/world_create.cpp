@@ -65,10 +65,12 @@ void init_kind(WorldHot& w, const WorldLayout& l, unsigned char* bytes, int k, c
     kh.slots.fresh = bits + 2 * kl.words;
     kh.removing = bits + 3 * kl.words;
     kh.slots.capacity = d.capacity;
+    kh.slots.init_padding();
     kh.size = d.size;
     kc.construct = d.construct;
     kc.destroy = d.destroy;
     kc.hook = d.on_remove;
+    if (kc.hook) w.cold->hooked |= 1u << k;
     for (int s = 0; s < d.capacity; ++s) kh.owner[s] = kNoSlot;
     for (int s = 0; s <= d.capacity; ++s) d.construct(component_at(w, k, s));
 }
@@ -98,6 +100,7 @@ WorldHot* build(const WorldDesc& desc, const ComponentDesc* kinds, int count, co
     w->entities.fresh = bits + 2 * l.entity_words;
     w->cold->dying = bits + 3 * l.entity_words;
     w->entities.capacity = desc.max_entities;
+    w->entities.init_padding();
     w->cold->queue_next = reinterpret_cast<std::uint16_t*>(bytes + l.queue);
     init_records(*w);
     for (int k = 0; k < count; ++k) {

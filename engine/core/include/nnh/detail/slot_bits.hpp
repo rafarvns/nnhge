@@ -32,7 +32,9 @@ inline int lowest_bit(std::uint32_t x) {
 constexpr int words_for(int capacity) { return (capacity + 31) >> 5; }
 
 /// The bitmaps and counters of one table of slots. The bitmaps live elsewhere (inside a pool or a world's block);
-/// slots at or past `capacity` are never taken. Invariant: every word below `hint` has no free slot.
+/// slots at or past `capacity` are never taken: init_padding() sets their bits in the last quarantine word for good
+/// (flush and reset keep them), so find_free needs no capacity compare. Invariant: every word below `hint` has no
+/// free slot.
 struct SlotTable {
     std::uint32_t* live = nullptr;
     std::uint32_t* quarantine = nullptr;
@@ -43,20 +45,34 @@ struct SlotTable {
     int peak = 0;   ///< highest count since the last reset of the stats
     int misses = 0; ///< takes refused because the table was full
     int hint = 0;   ///< first word that may hold a free slot
+    int words = 0;  ///< words_for(capacity), set by init_padding()
+    std::uint32_t pad = 0; ///< the last word's bits past `capacity`, always set in `quarantine`
+
+    /// After `capacity` is set and the bitmaps zeroed: the padding bits, the word count.
+    void init_padding() {
+        words = words_for(capacity);
+        pad = (capacity & 31) != 0 ? ~0u << (capacity & 31) : 0u;
+        if (words > 0) quarantine[words - 1] |= pad;
+    }
+    /// What quarantine word `w` holds when nothing in it is quarantined.
+    std::uint32_t empty_quarantine(int w) const { return w == words - 1 ? pad : 0u; }
 
     bool is_live(int slot) const { return ((live[slot >> 5] >> (slot & 31)) & 1u) != 0; }
 
     /// The lowest slot neither live nor quarantined, or −1 when there is none.
     int find_free() {
-        const int words = words_for(capacity);
-        for (int w = hint; w < words; ++w) {
-            const std::uint32_t free = ~(live[w] | quarantine[w]);
+        const int n = words;
+        if (hint < n) { // the common case, straight-line: the hint word has room
+            const std::uint32_t free = ~(live[hint] | quarantine[hint]);
+            if (free != 0) return (hint << 5) + lowest_bit(free);
+        }
+        for (int w = hint + 1; w < n; ++w) {
+            const std::uint32_t free = ~(live[w] | quarantine[w]); // padding bits read as taken
             if (free == 0) continue;
             if (w != hint) hint = w; // the common case (the hint word has room) stores nothing
-            const int slot = (w << 5) + lowest_bit(free);
-            return slot < capacity ? slot : -1;
+            return (w << 5) + lowest_bit(free);
         }
-        hint = words;
+        hint = n;
         return -1;
     }
 
@@ -79,29 +95,30 @@ struct SlotTable {
 
     /// Quarantined slots become free. Returns whether any was.
     bool flush() {
-        const int words = words_for(extent);
+        const int n = words_for(extent);
         bool any = false;
-        for (int w = 0; w < words; ++w) {
-            if (quarantine[w] == 0) continue;
+        for (int w = 0; w < n; ++w) {
+            const std::uint32_t empty = empty_quarantine(w);
+            if (quarantine[w] == empty) continue;
             if (!any && w < hint) hint = w;
             any = true;
-            quarantine[w] = 0;
+            quarantine[w] = empty;
         }
         return any;
     }
 
     /// The end of the outermost iteration: nothing is fresh any more.
     void end_iteration() {
-        const int words = words_for(extent);
-        for (int w = 0; w < words; ++w) fresh[w] = 0;
+        const int n = words_for(extent);
+        for (int w = 0; w < n; ++w) fresh[w] = 0;
     }
 
     /// Every slot free, extent 0 (the caller has emptied the slots).
     void reset() {
-        const int words = words_for(extent);
-        for (int w = 0; w < words; ++w) {
+        const int n = words_for(extent);
+        for (int w = 0; w < n; ++w) {
             live[w] = 0;
-            quarantine[w] = 0;
+            quarantine[w] = empty_quarantine(w);
             fresh[w] = 0;
         }
         extent = 0;

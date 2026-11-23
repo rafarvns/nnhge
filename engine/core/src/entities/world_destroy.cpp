@@ -33,15 +33,17 @@ int dequeue(WorldCold& c) {
 void process(World& world, WorldHot& w, std::uint32_t slot) {
     std::uint32_t* r = record_at(w, slot);
     const Entity e = make_handle<World>(slot, r[0] & 0xFFFFu);
-    for (int k = 0; k < w.kind_count; ++k) { // step 1: hooks, data intact
+    // Step 1: the hooks of the entity's hooked kinds, lowest bit first = registration order, data intact. (The kinds
+    // mask can't change meanwhile: adds and removes on a dying entity are refused.) Kinds without a hook cost nothing.
+    for (std::uint32_t bits = r[1] & w.cold->hooked; bits != 0; bits &= bits - 1) {
         if ((w.pending & kPendingDoomed) != 0) return;
-        if ((r[1] >> k & 1u) == 0 || !w.cold->kinds[k].hook) continue; // no call for kinds without a hook
+        const int k = lowest_bit(bits);
         run_hook(world, w, k, record_slots(w, r)[k], e);
     }
     if ((w.pending & kPendingDoomed) != 0) return;
-    std::uint16_t* slots = record_slots(w, r); // step 2: gone
-    for (int k = 0; k < w.kind_count; ++k) {
-        if ((r[1] >> k & 1u) == 0) continue;
+    std::uint16_t* slots = record_slots(w, r); // step 2: gone, only the kinds the entity has
+    for (std::uint32_t bits = r[1]; bits != 0; bits &= bits - 1) {
+        const int k = lowest_bit(bits);
         const int s = slots[k];
         slots[k] = kNoSlot;
         detach_component(w, k, s);
@@ -86,7 +88,7 @@ bool World::destroy(Entity e) {
     if (w == nullptr) return false;
     if (detail::live_record(*w, e) == nullptr || detail::bit_set(w->cold->dying, e.slot())) return false;
     detail::world_destroy(*this, *w, e.bits() & 0xFFFFu);
-    detail::world_finish(*w);
+    detail::world_finish_if_doomed(*w);
     return true;
 }
 

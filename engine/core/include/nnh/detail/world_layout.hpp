@@ -25,8 +25,8 @@ inline constexpr std::uint32_t kEntityLive = 1u << 16;
 /// A record's slot field for a kind the entity doesn't have.
 inline constexpr std::uint16_t kNoSlot = 0xFFFFu;
 /// WorldHot::pending bits: work for the end of the outermost iteration.
-inline constexpr std::uint8_t kPendingFresh = 1;  ///< something was spawned or added during it
-inline constexpr std::uint8_t kPendingDoomed = 2; ///< the world was destroyed during it (Release misuse path)
+inline constexpr std::uint32_t kPendingFresh = 1;  ///< something was spawned or added during it
+inline constexpr std::uint32_t kPendingDoomed = 2; ///< the world was destroyed during it (Release misuse path)
 
 /// One component kind's storage: T[capacity + 1] (the last is the checked accessor's scratch), the owner entity slot
 /// of each component slot, and its slot table (live, quarantine, fresh bitmaps).
@@ -52,7 +52,7 @@ struct WorldHot {
     void* const* kind_data = nullptr; ///< each kind's data, then null: index kind_count is the spare kind
     SlotTable entities;
     int iterating = 0;
-    std::uint8_t pending = 0;
+    std::uint32_t pending = 0; ///< a word, not a byte: a byte store may alias any counter
     WorldCold* cold = nullptr;
     TypeId ids[kMaxKinds] = {}; ///< kind_count type ids, in registration order (in the header: no pointer to chase)
 };
@@ -76,13 +76,33 @@ inline std::uint32_t* live_record(const WorldHot& w, Entity e) {
     return r[0] == ((e.bits() >> 16) | kEntityLive) ? r : nullptr;
 }
 
-/// The registration index of kind T in `w`, or -1. A scan of at most 32 ids (hoist it with World::storage<T>()).
+/// The registration index of kind T in `w`, or -1. The first four registered kinds are found by straight compares
+/// (the ids past kind_count are null and no type id is: no count check); the others by a scan of at most 32 ids.
+/// Register the kinds looked up most first; hoist the lookup out of loops with World::storage<T>().
 template <typename T>
 int kind_index(const WorldHot& w) {
     const TypeId id = type_id<T>();
-    for (int k = 0; k < w.kind_count; ++k)
+    if (w.ids[0] == id) return 0;
+    if (w.ids[1] == id) return 1;
+    if (w.ids[2] == id) return 2;
+    if (w.ids[3] == id) return 3;
+    for (int k = 4; k < w.kind_count; ++k)
         if (w.ids[k] == id) return k;
     return -1;
+}
+
+/// What an empty Storage view reads: one record, never live.
+inline constexpr std::uint32_t kNoRecord[1] = {0};
+
+/// The slot of `e`'s component in the u16 field `field` of its record (kNoSlot: none, or `e` stale). The caller reads
+/// the layout (records, stride, capacity, field) before any branch, so a loop of lookups keeps it in registers.
+inline std::uint32_t slot_by_handle(const std::uint32_t* records, std::uint32_t stride, std::uint32_t capacity,
+                                    std::uint32_t field, Entity e) {
+    const std::uint32_t slot = e.bits() & 0xFFFFu;
+    if (slot >= capacity) return kNoSlot;
+    const std::uint32_t* r = records + slot * stride;
+    if (r[0] != ((e.bits() >> 16) | kEntityLive)) return kNoSlot;
+    return reinterpret_cast<const std::uint16_t*>(r)[field];
 }
 
 inline bool bit_set(const std::uint32_t* bits, int slot) { return ((bits[slot >> 5] >> (slot & 31)) & 1u) != 0; }

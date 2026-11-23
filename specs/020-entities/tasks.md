@@ -268,7 +268,7 @@ plan.md as "Stage N refinements", as in plans 012–019.
   3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS`
      (spec 012's gate still passes).
   Files: plan.md ("Stage 10 results": verdicts, bench numbers, log paths). Covers AC-4, AC-6, AC-7.
-- [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
+- [ ] **T10.3** (optimisation round done, see plan.md "Console bench refinement"; budgets after the next console run) (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risks 1–2 without changing a result (every golden holds), then T10.2 run 1 again; if still missed, the
   maintainer sets the budget from the measurement with margin, written in the spec's AC-7 and
   `docs/api/entities.md`/`pool.md` with the numbers. Files: plan.md ("Console bench refinement"). Covers AC-7.

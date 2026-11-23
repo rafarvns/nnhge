@@ -27,22 +27,11 @@ int world_add(WorldHot& w, int kind, Entity e) {
     }
     const bool iterating = w.iterating > 0;
     k.slots.take(slot, iterating);
-    if (iterating) w.pending = static_cast<std::uint8_t>(w.pending | kPendingFresh);
+    if (iterating) w.pending = static_cast<std::uint32_t>(w.pending | kPendingFresh);
     k.owner[slot] = static_cast<std::uint16_t>(entity);
     slots[kind] = static_cast<std::uint16_t>(slot);
     r[1] |= 1u << kind;
     return slot;
-}
-
-void detach_component(WorldHot& w, int kind, int slot) {
-    KindHot& k = w.kinds[kind];
-    const KindCold& kc = w.cold->kinds[kind];
-    k.slots.retire(slot);
-    k.owner[slot] = kNoSlot;
-    k.dirty = true;
-    unsigned char* p = component_at(w, kind, slot);
-    if (kc.destroy != nullptr) kc.destroy(p);
-    kc.construct(p);
 }
 
 /// Runs `kind`'s hook for the component in `slot` of entity `e` (the component still attached). Its `removing` bit
@@ -73,7 +62,7 @@ bool world_remove(World& world, int kind, Entity e) {
         detach_component(w, kind, slot);
         if (w.cold->hook_depth == 0) drain_queue(world, w);
     }
-    world_finish(w);
+    world_finish_if_doomed(w);
     return true;
 }
 

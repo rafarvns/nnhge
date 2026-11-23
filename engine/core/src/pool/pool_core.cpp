@@ -29,7 +29,7 @@ bool pool_clear_allowed(const PoolCore& core) {
 
 void pool_end_iteration(PoolCore& core) {
     core.slots.end_iteration();
-    core.any_fresh = false;
+    core.any_fresh = 0;
 }
 
 void pool_init_inline(PoolCore& core, int capacity, std::uint32_t* meta, std::uint32_t* bitmaps, void* data) {
@@ -41,6 +41,7 @@ void pool_init_inline(PoolCore& core, int capacity, std::uint32_t* meta, std::ui
     core.slots.quarantine = bitmaps + words;
     core.slots.fresh = bitmaps + 2 * words;
     core.slots.capacity = capacity;
+    core.slots.init_padding();
     core.data = data;
 }
 

@@ -980,3 +980,63 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    mismatch here would be the game's (sparkle tweens, the bound world), not the module's.
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (about 2.5 min).
    Expected: `bench: PASS 4 layers + 300 sprites, …` (spec 012's gate still passes); `nnh: PASS`.
+
+## Console bench refinement
+
+**First console run** (Old 3DS XL, Development, the coordinator's run of `check.nnhs`): every logic line and the
+self-check equal the PC's (`entities: PASS C8FB9A41`); platformer `level.nnhs` PASS with the same sums (worst 19.4 ms,
+missed 0), `gate.nnhs` PASS. Bench: `each` 0.473 ms (worst 0.583, target 0.5) PASS; `spawn` 1.486 (1.757; target 1.0)
+FAIL; `find` 0.272 (0.375; 0.1) FAIL; `get` 5.264 (5.428; 0.5) FAIL; `storage get` 4.197 (4.346; information);
+`pool` 0.509 (0.584; 0.3) FAIL.
+
+**Reading:** `storage get` at ≈ 113 cycles per lookup for 19 instructions is memory-bound: 10 000 random handles over
+16 KB of records and 20 KB of bodies, a 16 KB L1D and no L2 — two misses per lookup. Not chased (the handle order is the
+workload). The ≈ 1 ms between `get` and `storage get` is instructions (the kind lookup and header loads per call).
+`find` (16 instructions per record, ≈ 71 cycles) is a sequential walk over 28 KB of records that misses on almost every
+record: no hardware prefetcher on the ARM11. `pool` is instruction-bound (≈ 94 instructions per pair, ≈ 137 cycles); no
+rescan from word 0 (the hint word advances as words fill and only a flush lowers it). `spawn`: ≈ 850 instructions per
+entity, mostly `world_add` × 3 and `destroy`.
+
+**Changes** (no result changes; every golden holds; AC-7's targets untouched):
+
+- **Slot tables** (`slot_bits.hpp`): `init_padding()` keeps the last word's bits past `capacity` set in the
+  quarantine bitmap for good (flush and reset restore them), so `find_free` needs no capacity compare; `words` is
+  stored; the hint word is checked straight-line before the scan loop. Test first:
+  `slot_table_padding_past_the_capacity_reads_as_taken_through_flush_and_reset`,
+  `slot_table_flush_reports_only_real_quarantine`. `KindHot` grew to 64 bytes: indexing a kind is now a shift.
+- **Pools**: `release` validates the handle directly (no pointer to null-test); `any_fresh` is a word (a byte store may
+  alias any counter under C++'s rules).
+- **Worlds**: `kind_index` checks the first four registered kinds by straight compares (no count check: the ids past
+  `kind_count` are null); `get<T>` reads the header before the kind lookup; `detach_component` is inline in `destroy`;
+  `destroy`'s step 1 walks only the hooked kinds the entity has (a `hooked` mask) and step 2 only the kinds it has,
+  lowest bit first (= registration order); `world_finish` is called only when the doomed flag is set; `pending` is a
+  word.
+- **find**: `__builtin_prefetch` (`pld`) six records ahead (≈ 170 bytes, 5–6 lines), stopped near the end.
+- Tried and dropped: a branch-free `get`/`slot_of` with arithmetic masks — GCC spilled the sum to the stack and the
+  masks added instructions (Storage 19 → 28); plain branches kept.
+
+**ARM evidence** (3ds-dev objects, `build/ref-020/opt-before` → `opt-after`, common paths):
+
+| Hot path | Before | After |
+|----------|--------|-------|
+| `each<Body, Velocity>`, per entity | 27 | 27 (unchanged) |
+| `get<Body>`, per lookup (first kind) | 37, header re-read per call | 33 (kind 0: one compare; GCC still sinks 4 header loads into the branches) |
+| `Storage<Body>::get`, per lookup | 19 | 19 |
+| `find`, per record (4 tags) | 16, no prefetch | 19 including a `pld` six records ahead |
+| pool acquire + release, per pair | ≈ 94, 9 stack accesses | ≈ 85, 5 stack accesses |
+| `spawn()` | ≈ 70 | ≈ 65 |
+| `world_add` (each of 3 adds) | ≈ 114 | ≈ 92 |
+| `destroy` step 1 (3 kinds, none hooked) | ≈ 42 | ≈ 5 |
+| `destroy` step 2, per component | ≈ 10 + a call to `detach_component` (≈ 42) + `construct` | ≈ 38 inline + `construct` |
+| spawn workload, per entity | ≈ 850 | ≈ 700 |
+
+**Expected at the next console run** (≈ 1.8 cycles per instruction measured on `spawn` and `pool`, misses aside):
+`each` ≈ 0.47 ms (unchanged); `spawn` ≈ 1.2–1.3 ms (from 1.49); `find` ≈ 0.12–0.18 ms (from 0.27: the prefetch hides
+part of the misses); `get` ≈ 5.0 ms (from 5.26); `storage get` ≈ 4.2 ms (unchanged, memory-bound); `pool` ≈ 0.45 ms
+(from 0.51). Only `each` will meet its written target; per AC-7 the budgets are then set from that measurement with
+margin (the coordinator's call), and the numbers go into the spec and `docs/api/{entities,pool}.md`.
+
+Checks: `nnh_tests` 2199 (pc-debug), ctest pc-debug 265/265 and pc-release 257/257 (`entities_self_check_pc` and
+`platformer_replay_matches_script` included), `check.nnhs --pc` PASS (112 lines), `level.nnhs --pc` PASS
+(`B2418A28`), 3ds-release and 3ds-dev without a warning, `hello` sizes and `nm` unchanged. pc-dev bench (x86, not
+representative): each 0.011, spawn 0.050, find 0.011, get 0.057, storage get 0.048, pool 0.023 ms.

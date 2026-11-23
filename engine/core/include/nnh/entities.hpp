@@ -176,17 +176,14 @@ public:
     Entity owner(int slot) const { return is_live(slot) ? detail::entity_at(*w_, k().owner[slot]) : Entity{}; }
     /// The slot of `e`'s component, or −1 when `e` is stale or lacks T.
     int slot_of(Entity e) const {
-        const std::uint32_t slot = e.bits() & 0xFFFFu; // an empty view has entities_ 0: every handle is out of range
-        if (slot >= entities_) return -1;
-        const std::uint32_t* r = records_ + slot * record_words_;
-        if (r[0] != ((e.bits() >> 16) | detail::kEntityLive)) return -1;
-        const std::uint16_t s = reinterpret_cast<const std::uint16_t*>(r)[slot_field_];
-        return s == detail::kNoSlot ? -1 : s;
+        // An empty view has entities_ 0: every handle is out of range.
+        const std::uint32_t s = detail::slot_by_handle(records_, record_words_, entities_, slot_field_, e);
+        return s == detail::kNoSlot ? -1 : static_cast<int>(s);
     }
     /// As World::get<T>, without the kind lookup or a load of the world's header.
     T* get(Entity e) const {
-        const int s = slot_of(e);
-        return s < 0 ? nullptr : data_ + s;
+        const std::uint32_t s = detail::slot_by_handle(records_, record_words_, entities_, slot_field_, e);
+        return s == detail::kNoSlot ? nullptr : data_ + s;
     }
     /// Every live component in ascending slots: `for (auto [entity, component] : view.items())` (FR-15's rules).
     detail::StorageRange<T> items() const { return detail::StorageRange<T>(w_, kind_); }
@@ -203,7 +200,7 @@ private:
     detail::WorldHot* w_ = nullptr;
     int kind_ = 0;
     // The world's record layout, fixed for its life (the block never moves): what get() reads.
-    const std::uint32_t* records_ = nullptr;
+    const std::uint32_t* records_ = detail::kNoRecord;
     std::uint32_t record_words_ = 0;
     std::uint32_t entities_ = 0;
     std::uint32_t slot_field_ = 0; ///< index of this kind's u16 slot field from the record's start
@@ -280,18 +277,19 @@ public:
     T* get(Entity e) {
         const detail::WorldHot* w = hot_;
         if (w == nullptr) return nullptr;
-        // Straight-line and call-free in Release (the assert's call is [[noreturn]]): every header field is read
-        // before a branch, so a loop of lookups keeps them in registers (plan 020, ARM pre-check). An unknown kind
-        // reads the records' spare slot field (always kNoSlot): null without a branch of its own.
+        // Call-free in Release (the assert's call is [[noreturn]]); the header is read before any branch, so a loop of
+        // lookups keeps it in registers (plan 020, ARM pre-check and console bench refinement). An unknown kind reads
+        // the records' spare slot field (always kNoSlot).
+        const std::uint32_t* const records = w->records; // the header first: loads before any branch hoist
+        const auto stride = static_cast<std::uint32_t>(w->record_words);
+        const auto capacity = static_cast<std::uint32_t>(w->entities.capacity);
+        const auto slots_field = static_cast<std::uint32_t>(2 * w->slots_word);
+        void* const* const kind_data = w->kind_data;
         int k = detail::kind_index<T>(*w);
         NNH_ASSERT(k >= 0, "nnh::World::get<T>(): a component kind the world doesn't store");
         if (k < 0) k = w->kind_count;
-        T* const data = static_cast<T*>(w->kind_data[k]);
-        const int slots_word = w->slots_word;
-        std::uint32_t* r = detail::live_record(*w, e);
-        if (r == nullptr) return nullptr;
-        const std::uint16_t s = reinterpret_cast<const std::uint16_t*>(r + slots_word)[k];
-        return s == detail::kNoSlot ? nullptr : data + s;
+        const std::uint32_t s = detail::slot_by_handle(records, stride, capacity, slots_field + static_cast<std::uint32_t>(k), e);
+        return s == detail::kNoSlot ? nullptr : static_cast<T*>(kind_data[k]) + s;
     }
     template <typename T>
     const T* get(Entity e) const {

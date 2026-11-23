@@ -48,7 +48,7 @@ void recover(P& pool) {
     nnh::detail::PoolCore& core = *nnh::detail::PoolAccess::core(pool);
     core.iterating = 0;
     core.slots.end_iteration();
-    core.any_fresh = false;
+    core.any_fresh = 0;
 }
 
 template <typename T, int N>

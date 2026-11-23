@@ -18,6 +18,7 @@ struct Table {
         t.quarantine = quarantine;
         t.fresh = fresh;
         t.capacity = capacity;
+        t.init_padding();
     }
     std::uint32_t live[8] = {};
     std::uint32_t quarantine[8] = {};
@@ -84,7 +85,7 @@ NNH_TEST(slot_table_quarantines_retired_slots_until_the_flush) {
     CHECK(tb.t.find_free() == 4); // 1 is quarantined
     tb.t.flush();
     CHECK(tb.t.find_free() == 1);
-    CHECK(tb.t.quarantine[0] == 0);
+    CHECK((tb.quarantine[0] & 0xFFu) == 0); // the 8 slots; the bits past them are padding
 }
 
 NNH_TEST(slot_table_marks_fresh_slots_while_iterating_and_clears_them_at_the_end) {
@@ -115,6 +116,7 @@ NNH_TEST(slot_table_equals_a_naive_reference_on_10000_seeded_operations) {
     t.quarantine = quarantine;
     t.fresh = fresh;
     t.capacity = kCap;
+    t.init_padding();
     bool ref_live[kCap] = {}, ref_quar[kCap] = {};
     int ref_extent = 0;
     std::uint32_t seed = 12345;
@@ -155,4 +157,31 @@ NNH_TEST(slot_table_equals_a_naive_reference_on_10000_seeded_operations) {
         if (t.count != count || t.extent != ref_extent) ++mismatches;
     }
     CHECK(mismatches == 0);
+}
+
+NNH_TEST(slot_table_padding_past_the_capacity_reads_as_taken_through_flush_and_reset) {
+    // Plan 020, console bench refinement: the bits of the last word past `capacity` (set by init_padding(), which
+    // Table calls) stay set in the quarantine
+    // bitmap, so find_free needs no capacity compare; flush and reset keep them.
+    Table tb(40);
+    CHECK(tb.t.words == 2 && tb.quarantine[1] == 0xFFFFFF00u);
+    for (int i = 0; i < 40; ++i) tb.t.take(tb.t.find_free(), false);
+    CHECK(tb.t.find_free() == -1);
+    tb.t.retire(39);
+    CHECK(tb.t.flush() && tb.quarantine[1] == 0xFFFFFF00u);
+    CHECK(tb.t.find_free() == 39);
+    tb.t.reset();
+    CHECK(tb.quarantine[1] == 0xFFFFFF00u && tb.t.find_free() == 0);
+    tb.t.flush(); // nothing quarantined: the padding alone is not "something"
+    CHECK(tb.quarantine[1] == 0xFFFFFF00u);
+    Table full(64);
+    CHECK(full.t.words == 2 && full.quarantine[1] == 0u);
+}
+
+NNH_TEST(slot_table_flush_reports_only_real_quarantine) {
+    Table tb(40);
+    for (int i = 0; i < 40; ++i) tb.t.take(tb.t.find_free(), false);
+    CHECK(!tb.t.flush());
+    tb.t.retire(5);
+    CHECK(tb.t.flush());
 }

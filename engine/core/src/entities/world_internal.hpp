@@ -34,6 +34,7 @@ struct WorldCold {
     int queue_head = -1;
     int queue_tail = -1;
     int hook_depth = 0; ///< remove hooks running
+    std::uint32_t hooked = 0; ///< bit k: kind k has a remove hook
     bool clearing = false;
     World* owner = nullptr; ///< the bound World object (bound worlds don't move)
     Scene* scene = nullptr;
@@ -47,12 +48,26 @@ inline unsigned char* component_at(const WorldHot& w, int kind, int slot) {
 }
 inline bool world_busy(const WorldHot& w) { return w.iterating > 0 || w.cold->hook_depth > 0; }
 
-/// Destroys the component and leaves a T{} (the record's slot already cleared), quarantining its slot.
-void detach_component(WorldHot& w, int kind, int slot);
+/// Destroys the component and leaves a T{} (the record's slot already cleared), quarantining its slot. Inline: destroy
+/// runs it for every component (plan 020, console bench refinement).
+inline void detach_component(WorldHot& w, int kind, int slot) {
+    KindHot& k = w.kinds[kind];
+    const KindCold& kc = w.cold->kinds[kind];
+    k.slots.retire(slot);
+    k.owner[slot] = kNoSlot;
+    k.dirty = true;
+    unsigned char* p = component_at(w, kind, slot);
+    if (kc.destroy != nullptr) kc.destroy(p);
+    kc.construct(p);
+}
 /// Destroys `e` (or queues it inside a hook). The caller checked it is live and not dying.
 void world_destroy(World& world, WorldHot& w, std::uint32_t slot);
 /// After an outermost operation: frees a world destroyed during it. True when it did.
 bool world_finish(WorldHot& w);
+/// The same, with the common case (not destroyed) inline: no call.
+inline void world_finish_if_doomed(WorldHot& w) {
+    if ((w.pending & kPendingDoomed) != 0) world_finish(w);
+}
 /// Destroys every object of every kind and frees the block (no hooks).
 void world_teardown(WorldHot* w);
 /// clear() without the misuse checks (the destructor, the scene's exit).

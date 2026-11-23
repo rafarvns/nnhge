@@ -29,7 +29,8 @@ struct PoolCore {
     std::uint32_t* meta = nullptr; ///< per slot: generation | kSlotLive
     void* data = nullptr;          ///< T[capacity + 1]; the last slot is the checked accessor's scratch
     int iterating = 0;             ///< nesting depth of running iterations
-    bool any_fresh = false;        ///< something was acquired during the running iteration
+    std::uint32_t any_fresh = 0;   ///< something was acquired during the running iteration (a word, not a bool:
+                                   ///< a byte store may alias any counter, which keeps it out of registers)
     Scene* scene = nullptr;        ///< bound scene (D30), or null
     void (*clear_fn)(PoolCore&) = nullptr; ///< the typed clear(), for the scene's AfterExit
     alignas(void*) unsigned char node[3 * sizeof(void*)] = {}; ///< the scene attachment (pool_scene.cpp)
@@ -65,7 +66,7 @@ struct PoolOps {
         }
         const bool iterating = c.iterating > 0;
         c.slots.take(slot, iterating);
-        if (iterating) c.any_fresh = true; // no store in the common case
+        if (iterating) c.any_fresh = 1; // no store in the common case
         c.meta[slot] |= kSlotLive;
         return slot;
     }
@@ -75,11 +76,13 @@ struct PoolOps {
     }
 
     static bool release(PoolCore& c, Handle<T> h) {
-        T* object = get(c, h);
-        if (object == nullptr) return false;
-        const int slot = h.slot();
-        c.meta[slot] = next_generation(c.meta[slot] & 0xFFFFu); // stale from now on
-        c.slots.retire(slot);
+        const std::uint32_t slot = h.bits() & 0xFFFFu; // the check of get(), without a pointer to null-test
+        std::uint32_t* const meta = c.meta;
+        if (slot >= static_cast<std::uint32_t>(c.slots.capacity) || meta[slot] != ((h.bits() >> 16) | kSlotLive))
+            return false;
+        T* const object = data(c) + slot;
+        meta[slot] = next_generation(h.bits() >> 16); // stale from now on
+        c.slots.retire(static_cast<int>(slot));
         object->~T();
         ::new (static_cast<void*>(object)) T{};
         return true;

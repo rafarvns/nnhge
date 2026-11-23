@@ -20,7 +20,7 @@ Entity World::spawn() {
     }
     const bool iterating = w->iterating > 0;
     w->entities.take(slot, iterating);
-    if (iterating) w->pending = static_cast<std::uint8_t>(w->pending | detail::kPendingFresh);
+    if (iterating) w->pending = static_cast<std::uint32_t>(w->pending | detail::kPendingFresh);
     std::uint32_t* r = detail::record_at(*w, static_cast<std::uint32_t>(slot));
     r[0] |= detail::kEntityLive;
     return detail::make_handle<World>(static_cast<std::uint32_t>(slot), r[0] & 0xFFFFu);

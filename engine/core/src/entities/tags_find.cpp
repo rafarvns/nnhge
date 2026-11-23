@@ -17,13 +17,27 @@ inline bool tagged(const std::uint32_t* r, std::uint32_t t, std::index_sequence<
     return ((r[I] == t) || ...);
 }
 
+constexpr int kPrefetchAhead = 6; // ≈ 170 bytes at 4 tags: 5 to 6 cache lines of 32 bytes
+
+inline void prefetch(const std::uint32_t* p) {
+#if defined(__GNUC__) || defined(__clang__)
+    __builtin_prefetch(p);
+#else
+    (void)p;
+#endif
+}
+
 template <int N>
 int scan(const WorldHot& w, std::uint32_t t, Entity* out, int capacity, bool first_only) {
     const std::uint32_t* r = w.records + 2;
     const int stride = w.record_words;
     const int extent = w.entities.extent;
     int total = 0;
+    // The walk is sequential and the ARM11 has no hardware prefetcher (and the Old 3DS no L2): ask for the record
+    // kPrefetchAhead records ahead with PLD (a hint: it never faults); stop asking near the end.
+    const int prefetch_end = extent - kPrefetchAhead;
     for (int slot = 0; slot < extent; ++slot, r += stride) {
+        if (slot < prefetch_end) prefetch(r + kPrefetchAhead * stride);
         if (!tagged(r, t, std::make_index_sequence<N>{})) continue;
         if (total < capacity) out[total] = entity_at(w, slot);
         ++total;

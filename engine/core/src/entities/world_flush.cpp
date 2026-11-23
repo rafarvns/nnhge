@@ -64,7 +64,7 @@ void World::clear() {
         !detail::idle_or_report(*w, "World::clear() inside an iteration or a remove hook (ignored)"))
         return;
     detail::world_clear(*this, *w);
-    detail::world_finish(*w);
+    detail::world_finish_if_doomed(*w);
 }
 
 bool World::clearing() const { return hot_ != nullptr && hot_->cold->clearing; }

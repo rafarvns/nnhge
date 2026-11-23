@@ -492,6 +492,8 @@ Small decisions the plan would normally ask about; each takes the recommended op
     sums), bodies = the player and the turrets in one struct view (turrets filtered out by the bullets' mask). The
     replay line format is unchanged (the turret state is in the sum only), so the ctest's regex holds.
 17. **AC-7's point-query target recast** to ≤ 0.1 µs per box tested (above); the ray target (2 ms) confirmed.
+    **Confirmed by the maintainer 2026-11-23**: the old target (256 queries × 256 boxes < 0.3 ms) is dropped, no
+    broadphase; the bench still runs the 256 × 256 workload and judges it per box tested. The spec's AC-7 says so.
 18. **Console stage:** three scripted runs, each started with Homebrew Launcher → Y (queries `check.nnhs`, platformer
     `level.nnhs`, platformer `gate.nnhs`); nothing else is asked of the maintainer.
 
@@ -513,3 +515,32 @@ Small decisions the plan would normally ask about; each takes the recommended op
 
 No constitution exception is requested. D34 is new (see [decisions.md](../../docs/architecture/decisions.md)); one
 acceptance target (AC-7's point queries) is recast and reported.
+
+## Stage 0 results
+
+Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), before any spec 019 change.
+
+- `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 732 / 22 020 / 211 696; pc-debug 198 816 /
+  26 756 / 214 352; 3ds-release `hello.elf` 201 188 / 28 352 / 106 680 (`.3dsx` 246 576 bytes); 3ds-dev `hello.elf`
+  217 992 / 32 872 / 109 288. (The 3DS text is smaller than plan 018's 216 748: the devkitARM on this machine was
+  updated since; every later number here is compared with these.)
+- Build times: edit `examples/hello/main.cpp` → simulator (pc-debug) 1.94, 1.50, 1.49 s; → `.3dsx` (3ds-release)
+  3.05, 2.71 s; clean `nnh_core` (pc-debug, `ninja -t clean nnh_core`, parallel) 5.34, 5.27, 5.26 s.
+- Header cost (`g++ -std=c++20 -fsyntax-only` of a one-line TU, 3 runs): `<nnh/collision.hpp>` 151 preprocessed
+  lines, 0.27–0.32 s; `<nnh/tilemap.hpp>` 8331 lines, 0.41–0.45 s.
+- `objdump -d` of `map_collision.cpp` (pc-release `.obj`, 3ds-release `.o`) saved as
+  `build/ref-019/map_collision.{pc,3ds}.before.dis` (360 and 320 lines; `build/ref-019/baseline.sh <suffix>` redoes it).
+- T0.2: `tests/tilemap/test_collision_grid_regression.cpp`, pinned on the unchanged code. Cells (every cell of the
+  map and a one-cell ring, `collision_at` checked equal to the grid's own lookup) and moves (400 boxes from an LCG
+  walk, each moved with outside Empty and Solid, plus `contacts` at the end and `cells_touching` at the start) over
+  `good.tmj` (cells `0x698EB725`, moves `0xE419AD3C`), the platformer's `level1.tmj` (converted by the tests' build,
+  `0x852ED0F6` / `0xA6D13AF0`), a 20 × 12 map built in code with four layers and two tilesets (`0x2E9EDC46` /
+  `0x8761516F`) and the same map after `set_tile`/`fill`/`set_layer_collision`/`set_tile_collision` edits
+  (`0x6EA3F8C6` / `0xB2975DBA`). Each case also checks that the map has solid (and, but for `good.tmj`, one-way) cells.
+- T0.3: converted with `nnh-assetc` 0.3.0: `good.nnhmap` SHA-256
+  `97d36d4c9a5b57194bdb93a0914e24af25474fd2ee65eeac4d2a78dac25299de`, `level1.nnhmap`
+  `d4199d18b278062d3792af150784bf2eeb25d3d9cd3e1d321234ad6102c792d1` (copies in `build/ref-019/`).
+- T0.4: reference screenshots in `build/ref-019/ref/` (not committed): `hello`, `sprites`, `scenes` at frame 30,
+  `camera` (`CAMERA_DEMO=zoom1`) at 30, platformer `PLATFORMER_DEMO=bench` (top screen only) and level 1 at 90.
+  `build/ref-019/compare.sh` takes them again into `now/` and compares the pixels.
+- T0.5: `kMaxTests` 4096; `nnh_tests` 1853 tests.

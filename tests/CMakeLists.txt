@@ -175,6 +175,7 @@ add_executable(nnh_tests
     system/test_system.cpp
     text/test_builtin_font.cpp
     tilemap/test_code_vs_file.cpp
+    tilemap/test_collision_grid_regression.cpp
     tilemap/test_map_animations.cpp
     tilemap/test_map_bounds.cpp
     tilemap/test_map_build.cpp
@@ -721,7 +722,16 @@ add_custom_command(OUTPUT ${_maps_out}/good.nnhmap
     DEPFILE ${_maps_out}/good.nnhmap.d
     COMMENT "Map tests/data/maps/good.tmj"
     VERBATIM)
-add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap)
+# The platformer's level 1, for the collision_grid() regression test (spec 019 T0.2).
+set(_platformer_assets ${PROJECT_SOURCE_DIR}/examples/platformer/assets)
+add_custom_command(OUTPUT ${_maps_out}/level1.nnhmap
+    COMMAND nnh_assetc map ${_platformer_assets}/levels/level1.tmj ${_maps_out}/level1.nnhmap
+            --assets ${_platformer_assets} --depfile ${_maps_out}/level1.nnhmap.d
+    DEPENDS ${_platformer_assets}/levels/level1.tmj nnh_assetc
+    DEPFILE ${_maps_out}/level1.nnhmap.d
+    COMMENT "Map examples/platformer/assets/levels/level1.tmj (tests)"
+    VERBATIM)
+add_custom_target(nnh_test_maps DEPENDS ${_maps_out}/good.nnhmap ${_maps_out}/level1.nnhmap)
 add_dependencies(nnh_tests nnh_test_maps)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_MAPS_DIR="${_maps_out}")
 

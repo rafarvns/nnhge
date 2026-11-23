@@ -255,7 +255,9 @@ that give the same bits on PC and 3DS. A game that uses none of it pays nothing.
 - **AC-7 Cost on the console.** A bench mode of `examples/queries`, measured on an Old 3DS with the profiler and
   logged as `queries bench: PASS <numbers>` (or FAIL): 128 rays of up to 400 px per frame against a tilemap's
   filtered grid (16×16 tiles) plus 64 boxes, first hit, costs **under 2 ms per frame** (target; the plan confirms it),
-  and 256 point queries over 256 boxes under 0.3 ms; per-ray and per-box costs are written in the docs. Spec 012's tile
+  and point queries cost **at most 0.1 µs per box tested** (measured with 256 point queries over 256 boxes per frame;
+  plan decision 17, confirmed by the maintainer 2026-11-23: the first target, 0.3 ms for that whole workload, would
+  need a broadphase, a non-goal); per-ray and per-box costs are written in the docs. Spec 012's tile
   gate (4 layers + 300 sprites) still passes, and `collision::move` through `collision_grid()` costs the same as
   before (no measurable change on the gate's movers).
 - **AC-8 Opt-in.** `examples/hello` builds with the same executable size as before on PC and 3DS (no query code

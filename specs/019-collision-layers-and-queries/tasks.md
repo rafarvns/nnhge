@@ -13,13 +13,13 @@ refinements", as in plans 012–018.
 
 ## Stage 0: baseline and regressions
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each): `hello.exe` (pc-release, pc-debug) and `hello.elf`/`.3dsx`
   (3ds-release, 3ds-dev) sizes (`size` text/data/bss); edit `examples/hello/main.cpp` → simulator and `.3dsx` build
   times; clean `nnh_core` build; preprocessed line count and compile time of a one-line TU including
   `<nnh/collision.hpp>` and one including `<nnh/tilemap.hpp>`; `objdump -d` of `map_collision.cpp.o` (3ds-release and
   pc-release) saved as `build/ref-019/map_collision.{3ds,pc}.dis`. Files: plan.md ("Stage 0 results"). Covers III,
   FR-18, AC-8.
-- [ ] **T0.2** `collision_grid()` regression test, written and pinned on today's code: on the fake platform, the cells
+- [x] **T0.2** `collision_grid()` regression test, written and pinned on today's code: on the fake platform, the cells
   of `collision_at` and of `collision_grid()` (through `detail::cell_at` and through `collision::move`/`contacts` of a
   few boxes) over the loaded `tests/data/maps/good.tmj`, the platformer's `level1` map (its converted `.nnhmap` as a
   test fixture or loaded from the build's assets), a code-built map with collision layers, solid and one-way tiles on
@@ -27,12 +27,12 @@ refinements", as in plans 012–018.
   edits; an FNV hash of every (x, y, kind) and of the move results, pinned as golden values. Files:
   `tests/tilemap/test_collision_grid_regression.cpp`, `tests/CMakeLists.txt`. Test: passes on `main` before any change.
   Covers FR-5, FR-6, FR-18, AC-3.
-- [ ] **T0.3** [P] Converter baseline: convert `tests/data/maps/good.tmj` and `examples/platformer/assets/levels/level1.tmj`
+- [x] **T0.3** [P] Converter baseline: convert `tests/data/maps/good.tmj` and `examples/platformer/assets/levels/level1.tmj`
   with today's `nnh-assetc` and record their SHA-256 in plan.md (the outputs stay in `build/ref-019/`). Covers FR-7.
-- [ ] **T0.4** [P] Reference screenshots for AC-8 (kept in `build/ref-019/`, not committed): `hello`, `sprites`,
+- [x] **T0.4** [P] Reference screenshots for AC-8 (kept in `build/ref-019/`, not committed): `hello`, `sprites`,
   `scenes`, `camera` (`CAMERA_DEMO=zoom1`), platformer `PLATFORMER_DEMO=bench` (top screen) and level 1 at frame 90,
   plus `build/ref-019/compare.sh` that rebuilds them and `cmp`s each PNG. Files: plan.md (list and frames). Covers AC-8.
-- [ ] **T0.5** [P] Test runner capacity: `kMaxTests` 2048 → 4096 (1849 used, the spec adds ≈ 200). Files:
+- [x] **T0.5** [P] Test runner capacity: `kMaxTests` 2048 → 4096 (1849 used, the spec adds ≈ 200). Files:
   `tests/framework/test_main.cpp`. Test: `nnh_tests` passes. Covers VI.
 
 ## Stage 1: layers, views, filters, point and box queries (pure)

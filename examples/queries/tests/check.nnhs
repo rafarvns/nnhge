@@ -12,9 +12,9 @@
 # tests/queries_example/test_self_check.cpp).
 fail-on "] E "
 fail-on "queries: FAIL"
-# A bench line over its target fails the run too (rays "(target < 2 ms) FAIL", points "(target <= 0.1 us) FAIL").
-fail-on "ms) FAIL"
-fail-on "us) FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line ("queries bench: FAIL (rays)"),
+# logged after every bench number, so one run reports the rays, their split, the points and the moves.
+fail-on "queries bench: FAIL"
 
 # First hit: the target starts at (330, 200); the ray stops flush on a wall's left face.
 wait 30
@@ -88,12 +88,15 @@ expect "queries: PASS 4ACAA177" 60
 wait 10
 screenshot self-check
 
-# The bench (SELECT): about 20 s; PASS or FAIL against the targets, the move times recorded.
+# The bench (SELECT): about 20 s; each line PASS or FAIL against its target, the split and the move times recorded,
+# then the verdict ("queries bench: PASS", or FAIL and the run fails). The split ("queries bench: rays split ...")
+# comes in the frame of the rays line and the verdict in the frame of the move line: an expect matches from the
+# frame after the previous one, so those two lines are in the log but not expected on their own.
 tap SELECT
 expect "queries bench: started" 20
 expect "queries bench: rays avg" 700
 expect "queries bench: points avg" 400
-expect "queries bench: move unfiltered" 400
+expect "queries bench: PASS" 400
 wait 10
 screenshot bench
 end

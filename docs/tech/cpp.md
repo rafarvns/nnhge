@@ -48,7 +48,8 @@ Public functions document: does it allocate? is it per-frame safe? what happens 
   `nnh::init({.title = "My Game"})`.
 - `const` by default; references for non-null parameters; no owning raw pointers (RAII handles).
 - No `using namespace` in headers. Anonymous namespaces for file-local helpers.
-- Formatting: `.clang-format` (LLVM base, 4 spaces, 110 columns). Naming: see
+- Formatting: `.clang-format` (LLVM base, 4 spaces, 110 columns), applied with **clang-format 23** (older versions
+  wrap a few constructs differently; nothing checks formatting automatically, so use 23 to avoid format-only diffs). Naming: see
   [project-structure.md](../architecture/project-structure.md#naming).
 
 ## Memory on 3DS

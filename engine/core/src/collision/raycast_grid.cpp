@@ -57,7 +57,8 @@ bool raycast(const Grid& grid, Vec2 from, Vec2 to, RayHit& hit, const QueryFilte
     detail::GridWalk walk(grid, s, outside_inert(grid, s, filter));
     detail::WalkCell c;
     while (walk.next(c)) {
-        if (cell_hit(walk, s, c, detail::cell_at(grid, c.x, c.y), from, filter, hit)) {
+        const Cell kind = detail::cell_at(grid, c.x, c.y);
+        if (kind != Cell::Empty && cell_hit(walk, s, c, kind, from, filter, hit)) {
             hit.distance = hit.fraction * detail::ray_length(from, to);
             return true;
         }
@@ -74,7 +75,8 @@ int raycast_all(const Grid& grid, Vec2 from, Vec2 to, RayHit* hits, int capacity
     float length = -1;
     int total = 0;
     while (walk.next(c)) {
-        if (!cell_hit(walk, s, c, detail::cell_at(grid, c.x, c.y), from, filter, hit)) continue;
+        const Cell kind = detail::cell_at(grid, c.x, c.y);
+        if (kind == Cell::Empty || !cell_hit(walk, s, c, kind, from, filter, hit)) continue;
         if (length < 0) length = detail::ray_length(from, to);
         hit.distance = hit.fraction * length;
         total = detail::insert_hit(hits, capacity, total, hit); // walk order is fraction order

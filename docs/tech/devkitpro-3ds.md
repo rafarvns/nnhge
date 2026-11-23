@@ -52,6 +52,14 @@ Always leave through `aptMainLoop()` returning false or the game's own exit; nev
   (see `<3ds/env.h>`); measure before changing it. `osGetMemRegionFree()` reports free memory.
 - `APT_CheckNew3DS(&is_new)` tells the model at runtime. New 3DS extra memory/CPU modes need a `.cia`
   with the right `.rsf` settings.
+- **Float compares are expensive in hot loops.** The VFPv2 has no compare-to-register: every `if (a < b)` on floats is
+  `vcmp` + `vmrs` + a branch, and `vmrs` stalls the ARM pipeline until the VFP result is ready (adds take 8 cycles).
+  A loop over many items should reject them with integer tests where it can (spec 019's box scans compare floats'
+  bit patterns as integers and test finiteness on the bits: 88 instructions with 10 float compares became 11–17
+  integer instructions per rejected box, see
+  [plan 019](../../specs/019-collision-layers-and-queries/plan.md#console-bench-refinement)). Check the disassembly
+  (`arm-none-eabi-objdump -dr` of a `3ds-dev` object) for `vmrs`, `memset`/`memcpy` calls, `__aeabi_*` helpers
+  (64-bit conversions, divisions: the ARM11 has no integer divide) and `floorf`/`ceilf` calls (VFPv2 can't round).
 
 ## 2D drawing (what our backend does)
 

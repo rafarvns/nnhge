@@ -25,12 +25,6 @@ float from_bits(std::uint32_t b) {
 
 } // namespace
 
-int compare(Ratio p, Ratio q) {
-    const double l = p.n * q.a;
-    const double r = q.n * p.a;
-    return l < r ? -1 : (l > r ? 1 : 0);
-}
-
 Segment make_segment(Vec2 from, Vec2 to) {
     Segment s;
     s.px = from.x;

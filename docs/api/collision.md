@@ -346,6 +346,6 @@ Debug/Development; in Release the query reads nothing and returns no hits (false
 | `contacts` | four tiny `move` probes |
 | `cells_touching` | one lookup per overlapped cell (only cells inside the grid when `outside` is Empty) |
 | Rays on a grid | one cell lookup per cell visited (inside the grid only when `outside` can't block) |
-| Rays, casts, point queries on boxes | one test per box in the view (no broadphase: pass a bucket's view if you keep buckets) |
-| Measured (PC simulator, Debug) | 128 first-hit rays of 0–400 px against a 25 × 15 filtered grid + 64 boxes: about 1 ms per frame; point queries 0.05 µs per box tested. Old 3DS: pending (spec 019 stage 10; targets < 2 ms and ≤ 0.1 µs per box) |
+| Rays, casts, point queries on boxes | one test per box in the view (no broadphase: pass a bucket's view if you keep buckets); a box away from the segment, point or query box is dropped with integer tests on its bits, so only nearby boxes cost float or `double` work |
+| Measured (PC simulator, Debug) | 128 first-hit rays of 0–400 px against a 25 × 15 filtered grid + 64 boxes: about 1 ms per frame; point queries 0.05 µs per box tested. Old 3DS, first run: rays 14.1 ms per frame, 0.56 µs per box, `move` 11 µs; the code was then reworked for the 3DS's VFP ([plan 019](../../specs/019-collision-layers-and-queries/plan.md#console-bench-refinement)), re-run pending (targets < 2 ms and ≤ 0.1 µs per box) |
 | Coordinates | `float`; cell indices saturate at ±2^30. `contacts`' 1/64 px tolerance stays above float spacing for worlds up to 131 072 px |

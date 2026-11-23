@@ -92,6 +92,7 @@ add_executable(nnh_tests
     camera/test_camera_zoom.cpp
     collision/test_aabb.cpp
     collision/test_box_cast.cpp
+    collision/test_box_keys.cpp
     collision/test_box_view.cpp
     collision/test_cells_crossed.cpp
     collision/test_cells_touching.cpp

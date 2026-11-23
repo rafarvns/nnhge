@@ -24,11 +24,15 @@ int fixed_cell(const GridWalk::Axis& ax) {
 /// The cell the segment is in just after `t0` on a moving axis: back(k) ≤ t0 < front(k).
 int moving_cell(const GridWalk::Axis& ax, Ratio t0) {
     const double d = ax.s > 0 ? ax.a : -ax.a;
-    int k = first_cell(ax.origin, ax.size, along(ax.p, d, t0));
+    // At t0 = 0 (a ray starting inside the grid) the guess is p itself: no double division (±0 give one cell).
+    int k = first_cell(ax.origin, ax.size, t0.n == 0 ? static_cast<float>(ax.p) : along(ax.p, d, t0));
     for (int n = 0; n < kMaxFix && compare(ax.back(k), t0) > 0; ++n) k -= ax.s;
     for (int n = 0; n < kMaxFix && compare(t0, ax.front(k)) >= 0; ++n) k += ax.s;
     return k;
 }
+
+/// Where the segment meets the line ahead of cell i (the walk's next step on that axis); 1 when it doesn't move.
+Ratio next_line(const GridWalk::Axis& ax, int i) { return ax.s != 0 ? ax.front(i) : kRatioOne; }
 
 double cells_along(const GridWalk::Axis& ax) {
     const double size = ax.size;
@@ -52,7 +56,10 @@ bool GridWalk::start(const Segment& s) {
     i_ = s.sx == 0 ? fixed_cell(x_) : moving_cell(x_, t0);
     j_ = s.sy == 0 ? fixed_cell(y_) : moving_cell(y_, t0);
     const double steps = 4 + cells_along(x_) + cells_along(y_);
-    steps_left_ = static_cast<long long>(steps < kMaxSteps ? steps : kMaxSteps);
+    // ≤ 2^26: through int, one instruction on the 3DS (to long long directly is a call to __aeabi_d2lz).
+    steps_left_ = static_cast<int>(steps < kMaxSteps ? steps : kMaxSteps);
+    tx_ = next_line(x_, i_);
+    ty_ = next_line(y_, j_);
     const bool fx = s.sx != 0 && compare(x_.back(i_), t0) == 0;
     const bool fy = s.sy != 0 && compare(y_.back(j_), t0) == 0;
     if (fx && fy && t0.n > 0) { // clipped exactly at a grid corner: the cells beside it first
@@ -82,7 +89,7 @@ bool GridWalk::clip_to_grid(Ratio& t0) const {
     }
     // enter == exit: the segment only touches the grid's rectangle at one of its corners, which may still pass a
     // corner cell of the grid beside it (the corner rule); the walk starts outside and keeps only that cell.
-    if (compare(enter, exit) > 0 || compare(enter, kRatioOne) >= 0) return false;
+    if (compare(enter, exit) > 0 || !before_end(enter)) return false;
     t0 = enter;
     return true;
 }
@@ -90,13 +97,14 @@ bool GridWalk::clip_to_grid(Ratio& t0) const {
 void GridWalk::push(int x, int y, Ratio t, bool face_x, bool face_y, bool corner) {
     if (clip_ && !in_grid(x, y)) return;
     WalkCell& c = queue_[queued_++];
-    c = {};
-    c.x = x;
+    c.x = x; // every field set (no `c = {}`: a memset call per cell on the 3DS)
     c.y = y;
     c.t = t;
     c.face_x = face_x;
     c.face_y = face_y;
+    c.inside = false;
     c.corner = corner;
+    c.corner_point = {};
     if (corner) {
         // The corner both lines meet at: the x line between this cell's column and the walk's, the same for y.
         const int cx = face_x ? (x_.s > 0 ? x : x + 1) : (x_.s > 0 ? x + 1 : x);
@@ -110,11 +118,9 @@ void GridWalk::advance() {
         done_ = true;
         return;
     }
-    const Ratio tx = x_.s != 0 ? x_.front(i_) : kRatioOne;
-    const Ratio ty = y_.s != 0 ? y_.front(j_) : kRatioOne;
-    const int order = x_.s == 0 ? 1 : (y_.s == 0 ? -1 : compare(tx, ty)); // < 0: the x line first
-    const Ratio t = order <= 0 ? tx : ty;
-    if (compare(t, kRatioOne) >= 0) {
+    const int order = x_.s == 0 ? 1 : (y_.s == 0 ? -1 : compare(tx_, ty_)); // < 0: the x line first
+    const Ratio t = order <= 0 ? tx_ : ty_;
+    if (!before_end(t)) {
         done_ = true;
         return;
     }
@@ -131,19 +137,12 @@ void GridWalk::advance() {
         j_ += y_.s;
         push(i_, j_, t, true, true, true);
     }
+    // The crossed axis moves (order < 0 needs x moving, > 0 y moving, 0 both): its next line, nothing else.
+    if (order <= 0) tx_ = x_.front(i_);
+    if (order >= 0) ty_ = y_.front(j_);
     const bool saturated = i_ <= -kMaxCellIndex || i_ >= kMaxCellIndex || j_ <= -kMaxCellIndex ||
                            j_ >= kMaxCellIndex;
     if ((clip_ && !in_grid(i_, j_)) || saturated) done_ = true;
-}
-
-bool GridWalk::next(WalkCell& cell) {
-    while (read_ == queued_) {
-        if (done_) return false;
-        read_ = queued_ = 0;
-        advance();
-    }
-    cell = queue_[read_++];
-    return true;
 }
 
 } // namespace nnh::collision::detail

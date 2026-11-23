@@ -21,8 +21,14 @@ int first_cell(float origin, float size, float v);
 int last_cell(float origin, float size, float end);
 /// Cells `box` overlaps (shared area > 0); empty for a box without area.
 CellRange cell_range(const Grid& grid, Rect box);
-/// The kind of cell (x, y): `grid.outside` beyond the edges (or when the grid has no cells).
-Cell cell_at(const Grid& grid, int x, int y);
+/// The kind of cell (x, y): `grid.outside` beyond the edges (or when the grid has no cells). Inline: the walks and
+/// sweeps call it per cell.
+inline Cell cell_at(const Grid& grid, int x, int y) {
+    if (x < 0 || y < 0 || x >= grid.width || y >= grid.height) return grid.outside;
+    if (grid.cells) return grid.cells[y * grid.width + x];
+    if (grid.cell) return grid.cell(grid.context, x, y);
+    return grid.outside;
+}
 
 enum class Axis : unsigned char { X, Y };
 

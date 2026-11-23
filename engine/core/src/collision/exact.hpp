@@ -16,8 +16,15 @@ struct Ratio {
 inline constexpr Ratio kRatioZero{0, 1};
 inline constexpr Ratio kRatioOne{1, 1};
 
-/// −1, 0 or 1 as p is before, at or after q (n·q.a against q.n·p.a, no division).
-int compare(Ratio p, Ratio q);
+/// −1, 0 or 1 as p is before, at or after q (n·q.a against q.n·p.a, no division). Inline: the walk and the slab
+/// test call it per cell and per box (two products and a compare; nothing to contract into a fused operation).
+inline int compare(Ratio p, Ratio q) {
+    const double l = p.n * q.a;
+    const double r = q.n * p.a;
+    return l < r ? -1 : (l > r ? 1 : 0);
+}
+/// compare(t, kRatioOne) < 0 without the products (× 1 is exact): t is before the segment's end.
+inline bool before_end(Ratio t) { return t.n < t.a; }
 
 /// The segment from → to: start, delta, its magnitude and sign per axis (all exact in double).
 struct Segment {

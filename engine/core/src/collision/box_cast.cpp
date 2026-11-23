@@ -1,6 +1,7 @@
 // Box casts against a box view (spec 019 FR-13): the cast box's top-left as a ray against each target grown by the
 // cast box's size, the numerators in double from the three floats (no rounded grown box). The contact position is
-// placed flush with float sums as overlaps() makes them, stepping down from the exact value as move() does.
+// placed flush with float sums as overlaps() makes them, stepping down from the exact value as move() does. Targets
+// out of the cast's reach are dropped first on order keys (box_view.hpp), as rays do.
 
 #include "collision/box_view.hpp"
 #include "collision/hit_list.hpp"
@@ -56,6 +57,35 @@ bool cast_hit(const detail::Segment& s, Rect box, Vec2 to, Rect target, bool fro
     return true;
 }
 
+/// Where the cast box's top-left goes: its lowest x, y (floats and keys) and the keys of its highest x, y plus the
+/// cast box's size, rounded to float. A target whose x key is above that rounded reach starts beyond the exact one,
+/// so its grown slab's low side x − w is past every position of the top-left.
+struct Reach {
+    float x0 = 0, y0 = 0;
+    std::int32_t kx0 = 0, ky0 = 0, kx1 = 0, ky1 = 0;
+};
+
+Reach reach_of(Rect box, Vec2 to) {
+    Reach r;
+    r.x0 = box.x < to.x ? box.x : to.x;
+    r.y0 = box.y < to.y ? box.y : to.y;
+    r.kx0 = detail::order_key(detail::to_bits(r.x0));
+    r.ky0 = detail::order_key(detail::to_bits(r.y0));
+    r.kx1 = detail::order_key(detail::to_bits((box.x > to.x ? box.x : to.x) + box.w));
+    r.ky1 = detail::order_key(detail::to_bits((box.y > to.y ? box.y : to.y) + box.h));
+    return r;
+}
+
+/// The target under the cursor starts beyond the reach (its keys alone: the scans' first test).
+bool beyond(const Reach& r, const detail::BoxCursor& c) { return c.x_key() > r.kx1 || c.y_key() > r.ky1; }
+
+/// False when the candidate ends (x + w as the slab test sums it) at or before the top-left's lowest position.
+/// x > that position already means x + w > it (w > 0, round to nearest).
+bool reaches(const Reach& r, const detail::BoxBits& t) {
+    if (detail::order_key(t.x) <= r.kx0 && !(detail::from_bits(t.x) + detail::from_bits(t.w) > r.x0)) return false;
+    return detail::order_key(t.y) > r.ky0 || detail::from_bits(t.y) + detail::from_bits(t.h) > r.y0;
+}
+
 /// Checks the inputs; false (nothing to cast) also for a cast box without area or a zero-length cast.
 bool cast_ok(const BoxView& boxes, Rect box, Vec2 to, const char* who, detail::Segment& s) {
     if (!detail::view_ok(boxes, who) || !detail::rect_ok(box, who) || !detail::point_ok(to, who)) return false;
@@ -70,10 +100,14 @@ bool box_cast(const BoxView& boxes, Rect box, Vec2 to, RayHit& hit, const QueryF
     if (!cast_ok(boxes, box, to, "box_cast", s)) return false;
     bool found = false;
     RayHit candidate;
-    Rect target;
-    for (int i = 0; i < boxes.count; ++i) {
-        if (!detail::passes(boxes, filter, i, target) ||
-            !cast_hit(s, box, to, target, filter.hit_from_inside, candidate)) {
+    const Reach reach = reach_of(box, to);
+    const QueryFilter f = filter; // locals: the stores into `hit` can't alias them
+    const int count = boxes.count;
+    detail::BoxCursor cursor(boxes);
+    detail::BoxBits target;
+    for (int i = 0; i < count; ++i, cursor.next()) {
+        if (beyond(reach, cursor) || !detail::candidate(cursor, f, i, target) || !reaches(reach, target) ||
+            !cast_hit(s, box, to, detail::to_rect(target), f.hit_from_inside, candidate)) {
             continue;
         }
         if (found && !(candidate.fraction < hit.fraction)) continue; // ties: the lowest index
@@ -91,10 +125,14 @@ int box_cast_all(const BoxView& boxes, Rect box, Vec2 to, RayHit* hits, int capa
     const float length = detail::ray_length({box.x, box.y}, to);
     int total = 0;
     RayHit candidate;
-    Rect target;
-    for (int i = 0; i < boxes.count; ++i) {
-        if (!detail::passes(boxes, filter, i, target) ||
-            !cast_hit(s, box, to, target, filter.hit_from_inside, candidate)) {
+    const Reach reach = reach_of(box, to);
+    const QueryFilter f = filter;
+    const int count = boxes.count;
+    detail::BoxCursor cursor(boxes);
+    detail::BoxBits target;
+    for (int i = 0; i < count; ++i, cursor.next()) {
+        if (beyond(reach, cursor) || !detail::candidate(cursor, f, i, target) || !reaches(reach, target) ||
+            !cast_hit(s, box, to, detail::to_rect(target), f.hit_from_inside, candidate)) {
             continue;
         }
         candidate.box = i;

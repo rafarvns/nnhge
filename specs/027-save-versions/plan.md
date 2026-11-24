@@ -806,3 +806,26 @@ same PC at the same time: timings are noisy.
   `detail/data_*`, `type_id`, `printf_format`), `nnh/result.hpp` and its own four detail headers — no gfx, audio,
   tilemap or entities header. Header cost: 10 987 preprocessed lines and 0.461 s against `<nnh/data.hpp>`'s 10 078
   and 0.453 s: +0.008 s (budget +0.05 s; risk 6 not triggered).
+
+## Stage 3 refinements and results
+
+- **File** as planned: `src/saves/save_encode.cpp` (≈ 190 lines). Every write checks the room left first (`LimitReached`
+  with nothing written past `capacity`, the message naming the size needed). A length prefix (a struct value, a string
+  sequence's or a struct sequence's `bytes`) is written after its content: one byte is reserved and the content moved
+  with one `memmove` when the length needs two or three bytes, so each value is encoded once (no size pass). A List's
+  count is clamped to its capacity (memory is never trusted). Fixed-width sequences are one `memcpy` (stride = wire
+  width for every fixed kind, little-endian), bool sequences one byte test per item. A string that isn't UTF-8 (a
+  game that wrote raw bytes into a `data::String`) asserts in Debug/Development and returns `InvalidArgument`
+  ("field 18: string is not UTF-8"; the encoder keeps a `FieldPath` for that message).
+- **Overhead measured** (FR-5; hand bytes in the tests): a one-value field costs 2 bytes of tag (3 for ids ≥ 128, 4 for
+  ≥ 16 384); a struct value +1 (+2 from 128 bytes of content); a string +1 (its length, not its capacity); a sequence
+  of numbers +1–3 (count); of strings +2–6 (count, bytes); of structs +2–6 plus a template of 1 + 2 bytes per item
+  field, once per sequence. The reference save's total is measured at stage 6.
+- Tests: `test_encode.cpp` (8: every one-value kind against hand bytes — including three enums of `u8` and `i64`
+  underlying types, a nested struct and every number at both signs —, a bool byte of 2 written as 1, defaults written,
+  the id-length overheads, nested structs by their own ids, a short buffer at 0/10/21/half/full − 1 bytes with
+  nothing written past it, strings of 0 to capacity bytes, a non-UTF-8 string), `test_encode_sequences.cpp` (5: every
+  sequence shape by hand, empty sequences with their template, an array of structs inside list rows, two-byte counts
+  and lengths, `max_size<T>()` equal to the encoded size of a full value for 10 shapes — including a 255 × 255-byte
+  string list (65 kB) and a three-byte string `bytes` length).
+- **T3.3** ctest pc-debug 326/326, pc-release; four presets without a warning; spec 014 untouched; `hello` unchanged.

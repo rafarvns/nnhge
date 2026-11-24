@@ -97,16 +97,16 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 3: the encoder (pure)
 
-- [ ] **T3.1** `save_encode.cpp` for one-value kinds and nested structs: every kind's bytes, ascending ids whatever the
+- [x] **T3.1** `save_encode.cpp` for one-value kinds and nested structs: every kind's bytes, ascending ids whatever the
   declaration order, bools as 0/1, strings at their length, non-UTF-8 → `InvalidArgument` (assert in Debug/Development),
   short buffer → `LimitReached` with nothing written past `capacity`; `encode<T>`. Test: `tests/saves/test_encode.cpp`
   (hand-written expected bytes per kind with a comment per field; 64-bit and `double` values; nested structs; overhead
   per field as plan.md states). Covers FR-3, FR-4, FR-5, FR-8, FR-21.
-- [ ] **T3.2** Sequences: packed number arrays and lists (one copy when kinds match), string sequences with `bytes`, struct
+- [x] **T3.2** Sequences: packed number arrays and lists (one copy when kinds match), string sequences with `bytes`, struct
   sequences with their template and rows, nested arrays of structs. Test: `tests/saves/test_encode_sequences.cpp` (hand
   bytes; an empty list still writes its template; `max_size<T>()` equals the encoded size of a value with every string
   and list full, for 10 shapes). Covers FR-3, FR-4, FR-8.
-- [ ] **T3.3** Stage end: the stage-end guards. Files: plan.md ("Stage 3 results": the overhead table measured). Covers
+- [x] **T3.3** Stage end: the stage-end guards. Files: plan.md ("Stage 3 results": the overhead table measured). Covers
   FR-5.
 
 ## Stage 4: the decoder, evolution, migrations (pure)

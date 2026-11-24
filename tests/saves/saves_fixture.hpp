@@ -70,6 +70,57 @@ struct Seqs {
 NNH_SAVE_TYPE(Seqs, "seqs", NNH_SAVE_FIELD(numbers, 1), NNH_SAVE_FIELD(flags, 2), NNH_SAVE_FIELD(words, 3),
               NNH_SAVE_FIELD(pairs, 4), NNH_SAVE_FIELD(grid, 5));
 
+/// A Kinds with every field set away from its default (test_encode.cpp has its bytes).
+inline Kinds kinds_sample() {
+    Kinds k;
+    k.flag = true;
+    k.u8 = 0xAB;
+    k.i8 = -2;
+    k.u16 = 0x1234;
+    k.i16 = -3;
+    k.u32 = 0x89ABCDEFu;
+    k.i32 = -4;
+    k.u64 = 0x0102030405060708ull;
+    k.i64 = -5;
+    k.f32 = 1.5f;
+    k.f64 = -2.25;
+    k.v2 = {1.0f, -1.0f};
+    k.color = {1, 2, 3, 4};
+    k.ref.id = 0x11223344u;
+    k.tex.id = 5;
+    k.snd.id = 6;
+    k.mus.id = 7;
+    k.name.assign("Ana");
+    k.pair = {9, -1};
+    k.mood = saves_test::Mood::Angry;
+    k.element = test_data::Element::Fire;
+    k.big = saves_test::Big::High;
+    return k;
+}
+
+/// A Seqs with every sequence partly filled (test_encode_sequences.cpp has its bytes).
+inline Seqs seqs_sample() {
+    Seqs s;
+    s.numbers[0] = 1;
+    s.numbers[1] = 0x0203;
+    s.numbers[2] = 0xFFFF;
+    s.flags.push_back(true);
+    s.flags.push_back(false);
+    s.flags.push_back(true);
+    nnh::data::String<4> w;
+    w.assign("ab");
+    s.words.push_back(w);
+    w.assign("");
+    s.words.push_back(w);
+    w.assign("xyz");
+    s.words.push_back(w);
+    s.pairs.push_back({1, -2});
+    s.pairs.push_back({3, 4});
+    s.grid[0] = {5, 6};
+    s.grid[1] = {7, 8};
+    return s;
+}
+
 using Bytes = std::vector<std::uint8_t>;
 
 /// The structured header of `key` with `version`, as the tests write it by hand: "NNSV", format 1, key length,

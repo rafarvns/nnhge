@@ -10,7 +10,7 @@ Full guide: `docs/process/tdd.md`.
 ## Loop (per behaviour)
 
 1. **Red**: write one small test; build; see it fail for the expected reason.
-2. **Green**: simplest code that passes; run all tests.
+2. **Green**: simplest code that passes; run the changed module's tests (`nnh_tests <filter>`); the full suite only at the end of a spec (docs/process/tdd.md, "How much to run, and when").
 3. **Refactor**: clean code and test, stay green, respect file rules.
 
 Bug fix = first a test that reproduces the bug (red), then the fix.

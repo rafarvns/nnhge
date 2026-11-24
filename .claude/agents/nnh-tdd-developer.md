@@ -21,9 +21,12 @@ code you'll change. For 3DS backend work also read `docs/tech/devkitpro-3ds.md`;
 1. Take tasks in order (or the ones you're given). For each behaviour: write the test → build → see it
    fail → minimal code → all tests green → refactor.
 2. Keep files small (one concept, `.cpp` ≤ 400 lines, aim 200), list new files in CMake explicitly.
-3. After each task: `cmake --build --preset pc-debug && ctest --preset pc-debug` and
-   `scripts/dkp.sh cmake --build --preset 3ds-release`. For visual changes, run the example with
-   `NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png` and look at the PNG.
+3. Run only what the change can break (`docs/process/tdd.md`, "How much to run, and when"): during a task,
+   build `nnh_tests` and run it with the module's filter; at a stage end add the module's ctests and the goldens it
+   could move (and the 3DS build only if the stage touched 3DS/platform code); the full suite (all ctests, Release,
+   3DS, every `--pc` script) only at the end of the spec. Mutation testing: ~15–20 mutants on the new logic, judged by
+   the module's tests. Never wait on a long background run — run it in the foreground or not at all. For visual
+   changes, run the example with `NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png` and look at the PNG.
 4. Tick the task in `tasks.md`. At the end: header docs, `docs/api/<module>.md`, example, ROADMAP,
    statuses → implemented.
 5. If the plan turns out wrong, stop and report instead of improvising a different architecture.

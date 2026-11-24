@@ -4,7 +4,7 @@
 
 1. **Red** — write one small test for the next behaviour. Build and run it; it must fail (or not compile)
    for the expected reason.
-2. **Green** — write the simplest code that makes it pass. Run all tests.
+2. **Green** — write the simplest code that makes it pass. Run the tests of the module you changed.
 3. **Refactor** — clean up code and test while staying green: names, duplication, file rules.
 
 Repeat per behaviour. Commit when green.
@@ -18,6 +18,22 @@ build/pc-debug/tests/nnh_tests.exe <filter>                    # only tests whos
 ```
 
 The test build is fast on purpose: an in-house framework (`tests/framework/`), no external dependency.
+
+## How much to run, and when
+
+The full suite (every ctest, Release, the 3DS build, every example's `--pc` script, mutation testing, the Linux
+VM, fuzzing) takes long; running it after every change made development crawl. Run what the change can break:
+
+| When | Run |
+|------|-----|
+| Each red/green step | `cmake --build --preset pc-debug --target nnh_tests` and `nnh_tests <module filter>` (the module you touched, plus its direct users' tests if you changed a header they include) |
+| End of a plan stage | the above, plus the stage's own ctests (`ctest --preset pc-debug -R <module>`), the goldens the stage could move, and `scripts/dkp.sh cmake --build --preset 3ds-dev` only when the stage touched 3DS or platform code |
+| End of a spec (before merging) | everything: `ctest --preset pc-debug` and `pc-release`, the 3DS release build, every example's `--pc` script, the docs check, then stage 9 (Linux VM) and stage 10 (console) |
+
+Mutation testing covers the new logic only: about 15–20 hand mutants on the module's core files, each judged by that
+module's tests (`nnh_tests <filter>`), never by a full rebuild and suite per mutant. Fuzz targets run 2 minutes each
+in stage 9 (longer only when chasing a finding). Agents never leave a long run in the background and wait for it: run
+it in the foreground or not at all.
 
 ## Writing a test
 

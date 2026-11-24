@@ -1,6 +1,6 @@
 # Plan 025: Pathfinding on grids
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (stages 0-8 and 11; Linux T9.1 and Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D40 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 012 (`collision::Grid`, `Cell`, spec 012's half-open cell rule; tilemaps, tile properties, `set_tile`), spec
 019 (`collision_grid(mask)`, the exact grid walk and its corner rule, `cells_crossed`), spec 002 (asserts, logs,
@@ -699,6 +699,30 @@ brings the console back to the Homebrew Launcher; logs and screenshots in `build
    exactly the `replay: … sum` lines **in the tree at that time**, `replay: done 900 frames sum <last>: 60 Hz PASS`;
    `nnh: PASS (79 lines, …)`. A different sum is a defect (025 touches nothing the platformer runs).
 
+**Completed with the recorded values (stage 7).** Before the console, on the PC: `scripts/dkp.sh cmake --build --preset
+3ds-release` and `scripts/dkp.sh cmake --build --preset 3ds-dev --target pathfinding_3dsx platformer_3dsx` without a
+warning; `sh build/ref-025/sizes.sh now` equal to `build/ref-025/base/sizes.txt` (hello unchanged). Then, Homebrew
+Launcher open on the Old 3DS, press **Y**, and on the PC:
+
+```sh
+build/pc-debug/tools/nnh/nnh run pathfinding --script examples/pathfinding/tests/check.nnhs   # ~75 s: 3 700 frames
+```
+
+Expected, every line as the `--pc` run's (`nnh: PASS (104 lines, …)` on the PC): `field: built 3,3 settled 1135 frames
+3`; `pathfinding: check started`; `pathfinding: 64 sum 8332890F`, `128 sum BF55A00B`, `192 sum B3E6C49A`, `256 sum
+C825A5E7`, `320 sum 77C6FFC5`, `384 sum E738F010`, `448 sum 528F7687`, `512 sum 1C0B5992`; **`pathfinding: PASS
+1C0B5992`**; `pathfinding: showcase`; `hero: paused`; `goal: 24,5 found cells 22 cost 438 expanded 251 waypoints 3`;
+`door: 1 closed version 2`; `replan: version 2 found cells 48 cost 1040 expanded 777 waypoints 9`; `goal: 34,7 partial
+cells 41 cost 1012 expanded 1134 waypoints 7`; `hero: 2x2`; `goal: 24,20 partial cells 18 cost 428 expanded 378
+waypoints 3`; `mode: never`; `hero: 1x1`; `hero: walking`; `pathfinding bench: maze path 405 cells, 494 expanded; smooth
+path 200 cells; replans 32 pairs, 4518 expanded; astar 81359 expanded` (the counts must match the PC's); then the eleven
+bench lines and the verdict. **Expected verdict from the pre-check: `pathfinding bench: FAIL (replans, next, …)`**
+(`field slices`, `astar`, `field one` and `sync` at risk): the script then fails at its verdict line, after every number
+is logged — record them under "Console run 1" and go on with T10.3 (find the cost in the 3ds-dev disassembly, apply risk
+1's list without changing a result, run again; then set the budgets from the measurement with ≈ 25 % margin in the spec's
+AC-7, `bench_scene.cpp` and `docs/api/pathfinding.md`). Screenshots (`build/logs/pathfinding-*/`): start, door-open,
+door-closed, partial, big, walking, bench — the same pictures as the `--pc` run's. Run 2 (the platformer) as above.
+
 ## Decisions taken (overnight, to review)
 
 The spec's "Decisions to take" are approved as recommended. Its open questions and these plan-level decisions were
@@ -1013,3 +1037,63 @@ number is logged. The remaining "no result change" mitigations (risk 1: a per-ce
 batch `next`, a 4-ary heap, packed field words, direct `cells` reads in sync) can't reduce `replans`' expansion count,
 which comes from the workload's weights; they are left for T10.3 with the console's numbers (the
 measurement-with-margin policy) rather than guessed now.
+
+## Mutation testing (T8.1)
+
+58 hand mutants (`build/ref-025/mutants.py`, applied one at a time by `mutate.py`; each rebuilds `nnh_tests` and runs
+every `path*`/`pathfinding*` test; 54 in pc-debug, 4 Release-path mutants in pc-release): the order's keys and its
+`seq` tie, the buffer, the heap's sifts, compaction and heapify, the strict-g rule, reopening, the neighbour order, each
+diagonal rule and a diagonal's side cells and cost, the limit, staleness, partial ties (index, g, scaled h), the heuristic
+scale and octile formula, the blocked-goal answer, the stamp wrap, the stale flag, the default limit, footprints (edge,
+max, range), one-way cells, versions, the walk's corners and tie, smoothing's corner cells, weight rule and Never rule,
+the field's diagonal cost, cap, side cells, swap, stale skip and duplicate goals, `next`'s ties, goal and rule, the
+follower, region clipping, the path prefix, inspection stamps, the doomed map, and Release clamps and ignores.
+
+**First pass: 52 killed, 6 survived.** Three were real gaps, now tested and killed: `field-dup-goal` (a duplicate goal
+settled twice: the several-goals test now checks `settled()` against the same build without duplicates),
+`follower-radius` (`<` for `<=`: a waypoint exactly on the radius is now passed), `rel-follower-nan` (Release: a NaN
+position must leave an arrived follower arrived). Three are **equivalent** and stay:
+- `heap-offer-keeps-worse` — which child the buffer holds doesn't change the pop order: `take()` always compares it with
+  the heap's top (only speed changes);
+- `stale-entry-kept` (the pop's `g == f − h` check dropped) — a newer entry for a cell has the same h and a strictly
+  lower g, so it pops first and closes the cell; the closed check then rejects every older one (the g check matters only
+  in compaction, which keeps it);
+- `follower-arrived` (arrival without "at the last waypoint") — the advance loop stops before the last point only when
+  the point is out of the radius, so the extra condition never decides.
+
+**Score: 55 of 58 killed (94.8 %); every non-equivalent mutant killed.** Results in `build/ref-025/mutation.txt`.
+
+## Stage 8 refinements and results
+
+- **Release strings** (T8.2): `scripts/check_release_strings.sh` passes on the 3ds-release `pathfinding.elf` (4.49 MB)
+  and the pc-release `pathfinding.exe`.
+- **Opt-in by linking** (T8.3, `build/ref-025/probe/`, against the 3ds-release libraries): a program calling only
+  `PathMap::create` and `find` links 22 pathfinding symbols (map create, searcher, begin/step/finish, misuse) and no
+  sync, field, smoothing or follower code (`.text` 154 764 B, 135 020 before the forced inlining of stage 7); one calling
+  only `collision::move` links none (`.text` 42 152). `hello` sizes and `nm` lists equal stage 0's at every stage end.
+- **Regression** (T8.4): `compare.sh now` — hello, queries, entities, prefabs, platformer, replay 64/312 byte-identical
+  to stage 0; every example's `--pc` script ctest passes (prefabs, pathfinding); `.text` of the 3ds-release queries,
+  entities, prefabs and platformer ELFs unchanged; `pathfinding` `.text` 294 340 B.
+- **Build times** (T8.4, pc-debug simulator / 3ds-dev `.3dsx` after touching one game file, three runs, noisy):
+  `examples/pathfinding/hero.cpp` 1.90–1.94 s / 4.55–4.62 s; `examples/queries/queries_scene.cpp` 1.86–1.90 s /
+  3.81–3.88 s (the 3DS times include `dkp.sh`'s MSYS2 start). Within constitution III (< 2 s, < 5 s).
+- **Header** (T11.4): `<nnh/pathfinding.hpp>` 8 023 preprocessed lines, 405 ms `-fsyntax-only` against 408 ms for
+  `collision.hpp` + `result.hpp`.
+
+## Stage 9: Linux checks (left to the lead)
+
+On `nnhge-build` (VM 120), as specs 020–021: GCC 13, GCC 14 and clang 18 with ASan/UBSan — `nnh_tests` and ctest pass;
+the golden `1C0B5992` and its checkpoints, AC-2 (2 048 maps in pc-dev/pc-release), the walk = `cells_crossed` and the
+replay ctest identical on all three; libFuzzer `fuzz_path_ops` 10 minutes (`-DNNH_BUILD_FUZZERS=ON`, clang).
+
+## Stage 11 results
+
+- `docs/api/pathfinding.md` (maps, syncing, weights from Tiled, agent sizes, the diagonal rules drawn in text, costs and
+  the 32-bit bound, searches and statuses, the total order, slicing and stale results, re-planning, smoothing, fields
+  and crowds with the naive flee, the follower, memory, cost, misuse). The diagonal rules are drawn as text diagrams in
+  the page instead of `docs/images/pathfinding/*.png` (no image pipeline needed; the wiki renders them as they are).
+- Links: `collision.md` (end of "Grids"), `tilemap.md` (end of "Collision layers"), `guides/levels.md` ("Slow tiles for
+  pathfinding" at the end of "4. Collision"); `patterns.md` (the Time-sliced job row points at the module);
+  `decisions.md` (D40 implemented, change-log entry); `REFERENCES.md` (025's block); `CLAUDE.md` (layout paragraph after
+  "Collision layers and queries", two commands after `ANIMATION_DEMO=check`); `ROADMAP.md` (the item checked);
+  `specs/README.md` and the three spec files' status. `python -I scripts/docs_tool.py check`: 0 broken links.

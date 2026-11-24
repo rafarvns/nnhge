@@ -68,6 +68,9 @@ NNH_TEST(path_field_with_several_goals_takes_the_nearest_and_ignores_duplicates)
     f.build(map, goals, 4);
     CHECK(equals_reference(f, path_ref::ref_of(map), {goals, goals + 4}, kUnreachable));
     CHECK(f.distance({4, 0}) == 40 && f.distance({5, 1}) == 40 && f.distance({9, 0}) == 10);
+    const int settled = f.settled();
+    f.build(map, goals, 2); // the same goals without duplicates: the same work
+    CHECK(f.settled() == settled && settled == 20);
 }
 
 NNH_TEST(path_field_leaves_cells_beyond_the_maximum_cost_unreachable) {

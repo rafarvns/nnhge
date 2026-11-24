@@ -56,6 +56,9 @@ NNH_TEST(path_follower_uses_squared_distances_on_the_radius_edge) {
     PathFollower f(pts, 2, 5);
     CHECK(f.target({0, 0}) == (Vec2{3, 4}));
     CHECK(f.target({0, 0}) == (Vec2{3, 4}) && f.arrived()); // |(3, 4)| = 5: on the edge counts
+    const Vec2 line[3] = {{0, 0}, {10, 0}, {20, 0}};
+    PathFollower g(line, 3, 5);
+    CHECK(g.target({4, 3}) == (Vec2{10, 0}) && g.index() == 1); // exactly 5 from point 0: passed
 }
 
 namespace {
@@ -79,6 +82,12 @@ NNH_TEST(path_follower_misuse_asserts_and_changes_nothing_in_release) {
         CHECK(path_test::asserts_or_is_ignored(fn));
         if (!nnh::build::kAssertsEnabled) CHECK(g_t == (Vec2{10, 0}) && f.index() == 1);
     }
+    PathFollower done(kPoints, 1, 2); // arrived at its only point: a NaN position leaves it arrived
+    CHECK(done.target({0, 0}) == (Vec2{0, 0}) && done.arrived());
+    g_f = &done;
+    CHECK(path_test::asserts_or_is_ignored(nan_position));
+    CHECK(done.arrived() && done.index() == 0);
+    g_f = &f;
     for (auto fn : {nan_radius, negative_count, null_points}) {
         CHECK(path_test::asserts_or_is_ignored(fn));
         if (!nnh::build::kAssertsEnabled) CHECK(f.arrived() && f.target({1, 1}) == (Vec2{1, 1})); // emptied

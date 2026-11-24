@@ -1,6 +1,6 @@
 # Tasks 025: Pathfinding on grids
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (stages 0-8 and 11; Linux T9.1 and Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -222,18 +222,18 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 8: mutation testing, opt-in checks
 
-- [ ] **T8.1** Mutation pass as in plans 019–023: hand mutants (`build/ref-025/mutants.py`, applied one at a time by
+- [x] **T8.1** Mutation pass as in plans 019–023: hand mutants (`build/ref-025/mutants.py`, applied one at a time by
   `mutate.py`, the whole `nnh_tests` each) of `src/pathfinding/*` (the order's three keys, the neighbour order, the
   diagonal rules, the strict-g rule, the buffer, compaction, staleness, the limit, partial ties, footprints, the walk's
   corners, the weight rule, field relaxations and `next` ties, the follower, misuse paths); Release-path mutants in
   pc-release; survivors become tests or are argued equivalent. Files: plan.md ("Mutation testing"). Covers VI.
-- [ ] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `pathfinding`
+- [x] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `pathfinding`
   executables passes. Covers FR-23.
-- [ ] **T8.3** [P] Opt-in by linking: probes (`build/ref-025/probe_*`, not committed) linked against the 3ds-release
+- [x] **T8.3** [P] Opt-in by linking: probes (`build/ref-025/probe_*`, not committed) linked against the 3ds-release
   libraries: a game calling only `PathMap` and `find` links no field, smoothing or follower code; a game with
   `collision::move` only links nothing of `pathfinding`; `hello`'s sizes and `nm` equal T0.1's. Files: plan.md ("Stage 8
   results"). Covers FR-24, AC-8.
-- [ ] **T8.4** Regression and build times: `compare.sh` (every T0.2 reference identical); every example's console
+- [x] **T8.4** Regression and build times: `compare.sh` (every T0.2 reference identical); every example's console
   script passes with `--pc`; `.text` of `queries`, `entities`, `prefabs`, `platformer` unchanged and of `pathfinding`
   recorded; edit `examples/pathfinding/hero.cpp` → simulator and `.3dsx` times against T0.1's and constitution III.
   Files: plan.md ("Stage 8 results"). Covers AC-6, AC-8, III.
@@ -267,25 +267,25 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/pathfinding.md`: maps and syncing from grids and
+- [x] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/pathfinding.md`: maps and syncing from grids and
   tilemaps (regions), weights and the `path_cost` pattern, agent sizes, the diagonal modes with a picture of each rule
   (`docs/images/pathfinding/*.png`), costs and the 32-bit bound, searches and statuses, the total order, limits and
   partial paths, time slicing and stale results, smoothing (centre line, greedy runs), fields and crowds (the naive flee),
   the follower, re-planning patterns, determinism, costs, memory per cell, misuse; header comments (allocates? per-frame
   safe? misuse?). Covers VIII, AC-9.
-- [ ] **T11.2** Other pages: `docs/api/collision.md` (a link at the end of "Grids"), `docs/api/tilemap.md` (a link under
+- [x] **T11.2** Other pages: `docs/api/collision.md` (a link at the end of "Grids"), `docs/api/tilemap.md` (a link under
   "Collision layers"), `docs/guides/levels.md` (a "Slow tiles for pathfinding" subsection at the end of "4. Collision"),
   `docs/architecture/patterns.md` (the row: implemented), `docs/REFERENCES.md` (Godot `AStarGrid2D`/`AStar2D`, the A*
   Pathfinding Project, Unity NavMesh, Red Blob Games, Amit Patel, Hart–Nilsson–Raphael, Brian Walker, Emerson, Harabor &
   Grastien, Botea et al.), `CLAUDE.md` (layout paragraph after "Collision layers and queries", commands after the
   `ANIMATION_DEMO=check` line, the `pathfinding/` example in the layout); `python -I scripts/docs_tool.py check` → 0
   broken links. Covers AC-9.
-- [ ] **T11.3** `docs/architecture/decisions.md`: D40 change-log note "implemented" with the stage refinements. Covers
+- [x] **T11.3** `docs/architecture/decisions.md`: D40 change-log note "implemented" with the stage refinements. Covers
   AC-9.
-- [ ] **T11.4** Final measurements (header costs, build times, `hello` sizes, `.text`) in plan.md and
+- [x] **T11.4** Final measurements (header costs, build times, `hello` sizes, `.text`) in plan.md and
   `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.5** `docs/ROADMAP.md`: the "Pathfinding on grids" checkbox, with the implemented summary.
-- [ ] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.5** `docs/ROADMAP.md`: the "Pathfinding on grids" checkbox, with the implemented summary.
+- [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
 - [ ] **T11.7** (the lead, after 022 and 023 are merged) Merge `spec-025` into `main` per plan.md's "Merge notes"; then
   the full ctest (pc-debug, pc-release), every example's `--pc` script, AC-3's golden, 022's and 023's goldens and the
   replay ctest with the tree's lines, one 3ds-release build; T10.2 run 2 is repeated if the merge happened after it.

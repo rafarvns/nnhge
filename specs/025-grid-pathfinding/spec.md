@@ -1,6 +1,6 @@
 # Spec 025: Pathfinding on grids
 
-Status: approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
+Status: implemented 2026-11-24 (Linux T9.1 and Old 3DS T10.2 pending). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
 question as recommended; to review in the morning)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 012](../012-tilemaps-and-collision/spec.md) (`<nnh/collision.hpp>`: `Grid`, `Cell`, solid and one-way

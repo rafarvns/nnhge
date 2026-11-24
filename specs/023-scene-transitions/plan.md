@@ -754,3 +754,15 @@ Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `bui
 | Goldens | replay `B2418A28` (spec 021's lines: this tree predates spec 022's T6.3), tweens `B44CA3F6`, entities `C8FB9A41`, prefabs `7BB7901E` |
 | AC-9 references | `build/ref-023/ref/`: hello, sprites, scenes title (30) and level (90, `NNH_SIM_INPUT=buttons=A`), tweens, actions, camera `zoom1`, platformer level 1 (90), replay 64 and 312; `compare.sh` retakes them identical |
 | Disassembly | 3ds-dev `input.o`, `scenes.o`, `scene_stack.o` in `build/ref-023/m-t0/dis/`; `input_update` is 54 instructions with one call (`shape_stick`) per stick; 3ds objects are built with one section per function (the linker drops unreferenced functions) |
+
+## Stage 1 results
+
+- `<nnh/ease.hpp>` holds `Ease`, `kEaseCount`, `EaseFn`, `ease()` and `Easing` verbatim; `<nnh/tween.hpp>` includes it.
+  A one-line TU including only `<nnh/ease.hpp>` preprocesses to `<cstdint>` and the system headers it pulls (461
+  lines, 314 ms). `FinishEvent` moved verbatim to `<nnh/detail/finish_event.hpp>`, included by `tween_detail.hpp`.
+- The 3ds-dev disassembly of every `src/tween/*.o` is identical to stage 0's (`objsum.sh`); `tweens: PASS B44CA3F6`
+  (`check.nnhs --pc`); spec 015's tests and compile-fail tests pass unchanged; stage-end guards green (ctest 268/258,
+  0 warnings on the four presets, actions and input scripts PASS, `compare.sh` identical, docs 0 broken links).
+- `tween.hpp` grew by 32 preprocessed lines (the new headers' comments): 8 445, `-fsyntax-only` unchanged.
+- Refinement (tooling): the actions example saves rebound controls (`controls.bin`) when its script runs, which
+  changes its screenshot; `compare.sh` deletes that file before retaking the reference.

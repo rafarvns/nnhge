@@ -47,7 +47,25 @@ still on the stack is caught at runtime ([api/scene.md](../api/scene.md#ownershi
 ```
 frame():  present previous frame → apply scene changes → input → input actions (D32) → deliver events (input last)
 game:     top scene update() → draw scenes bottom-to-top          (scenes::update_and_draw(), nnh::run())
+          while a transition runs: its step → (top update() only if its options allow) → draw scenes → its overlay
 ```
+
+## Transitions (D38)
+
+A scene transition ([api/transition.md](../api/transition.md), spec 023) spans two scenes, so neither owns it: one
+running transition is **module state of `transition`**, reached only through `nnh::transition` functions and reset by
+`nnh::shutdown()` — like the scene stack itself, never a game object. The stack runs it through an **optional frame
+hook** (the pattern of D30 and D32): `scene/scene_hook.hpp` declares `g_scene_transition`, a pointer to a constant
+`{frame, cancel}` pair, null except while a transition runs. `scenes::update_and_draw()` pays one null check; while the
+pointer is set it calls the hook's frame instead, which steps the transition's timeline, calls the stack's two halves
+(`update_top()` only when the options allow, then `draw_all()`), then records the overlay on layer 15 with
+`ignore_camera`. The transition's stack change goes through the normal deferred requests (a tolerant
+`TransitionPop`); the waiting scene's pending count is held meanwhile, so ownership checks stay spec 001's. `run()`
+loops while the hook is set even on an empty stack, and the hook is cancelled (silently) before the stack is cleared.
+The scene module never names the transition module; a game that never requests a transition links none of it.
+
+Input is blocked at its source, not by the scenes: the input module's filter idles the frame's sample while a blocker
+is on ([api/input.md](../api/input.md#blocking-input)), so queries, events and actions all agree.
 
 ## Scene attachments (D30)
 

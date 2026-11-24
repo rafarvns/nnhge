@@ -148,6 +148,16 @@ limits (`set_limits(map.bounds())`), seeded trauma shake, zoom about the centre,
 screens as one world) or two rigs for two views, `to_world`/`to_screen`, `debug_draw()`. `Camera2D::zoom` (0.5–4)
 is applied by core to sprites, text, shapes and tile layers (snapped tile edges, row chunks below zoom 1; zoom 1
 byte-identical) ([api/camera.md](docs/api/camera.md), [gfx.md#zoom](docs/api/gfx.md#zoom)).
+Scene transitions (spec 023, implemented, console run pending; D38; demo `examples/transitions`):
+`<nnh/transition.hpp>` — `transition::replace/push/pop/cover(scene, {.effect, .reveal, .bottom, .tall, .out, .hold,
+.in, .out_ease, .loading, .on_covered, .on_finished, .publish, ...})`: out → covered (the stack change through spec
+001's deferred path, `on_covered`, a loading step per frame, the hold) → in, whole 60 Hz frames, easings from
+`<nnh/ease.hpp>`; effects `fade/wipe/split/blinds/iris/custom/none` as integer rectangles on layer 15 (`ignore_camera`),
+per screen or across both (`tall`), `reveal_at` for the reopening iris; no scene updates during a transition unless
+`update_out/update_in`; game input blocked at its source (`input::set_blocked` too; held controls wait for release);
+queries `running/phase/coverage/...`; pure `effect_rects/draw_effect`. Run by a scene-stack hook (one null check);
+self-check `BFE1D810` ([api/transition.md](docs/api/transition.md)). The platformer's doors use a tall iris
+(`PLATFORMER_DEMO=doors`, `tests/doors.nnhs`).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
@@ -205,6 +215,9 @@ build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/l
 build/pc-debug/tools/nnh/nnh run data [--pc] --script examples/data/tests/check.nnhs        # data assets: self-check checksum = PC's
 QUERIES_DEMO=all NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/queries.png build/pc-debug/examples/queries/queries.exe   # first|all|cast|water|touch|check|bench
 build/pc-debug/tools/nnh/nnh run queries [--pc] --script examples/queries/tests/check.nnhs  # rays, touches, self-check 4ACAA177, bench
+build/pc-debug/tools/nnh/nnh run transitions [--pc] --script examples/transitions/tests/check.nnhs  # self-check BFE1D810, showcase, bench
+build/pc-debug/tools/nnh/nnh run platformer [--pc] --script examples/platformer/tests/doors.nnhs   # ten door irises, 60 Hz PASS/FAIL
+TRANSITIONS_SHOT=iris NNH_EXIT_AFTER_FRAMES=40 NNH_SCREENSHOT=build/iris.png build/pc-debug/examples/transitions/transitions.exe   # fade|wipe|split|blinds|iris|diamond|curtain|tall|loading
 build/pc-debug/tools/nnh/nnh run prefabs [--pc] --script examples/prefabs/tests/check.nnhs  # room, touch spawns, self-check 7BB7901E, bench
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings

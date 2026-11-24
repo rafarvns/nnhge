@@ -1,8 +1,8 @@
 # Spec 026: 3D foundation
 
 Status: approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
-question as recommended; to review in the morning, especially decision 2: a CPU rasterizer in the simulator, D41,
-which reverses part of D20). Implemented after spec 022 (it uses 022's `sin_cos`)
+question as recommended; decision 2, a CPU rasterizer in the simulator (D41,
+reversing part of D20), confirmed by the maintainer the same night). Implemented after spec 022 (it uses 022's `sin_cos`)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 004](../004-2d-graphics/spec.md) (recorded per-screen passes, one texture type, layers; FR-11 to
 FR-14 "Ready for 3D"), [spec 007](../007-assets-and-romfs/spec.md) (the assets folder, per-file conversion steps,

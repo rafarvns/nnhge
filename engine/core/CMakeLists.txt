@@ -208,6 +208,12 @@ set(_nnh_transition_sources
     src/transition/effect_fill.cpp
     src/transition/effect_iris.cpp
     src/transition/effect_query.cpp
+    src/transition/transition_frame.cpp
+    src/transition/transition_loading.cpp
+    src/transition/transition_overlay.cpp
+    src/transition/transition_queries.cpp
+    src/transition/transition_request.cpp
+    src/transition/transition_timeline.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_transition_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

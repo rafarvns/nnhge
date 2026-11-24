@@ -817,3 +817,29 @@ Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `bui
   (`small_function.hpp`'s `<new>`/`<type_traits>`/`<utility>` are most of it; `scene.hpp` + `gfx.hpp`: 565 + 779).
 - Guards green (ctest 268/258, `nnh_tests` 2413, 0 warnings on four presets, scripts PASS, `compare.sh` identical);
   `hello` unchanged since stage 2 (text 201 244, same `nm` list).
+
+## Stage 4 results and refinements
+
+- Tests: `tests/scene/test_scene_hook.cpp` (9: the halves equal `update_and_draw()` call for call, nothing on an empty
+  stack, the transition change through the deferred path, the tolerant pop, delegation to a test hook, the cancel at
+  `shutdown()` and at the end of `run()`, `run()` looping while the hook runs on an empty stack, the pending count),
+  `tests/transition/test_timeline.cpp` (11), `test_requests.cpp` (11: each request, plain changes instant, the refusal
+  logged once per running transition, each misuse asserting or clamped/refused on the Release path, queries frame by
+  frame, `reveal_at`, the waiting scene's count); `test_scene_stack.cpp`, `test_run.cpp`, `test_scene_attachments.cpp`
+  unchanged and green. `nnh_tests` 2444; guards green.
+- **Refinement: the transition's tolerant pop logs in the transition module**, not in the stack:
+  `Op::TransitionPop` pops nothing on an empty stack silently, and `transition_enqueue_change()` logs the error when it
+  enqueues a pop on a stack the game emptied. The stack's log string cost `hello` 100 bytes (every game links
+  `apply_pending`); without it the scene hook costs `hello` **32 bytes** (`scenes_shutdown`'s cancel check and the
+  4-byte pointer): **`hello` +88 bytes of 3DS text since stage 0** (201 188 → 201 276, budget 96). `scenes`: `+`
+  the null check in `update_and_draw` (8 bytes: `0x20`), `run()` 132 bytes.
+- **Refinement: queries read between frames show the state the next frame starts in** (the end of a frame already
+  moved the phase: after the last out frame, `phase()` is Covered with `phase_progress()` 0). Inside a frame (scenes'
+  `update`/`draw`, callbacks, custom effects) they are that frame's, as the tests read them.
+- **Refinement: a change enqueued during the frame it is requested in** (O = 0 and a request before
+  `update_and_draw()`, from an event handler or `on_enter()`) is applied at the start of the next frame, so that
+  first frame is drawn covered without counting as a covered frame (on_covered always follows the change).
+- **Refinement: the in phase is skipped only over a stack the transition's own change emptied** (`op != Cover` and an
+  empty stack): a `cover()` in a game without scenes still reveals (FR-18).
+- `TransitionState`: 248 bytes on 32-bit (the callbacks 96, `FinishEvent` 40, four resolved effects 56, easings 16,
+  timeline 20, counters and flags), ≤ 320 on 64-bit; `static_assert`ed.

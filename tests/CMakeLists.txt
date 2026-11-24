@@ -478,6 +478,9 @@ target_sources(nnh_tests PRIVATE
     fuzz/test_fuzz_transition_geometry.cpp
     input/test_input_block.cpp
     input/test_input_block_api.cpp
+    scene/test_scene_hook.cpp
+    transition/test_requests.cpp
+    transition/test_timeline.cpp
     transition/test_effect_area.cpp
     transition/test_effect_fill.cpp
     transition/test_effect_iris.cpp

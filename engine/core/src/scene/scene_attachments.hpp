@@ -24,6 +24,7 @@ struct SceneAttachment {
 /// The scene module's access to Scene::attachments_ (a friend of Scene).
 struct SceneAccess {
     static SceneAttachment*& head(Scene& scene) { return scene.attachments_; }
+    static std::uint8_t& pending(Scene& scene) { return scene.pending_; } ///< scene_hook.hpp (spec 023)
 };
 
 /// The running notification pass, shared by scene_notify.cpp and scene_attachments.cpp. (Two files so that a

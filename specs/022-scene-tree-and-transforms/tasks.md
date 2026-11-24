@@ -215,35 +215,35 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 7: `examples/hierarchy` (PC)
 
-- [ ] **T7.1** Art and yard: `art/make_art.py` (original ship, gun, hand, walker, hat, cart, rider, squash block,
+- [x] **T7.1** Art and yard: `art/make_art.py` (original ship, gun, hand, walker, hat, cart, rider, squash block,
   crates, bullet, posts), `components.hpp`, `yard.{hpp,cpp}` (world bound to the showcase scene, library with
   `ship`/`walker`/`cart`/`squash`/`crate` trees in `yard_prefabs.cpp`, the hierarchy, the frame order), `ship`, `walker`
   (turning by `scale.x = −1`, the hat's bob tween by pointer), `cart` (the rider followed by a `CameraRig` on the top
   screen), `yard_draw` (every node through the gfx overload, centred pivots), `hud` (FR-22's stats). Test: PC
   screenshots `HIERARCHY_DEMO=showcase` (the yard; a mirrored walker) read back. Files: `examples/hierarchy/*`,
   `examples/CMakeLists.txt`. Covers AC-5, FR-4, FR-13, FR-15.
-- [ ] **T7.2** Picking and reparenting: bodies from bounds after the pass (`each<Node, Body>`), a touch on the bottom
+- [x] **T7.2** Picking and reparenting: bodies from bounds after the pass (`each<Node, Body>`), a touch on the bottom
   screen (zoom 0.5) picks through `collision::boxes_at` and logs `picked: …`; X attaches to the hand / drops (`attached:
   …`, `dropped: …` at the same position); B destroys the ship (`destroyed: ship + n children`); D-Pad up detaches its
   children (`detached: n children`); D-Pad down toggles the debug draw; X with nothing picked restarts (`yard: restarted
   nodes n`). Files: `picking.*`, `showcase_scene.*`, `main.cpp`, `demos.hpp`. Test: PC screenshots (carried crate, a
   cascade, the debug draw) read back; the lines in a `--pc` run. Covers AC-5, FR-10, FR-11, FR-14, FR-22.
-- [ ] **T7.3** Self-check scene: SELECT runs T5.5's script, 2000 operations per frame, logging `hierarchy: <n> sum
+- [x] **T7.3** Self-check scene: SELECT runs T5.5's script, 2000 operations per frame, logging `hierarchy: <n> sum
   <checksum>` and `hierarchy: PASS <checksum>` / `hierarchy: FAIL ...`; `HIERARCHY_DEMO=check` starts in it; ctest
   `hierarchy_self_check_pc`. Files: `self_check_scene.*`, `tests/CMakeLists.txt`. Covers AC-2, AC-6.
-- [ ] **T7.4** [P] Bench (AC-7): `bench.{hpp,cpp}` (the five workloads as plan.md: prefab-built 1024-node world for the
+- [x] **T7.4** [P] Bench (AC-7): `bench.{hpp,cpp}` (the five workloads as plan.md: prefab-built 1024-node world for the
   passes, a shuffled hand-built one for `world_now`, two 256-entity worlds for the spawn on alternate frames, the
   32-parent/64-item reparent set) and `bench_scene.{hpp,cpp}` (300 frames each, profile scopes around the measured call
   only, one line per workload, the spawn line's hand time and ratio, the verdict; Debug: `not judged (Debug)`); Y runs
   it, `HIERARCHY_DEMO=bench` starts in it. Test: a pc-dev run logs every line and PASS. Covers AC-7.
-- [ ] **T7.5** The script `examples/hierarchy/tests/check.nnhs`: SELECT → every checkpoint and the PASS line; the
+- [x] **T7.5** The script `examples/hierarchy/tests/check.nnhs`: SELECT → every checkpoint and the PASS line; the
   restart line; fixed touches and buttons with their expected `picked:`/`attached:`/`dropped:`/`detached:`/`destroyed:`
   lines (a `wait 3` after every `expect` an input follows); screenshots (showcase, mirrored walker, carried crate,
   cascade, debug draw); Y → the bench lines and `hierarchy bench: PASS`; `fail-on "hierarchy: FAIL"`, `fail-on
   "hierarchy bench: FAIL"`, `fail-on "] E "`; ctest `hierarchy_check_script_pc` (`RESOURCE_LOCK nnh_remote_port`).
   Test: `nnh run hierarchy --pc --no-build --script examples/hierarchy/tests/check.nnhs` → PASS, twice. Covers AC-5,
   AC-6, AC-7.
-- [ ] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of
+- [x] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of
   `examples/hierarchy/bench.o`, `src/hierarchy/*`, `src/transform/*`, `src/core/det_sine.o`, `src/prefabs/prefab_tree.o`,
   `prefab_spawn.o`, `src/entities/world_reserve_many.o`, `world_spawn.o`, `world_components.o`; per AC-7 hot path record
   instructions, calls, stack reloads, `pld`, `vmrs`, `vdiv`, `__aeabi_*`, `memcpy`/`memset`, shift-add chains, and compare

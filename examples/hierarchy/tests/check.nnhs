@@ -1,0 +1,85 @@
+# Spec 022 AC-5/AC-6/AC-7, automatic (spec 013): the yard, the self-check (prefab hierarchies against hand-written
+# ones: its checksum lines must be the PC's bit for bit), then the showcase again: a crate picked by a touch, carried in
+# the ship's hand and dropped where it was (keep world: the same position twice), the gun picked (depth 1), the debug
+# draw, the ship destroyed with its children, a restart, the ship's children detached first; then the bench (AC-7's
+# targets) and its verdict.
+# PC:      nnh run hierarchy --pc --script examples/hierarchy/tests/check.nnhs
+# Console: nnh run hierarchy --script examples/hierarchy/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines below are the PC's (pc-debug). The showcase's lines change only if the yard or the moves below
+# change; the checksum lines only if self_check.cpp or the hierarchy/prefabs/entities/transform modules change: then run
+# `HIERARCHY_DEMO=check NNH_EXIT_AFTER_FRAMES=60 build/pc-debug/examples/hierarchy/hierarchy.exe`, copy its lines here
+# and the values into kHierarchyCheckGolden/kHierarchyCheckpoints (self_check.hpp).
+fail-on "] E "
+fail-on "hierarchy: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "hierarchy bench: FAIL"
+
+# (The yard's first line is logged in frame 0, before the script starts: the restarts below expect it.)
+wait 30
+screenshot showcase
+
+# The self-check (SELECT): 50 000 operations, a checksum every 10 000, then the verdict.
+tap SELECT
+expect "hierarchy: self-check started" 20
+expect "hierarchy: 10000 sum D22B93EC" 60
+expect "hierarchy: 20000 sum 9DB7C5E5" 60
+expect "hierarchy: 30000 sum 820ED1D5" 60
+expect "hierarchy: 40000 sum 5ED71B4D" 60
+expect "hierarchy: 50000 sum 23DB5C36" 60
+expect "hierarchy: PASS 23DB5C36" 30
+wait 10
+screenshot self-check
+
+# Back to the showcase (SELECT): the yard again. The bottom screen shows it at zoom 0.5.
+tap SELECT
+expect "yard: restarted nodes 12" 20
+wait 10
+# The first crate (world 200,218 = bottom 100,109): picked, carried in the ship's hand, dropped where it was.
+touch 100 109
+expect "picked: crate slot 10 gen 2 depth 0 at 200,218" 5
+wait 10
+untouch
+wait 10
+tap X
+expect "attached: crate to hand at 200,218" 10
+wait 30
+screenshot carried
+tap X
+expect "dropped: crate at 200,218" 10
+wait 10
+# The gun (its box around world 108,120 = bottom 54,60; its node at 104,120), over the ship: the child wins.
+touch 54 60
+expect "picked: gun slot 1 gen 2 depth 1 at 104,120" 5
+wait 10
+untouch
+wait 10
+tap DOWN
+wait 10
+screenshot debug-draw
+tap DOWN
+wait 10
+# B: the ship goes, and its gun, muzzle and hand with it.
+tap B
+expect "destroyed: ship + 3 children" 10
+wait 10
+screenshot cascade
+# X with the picked gun gone: a restart. Then D-Pad up detaches the ship's children first.
+tap X
+expect "yard: restarted nodes 12" 10
+wait 10
+tap UP
+expect "detached: 2 children" 10
+wait 10
+
+# The bench (Y): five workloads of 300 frames, a line each, then the verdict (about 25 s).
+tap Y
+expect "hierarchy bench: started" 20
+expect "hierarchy bench: pass_turn" 420
+expect "hierarchy bench: pass_move" 420
+expect "hierarchy bench: world_now" 420
+expect "hierarchy bench: spawn" 420
+expect "hierarchy bench: reparent" 420
+expect "hierarchy bench: PASS" 30
+wait 10
+screenshot bench

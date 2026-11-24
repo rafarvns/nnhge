@@ -478,6 +478,21 @@ if(TARGET prefabs AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQU
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
 endif()
+# The hierarchy example's self-check in the simulator (spec 022 T7.3, AC-6) and its console script played with --pc.
+if(TARGET hierarchy AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME hierarchy_self_check_pc COMMAND hierarchy)
+    set_tests_properties(hierarchy_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;HIERARCHY_DEMO=check;NNH_EXIT_AFTER_FRAMES=60"
+        PASS_REGULAR_EXPRESSION "hierarchy: PASS 23DB5C36" FAIL_REGULAR_EXPRESSION "hierarchy: FAIL" TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME hierarchy_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run hierarchy --pc --no-build --script examples/hierarchy/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(hierarchy_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+endif()
 # The data example's self-check in the simulator (spec 014 T8.3): the line the console script expects.
 if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME data_self_check_pc COMMAND data)

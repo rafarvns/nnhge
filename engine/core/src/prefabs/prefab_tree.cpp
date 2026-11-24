@@ -17,10 +17,10 @@ namespace nnh {
 namespace detail {
 namespace {
 
-struct TreeEntity {
-    int prefab = 0;
-    int parent = -1; ///< index in the creation list, −1 for the root
-    const PrefabChildEntry* entry = nullptr; ///< null for the root
+struct TreeEntity { // no default initializers: flatten_tree writes every entry it uses (no array clearing)
+    int prefab;
+    int parent; ///< index in the creation list, −1 for the root
+    const PrefabChildEntry* entry; ///< null for the root
 };
 
 /// The creation list: pre-order, children in entry order (an explicit stack: ≤ 16 levels by the registration checks).
@@ -109,23 +109,16 @@ void run_chain(PrefabBlock& b, int index, World& world, Entity e, const SpawnInf
     for (int i = count - 1; i >= 0 && !b.doomed; --i) b.records[chain[i]].hook(world, e, info);
 }
 
-/// Post-order (children before parents) of the creation list, from its parent indices.
+/// Post-order (children before parents) of the creation list (pre-order): before an entity is pushed, every stacked
+/// entity that isn't its parent has a complete subtree and is emitted; the rest at the end. No array to clear.
 int post_order(const TreeEntity* list, int n, int* out) {
-    int count = 0;
-    bool done[kMaxPrefabTree] = {};
-    int i = 0;
-    while (count < n) {
-        int child = -1; // the first unfinished child of i, in list (= entry) order
-        for (int c = i + 1; c < n && child < 0; ++c)
-            if (list[c].parent == i && !done[c]) child = c;
-        if (child >= 0) {
-            i = child;
-            continue;
-        }
-        done[i] = true;
-        out[count++] = i;
-        i = list[i].parent < 0 ? 0 : list[i].parent;
+    int stack[kMaxPrefabTree];
+    int top = 0, count = 0;
+    for (int i = 0; i < n; ++i) {
+        while (top > 0 && stack[top - 1] != list[i].parent) out[count++] = stack[--top];
+        stack[top++] = i;
     }
+    while (top > 0) out[count++] = stack[--top];
     return count;
 }
 

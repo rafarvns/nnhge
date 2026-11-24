@@ -969,3 +969,40 @@ Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at co
   renderer makes the tile gate miss its frames, as before spec 022). New references for level 1 at 90 and the replay at
   64 and 312 (barrels visible, aimed at the player); the bench's top screen identical. Guards: pc-debug ctest 269/269,
   pc-release 259/259, `nnh_tests` 2440, 3ds builds without a warning, `hello` unchanged.
+
+### Stage 7 results
+
+- **Example (T7.1–T7.5)**: `examples/hierarchy` — refinement: the ship, walker, cart, picking and HUD code is in
+  `yard.cpp` (logic, 180 lines), `yard_draw.cpp` (drawing and HUD) and `yard_prefabs.cpp` (the five hierarchies), not
+  one file each; the yard's world and tween set are unbound (the yard flushes and updates them in its frame order,
+  `world.flush()` then `propagate()`), art from `art/make_art.py` (`assets/art/yard.png`, 128×32). Screenshots read
+  back: showcase, mirrored walker (frame 300), carried crate, debug draw, cascade, bench. `tests/check.nnhs` (85 lines,
+  a 10-frame wait after every `expect` an input follows) → `nnh: PASS` with `--pc`; its showcase lines:
+  `yard: restarted nodes 12`, `picked: crate slot 10 gen 2 depth 0 at 200,218`, `attached: crate to hand at 200,218`,
+  `dropped: crate at 200,218`, `picked: gun slot 1 gen 2 depth 1 at 104,120`, `destroyed: ship + 3 children`,
+  `detached: 2 children`. ctests `hierarchy_self_check_pc` and `hierarchy_check_script_pc` pass.
+- **PC bench** (pc-dev, WinLibs GCC, offscreen): pass_turn 0.030 ms, pass_move 0.022, world_now 0.087, spawn 0.091
+  (hand 0.070, ratio 1.28), reparent 0.036 ms — `hierarchy bench: PASS`.
+- **T7.6 ARM pre-check** (3ds-dev objects, `dis7/`): `propagate` 584 instructions in all, no call inside the per-node
+  loop (its calls: `tree_of` at entry, the two misuse paths), 2 `pld` per node, 4 `vmrs` (the clamp of the two inlined
+  `sin_quarter`s, reached only when a rotation's bits changed), no `__aeabi_*`/`memcpy`/`memset`; `world_now` 486, one
+  call (`tree_of`); keep-world attach: `check` 130 + `relative` 38 (2 `vdiv`, plus 1 in its `to_local`) + links;
+  `reparent_transform` 260 (the keep-local composition with its sine); `tree_spawn` 1062 (2 `memset`s left: the
+  handle and reservation arrays' default initialisation), `world_reserve_many` 294, `node_removed` 72; `World::spawn`
+  109, `world_add` 143, spec 021's spawn body (`prefab_spawn_one`) 491 byte-identical, `examples/entities` `bench.o`
+  identical. **Decision (plan item 5)**: `sin_quarter`'s clamp stays a float compare — it runs only when a rotation
+  changed, and keeping it leaves spec 015's bits and disassembly untouched; it is risk 1(b) if `pass_turn` misses.
+  **Savings applied** (results unchanged, goldens hold): keep-world `attach` inverts the parent's map once (through
+  `relative`, which refuses without writing) instead of twice; `tree_spawn`'s post-order uses a stack (no cleared
+  array) and its creation list has no default initializers; the bench keeps its root handles in a member.
+
+| AC-7 workload | Estimate from the counts (per item, then × 256 or × 64; upper × 1.3) | Target | Expected |
+|---------------|-----------------------------------------------------------------------|--------|----------|
+| pass_turn | per hierarchy ≈ 375 instructions (root rule + sine, a turned child + sine, two translations) ≈ 560 cycles + 4 records × 2.5 prefetched lines ≈ 400 | < 1.5 ms | 0.9–1.2 ms, PASS |
+| pass_move | ≈ 285 instructions, no sine ≈ 430 + 400 cycles | < 1.0 ms | 0.8–1.05 ms, **at risk** |
+| world_now | 4 dependent misses ≈ 440 cycles + ≈ 385 instructions | < 1.5 ms | 1.0–1.3 ms, tight |
+| spawn | tree ≈ 1400 instructions + 4 cascaded destroys ≈ 1780, × 2.23 cycles; hand ≈ 5400 | < 2.2 ms, ≤ 1.3× | 1.7–2.2 ms, ratio 0.6–1.3: **at risk** (the PC's ratio is 1.28) |
+| reparent | keep-world ≈ 330 instructions + 3 `vdiv`; keep-local ≈ 430 with a sine | < 1.0 ms | 1.0–1.4 ms, **likely missed** |
+
+  If reparent or pass_move miss on the console, T10.3 applies risk 1's list (the reparent first: the subtree walk
+  skipped for leaves, one reciprocal for the three divisions, the walk fix-up loops skipped when no walk is active).

@@ -28,8 +28,10 @@ bool usable(const Tree& t, Entity e) {
 }
 
 /// The checks in the plan's order; `same` is set when `child` is already `parent`'s child (nothing to do).
+/// The inverse test is skipped when `test_inverse` is false (attach keep-world: relative() makes the same exponent test
+/// on the same determinant and refuses without writing, so the map is inverted once, not twice — plan 022 T7.6).
 AttachCheck check(const Tree& t, Entity child, Entity parent, Reparent mode, std::uint16_t& cs, std::uint16_t& ps,
-                  bool& same) {
+                  bool& same, bool test_inverse = true) {
     same = false;
     if (!usable(t, child) || !usable(t, parent)) return AttachCheck::Stale;
     cs = t.slot_of(child);
@@ -42,7 +44,7 @@ AttachCheck check(const Tree& t, Entity child, Entity parent, Reparent mode, std
     for (std::uint16_t p = ps; p != kNoNode; p = NA::parent(t.nodes[p]))
         if (p == cs) return AttachCheck::Cycle;
     if (NA::depth(t.nodes[ps]) + 1 + subtree_height(t, cs) >= kMaxHierarchyDepth) return AttachCheck::TooDeep;
-    if (mode == Reparent::KeepWorld) {
+    if (mode == Reparent::KeepWorld && test_inverse) {
         Affine2D inv;
         if (!inverse(NA::world(t.nodes[ps]).map, inv)) return AttachCheck::NotInvertible;
     }
@@ -87,7 +89,11 @@ bool Hierarchy::attach(Entity child, Entity parent, Reparent mode) {
     }
     std::uint16_t cs = 0, ps = 0;
     bool same = false;
-    const AttachCheck why = detail::check(t, child, parent, mode, cs, ps, same);
+    AttachCheck why = detail::check(t, child, parent, mode, cs, ps, same, false);
+    Transform2D kept{};
+    if (why == AttachCheck::Ok && !same && mode == Reparent::KeepWorld &&
+        !relative(t.nodes[ps].world(), t.nodes[cs].world(), kept)) // before the links change; nothing written yet
+        why = AttachCheck::NotInvertible;
     if (why != AttachCheck::Ok) {
         ++t.modules().words[detail::kRefusals];
         detail::hierarchy_misuse(detail::reason(why));
@@ -95,7 +101,7 @@ bool Hierarchy::attach(Entity child, Entity parent, Reparent mode) {
     }
     if (same) return true;
     Node& c = t.nodes[cs];
-    if (mode == Reparent::KeepWorld) detail::reparent_transform(c, &t.nodes[ps], mode); // before the links change
+    if (mode == Reparent::KeepWorld) c.local = kept;
     detail::unlink(t, cs);
     detail::link_last(t, ps, cs);
     detail::rewrite_depths(t, cs);

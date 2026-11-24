@@ -307,8 +307,11 @@ set(_nnh_saves_sources
     src/saves/save_apply.cpp
     src/saves/save_convert.cpp
     src/saves/save_decode.cpp
+    src/saves/save_dump.cpp
+    src/saves/save_dump_env.cpp
     src/saves/save_encode.cpp
     src/saves/save_enum.cpp
+    src/saves/save_file.cpp
     src/saves/save_header.cpp
     src/saves/save_migrate.cpp
     src/saves/save_report.cpp

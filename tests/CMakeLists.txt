@@ -535,16 +535,24 @@ target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_S
 # Structured saves (spec 027): the codec, evolution, migrations, files, power cuts, golden files, fuzz.
 target_sources(nnh_tests PRIVATE
     platform_fake/test_power_cut_fake.cpp
+    saves/test_backup.cpp
+    saves/test_blob.cpp
     saves/test_declare.cpp
+    saves/test_dump.cpp
     saves/test_encode.cpp
     saves/test_encode_sequences.cpp
     saves/test_evolution.cpp
+    saves/test_file.cpp
     saves/test_fit.cpp
     saves/test_header.cpp
     saves/test_migrations.cpp
     saves/test_old_fields.cpp
+    saves/test_power_cut.cpp
     saves/test_raw_unchanged.cpp
     saves/test_round_trip.cpp
+    saves/test_save_cost.cpp
+    saves/test_save_misuse.cpp
+    saves/test_slots.cpp
     saves/test_summary.cpp
     saves/test_validate.cpp
     saves/test_versions.cpp

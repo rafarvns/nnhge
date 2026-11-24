@@ -140,27 +140,27 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 5: files, backups, power cuts, the dump
 
-- [ ] **T5.1** Store and load: `save_file.cpp` (`store`/`load` and their `Buffer` overloads, the backup rules of D46,
+- [x] **T5.1** Store and load: `save_file.cpp` (`store`/`load` and their `Buffer` overloads, the backup rules of D46,
   `Corrupted` with both reasons, `NotFound`), `save_report.cpp` (the warning line, the `saves` channel). Test:
   `tests/saves/test_file.cpp` (`NNHS` version 1 + structured header on disk; the fs call sequence equals T0.2's
   `save::write` sequence; one `fs_write` per store; the report; one warning line exactly when backup/dropped/adjusted;
   no line otherwise), `tests/saves/test_backup.cpp` (CRC-valid broken structure, bit flips, truncation, missing main →
   backup used; key mismatch and newer version never try the backup; both bad → `Corrupted`, struct unchanged). Covers
   FR-6, FR-7, FR-9, FR-15.
-- [ ] **T5.2** Slots: `info`, `exists`, `remove`. Test: `tests/saves/test_slots.cpp` (file, backup only, none; remove of
+- [x] **T5.2** Slots: `info`, `exists`, `remove`. Test: `tests/saves/test_slots.cpp` (file, backup only, none; remove of
   file + backup + temp; `info` of main, backup, raw file; three slots and a settings file side by side). Covers FR-16.
-- [ ] **T5.3** Power cuts and damage: Test: `tests/saves/test_power_cut.cpp` (first store and store over a save; cut after
+- [x] **T5.3** Power cuts and damage: Test: `tests/saves/test_power_cut.cpp` (first store and store over a save; cut after
   0..4 operations, torn and not; another store after each cut; the next load gives the new or the previous values, never
   `Corrupted`, never `NotFound` once a save existed). Covers AC-3, X.
-- [ ] **T5.4** The dump: `save_dump.cpp` (values, buffers, files; names when known, ids otherwise; Release stubs),
+- [x] **T5.4** The dump: `save_dump.cpp` (values, buffers, files; names when known, ids otherwise; Release stubs),
   `save_dump_env.cpp` (`NNH_SAVE_DUMP` once, the test override, `<path>.txt` in 4 KB pieces). Test:
   `tests/saves/test_dump.cpp` (exact text of a small value; nested indentation; list counts; escapes; unknown and
   retired fields; `<path>.txt` written with the override; `Unsupported` in pc-release). Covers FR-17.
-- [ ] **T5.5** [P] Misuse, cost and blobs: Test: `tests/saves/test_save_misuse.cpp` (every FR-21 case), 
+- [x] **T5.5** [P] Misuse, cost and blobs: Test: `tests/saves/test_save_misuse.cpp` (every FR-21 case), 
   `tests/saves/test_save_cost.cpp` (no allocation over every call; visited-field counters linear for 128-field structs and
   256-item lists), `tests/saves/test_blob.cpp` (an `ActionSet`'s `NNHB` in a `List<std::uint8_t, 256>` stored, loaded,
   applied with `load_from`). Covers FR-3, FR-8, FR-19, FR-21.
-- [ ] **T5.6** Stage end: the stage-end guards. Files: plan.md ("Stage 5 results"). Covers AC-1, AC-3.
+- [x] **T5.6** Stage end: the stage-end guards. Files: plan.md ("Stage 5 results"). Covers AC-1, AC-3.
 
 ## Stage 6: the reference save, golden files, fuzz
 

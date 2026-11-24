@@ -69,8 +69,10 @@ void save_log_report(const char* path, const SaveTypeInfo& type, const save::Rep
     if (!report.used_backup && report.dropped == 0 && report.adjusted == 0) return;
     Line line;
     line.add("save %s:", path);
-    if (report.used_backup) line.add(" backup used (%s)", backup_reason != nullptr ? backup_reason : "");
-    else line.add(" loaded");
+    if (report.used_backup)
+        line.add(" backup used (%s)", backup_reason != nullptr ? backup_reason : "");
+    else
+        line.add(" loaded");
     if (report.migrated > 0) {
         line.add("; v%lu -> v%lu (%d steps)", static_cast<unsigned long>(report.version),
                  static_cast<unsigned long>(type.version), report.migrated);

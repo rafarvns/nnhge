@@ -766,3 +766,27 @@ Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `bui
 - `tween.hpp` grew by 32 preprocessed lines (the new headers' comments): 8 445, `-fsyntax-only` unchanged.
 - Refinement (tooling): the actions example saves rebound controls (`controls.bin`) when its script runs, which
   changes its screenshot; `compare.sh` deletes that file before retaking the reference.
+
+## Stage 2 results and refinements
+
+- Tests: `tests/input/test_input_block.cpp` (9, the pure filter) and `test_input_block_api.cpp` (9: queries idle, no
+  input event while blocked — not even the release of what was held when the block started —, held controls wait for
+  their release, `touch_position()` keeps the last point, the game's block never lifts a transition's, init lifts the
+  block, the overlay toggle works while blocked, remote input blocked, actions idle and held bindings waiting); seen red
+  with a stub filter, then green. `nnh_tests` 2371, ctest 268/258, guards green.
+- **Refinement: the raw buttons for engine controls live in `input.cpp`** (an 8-byte `InputState engine`, updated
+  every frame) instead of in `InputBlock`: `detail::input_engine_held_mask()`/`input_engine_pressed_mask()` always
+  return the raw buttons (the old masks differed only by the D-Pad mirror's bits, which SELECT + L never reads), and
+  `InputBlock` is 8 bytes (filtered mask, blockers, three flags).
+- **Refinement: the filter applies the sample itself.** `detail::g_input_filter` is `void (*)(const InputSample&)`;
+  when set, `input_update()` hands it the raw sample and returns; the filter copies, filters, calls
+  `detail::input_apply()` and, while blocking, `detail::input_forget_edges()` (a blocked frame has no edge, so the
+  buttons held when the block starts are not "released"). Both helpers are in `input.cpp` but referenced only by
+  `input_block.cpp`, so the 3DS linker drops them from games that never block. A first version (the filter returning
+  a filtered copy to `input_update()`) cost 160 bytes of `hello` text; this one costs **56 bytes** (201 188 → 201 244,
+  within the 96-byte budget): `input_update` is now 11 instructions (the engine mask, one load and branch, a tail call
+  to `input_apply`).
+- `hello`'s 3ds-release `nm` list differs only by the input path: `+ input_apply`, `+ g_input_filter`,
+  `+ input_engine_held_mask`, `+ input_engine_pressed_mask`, `− input_pressed_mask`, `− input::held_mask` (no longer
+  called by `app.cpp`); no `InputBlock` symbol. pc-release `hello.exe` +812 bytes (the PC links whole objects).
+- `input_reset()` (from `nnh::init()`) clears the filter pointer: a block never survives `shutdown()`/`init()`.

@@ -473,6 +473,10 @@ target_include_directories(nnh_actions_bench PRIVATE ${PROJECT_SOURCE_DIR}/engin
 target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
 # The camera example's self-check (spec 018 T6.2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
+# Scene transitions and the input block (spec 023): every test of the spec in one block (merge notes, plan 023).
+target_sources(nnh_tests PRIVATE
+    input/test_input_block.cpp
+    input/test_input_block_api.cpp)
 # The queries example's self-check (spec 019 T7.3, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.

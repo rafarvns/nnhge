@@ -127,6 +127,7 @@ void ParticleEmitter::set_desc(const ParticleDesc& desc) {
     block_->desc = desc;
     block_->seed = desc.seed;
     detail::particle_derive(desc, block_->derived);
+    block_->reach_texture_w = block_->reach_texture_h = -1; // the frames' reach is found again
     detail::rearm_changed_bursts(*block_);
 }
 

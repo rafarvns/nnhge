@@ -179,13 +179,14 @@ the last frame that drew it). No events (FR-23): ask `finished()` and publish yo
 | Per particle | 48 bytes (32 hot + 16 cold) |
 | Per emitter | ≈ 2.3 KB + 48 × capacity, one block |
 | `max_particles > 0` | ≈ 8 KB of gfx storage; 3DS: ≈ 192 B of `Linear` per quad |
-| `update()` | one cache line per particle; Old 3DS estimate ≈ 0.9 ms for 1024 particles (target 1.2 ms) |
-| Births | ≈ 700 instructions each with a circle and a full-turn cone (two sines); emitting 512 in a frame is over its 1 ms target on an Old 3DS by the estimate |
-| Drawing | one command per draw; the expansion ≈ 1.7 µs per visible particle on an Old 3DS (estimate) plus the platform's per-quad cost |
-| Off-screen emitter | its update, plus one bounds test at submit |
+| `update()` | one cache line per particle; Old 3DS (console run 1): 0.63 ms for 1024 particles in one emitter, 0.70 ms for 16 × 64 |
+| Births | ≈ 525 instructions each with a circle and a full-turn cone (two sines side by side, no float compare, no call); Old 3DS run 1 (before the T10.3 round): 5 µs each, 2.55 ms for 512 in a frame; expected after it ≈ 1.45–1.8 ms (provisional) |
+| Drawing | one command per draw; Old 3DS run 1: 8.3 µs per visible particle all-in, against 12.8 µs for the same `gfx::draw` sprite (ratio 0.65) |
+| Off-screen emitter | its update, plus one bounds test at submit (its frames' reach is remembered per texture size); Old 3DS run 1: 0.058 ms with the timer's own cost and the frames read each frame, ≈ 0.040–0.047 ms expected after T10.3 (provisional) |
 
-Old 3DS numbers are estimates until the console run ([plan 024](../../specs/024-particles/plan.md), stage 10): the
-bench is `PARTICLES_DEMO=bench` or Y in the example.
+Old 3DS numbers come from the first console run and the estimates of the optimisation round after it ([plan
+024](../../specs/024-particles/plan.md), "Console run 1" and "Optimisation round (T10.3)"); the budgets are set from the
+second run. The bench is `PARTICLES_DEMO=bench` or Y in the example.
 
 ## Misuse
 

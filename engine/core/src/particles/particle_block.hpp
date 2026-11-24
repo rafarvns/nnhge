@@ -69,6 +69,11 @@ struct ParticleBlock {
     int drawn = 0;
     int culled = 0;
     std::uint32_t stats_frame = 0xFFFFFFFFu;
+    /// The frames' cull reach for a texture size (spec 024 T10.3): found by the first textured expansion with that size,
+    /// reused while the description stays (set_desc forgets it), so an emitter culled whole reads no frame.
+    std::int32_t reach_texture_w = -1, reach_texture_h = -1; ///< -1: not found yet
+    float frames_reach = 0;
+    bool frames_fit = false; ///< every frame's region lies inside that texture
     Scene* scene = nullptr;
     SceneAttachment attachment{};
     ParticleDesc desc{};

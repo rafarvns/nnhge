@@ -1,6 +1,6 @@
 # Plan 024: Particles
 
-Status: implemented 2026-11-24 (Linux T9.1 passed 2026-11-24; console T10.2 pending); approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (Linux T9.1 passed 2026-11-24; console run 1 done, T10.3 optimisation round done, rerun pending); approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D39 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 022 (`Transform2D`, `WorldTransform2D`, `to_world`, `transform_point`, `transform_direction`, `inverse`,
 `bounds`, `is_finite`, the inline `sin_cos_inline`/`is_finite_bits` of `src/transform/sin_cos.hpp`, the mirror rule of
@@ -1074,3 +1074,117 @@ all without a warning):
   verdict under the sanitiser, an environment limit, not a failure of the run.
 - libFuzzer `fuzz_particle_ops`: 600 s, 741 348 runs, cov 894, no finding. The crash input runs clean.
 - The data fuzz targets were not re-run in this round: no data code changed since stage 5.
+
+## Console run 1
+
+Old 3DS XL, 2026-11-24, Development build, `nnh run particles --script examples/particles/tests/check.nnhs` (the bench
+is its last part). Logic: **`particles: PASS C5EF1A84`**, every checkpoint equal to the PC's. Bench (targets as AC-7
+wrote them):
+
+| Workload | Estimate (T7.6) | Run 1 | Target | Verdict |
+|----------|-----------------|-------|--------|---------|
+| `update1024` | 0.85–0.95 ms | 0.627 ms | < 1.2 ms | PASS |
+| `update16x64` | 0.95–1.05 ms | 0.703 ms | < 1.4 ms | PASS |
+| `emit512` | 2.2–2.6 ms | **2.546 ms** | < 1.0 ms | **FAIL** |
+| draw: particle / sprite | 8.0–8.5 / 11.5–12.8 µs | 8.32 / 12.75 µs, ratio 0.65 | ≤ 0.75 | PASS |
+| `offscreen` submit (culled 512) | ≈ 0 | **0.058 ms** | < 0.05 ms | **FAIL** |
+| `frame` worst | 10–11 ms | 17.8 ms | no missed frame | PASS |
+
+`emit512` matched the T7.6 estimate (5.0 µs ≈ 1 330 cycles per birth). The `offscreen` estimate was wrong: it counted
+the bounds test, not the code and data an emitter touches before it and gfx's own path for one batch.
+
+## Optimisation round (T10.3)
+
+On the PC, 2026-11-24, branch `opt-024`, from the 3ds-dev disassembly (`arm-none-eabi-objdump -d -C` of
+`build/3ds-dev/examples/particles/particles.elf`).
+
+### What was slow
+
+1. **Births (`emit512`)**: a circle birth with a full-turn cone ran ≈ 690 instructions in three functions:
+   - `birth` (286 instructions);
+   - the circle sampler through an indirect call (222, with its own `sin_cos` and 4 `vmrs`: the ring mixture's two
+     float compares and the quarter sine's clamps);
+   - `particle_direction`, called directly (180, a second `sin_cos`, 2 `vmrs`).
+
+   The two sines ran one after the other. Each has two Horner chains of 8-cycle VFP operations, and each ends in a
+   `switch` on a random quadrant (mispredicted about 3 times in 4). The colour was a loop of four serial channel chains
+   (`ldrb`, `vcvt`, `vmla`, `vadd`, `vcvt`, `strb`). The 1.5 fresh cache lines per particle were stored without a
+   prefetch. Measured: ≈ 1.9 cycles per instruction.
+2. **The whole-emitter cull (`offscreen`)** came only after `resolve_frames`:
+   - both `ExpandSetup` arrays zeroed (two `memset` calls, 384 B);
+   - every frame's region and pivot read (4 records of the description: 4 more data lines), 5 float compares each
+     (20 `vmrs`);
+   - 2 `vdiv` for the view.
+
+   That is ≈ 360 instructions over ≈ 30 lines of code, cold every frame (the frame's text, citro2d and the submit
+   evict the 16 KB caches), plus ≈ 10 lines of the block. The rest of the 0.058 ms is gfx's own path for one batch
+   (record, the top screen's pass with one command, `ops_submit`, the texture lookup, `ParticleBatches::submit`) and
+   the timer.
+3. **The bench measured its timer.** Each workload is timed by two `time::now()` reads. On the 3DS each read is
+   `svcGetSystemTick` and two `__aeabi_uldivmod` (≈ 330 instructions, spec 023's finding), and about one read falls
+   inside the window: ≈ 2–4 µs a frame. That is 0.1 % of `emit512`, but ≈ 5 % of `offscreen`.
+
+### What changed (no result moved)
+
+| Change | Where | Instructions (3ds-dev) | Kind |
+|--------|-------|------------------------|------|
+| One births function per shape: sampler, direction and the rest inline (`ParticleDerived::births` replaces `sample`; `birth()`, `emit_on` and local rate births call it, one indirect call per batch). The circle runs the shape's and the cone's sines lane by lane (`sin_cos_flat2`). Integer compares replace float ones: the ring mixture as 24-bit picks against `ring_pick` (`fraction_threshold`), the box outline on the bits. The outward unit vector is computed only when asked for. The four colour channels sit side by side, from exact `color_base` floats. `pld` fetches the hot and cold records four births ahead. | `particles/particle_births.cpp` (new), `particle_shapes.*`, `particle_derived.*`, `emitter_emit.cpp`, `emitter_rate.cpp` | per circle + cone birth ≈ 690 → ≈ 527; `vmrs` 6 → 0; calls 2 → 0; quadrant branches 2 → 0; `births<Circle>` is 712 instructions of code (both direction paths) | engine |
+| `sin_cos_flat` / `sin_cos_flat2`: `sin_cos_inline`'s exact bits without a branch. Every case is computed and picked with integer masks; an empty `asm` keeps the masks opaque, else GCC turns the selects back into branches and duplicates the paths. The clamp is an integer compare; the work is split in stages so that two angles run side by side. | `transform/sin_cos_flat.hpp` (new) | per sine ≈ 75, no branch, no `vmrs` | engine |
+| The frames' reach is remembered in the block per texture size (`frames_reach`; `set_desc` forgets it). The whole-emitter cull runs before `ExpandSetup` is built. At zoom 1 (tested on the bits) the view's divisions are skipped (×1 exact). | `particle_block.hpp`, `particle_expand.cpp`, `emitter_create.cpp` | culled-whole path ≈ 360 → ≈ 140; `vmrs` 23 → 0 (world space); `memset` 2 → 0; `vdiv` 2 → 0; no frame record read | engine |
+| The timer's own cost is taken out: cost = own − the base run's own (an empty timed call) + (submit − base submit). The base line adds `timer X ms`. | `examples/particles/bench_scene.cpp` | — | measurement |
+
+`.text`: the five births functions take ≈ 9.2 KB, against ≈ 3.0 KB for `birth`, the samplers and
+`particle_direction` before, so a game that emits gains ≈ 6 KB.
+
+Targets unchanged. Tests, written before the rewrite:
+
+- `births_of_every_shape_and_direction_keep_their_bits` (`test_birth_golden.cpp`): 16 cases recorded from the code
+  before the round. They hash the raw hot and cold records and the bounds keys after `emit`, `emit_at(point)`,
+  `emit_at(transform)` and 12 rate frames on a moving, turning, mirrored emitter.
+- `sin_cos_flat_*` (3): bits equal to `sin_cos_inline` over a stride of all 2³² patterns, every float within 16 000 of
+  129 quarter turns, and the two lanes.
+- `ring_pick_threshold_splits_the_24_bit_picks_exactly`.
+- `test_cull_reach.cpp` (3): a bad frame still reported off screen after another texture size, `set_desc` widening
+  the reach (red until `set_desc` forgot it), a whole-texture frame following the texture's size.
+
+Mutants: 19, 16 killed. Three survivors:
+- m08, the clamp of the sine part: its value is at most sin(π/4) and never reaches it, so it is dead in
+  `sin_cos_inline` too.
+- m10, `pick <= ring_pick`: it differs for one pick value in 2²⁴, which no test seed reaches.
+- m13, `<=` at a box corner: both edges give the same corner point, so it is equivalent.
+
+Goldens unchanged:
+- `particles: PASS C5EF1A84`: `nnh_tests` in pc-debug and pc-release, and ctest `particles_self_check_pc`.
+- `particles_check_script_pc`.
+- The platformer's replay ctest and doors script.
+- The screenshots `PARTICLES_SHOT=gallery|trail|explosion|touch|local|world|full` and the platformer's `level1`,
+  `bonus` and replay: byte-identical to builds of `208e375`.
+- The full pc-debug ctest.
+
+### Expected on the Old 3DS (console rerun)
+
+| Workload | Run 1 | Expected | Target |
+|----------|-------|----------|--------|
+| `emit512` | 2.546 ms | 1.45–1.8 ms: 527 instructions at 1.4–1.7 cycles each (chains interleaved, no `vmrs`, no mispredicted quadrant) + prefetched lines, ≈ 2.8–3.5 µs per birth | < 1.0: **still FAIL** |
+| `offscreen` | 0.058 ms | 0.040–0.047 ms: − timer 0.002–0.004, − ≈ 220 instructions, 23 `vmrs` and 2 `vdiv` ≈ 0.003, − ≈ 16–20 cold lines ≈ 0.007 | < 0.05: PASS expected, tight |
+| `update1024` / `update16x64` | 0.627 / 0.703 ms | ≈ 0.59–0.61 / 0.66–0.69 ms (17 rate births a frame on the new path, timer out) | PASS |
+| draw ratio | 0.65 | 0.65 (visible emitters: frames read as before, 2 `vdiv` fewer per batch) | PASS |
+| `frame` worst | 17.8 ms | unchanged | PASS |
+
+What is left in `emit512` is the birth itself: 13 hashes (≈ 105 instructions), two sines (≈ 150), the map, the flush
+and the writes. A further cut means fewer values per particle, which changes results, or births in pairs. Births in
+pairs are risk 1 (a) applied to the whole birth, with register pressure that GCC already spills at one particle (45
+stack accesses in `births<Circle>`). Risk 1 (b) (a full turn's sine without the reduction) and stage 7's idea of
+taking the direction from the shape's angle would both give other bits than the self-check's, so they are out. If the
+rerun still misses, the maintainer's policy applies: the budget becomes the
+measurement + ≈ 25 %, written in AC-7, `bench_scene.cpp` (`kTargets`) and `docs/api/particles.md` ("Console run 2 and
+budgets set").
+
+Rerun (Homebrew Launcher open, press **Y**):
+
+```sh
+build/pc-debug/tools/nnh/nnh run particles --script examples/particles/tests/check.nnhs
+```
+
+Expect `particles: PASS C5EF1A84` and the same logic lines. The base line now reads `particles bench: base gfx submit
+avg X ms timer Y ms`. Record the bench lines in "Console run 2 and budgets set".

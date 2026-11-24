@@ -1,38 +1,15 @@
-// Births (spec 024 FR-6, FR-9, FR-15, FR-18, plan "Births"): one inline birth() used by rate births, bursts, emit,
-// emit_at and prewarm. Values in property order from the counter-based generator; the emission number is taken by every
-// particle asked for (dropped ones too), so drops never shift later values. Full: as many as fit, the rest dropped and
-// counted, one Debug/Development warning per emitter.
+// Emission on demand (spec 024 FR-6, FR-9, FR-15, FR-18, plan "Births"): the birth map, the full case and emit /
+// emit_at, through the shape's births (particle_births.cpp, also used by rate births, bursts and prewarm). The emission
+// number is taken by every particle asked for (dropped ones too), so drops never shift later values. Full: as many as
+// fit, the rest dropped and counted, one Debug/Development warning per emitter.
 
 #include "nnh/log.hpp"
 #include "particles/emitter_births.hpp"
 #include "particles/particle_bits.hpp"
-#include "particles/particle_random.hpp"
-#include "particles/particle_shapes.hpp"
 
 NNH_LOG_CHANNEL_EXTERN(particles);
 
 namespace nnh::detail {
-namespace {
-
-std::uint32_t pack(const std::uint8_t c[4]) {
-    return static_cast<std::uint32_t>(c[0]) | (static_cast<std::uint32_t>(c[1]) << 8) |
-           (static_cast<std::uint32_t>(c[2]) << 16) | (static_cast<std::uint32_t>(c[3]) << 24);
-}
-
-void include_bounds(ParticleBlock& b, float x, float y) {
-    const std::int32_t kx = order_key(x), ky = order_key(y);
-    if (b.alive == 0) {
-        b.key_min_x = b.key_max_x = kx;
-        b.key_min_y = b.key_max_y = ky;
-        return;
-    }
-    if (kx < b.key_min_x) b.key_min_x = kx;
-    if (kx > b.key_max_x) b.key_max_x = kx;
-    if (ky < b.key_min_y) b.key_min_y = ky;
-    if (ky > b.key_max_y) b.key_max_y = ky;
-}
-
-} // namespace
 
 int reserve_births(ParticleBlock& b, int count) {
     const int room = b.capacity - b.alive;
@@ -50,49 +27,7 @@ int reserve_births(ParticleBlock& b, int count) {
 }
 
 void birth(ParticleBlock& b, std::uint32_t number, const BirthMap& at, float pre_age) {
-    const ParticleDerived& d = b.derived;
-    const std::uint32_t base = particle_base(b.seed, number);
-    ShapeSample shape;
-    d.sample(d, base, shape);
-    const Vec2 dir = particle_direction(d, base, shape);
-    const float speed = d.speed_min + d.speed_span * unit_float(particle_hash(base, kPropSpeed));
-    Vec2 p = shape.position;
-    Vec2 v{dir.x * speed, dir.y * speed};
-    if (!at.translation) {
-        p = map_point(at.map, p);
-        v = map_direction(at.map, v);
-    } else {
-        p = {p.x + at.map.origin.x, p.y + at.map.origin.y};
-    }
-    v = {flush_tiny(v.x + at.inherit.x), flush_tiny(v.y + at.inherit.y)};
-    const float rotation = d.rotation_min + d.rotation_span * unit_float(particle_hash(base, kPropRotation));
-    const float spin = d.spin_min + d.spin_span * unit_float(particle_hash(base, kPropSpin));
-    const std::uint32_t life = d.life_min + hash_below(particle_hash(base, kPropLifetime), d.life_count);
-    const float cu = unit_float(particle_hash(base, kPropColor));
-    std::uint8_t c[4];
-    for (int k = 0; k < 4; ++k) {
-        c[k] = static_cast<std::uint8_t>(static_cast<float>(d.color_min[k]) + d.color_span[k] * cu + 0.5f);
-    }
-    ParticleHot& h = b.hot[b.alive];
-    h.px = p.x + v.x * pre_age;
-    h.py = p.y + v.y * pre_age;
-    h.vx = v.x;
-    h.vy = v.y;
-    h.rotation = at.rotation + flip_sign(rotation, at.mirror);
-    h.spin = flip_sign(spin, at.mirror);
-    h.age = static_cast<std::uint32_t>(pre_age * 4096.0f + 0.5f);
-    h.life = life;
-    ParticleCold& cold = b.cold[b.alive];
-    cold.inv_life = 1.0f / static_cast<float>(life);
-    cold.size = d.size_min + d.size_span * unit_float(particle_hash(base, kPropSize));
-    cold.color = pack(c);
-    cold.frame = d.random_frame ? static_cast<std::uint8_t>(hash_below(particle_hash(base, kPropFrame),
-                                                                        static_cast<std::uint32_t>(d.frames)))
-                                : 0;
-    include_bounds(b, h.px, h.py);
-    ++b.alive;
-    ++b.emitted;
-    if (b.alive > b.peak) b.peak = b.alive;
+    b.derived.births(b, number, 1, at, pre_age);
 }
 
 BirthMap birth_map(const ParticleBlock& b, const WorldTransform2D& at) {
@@ -112,7 +47,7 @@ int emit_on(ParticleBlock& b, const WorldTransform2D& at, int count) {
     const std::uint32_t first = b.next_number;
     b.next_number += static_cast<std::uint32_t>(count);
     const BirthMap m = birth_map(b, at);
-    for (int i = 0; i < made; ++i) birth(b, first + static_cast<std::uint32_t>(i), m, 0.0f);
+    b.derived.births(b, first, made, m, 0.0f);
     return made;
 }
 

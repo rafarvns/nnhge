@@ -30,7 +30,7 @@ float transition::phase_progress() {
     return state().running ? detail::timeline_phase_progress(state().timeline) : 0.0f;
 }
 
-float transition::loading_progress() { return state().loading_progress; }
+float transition::loading_progress() { return state().running ? state().loading_progress : 0.0f; }
 
 int transition::frames() { return state().running ? static_cast<int>(state().frames) : 0; }
 

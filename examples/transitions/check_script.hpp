@@ -17,10 +17,10 @@
 /// The checksum the simulator recorded for the whole script (pc-debug), and its value every 120 frames. A different
 /// value on any system is a determinism hole (or a change of the script or the module: record the new values from
 /// pc-debug, here and in examples/transitions/tests/check.nnhs).
-inline constexpr std::uint32_t kTransitionsCheckGolden = 0xB32C7A79u; // pc-debug, WinLibs GCC 16
-inline constexpr std::uint32_t kTransitionsCheckpoints[10] = {0x89F4F944u, 0x4BF8CFEEu, 0x58AEC725u, 0x8284B4EAu,
-                                                              0xE271C1BBu, 0x70D4E35Eu, 0xC82DAF6Fu, 0xBF71A011u,
-                                                              0x11D7022Eu, 0xB32C7A79u};
+inline constexpr std::uint32_t kTransitionsCheckGolden = 0xBFE1D810u; // pc-debug, WinLibs GCC 16
+inline constexpr std::uint32_t kTransitionsCheckpoints[10] = {0xDA198EA8u, 0xE37BCD73u, 0x611CBFC8u, 0x6926151Eu,
+                                                              0x772D4A96u, 0x32B87B97u, 0x2576DBF6u, 0xDABFC1BCu,
+                                                              0x836B1ECEu, 0xBFE1D810u};
 
 class TransitionsCheck {
 public:

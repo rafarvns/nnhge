@@ -76,15 +76,17 @@ NNH_TEST(loading_progress_is_clamped) {
                      .in = Frames{0},
                      .loading = [] {
                          ++calls;
-                         const float values[] = {-3.0f, 0.0f / 0.0f, 7.0f};
-                         return tr::LoadStep{values[calls - 1], calls == 3};
+                         const float values[] = {-3.0f, 0.0f / 0.0f, 7.0f, 0.5f};
+                         return tr::LoadStep{values[calls - 1], calls == 4};
                      }}));
     step();
     CHECK(tr::loading_progress() == 0.0f);
     step();
-    CHECK(tr::loading_progress() == 0.0f);
+    CHECK(tr::loading_progress() == 0.0f && tr::running());
     step();
-    CHECK(tr::loading_progress() == 1.0f && !tr::running());
+    CHECK(tr::loading_progress() == 1.0f && tr::running());
+    step();
+    CHECK(tr::loading_progress() == 0.0f && !tr::running()); // no transition: 0
     nnh::shutdown();
 }
 

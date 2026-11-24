@@ -1,0 +1,112 @@
+# Spec 023 AC-5/AC-6/AC-8, automatic (spec 013): the self-check (its checksum lines must be the PC's bit for bit),
+# then the showcase — a fade with B pressed during it (the room must see no input: "seen 0"), the iris with a centre
+# touched on the bottom screen, the tall area, a loading step with screenshots of the cover and the bar — then the
+# bench.
+# PC:      nnh run transitions --pc --script examples/transitions/tests/check.nnhs
+# Console: nnh run transitions --script examples/transitions/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The checksum lines below are the PC's (pc-debug). They change only if check_steps.cpp or the transition module's
+# arithmetic changes: then run `TRANSITIONS_DEMO=check NNH_EXIT_AFTER_FRAMES=1250
+# build/pc-debug/examples/transitions/transitions.exe`, copy its lines here and the values into check_script.hpp.
+fail-on "] E "
+fail-on "transitions: FAIL"
+fail-on "transitions bench: FAIL"
+
+# The title, then the first room.
+wait 30
+tap A
+expect "transitions: showcase room 1" 120
+wait 45
+
+# The self-check (SELECT): 1200 frames, a checksum every 120, then the verdict and back to the room.
+tap SELECT
+expect "transitions: check started" 20
+expect "transitions: 120 sum DA198EA8" 300
+expect "transitions: 240 sum E37BCD73" 300
+expect "transitions: 360 sum 611CBFC8" 300
+expect "transitions: 480 sum 6926151E" 300
+expect "transitions: 600 sum 772D4A96" 300
+expect "transitions: 720 sum 32B87B97" 300
+expect "transitions: 840 sum 2576DBF6" 300
+expect "transitions: 960 sum DABFC1BC" 300
+expect "transitions: 1080 sum 836B1ECE" 300
+# The verdict and the return to the room come in the same frame.
+expect "transitions: PASS BFE1D810" 300
+wait 20
+
+# A fade to room 2; B tapped while it runs must reach nobody.
+tap A
+expect "transition: start replace fade both reverse out 24 hold 0 in 24" 10
+wait 10
+tap B
+wait 8
+screenshot fade-mid
+expect "seen 0" 120
+wait 10
+
+# The iris (RIGHT four times: wipe, split, blinds, iris), its centre touched on the bottom screen.
+tap RIGHT
+wait 4
+tap RIGHT
+wait 4
+tap RIGHT
+wait 4
+tap RIGHT
+expect "settings: iris both reverse" 10
+wait 10
+touch 100 120
+expect "iris centre: bottom 100,120" 10
+wait 10
+untouch
+wait 4
+tap A
+expect "transition: start replace iris both reverse out 24 hold 0 in 24" 10
+wait 16
+screenshot iris-mid
+expect "seen 0" 120
+wait 10
+
+# The tall area (R twice: top only, then tall), a wipe down both screens (LEFT three times: back to the wipe).
+tap R
+wait 4
+tap R
+expect "settings: iris tall reverse" 10
+wait 10
+tap LEFT
+wait 4
+tap LEFT
+wait 4
+tap LEFT
+expect "settings: wipe tall reverse" 10
+wait 10
+tap A
+expect "transition: start replace wipe tall reverse out 24 hold 0 in 24" 10
+wait 16
+screenshot tall-mid
+expect "seen 0" 120
+wait 10
+
+# A loading step: the curtain falls, the bar fills over 40 slices, the curtain rises.
+tap B
+expect "transition: start replace curtain tall reverse out 24 hold 20 in 24" 10
+wait 12
+screenshot curtain-mid
+wait 20
+screenshot loading-bar
+expect "seen 0" 200
+wait 10
+
+# The bench (Y): every workload, then the verdict.
+tap Y
+expect "transitions bench: started" 20
+expect "transitions bench: base gfx submit avg" 400
+expect "transitions bench: fade avg" 400
+expect "transitions bench: wipe avg" 400
+expect "transitions bench: split avg" 400
+expect "transitions bench: blinds8 avg" 400
+expect "transitions bench: iris avg" 400
+# The loading line, the verdict and "done" come in the same frame.
+expect "transitions bench: done" 400
+wait 10
+screenshot bench
+end

@@ -161,7 +161,7 @@ bool running();                ///< from the request until the end of its last f
 Phase phase();                 ///< None when not running
 float coverage(Screen screen); ///< this frame, 0..1; 0 for a screen whose effect in this phase is none()
 float phase_progress();        ///< out/in: k / n; covered: the hold's progress (1 without a hold)
-float loading_progress();      ///< the loading step's last progress (0 before it runs; 1 without a step)
+float loading_progress();      ///< the loading step's last progress (0 before it runs; 1 without a step; 0 when idle)
 int frames();                  ///< transition frames so far (1 on the first)
 struct Timing {
     Frames out;

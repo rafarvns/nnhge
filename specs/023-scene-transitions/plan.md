@@ -1,6 +1,6 @@
 # Plan 023: Scene transitions
 
-Status: approved 2026-11-23 (overnight pre-approval)
+Status: implemented 2026-11-24, console run T10.2 and Linux checks T9.1 pending (approved 2026-11-23 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D38 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (the scene stack, deferred changes, `nnh::run()`), spec 004 (rectangles, layers, `ignore_camera`,
 recording and submit), spec 015 (the libm-free easings, `SmallFunction` callbacks, `FinishEvent`; D30), spec 017
@@ -886,3 +886,76 @@ Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `bui
 - **AC-7 screenshot**: `doors.nnhs`'s `door-iris` (frame 967, 42 frames after RIGHT): the circle closing on the player
   at the door, a 4-pixel staircase edge, continued over the bottom screen — read back.
 - `platformer_replay_matches_script` passes with `level.nnhs` untouched (`B2418A28`).
+
+## Stage 7 results and refinements
+
+- `examples/transitions` (13 sources ≤ 200 lines, `art/make_art.py` → `assets/art/tiles.png`, `art/make_music.py` →
+  `assets/music/loop.ogg`, 32 kHz, 4 bars at 120 bpm, `LOOPSTART=0`): title → room 1 (fade, music faded in from
+  `on_covered`), two rooms as code-built tile maps (`world.cpp`), the HUD on the bottom screen, LEFT/RIGHT effect, L
+  reveal, R screens, touch → iris centre, A change, B loading step (curtain + bar, 40 slices, hold 20), X loading scene
+  (`title_scene.cpp`'s `LoadingScene`, a second transition from its `update()`), SELECT self-check, Y bench, START.
+  Refinement: `title_scene.cpp` holds the title and the loading scene (one file pair), and the check scene's glue is in
+  `main.cpp` (`log_checkpoint`); `bench.{hpp,cpp}` + `bench_scene.{hpp,cpp}` as planned.
+- **Refinement: `loading_progress()` reads 0 when no transition runs** (it kept the last transition's value, so the
+  self-check's sum depended on what ran before it: started by SELECT after the title's fade it differed from
+  `TRANSITIONS_DEMO=check`). **AC-3 goldens re-recorded** (pc-debug = pc-release = the simulator, from boot or from
+  SELECT): checkpoints `DA198EA8 E37BCD73 611CBFC8 6926151E 772D4A96 32B87B97 2576DBF6 DABFC1BC 836B1ECE`, final
+  **`BFE1D810`** (stage 5's values are superseded).
+- **Refinement: the `gfx submit` profile scope is Development-only** (`#if NNH_FLAVOR_DEVELOPMENT` in `gfx_submit()`, as
+  the plan's text says): in Debug it added a scope to every frame and broke spec 002's profiler tests, which count
+  scopes. Release and Debug objects are unchanged.
+- The input log counts what scenes see from the transition's first frame (`frames() > 0`): the request's own frame
+  still read the press that started it.
+- `examples/transitions/tests/check.nnhs`: PASS twice with `--pc` (112 lines, frames 1–3824): the ten checkpoints
+  and `transitions: PASS BFE1D810`; fade with B tapped during it → `transition: done frame 1377 seen 0`; four RIGHTs →
+  `settings: iris both reverse`; touch → `iris centre: bottom 100,120`; iris `seen 0`; R R and LEFT ×3 → `wipe tall`,
+  `seen 0`; B → `transition: start replace curtain tall reverse out 24 hold 20 in 24`, `seen 0`; the bench lines and
+  `transitions bench: done`. Lines that come in one frame are expected once (the verdict and the room's return; the
+  bench's loading line, verdict and `done`); every input waits ≥ 10 frames after an `expect` (the tool warns otherwise).
+  ctests `transitions_self_check_pc` and `transitions_check_script_pc` (023's ctest block after `camera_self_check_pc`).
+- Screenshots read back (`TRANSITIONS_SHOT=<mode> NNH_EXIT_AFTER_FRAMES=40`, coverage 0.25 with QuadIn): fade, wipe,
+  split, blinds, iris (a 4-pixel staircase circle on each screen), diamond, curtain (velvet rows and the gold hem over
+  the top quarter of both screens), tall (the wipe's first 120 rows of the 480-row area: half the top screen); at 61
+  the fade covers both screens; `TRANSITIONS_SHOT=loading` at 80: the curtain down on both screens with the bar half
+  full. Four are in `docs/images/transitions/`.
+- **PC bench (pc-dev, `TRANSITIONS_DEMO=bench`)**: base submit 0.133 ms; fade 0.440, wipe 0.273, split 0.294, blinds8
+  0.252, iris 0.305 (rects 240 of 244), loading engine 0.435 ms average → `FAIL (fade, wipe, split, loading engine)`.
+  Not representative: on the PC the submit includes the SDL software renderer filling every overlay pixel (a
+  full-screen rectangle pair costs ≈ 0.3 ms there; on the 3DS the GPU fills them after `C2D_DrawRectSolid` has queued
+  six vertices). The `transition` scope alone is a few µs. The console judges AC-8 (T10.2); the PC bench is not.
+  pc-debug logs `not judged (Debug)`.
+
+## Stage 7 ARM pre-check (T7.7, 3ds-dev objects, before any console run)
+
+| Hot path | Disassembly | Plan's assumption | Verdict |
+|----------|-------------|-------------------|---------|
+| `scenes::update_and_draw` | 8 instructions: one load, one branch, a tail call | one load and branch | ✓ |
+| `input_update` | 11 instructions: the engine mask (2 loads, 2 stores), one load and branch, a tail call to `input_apply` (the old body, unchanged) | one load and branch | ✓ (+1 call per frame) |
+| iris band loop (`geometry_iris`) | per cut band ≈ 20 instructions of setup, the inlined bit-method square root (≈ 7 × 3 to place the bit + ≈ 8 × 8 iterations for r² < 2¹⁶), 2 calls to `RectTarget::emit` (≈ 15 instructions each, then the sink); ≈ 120 instructions per band; no `__aeabi_*`, no `vmrs`, no `memcpy` in the loop; one `__aeabi_idivmod` per call, only when the target starts below row 0 (the tall bottom screen) | 100–130 | ✓ |
+| blinds (`geometry_fill`) | one `__aeabi_idivmod` per call; per bar ≈ 14 instructions and one emit | one udivmod per screen | ✓ |
+| the step (`transition_frame` → `timeline_step`) | one `vdiv` and one `ease()` call per out/in frame; `vmrs` only in the clamp/ratchet compares of the step (4 per frame), not per band | one ease, one vdiv | ✓ |
+| `effect_area` (`resolve_effect`, `max_rects`) | float compares (`vmrs`) and two `__aeabi_idiv` in `max_rects_resolved`: request time only | — | ✓ (not per frame) |
+| the rectangle path | unchanged gfx code: `fill_rect` → `DrawList::record` → build → `draw_2d` (counted in the plan's table) | 800–1270 cycles, × 1.3 | — |
+
+Expected console numbers (the plan's table, unchanged by the disassembly): fade/wipe 0.010–0.017 ms, split
+0.018–0.029, blinds8 0.066–0.105, iris average 0.60–0.95 ms (worst 1.05–1.60, rects 244), loading engine 0.012–0.020
+— PASS, the iris's worst frame the one at risk (risk 1). A cheap win kept in reserve (no result changes): start the
+square root's bit at 2¹⁶ when r² < 2³² is known to fit (saves ≈ 20 instructions per band).
+
+## Stage 10: prepared commands (completed by stage 7)
+
+On the PC first (T10.1): `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh cmake --build --preset
+3ds-dev --target transitions_3dsx platformer_3dsx actions_3dsx` (both 0 warnings at stage 7); `hello.elf` text 201 276
+(T0.1 + 88). Then on the Old 3DS, nobody touching it after Y — open the Homebrew Launcher, press **Y**, then:
+
+1. `build/pc-debug/tools/nnh/nnh run transitions --script examples/transitions/tests/check.nnhs` (≈ 65 s): expected
+   `transitions: 120 sum DA198EA8` … `transitions: 1080 sum 836B1ECE`, **`transitions: PASS BFE1D810`**, the showcase's
+   `seen 0` lines and `iris centre: bottom 100,120`, the bench lines and `transitions bench: PASS` (or `FAIL (...)`:
+   record the numbers in "Console run 1"); screenshots `fade-mid`, `iris-mid`, `tall-mid`, `curtain-mid`,
+   `loading-bar` compared with the `--pc` run's (same geometry, fade colours within one step).
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/doors.nnhs` (≈ 20 s): `doors: 1
+   level1 -> bonus frame 12` … `doors: 10 bonus -> level1 frame 813`, `doors: done 10 irises frames 891 … 60 Hz
+   PASS`, the `door-iris` screenshot.
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (≈ 40 s): the tree's
+   replay lines (`B2418A28` here; spec 022's after the merge), `60 Hz PASS`.
+4. `build/pc-debug/tools/nnh/nnh run actions --script examples/actions/tests/check.nnhs` (≈ 30 s): PASS as before.

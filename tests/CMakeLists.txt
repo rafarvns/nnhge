@@ -425,6 +425,18 @@ endif()
 if(NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     set(_sim_env "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy")
     get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    if(TARGET transitions)
+        add_test(NAME transitions_self_check_pc COMMAND transitions)
+        set_tests_properties(transitions_self_check_pc PROPERTIES
+            ENVIRONMENT "${_sim_env};TRANSITIONS_DEMO=check;NNH_EXIT_AFTER_FRAMES=1250"
+            PASS_REGULAR_EXPRESSION "transitions: PASS BFE1D810" FAIL_REGULAR_EXPRESSION "transitions: FAIL" TIMEOUT 120)
+        add_test(NAME transitions_check_script_pc
+                 COMMAND $<TARGET_FILE:nnh> run transitions --pc --no-build --script examples/transitions/tests/check.nnhs
+                 WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+        set_tests_properties(transitions_check_script_pc PROPERTIES ENVIRONMENT "${_sim_env};NNH_PRESET=${_preset}"
+            PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+            RESOURCE_LOCK nnh_remote_port)
+    endif()
     if(TARGET platformer)
         add_test(NAME platformer_doors_script_pc
                  COMMAND $<TARGET_FILE:nnh> run platformer --pc --no-build --script examples/platformer/tests/doors.nnhs

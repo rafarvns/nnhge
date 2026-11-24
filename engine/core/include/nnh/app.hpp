@@ -37,6 +37,10 @@ struct GfxConfig {
     /// 0 (default) = no particle drawing and no memory for it. Up to 65535. Costs ~8 KB once when > 0, and on 3DS one
     /// citro2d quad (~192 bytes, Linear) each.
     int max_particles = 0;
+    /// 3D draws per frame (<nnh/gfx3d.hpp>, spec 026); more are dropped. 0 (default) = 3D off: no 3D memory, render
+    /// targets or shader, meshes can't be created. 1 to 4096. With 3D on: about 120 bytes each plus ~4 KB (heap), on
+    /// 3DS 640 bytes each of command buffer (linear) and 576 000 bytes of VRAM for the top screen's depth target.
+    int max_draws_3d = 0;
 };
 
 /// Audio capacities (see <nnh/audio.hpp>), allocated once at init().

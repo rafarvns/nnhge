@@ -1,6 +1,6 @@
 # Plan 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run T10.1/T10.2 and Linux VM T9.3 pending)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md)
 Decisions: [D41, D42, D43, D44](../../docs/architecture/decisions.md) (written with this plan; design until implemented)
 
@@ -591,3 +591,224 @@ Unchanged from the first check. Notes: III — the picasso step and the per-mode
 measured (T0.2/T9.4); VII — `gfx3d.hpp` passes the 150-line aim (comments), no `.cpp` near 400; XI — 3D is off by
 default and a 2D game links no 3D code (P14's null checks are the only cost, recorded against AC-9). No exception needs
 the maintainer's approval beyond the decisions above.
+
+## Stage results and refinements
+
+### Stage 0 results (T0.1–T0.2)
+
+- T0.1: spec 022 is on `main` with the names the plan expected: `nnh::sin_cos` and the quarter-turn constants in
+  `<nnh/transform.hpp>`, `detail::sin_cos_inline` in `src/transform/sin_cos.hpp`, `detail::sin_quarter_inline` in
+  `src/core/det_sine.hpp`; `nnh_tests transform` green.
+- T0.2 baselines (Windows, WinLibs GCC, devkitARM; builds of other worktrees ran at the same time, so times are noisy):
+
+  | Measure | Value |
+  |---------|-------|
+  | `hello` 3DS Release `.text` / `.data` / `.bss` | 201 124 / 28 352 / 106 680 B |
+  | `hello.3dsx` (3DS Release) | 246 512 B |
+  | `hello.exe` (PC Release) / its `.text` | 278 856 B / 130 668 B |
+  | edit `examples/hello/main.cpp` → rebuilt (pc-debug / 3ds-release) | 1.7 s / 3.0 s |
+  | pc-release, 3ds-release, 3ds-dev builds | 0 warnings |
+
+- `scripts/example_shots.sh [preset] [frames] [out]` (new) runs every example headless (`SDL_VIDEO_DRIVER=offscreen`,
+  software renderer, `NNH_SIM_RENDERER=sdl`) for 30 frames and prints each screenshot's SHA-256; the pc-debug list is
+  saved in `build/baseline-026/shots.txt` and compared at every stage end (AC-9: 2D frames byte-identical).
+
+### Stage 1 results and refinements (T1.1–T1.7)
+
+- Files: `is_finite(Mat4)` lives in `mat4.cpp` (no `finite3d.cpp`); the look basis shared by `look_rotation` and
+  `look_at` and the eighth-turn snap are in `quat_basis.cpp` (`math3d_internal.hpp` declares them).
+- **Eighth-turn snap (P4)**: rather than testing the bits of `sin_cos(kQuarterTurn/2)`, `quat_axis_angle` and
+  `perspective` pass every half angle through `detail::snap_eighth`: when |sin| and |cos| differ by at most 2⁻²⁰ both get
+  the larger magnitude with their own signs. Quarter, half and three-quarter turns (and their products) map axes to axes
+  exactly; `perspective(kQuarterTurn, …)` has a focal length of exactly 1.
+- **slerp**: Eberly's 8-term polynomial measured a worst error of 1.9·10⁻⁵ against `double` over the whole range
+  (x = cos θ ∈ [0, 1]), above FR-3's 2⁻¹⁸. The same recurrence with **16 terms** and the last pair scaled by
+  1 + μ = 1.9092 (fitted by search) measures **1.2·10⁻⁷** (float rounding); cost 16 multiply-adds per coefficient.
+- `normalize` is overloaded for `Vec3` and `Quat` (P3), so a braced argument is ambiguous: write
+  `normalize(Vec3{…})` (documented in the API page).
+- Degenerate look directions: `forward` parallel to `up` uses the up (0, 0, ∓1), so a camera looking straight down has
+  −z (north) at the top of the screen and +x on the right.
+- Measured accuracy (AC-3, `test_math3d_accuracy.cpp`, `test_quat_interp.cpp`): unit quaternions from axis-angle
+  8.7·10⁻⁷, rotated directions 1.4·10⁻⁶ (bound 2⁻¹⁸ = 3.8·10⁻⁶); points through chains of 8 transforms with coordinates up
+  to 4096: 3.5·10⁻⁶ of the magnitude (bound 2⁻¹⁶ = 1.5·10⁻⁵); slerp 1.2·10⁻⁷.
+- T1.7: the golden script lives in the example from the start (`examples/models/self_check.{hpp,cpp}`, compiled into
+  `nnh_tests` with `-ffp-contract=off`), so the console and the tests run the same code. Inputs are FNV-1a hashes scaled
+  by powers of two (exact); stage 1's math-only golden after 50 000 operations: `436E15A9` (checkpoints `376AB001`,
+  `804B29F2`, `C4D52290`, `48556FCB`). It changes once, in T4.10, when frustum tests, orders and `to_screen` join.
+
+### Stage 2 results and refinements (T2.1–T2.7)
+
+- **Format**: the header packs flags, submesh count, texture count and stride in one word to stay at 112 bytes; a
+  submesh record is 48 bytes (16-byte material record + one reserved word). The structs are the bytes (both systems are
+  little-endian); the reader copies with `memcpy` (no alignment assumed). The index section is padded to 4 bytes.
+- **Texture coordinates**: one uv range per mesh (stored in every submesh record): a vertex shared by two submeshes
+  would otherwise need two quantisations. The per-submesh fields stay in the format for later.
+- **Bounds**: the box and the sphere are computed from the *decoded* positions (what the GPU draws); the sphere's centre
+  is the box centre (the position offset).
+- Files: `mesh_measure.cpp` (validation and sizing) beside `mesh_build.cpp` (writing); flat normals live in
+  `mesh_quantize.cpp` (`face_normal`); `mesh_record.cpp` (records, upload, accounting) and `mesh_table.cpp`; one test
+  file for layout/quantisation/flat normals/build/limits (`test_mesh_build.cpp`).
+- **Hook moved forward (part of T4.1 done here)**: `GfxConfig::max_draws_3d`, `gfx/gfx3d_hook.*` and the registrar
+  `gfx3d/gfx3d_ops.cpp` land in stage 2 because meshes need 3D on (P6): `mesh_table_ready()` calls `gfx3d_link()`, so a
+  game that makes a mesh links the registrar. 3D init failing (`video3d_init`) fails `nnh::init()`.
+- **Deferred frees mirror textures**: a mesh released inside a frame stays usable by that frame's draws and is freed in
+  the frame's `after_frame` (2D textures behave the same way, so "a draw recorded before is skipped" reads "is drawn
+  that frame, then the mesh is gone").
+- The fake platform logs `[` and `]` for `begin_3d`/`end_3d` in `State::calls` (2D-only frames unchanged) and keeps
+  meshes' bytes (`mesh_data`) for the pixel tests; the PC and 3DS backends are stubs returning false until stages 6–7.
+- Measured: `hello` 3DS Release `.text` +72 B (201 196), `.3dsx` +72 B, PC Release `.exe` +489 B — the hook pointer and
+  its null checks (P14 budget: 128 B / 1 KB). Every example's screenshot unchanged (`audio` and `foundation` show live
+  timings and differ run to run, so they are left out of the comparison). Primitive bytes: cube CRC `9A45BD39`,
+  `make_sphere(0.5, 8, 12)` CRC `BBF6FDA6`.
+
+### Stage 3 results and refinements (T3.1–T3.8)
+
+- Files: the .glb container is read in `gltf_document.cpp` (no `gltf_glb.cpp`); primitives and the merge share
+  `gltf_primitives.cpp` (no `gltf_merge.cpp`); the orchestration is `convert_mesh.cpp` + a `mesh` row in `cli.cpp` (no
+  `cli_mesh.cpp`). The CLI takes `--assets` like `map` and `sprite` (not `--assets-root`) and prints one
+  `<model>: note: ignored: …` line per ignored feature on standard output.
+- **Baking in double, not math3d**: node matrices, the cofactor normal matrix and positions are computed in `double`
+  (IEEE + − × ÷ and sqrt: the same bits on every host), so the host tool doesn't link core's math (and its asserts).
+  The baked floats then go through the engine's own builder (`mesh_build.cpp`, compiled into the tool with
+  `-ffp-contract=off -fno-math-errno`): `test_cli_mesh.cpp` checks the converted cube's bytes equal create_mesh's builder
+  output for the same arrays (AC-4).
+- Mixed normals: when every primitive lacks `NORMAL` the builder makes flat normals (as create_mesh would); when only
+  some lack it, those are unwelded in the converter with the builder's `face_normal`. Missing `TEXCOORD_0`/`COLOR_0`
+  in some primitives become (0, 0) and white.
+- Defaults: no sampler → linear filtering (as Blender shows it); `alphaCutoff` 0.5 → 128; `doubleSided` → no culling;
+  glTF factors are converted to bytes as given (no sRGB conversion).
+- The JSON reader's depth limit stays 32 (glTF documents nest ≤ 6); the other limits as planned.
+- Fixtures: `tests/data/gltf/make_fixtures.py` (7 good models incl. `cube.glb`, 12 `bad_*` with expected messages);
+  "more than 65535 vertices" and the notes are tested from memory (no 800 KB fixture). Mini-fuzz: 599 of 8 000 mutated
+  models convert and validate; libFuzzer target `fuzz_assetc_gltf`.
+- CMake: `.gltf`/`.glb` → `.nnhmesh` step with a depfile (model, buffers, PNGs), P25 buffers not packed, two sources
+  becoming the same asset refused; `gltf`, `glb`, `nnhmesh` are reserved data keys. The `ninja -d explain` check of
+  "editing one model reconverts only it" runs with the example's two models in stage 8.
+
+### Stage 4 results and refinements (T4.1–T4.11)
+
+- **API deviations (recorded for the maintainer)**: `Camera3D::near_plane`/`far_plane` instead of `near`/`far`
+  (`<windows.h>` defines `near` and `far` as empty macros: a Windows game including it would break the struct);
+  pure overloads `gfx3d::to_screen(const Camera3D&, Vec3)` and `gfx3d::screen_ray(const Camera3D&, Vec2)` (the top
+  screen's 400×240) so the self-check and tools use them without an engine; `request_probes`/`probe_results` exist but
+  answer nothing until stage 7.
+- Record = 92 bytes (model rows 48, material 28, mesh 6, submesh 1, flags 1, tint 4, call 2, padding 2); with the
+  world sphere, view depth, two order entries, sort scratch and two flags: **120 bytes per draw** (measured: 7 680 B
+  for 64), one heap block under tag `gfx3d`.
+- Order: the opaque pass walks every visible draw in call order drawing only its non-blended submeshes; the blended
+  pass walks the draws having a blended submesh, sorted back to front by the view depth of their sphere's centre
+  (bottom-up stable merge sort), drawing only those submeshes. So a mixed model's glass waits for every opaque draw.
+- Culling in view space (no plane extraction): near/far by the sphere's depth, sides by |x| − ahead·tan ≤ r·√(1+tan²)
+  (tan from `sin_cos`), orthographic by half extents; a mesh destroyed mid-frame stays drawable that frame.
+- `gfx/world_split.*` and `gfx_submit_slice` as planned; `gfx_build_pass` and `gfx_check_stale` are inline in
+  `gfx_state.hpp`. **Merge watch-out**: `submit_screen` is now `hook → gfx_build_pass → gfx_submit_slice →
+  gfx_check_stale`; 024's split dispatch goes inside `gfx_submit_slice`'s loop, 023's profile scope stays in
+  `gfx_submit`.
+- Golden (T4.10): kinds 6 (`to_screen`, perspective or orthographic, flags) and 7 (`screen_ray`) joined the script;
+  frustum and order decisions are pinned by unit tests instead (the console can't reach them through the public API).
+  **New golden `A3BF4EDF`** (checkpoints `95C33EC5`, `19D9D5B0`, `B657BA1D`, `C074FBC1`).
+- No allocation over 100 frames of 256 draws (operator new and `nnh::mem` counted); no event published.
+- **hello (P14) over budget**: 3DS Release `.text` 201 380 B = **+256 B** against the baseline (stage 2: +72 B for the
+  hook). The extraction of `gfx_submit_slice` (an out-of-line function the 2D path now calls) costs ~180 B; the 3DS
+  build doesn't garbage-collect sections, so any shared helper stays. Kept for the merge plan's single slice function;
+  `.bss` +264 B (`TileSplit::layer` in the 64 split points); PC `.exe` +1 249 B (over the 1 KB budget by 225 B).
+  Every example's screenshot unchanged.
+
+### Stage 5 results and refinements (T5.1–T5.6)
+
+- `engine/platforms/shared/raster3d/` as planned plus `raster3d.cpp` (clear, draw: vertex stage → clip → fan →
+  coverage → depth → shade → cut-out/blend). The lighting tables live there (`light_tables.cpp`, pure) rather than in
+  core's `gfx3d/`: platforms never call core, and the 3DS backend compiles the same file (stage 7).
+- Clipping: near, far and a ±8 NDC guard band (so 28.4 coordinates stay far from overflow); a triangle crossing the
+  camera plane becomes a fan.
+- Fill rule: edge functions in int64 at pixel centres, top-left edges inclusive (on the y-down screen with the
+  triangle normalised to a positive area: dy < 0, or dy = 0 and dx > 0); front faces are counter-clockwise in NDC.
+- Shading: `surface.rgb × min(ambient + Σ diffuse, 1) + Σ specular`, clamped — the diffuse sum is clamped before the
+  multiply, as the PICA200's fragment primary colour is. Depth: NDC z, less-than, cleared to +1.
+- Fake pixels: `fake::enable_pixels_3d(true)`, `fake::pixel_3d(x, y)` (the picture of the frame that ended last);
+  textures from `texture_create_rgba` copied, "FAKE" images become a gradient. 7 rasteriser tests + 2 end-to-end
+  frames through core.
+
+### Stage 6 results and refinements (T6.1–T6.5)
+
+- `video3d_pc.cpp` holds init, meshes and the pass (no separate `pass3d_pc.cpp`/`mesh3d_pc.cpp`: ~150 lines);
+  `texels3d_pc.cpp` reads a texture back once and keeps its pixels as an `SDL_Texture` property with a cleanup
+  callback (freed with the texture, so no stale cache and no change to `texture_pc.cpp`).
+- **Contract addition**: `const char* video3d_self_test()` — the backend's own check, logged by core after the first
+  frame (Development; scripts can only expect lines from frame 1). PC: "3d tilt: PASS (simulator: no rotated screen to
+  match)"; fake: none.
+- T6.4: `scripts/check_png_hash.sh` (windowed default renderer, `NNH_SIM_RENDERER=sdl`, `SDL_VIDEO_DRIVER=offscreen`).
+  The two headless runs give identical PNGs; the windowed GPU-device run differs — but it differs for 2D-only examples
+  too (`examples/text`), so golden hashes are taken headless; the 3D pass itself is the same bytes on every renderer
+  (P15: composed on the CPU).
+- T6.5: the showcase's frames stay at 60 Hz in pc-debug on the maintainer's PC (688 triangles, 7 draws); P15's
+  read-back fallback was not needed. A per-stage timing of the pass alone is not exposed (the profiler has no 3D scope
+  yet: spec 023 adds a gfx submit scope).
+
+### Stage 7 results and refinements (T7.1–T7.6)
+
+- Files: `video3d_3ds.cpp` (target, shader, attribute layouts, meshes), `pass3d_3ds.cpp`, `lights3d_3ds.cpp`,
+  `tilt3d_3ds.cpp`, `shaders/mesh3d.v.pica`; picasso + bin2s through `ctr_add_shader_library` and
+  `dkp_add_embedded_binary_library` (header `nnh_mesh3d_shader_shbin.h`). 3ds-release and 3ds-dev build with no
+  warning; `examples/models` produces a `.3dsx`.
+- **Projection fix-up**: instead of a hand-written tilt/depth matrix, `F = Mtx_PerspTilt(60°, 400/240, 0.1, 100) ×
+  inverse(GL(same))` is taken once from citro3d itself; the Development self-test compares `F × GL(p)` with
+  `Mtx_PerspTilt(45°, …, 0.5, 50)` and `Mtx_OrthoTilt(±5, ±3, 1, 30)` (relative 1e-5) and logs `3d tilt: PASS|FAIL`.
+- **Lighting tables in the PICA200's layouts** (shared file `engine/platforms/shared/raster3d/light_tables.cpp`, used by
+  the simulator too): specular D0 on a signed N·H input, 128 entries over [0, 1) (x = i/128); distance attenuation
+  unsigned, 256 entries (x = i/256), scale 1/range per light; citro3d's `LightLut_FromArray` gets values and
+  differences. Highlights clamped where N·L ≤ 0 on both systems.
+- Shader rule found while building: picasso refuses a uniform as the second source (`mul r, uniform, input` order).
+- A material without vertex colours uses the fixed colour attribute (the loaders stop before the colour; the stride
+  skips it); the colour scale is always base × tint / 255.
+- Probes (T7.5) read back through `platform::remote_capture` after `end_frame` (Development); `test_probe.cpp` on fake.
+- T7.6: `examples/models/tests/smoke.nnhs` (DOWN in the showcase opens the smoke scene: a flat cube, A → lit and
+  textured) passes with `--pc`. Console run prepared for the lead (below, "Console runs").
+- **Open points only the console can settle**: the cull winding after the tilt (`GPU_CULL_BACK_CCW`), the D0 signed
+  layout, the alpha-test reference scale, depth GREATER after the frame-start clear to 0, the probe read-back of the
+  top framebuffer.
+
+### Stage 8 results (T8.1–T8.5)
+
+- `examples/models`: `world.cpp` (two converted models — `ship.gltf` textured hull + red wings, `pylon.gltf` vertex
+  colours — a cube, a sphere, a 12×12 checker floor, a cut-out fence, a blended glass pane), `showcase_scene.cpp` +
+  `showcase_draw.cpp`, `check_scene.cpp` + `probe_scenes.cpp` (six probe scenes: flat, textured, lit, cut-out, blend over
+  depth, 2D around 3D; expected colours worked out by hand from FR-10, no separate `shading_ref`), `bench_scene.cpp`,
+  `smoke_scene.cpp`; art by `art/make_models.py`.
+- PC: `3d: PASS A3BF4EDF`, `3d pixels: PASS` (all 15 probes); `tests/check.nnhs` passes with `--pc` (tag lines
+  `200,88 depth 6.62`, orthographic `200,81 depth 6.62`); ctest runs `models_self_check_pc` and `models_check_script_pc`.
+- The bench logs `rec` (the game's recording time) instead of the CPU time of the whole 3D work: culling, sorting and
+  submission happen inside `nnh::frame()`; frame time avg/worst/missed carry the rest.
+
+### Stage 9 results (T9.1, T9.2, T9.4; T9.3 — the Linux VM — is the lead's)
+
+- T9.1: `nnh_tests` 2 674 tests (57 s, Windows pc-debug, other builds running), `nnh_assetc_tests` 275; ctest pc-debug
+  273/273 (plus the two models tests added in stage 8), pc-release 259/259.
+- T9.2 hand mutations (each applied, `nnh_tests` rebuilt, a filter run, reverted): **14 of 14 killed** — the eighth-turn
+  snap off, the 2⁻¹⁰⁰ threshold moved, the blended sort's tie rule (`<` → `<=`), the top-left bias removed, the culling
+  radius ignored, the quantisation's +½ removed, the index check `>=` → `>`, the affine check removed, the near-plane
+  clip distance, the blend's +127 rounding, the normal matrix's determinant (the cofactors of a column), slerp's
+  shortest-arc sign, the mirror wrap, the specular clamp where N·L ≤ 0.
+- T9.4 (AC-9): `scripts/check_no_3d_symbols.sh` finds no 3D symbol in `hello` (3DS `.elf`, PC `.exe`) besides the hook
+  pointer, and finds them in `models` (positive control). `hello`: 3DS Release `.text` 201 396 B (**+272 B**:
+  +72 the hook, ~+184 the shared 2D slice function, +16 the command-buffer size in `app_3ds.cpp`), `.bss` +264 B,
+  `.3dsx` 246 788 B (+276 B); PC Release `.exe` 279 942 B (+1 086 B). **Over P14's budget** (128 B / 1 KB) — reported to
+  the maintainer; the remedy would be garbage-collected sections on 3DS or duplicating the 2D slice loop. Every other
+  example's screenshot is unchanged (`scripts/example_shots.sh`, `audio` and `foundation` excluded: live timings);
+  every earlier script passing in ctest. 2D-only games keep citro2d's targets (the 3D target replaces the top one only
+  in `video3d_init`). Edit-one-game-`.cpp` times unchanged within noise (pc-debug 1.6 s, 3ds-release 3.0 s).
+- T3.8's rebuild check (stage 9): touching `pylon.gltf` (pc-debug) or `ship.bin` (3ds-release) reconverts only that model
+  and the asset index (`Model models/ship.gltf`, `Asset index for models`).
+
+### Stage 10 (026a docs: T10.3, T10.4; the console run T10.1–T10.2 is the lead's)
+
+- New pages: `docs/api/math3d.md`, `docs/api/mesh.md`, `docs/api/gfx3d.md`, guide `docs/guides/models.md`; links from
+  `math.md`, `gfx.md`, `texture.md`, `assets.md`; `rendering.md` (the 3D pass, the world layer, the hook, the CPU
+  rasteriser — the "3D will need a GPU device" text replaced), `sdl3.md` (D41: 3D on the CPU, the renderer comparison),
+  `devkitpro-3ds.md` (target, shader, tables, combiners, projection fix-up, open points), `project-structure.md`
+  (`platforms/shared/raster3d`, `platforms/3ds/shaders`), D41–D44 change-log line, `REFERENCES.md`, `CLAUDE.md`,
+  ROADMAP M8 and `specs/README.md` (026a built, console pending).
+- PC bench (simulator, pc-debug: core -O0, raster3d -O2; offscreen, 120 frames per case; the numbers say nothing about
+  the console): throughput 12 032 triangles avg 16.67 ms worst 17.03, 0 missed; draws 256 worst 20.98, 7 missed,
+  recording 0.22 ms; cpu 512 recording 0.43 ms; fill (3 full-screen blended planes) avg 18.6 ms, 118 missed — the CPU
+  rasteriser is fill-bound there (~290 000 blended pixels a frame).

@@ -21,6 +21,10 @@ engine/
   platforms/<system>/src/<area>_<system>.cpp one file per contract area per system
   platforms/<system>/include/nnh/<system>/   extension headers (optional, system-only features)
   platforms/<system>/README.md               requirements, limits, capabilities
+  platforms/shared/                          code several platforms compile: stdio_fs.cpp, raster3d/ (the CPU
+                                             rasteriser of the PC's and the fake's 3D, spec 026 D41; its lighting
+                                             tables are compiled by the 3DS backend too)
+  platforms/3ds/shaders/                     PICA200 vertex shaders (picasso), embedded by the build (spec 026)
 tests/
   framework/                                 the tiny test framework; alloc_counter.* (counting operator new,
                                              linked into nnh_tests only)

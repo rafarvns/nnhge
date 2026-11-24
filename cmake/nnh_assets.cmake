@@ -11,6 +11,9 @@
 #   *.ase.json (Aseprite sprite sheet data, spec 016, D31) -> converted by nnh-assetc into <path without .ase.json>
 #       .nnhsprite; a depfile lists the export and the PNG beside it (that PNG is packed as an image, as usual);
 #   *.ase, *.aseprite -> not packed (Aseprite's own files, if kept in the folder);
+#   *.gltf, *.glb (glTF 2.0 models, spec 026, D42) -> converted by nnh-assetc into <path without the extension>.nnhmesh;
+#       a depfile lists the model, its buffers and its PNGs (packed as images, as usual); a model's buffers —
+#       <model>.bin and <model>_<any>.bin beside a <model>.gltf — are not packed (plan 026 P25);
 #   others -> copied unchanged, except in a game with a data schema (spec 014, nnh_data.cmake): there every other
 #       file goes through `nnh-assetc data`, which converts a file whose extension is a declared key
 #       (`enemies/goblin.enemy`, same output name) and copies any other, writing a references sidecar in
@@ -41,6 +44,9 @@ function(nnh_asset_output_name name out_var)
         set(${out_var} "${converted}" PARENT_SCOPE)
     elseif(name MATCHES "\\.tmj$")
         string(REGEX REPLACE "\\.tmj$" ".nnhmap" converted "${name}")
+        set(${out_var} "${converted}" PARENT_SCOPE)
+    elseif(name MATCHES "\\.(gltf|glb)$")
+        string(REGEX REPLACE "\\.(gltf|glb)$" ".nnhmesh" converted "${name}")
         set(${out_var} "${converted}" PARENT_SCOPE)
     else()
         set(${out_var} "${name}" PARENT_SCOPE)
@@ -116,6 +122,44 @@ function(_nnh_add_sprite_step target source out name output_name assetc assetc_d
         VERBATIM)
 endfunction()
 
+# One model conversion step (spec 026): <source>/<name> (.gltf/.glb) -> <out>/<output name> (.nnhmesh), with a
+# depfile listing the model, its buffers and its textures.
+function(_nnh_add_mesh_step target source out name output_name assetc assetc_depends)
+    set(output "${out}/${output_name}")
+    set(depfile "${CMAKE_CURRENT_BINARY_DIR}/nnh_meshes/${output_name}.d")
+    get_filename_component(output_dir "${output}" DIRECTORY)
+    get_filename_component(depfile_dir "${depfile}" DIRECTORY)
+    add_custom_command(OUTPUT "${output}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir} ${depfile_dir}
+        COMMAND ${assetc} mesh ${source}/${name} ${output} --assets ${source} --depfile ${depfile}
+        DEPENDS "${source}/${name}" ${assetc_depends}
+        DEPFILE "${depfile}"
+        COMMENT "Model ${name}"
+        VERBATIM)
+endfunction()
+
+# _nnh_model_buffers(<files> <out_var>): the .bin files that belong to a .gltf beside them (plan 026 P25).
+function(_nnh_model_buffers files out_var)
+    set(buffers "")
+    foreach(name IN LISTS files)
+        if(NOT name MATCHES "^(.*)\\.gltf$")
+            continue()
+        endif()
+        set(stem "${CMAKE_MATCH_1}")
+        string(LENGTH "${stem}" n)
+        foreach(other IN LISTS files)
+            string(SUBSTRING "${other}" 0 ${n} head)
+            if(head STREQUAL stem)
+                string(SUBSTRING "${other}" ${n} -1 rest) # ".bin" or "_<any>.bin" (no folder)
+                if(rest STREQUAL ".bin" OR rest MATCHES "^_[^/]+\\.bin$")
+                    list(APPEND buffers "${other}")
+                endif()
+            endif()
+        endforeach()
+    endforeach()
+    set(${out_var} "${buffers}" PARENT_SCOPE)
+endfunction()
+
 function(nnh_add_assets target folder)
     get_filename_component(source "${folder}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     if(NOT IS_DIRECTORY "${source}")
@@ -139,14 +183,21 @@ function(nnh_add_assets target folder)
         nnh_assetc_command(assetc assetc_depends "Tiled maps") # only games with maps, sprites or data build it
     elseif(files MATCHES "\.ase\.json(;|$)")
         nnh_assetc_command(assetc assetc_depends "Aseprite exports (.ase.json)")
+    elseif(files MATCHES "\\.(gltf|glb)(;|$)")
+        nnh_assetc_command(assetc assetc_depends "glTF models (.gltf, .glb)")
     endif()
+    _nnh_model_buffers("${files}" model_buffers)
 
     set(outputs "")
     set(names "") # output names, for the index
     foreach(name IN LISTS files)
         nnh_asset_output_name("${name}" output_name)
-        if(output_name STREQUAL "")
+        if(output_name STREQUAL "" OR name IN_LIST model_buffers)
             continue()
+        endif()
+        if(output_name IN_LIST names)
+            message(FATAL_ERROR "nnh_add_game(${target}): two files would both become the asset ${output_name}: "
+                                "remove one of them")
         endif()
         if(NOT output_name STREQUAL name AND output_name IN_LIST files)
             message(FATAL_ERROR "nnh_add_game(${target}): ${name} and ${output_name} would both become the asset "
@@ -158,6 +209,8 @@ function(nnh_add_assets target folder)
         get_filename_component(output_dir "${output}" DIRECTORY)
         if(name MATCHES "\\.tmj$")
             _nnh_add_map_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
+        elseif(name MATCHES "\\.(gltf|glb)$")
+            _nnh_add_mesh_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
         elseif(name MATCHES "\\.ase\\.json$")
             _nnh_add_sprite_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}"
                                  "${assetc_depends}")

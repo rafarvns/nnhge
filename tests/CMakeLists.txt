@@ -1261,6 +1261,34 @@ add_custom_target(nnh_test_sprites DEPENDS ${_ase_out}/good.nnhsprite)
 add_dependencies(nnh_tests nnh_test_sprites)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
 
+# 3D foundation (spec 026): math, meshes, the 3D pass, the CPU rasteriser, the example's self-check.
+target_sources(nnh_tests PRIVATE
+    gfx3d/test_pixels_fake.cpp
+    gfx3d/test_probe.cpp
+    gfx3d/test_record.cpp
+    gfx3d/test_screen_pass.cpp
+    gfx3d/test_screen_project.cpp
+    math3d/test_conventions.cpp
+    math3d/test_mat4.cpp
+    math3d/test_math3d_accuracy.cpp
+    math3d/test_math3d_exact.cpp
+    math3d/test_projection.cpp
+    math3d/test_quat.cpp
+    math3d/test_quat_interp.cpp
+    math3d/test_vec3.cpp
+    mesh/test_create_mesh.cpp
+    mesh/test_load_mesh.cpp
+    mesh/test_mesh_build.cpp
+    mesh/test_mesh_validate.cpp
+    mesh/test_primitives.cpp
+    models_example/test_self_check.cpp
+    raster3d/test_raster.cpp
+    ${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp
+)
+target_link_libraries(nnh_tests PRIVATE nnh::raster3d)
+set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp PROPERTIES
+                            COMPILE_OPTIONS -ffp-contract=off)
+
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60
 option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)
@@ -1277,4 +1305,33 @@ if(NNH_BUILD_FUZZERS)
         target_compile_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)
         target_link_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)
     endforeach()
+endif()
+
+# 3D foundation (spec 026): fuzz targets of the two new parsers (the .nnhmesh reader, the glTF reader in nnh-assetc).
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_mesh.cpp)
+target_sources(nnh_tests PRIVATE fuzz/test_fuzz_mesh.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_mesh_reader fuzz/libfuzzer_mesh_reader.cpp)
+    target_link_libraries(fuzz_mesh_reader PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_mesh_reader PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_mesh_reader PRIVATE -fsanitize=fuzzer,address)
+endif()
+# The 3D contract's conformance (spec 026): the fake platform and the PC simulator (headless).
+target_sources(nnh_conformance_fake PRIVATE platform_conformance/test_video3d.cpp)
+target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_video3d.cpp)
+# The models example (spec 026 AC-7): its check mode in the simulator (math golden, probe pixels) and its console script
+# played with --pc.
+if(TARGET models AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME models_self_check_pc COMMAND models)
+    set_tests_properties(models_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;MODELS_DEMO=check;NNH_EXIT_AFTER_FRAMES=80"
+        PASS_REGULAR_EXPRESSION "3d pixels: PASS" FAIL_REGULAR_EXPRESSION "3d: FAIL|3d pixels: FAIL|\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME models_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run models --pc --no-build --script examples/models/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(models_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
 endif()

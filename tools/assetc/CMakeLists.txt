@@ -22,6 +22,7 @@ add_library(nnh_assetc_lib STATIC
     src/cli_data.cpp
     src/cli_data_index.cpp
     src/convert.cpp
+    src/convert_mesh.cpp
     src/convert_sprite.cpp
     src/data_convert.cpp
     src/data_index_build.cpp
@@ -32,6 +33,11 @@ add_library(nnh_assetc_lib STATIC
     src/diagnostics.cpp
     src/depfile.cpp
     src/files.cpp
+    src/gltf_accessors.cpp
+    src/gltf_document.cpp
+    src/gltf_materials.cpp
+    src/gltf_nodes.cpp
+    src/gltf_primitives.cpp
     src/index_writer.cpp
     src/json.cpp
     src/json_fields.cpp
@@ -73,7 +79,21 @@ add_library(nnh_assetc_lib STATIC
     ${_core}/data/schema_fingerprint.cpp
     ${_core}/data/schema_registry.cpp
     ${_core}/data/schema_write.cpp
+    # meshes (spec 026, D42): the engine's builder and validator, so models and create_mesh() give the same bytes
+    ${_core}/mesh/mesh_build.cpp
+    ${_core}/mesh/mesh_layout.cpp
+    ${_core}/mesh/mesh_measure.cpp
+    ${_core}/mesh/mesh_quantize.cpp
+    ${_core}/mesh/mesh_validate.cpp
 )
+# The mesh builder and the glTF baking (double) without fused multiply-add: Windows and Linux converters write the same
+# bytes (spec 026 FR-23's rule for the tool).
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_core}/mesh/mesh_build.cpp ${_core}/mesh/mesh_measure.cpp
+                                ${_core}/mesh/mesh_quantize.cpp src/gltf_accessors.cpp src/gltf_document.cpp
+                                src/gltf_materials.cpp src/gltf_nodes.cpp src/gltf_primitives.cpp src/convert_mesh.cpp
+                                PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
+endif()
 set_target_properties(nnh_assetc_lib PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 target_include_directories(nnh_assetc_lib PUBLIC src ${_core} ${_nnh_root}/engine/core/include)
 target_compile_definitions(nnh_assetc_lib PUBLIC NNH_ASSETC_VERSION="${PROJECT_VERSION}")
@@ -104,6 +124,7 @@ endif()
 # Fuzz target bodies (tests/fuzz_assetc.cpp): the mini-fuzz in the tests and the libFuzzer programs share them.
 if(NNH_BUILD_TESTS OR NNH_BUILD_FUZZERS)
     add_library(nnh_assetc_fuzz STATIC tests/fuzz_assetc.cpp tests/fuzz_assetc_data.cpp tests/fuzz_assetc_sprite.cpp
+                                       tests/fuzz_assetc_gltf.cpp
                                        ${_core}/data/data_apply.cpp)
     target_include_directories(nnh_assetc_fuzz PUBLIC tests)
     target_link_libraries(nnh_assetc_fuzz PUBLIC nnh_assetc_lib)
@@ -120,6 +141,7 @@ if(NNH_BUILD_TESTS)
         tests/test_cli.cpp
         tests/test_cli_data.cpp
         tests/test_cli_data_index.cpp
+        tests/test_cli_mesh.cpp
         tests/test_cli_sprite.cpp
         tests/test_data_convert.cpp
         tests/test_data_convert_tables.cpp
@@ -130,6 +152,7 @@ if(NNH_BUILD_TESTS)
         tests/test_diagnostics.cpp
         tests/test_fuzz_assetc.cpp
         tests/test_fuzz_assetc_sprite.cpp
+        tests/test_fuzz_assetc_gltf.cpp
         tests/test_json.cpp
         tests/test_json_fields.cpp
         tests/test_map_writer.cpp
@@ -150,7 +173,8 @@ if(NNH_BUILD_TESTS)
         ${_nnh_root}/tests/data_assets/test_types.cpp
     )
     target_link_libraries(nnh_assetc_tests PRIVATE nnh_assetc_fuzz nnh_assetc_lib nnh_test_framework)
-    target_compile_definitions(nnh_assetc_tests PRIVATE NNH_ASSETC_TEST_TMP="${CMAKE_CURRENT_BINARY_DIR}")
+    target_compile_definitions(nnh_assetc_tests PRIVATE NNH_ASSETC_TEST_TMP="${CMAKE_CURRENT_BINARY_DIR}"
+                                                        NNH_GLTF_DIR="${_nnh_root}/tests/data/gltf")
     target_include_directories(nnh_assetc_tests PRIVATE ${_nnh_root}/tests/data_assets)
     # test_cli.cpp writes a small game's assets here (the tool itself never creates folders: the build does).
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cli/assets/levels ${CMAKE_CURRENT_BINARY_DIR}/cli/assets/tiles
@@ -175,7 +199,7 @@ if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_assetc_lib nnh_assetc_fuzz)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name json map toml data refs sprite)
+    foreach(name json map toml data refs sprite gltf)
         add_executable(fuzz_assetc_${name} tests/libfuzzer_assetc_${name}.cpp)
         target_link_libraries(fuzz_assetc_${name} PRIVATE nnh_assetc_fuzz)
         target_compile_options(fuzz_assetc_${name} PRIVATE -fsanitize=fuzzer,address)

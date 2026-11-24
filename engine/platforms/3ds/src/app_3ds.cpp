@@ -104,7 +104,9 @@ bool init(const AppConfig& config) {
     // The window title and icon come from the SMDH on 3DS; config gives the data folder.
     g_last_error = "";
     gfxInitDefault();
-    if (!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)) {
+    // 3D draws (spec 026, plan P22) each add about 640 bytes of GPU commands.
+    const int max_draws_3d = config.gfx.max_draws_3d > 0 ? config.gfx.max_draws_3d : 0;
+    if (!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE + static_cast<std::size_t>(max_draws_3d) * 640u)) {
         g_last_error = "C3D_Init failed";
         gfxExit();
         return false;

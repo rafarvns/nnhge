@@ -1,7 +1,8 @@
-# Rendering: 2D now, 3D later
+# Rendering: 2D and 3D
 
-> Status: **2D implemented** ([spec 004](../../specs/004-2d-graphics/spec.md), PC and 3DS). 3D (M8) is not
-> built yet; this page fixes the structure so it can be added without rewriting games.
+> Status: **2D implemented** ([spec 004](../../specs/004-2d-graphics/spec.md), PC and 3DS). **3D mono implemented**
+> ([spec 026](../../specs/026-3d-foundation/spec.md) part 026a: meshes, materials, lights, the 3D pass among the 2D
+> layers; PC rasteriser and citro3d backend, console run pending); stereo is the spec's second part.
 
 ## The frame, per screen
 
@@ -12,15 +13,36 @@ game update()/draw()          gfx::draw / fill_rect / line ...   → recorded in
                               debug::print, overlay              → recorded in the debug list
 end of frame (next nnh::frame() or shutdown())
  for each screen (top, bottom):
-   2D pass, layers below the world      (today: all 2D)          ┐ sorted by layer, then call order
-   3D pass  (M8: meshes, 3D camera)     (not yet)                │ batched by texture
-   2D pass, layers above the world      (HUD)                    ┘
+   2D pass, layers below the world      (a sky)                  ┐ sorted by layer, then call order
+   3D pass  (spec 026: meshes, camera)  only in frames with 3D   │ batched by texture
+   2D pass, layers from the world up    (HUD)                    ┘
    debug pass (debug text, overlay)     always on top, built-in font, own capacity
  present, wait for 60 Hz
 ```
 
-Today every layer is in the first 2D pass. When 3D arrives, a game marks where the world sits among the
-layers, and the core submits the 2D list in two slices around the 3D pass. The 2D calls don't change.
+A frame without 3D draws submits the whole 2D list as one pass, exactly as before 3D existed. A frame with 3D draws on
+the top screen splits it at the screen's **world layer** (`gfx3d::set_world_layer`, default 8; decision D43):
+`gfx/world_split.cpp` finds the first item and tile batch at or above it, `gfx_submit_slice` sends the 2D below, the 3D
+module (`gfx3d/screen_pass.cpp`) culls, orders and submits the 3D pass (`platform::begin_3d / draw_3d / end_3d`), and
+the rest of the 2D follows. The 2D calls don't change.
+
+The 3D module is reached only through one hook pointer (`gfx/gfx3d_hook.hpp`), set by a registrar in an object that
+only mesh and 3D entry points link: a 2D-only game links no 3D code (its cost: the pointer's null checks).
+
+## The 3D pass (spec 026)
+
+- **Recording**: `gfx3d::draw` stores a 92-byte record (model rows, optional material, mesh handle, tint) and the
+  draw's world bounding sphere, O(1), no allocation; capacity `AppConfig::gfx.max_draws_3d`.
+- **At the end of the frame**: spheres culled against the camera's frustum in view space; the opaque and cut-out parts
+  in call order, then the blended parts back to front (stable merge sort by view depth); per draw, core folds the
+  mesh's quantisation decode into the model-view matrix and resolves the material (tint, texture handle), so the
+  backend only uploads values. Lights go to the backend in view space.
+- **Backends**: the 3DS draws with citro3d (a 24-bit depth target replacing citro2d's top target, the mesh vertex
+  shader, fragment lighting tables, texture combiners) between `C2D_Flush()` and `C2D_Prepare()`; 2D in a 3D game draws
+  with depth off. The PC simulator draws with the engine's own **CPU rasteriser** (`engine/platforms/shared/raster3d/`,
+  decision D41): into a 400×240 colour and depth buffer that starts as the clear colour or as the top target read back
+  when 2D was drawn below the world, put back opaque, so every blend happens on the CPU and screenshots are the same on
+  every renderer. The fake platform records every call and can run the same rasteriser for pixel tests.
 
 ## Tile layers (batches)
 
@@ -105,8 +127,8 @@ No contract change; the 3DS sizes citro2d for `max_particles` more objects. A de
 
 - **Order by layer** without making the game sort its calls.
 - **Batching**: consecutive draws of the same texture go to the GPU together.
-- **Stereoscopic 3D (M8)**: the top screen is drawn twice, once per eye. A recorded list can be
-  submitted twice with a horizontal offset per layer (parallax), so 2D games get depth without new calls.
+- **Stereoscopic 3D (spec 026's second part)**: the top screen is drawn twice, once per eye. A recorded list can be
+  submitted twice (and later with a horizontal offset per layer), so 2D needs no new calls.
 - **Testability**: the list is plain data, checked by unit tests on the fake platform.
 
 The list has a fixed capacity set at `init()` (no allocation per frame). It stores texture **handles**,
@@ -114,22 +136,21 @@ not pointers; a texture destroyed before the end of the frame is skipped (and as
 
 ## One texture type for 2D and 3D
 
-| System | A texture is | 2D draws it with | 3D (M8) will sample it with |
+| System | A texture is | 2D draws it with | 3D samples it with |
 |--------|--------------|------------------|-----------------------------|
 | 3DS | a citro3d `C3D_Tex` in linear memory (from a tex3ds `.t3x`) | citro2d (`C2D_Image` points at the `C3D_Tex`) | citro3d directly |
-| PC | an `SDL_Texture` of a renderer created on an `SDL_GPUDevice` (`SDL_CreateGPURenderer`, SDL 3.4) | the SDL renderer | the same `SDL_GPUDevice` |
+| PC | an `SDL_Texture` of a renderer created on an `SDL_GPUDevice` (`SDL_CreateGPURenderer`, SDL 3.4) | the SDL renderer | the CPU rasteriser, from its pixels read back once (`texels3d_pc.cpp`) |
 
 citro2d is a layer on top of citro3d: a 3D pass is raw citro3d between `C2D_Flush()` and `C2D_Prepare()`.
-On PC the GPU device is shared by the 2D renderer and the future 3D code. Headless runs (CI,
-screenshots with `SDL_VIDEO_DRIVER=offscreen`) may have no GPU device: the simulator then falls back to
-SDL's default renderer, which is enough for 2D (3D will need a GPU device).
+On PC the 3D pass needs no GPU device (decision D41, amending D20): headless runs (CI, screenshots with
+`SDL_VIDEO_DRIVER=offscreen`) and SDL's default renderer draw 3D too.
 
 ## Coordinates and names
 
 - 2D works in **screen pixels**, (0, 0) top-left, y down, `float` positions (`nnh::Vec2`).
 - Each screen has a **`Camera2D`** (a position subtracted from camera-relative draws and a zoom, see
-  [Zoom (D33)](#zoom-d33)). A 3D camera, 3D
-  vectors and matrices will be separate types next to these, never a renamed 2D type.
+  [Zoom (D33)](#zoom-d33)). The 3D camera, vectors and matrices are separate types
+  ([math3d.md](../api/math3d.md), [gfx3d.md](../api/gfx3d.md)), never renamed 2D types.
 - The final position of a sprite is rounded to whole pixels on both systems, so pixel art stays sharp
   and PC and 3DS agree; game state keeps the sub-pixel position.
 

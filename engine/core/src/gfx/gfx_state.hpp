@@ -7,6 +7,7 @@
 #include "gfx/particle_batches.hpp"
 #include "gfx/texture_table.hpp"
 #include "gfx/tile_batches.hpp"
+#include "nnh/assert.hpp"
 #include "nnh/gfx.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/video.hpp"
@@ -95,6 +96,29 @@ std::uint8_t gfx_clamp_layer(int layer);
 
 /// Frees a texture's platform resource and memory accounting now.
 void destroy_texture_now(int slot, std::uint32_t generation);
+
+/// A screen's built 2D pass (gfx_build_pass): items in GfxState::pass, tile batch splits in GfxState::splits.
+struct Pass2D {
+    int items = 0;
+    int stale = 0;  ///< sprites skipped: their texture was destroyed
+    int splits = 0;
+};
+/// Builds `screen`'s 2D pass with its camera. Inline (hello's size, plan P14).
+inline Pass2D gfx_build_pass(Screen screen) {
+    GfxState& g = gfx_state();
+    const auto r = g.draws.build(screen, gfx_cameras()[screen == Screen::Top ? 0 : 1], g.textures, g.pass,
+                                 g.max_draws, g.splits, kMaxTileBatches + kMaxParticleBatches);
+    return {r.items, r.stale, r.splits};
+}
+/// Submits items [item_from, item_to) with tile batches [split_from, split_to) among them (gfx_frame.cpp).
+/// @return stale tile batches.
+int gfx_submit_slice(Screen screen, int item_from, int item_to, int split_from, int split_to);
+/// The pass's stale-texture asserts.
+inline void gfx_check_stale(const Pass2D& pass, int stale_tiles) {
+    NNH_ASSERT(pass.stale == 0, "%d sprites drawn with a texture destroyed earlier", pass.stale);
+    NNH_ASSERT(stale_tiles == 0, "%d tile batches drawn with a tileset texture destroyed earlier", stale_tiles);
+    (void)pass, (void)stale_tiles;
+}
 
 } // namespace detail
 } // namespace nnh

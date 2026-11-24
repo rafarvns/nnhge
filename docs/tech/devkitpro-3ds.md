@@ -110,6 +110,45 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
   font is a good test pattern: each glyph is exactly one tile. No citro2d text (`C2D_TextBuf`): all text
   is engine sprites.
 
+## 3D drawing (spec 026, what our backend does)
+
+> Status: built and linked (026a, mono); the first console run (the smoke and check scripts of `examples/models`)
+> confirms the open points below.
+
+- **Only with 3D on** (`AppConfig::gfx.max_draws_3d > 0`): `C3D_Init` gets 640 bytes of command buffer per 3D draw
+  more; `video3d_init` replaces citro2d's top target (RGBA8 + 16-bit depth) by `C3D_RenderTargetCreate(240, 400,
+  GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8)` on the same output (`C3D_RenderTargetSetOutput(…, GFX_TOP, GFX_LEFT, …)`,
+  transfer flags as citro2d's). VRAM: the depth buffer grows from 192 000 to 384 000 bytes. A 2D game keeps
+  citro2d's targets untouched.
+- **2D in a 3D game** draws with the depth test off and colour writes only (`C3D_DepthTest(false, GPU_ALWAYS,
+  GPU_WRITE_COLOR)` after every `C2D_Prepare()`), so 2D below the world never hides it; the frame-start
+  `C2D_TargetClear` clears the depth to 0.
+- **The pass** (`pass3d_3ds.cpp`): `C2D_Flush()`, bind the mesh shader, depth test `GPU_GREATER` with writes (blended
+  draws: colour writes only), the light environment; per draw: uniforms (model-view 3×4 with the quantisation decode
+  folded in, normal matrix, uv decode, colour scale = base × tint / 255), the attribute layout of the mesh's vertex
+  format (12/16/20 bytes; missing texture coordinates and colours are fixed attributes), texture filter and wrap,
+  combiners, culling, alpha test or blending — each only when it changes — then `C3D_DrawElements(GPU_TRIANGLES, n,
+  C3D_UNSIGNED_SHORT, …)` from linear memory. At the end: touched textures' parameters restored, lighting unbound,
+  alpha test and culling off, every combiner reset, `C2D_Prepare()` and the 2D depth state.
+- **Shader** `engine/platforms/3ds/shaders/mesh3d.v.pica`, built by `picasso` through `ctr_add_shader_library` and
+  embedded by `dkp_add_embedded_binary_library` (`nnh_mesh3d_shader_shbin.h`): raw int16 positions × model-view,
+  int8 normals × normal matrix → the normal quaternion (citro3d's `fragment_light` method), the view vector, uv × scale
+  + offset, colour × colour scale. Uniforms are always the instruction's first source (picasso refuses a uniform in
+  the second one).
+- **Projection**: core gives an OpenGL clip-space projection; `tilt3d_3ds.cpp` multiplies it by a constant matrix taken
+  once from citro3d itself (`Mtx_PerspTilt(ref) × inverse(GL(ref))`): the PICA's depth range and the 90° screen
+  rotation. A Development self-test compares the result with `Mtx_PerspTilt` and `Mtx_OrthoTilt` for other parameters
+  and logs `3d tilt: PASS|FAIL` after the first frame.
+- **Lighting** (`lights3d_3ds.cpp`): one `C3D_LightEnv`, 4 `C3D_Light`s (position w = 0 directional, 1 point), material
+  ambient and diffuse 1 and specular 0 = the draw's specular colour; `D0` on N·H with a signed input, one table per
+  shininess level (8 × 1 KB, filled from `engine/platforms/shared/raster3d/light_tables.cpp`, the simulator's tables),
+  `C3D_LightEnvClampHighlights(true)`; point lights' distance attenuation through a `C3D_LightLutDA` with scale
+  1/range and the shared (1 − x)² table. Combiners: `TEXTURE0 × PRIMARY` (or `PRIMARY`), then `× FRAGMENT_PRIMARY`,
+  then `+ FRAGMENT_SECONDARY` (lit only).
+- **Open points for the console run**: the culling winding (`GPU_CULL_BACK_CCW` after the tilt), the `D0` signed
+  table layout, the alpha-test reference, the read-back of probe pixels through `remote_capture` (the framebuffer
+  after the display transfer).
+
 ## Input (HID)
 
 `hidScanInput()` once per frame, then `hidKeysHeld()`, `hidKeysDown()`, `hidKeysUp()` (`KEY_A`, `KEY_DUP`...),

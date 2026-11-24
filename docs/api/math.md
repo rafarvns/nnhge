@@ -27,3 +27,8 @@ pixels ([rendering.md](../architecture/rendering.md)).
 
 Positions, rotations and scales composed through parents (with the same bits on every system) are
 `<nnh/transform.hpp>`'s values: see [transform.md](transform.md) and, for entities, [hierarchy.md](hierarchy.md).
+
+## 3D values
+
+Vectors, quaternions, matrices and projections for 3D live in [math3d.md](math3d.md) (`<nnh/math3d.hpp>`, spec 026):
+separate types, never renamed 2D ones.

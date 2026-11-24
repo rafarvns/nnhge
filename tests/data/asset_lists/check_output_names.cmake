@@ -15,7 +15,10 @@ foreach(case "levels/level1.tmj|levels/level1.nnhmap"
              "art/hero.ase|"
              "art/hero.aseprite|"
              "art/hero.json|art/hero.json"
-             "art/hero.ase.json.txt|art/hero.ase.json.txt")
+             "art/hero.ase.json.txt|art/hero.ase.json.txt"
+             "models/ship.gltf|models/ship.nnhmesh"
+             "models/ship.glb|models/ship.nnhmesh"
+             "models/ship.bin|models/ship.bin")
     string(REPLACE "|" ";" case "${case}")
     list(GET case 0 name)
     list(LENGTH case n)

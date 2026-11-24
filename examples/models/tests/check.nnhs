@@ -1,0 +1,54 @@
+# Spec 026 AC-7 (mono, 026a), automatic (spec 013): the math self-check (its checksum lines must be the PC's bit for
+# bit), the probe scenes (pixels against FR-10 within FR-24's tolerance), then the showcase: the Circle Pad orbits,
+# X switches to orthographic, the debug draw goes on — each logs where the ship's name tag lands (to_screen: the
+# console must print the PC's numbers) — with screenshots to read beside the PC's.
+# PC:      nnh run models --pc --script examples/models/tests/check.nnhs
+# Console: nnh run models --script examples/models/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines are the PC's (pc-debug). The checksums change only if self_check.cpp or the 3D math change: then
+# run `MODELS_DEMO=check NNH_EXIT_AFTER_FRAMES=70 build/pc-debug/examples/models/models.exe`, copy its lines here and
+# the sum into kSelfCheckGolden. The tag lines come from the PC run of this script.
+fail-on "] E "
+fail-on "3d: FAIL"
+fail-on "3d pixels: FAIL"
+
+wait 30
+screenshot showcase
+
+# The check (SELECT): 50 000 operations, a checksum every 10 000, the verdict, then the six probe scenes.
+tap SELECT
+expect "models: check started" 20
+expect "3d: 10000 sum 95C33EC5" 120
+expect "3d: 20000 sum 19D9D5B0" 120
+expect "3d: 30000 sum B657BA1D" 120
+expect "3d: 40000 sum C074FBC1" 120
+expect "3d: 50000 sum A3BF4EDF" 120
+expect "3d: PASS A3BF4EDF" 30
+expect "3d pixels: PASS" 300
+wait 10
+screenshot probes
+
+# Back to the showcase: orbit with the Circle Pad, then the tag's position.
+tap SELECT
+expect "models: showcase" 20
+wait 10
+stick circle 1 0
+wait 30
+stick circle 0 0
+expect "tag: 200,88 depth 6.62" 10
+wait 10
+tap X
+# (X logs "projection: orthographic" and the tag in the same frame: one expect per frame)
+expect "tag: 200,81 depth 6.62" 10
+wait 10
+screenshot ortho
+tap X
+expect "projection: perspective" 10
+wait 10
+touch 40 200
+expect "debug draw: on" 10
+wait 10
+untouch
+wait 10
+screenshot debug
+end

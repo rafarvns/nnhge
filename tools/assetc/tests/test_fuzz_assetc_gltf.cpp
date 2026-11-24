@@ -1,0 +1,53 @@
+// Mini-fuzz of `nnh-assetc mesh` (spec 026 T3.7): seeded, deterministic mutations of a model using every feature
+// the converter reads, run through the fuzz body (which aborts on a broken invariant). fuzz_assetc_gltf runs the
+// same body for longer on Linux.
+
+#include <cstdint>
+#include <string>
+
+#include "fuzz_assetc.hpp"
+#include "test.hpp"
+
+namespace {
+
+struct Rng {
+    std::uint32_t state;
+    std::uint32_t next() { return state = state * 1664525u + 1013904223u; }
+};
+
+/// 1-6 edits: replace, delete, insert a byte, or insert a JSON-significant character.
+void mutate(std::string& s, Rng& rng) {
+    static const char kSignificant[] = "{}[]\",:\\-.0123456789@=\n";
+    const int edits = 1 + static_cast<int>(rng.next() % 6);
+    for (int e = 0; e < edits; ++e) {
+        const std::uint32_t r = rng.next();
+        const std::size_t at = s.empty() ? 0 : (r >> 8) % s.size();
+        switch (r % 4) {
+        case 0: if (!s.empty()) s[at] = static_cast<char>(rng.next() >> 16); break;
+        case 1: if (!s.empty()) s.erase(at, 1); break;
+        case 2: s.insert(at, 1, static_cast<char>(rng.next() >> 16)); break;
+        default: s.insert(at, 1, kSignificant[(rng.next() >> 8) % (sizeof kSignificant - 1)]); break;
+        }
+    }
+}
+
+} // namespace
+
+NNH_TEST(assetc_gltf_target_seed_converts) {
+    const std::string seed = nnh::assetc::fuzz::gltf_seed();
+    CHECK(nnh::assetc::fuzz::gltf_converts(seed.data(), seed.size()));
+}
+
+NNH_TEST(assetc_gltf_target_survives_mutated_models) {
+    Rng rng{2026};
+    int accepted = 0;
+    for (int i = 0; i < 8000; ++i) {
+        std::string doc = nnh::assetc::fuzz::gltf_seed();
+        mutate(doc, rng);
+        nnh::assetc::fuzz::gltf_target(reinterpret_cast<const std::uint8_t*>(doc.data()), doc.size());
+        accepted += nnh::assetc::fuzz::gltf_converts(doc.data(), doc.size()) ? 1 : 0;
+    }
+    std::printf("    %d of 8000 mutated models converted\n", accepted);
+    CHECK(accepted > 300);  // the deep path (builder + engine validator) runs
+    CHECK(accepted < 7600); // and refusals too
+}

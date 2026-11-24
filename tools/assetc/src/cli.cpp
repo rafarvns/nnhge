@@ -10,6 +10,7 @@
 
 #include "cli_internal.hpp"
 #include "convert.hpp"
+#include "convert_mesh.hpp"
 #include "convert_sprite.hpp"
 #include "core/crc32.hpp" // shared with core (pure file): the version line proves which CRC the maps get
 #include "depfile.hpp"
@@ -27,6 +28,7 @@ namespace {
 constexpr const char* kUsage =
     "usage: nnh-assetc --version\n"
     "       nnh-assetc map <in.tmj> <out.nnhmap> --assets <assets folder> [--depfile <out.d>]\n"
+    "       nnh-assetc mesh <in.gltf|in.glb> <out.nnhmesh> --assets <assets folder> [--depfile <out.d>]\n"
     "       nnh-assetc data <in> <out> --schema <schema> --refs <out.refs> --name <asset name> [--show <path>]\n"
     "       nnh-assetc data-index --out <.nnh_data> --schema <schema> --assets-list <file> --refs-list <file>\n"
     "                  [--show <assets folder>]\n";
@@ -90,6 +92,14 @@ int run_convert(ConvertFn convert, const MapArgs& a, std::FILE* err) {
     return 0;
 }
 
+std::vector<std::string> g_mesh_notes; // the last model's ignored features (spec 026)
+
+bool convert_mesh_noting(FileSource& files, const std::string& in, const std::string& assets, Converted& out,
+                         Problem& problem) {
+    g_mesh_notes.clear();
+    return convert_mesh(files, in, assets, out, problem, &g_mesh_notes);
+}
+
 } // namespace
 
 int run_cli(int argc, const char* const* argv, std::FILE* out, std::FILE* err) {
@@ -105,6 +115,11 @@ int run_cli(int argc, const char* const* argv, std::FILE* out, std::FILE* err) {
     }
     if (argc >= 2 && std::strcmp(argv[1], "sprite") == 0 && parse_map_args(argc, argv, args)) {
         return run_convert(convert_sprite, args, err);
+    }
+    if (argc >= 2 && std::strcmp(argv[1], "mesh") == 0 && parse_map_args(argc, argv, args)) {
+        const int code = run_convert(convert_mesh_noting, args, err);
+        for (const std::string& note : g_mesh_notes) std::fprintf(out, "%s: note: %s\n", args.in.c_str(), note.c_str());
+        return code;
     }
     if (argc >= 2 && std::strcmp(argv[1], "data") == 0) {
         const int code = run_data(argc, argv, err);

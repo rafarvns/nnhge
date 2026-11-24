@@ -12,6 +12,7 @@
 #include "nnh/platform/audio.hpp"
 #include "nnh/platform/crash.hpp"
 #include "nnh/platform/video.hpp"
+#include "nnh/platform/video3d.hpp"
 #include "nnh/system.hpp"
 #include "nnh/time.hpp"
 
@@ -226,5 +227,50 @@ const Crash& last_crash();
 /// Calls the CPU fault handler core installed with crash_install_hooks(), as if the CPU faulted.
 /// Use inside run_expecting_crash().
 void simulate_cpu_fault(const platform::CpuFault& fault);
+
+// ---- 3D (spec 026, nnh/platform/video3d.hpp) ---------------------------------------------------------------------
+// begin_3d() and end_3d() also log '[' and ']' in State::calls, between the screen's 'T'/'B' draw_2d calls.
+
+inline constexpr int kMaxRecorded3D = 64;
+
+/// One begin_3d / draw_3d / end_3d call of the current or last frame.
+struct Fake3DCall {
+    char kind = 0; ///< 'b' begin_3d, 'd' draw_3d, 'e' end_3d
+    Screen screen = Screen::Top;
+    platform::Pass3D pass{};  ///< kind 'b'
+    platform::Draw3D draw{};  ///< kind 'd'
+};
+
+/// What the fake 3D backend saw (pass3d_log()).
+struct Fake3D {
+    int init_calls = 0;
+    int shutdown_calls = 0;
+    bool initialized = false;
+    int max_draws = 0;             ///< from video3d_init
+    int meshes_created = 0;
+    int live_meshes = 0;
+    std::size_t live_mesh_bytes = 0;
+    int call_count = 0;            ///< calls in the current frame (first kMaxRecorded3D kept)
+    Fake3DCall calls[kMaxRecorded3D];
+    int last_frame_call_count = 0; ///< the same for the frame that ended last
+    Fake3DCall last_frame_calls[kMaxRecorded3D];
+};
+
+const Fake3D& pass3d_log();
+
+/// When true, video3d_init() fails (like a console out of VRAM).
+void set_video3d_init_fails(bool fails);
+/// When true, mesh_create() fails (out of linear memory).
+void set_mesh_create_fails(bool fails);
+/// When on, begin_3d/draw_3d/end_3d also rasterise into a 400×240 top-screen picture with the engine's CPU
+/// rasteriser (spec 026 FR-25): cleared to the top clear colour at begin_frame (the fake draws no 2D pixels).
+/// Textures: RGBA copies of texture_create_rgba's pixels; "FAKE" images are a gradient (r = x·255/(w−1),
+/// g = y·255/(h−1), b = 0, a = 255).
+void enable_pixels_3d(bool on);
+/// A pixel of the picture of the frame that ended last.
+Color pixel_3d(int x, int y);
+
+/// The bytes a mesh was created with (vertices then indices), or nullptr for an unknown handle.
+const std::uint8_t* mesh_data(platform::MeshHandle handle, std::size_t& size);
 
 } // namespace nnh::platform_fake

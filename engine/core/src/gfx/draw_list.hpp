@@ -43,6 +43,7 @@ struct DrawCommand {
 struct TileSplit {
     int at = 0;
     int batch = 0;
+    std::uint8_t layer = 0; ///< the batch's draw layer (spec 026: where the 3D world splits the pass)
 };
 
 class DrawList {

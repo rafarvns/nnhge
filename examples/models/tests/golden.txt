@@ -1,0 +1,7 @@
+# Golden screenshot hashes of the models example (spec 026 AC-5, FR-23): SHA-256 of the PNG written with
+# NNH_EXIT_AFTER_FRAMES=<frames> NNH_SCREENSHOT=…, headless (SDL_VIDEO_DRIVER=offscreen, SDL_RENDER_DRIVER=software,
+# NNH_SIM_RENDERER=sdl). The same on pc-debug and pc-release (Windows, WinLibs GCC); the Linux VM checks them in stage 9.
+# demo      frames  sha256
+showcase    30      d1e735a94a82c13789ca03a199885521337153b4329150792e72b7c5335bfb54
+check       60      aca7e42e0623563cd9b06ba0c5eb27c8c8a7c677a75c80221574727791e5a8d7
+smoke       60      982c37ddbb0bf6a2d27c84eaf10ccf7a2e0bae09158ab5423cdfeaa94e1af108

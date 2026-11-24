@@ -122,3 +122,9 @@ art/hero.ase.json: hero.png not found: export the sheet beside the data (--sheet
 Other refusals: a tag out of range, two clips with one name, a duration outside 1..65 535 ms, a clip over 256 frames
 or one play over 1 hour, more than 8 markers on a frame, a pivot more than 2047 pixels away, and the library limits.
 Editing one export reconverts only it (a depfile lists the JSON and the PNG).
+
+## Models
+
+`*.gltf` and `*.glb` files in the assets folder are converted into `<name>.nnhmesh` by the build (spec 026): load them
+with `load_mesh("models/ship")` ([mesh.md](mesh.md), export guide [models.md](../guides/models.md)). A model's buffers
+(`<model>.bin`, `<model>_<any>.bin` beside a `.gltf`) are not packed; `gltf`, `glb` and `nnhmesh` aren't data keys.

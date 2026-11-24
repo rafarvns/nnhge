@@ -8,6 +8,7 @@
 #include "nnh/system.hpp"
 
 #include "nnh/platform/input.hpp"
+#include "nnh/platform/video.hpp"
 #include "nnh/platform_fake.hpp"
 
 namespace nnh::platform_fake::detail {
@@ -38,6 +39,13 @@ State& mutable_state();
 Controls& controls();
 void fs_reset(); // fs_fake.cpp
 void remote_reset(); // remote_fake.cpp
+void video3d_reset(); // video3d_fake.cpp
+void video3d_frame_begun(); // video3d_fake.cpp: begin_frame() starts a new 3D log
+void video3d_frame_ended(); // video3d_fake.cpp
+/// video3d_fake.cpp: a texture was created (rgba null: the "FAKE" format, filled with a gradient) or destroyed, for the
+/// 3D pixel tests.
+void texture_recorded(platform::TextureHandle handle, int width, int height, const void* rgba);
+void texture_forgotten(platform::TextureHandle handle);
 void set_last_error(const char* message); // app_fake.cpp
 
 } // namespace nnh::platform_fake::detail

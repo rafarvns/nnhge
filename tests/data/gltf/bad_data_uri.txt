@@ -1,0 +1,1 @@
+embedded data (a data: URI) isn't supported

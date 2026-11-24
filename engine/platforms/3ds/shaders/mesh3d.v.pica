@@ -1,0 +1,87 @@
+; NNHGE mesh vertex shader (spec 026, decision D42/D43). Built by devkitPro's picasso (ctr_add_shader_library).
+; Inputs are the .nnhmesh vertex as stored (raw integers, no normalisation): the quantisation decode is folded into
+; modelView by core, so positions need no extra work. Outputs feed the PICA200's fragment lighting (normal quaternion,
+; view vector) and the texture combiners (primary colour = vertex colour × base × tint, folded into colorScale).
+; (A uniform is always the first source: the PICA200 reads uniforms only there.)
+; Written from citro3d's fragment_light example's documented method (normal → quaternion).
+
+; Uniforms
+.fvec projection[4]   ; core's projection × the fixed tilt/depth matrix (rows)
+.fvec modelView[3]    ; view × model × T(offset) × S(scale), rows 0..2
+.fvec normalMtx[3]    ; inverse transpose of view × model (3×3 rows, w unused)
+.fvec uvDecode        ; uv = q.xy × scale.xy + offset (x, y = scale; z, w = offset)
+.fvec colorScale      ; base × tint / 255 (rgba): the colour attribute arrives as 0..255
+
+; Constants
+.constf consts(0.0, 1.0, 0.5, 0.0078740157) ; 0, 1, ½, 1/127
+.alias zeros consts.xxxx
+.alias ones consts.yyyy
+.alias half consts.zzzz
+
+; Outputs
+.out outpos position
+.out outtc0 texcoord0
+.out outclr color
+.out outview view
+.out outnq normalquat
+
+; Inputs
+.alias inpos v0 ; int16 × 4 (x, y, z, 0)
+.alias innrm v1 ; int8 × 4 (x, y, z, 0)
+.alias intc  v2 ; int16 × 2 (fixed 0 when the mesh has none)
+.alias inclr v3 ; uint8 × 4 (fixed 255 when the mesh has none)
+
+.proc main
+	; r0 = (position, 1)
+	mov r0.xyz, inpos
+	mov r0.w, ones
+
+	; r1 = modelView × r0 (view space), w = 1
+	dp4 r1.x, modelView[0], r0
+	dp4 r1.y, modelView[1], r0
+	dp4 r1.z, modelView[2], r0
+	mov r1.w, ones
+
+	; the view vector: from the surface towards the eye
+	mov outview, -r1
+
+	; outpos = projection × r1
+	dp4 outpos.x, projection[0], r1
+	dp4 outpos.y, projection[1], r1
+	dp4 outpos.z, projection[2], r1
+	dp4 outpos.w, projection[3], r1
+
+	; texture coordinates: q × scale + offset
+	mul r2.xy, uvDecode.xy, intc.xy
+	add r2.xy, uvDecode.zw, r2.xy
+	mov r2.zw, zeros
+	mov outtc0, r2
+
+	; colour: q × colorScale
+	mul outclr, colorScale, inclr
+
+	; the normal in view space, normalised
+	mul r3.xyz, consts.www, innrm.xyz
+	dp3 r4.x, normalMtx[0], r3
+	dp3 r4.y, normalMtx[1], r3
+	dp3 r4.z, normalMtx[2], r3
+	dp3 r5.x, r4, r4
+	rsq r5.x, r5.x
+	mul r4.xyz, r4.xyz, r5.xxx
+
+	; normal → quaternion rotating +z onto it: (n.xy / (2s), s, 0) with s = √((1 + n.z) / 2)
+	mov r0, consts.yxxx
+	add r6, ones, r4.z
+	mul r6, half, r6
+	cmp zeros, ge, ge, r6.x
+	rsq r6, r6.x
+	mul r7, half, r4
+	jmpc cmp.x, degenerate
+
+	rcp r0.z, r6.x
+	mul r0.xy, r7, r6
+
+degenerate:
+	mov outnq, r0
+	end
+.end

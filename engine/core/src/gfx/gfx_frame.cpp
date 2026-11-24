@@ -1,6 +1,7 @@
 // 2D graphics lifecycle: capacities at init, end-of-frame submission per screen, deferred texture
 // frees, cleanup at shutdown (docs/architecture/rendering.md).
 
+#include "gfx/gfx3d_hook.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "gfx/gfx_state.hpp"
 #include "log/engine_channels.hpp"
@@ -24,6 +25,7 @@ detail::TextureSlot* g_slots = nullptr;
 detail::TileBatchRecord* g_tile_records = nullptr; // only when max_tiles > 0
 platform::TileQuad2D* g_tile_scratch = nullptr;
 std::uint32_t g_next_generation = 1; // texture handles from a previous init() stay stale
+bool g_3d_on = false;                // the 3D hook's init succeeded (spec 026)
 
 template <typename T>
 T* allocate(int count) {
@@ -79,27 +81,13 @@ int submit_tiles(Screen screen, int index, Camera2D camera) {
     return 0;
 }
 
-/// The screen's 2D pass: the sorted items, cut by tile batches where they sit among them.
+/// The screen's 2D pass: the sorted items, cut by tile batches where they sit among them. With 3D on, the 3D module
+/// submits screens that have 3D draws itself (the same 2D slices around its pass, spec 026 D43).
 void submit_screen(Screen screen) {
-    detail::GfxState& g = g_state;
-    const Camera2D camera = g_cameras[screen == Screen::Top ? 0 : 1];
-    const auto result = g.draws.build(screen, camera, g.textures, g.pass, g.max_draws, g.splits,
-                                      detail::kMaxTileBatches + detail::kMaxParticleBatches);
-    int stale_tiles = 0;
-    int from = 0;
-    for (int i = 0; i < result.splits; ++i) {
-        const detail::TileSplit split = g.splits[i];
-        if (split.at > from) platform::draw_2d(screen, g.pass + from, split.at - from);
-        from = split.at;
-        if (split.batch < detail::kParticleBatchBase) {
-            stale_tiles += submit_tiles(screen, split.batch, camera);
-        } else if (detail::g_gfx_particle_ops != nullptr) { // asserts itself on a stale texture
-            detail::g_gfx_particle_ops->submit(screen, split.batch - detail::kParticleBatchBase, camera);
-        }
-    }
-    if (result.items > from) platform::draw_2d(screen, g.pass + from, result.items - from);
-    NNH_ASSERT(result.stale == 0, "%d sprites drawn with a texture destroyed earlier", result.stale);
-    NNH_ASSERT(stale_tiles == 0, "%d tile batches drawn with a tileset texture destroyed earlier", stale_tiles);
+    if (g_3d_on && detail::g_gfx_3d_ops->submit_screen(screen)) return;
+    const detail::Pass2D pass = detail::gfx_build_pass(screen);
+    const int stale_tiles = detail::gfx_submit_slice(screen, 0, pass.items, 0, pass.splits);
+    detail::gfx_check_stale(pass, stale_tiles);
 }
 
 /// Allocates the tile batch records and quad scratch (nothing when max_tiles is 0). @return false if out of memory.
@@ -117,6 +105,27 @@ bool tiles_init(int max_tiles) {
 } // namespace
 
 constinit const detail::GfxParticleOps* detail::g_gfx_particle_ops = nullptr;
+
+// The 2D part of submit_screen (spec 026 extracted it unchanged so the 3D pass can sit between two slices): items
+// [item_from, item_to) of the built pass with the tile batches [split_from, split_to) where they sit among them.
+int detail::gfx_submit_slice(Screen screen, int item_from, int item_to, int split_from, int split_to) {
+    GfxState& g = g_state;
+    const Camera2D camera = g_cameras[screen == Screen::Top ? 0 : 1];
+    int stale_tiles = 0;
+    int from = item_from;
+    for (int i = split_from; i < split_to; ++i) {
+        const TileSplit split = g.splits[i];
+        if (split.at > from) platform::draw_2d(screen, g.pass + from, split.at - from);
+        from = split.at;
+        if (split.batch < kParticleBatchBase) {
+            stale_tiles += submit_tiles(screen, split.batch, camera);
+        } else if (g_gfx_particle_ops != nullptr) { // asserts itself on a stale texture
+            g_gfx_particle_ops->submit(screen, split.batch - kParticleBatchBase, camera);
+        }
+    }
+    if (item_to > from) platform::draw_2d(screen, g.pass + from, item_to - from);
+    return stale_tiles;
+}
 
 detail::GfxState& detail::gfx_state() { return g_state; }
 Camera2D* detail::gfx_cameras() { return g_cameras; }
@@ -149,12 +158,22 @@ bool detail::gfx_init(const GfxConfig& config) {
         gfx_shutdown();
         return false;
     }
+    // 3D (spec 026, D43): only when the game links the 3D module and asks for a capacity.
+    if (config.max_draws_3d > 0 && g_gfx_3d_ops != nullptr) {
+        if (!g_gfx_3d_ops->init(config)) {
+            gfx_shutdown();
+            return false;
+        }
+        g_3d_on = true;
+    }
     return true;
 }
 
 void detail::gfx_shutdown() {
     if (!g_state.ready) return;
     gfx_after_frame();
+    if (g_3d_on) g_gfx_3d_ops->shutdown(); // meshes (and the textures they own) first
+    g_3d_on = false;
     font_texture_release(); // counted under its own tag
     g_state.textures.for_each_active([](const TextureData& t) {
         platform::texture_destroy(t.platform);
@@ -196,6 +215,7 @@ void detail::gfx_after_frame() {
         destroy_texture_now(g_state.pending[i].slot, g_state.pending[i].generation);
     }
     g_state.pending_count = 0;
+    if (g_3d_on) g_gfx_3d_ops->after_frame();
 }
 
 } // namespace nnh

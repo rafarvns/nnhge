@@ -398,6 +398,66 @@ target_sources(nnh_core PRIVATE ${_nnh_particles_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_particles_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# 3D math (spec 026, D44): vectors, quaternions, matrices, projections. Only IEEE + - * /, a correctly rounded square
+# root (-fno-math-errno: one instruction, no libm) and sin_cos, without fused multiply-add: the same bits on every
+# compiler and on the 3DS. A game that doesn't use <nnh/math3d.hpp> links none of it.
+set(_nnh_math3d_sources
+    src/math3d/mat4.cpp
+    src/math3d/mat4_inverse.cpp
+    src/math3d/projection.cpp
+    src/math3d/quat.cpp
+    src/math3d/quat_basis.cpp
+    src/math3d/quat_interp.cpp
+    src/math3d/transform3d.cpp
+    src/math3d/vec3.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_math3d_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_math3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
+endif()
+# Meshes (spec 026, D42): the .nnhmesh format, quantisation and validation (pure, also compiled into nnh-assetc so both
+# write the same bytes), the mesh table and handles, code-built meshes, primitives and loading. Same float rules.
+set(_nnh_mesh_sources
+    src/mesh/create_mesh.cpp
+    src/mesh/load_mesh.cpp
+    src/mesh/mesh.cpp
+    src/mesh/mesh_build.cpp
+    src/mesh/mesh_layout.cpp
+    src/mesh/mesh_measure.cpp
+    src/mesh/mesh_quantize.cpp
+    src/mesh/mesh_record.cpp
+    src/mesh/mesh_table.cpp
+    src/mesh/mesh_validate.cpp
+    src/mesh/primitives.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_mesh_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_mesh_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
+endif()
+# 3D drawing (spec 026, D43): recording, culling, order, lights, the screen pass, queries. gfx/gfx3d_hook.cpp (the null
+# hook pointer) is always linked; everything else only through the hook's registrar (gfx3d_ops.cpp, plan P14).
+set(_nnh_gfx3d_sources
+    src/gfx/gfx3d_hook.cpp
+    src/gfx/world_split.cpp
+    src/gfx3d/camera3d.cpp
+    src/gfx3d/cull.cpp
+    src/gfx3d/debug_draw3d.cpp
+    src/gfx3d/gfx3d_init.cpp
+    src/gfx3d/gfx3d_ops.cpp
+    src/gfx3d/lighting.cpp
+    src/gfx3d/material_check.cpp
+    src/gfx3d/order.cpp
+    src/gfx3d/probe.cpp
+    src/gfx3d/record.cpp
+    src/gfx3d/screen_pass.cpp
+    src/gfx3d/screen_project.cpp
+    src/gfx3d/stats3d.cpp
+    src/gfx3d/submit3d.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_gfx3d_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_gfx3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

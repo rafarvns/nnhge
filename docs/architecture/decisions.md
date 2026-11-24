@@ -273,3 +273,10 @@ never through `#ifdef` in game code.
   fallback (a game-declared preset type, `examples/particles/presets.hpp`); the amendment is left for the maintainer.
   3ds-release `hello` grows by 144 B of `.text` (budget 128 B: flagged) and 256 B of `.bss`; by the ARM pre-check
   emitting 512 particles in a frame misses its Old 3DS target.
+- 2026-11-24: D41–D44 **implemented for 026a** (mono 3D: math, meshes and the glTF converter, recording and the 3D
+  pass among the 2D layers, the CPU rasteriser on PC and fake, the citro3d backend; console run pending). Refinements in
+  plan 026 "Stage results": `Camera3D::near_plane`/`far_plane` (not `near`/`far`, which `<windows.h>` defines away),
+  pure `gfx3d::to_screen(camera, …)`/`screen_ray(camera, …)` overloads, the lighting tables in the PICA200's layouts
+  shared from `engine/platforms/shared/raster3d/light_tables.cpp`, the 3DS projection fix-up taken from citro3d's own
+  `Mtx_PerspTilt`. D43's hook costs `hello` +256 B of 3DS `.text` (over P14's 128 B budget: the shared 2D slice
+  function), measured and recorded.

@@ -45,4 +45,12 @@ const char* sprite_seed();
 /// For the mini-fuzz: whether `text` converts (aborting on a broken invariant, as sprite_target does).
 bool sprite_converts(const char* text, std::size_t size);
 
+/// `nnh-assetc mesh` from memory (spec 026, fuzz_assetc_gltf.cpp): the input is a .gltf document (a .glb when it starts
+/// with "glTF") beside a fixed buffer and PNG; accepted models pass the engine's .nnhmesh validator.
+int gltf_target(const std::uint8_t* data, std::size_t size);
+/// A model using every feature the converter reads (two nodes, a mirror, two materials, texture, colours).
+const char* gltf_seed();
+/// For the mini-fuzz: whether `text` converts (aborting on a broken invariant, as gltf_target does).
+bool gltf_converts(const char* text, std::size_t size);
+
 } // namespace nnh::assetc::fuzz

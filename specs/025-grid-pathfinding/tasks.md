@@ -164,23 +164,23 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 6: random references, the golden, fuzz
 
-- [ ] **T6.1** AC-2: `tests/pathfinding/test_reference_random.cpp` — 2048 seeded maps (1 × 1 to 64 × 64, 0–50 %
+- [x] **T6.1** AC-2: `tests/pathfinding/test_reference_random.cpp` — 2048 seeded maps (1 × 1 to 64 × 64, 0–50 %
   blocked, weights 1–9, every mode, agent sizes 1–2): 4 searches each (partial on/off, a limit sometimes, one sliced)
   against the reference Dijkstra and the literal A*; one field (1–4 goals) against the multi-source reference and
   `next`; every smoothed segment against the sampled checker. Time it in pc-debug: ≤ 5 s, else 512 maps in Debug and
   2048 elsewhere (recorded). Covers AC-2.
-- [ ] **T6.2** The golden script: `examples/pathfinding/check_maps.{hpp,cpp}` (`rooms`, `maze`, `swamp`, seeded),
+- [x] **T6.2** The golden script: `examples/pathfinding/check_maps.{hpp,cpp}` (`rooms`, `maze`, `swamp`, seeded),
   `examples/pathfinding/self_check.{hpp,cpp}` (M1–M4; 512 searches, door edits, stale searches, 64 smoothings, 16 fields
   with `next`; FNV-1a of every result; checkpoints every 64 searches), goldens from pc-debug in
   `kPathfindingCheckGolden`/`kPathfindingCheckpoints`, equal in pc-release. Test:
   `tests/pathfinding_example/test_self_check.cpp` (on the fake platform; a changed tie rule or neighbour order fails it —
   checked once by hand with a temporary swap). Files: those, `tests/CMakeLists.txt` (025's block). Covers AC-3.
-- [ ] **T6.3** [P] Fuzz: `tests/fuzz/fuzz_path_ops.cpp` (bytes → map size, cells, settings, then a stream of syncs,
+- [x] **T6.3** [P] Fuzz: `tests/fuzz/fuzz_path_ops.cpp` (bytes → map size, cells, settings, then a stream of syncs,
   edits, searches (one-shot and sliced, with edits between slices), smoothings, field builds and queries, follower
   steps, including out-of-range values on the Release-path build; checks: paths valid, sliced = one-shot, nothing out of
   bounds), `libfuzzer_path_ops.cpp`, `test_fuzz_path_ops.cpp` (mini-fuzz in `nnh_tests`). Files: `tests/CMakeLists.txt`
   (025's block: `target_sources(nnh_fuzz_targets …)`, the `if(NNH_BUILD_FUZZERS)` executable). Covers X, FR-23.
-- [ ] **T6.4** Stage end: the stage-end guards. Files: plan.md ("Stage 6 results": golden and checkpoints, AC-2's
+- [x] **T6.4** Stage end: the stage-end guards. Files: plan.md ("Stage 6 results": golden and checkpoints, AC-2's
   timing). Covers AC-3, AC-8.
 
 ## Stage 7: `examples/pathfinding` (PC), the bench and the ARM pre-check

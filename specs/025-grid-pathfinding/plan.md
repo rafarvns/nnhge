@@ -911,3 +911,27 @@ on this PC at the same time (other agents): times below are noisy, sizes are exa
   order ties, the corner rule, `next_point`, field = the search's cost from every walkable cell on 200 maps with 1–2
   goals). The pc-release run caught a wrong expected value in a Release-path check (34, octile, not 40) — fixed in the
   test. Guards green.
+
+## Stage 6 refinements and results
+
+- **AC-2** (`test_reference_random.cpp`): pc-debug runs 512 maps (all path tests together took 5.6 s in Debug, over
+  the 5 s budget with 2048), pc-dev/pc-release run **2048 maps**: 8 192 searches (2 647 Found, 2 723 Partial, 2 048
+  sliced; limits 1–60 on a quarter, scale 40 on a fifth), 2 048 fields (1–4 goals, a seventh capped at 200) with every
+  cell's `next` checked to lower the cost-to-go by exactly its step, 26 990 smoothed segments against the exact checker
+  — all equal to the references (pc-release: 3.1 s for every path test).
+- **Maps** (`examples/pathfinding/check_maps.{hpp,cpp}`): `rooms` (8 × 8 blocks, a 6–7-cell room in each, joined right
+  and down; 29 % walls at 64 × 64 and 128 × 128, 100/100 seeded pairs connected), `maze` (iterative backtracker with
+  a caller-given stack; 54 % walls at 48 × 48), `swamp` (4 × 4 weight patches, a walled island). `ByteGrid` gives the
+  `collision::Grid` callback and the weight callback over the same bytes (so `sync(grid, weights)` is exercised).
+- **The golden** (`self_check.{hpp,cpp}`): as planned, M4 being a copy of M1's bytes at agent size 2 (its doors toggle
+  its own copy). The fields' `next` asks 64 seeded cells; door edits rotate fill / set_cell / region sync. Recorded in
+  pc-debug, equal in pc-release: **`kPathfindingCheckGolden = 1C0B5992`**, checkpoints `8332890F BF55A00B B3E6C49A
+  C825A5E7 77C6FFC5 E738F010 528F7687 1C0B5992`. The same in slices of 8 searches (64 frames) as in one run.
+- **Hand check** (T6.2): flipping the `seq` tie (`a.seq < b.seq`) moves the golden to `23575D7F` and fails 8 tests
+  (the golden, the literal-A* comparisons, the heap order tests, AC-2); restored.
+- **Fuzz** (T6.3): `tests/fuzz/fuzz_path_ops.{hpp,cpp}` (own header: `fuzz_targets.hpp` untouched for the merge),
+  `libfuzzer_path_ops.cpp`, mini-fuzz `test_fuzz_path_ops.cpp` (200 inputs ≤ 4 KiB): paths valid, sliced = one-shot
+  (status, cost, cells, expansions, every cell), waypoints keep both ends, `next` lowers the distance; misuse values only
+  in Release builds. In `tests/CMakeLists.txt`: one `target_sources(nnh_fuzz_targets ...)` and an
+  `if(NNH_BUILD_FUZZERS)` with `fuzz_path_ops`, both in 025's block.
+- Guards green.

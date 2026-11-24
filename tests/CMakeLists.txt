@@ -520,13 +520,25 @@ target_sources(nnh_tests PRIVATE
     pathfinding/test_path_map_sync.cpp
     pathfinding/test_path_misuse.cpp
     pathfinding/test_path_points.cpp
+    pathfinding/test_reference_random.cpp
     pathfinding/test_reference_self.cpp
     pathfinding/test_searcher_reuse.cpp
     pathfinding/test_slicing.cpp
     pathfinding/test_smooth.cpp
     pathfinding/test_smooth_walk.cpp
     pathfinding/test_tie_order.cpp
+    pathfinding_example/test_self_check.cpp
+    fuzz/test_fuzz_path_ops.cpp
+    ${PROJECT_SOURCE_DIR}/examples/pathfinding/check_maps.cpp
+    ${PROJECT_SOURCE_DIR}/examples/pathfinding/self_check.cpp
 )
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_path_ops.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_path_ops fuzz/libfuzzer_path_ops.cpp)
+    target_link_libraries(fuzz_path_ops PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_path_ops PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_path_ops PRIVATE -fsanitize=fuzzer,address)
+endif()
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.

@@ -1,0 +1,1 @@
+buffer 'other.bin' must be named bad_buffer_name.bin

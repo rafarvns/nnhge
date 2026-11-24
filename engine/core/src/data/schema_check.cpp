@@ -32,9 +32,10 @@ struct Reporter {
     }
 };
 
-// Extensions other asset steps own. D31 (spec 016): Aseprite files and converted sprite libraries too.
-constexpr const char* kReservedKeys[] = {"png",      "wav", "ogg",       "tmj", "tsj",     "nnhmap",
-                                         "nnh_data", "t3x", "nnhsprite", "ase", "aseprite"};
+// Extensions other asset steps own. D31 (spec 016): Aseprite files and converted sprite libraries too; D42 (spec 026):
+// glTF models and converted meshes.
+constexpr const char* kReservedKeys[] = {"png",       "wav", "ogg",      "tmj",  "tsj", "nnhmap",  "nnh_data", "t3x",
+                                         "nnhsprite", "ase", "aseprite", "gltf", "glb", "nnhmesh"};
 
 bool key_syntax_ok(const char* key) {
     const std::size_t n = std::strlen(key);

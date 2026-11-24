@@ -660,3 +660,27 @@ the maintainer's approval beyond the decisions above.
   its null checks (P14 budget: 128 B / 1 KB). Every example's screenshot unchanged (`audio` and `foundation` show live
   timings and differ run to run, so they are left out of the comparison). Primitive bytes: cube CRC `9A45BD39`,
   `make_sphere(0.5, 8, 12)` CRC `BBF6FDA6`.
+
+### Stage 3 results and refinements (T3.1–T3.8)
+
+- Files: the .glb container is read in `gltf_document.cpp` (no `gltf_glb.cpp`); primitives and the merge share
+  `gltf_primitives.cpp` (no `gltf_merge.cpp`); the orchestration is `convert_mesh.cpp` + a `mesh` row in `cli.cpp` (no
+  `cli_mesh.cpp`). The CLI takes `--assets` like `map` and `sprite` (not `--assets-root`) and prints one
+  `<model>: note: ignored: …` line per ignored feature on standard output.
+- **Baking in double, not math3d**: node matrices, the cofactor normal matrix and positions are computed in `double`
+  (IEEE + − × ÷ and sqrt: the same bits on every host), so the host tool doesn't link core's math (and its asserts).
+  The baked floats then go through the engine's own builder (`mesh_build.cpp`, compiled into the tool with
+  `-ffp-contract=off -fno-math-errno`): `test_cli_mesh.cpp` checks the converted cube's bytes equal create_mesh's builder
+  output for the same arrays (AC-4).
+- Mixed normals: when every primitive lacks `NORMAL` the builder makes flat normals (as create_mesh would); when only
+  some lack it, those are unwelded in the converter with the builder's `face_normal`. Missing `TEXCOORD_0`/`COLOR_0`
+  in some primitives become (0, 0) and white.
+- Defaults: no sampler → linear filtering (as Blender shows it); `alphaCutoff` 0.5 → 128; `doubleSided` → no culling;
+  glTF factors are converted to bytes as given (no sRGB conversion).
+- The JSON reader's depth limit stays 32 (glTF documents nest ≤ 6); the other limits as planned.
+- Fixtures: `tests/data/gltf/make_fixtures.py` (7 good models incl. `cube.glb`, 12 `bad_*` with expected messages);
+  "more than 65535 vertices" and the notes are tested from memory (no 800 KB fixture). Mini-fuzz: 599 of 8 000 mutated
+  models convert and validate; libFuzzer target `fuzz_assetc_gltf`.
+- CMake: `.gltf`/`.glb` → `.nnhmesh` step with a depfile (model, buffers, PNGs), P25 buffers not packed, two sources
+  becoming the same asset refused; `gltf`, `glb`, `nnhmesh` are reserved data keys. The `ninja -d explain` check of
+  "editing one model reconverts only it" runs with the example's two models in stage 8.

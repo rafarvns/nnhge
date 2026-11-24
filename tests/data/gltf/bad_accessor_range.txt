@@ -1,0 +1,1 @@
+the accessor reads past its bufferView or buffer

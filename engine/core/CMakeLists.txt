@@ -357,6 +357,7 @@ endif()
 # write the same bytes), the mesh table and handles, code-built meshes, primitives and loading. Same float rules.
 set(_nnh_mesh_sources
     src/mesh/create_mesh.cpp
+    src/mesh/load_mesh.cpp
     src/mesh/mesh.cpp
     src/mesh/mesh_build.cpp
     src/mesh/mesh_layout.cpp

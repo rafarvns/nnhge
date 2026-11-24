@@ -1,0 +1,1 @@
+required extension KHR_draco_mesh_compression isn't supported

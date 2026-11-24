@@ -1036,6 +1036,7 @@ target_sources(nnh_tests PRIVATE
     math3d/test_quat_interp.cpp
     math3d/test_vec3.cpp
     mesh/test_create_mesh.cpp
+    mesh/test_load_mesh.cpp
     mesh/test_mesh_build.cpp
     mesh/test_mesh_validate.cpp
     mesh/test_primitives.cpp

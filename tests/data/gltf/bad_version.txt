@@ -1,0 +1,1 @@
+not glTF 2.0 (asset.version is '1.0')

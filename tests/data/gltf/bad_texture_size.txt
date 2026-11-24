@@ -1,0 +1,1 @@
+texture sides must be powers of two from 8 to 1024

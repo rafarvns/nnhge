@@ -63,23 +63,23 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 3 — glTF converter (026a)
 
-- [ ] **T3.1** `tests/data/gltf/make_fixtures.py` → `cube_textured.gltf/.bin/.png`, `multi_node.gltf` (baked
+- [x] **T3.1** `tests/data/gltf/make_fixtures.py` → `cube_textured.gltf/.bin/.png`, `multi_node.gltf` (baked
   transforms, a mirrored node), `vertex_colors.gltf`, `no_normals.gltf`, `cutout_blend.gltf`, `cube.glb`, and one
   `bad_<rule>.gltf` (+ `.txt` expected message) per refusal of FR-6/FR-7 — covers AC-4
-- [ ] **T3.2** `gltf_glb.cpp`, `gltf_document.cpp` (limits, required extensions) — test: `test_gltf_document.cpp` —
+- [x] **T3.2** `gltf_glb.cpp`, `gltf_document.cpp` (limits, required extensions) — test: `test_gltf_document.cpp` —
   covers FR-6, FR-7
-- [ ] **T3.3** `gltf_accessors.cpp` (types, normalised, strides, ranges, no sparse) — test: `test_gltf_accessors.cpp` —
+- [x] **T3.3** `gltf_accessors.cpp` (types, normalised, strides, ranges, no sparse) — test: `test_gltf_accessors.cpp` —
   covers FR-6, FR-7
-- [ ] **T3.4** `gltf_nodes.cpp` (default scene, depth, TRS/matrix bake with math3d, mirrored winding, inverse-transpose
+- [x] **T3.4** `gltf_nodes.cpp` (default scene, depth, TRS/matrix bake with math3d, mirrored winding, inverse-transpose
   normals) — test: `test_gltf_nodes.cpp` — covers FR-6
-- [ ] **T3.5** `gltf_primitives.cpp`, `gltf_materials.cpp` (paths, PNG rules via `png_size`, samplers, alpha, unlit),
+- [x] **T3.5** `gltf_primitives.cpp`, `gltf_materials.cpp` (paths, PNG rules via `png_size`, samplers, alpha, unlit),
   `gltf_merge.cpp` — test: `test_gltf_materials.cpp`, `test_gltf_merge.cpp` — covers FR-6
-- [ ] **T3.6** `cli_mesh.cpp` (`nnh-assetc mesh`, notes, `file: reason (at $.path)`, depfile with `.bin` and PNGs);
+- [x] **T3.6** `cli_mesh.cpp` (`nnh-assetc mesh`, notes, `file: reason (at $.path)`, depfile with `.bin` and PNGs);
   shared core files and gltf sources with `-ffp-contract=off` in `tools/assetc/CMakeLists.txt` — test:
   `test_cli_mesh.cpp` (every fixture and every `bad_*`), **same bytes** as `create_mesh` from the converter's arrays —
   covers FR-6, AC-4
-- [ ] **T3.7** `libfuzzer_assetc_gltf.cpp` + `fuzz_assetc_gltf.cpp` (mini-fuzz in `nnh_tests`) — covers FR-7, AC-4
-- [ ] **T3.8** `cmake/nnh_assets.cmake`: `.gltf/.glb` step before the generic rules, P25's `.bin` not packed, `gltf`,
+- [x] **T3.7** `libfuzzer_assetc_gltf.cpp` + `fuzz_assetc_gltf.cpp` (mini-fuzz in `nnh_tests`) — covers FR-7, AC-4
+- [x] **T3.8** `cmake/nnh_assets.cmake`: `.gltf/.glb` step before the generic rules, P25's `.bin` not packed, `gltf`,
   `glb`, `nnhmesh` refused as data keys; `load_mesh.cpp` (validate, upload, textures) — test: `test_load_mesh.cpp`
   (fake assets), `ninja -d explain` after touching one model reconverts only it (PC and 3DS; note in plan) — covers FR-6,
   FR-8, AC-4

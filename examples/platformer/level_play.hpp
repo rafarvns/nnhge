@@ -25,6 +25,7 @@
 #include "player_sprite.hpp"
 #include "replay_run.hpp"
 #include "sparkles.hpp"
+#include "level_effects.hpp"
 #include "turrets.hpp"
 
 #include <nnh/camera.hpp>
@@ -81,6 +82,7 @@ class LevelPlay {
     nnh::TweenSet tweens_;  ///< the sparkles' fades, bound to the level scene after the world
     level::LevelPrefabs prefabs_; ///< coin, turret, spark (level_prefabs.hpp)
     Sparkles sparkles_{world_, prefabs_};
+    LevelEffects effects_; ///< dust, puffs, muzzle flashes (spec 024): particles outside the world
     nnh::Entity player_entity_{};
     TurretBook turrets_{world_};
     nnh::Hierarchy tree_{world_}; ///< the turrets' barrels (spec 022): the pass runs after the turrets aim

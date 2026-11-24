@@ -911,3 +911,24 @@ batches (stage 4), so the four stages are one commit, as 022's stages 3 and 4 we
   (200 inputs) in `nnh_tests`; `fuzz_particle_ops` under `NNH_BUILD_FUZZERS`.
 - **Bench prerequisite**: spec 023's `gfx submit` profile scope copied byte for byte into `gfx_frame.cpp` (023's branch
   is `worktree-agent-a7d53ca3428767bfb`, not `spec-023`); on merge keep 023's.
+
+### Stage 6 results
+
+- **T6.1** `examples/platformer/level_effects.{hpp,cpp}`: `LevelEffects` (dust 64, puff 64, flash 32; texture-less
+  squares, fixed seeds) reads an `EffectsInput {player, turrets, world, tree}`; landing (on the ground after not),
+  starting to run (on the ground, `|vx|` crossing 0.5 px per frame: 6 behind the feet), a bullet with
+  `stuck == kStuckFrames` (8 along the wall's normal), `hits()` grown (12: four cones of 3 at the player's centre), a
+  turret with `cooldown == kFirePeriod` (6 from the barrel's stored world transform at `kMuzzle`, along its
+  rotation). Tests (`tests/platformer/test_level_effects.cpp`, 4): each trigger's count and place, nothing without a
+  trigger, and `TurretBook::state()` and the world's count equal before and after every `update()`.
+- **T6.2** hooks exactly as planned (include, member after `sparkles_`, one statement after `camera_.apply();`, after
+  `turrets_.restart();`, after `draw_sparkles();`), `level_effects.cpp` after `level_camera.cpp`, `.max_particles = 256`
+  (the `init` call is wrapped onto two lines to stay within 110 columns). `examples/platformer/tests` untouched
+  (`git diff --exit-code`). The replay ctest passes; `level.nnhs --pc` (pc-debug): every `replay:` line and `replay:
+  done 900 frames sum E445E8B2: 60 Hz PASS`, `nnh: PASS (81 lines)` — a first run under the PC's load (other worktrees
+  building) logged the same sums with `60 Hz FAIL` (level1 worst 103 ms), the second passed: the verdict is the
+  simulator's wall clock, not the particles. References: level 1 at 90 and the replay at 64 unchanged; the replay at
+  312 changed (a puff) and is the new reference; landing dust read back at replay frame 348.
+- **T6.3** `gate.nnhs --pc` and `zoom_gate.nnhs --pc` on pc-debug report `bench: FAIL` (avg 52.8 / 34.5 ms, every frame
+  missed): the gate is a wall-clock benchmark of a Debug simulator on a loaded PC (it is judged on the console, T10.2
+  run 3); not a particle regression (the gate's scenes have no `LevelPlay`).

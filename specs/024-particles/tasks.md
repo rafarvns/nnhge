@@ -194,13 +194,13 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 6: the platformer's effects (replay lines untouched)
 
-- [ ] **T6.1** `examples/platformer/level_effects.{hpp,cpp}`: dust (landing, starting to run), puff (a bullet stopped
+- [x] **T6.1** `examples/platformer/level_effects.{hpp,cpp}`: dust (landing, starting to run), puff (a bullet stopped
   on a wall, a hit), flash (a turret firing, at spec 022's muzzle point along the barrel), texture-less squares on
   `kPlayer`, fixed seeds; `update(const EffectsInput&)` reads only; `draw()`; `clear()`. Test:
   `tests/platformer/test_level_effects.cpp` (each trigger emits the planned count at the planned place; a frame without
   a trigger emits nothing; the bullet pool, turrets, world and hierarchy are byte-identical before and after
   `update()`). Files: those, `tests/CMakeLists.txt` (024's block). Covers AC-5.
-- [ ] **T6.2** The hooks: `level_play.hpp` (include after `sparkles.hpp`, `LevelEffects effects_;` after `sparkles_`),
+- [x] **T6.2** The hooks: `level_play.hpp` (include after `sparkles.hpp`, `LevelEffects effects_;` after `sparkles_`),
   `level_play.cpp` (after `camera_.apply();` in `update()`, after `turrets_.restart();`, after `draw_sparkles();`),
   `main.cpp` (`.max_particles = 256`), `CMakeLists.txt` (`level_effects.cpp` after `level_camera.cpp`). Test: ctest
   `platformer_replay_matches_script` passes with the lines in the tree; `nnh run platformer --pc --no-build --script

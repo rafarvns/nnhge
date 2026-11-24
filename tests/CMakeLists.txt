@@ -563,7 +563,9 @@ target_sources(nnh_tests PRIVATE
     particles/test_subframe.cpp
     fuzz/test_fuzz_particle_ops.cpp
     particles_example/test_self_check.cpp
+    platformer/test_level_effects.cpp
     ${PROJECT_SOURCE_DIR}/examples/particles/self_check.cpp
+    ${_platformer}/level_effects.cpp
 )
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/particles/self_check.cpp PROPERTIES

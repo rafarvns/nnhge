@@ -120,7 +120,8 @@ std::unique_ptr<Game> make_game(const char*& error) {
 
 int main() {
     // Tile quads per frame: the benchmark's 12 full layers. Sprites: up to 2000 + the HUD text.
-    if (!nnh::init({.title = "NNHGE Platformer", .gfx = {.max_draws = 4096, .max_tiles = Bench::kMaxTiles}}))
+    if (!nnh::init({.title = "NNHGE Platformer",
+                    .gfx = {.max_draws = 4096, .max_tiles = Bench::kMaxTiles, .max_particles = 256}}))
         return 1;
     nnh::input::set_circle_pad_mirrors_dpad(true);
     nnh::gfx::set_clear_color(nnh::Screen::Top, nnh::rgb(120, 190, 240));

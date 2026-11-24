@@ -94,6 +94,7 @@ void LevelPlay::restart() {
     spawn_things();
     collected_ = 0;
     turrets_.restart();
+    effects_.clear();
     in_door_ = false;
     // A fresh rig: no trauma and the shake's noise clock back at 0, so a restart (and the replay that starts with
     // one) plays the same whatever came before.
@@ -130,6 +131,7 @@ void LevelPlay::update(const PlayerInput& input, bool doors) {
     camera_.set_offset({look_ahead_, 0});
     camera_.update(box); // after moving the player: this frame's position
     camera_.apply();
+    effects_.update({player_, turrets_, world_, tree_}); // spec 024: reads this frame, writes nothing of it
 }
 
 void LevelPlay::take_coins() {
@@ -184,6 +186,7 @@ void LevelPlay::draw() {
     draw_doors();
     draw_turrets();
     draw_sparkles();
+    effects_.draw(kPlayer);
     sprite_.draw(kTop, art_.player, player_.feet(), kPlayer);
     if (turrets_.flash() > 0 && (turrets_.flash() / 2) % 2 == 0) // hit: the player blinks red
         nnh::gfx::fill_rect(kTop, player_.box(), nnh::rgba(255, 40, 40, 140), {.layer = kFront});

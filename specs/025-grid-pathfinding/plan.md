@@ -780,3 +780,46 @@ not amended (filtered grids are read through the unchanged `Grid` callback; the 
 `collision/grid_internal.hpp` for spec 012's cell rule, as D36/D37 use other modules' internal headers). The spec's
 memory estimates (searchers ≤ 8 B, fields ≤ 4 B per cell) are not met and are flagged (decision 9, risk 2). The
 patterns page gains a "Time-sliced job" row.
+
+## Stage 0 results
+
+Windows, WinLibs GCC 16.2, devkitARM; built in the `spec-025` worktree from `main` at `1e4570b`. Three other builds ran
+on this PC at the same time (other agents): times below are noisy, sizes are exact.
+
+- **Sizes** (`build/ref-025/base/sizes.txt`, `nm -C` lists beside it): `hello.exe` pc-release 278 856 B, pc-debug
+  1 297 082 B; `hello.elf` 3ds-release 2 488 800 B (`.3dsx` 246 512), 3ds-dev 2 748 028 B (`.3dsx` 268 012). `.text` of
+  the 3ds-release examples: queries 256 004, entities 250 580, prefabs 313 548, platformer 327 132.
+- **Headers** (one-line TUs, best of 5 `-fsyntax-only`, pc GCC): `<nnh/collision.hpp>` 691 lines 301 ms;
+  `<nnh/collision.hpp>` + `<nnh/result.hpp>` 7 745 lines 421 ms; `<nnh/tilemap.hpp>` 8 485 lines 435 ms.
+- **Disassembly** of `collision::detail::first_cell` and `collision::cell_at` (3ds-dev `grid.o`, `point_queries.o`) in
+  `build/ref-025/dis0/`.
+- **Screenshots** (T0.2): `build/ref-025/ref/` — hello, queries (`all` at 30), entities (60), prefabs (60), platformer
+  (90), replay (64, 312); `build/ref-025/compare.sh now` retakes and compares them.
+- **Goldens and counts** (T0.3): ctest `platformer_replay_matches_script` with the tree's `replay: done 900 frames sum
+  B2418A28: 60 Hz PASS`; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7BB7901E`; 2 414 tests in
+  `nnh_tests`, `kMaxTests` 4096 (1 682 left: not raised).
+- **Not measured**: the clean `nnh_core` time and the edit-a-game-file times at stage 0 (three parallel builds made them
+  meaningless); the edit times of `examples/pathfinding` are measured against `examples/queries` in the same session at
+  T8.4.
+- Guards: `build/ref-025/guards.sh` (builds without warnings, both ctests, 3DS presets, sizes and `nm` against the base,
+  untouched headers and platformer, docs links).
+
+## Stage 1 refinements and results
+
+- **Header** as sketched, plus `PathSearcher::valid()`, `DistanceField::width()/height()/valid()` and
+  `friend struct detail::PathAccess` in the three classes (the internal accessor the searcher, fields and tests use;
+  no public API).
+- **Regions** (`fill`, `sync(grid, region)`): clipped to the map; a negative size or a non-empty region entirely
+  outside the map is misuse (assert, nothing changed); an empty region is accepted and still increments the version
+  (every accepted call does, as written).
+- **Queries on an invalid (empty) map** (`blocked`, `weight`, accessors) answer blocked / 0 without asserting; commands
+  on it (`sync`, `set_cell`, `fill`, `set_diagonals`, `cell_center`, `cell_at`) assert. `blocked`/`weight` outside a valid
+  map assert as the misuse table says (Release: blocked).
+- **Memory**: exactly `sizeof(PathMapBlock)` (96 B on 64-bit) + (W + 2)(H + 2) (+ W·H for agent sizes 2–4), tested
+  through the tag's stats.
+- **Header cost** (T1.6): `<nnh/pathfinding.hpp>` 8 023 lines, 437 ms against 421 ms for `collision.hpp` + `result.hpp`
+  (+16 ms, within 0.05 s); it pulls only `collision.hpp`, `math.hpp`, `result.hpp` (and `assert.hpp`, `build.hpp`,
+  `detail/printf_format.hpp` through it) and `<cstdint>`.
+- Tests: `test_path_map_create.cpp` (10), `test_path_map_sync.cpp` (9), `test_path_map_edit.cpp` (5),
+  `test_footprint.cpp` (3), `test_path_points.cpp` (5). Guards: all green (ctest 268 pc-debug, 258 pc-release), sizes and
+  `nm` identical to stage 0.

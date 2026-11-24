@@ -500,6 +500,14 @@ target_sources(nnh_tests PRIVATE prefabs_example/test_self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)
+# Pathfinding on grids (spec 025): unit tests, references, the example's self-check, the fuzz target.
+target_sources(nnh_tests PRIVATE
+    pathfinding/test_footprint.cpp
+    pathfinding/test_path_map_create.cpp
+    pathfinding/test_path_map_edit.cpp
+    pathfinding/test_path_map_sync.cpp
+    pathfinding/test_path_points.cpp
+)
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.

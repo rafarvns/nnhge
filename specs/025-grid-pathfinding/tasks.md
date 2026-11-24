@@ -21,7 +21,7 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 0: baseline
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-025/`, not committed): `hello.exe`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-025/`, not committed): `hello.exe`
   (pc-release, pc-debug) and `hello.elf`/`.3dsx` (3ds-release, 3ds-dev) sizes and `nm -C` lists; `.text` of the
   3ds-release `queries`, `entities`, `prefabs` and `platformer` ELFs; edit `examples/queries/playground.cpp` (or the
   example's main scene file) → simulator and `.3dsx` times (the reference for the pathfinding example's edit); clean
@@ -29,16 +29,16 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   `<nnh/collision.hpp>` + `<nnh/result.hpp>`, and `<nnh/tilemap.hpp>`; 3ds-dev disassembly of
   `collision::detail::first_cell` and `collision::cell_at` saved in `build/ref-025/dis0/`. Files: plan.md ("Stage 0
   results"). Covers III, FR-24, AC-8.
-- [ ] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-025/ref/`: `hello`, `queries` (`QUERIES_DEMO=all` at
+- [x] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-025/ref/`: `hello`, `queries` (`QUERIES_DEMO=all` at
   30), `entities`, `prefabs` (room at 60), platformer level 1 at 90 and `PLATFORMER_DEMO=replay` at 64 and 312;
   `build/ref-025/compare.sh` retakes them into `now/`. Files: plan.md. Covers AC-6, AC-8.
-- [ ] **T0.3** [P] Goldens and counts today: the replay ctest's last line as in the tree, `4ACAA177`, `C8FB9A41`,
+- [x] **T0.3** [P] Goldens and counts today: the replay ctest's last line as in the tree, `4ACAA177`, `C8FB9A41`,
   `7BB7901E`, `5201E6CF`; `nnh_tests` count against `kMaxTests` (4096; this spec adds ≈ 260 tests: raise only if
   fewer than 400 are left, and note it for the merge). Files: plan.md. Covers VI.
 
 ## Stage 1: path maps
 
-- [ ] **T1.1** The header skeleton and map creation: `<nnh/pathfinding.hpp>` (`CellPos`, `CellRect`, `kPathBlocked`,
+- [x] **T1.1** The header skeleton and map creation: `<nnh/pathfinding.hpp>` (`CellPos`, `CellRect`, `kPathBlocked`,
   `kUnreachable`, `Diagonals`, `PathMapDesc`, `PathWeights`, `PathMap`), `path_block.hpp` (padded block, index
   helpers, neighbour offsets, users count, doomed flag, the `path` tag), `path_check.{hpp,cpp}` (misuse reporting),
   `map_create.cpp` (validation, the 64-bit check of `W × H × diagonal × 259 < 2³²`, allocation, move/destroy,
@@ -47,26 +47,26 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   W·H for agent 2); move leaves the source invalid). Files: those, `engine/core/CMakeLists.txt` (the
   `_nnh_pathfinding_sources` block after the `_nnh_query_sources` block, `-ffp-contract=off`), `tests/CMakeLists.txt`
   (025's block before `add_test(NAME unit ...)`). Covers FR-1, FR-2, FR-6, FR-24.
-- [ ] **T1.2** Sync: `map_sync.cpp` — whole map and region, cells read once with `collision::detail::cell_at` (region
+- [x] **T1.2** Sync: `map_sync.cpp` — whole map and region, cells read once with `collision::detail::cell_at` (region
   offset; `outside` beyond the grid), Empty/Solid/OneWay and `one_way_walkable`, the weight callback (once per walkable
   cell, grid coordinates, row-major; bad values assert, Release clamps). Test: `tests/pathfinding/test_path_map_sync.cpp`
   (array grid; callback grid; a `Tilemap` built in code with `collision_grid()` and two masks (boats, walkers); region
   offset with cells past the grid's edges and `outside` Solid/Empty; the callback counted and never called after sync;
   a region sync changes only its rectangle). Covers FR-3, FR-23.
-- [ ] **T1.3** [P] Edits and queries: `map_edit.cpp` — `set_cell`, `fill` (clipped), `set_diagonals`, `blocked`,
+- [x] **T1.3** [P] Edits and queries: `map_edit.cpp` — `set_cell`, `fill` (clipped), `set_diagonals`, `blocked`,
   `weight`, `version` (+1 per call), size and cost accessors. Test: `tests/pathfinding/test_path_map_edit.cpp`. Covers
   FR-2, FR-4.
-- [ ] **T1.4** Footprints: `footprint.{hpp,cpp}` — erosion of a rectangle for agent sizes 2–4 (blocked if any square
+- [x] **T1.4** Footprints: `footprint.{hpp,cpp}` — erosion of a rectangle for agent sizes 2–4 (blocked if any square
   cell is blocked or outside, else the square's largest weight), the affected rectangle of a change; sync, `set_cell`
   and `fill` through it. Test: `tests/pathfinding/test_footprint.cpp` (sizes 1–4 against a brute-force erosion on 200
   seeded maps; the last k − 1 columns/rows blocked; partial sync and a `set_cell` next to a changed cell recompute
   exactly the overlapping cells). Covers FR-5.
-- [ ] **T1.5** [P] Geometry: `map_geometry.cpp` — `contains`, `cell_center` (the k × k footprint's centre), `cell_at`
+- [x] **T1.5** [P] Geometry: `map_geometry.cpp` — `contains`, `cell_center` (the k × k footprint's centre), `cell_at`
   (the anchor of an agent centred at the point, through `collision::detail::first_cell`), `cells_to_points`. Test:
   `tests/pathfinding/test_path_points.cpp` (`cell_at` = `collision::cell_at` on the same grid for 10 000 seeded points
   at agent 1, its anchor shift at agents 2–4, `cell_center` ∘ `cell_at` = identity, NaN points (assert; Release
   `{-1, -1}`), the buffer contract). Covers FR-8.
-- [ ] **T1.6** Stage end: the stage-end guards; include check (`<nnh/pathfinding.hpp>` pulls only `<cstdint>`,
+- [x] **T1.6** Stage end: the stage-end guards; include check (`<nnh/pathfinding.hpp>` pulls only `<cstdint>`,
   `nnh/math.hpp`, `nnh/collision.hpp`, `nnh/result.hpp` and what they include; preprocessed lines and `-fsyntax-only`
   against T0.1's `collision.hpp` + `result.hpp`, within 0.05 s). Files: plan.md ("Stage 1 results"). Covers FR-24,
   III.

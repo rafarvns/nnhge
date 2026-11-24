@@ -21,7 +21,7 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 0: baseline
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-022/`, not committed): `hello.exe`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-022/`, not committed): `hello.exe`
   (pc-release, pc-debug) and `hello.elf`/`.3dsx` (3ds-release, 3ds-dev) sizes and `nm -C` lists; edit
   `examples/prefabs/room.cpp` → simulator and `.3dsx` times (the reference for the hierarchy example's edit); clean
   `nnh_core`; preprocessed lines and `-fsyntax-only` time of one-line TUs including `<nnh/entities.hpp>` and
@@ -29,48 +29,48 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   counts (`fcount.py`): `World::spawn` 109, `detail::world_add` 143, `examples/entities` `bench.o` (`get` 33, `Storage::get`
   19, `each` 27), `detail::prefab_spawn`, `detail::sin_quarter`; saved listings `build/ref-022/dis0/`. Files: plan.md
   ("Stage 0 results"). Covers III, FR-24, AC-8.
-- [ ] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-022/ref/`: `hello`, `sprites`, `scenes`, `camera`
+- [x] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-022/ref/`: `hello`, `sprites`, `scenes`, `camera`
   (`CAMERA_DEMO=zoom1`), `queries` (`QUERIES_DEMO=all`), `entities` (showcase at 30), `prefabs` (showcase at 30),
   platformer `PLATFORMER_DEMO=bench` (top screen), level 1 at 90, `PLATFORMER_DEMO=replay` at 64 and 312;
   `build/ref-022/compare.sh` retakes them into `now/`. (The platformer's level and replay images are expected to change
   in stage 6: barrels; new references are taken there.) Files: plan.md. Covers AC-8.
-- [ ] **T0.3** [P] Goldens today: replay ctest (`sum B2418A28: 60 Hz PASS`), `C8FB9A41`, `7BB7901E`, `B44CA3F6`;
+- [x] **T0.3** [P] Goldens today: replay ctest (`sum B2418A28: 60 Hz PASS`), `C8FB9A41`, `7BB7901E`, `B44CA3F6`;
   `nnh_tests` count (raise `kMaxTests` if fewer than 500 are left: this spec adds ≈ 250). Files: plan.md. Covers VI.
 
 ## Stage 1: transform math (pure)
 
-- [ ] **T1.1** Move `sin_quarter` to `engine/core/src/core/det_sine.{hpp,cpp}` (same body; `tween/ease_math.hpp`
+- [x] **T1.1** Move `sin_quarter` to `engine/core/src/core/det_sine.{hpp,cpp}` (same body; `tween/ease_math.hpp`
   includes the new header so `tests/tween/test_ease_math.cpp` compiles unchanged); `det_sine.cpp` in a source list with
   `-ffp-contract=off`. No new test: spec 015's tests and `tweens: PASS B44CA3F6` are the test; the 3ds-dev
   disassembly of `sin_quarter` and `ease.o` identical to T0.1's. Files: `src/core/det_sine.*`, `src/tween/ease_math.*`,
   `engine/core/CMakeLists.txt`. Covers FR-3.
-- [ ] **T1.2** `sin_cos`: `× float(2/π)`, nearest quarter by sign bits and truncation, the `2⁻²⁰` snap, quadrants,
+- [x] **T1.2** `sin_cos`: `× float(2/π)`, nearest quarter by sign bits and truncation, the `2⁻²⁰` snap, quadrants,
   non-finite → {0, 1} + misuse, `|q| ≥ 2²³` integer path; inline in `src/transform/sin_cos.hpp`, public wrapper; the
   four constants. Test: `tests/transform/test_sin_cos.cpp` (constants and `k × kQuarterTurn` for k = −8..8 exact;
   `sin_cos(−x)` bits = negated; 4096 angles against `std::sin`/`std::cos` within 7·10⁻⁷ + snap; NaN, ±inf, 2³⁰ rad;
   monotonic around the snap). Files: `include/nnh/transform.hpp`, `src/transform/sin_cos.*`, CMake
   `_nnh_transform_sources`. Covers FR-3.
-- [ ] **T1.3** Values and composition: `Transform2D`, `Affine2D`, `WorldTransform2D`; inline root rule, pure-translation
+- [x] **T1.3** Values and composition: `Transform2D`, `Affine2D`, `WorldTransform2D`; inline root rule, pure-translation
   rule, full composition with drawing values and the mirror sign by bits (`src/transform/compose.hpp`); public `to_world`,
   `compose`. Test: `tests/transform/test_compose.cpp` (identity; scale → rotate → move order; root bit-equal to the
   local; translation rule vs the full rule on non-zero values; quarter turns on whole pixels; mirrors: positions,
   rotations the other way, drawing scale; shear: drawing values = accumulated rotation, product of scales). Covers FR-1,
   FR-2, FR-4.
-- [ ] **T1.4** Points and inverses: `transform_point`, `transform_direction`, `inverse` (exponent threshold),
+- [x] **T1.4** Points and inverses: `transform_point`, `transform_direction`, `inverse` (exponent threshold),
   `to_local`, `is_finite`. Test: `tests/transform/test_affine.cpp` (round trips; a zero scale refused, a 2⁻⁶⁰ scale
   accepted, determinant below 2⁻¹⁰⁰ refused; directions ignore translation; finiteness on every special pattern).
   Files: `src/transform/affine.cpp`. Covers FR-2.
-- [ ] **T1.5** [P] `relative` (keep-world math) and `bounds`. Test: `tests/transform/test_relative.cpp` (compose(parent,
+- [x] **T1.5** [P] `relative` (keep-world math) and `bounds`. Test: `tests/transform/test_relative.cpp` (compose(parent,
   relative(parent, w)) reproduces `w`'s points within the bound and its drawing values exactly for power-of-two scales
   and quarter turns; mirrored parents; non-invertible → false), `tests/transform/test_bounds.cpp` (unrotated exact with
   `w = |a|·r.w`, mirrored normalised, rotated enclosing, quarter turns exact). Files: `src/transform/relative.cpp`,
   `bounds.cpp`. Covers FR-10, FR-14.
-- [ ] **T1.6** Accuracy (open question 1): `tests/transform/test_accuracy.cpp` — 2000 seeded chains (depth 1..16,
+- [x] **T1.6** Accuracy (open question 1): `tests/transform/test_accuracy.cpp` — 2000 seeded chains (depth 1..16,
   coordinates within ±4096 px, scales ¼–4, angles any) against a `double` reference using the engine's sine values
   (bound 1/32 px) and against `std::sin`/`std::cos` (the measured bound recorded); exactness cases (roots, unrotated
   unscaled chains = hand sums as IEEE values, quarter turns). Files: plan.md ("Stage 1 results": both bounds). Covers
   FR-3, AC-3.
-- [ ] **T1.7** Stage end: the stage-end guards; include check (`<nnh/transform.hpp>` preprocesses to `math.hpp` only);
+- [x] **T1.7** Stage end: the stage-end guards; include check (`<nnh/transform.hpp>` preprocesses to `math.hpp` only);
   a probe TU shows no float arithmetic in the header (it has none). Files: plan.md. Covers FR-24, III.
 
 ## Stage 2: entities-internal additions (pure)

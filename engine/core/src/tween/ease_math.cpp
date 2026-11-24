@@ -1,5 +1,6 @@
 // libm-free sine and 2^x approximations (plan 015 "Determinism"). Coefficients fitted once (Lawson's weighted
-// least squares → minimax) with the end constraints p(1) = 1 for the sine and p(0) = 1, p(1) = 2 for 2^f.
+// least squares → minimax) with the end constraints p(1) = 1 for the sine and p(0) = 1, p(1) = 2 for 2^f. The sine
+// polynomial itself lives in core/det_sine.hpp (shared with the transforms, spec 022), inlined here as before.
 
 #include "tween/ease_math.hpp"
 
@@ -7,12 +8,6 @@
 #include <cstdint>
 
 namespace nnh::detail {
-
-float sin_quarter(float u) {
-    const float u2 = u * u;
-    const float v = u * (1.5707903f + u2 * (-0.64588609f + u2 * (0.079418352f + u2 * -0.0043225876f)));
-    return v < 1.0f ? v : 1.0f; // the fit touches 1 only at u = 1; rounding must not cross it
-}
 
 float sin_turns(float x) {
     float r = x - static_cast<float>(static_cast<std::int32_t>(x)); // fraction, sign of x
@@ -22,13 +17,13 @@ float sin_turns(float x) {
     const float u = r4 - static_cast<float>(quarter); // exact
     switch (quarter & 3) {
     case 0:
-        return sin_quarter(u);
+        return sin_quarter_inline(u);
     case 1:
-        return sin_quarter(1.0f - u);
+        return sin_quarter_inline(1.0f - u);
     case 2:
-        return -sin_quarter(u);
+        return -sin_quarter_inline(u);
     default:
-        return -sin_quarter(1.0f - u);
+        return -sin_quarter_inline(1.0f - u);
     }
 }
 

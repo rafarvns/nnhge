@@ -813,3 +813,51 @@ No constitution exception is requested. D37 is new (see [decisions.md](../../doc
 and D36 get dated notes (entities-internal additions; prefab children and the dispatch); D30 is not amended (the pass
 is the game's call); the patterns page gains a "Transform hierarchy (Composite)" row; the scenes page notes the naming.
 Two AC-7 targets are flagged at risk and keep the spec's measurement-with-margin fallback.
+
+## Stage results and refinements
+
+### Stage 0 results
+
+Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at commit `7c9e3a5`. Scripts in
+`build/ref-022/` (not committed; adapted from `build/ref-021/`).
+
+- **`hello` sizes (bytes)**: pc-release `hello.exe` 278 856 (`text` 130 572), pc-debug 1 284 282 (`text` 198 464);
+  3ds-release `hello.elf` 2 482 372 (`text` 201 012), `.3dsx` 246 400; 3ds-dev `hello.elf` 2 740 628 (`text`
+  217 728), `.3dsx` 267 844. `nm -C` lists saved (`hello.pc.nm`, `hello.3ds.nm`).
+- **`.text` (3ds-release)**: platformer 361 568, prefabs 343 524, entities 271 024.
+- **Build times** (3 runs, centiseconds): edit `examples/prefabs/room.cpp` → pc-debug `prefabs` 231 / 219 / 223,
+  3ds-release `prefabs_3dsx` 507 / 500 / 511; clean `nnh_core` pc-debug 10.5 s.
+- **Header cost** (one-line TU, `-E` lines and `-fsyntax-only`): `<nnh/entities.hpp>` 8 555 lines, 0.45–0.51 s;
+  `<nnh/math.hpp>` 63 lines, 0.26–0.31 s.
+- **3ds-dev disassembly** (`dis0/`, `fcount.py` totals per function): `World::spawn` 109, `detail::world_add` 143,
+  `detail::prefab_spawn` 491 (64 stack accesses), `detail::sin_quarter` 19 (1 `vmrs`: the clamp), `sin_turns` 86 with
+  `sin_quarter` inlined (no call), `examples/entities` `bench.o` saved for byte comparison.
+- **Goldens**: replay ctest `sum B2418A28: 60 Hz PASS`; `entities: PASS C8FB9A41`; `prefabs: PASS 7BB7901E`;
+  `tweens: PASS B44CA3F6` (each `--pc` script PASS). `nnh_tests`: 2316 tests, `kMaxTests` 4096 (room left).
+- **Reference screenshots** (`ref/`): hello, sprites, scenes, camera zoom1, queries all, entities, prefabs, platformer
+  bench (top), level 1 at 90, replay at 64 and 312.
+
+### Stage 1 results
+
+- **T1.1**: `sin_quarter` moved to `src/core/det_sine.{hpp,cpp}`. Its body is an `always_inline` function
+  (`sin_quarter_inline`) in the header, which `tween/ease_math.cpp`'s `sin_turns` uses (it was inlined there before), and
+  `det_sine.cpp` defines the out-of-line `sin_quarter`. 3ds-dev disassembly: `ease.o` identical; `ease_math.o` identical
+  except that `sin_quarter`'s definition left it; the moved body in `det_sine.o` is byte-identical (19 instructions, the
+  clamp's `vmrs`). `tweens: PASS B44CA3F6` (ctest `tweens_self_check_pc`).
+- **Refinement (T1.2)**: `sin_cos` lives inline in `src/transform/sin_cos.hpp` (`sin_cos_inline`), the snap writes
+  `0 · f` (the sign of `f` kept, so `sin_cos(−x)` is `sin_cos(x)` with the sine's sign bit flipped for every input,
+  zeros included); the public `sin_cos` adds the non-finite assert. The constant is `float(2/π)` = `0x3F22F983`.
+- **Refinement (T1.3)**: the rules are inline in `src/transform/compose.hpp` (`root_world`, `translate_world`,
+  `full_world`, `child_world`), shared by `compose()`, the pass and `world_now`.
+- **Refinement (T1.4)**: `inverse`/`to_local` also refuse a non-finite determinant (exponent field 255), and
+  `to_local` subtracts the origin before applying the inverse axes (better accuracy than going through `inverse`).
+- **Refinement (T1.5)**: `bounds` has a second exact case besides unrotated maps: a map whose diagonal is zero (an
+  odd number of quarter turns) swaps the axes exactly.
+- **T1.6 accuracy** (2000 seeded chains, depth 1..16, world coordinates within ±4096 px, accumulated scales ¼..4,
+  mirrors, any angles): worst world-position error **1.65·10⁻⁴ px** against a `double` reference using the engine's
+  sine values (FR-3's bound 1/32 px confirmed with a margin of ≈ 190×), **2.5·10⁻³ px** against `<cmath>`'s sine (the
+  polynomial's own error, < 2·10⁻⁶ rad per level, dominates). The tests bound them at 1/32 and 1/16 px.
+- **T1.7**: `<nnh/transform.hpp>` preprocesses to itself and `math.hpp` only (140 lines, `-fsyntax-only` 0.27–0.34 s,
+  the same as `math.hpp`'s 0.26–0.31 s); it has no inline float arithmetic. Guards: pc-debug ctest 268/268, pc-release
+  258/258, `nnh_tests` 2353, 3ds-release and 3ds-dev without a warning, `hello` sizes and `nm` unchanged, `World::spawn`,
+  `world_add`, `prefab_spawn` and `examples/entities` `bench.o` byte-identical.

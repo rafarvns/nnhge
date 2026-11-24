@@ -277,6 +277,12 @@ add_executable(nnh_tests
     time/test_duration.cpp
     time/test_fixed_step.cpp
     time/test_frame_time.cpp
+    transform/test_accuracy.cpp
+    transform/test_affine.cpp
+    transform/test_bounds.cpp
+    transform/test_compose.cpp
+    transform/test_relative.cpp
+    transform/test_sin_cos.cpp
     tween/test_ease.cpp
     tween/test_ease_golden.cpp
     tween/test_ease_math.cpp

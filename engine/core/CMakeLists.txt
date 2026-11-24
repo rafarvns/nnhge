@@ -272,6 +272,21 @@ set(_nnh_prefabs_sources
     src/prefabs/prefab_spawn.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_prefabs_sources})
+# Transforms (spec 022, D37): the shared deterministic sine and every float operation of the transform values. No fused
+# multiply-add, so compositions, points, inverses and the sine have the same bits on every compiler and on the 3DS.
+# A game that uses only <nnh/transform.hpp> links these objects and no entities code.
+set(_nnh_transform_sources
+    src/core/det_sine.cpp
+    src/transform/affine.cpp
+    src/transform/bounds.cpp
+    src/transform/compose.cpp
+    src/transform/relative.cpp
+    src/transform/sin_cos.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_transform_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_transform_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

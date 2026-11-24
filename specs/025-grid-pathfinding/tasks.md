@@ -1,7 +1,6 @@
 # Tasks 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 run 1 done, T10.3 done on the PC, console rerun
-pending). Approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24; Linux T9.1 and Old 3DS T10.2 passed (budgets set from the console). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -256,7 +255,7 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   cmake --build --preset 3ds-dev --target pathfinding_3dsx platformer_3dsx` without a warning; T7.6's table still true;
   `hello.elf` equal to T0.1's; plan.md's "Stage 10: console run (prepared)" completed with the recorded golden,
   checkpoints and showcase lines. Covers AC-8, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Two runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** Old 3DS, nobody touching it after Y. Two runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run pathfinding --script examples/pathfinding/tests/check.nnhs` → every
      `pathfinding: <n> sum` line and `pathfinding: PASS` equal the PC's, every showcase line, the bench lines and the
      verdict (numbers recorded); screenshots read back (the same pictures as the `--pc` run's);
@@ -265,8 +264,9 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths). Covers AC-5, AC-6, AC-7.
   **Run 1 done 2026-11-24** (plan.md "Console run 1"): every logic line equal to the PC's (`pathfinding: PASS
   1C0B5992`, the showcase lines); bench `FAIL (astar, replans, field one, field slices, next)` → T10.3. Run 1 is repeated
-  after T10.3; run 2 (the platformer) as written.
-- [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
+  after T10.3. Run 2 (the platformer `level.nnhs`, 2026-11-24 morning, on main with 022 and 025): replay lines and
+  `E445E8B2: 60 Hz PASS` (worst 18.3 ms, missed 0).
+- [x] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risk 1's list without changing a result (every golden holds); then T10.2 run 1 again; if still missed, the
   budget is set from the measurement with ≈ 25 % margin, written in the spec's AC-7, `bench_scene.cpp` and
   `docs/api/pathfinding.md` with the numbers. Files: plan.md ("Optimisation round", "Console run 2 and budgets set").
@@ -277,7 +277,9 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   `path_field_next_after_a_map_edit_reads_the_current_cells`,
   `path_field_next_with_another_map_of_the_same_size_and_version_reads_that_map`,
   `path_field_next_during_a_double_buffered_rebuild_follows_the_finished_build`; the field memory test (5 B per padded
-  cell per array). **Pending:** the console rerun of T10.2 run 1, then the budgets from that measurement.
+  cell per array). **Console rerun** (plan.md "Console run 2 and budgets set"): astar 4.049 µs, replans 14.606 ms, field slices
+  worst 1.366 ms still over; budgets set from it with ~25 % margin (bench_scene.cpp, spec AC-7, docs); a run with them:
+  `pathfinding bench: PASS`, `nnh: PASS (104 lines)`.
 
 ## Stage 11: docs, roadmap, status
 

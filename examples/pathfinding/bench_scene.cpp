@@ -20,18 +20,20 @@ struct Phase {
     int (PathBench::*run)();
 };
 
-// AC-7's targets as written (they predate any console measurement; the console run sets them with margin if missed).
+// AC-7's budgets, set from the Old 3DS measurement after the optimisation round (2026-11-24, console run 2: astar
+// 4.049 us, maze one 0.714, maze slices worst 0.497, replans 14.606, field one 6.613, field slices worst 1.366, next
+// 0.165, smooth 0.225, sync 3.840, door 0.038 ms) with ~25 % margin.
 constexpr Phase kPhaseList[BenchScene::kPhases] = {
-    {"astar", "us", 2.5, Judge::Avg, &PathBench::astar}, // per expanded cell
-    {"maze one", "ms", 8.0, Judge::Avg, &PathBench::maze_one},
-    {"maze slices", "ms", 0.8, Judge::Worst, &PathBench::maze_slice},
-    {"replans", "ms", 3.0, Judge::Avg, &PathBench::replans},
-    {"field one", "ms", 8.0, Judge::Avg, &PathBench::field_one},
-    {"field slices", "ms", 1.0, Judge::Worst, &PathBench::field_slice},
-    {"next", "ms", 0.3, Judge::Avg, &PathBench::next},
+    {"astar", "us", 5.0, Judge::Avg, &PathBench::astar}, // per expanded cell
+    {"maze one", "ms", 0.9, Judge::Avg, &PathBench::maze_one},
+    {"maze slices", "ms", 0.65, Judge::Worst, &PathBench::maze_slice},
+    {"replans", "ms", 18.0, Judge::Avg, &PathBench::replans},
+    {"field one", "ms", 8.3, Judge::Avg, &PathBench::field_one},
+    {"field slices", "ms", 1.7, Judge::Worst, &PathBench::field_slice},
+    {"next", "ms", 0.21, Judge::Avg, &PathBench::next},
     {"next_crowd", "ms", 0, Judge::None, &PathBench::next_crowd},
-    {"smooth", "ms", 1.0, Judge::Avg, &PathBench::smooth},
-    {"sync", "ms", 5.0, Judge::Avg, &PathBench::sync},
+    {"smooth", "ms", 0.3, Judge::Avg, &PathBench::smooth},
+    {"sync", "ms", 4.8, Judge::Avg, &PathBench::sync},
     {"door", "ms", 0.05, Judge::Avg, &PathBench::door},
 };
 

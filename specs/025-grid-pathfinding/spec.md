@@ -1,7 +1,7 @@
 # Spec 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (Linux T9.1 passed; Old 3DS T10.2 run 1: logic PASS, bench missed → T10.3 optimised
-on the PC, console rerun and AC-7 budgets pending). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
+Status: implemented 2026-11-24; Linux T9.1 and Old 3DS T10.2 passed (AC-7 budgets set from the console after one
+optimisation round). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
 question as recommended; to review in the morning)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 012](../012-tilemaps-and-collision/spec.md) (`<nnh/collision.hpp>`: `Grid`, `Cell`, solid and one-way
@@ -271,6 +271,13 @@ cells when a door opens, and gets **the same paths, bit for bit, on PC and 3DS**
   If a target is missed, the implementation is optimised first; if it is still missed, the budget is set from the first
   console measurement with margin and written in the spec and the docs with the measured numbers (the maintainer's
   policy for benches, as in specs 019 to 021). Memory per cell of maps, searchers and fields is written in the docs.
+  **Budgets set (2026-11-24).** Console run 1 missed astar, replans, field one, field slices and next; after the
+  optimisation round ([plan 025](plan.md#optimisation-round-t103)) run 2 measured astar 4.049 µs, maze one 0.714 ms,
+  maze slices worst 0.497, replans 14.606, field one 6.613, field slices worst 1.366, next 0.165, smooth 0.225, sync
+  3.840 and door 0.038 ms. The budgets, from that run with ~25 % margin: astar **< 5 µs**, maze one **< 0.9 ms**, maze
+  slices **< 0.65 ms** (worst), replans **< 18 ms**, field one **< 8.3 ms**, field slices **< 1.7 ms** (worst), next
+  **< 0.21 ms**, smooth **< 0.3 ms**, sync **< 4.8 ms**, door **< 0.05 ms**. Re-planning 32 enemies in one frame takes
+  most of a 60 Hz frame on the Old 3DS: slice re-plans over frames (the example shows the pattern).
 - **AC-8 Opt-in.** `examples/hello` builds with the same executable size as before on PC and 3DS; `examples/queries`,
   `examples/entities`, `examples/prefabs` and the platformer keep their screenshots pixel-identical and their scripts and
   goldens passing; every earlier spec's tests pass unchanged; `<nnh/collision.hpp>` and `<nnh/tilemap.hpp>` are byte for

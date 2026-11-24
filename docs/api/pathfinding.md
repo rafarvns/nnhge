@@ -186,20 +186,22 @@ from the current cells (the same result the build would have stored on that map)
 Nothing allocates after `create`; nothing logs in the normal path; the only game code called is the weight callback,
 during `sync`. For a big level, search a **region** map around the action.
 
-**Old 3DS costs (provisional).** Measured on an Old 3DS (Development build, the example's bench, 2026-11-24, console
-run 1), then the field and `next` were optimised (spec 025 T10.3, no result change) and estimated from that run; the
-budgets are set from the next console measurement ([plan 025](../../specs/025-grid-pathfinding/plan.md#optimisation-round-t103)):
+**Old 3DS costs.** Measured on an Old 3DS (Development build, the example's bench, 2026-11-24, console run 2, after
+the optimisation round of [plan 025](../../specs/025-grid-pathfinding/plan.md#optimisation-round-t103)); spec 025 AC-7
+sets the budgets from them:
 
-| Workload | Console run 1 (avg) | After T10.3 (estimate) |
-|----------|---------------------|------------------------|
-| A*, per expanded cell (`rooms(128, 128)`, weights 1/3/8) | 4.3 µs | ≈ 4.1 µs |
-| 32 re-plans of 10–30 cells (4 518 expansions) | 15.1 ms | ≈ 14.9 ms |
-| one search across a 64 × 64 maze (494 expansions) | 0.72 ms | unchanged |
-| a 64 × 64 field, one call (2 872 cells) | 8.3 ms | ≈ 6.3 ms |
-| the same in slices of 512 cells, worst slice | 1.65 ms | ≈ 1.3 ms |
-| `next` for 256 scattered agents | 0.77 ms | ≈ 0.17 ms |
-| smoothing a 200-cell path | 0.22 ms | unchanged |
-| `sync` of 64 × 64 from a tilemap with a `path_cost` table | 3.9 ms | unchanged |
+| Workload | Old 3DS (avg) | Budget |
+|----------|---------------|--------|
+| A*, per expanded cell (`rooms(128, 128)`, weights 1/3/8) | 4.05 µs | < 5 µs |
+| 32 re-plans of 10–30 cells (4 518 expansions) | 14.6 ms | < 18 ms |
+| one search across a 64 × 64 maze (494 expansions) | 0.71 ms | < 0.9 ms |
+| the same in slices of 256 expansions, worst slice | 0.50 ms | < 0.65 ms |
+| a 64 × 64 field, one call (2 872 cells) | 6.6 ms | < 8.3 ms |
+| the same in slices of 512 cells, worst slice | 1.37 ms | < 1.7 ms |
+| `next` for 256 scattered agents | 0.17 ms | < 0.21 ms |
+| smoothing a 200-cell path | 0.23 ms | < 0.3 ms |
+| `sync` of 64 × 64 from a tilemap with a `path_cost` table | 3.8 ms | < 4.8 ms |
+| a 3 × 3 door refresh | 0.04 ms | < 0.05 ms |
 
 So an expansion costs about 4 µs on weighted levels (about 1.5 µs in a corridor maze, where the heuristic is exact):
 keep searches bounded (`max_expanded`) or sliced, prefer one field for a crowd (its `next` is a byte read per agent),

@@ -99,7 +99,7 @@ tunnelling, no corner leaks) and boxes, `cells_crossed`, `line_of_sight`, `box_c
 `boxes_overlapping`, `cell_at`; no allocation, the same bits everywhere ([api/collision.md](docs/api/collision.md)).
 Tilemaps: layer sets per `collision` layer and solid/one-way tile (Tiled `collision_layers`), `collision_grid(mask)`
 ([api/tilemap.md](docs/api/tilemap.md#collision-layers)). The platformer uses layered coins and turrets.
-Pathfinding on grids (spec 025, implemented; console run 1 logic PASS, bench optimised in T10.3, rerun pending; D40;
+Pathfinding on grids (spec 025, implemented, console and Linux checks passed; D40;
 demo `examples/pathfinding`):
 `<nnh/pathfinding.hpp>` — `PathMap::create(path_map_desc(grid))` (one block, 1 byte per cell: blocked or weight 1..255,
 agent sizes 1..4), `sync(grid[, region], PathWeights)` from any `collision::Grid` (a tilemap's `collision_grid(mask)`;

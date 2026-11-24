@@ -1,7 +1,6 @@
 # Plan 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 run 1 done, T10.3 optimisation done on the PC, console
-rerun pending). Approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24; Linux T9.1 and Old 3DS T10.2 passed (budgets set from the console). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D40 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 012 (`collision::Grid`, `Cell`, spec 012's half-open cell rule; tilemaps, tile properties, `set_tile`), spec
 019 (`collision_grid(mask)`, the exact grid walk and its corner rule, `cells_crossed`), spec 002 (asserts, logs,
@@ -1258,3 +1257,19 @@ build of `499f433`. `python -I scripts/docs_tool.py check`: 0 broken links.
 logic line as in run 1 (`pathfinding: PASS 1C0B5992`), the bench lines near the estimates above, and the verdict
 `pathfinding bench: FAIL (astar, replans, field slices)` if the estimates hold. Then the budgets (spec AC-7,
 `bench_scene.cpp`, `docs/api/pathfinding.md`) from that run with ≈ 25 % margin, and T10.2 run 2 (the platformer).
+
+## Console run 2 and budgets set (2026-11-24)
+
+Old 3DS, Development, after the optimisation round (T10.3): every logic line as the PC's (`pathfinding: PASS 1C0B5992`).
+Bench (avg, worst): astar 4.049 µs (4.220), maze one 0.714 (0.805), maze slices 0.381 (worst 0.497), replans 14.606
+(15.165), field one 6.613 (6.692), field slices 1.156 (worst 1.366), next 0.165 (0.245), next_crowd 0.146, smooth 0.225,
+sync 3.840, door 0.038 ms — the round's estimates held (field one −20 %, next −79 %; astar and replans about −5 %).
+Verdict `FAIL (astar, replans, field slices)`.
+
+**Budgets** (bench policy: optimise, then set every budget from the measurement with ~25 % margin; `bench_scene.cpp`,
+spec AC-7, `docs/api/pathfinding.md`): astar < 5 µs, maze one < 0.9 ms, maze slices < 0.65 ms (worst), replans < 18 ms,
+field one < 8.3 ms, field slices < 1.7 ms (worst), next < 0.21 ms, smooth < 0.3 ms, sync < 4.8 ms, door < 0.05 ms. The
+run with them: astar 4.047, replans 14.593, field slices worst 1.373, next 0.165, smooth 0.223 ms…, `pathfinding bench:
+PASS`, `nnh: PASS (104 lines)`. A* stays bound by its heap compares and record misses (an algorithm change — a bucketed
+open set, JPS — is a follow-up, not tuning); 32 re-plans in one frame take most of a 60 Hz frame on the Old 3DS, so the
+docs recommend slicing them over frames.

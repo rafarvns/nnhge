@@ -7,6 +7,7 @@
 #include "memory/memory_internal.hpp"
 #include "nnh/assert.hpp"
 #include "nnh/log.hpp"
+#include "nnh/profile.hpp"
 #include "text/font_texture.hpp"
 
 namespace nnh {
@@ -165,6 +166,9 @@ void detail::gfx_shutdown() {
 
 void detail::gfx_submit() {
     if (!g_state.ready) return;
+#if defined(NNH_FLAVOR_DEVELOPMENT)
+    NNH_PROFILE_SCOPE("gfx submit"); // Development only (the flavor benches measure in): spec 023's bench reads it
+#endif
     submit_screen(Screen::Top);
     submit_screen(Screen::Bottom);
     g_state.draws_last_frame = g_state.draws.count();

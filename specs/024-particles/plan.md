@@ -884,3 +884,30 @@ batches (stage 4), so the four stages are one commit, as 022's stages 3 and 4 we
   (PC and 3DS). Per function (3ds-release objects built from stage 0's and today's sources): `submit_screen` +60,
   `gfx_init` +32, `free_all` +24, `gfx_submit` +16. Moving the dispatch out of line (the plan's remedy) made it worse
   (+100: a call passing the camera), so the inline dispatch stays.
+
+### Stage 5 results
+
+- **T5.1 golden** (`examples/particles/self_check.{hpp,cpp}`, built with `-ffp-contract=off` in the example and in
+  `nnh_tests`): `kParticlesCheckGolden` **`C5EF1A84`**; checkpoints `D39517FF` (600), `640E6215` (1200), `35C3F348`
+  (1800), `2E105955` (2400), `6BA1B564` (3000), `C5EF1A84` (3600); the same in pc-debug and pc-release. Reach: up to
+  692 live particles, E2 kept full (15 422 dropped), E8 finished at the end. A one-value change (E1's rate 120 → 121)
+  fails all 7 checks; E4's restart moved by one frame does not (no checkpoint sees the difference: the script's
+  checkpoints are not a proof of every call). The test also checks E2 dropped and E8 finished.
+- **T5.2–T5.4 not done: presets fall back to the spec's option (a)** (the spec's FR-21 decision allows it "if the plan
+  finds D29 can't host an engine-shipped schema source cleanly"). Found while building: `ParticleDesc`'s times are
+  `FrameTime`, which is not an aggregate (it has constructors), and D29 refuses non-aggregate structs
+  (`data_tables.hpp`'s `static_assert`); describing it needs a third D29 rule (a `FrameTime` data kind or relaxing the
+  aggregate rule) on top of the plan's `.ascending` and `.up_to`, i.e. three changes to spec 014's pipeline, the
+  converter and their fixtures for one opt-in schema. Instead, the documented pattern: a game declares its own small,
+  aggregate preset type in its own schema source (times in frames, the values it tunes) and turns it into a
+  `ParticleDesc` (`examples/particles/presets.{hpp,cpp}`, `assets/fx/*.particles`); `ParticleEmitter::check()` /
+  `create()` refuse a bad result at run time (unsorted keys included, named). No change to D29, `nnh-assetc` or the
+  data module: `data check: PASS checksum 0xD5BD3020` unaffected by construction. The engine-shipped schema with the
+  two field rules (and a `FrameTime` kind) is a follow-up for the maintainer to decide (flagged).
+- **T5.5 fuzz**: `tests/fuzz/fuzz_particle_ops.cpp` (bytes → a description (raw bytes half the time, bools masked to
+  0/1) and a stream of updates, emissions, finite transforms, `set_desc`, restarts, stops, starts, clears and
+  expansions with any camera, zoom and capacity; aborts on alive > capacity, a finite world position outside the
+  bounds, an expansion writing past its capacity or not advancing); mini-fuzz `particle_ops_target_survives_random_inputs`
+  (200 inputs) in `nnh_tests`; `fuzz_particle_ops` under `NNH_BUILD_FUZZERS`.
+- **Bench prerequisite**: spec 023's `gfx submit` profile scope copied byte for byte into `gfx_frame.cpp` (023's branch
+  is `worktree-agent-a7d53ca3428767bfb`, not `spec-023`); on merge keep 023's.

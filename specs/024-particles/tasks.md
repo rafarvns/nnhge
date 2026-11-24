@@ -161,7 +161,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 5: the golden script, presets, fuzz
 
-- [ ] **T5.1** The self-check (AC-2): `examples/particles/self_check.{hpp,cpp}` (the 8 emitters of plan.md, 3600
+- [x] **T5.1** The self-check (AC-2): `examples/particles/self_check.{hpp,cpp}` (the 8 emitters of plan.md, 3600
   frames, the table and FNV-1a choices, checkpoints every 600 frames over every live particle's view and the counters);
   goldens from pc-debug in `kParticlesCheckGolden`/`kParticlesCheckpoints`, equal in pc-release. Test:
   `tests/particles_example/test_self_check.cpp` (on the fake platform; a one-value change in the script fails it —
@@ -184,7 +184,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   `particles_preset_rejects_<rule>`, `particles_preset_explains_<rule>`. Test: `tests/particles/test_presets.cpp` (the
   converted good preset loads equal, field for field, to the C++ description; AC-2's script with E6 from the preset
   gives the same checksum; `check()` refuses a hand-damaged loaded description). Covers FR-21, AC-3.
-- [ ] **T5.5** [P] Fuzz: `tests/fuzz/fuzz_particle_ops.cpp` (bytes → a description (often invalid: `create` errors) and
+- [x] **T5.5** [P] Fuzz: `tests/fuzz/fuzz_particle_ops.cpp` (bytes → a description (often invalid: `create` errors) and
   a stream of updates, emissions with any floats, transforms, `set_desc`, restarts, stops, clears and expansions into a
   scratch with any camera and zoom; checks: alive ≤ capacity, bounds contain positions, no UB), `libfuzzer_particle_ops.cpp`,
   `tests/fuzz/test_fuzz_particle_ops.cpp` (mini-fuzz in `nnh_tests`). Files: `tests/CMakeLists.txt` (024's block).

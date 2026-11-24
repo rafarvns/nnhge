@@ -561,7 +561,21 @@ target_sources(nnh_tests PRIVATE
     particles/test_shapes.cpp
     particles/test_space.cpp
     particles/test_subframe.cpp
+    fuzz/test_fuzz_particle_ops.cpp
+    particles_example/test_self_check.cpp
+    ${PROJECT_SOURCE_DIR}/examples/particles/self_check.cpp
 )
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/particles/self_check.cpp PROPERTIES
+                                COMPILE_OPTIONS -ffp-contract=off)
+endif()
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_particle_ops.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_particle_ops fuzz/libfuzzer_particle_ops.cpp)
+    target_link_libraries(fuzz_particle_ops PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_particle_ops PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_particle_ops PRIVATE -fsanitize=fuzzer,address)
+endif()
 # The prefabs example's self-check (spec 021 T5.4, AC-2): prefab spawns against hand-written ones, golden checksum.
 set(_prefabs_example ${PROJECT_SOURCE_DIR}/examples/prefabs)
 # (Its sources are compiled into nnh_fuzz_targets, which nnh_tests links: the fuzz target drives the same operations.)

@@ -27,6 +27,7 @@ add_library(nnh_platform_pc STATIC
     src/time_pc.cpp
     src/touch_pc.cpp
     src/video_pc.cpp
+    src/video3d_pc.cpp
     src/window_pc.cpp
     ../shared/stdio_fs.cpp
 )

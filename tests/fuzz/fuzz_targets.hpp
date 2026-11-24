@@ -69,4 +69,10 @@ int hierarchy_ops_target(const std::uint8_t* data, std::size_t size);
 /// (sin_cos range, is_finite, the inverse's exponent rule, the pure-translation rule) aborts.
 int transform_target(const std::uint8_t* data, std::size_t size);
 
+/// `.nnhmesh` meshes (spec 026, fuzz_mesh.cpp): validated as given, then with the header's size and CRC fixed; an
+/// accepted file is walked (every submesh's indices and vertices, every texture path) in bounds.
+int mesh_reader_target(const std::uint8_t* data, std::size_t size);
+/// For the mini-fuzz: whether `data`, with its size and CRC fixed as mesh_reader_target does, is accepted.
+bool mesh_fixed_accepted(const std::uint8_t* data, std::size_t size);
+
 } // namespace nnh::fuzz

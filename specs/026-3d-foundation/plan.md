@@ -635,3 +635,28 @@ the maintainer's approval beyond the decisions above.
   `nnh_tests` with `-ffp-contract=off`), so the console and the tests run the same code. Inputs are FNV-1a hashes scaled
   by powers of two (exact); stage 1's math-only golden after 50 000 operations: `436E15A9` (checkpoints `376AB001`,
   `804B29F2`, `C4D52290`, `48556FCB`). It changes once, in T4.10, when frustum tests, orders and `to_screen` join.
+
+### Stage 2 results and refinements (T2.1–T2.7)
+
+- **Format**: the header packs flags, submesh count, texture count and stride in one word to stay at 112 bytes; a
+  submesh record is 48 bytes (16-byte material record + one reserved word). The structs are the bytes (both systems are
+  little-endian); the reader copies with `memcpy` (no alignment assumed). The index section is padded to 4 bytes.
+- **Texture coordinates**: one uv range per mesh (stored in every submesh record): a vertex shared by two submeshes
+  would otherwise need two quantisations. The per-submesh fields stay in the format for later.
+- **Bounds**: the box and the sphere are computed from the *decoded* positions (what the GPU draws); the sphere's centre
+  is the box centre (the position offset).
+- Files: `mesh_measure.cpp` (validation and sizing) beside `mesh_build.cpp` (writing); flat normals live in
+  `mesh_quantize.cpp` (`face_normal`); `mesh_record.cpp` (records, upload, accounting) and `mesh_table.cpp`; one test
+  file for layout/quantisation/flat normals/build/limits (`test_mesh_build.cpp`).
+- **Hook moved forward (part of T4.1 done here)**: `GfxConfig::max_draws_3d`, `gfx/gfx3d_hook.*` and the registrar
+  `gfx3d/gfx3d_ops.cpp` land in stage 2 because meshes need 3D on (P6): `mesh_table_ready()` calls `gfx3d_link()`, so a
+  game that makes a mesh links the registrar. 3D init failing (`video3d_init`) fails `nnh::init()`.
+- **Deferred frees mirror textures**: a mesh released inside a frame stays usable by that frame's draws and is freed in
+  the frame's `after_frame` (2D textures behave the same way, so "a draw recorded before is skipped" reads "is drawn
+  that frame, then the mesh is gone").
+- The fake platform logs `[` and `]` for `begin_3d`/`end_3d` in `State::calls` (2D-only frames unchanged) and keeps
+  meshes' bytes (`mesh_data`) for the pixel tests; the PC and 3DS backends are stubs returning false until stages 6–7.
+- Measured: `hello` 3DS Release `.text` +72 B (201 196), `.3dsx` +72 B, PC Release `.exe` +489 B — the hook pointer and
+  its null checks (P14 budget: 128 B / 1 KB). Every example's screenshot unchanged (`audio` and `foundation` show live
+  timings and differ run to run, so they are left out of the comparison). Primitive bytes: cube CRC `9A45BD39`,
+  `make_sphere(0.5, 8, 12)` CRC `BBF6FDA6`.

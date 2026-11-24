@@ -1,6 +1,7 @@
 // 2D graphics lifecycle: capacities at init, end-of-frame submission per screen, deferred texture
 // frees, cleanup at shutdown (docs/architecture/rendering.md).
 
+#include "gfx/gfx3d_hook.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "gfx/gfx_state.hpp"
 #include "log/engine_channels.hpp"
@@ -23,6 +24,7 @@ detail::TextureSlot* g_slots = nullptr;
 detail::TileBatchRecord* g_tile_records = nullptr; // only when max_tiles > 0
 platform::TileQuad2D* g_tile_scratch = nullptr;
 std::uint32_t g_next_generation = 1; // texture handles from a previous init() stay stale
+bool g_3d_on = false;                // the 3D hook's init succeeded (spec 026)
 
 template <typename T>
 T* allocate(int count) {
@@ -140,12 +142,22 @@ bool detail::gfx_init(const GfxConfig& config) {
         gfx_shutdown();
         return false;
     }
+    // 3D (spec 026, D43): only when the game links the 3D module and asks for a capacity.
+    if (config.max_draws_3d > 0 && g_gfx_3d_ops != nullptr) {
+        if (!g_gfx_3d_ops->init(config)) {
+            gfx_shutdown();
+            return false;
+        }
+        g_3d_on = true;
+    }
     return true;
 }
 
 void detail::gfx_shutdown() {
     if (!g_state.ready) return;
     gfx_after_frame();
+    if (g_3d_on) g_gfx_3d_ops->shutdown(); // meshes (and the textures they own) first
+    g_3d_on = false;
     font_texture_release(); // counted under its own tag
     g_state.textures.for_each_active([](const TextureData& t) {
         platform::texture_destroy(t.platform);
@@ -183,6 +195,7 @@ void detail::gfx_after_frame() {
         destroy_texture_now(g_state.pending[i].slot, g_state.pending[i].generation);
     }
     g_state.pending_count = 0;
+    if (g_3d_on) g_gfx_3d_ops->after_frame();
 }
 
 } // namespace nnh

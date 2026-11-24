@@ -353,6 +353,35 @@ target_sources(nnh_core PRIVATE ${_nnh_math3d_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_math3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
+# Meshes (spec 026, D42): the .nnhmesh format, quantisation and validation (pure, also compiled into nnh-assetc so both
+# write the same bytes), the mesh table and handles, code-built meshes, primitives and loading. Same float rules.
+set(_nnh_mesh_sources
+    src/mesh/create_mesh.cpp
+    src/mesh/mesh.cpp
+    src/mesh/mesh_build.cpp
+    src/mesh/mesh_layout.cpp
+    src/mesh/mesh_measure.cpp
+    src/mesh/mesh_quantize.cpp
+    src/mesh/mesh_record.cpp
+    src/mesh/mesh_table.cpp
+    src/mesh/mesh_validate.cpp
+    src/mesh/primitives.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_mesh_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_mesh_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
+endif()
+# 3D drawing (spec 026, D43): recording, culling, order, lights, the screen pass, queries. gfx/gfx3d_hook.cpp (the null
+# hook pointer) is always linked; everything else only through the hook's registrar (gfx3d_ops.cpp, plan P14).
+set(_nnh_gfx3d_sources
+    src/gfx/gfx3d_hook.cpp
+    src/gfx3d/gfx3d_init.cpp
+    src/gfx3d/gfx3d_ops.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_gfx3d_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_gfx3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

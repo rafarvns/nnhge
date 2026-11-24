@@ -15,6 +15,7 @@ add_library(nnh_platform_fake STATIC
     src/system_fake.cpp
     src/time_fake.cpp
     src/video_fake.cpp
+    src/video3d_fake.cpp
 )
 add_library(nnh::platform_fake ALIAS nnh_platform_fake)
 target_include_directories(nnh_platform_fake PUBLIC include PRIVATE src)

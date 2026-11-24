@@ -1035,6 +1035,10 @@ target_sources(nnh_tests PRIVATE
     math3d/test_quat.cpp
     math3d/test_quat_interp.cpp
     math3d/test_vec3.cpp
+    mesh/test_create_mesh.cpp
+    mesh/test_mesh_build.cpp
+    mesh/test_mesh_validate.cpp
+    mesh/test_primitives.cpp
     models_example/test_self_check.cpp
     ${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp
 )
@@ -1058,3 +1062,15 @@ if(NNH_BUILD_FUZZERS)
         target_link_options(fuzz_${name} PRIVATE -fsanitize=fuzzer,address)
     endforeach()
 endif()
+
+# 3D foundation (spec 026): fuzz targets of the two new parsers (the .nnhmesh reader, the glTF reader in nnh-assetc).
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_mesh.cpp)
+target_sources(nnh_tests PRIVATE fuzz/test_fuzz_mesh.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_mesh_reader fuzz/libfuzzer_mesh_reader.cpp)
+    target_link_libraries(fuzz_mesh_reader PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_mesh_reader PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_mesh_reader PRIVATE -fsanitize=fuzzer,address)
+endif()
+# The 3D contract's conformance (spec 026): the fake platform now, the PC once its rasteriser lands (stage 6).
+target_sources(nnh_conformance_fake PRIVATE platform_conformance/test_video3d.cpp)

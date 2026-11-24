@@ -35,6 +35,7 @@ void begin_frame(Color top_clear, Color bottom_clear) {
     s.calls[0] = '\0';
     s.tiles.batch_count = 0;
     s.tiles.quad_count = 0;
+    platform_fake::detail::video3d_frame_begun();
 }
 
 void end_frame() {
@@ -45,6 +46,7 @@ void end_frame() {
     std::memcpy(s.last_frame_items, s.items, sizeof s.items);
     std::memcpy(s.last_frame_calls, s.calls, sizeof s.calls);
     s.last_frame_tiles = s.tiles;
+    platform_fake::detail::video3d_frame_ended();
 }
 
 // Test image format: "FAKE", width, height (16-bit little endian).

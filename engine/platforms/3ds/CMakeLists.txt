@@ -20,6 +20,7 @@ add_library(nnh_platform_3ds STATIC
     src/texture_3ds.cpp
     src/time_3ds.cpp
     src/video_3ds.cpp
+    src/video3d_3ds.cpp
     ../shared/stdio_fs.cpp
 )
 add_library(nnh::platform_3ds ALIAS nnh_platform_3ds)

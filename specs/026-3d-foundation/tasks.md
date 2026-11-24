@@ -44,21 +44,21 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 2 — meshes from code (026a)
 
-- [ ] **T2.1** `mesh/mesh_format.hpp` (header 112 B, submesh 48 B, texture 64 B, static_asserts), `mesh_layout.cpp`
+- [x] **T2.1** `mesh/mesh_format.hpp` (header 112 B, submesh 48 B, texture 64 B, static_asserts), `mesh_layout.cpp`
   (strides 12/16/20, offsets) — test: `tests/mesh/test_mesh_layout.cpp` — covers FR-4
-- [ ] **T2.2** `mesh_quantize.cpp`, `mesh_bounds.cpp`, `flat_normals.cpp` — test: `test_mesh_quantize.cpp` (round trips,
+- [x] **T2.2** `mesh_quantize.cpp`, `mesh_bounds.cpp`, `flat_normals.cpp` — test: `test_mesh_quantize.cpp` (round trips,
   error ≤ half step, degenerate extents), `test_flat_normals.cpp` — covers FR-4, FR-5
-- [ ] **T2.3** `mesh_build.cpp` (`MeshDesc` → bytes + CRC; limits; refusals with reasons) — test: `test_mesh_build.cpp`,
+- [x] **T2.3** `mesh_build.cpp` (`MeshDesc` → bytes + CRC; limits; refusals with reasons) — test: `test_mesh_build.cpp`,
   `test_mesh_limits.cpp` — covers FR-4, FR-5
-- [ ] **T2.4** `mesh_validate.cpp` + mini-fuzz case in `tests/fuzz/` + `libfuzzer_mesh_reader.cpp` — test:
+- [x] **T2.4** `mesh_validate.cpp` + mini-fuzz case in `tests/fuzz/` + `libfuzzer_mesh_reader.cpp` — test:
   `test_mesh_validate.cpp` (every corruption: magic, version, sizes, offsets, index out of range, NaN, bad enum, path,
   CRC) — covers FR-7
-- [ ] **T2.5** Contract `video3d.hpp` (mesh part) + fake `video3d_fake.cpp` (`mesh_create/destroy` recorded) + pc/3ds
+- [x] **T2.5** Contract `video3d.hpp` (mesh part) + fake `video3d_fake.cpp` (`mesh_create/destroy` recorded) + pc/3ds
   stubs returning false (`"3D not built yet"`) — test: `tests/platform_conformance/test_video3d.cpp` (fake) — covers FR-25
-- [ ] **T2.6** `mesh.hpp`, `mesh_table.*` (256 slots, generations), `Mesh` handle (move, reset, deferred free),
+- [x] **T2.6** `mesh.hpp`, `mesh_table.*` (256 slots, generations), `Mesh` handle (move, reset, deferred free),
   `create_mesh`, `texture_id` — files: `mesh.cpp`, `create_mesh.cpp`, `mesh_internal.hpp` — test:
   `test_create_mesh.cpp` (accounting `Linear`/`meshes`, `Unsupported` with 3D off) — covers FR-5, FR-8
-- [ ] **T2.7** [P] `primitives.cpp` (`make_cube`, `make_plane`, `make_sphere` with `sin_cos`) — test:
+- [x] **T2.7** [P] `primitives.cpp` (`make_cube`, `make_plane`, `make_sphere` with `sin_cos`) — test:
   `test_primitives.cpp` (vertex/triangle counts, normals unit within 1/127, bounds, uv ranges, byte hashes) — covers FR-5
 
 ## Stage 3 — glTF converter (026a)

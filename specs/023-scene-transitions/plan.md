@@ -736,3 +736,21 @@ not amended (its notifications follow the scene's `update()`); D32 is not amende
 queries); D28 noted (remote input is game input and is filtered); spec 001's "the top scene updates every frame" gains
 D38's exception. The patterns page gains an "Optional frame hook" row (D30, D32, D38). The iris's worst frame is
 flagged at risk and keeps the spec's measurement-with-margin fallback.
+
+## Stage 0 results (2026-11-24, worktree branch from `main` at 407ff10)
+
+Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `build/ref-023/` (not committed):
+`measure.sh` (sizes, `nm` lists, disassembly), `headers.sh` (header costs), `objsum.sh` (object disassembly sums),
+`edit_time.sh`, `compare.sh` (AC-9 screenshots).
+
+| Item | Value |
+|------|-------|
+| ctest | pc-debug 268/268, pc-release 258/258; `nnh_tests` 2353 tests (`kMaxTests` 4096: room for this spec's ≈ 200) |
+| Warnings | 0 in pc-debug, pc-release, 3ds-release, 3ds-dev |
+| `hello` | pc-release `.exe` 278 856 B (text 130 732), pc-debug 1 304 762 B; 3ds-release `.elf` text **201 188** (`.3dsx` 246 576 B); 3ds-dev `.3dsx` 268 108 B |
+| 3ds-release `.text` | `scenes` 206 492, `actions` 246 092, `platformer` 361 880 |
+| Headers (one-line TU, `g++ -E` lines / `-fsyntax-only` best of 3) | `scene.hpp` 565 / 300 ms, `gfx.hpp` 779 / 303 ms, `tween.hpp` 8 413 / 451 ms |
+| Edit `examples/scenes/title_scene.cpp` | simulator 2.0–2.3 s, `.3dsx` 3.3 s |
+| Goldens | replay `B2418A28` (spec 021's lines: this tree predates spec 022's T6.3), tweens `B44CA3F6`, entities `C8FB9A41`, prefabs `7BB7901E` |
+| AC-9 references | `build/ref-023/ref/`: hello, sprites, scenes title (30) and level (90, `NNH_SIM_INPUT=buttons=A`), tweens, actions, camera `zoom1`, platformer level 1 (90), replay 64 and 312; `compare.sh` retakes them identical |
+| Disassembly | 3ds-dev `input.o`, `scenes.o`, `scene_stack.o` in `build/ref-023/m-t0/dis/`; `input_update` is 54 instructions with one call (`shape_stick`) per stick; 3ds objects are built with one section per function (the linker drops unreferenced functions) |

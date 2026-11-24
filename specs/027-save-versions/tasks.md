@@ -111,32 +111,32 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 4: the decoder, evolution, migrations (pure)
 
-- [ ] **T4.1** Apply and decode: `save_apply.{hpp,cpp}` (reset `T{}`, merge-walk by id, sequences, rows in lockstep
+- [x] **T4.1** Apply and decode: `save_apply.{hpp,cpp}` (reset `T{}`, merge-walk by id, sequences, rows in lockstep
   with the template, report counting and Debug/Development paths), `save_convert.{hpp,cpp}` (same-kind copies),
   `save_decode.cpp` (validate → header checks → reset → apply), `decode<T>`. Test: `tests/saves/test_round_trip.cpp`
   (every kind and shape round-trips; a canary-filled struct is unchanged after each error; no allocation). Covers FR-8,
   FR-9.
-- [ ] **T4.2** Automatic evolution: `save_convert.cpp` (integer width and sign changes that fit, integer → float/double
+- [x] **T4.2** Automatic evolution: `save_convert.cpp` (integer width and sign changes that fit, integer → float/double
   exact by bit length, float → double on bits, array ↔ list, capacities grown, enum checks through `find_enum` once per
   sequence field). Test: `tests/saves/test_evolution.cpp` (added, removed → unknown, retired → silent, renamed,
   reordered, widened, signedness, exact int → float, a subnormal float → double unchanged, array/list grown,
   string grown, nested struct evolution). Covers FR-2, FR-10, FR-18.
-- [ ] **T4.3** Values that don't fit: Test: `tests/saves/test_fit.cpp` (out of range; inexact int → float at 2²⁴ + 1;
+- [x] **T4.3** Values that don't fit: Test: `tests/saves/test_fit.cpp` (out of range; inexact int → float at 2²⁴ + 1;
   inexact double → float; int → struct, struct → int, one ↔ array; NaN and ∞ in float, double, `Vec2`; enum outside
   `NNH_DATA_ENUM` names; bool bytes 2 and 0xFF; strings cut at 2- and 3-byte boundaries; list and array shrunk; array
   with fewer items not counted; drops per value; the counts saturate; the first three paths). Covers FR-11, FR-15.
-- [ ] **T4.4** Versions and type checks: key mismatch → `InvalidArgument` naming both keys, newer version →
+- [x] **T4.4** Versions and type checks: key mismatch → `InvalidArgument` naming both keys, newer version →
   `Unsupported` ("saved by version 5; this game reads up to 3"), raw `nnh::save` payload → its message, format 2 →
   `Unsupported`; the struct unchanged. Test: `tests/saves/test_versions.cpp`. Covers FR-6, FR-9, FR-14.
-- [ ] **T4.5** Migrations and the old-fields view: `save_migrate.cpp` (steps v … c − 1 in order, the runner's assert),
+- [x] **T4.5** Migrations and the old-fields view: `save_migrate.cpp` (steps v … c − 1 in order, the runner's assert),
   `old_fields.cpp` (`has`, `kind`, `shape`, `count`, `get` for every C++ kind and for save structs). Test:
   `tests/saves/test_migrations.cpp` (chains 1→3 and 2→3, call order, steps see the loaded struct, a current file runs
   none, a hand-built record with a null step asserts), `tests/saves/test_old_fields.cpp` (retired, unknown, dropped
   values; `4.2`, `9[3].2`; a region into a save struct; kinds that can't hold the value → false; the old-struct pattern).
   Covers FR-12, FR-13, FR-21.
-- [ ] **T4.6** [P] Summaries: `NNH_SAVE_SUMMARY` loads (same key, a subset of ids, no steps, newer refused). Test:
+- [x] **T4.6** [P] Summaries: `NNH_SAVE_SUMMARY` loads (same key, a subset of ids, no steps, newer refused). Test:
   `tests/saves/test_summary.cpp`. Covers FR-16.
-- [ ] **T4.7** Stage end: the stage-end guards. Files: plan.md ("Stage 4 results"). Covers AC-1.
+- [x] **T4.7** Stage end: the stage-end guards. Files: plan.md ("Stage 4 results"). Covers AC-1.
 
 ## Stage 5: files, backups, power cuts, the dump
 

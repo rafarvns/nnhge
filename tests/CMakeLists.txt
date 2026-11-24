@@ -538,9 +538,16 @@ target_sources(nnh_tests PRIVATE
     saves/test_declare.cpp
     saves/test_encode.cpp
     saves/test_encode_sequences.cpp
+    saves/test_evolution.cpp
+    saves/test_fit.cpp
     saves/test_header.cpp
+    saves/test_migrations.cpp
+    saves/test_old_fields.cpp
     saves/test_raw_unchanged.cpp
+    saves/test_round_trip.cpp
+    saves/test_summary.cpp
     saves/test_validate.cpp
+    saves/test_versions.cpp
     saves/test_wire.cpp)
 # Save declarations (spec 027 T2.3, AC-1): a correct one compiles with -Werror; each mistake fails to compile AND says
 # what is wrong. `~` separates alternatives (any one passes): GCC's wording, then clang's.

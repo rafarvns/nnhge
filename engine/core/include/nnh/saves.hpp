@@ -248,7 +248,15 @@ class OldFields {
     /// absent or when the value doesn't fit the type (out of range, another kind, not finite: FR-11).
     template <class T> bool get(const FieldPath& path, T& out) const {
         static constexpr detail::SaveFieldInfo field = detail::save_value_field<T>();
-        return detail::old_fields_get(root_, size_, path, field, &out);
+        T value{}; // a struct, array or list starts from its defaults; `out` changes only on success
+        if (!detail::old_fields_get(root_, size_, path, field, &value)) return false;
+        if constexpr (std::is_array_v<T>) {
+            for (std::size_t i = 0; i < std::extent_v<T>; ++i)
+                out[i] = value[i];
+        } else {
+            out = value;
+        }
+        return true;
     }
 
   private:

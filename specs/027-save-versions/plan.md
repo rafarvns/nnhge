@@ -829,3 +829,34 @@ same PC at the same time: timings are noisy.
   and lengths, `max_size<T>()` equal to the encoded size of a full value for 10 shapes — including a 255 × 255-byte
   string list (65 kB) and a three-byte string `bytes` length).
 - **T3.3** ctest pc-debug 326/326, pc-release; four presets without a warning; spec 014 untouched; `hello` unchanged.
+
+## Stage 4 refinements and results
+
+- **Files** as planned (`save_apply.{hpp,cpp}`, `save_convert.{hpp,cpp}`, `save_decode.cpp`, `save_migrate.cpp`,
+  `old_fields.cpp`), plus two internal headers: `save_cursor.hpp` (skipping a validated value and reading a sequence's
+  header, shared by the decoder, the view and the dump) and `save_internal.hpp` (`save_decode_payload`,
+  `save_run_steps`, and the stage 5 hooks). The `saves` log channel is defined in `save_report.cpp`.
+- **Decode order**: header (raw payload, format) → whole-structure validation → key (hash and text) → version → `T{}`
+  → fields → steps. So a damaged file is `Corrupted` before its key is looked at (stage 5 tries the backup for it).
+- **Merge by id**: a struct's file ids and its sorted fields and retired ids are walked together once (`Merge`), the
+  same code for tagged fields and for rows (whose ids come from the template); a row is merged per row, never through
+  a lookup table on the stack. **Lists** start from their item defaults: slots `[0, max(old count, n))` are reset
+  (`T{}` per struct item, zero for the others) before the file's items are applied, so a list item missing a field
+  gets the item struct's default, and freed slots keep the List invariant. **Arrays** keep `T{}`'s slot values as the
+  base (an array with fewer items keeps the defaults for the rest).
+- **Conversions** (`save_convert.cpp`, integer arithmetic only, `<bit>`'s `countl_zero`/`countr_zero`): as D46. A whole
+  sequence whose kind can't convert at all (string ↔ non-string, struct ↔ non-struct) is one drop; scalar sequences
+  drop per item. Same-kind integer, Color and reference sequences are one `memcpy`; float, Vec2 and bool sequences are
+  checked per item (finiteness, 0/1), enum sequences per item only when the enum has names.
+- **Enum names** are looked up once per run of the same field (`SaveApply::enum_names` keeps the last lookup), so the
+  rows of a list search the registry once (risk item 6 of the ARM plan).
+- **`OldFields::get`** converts into a temporary `T value{}` and copies it to `out` on success (so `out` is unchanged on
+  failure, and a struct, array or list starts from its defaults); a string longer than the target is cut (true), a
+  sequence into one value or the reverse is false. `old_fields.cpp` locates a path as a tagged value, an item, or a
+  row (template + row bytes), then converts with `apply_field`/`apply_row`.
+- **Missing step at run time**: the runner finds step v at index v − 1 (complete chain); a hand-built record with a null
+  step asserts in Debug/Development and skips it in Release (`migrated` then counts only the steps run).
+- Tests: `test_round_trip.cpp` (6), `test_evolution.cpp` (9), `test_fit.cpp` (9; the saturation test decodes 65 535 u16
+  of 300 plus one more into u8 fields: 65 536 drops reported as 65 535), `test_versions.cpp` (6),
+  `test_migrations.cpp` (5), `test_old_fields.cpp` (6), `test_summary.cpp` (4); `migration_types.hpp` (three versions
+  of one type with call-logging steps, and a summary). Enum names in tests: `test_data::Element` (stage 2 note).

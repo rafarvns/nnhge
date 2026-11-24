@@ -87,7 +87,17 @@ MiB each, every record and number checked, every name and path a valid asset pat
 the mini-fuzz and is refused), and the lists of sidecars and assets (≤ 4 MiB); it checks the index it writes with
 the engine's index validator. Fuzz target `refs_target` (mini-fuzz of 6 000 mutated sidecars, libFuzzer
 `fuzz_assetc_refs`, not run on Linux yet). The data schema program (`tools/data_schema`) only runs the game's own
-compiled tables through the engine's schema check. They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
+compiled tables through the engine's schema check. Structured saves (spec 027, `saves/save_validate.*`) are external
+data the player can edit: inside spec 002's checksummed container, a schema-free walk checks the whole payload before
+the game's struct is touched (structured header, canonical varints of at most 3 bytes, ids 1..65 535 strictly
+ascending per struct and template, wire bytes, nesting ≤ 8, every length and count against the bytes left, a
+struct's fields and a sequence's items filling their lengths exactly, strings valid UTF-8 without NUL, templates of
+1..128 fields; linear in the size); a CRC-valid file with a broken structure loads the backup instead.
+`saves_target` (`tests/fuzz/fuzz_saves.*`) decodes into a type with every kind and shape — as given, behind a valid
+structured header, and as a whole file through `nnh::save::load` with the size and CRC fixed —, re-encodes every
+accepted input and checks it decodes and encodes again to the same bytes, and runs the migration view on paths taken
+from the input; mini-fuzz in `nnh_tests` (15 000 mutants of two seeds and the three golden files), libFuzzer
+`fuzz_saves` (not run on Linux yet: spec 027 T9.1). They run as a deterministic mini-fuzz (20 000 mutated inputs; 300 mutations of a real file
   for Ogg, where each run decodes; 12 000 mutations of three valid maps, one with animated tiles, for `.nnhmap`) inside `nnh_tests` on every
   compiler, and with libFuzzer + AddressSanitizer on Linux (`-DNNH_BUILD_FUZZERS=ON` with clang; homelab
   build VM or the manual CI job). The libraries under test (`nnh_core`, `nnh_stb_vorbis`, `nnh_fuzz_targets`) are built

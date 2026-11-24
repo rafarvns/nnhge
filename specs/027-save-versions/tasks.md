@@ -1,6 +1,6 @@
 # Tasks 027: Save data with versions
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 through stage 8 and the docs; stage 9 (Linux) by the lead, stage 10 (console) pending
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -209,21 +209,21 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 8: mutation testing, opt-in checks
 
-- [ ] **T8.1** Mutation pass as in plans 019–026: hand mutants (`build/ref-027/mutants.py`, applied one at a time by
+- [x] **T8.1** Mutation pass as in plans 019–026: hand mutants (`build/ref-027/mutants.py`, applied one at a time by
   `mutate.py`, the whole `nnh_tests` each) of `src/saves/*` (varint canonical check, id order, depth bound, length checks,
   `bytes` fill, UTF-8 call, each conversion's range test, exactness tests, enum name check, bool test, string cut, list
   shrink, report counts, backup rules, key/version checks, step order, the view's walk), the compile-time checks (one
   mutant per `save_error_*` caller, caught by the negative-compile ctests) and the fake's power cut; Release-path mutants
   in pc-release; survivors become tests or are argued equivalent. Files: plan.md ("Mutation testing"). Covers VI.
-- [ ] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` gains the dump's and the report's Debug-only texts
+- [x] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` gains the dump's and the report's Debug-only texts
   (one `forbidden=` line after the input-actions line); run on the 3ds-release and pc-release `saves` executables (no
   member names, no dump text). Covers FR-17, FR-15.
-- [ ] **T8.3** [P] Opt-in by linking: probes (`build/ref-027/probe_*`, not committed) linked against the 3ds-release
+- [x] **T8.3** [P] Opt-in by linking: probes (`build/ref-027/probe_*`, not committed) linked against the 3ds-release
   libraries: a game that stores and loads a save without enums links no `src/data/` object; with an enum field, only
   `schema_registry.o`; no `data_load`, `data_index`, `index_validate`, `data_validate` symbol in either (map file);
   `hello` sizes and `nm` equal T0.1's; the saves module's `.text` recorded against plan.md's estimate. Files: plan.md
   ("Stage 8 results"). Covers FR-20, AC-7.
-- [ ] **T8.4** Build times and regressions: every example's console script passes with `--pc`; `.text` of `actions`,
+- [x] **T8.4** Build times and regressions: every example's console script passes with `--pc`; `.text` of `actions`,
   `data`, `foundation` equal T0.1's; edit `examples/saves/tiny_game.cpp` and `progress.hpp` (the declarations' header) →
   simulator and `.3dsx` times against T0.1's and constitution III. Files: plan.md ("Stage 8 results"). Covers AC-7, III.
 
@@ -260,25 +260,25 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/saves.md`: declaring a save type (the namespace and
+- [x] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/saves.md`: declaring a save type (the namespace and
   unqualified-name rule, a header or one source), ids and retired ids (never change an id's meaning), kinds and limits,
   the file and its guarantees (atomic, backup, CRC, cross-platform bytes), loading rules and the report, versions and
   migrations (steps, `OldFields`, paths) with both patterns (steps; keep the old struct), slots, summaries and settings,
   buffers and `max_size`, headroom, embedding with `encode`/`decode`, the dump and `NNH_SAVE_DUMP`, costs (measured, the
   card named), where to save (a save point, a "Saving…" indicator), migrating from raw `nnh::save`, newer files (ask the
   player), misuse, pitfalls; header comments (allocates? per-frame safe? misuse?). Covers VIII, AC-9.
-- [ ] **T11.2** Other pages: `docs/api/fs.md` (a link from "Saves"; raw saves stay documented), `docs/api/data.md` (one
+- [x] **T11.2** Other pages: `docs/api/fs.md` (a link from "Saves"; raw saves stay documented), `docs/api/data.md` (one
   sentence: its value types serve saves too), `docs/architecture/security.md` (the parser and `fuzz_saves` in its table),
   `project-structure.md` (the `saves` module if listed), `patterns.md` (the "Versioned schema" row: implemented),
   `docs/REFERENCES.md` (protobuf, FlatBuffers, Serde, Godot, Unity, Butano, Pokémon Gen III, GBATEK), `CLAUDE.md` (the
   layout paragraph after "Input actions", the commands after the `hello.exe` screenshot line); `python -I
   scripts/docs_tool.py check` → 0 broken links. Covers AC-9.
-- [ ] **T11.3** `docs/architecture/decisions.md`: D45 and D46 change-log note "implemented" with the stage refinements.
+- [x] **T11.3** `docs/architecture/decisions.md`: D45 and D46 change-log note "implemented" with the stage refinements.
   Covers AC-9.
-- [ ] **T11.4** Final measurements (header cost, build times, `hello` sizes, the module's `.text`) in plan.md and
+- [x] **T11.4** Final measurements (header cost, build times, `hello` sizes, the module's `.text`) in plan.md and
   `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.5** `docs/ROADMAP.md`: the "Save data with versions" checkbox, with the implemented summary.
-- [ ] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.5** `docs/ROADMAP.md`: the "Save data with versions" checkbox, with the implemented summary.
+- [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
 - [ ] **T11.7** (the lead, after 022–025 are merged) Merge `spec-027` into `main` per plan.md's "Merge notes"; then the
   full ctest (pc-debug, pc-release), every example's `--pc` script, AC-2's goldens, 022–025's goldens and the platformer
   replay ctest with the tree's lines, `0xD5BD3020`, one 3ds-release build; T10.2 run 1 is repeated if a merge happened

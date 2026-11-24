@@ -158,6 +158,14 @@ Input actions (spec 017, implemented; demo `examples/actions`): `<nnh/actions.hp
 touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
 frame (D32 after-input hook), listen/conflicts/reset for a controls screen, `NNHB` overrides saved with `nnh::save`
 ([api/actions.md](docs/api/actions.md)).
+Save data with versions (spec 027, implemented, console check pending; D45, D46; demo `examples/saves`):
+`<nnh/saves.hpp>` — `NNH_SAVE_TYPE(Progress, "progress", NNH_SAVE_VERSION(3), NNH_SAVE_STEP(1, from_v1), ...,
+NNH_SAVE_FIELD(member, id), NNH_SAVE_RETIRED(ids...))` in the struct's namespace (tables found by ADL; ids, retired ids
+and a complete step chain checked at compile time), `NNH_SAVE_STRUCT`, `NNH_SAVE_SUMMARY`; `save::store`/`load` with a
+`Buffer<T>` (`max_size<T>()`), `encode`/`decode`, `info`/`exists`/`remove`; a self-describing format inside spec 002's
+`NNHS` container (same bytes on PC and 3DS), the whole file validated first, exact conversions, a `Report`
+(unknown/dropped/adjusted, backup), the backup on any damage, `OldFields` for steps, a Debug dump and `NNH_SAVE_DUMP`;
+golden files in `tests/data/saves/`, fuzz target `fuzz_saves` ([api/saves.md](docs/api/saves.md)).
 Camera helpers (spec 018, implemented; D33; demo `examples/camera`): `<nnh/camera.hpp>` —
 `nnh::CameraRig`, a 128-byte value per view: `update(target)` once per frame after moving the target (one 60 Hz
 frame, bit-identical on PC and 3DS), `apply()` writes `Camera2D`; dead zone in screen pixels, per-frame smoothing,
@@ -215,6 +223,8 @@ build/pc-debug/tools/nnh/nnh run input --script examples/input/tests/remote.nnhs
 build/pc-debug/tools/nnh/nnh serve                              # build server for NNH Link (spec 011)
 NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
+SAVES_SHOT=saved NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/saves.png build/pc-debug/examples/saves/saves.exe   # SAVES_SHOT empty|saved|golden|backup; SAVES_DEMO showcase|check|bench; NNH_SAVE_DUMP=1
+build/pc-debug/tools/nnh/nnh run saves [--pc] --script examples/saves/tests/check.nnhs   # golden v1-v3 sums, encode crc 11363B5C, backup, bench
 ANIMATION_DEMO=check NNH_EXIT_AFTER_FRAMES=605 build/pc-debug/examples/animation/animation.exe   # showcase (default)|check|bench
 PATHFINDING_SHOT=explored NNH_EXIT_AFTER_FRAMES=40 NNH_SCREENSHOT=build/path.png build/pc-debug/examples/pathfinding/pathfinding.exe   # explored|smoothed|field|partial|door-closed|door-open|big
 build/pc-debug/tools/nnh/nnh run pathfinding [--pc] --script examples/pathfinding/tests/check.nnhs   # self-check 1C0B5992, doors, island, 2x2, bench

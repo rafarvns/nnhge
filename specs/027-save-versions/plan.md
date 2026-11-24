@@ -1,6 +1,6 @@
 # Plan 027: Save data with versions
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24, console check (T10.2) pending (approved 2026-11-24 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D45, D46 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`nnh::save`'s `NNHS` container, its write procedure and `read_one`, `nnh::fs` paths, `Result`, logs,
 asserts, profiler, `detail::crc32`), spec 014 (`data::String`, `data::List`, `data::Ref`, the media references, the
@@ -1028,3 +1028,44 @@ guards). On the Old 3DS, each run: Homebrew Launcher, press **Y**, nobody touche
 
 Optional (decision 21): copy `slot1.sav` from `sdmc:/3ds/saves/` into the simulator's data folder
 (`build/pc-debug/examples/saves/data/saves/`) and load it there (the same summary).
+
+## Mutation testing
+
+`build/ref-027/mutants.py` (88 hand mutants: wire, header, validator, encoder, conversions, apply, decode, steps, view,
+file layer, report, dump file, 15 compile-time checks run against the negative-compile ctests, the fake's power cut),
+applied one at a time by `mutate.py` (pc-debug, whole `nnh_tests` or `ctest -R saves_declaration`). First pass: 15
+survivors (and 5 patterns to fix): a sequence one byte short, rows that can't fit (caught later with another message),
+a List count above capacity in memory, signed limits (`<` vs `<=`), the float exponent limit (2^128), list slots past
+the file's items with a default list, a bad bool byte inside a bool array, two keys of one FNV-1a hash ("bgpx_" and
+"b13ck"), a string list's item skip, a row read into a number, a damaged main file without backup (Corrupted, not
+NotFound), `info` on a cut file whose headers are whole, a load that only adjusted, `NNH_SAVE_VERSION` twice. Each got
+a test (`tests/saves/test_edges.cpp`, 13 tests) or a negative-compile case (`version_twice`). Second pass: **87 of 88
+killed**; 1 equivalent (`O1`: the view's early stop when the file's ids pass the one looked for is only a shortcut).
+One mutant of the first list was equivalent too (a path-count condition) and was replaced. Score 87/87 non-equivalent.
+
+## Stage 8 results
+
+- **T8.2** `check_release_strings.sh`: the dump's texts, `NNH_SAVE_DUMP` and two of the example's member names; checked
+  on `saves.3dsx` and pc-release `saves.exe` (ok) and on pc-debug `saves.exe` (FAIL, the positive control). A 3DS `.elf`
+  keeps DWARF (every struct member's name), so the names are checked on the `.3dsx`.
+- **T8.3** Probes (`build/ref-027/probe_*.cpp`, linked against pc-release `libnnh_core.a` with a map file): a save
+  without enums links no `src/data` object; with an enum field, only `save_enum.o` and `schema_registry.o`. The 3ds-release
+  `saves.elf` has no `data_load`, `data_index`, `index_validate` or `validate_data` symbol. `hello` sizes and `nm` equal
+  T0.1's at every stage. Saves module, 3ds-release objects (text + rodata): validate 4.0 KB, encode 3.5, file 3.4, apply
+  3.2, old fields 3.0, convert 1.8, report 1.5, header 1.2, decode 0.8, the rest < 0.3: ≈ 22.6 KB (the plan estimated
+  7–10 KB for the codec alone; the codec here is ≈ 14.6 KB).
+- **T8.4** Console scripts with `--pc`: actions (`saved 40 bytes sum AAB4AA36`, `PASS 7/7`), animation, camera, data,
+  entities, foundation `assert_crash` PASS; hierarchy, prefabs and saves PASS as ctests (`*_check_script_pc`), the
+  platformer replay ctest passes; the run of the remaining scripts (foundation `cpu_fault`, input, pathfinding,
+  platformer gate/level/zoom_gate, queries, tweens) was cut by the session stop: for the lead's post-merge run. Edit
+  `examples/saves/tiny_game.cpp` → simulator 1.86–1.94 s, `.3dsx` 3.76–3.89 s; edit `progress.hpp` (the declarations'
+  header, 7 sources) → 2.26–2.28 s, 5.38–5.53 s (constitution III: < 2 s / < 5 s for one game `.cpp`; the header edit
+  rebuilds several sources). `.text` of `actions`, `data`, `foundation` unchanged (none links saves).
+- Guards: ctest pc-debug 333/333, pc-release 317/317; `nnh_tests` 2745 (pc-debug), 2698 (pc-release); four presets
+  without a warning; spec 014 untouched; `hello` unchanged.
+
+## Stage 11
+
+Docs: `docs/api/saves.md` (new), `fs.md`, `data.md`, `architecture/security.md`, `decisions.md` (D45/D46
+implemented), `patterns.md`, `REFERENCES.md`, `CLAUDE.md`, `ROADMAP.md`, `specs/README.md`, statuses. Stage 9 (Linux,
+VM 120) and stage 10 (console) are the lead's and the maintainer's; T11.7 (merge) is the lead's.

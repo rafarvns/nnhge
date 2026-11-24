@@ -183,3 +183,22 @@ order; Unity's `Transform`, `SetParent(worldPositionStays)` and `lossyScale`; Be
 propagation; flecs' `ChildOf` and cascading deletes; Michele Caini's "ECS back and forth" part 4 (EnTT hierarchies);
 Bitsquid's transform component; Robert Nystrom, *Game Programming Patterns*, "Dirty Flag" (links in
 [spec 022](../specs/022-scene-tree-and-transforms/spec.md#prior-art)).
+
+## Save data with versions (spec 027)
+
+Written from the published designs, no code copied (links in
+[spec 027](../specs/027-save-versions/spec.md#prior-art)):
+- **Protocol Buffers**: field numbers that never change or get reused (`reserved`), defaults for missing fields,
+  unknown fields skipped by their wire type — https://protobuf.dev/programming-guides/proto3/
+- **FlatBuffers**: explicit field ids and `deprecated` instead of removal — https://flatbuffers.dev/evolution/
+- **Serde** (Rust): `#[serde(default)]` for fields missing from old data, versioned structs converted in a chain —
+  https://serde.rs/field-attrs.html
+- **Godot** `ConfigFile`, `ResourceSaver` and the "Saving games" tutorial —
+  https://docs.godotengine.org/en/stable/tutorials/io/saving_games.html
+- **Unity** `JsonUtility` (missing fields keep their defaults) and `PlayerPrefs` —
+  https://docs.unity3d.com/ScriptReference/JsonUtility.html
+- **Butano** (GBA) `bn::sram`: a struct copied whole, what raw `nnh::save` does —
+  https://gvaliente.github.io/butano/namespacebn_1_1sram.html
+- **Pokémon Generation III** save blocks (alternating, checksummed, the previous one used on failure) —
+  https://bulbapedia.bulbagarden.net/wiki/Save_data_structure_(Generation_III)
+- **GBATEK**, GBA cart backup SRAM/FRAM — https://problemkaputt.de/gbatek-gba-cart-backup-sram-fram.htm

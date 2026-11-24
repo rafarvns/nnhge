@@ -276,8 +276,17 @@ spec; the order below is a proposal.
   struct (rate, life, speed, color over time), pooled, within the draw budget
 - [ ] **Localization** (Godot `tr()`, Unity Localization): text by key per language, registered in code or read
   from a table in the assets, the system language picked by default; the built-in font covers Latin-1
-- [ ] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
-  with a version number and migration from older saves
+- [x] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
+  with a version number and migration from older saves — [spec 027](../specs/027-save-versions/spec.md),
+  **implemented 2026-11-24**, Old 3DS check pending (T10.2): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
+  with `NNH_SAVE_FIELD(member, id)`, retired ids, `NNH_SAVE_VERSION` and compile-time-complete `NNH_SAVE_STEP` chains
+  (D45, D46); a self-describing little-endian format (tagged fields, packed sequences, one template per list of
+  structs: 5 % framing) inside spec 002's `NNHS` container, the same bytes on PC and 3DS (golden v1–v3 files); the
+  whole file validated before the struct changes, exact conversions (added, removed, renamed, widened fields load
+  without code), a report of unknown/dropped/adjusted values, the backup on any damage, power cuts tested after every
+  file operation; `OldFields` for migration steps, summaries for "Load game" screens, a Debug text dump and
+  `NNH_SAVE_DUMP`; no allocation; fuzzed. [saves.md](api/saves.md); `examples/saves` (tiny game, slots, settings,
+  check and bench modes, `tests/check.nnhs`)
 - [x] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
   allocation while searching — [spec 025](../specs/025-grid-pathfinding/spec.md), **implemented 2026-11-24**, Old 3DS
   check pending (T10.2): `<nnh/pathfinding.hpp>` — path maps baked from any `collision::Grid` (blocked cells and weights

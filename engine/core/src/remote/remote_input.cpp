@@ -2,6 +2,7 @@
 
 #include "remote/remote_input.hpp"
 
+#include "input/stick.hpp"
 #include "nnh/input.hpp"
 
 namespace nnh::detail::remote {
@@ -52,6 +53,22 @@ void RemoteInput::merge_into(platform::InputSample& sample) const {
         sample.touch_x = touch_x;
         sample.touch_y = touch_y;
     }
+}
+
+void RemoteInput::replace_into(platform::InputSample& sample) const {
+    sample = platform::InputSample{};
+    merge_into(sample); // over an idle reading the merge is the remote controls themselves
+}
+
+RestReport rest_report(const platform::InputSample& physical) {
+    const Stick circle = shape_stick(physical.circle_x, physical.circle_y);
+    const Stick cstick = shape_stick(physical.cstick_x, physical.cstick_y);
+    RestReport report;
+    report.circle_moved = circle.x != 0.0f || circle.y != 0.0f;
+    report.cstick_moved = cstick.x != 0.0f || cstick.y != 0.0f;
+    report.buttons = physical.buttons;
+    report.touching = physical.touching;
+    return report;
 }
 
 } // namespace nnh::detail::remote

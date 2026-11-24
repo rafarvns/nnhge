@@ -16,7 +16,8 @@ This guide walks through it. The full list of commands and rules is in the
 - For the console: a 3DS with the Homebrew Launcher, on the same local network as the PC (see
   [Getting started](getting-started.md#4-run-on-a-3ds)).
 - Your game needs no change. Remote input reaches it exactly like real input: `nnh::input::pressed()`,
-  `ButtonPressed`, `TouchStarted` and so on, on the frame the script says.
+  `ButtonPressed`, `TouchStarted` and so on, on the frame the script says. During a script it is the *only*
+  input: the console's own controls are ignored ([step 4](#4-run-it-on-the-console)).
 
 ## 1. Make the game say what happened
 
@@ -87,8 +88,20 @@ results are the same as on the console.
    build/pc-debug/tools/nnh/nnh run input --script examples/input/tests/remote.nnhs
    ```
 
-`nnh` builds the `.3dsx` (Development), sends it, waits for the game to connect and runs the script. Don't
-touch the console: real input is merged with the script's. When the script ends (PASS or FAIL), the game
+`nnh` builds the `.3dsx` (Development), sends it, waits for the game to connect and runs the script. While it
+runs, **only the script's input counts**: the console's own buttons, sticks and screen are ignored (in the
+simulator too), so a Circle Pad that doesn't quite centre can't move things. If a control is busy when the script
+attaches (a stick past the dead zone, a button held, the screen touched), the console says so once and `nnh`
+repeats it:
+
+```text
+[f0        0.002s] W remote Circle Pad not at rest (0.064, 0.090): ignored while the script runs
+nnh: the console's own controls are ignored while the script runs: Circle Pad not at rest (0.064, 0.090)
+```
+
+That's a hint, not a failure; but if the same game misbehaves when *you* play it, that pad is the reason (some Old
+3DS pads rest just past the 0.10 dead zone). To leave in the middle, press HOME or stop `nnh` (Ctrl+C): the
+connection closes and the console has its controls back. When the script ends (PASS or FAIL), the game
 closes and the console is back in the Homebrew Launcher, ready for the next run (press **Y** again). Add
 `--keep-open` to leave the game running with its controls given back, e.g. to look at a failure on the screens.
 
@@ -211,7 +224,8 @@ milliseconds.
 
 Without `--script`, type commands in `nnh`'s terminal while the game runs: `tap A`, `touch 160 120`,
 `screenshot here`, `expect "pressed" 30`, `help` for the list, `end` to give the game its controls back.
-Handy for reproducing a bug step by step; for anything you want to repeat, write a script.
+Handy for reproducing a bug step by step; for anything you want to repeat, write a script. Typed commands share the
+controls: what you press on the console still counts, merged with them.
 
 ## For agents and CI
 
@@ -223,7 +237,9 @@ Handy for reproducing a bug step by step; for anything you want to repeat, write
 
 - In the simulator without a display, set `SDL_VIDEO_DRIVER=offscreen`. The ctest `nnh_script_pc_smoke`
   (`tools/nnh/tests/script_pc_smoke.cmake`) runs the input script this way in every Debug/Development PC
-  preset and checks the exit code and the four PNG files.
+  preset and checks the exit code and the four PNG files. `hierarchy_check_script_resting_pad_pc` plays the
+  hierarchy script with `NNH_SIM_INPUT="circle=0.0641025641,0.0897435897"` (an Old 3DS pad resting at (10, 14) of
+  156, past the dead zone): it must still pass, with the "not at rest" note.
 - On the console, an agent runs the same command as a person; the maintainer only opens the Homebrew
   Launcher and presses Y. The log and the screenshots in `build/logs/` are the report.
 

@@ -168,6 +168,102 @@ NNH_TEST(remote_input_ignores_messages_that_are_not_input) {
     CHECK(!r.touching && r.circle_x == 0);
 }
 
+// ---- exclusive mode (spec 013 amendment 2026-11-24: a script owns the controls) ----------------------------
+
+namespace {
+
+/// An Old 3DS whose Circle Pad rests at raw (10, 14) of 156, A held and the screen touched.
+InputSample busy_console() {
+    InputSample real;
+    real.buttons = kA;
+    real.circle_x = 10.0f / 156.0f;
+    real.circle_y = 14.0f / 156.0f;
+    real.cstick_x = -0.5f;
+    real.touching = true;
+    real.touch_x = 300;
+    real.touch_y = 10;
+    return real;
+}
+
+InputSample replaced(const RemoteInput& remote, InputSample real) {
+    remote.replace_into(real);
+    return real;
+}
+
+} // namespace
+
+NNH_TEST(remote_input_exclusive_with_nothing_held_reads_an_idle_console) {
+    const RemoteInput r;
+    const InputSample out = replaced(r, busy_console());
+    CHECK(out.buttons == 0);
+    CHECK(out.circle_x == 0.0f && out.circle_y == 0.0f);
+    CHECK(out.cstick_x == 0.0f && out.cstick_y == 0.0f);
+    CHECK(!out.touching && out.touch_x == 0 && out.touch_y == 0);
+}
+
+NNH_TEST(remote_input_exclusive_reads_only_the_remote_controls) {
+    RemoteInput r;
+    r.apply(buttons(kB, 0));
+    r.apply(stick(0, 0, 50)); // weaker than the real resting pad: still the remote one
+    r.apply(stick(1, 250, 0));
+    r.apply(touch(true, 40, 200));
+    const InputSample out = replaced(r, busy_console());
+    CHECK(out.buttons == kB);
+    CHECK(out.circle_x == 0.0f && out.circle_y == 0.05f);
+    CHECK(out.cstick_x == 0.25f && out.cstick_y == 0.0f);
+    CHECK(out.touching && out.touch_x == 40 && out.touch_y == 200);
+}
+
+NNH_TEST(remote_input_exclusive_after_a_lifted_touch_reads_no_touch) {
+    RemoteInput r;
+    r.apply(touch(true, 40, 200));
+    r.apply(touch(false, 0, 0));
+    CHECK(!replaced(r, busy_console()).touching);
+}
+
+NNH_TEST(remote_input_a_resting_old_3ds_pad_is_not_at_rest) {
+    InputSample real;
+    real.circle_x = 10.0f / 156.0f;
+    real.circle_y = 14.0f / 156.0f;
+    const RestReport report = rest_report(real);
+    CHECK(report.circle_moved && !report.cstick_moved && report.buttons == 0 && !report.touching);
+    CHECK(!report.at_rest());
+}
+
+NNH_TEST(remote_input_sticks_inside_the_dead_zone_are_at_rest) {
+    InputSample real;
+    real.circle_x = 0.06f;
+    real.circle_y = 0.07f; // length 0.092 < 0.10
+    real.cstick_x = -0.09f;
+    const RestReport report = rest_report(real);
+    CHECK(!report.circle_moved && !report.cstick_moved);
+    CHECK(report.at_rest());
+    CHECK(rest_report(InputSample{}).at_rest());
+}
+
+NNH_TEST(remote_input_rest_report_names_every_busy_control) {
+    const RestReport report = rest_report(busy_console());
+    CHECK(report.circle_moved && report.cstick_moved);
+    CHECK(report.buttons == kA);
+    CHECK(report.touching);
+    CHECK(!report.at_rest());
+    InputSample only_circle_y;
+    only_circle_y.circle_y = -0.2f;
+    CHECK(rest_report(only_circle_y).circle_moved);
+    InputSample only_circle_x;
+    only_circle_x.circle_x = 0.2f;
+    CHECK(rest_report(only_circle_x).circle_moved && !rest_report(only_circle_x).cstick_moved);
+    InputSample only_c;
+    only_c.cstick_y = 0.2f;
+    CHECK(rest_report(only_c).cstick_moved && !rest_report(only_c).circle_moved && !rest_report(only_c).at_rest());
+    InputSample only_button;
+    only_button.buttons = kStart;
+    CHECK(rest_report(only_button).buttons == kStart && !rest_report(only_button).at_rest());
+    InputSample only_touch;
+    only_touch.touching = true;
+    CHECK(rest_report(only_touch).touching && !rest_report(only_touch).at_rest());
+}
+
 NNH_TEST(remote_input_release_all_lets_everything_go) {
     RemoteInput r;
     r.apply(buttons(kA | kB, 0));

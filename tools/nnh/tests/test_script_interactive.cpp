@@ -28,6 +28,7 @@ NNH_TEST(typed_mode_sends_nothing_before_the_first_command) {
     r.on_typed("tap A");
     c.run(1);
     CHECK(c.received.size() == 1 && c.received[0].type == wire::MessageType::Hello);
+    CHECK(!c.received.empty() && !c.received[0].exclusive); // a person typing: the console's controls still count
     c.run(20);
     CHECK(c.of_type(wire::MessageType::Buttons).size() == 2);
 }

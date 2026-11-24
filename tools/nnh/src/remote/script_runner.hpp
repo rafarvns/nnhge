@@ -5,17 +5,18 @@
 // time (the wait for the Hello answer) is the session's, which reports it with no_answer().
 // Tested against a fake console in tools/nnh/tests/test_script_runner.cpp and test_script_interactive.cpp.
 //
-// Script mode: Hello first; at the answer, every control the script uses must exist (ZL/ZR, C-Stick); then
-// messages go out in frame order, at most kMaxUnapplied ahead of the console's last tick. An `expect` is a
+// Script mode: Hello first, flagged exclusive (the game then reads only the script's input; the console's warning
+// about its own controls not at rest becomes a note — spec 013 amendment 2026-11-24); at the answer, every
+// control the script uses must exist (ZL/ZR, C-Stick); then messages go out in frame order, at most kMaxUnapplied ahead of the console's last tick. An `expect` is a
 // barrier: nothing after it is sent before a matching line arrives; its window runs from the segment's first
 // frame (frame 1, or the frame after the previous expect's line) to N frames after the clock at the expect,
 // and it times out at the first tick past that window. After a match the clock = the line's frame + 1.
 // `end` passes once a tick has reached the final clock and every screenshot is in. Failures: timeout,
 // `fail-on`, a level-F line, Late/Rejected/Dropped/ScreenFailed, a bad screen, the game closing first.
 //
-// Interactive mode: nothing is sent before the first typed command (then Hello); each line starts at the
-// last frame heard + kTypedDelay (never before what was already sent); `expect` reports and never ends the
-// run; `end` sends Bye and detaches (the next command attaches again); `help` lists the commands.
+// Interactive mode: nothing is sent before the first typed command (then Hello, not exclusive: real and remote
+// input are merged); each line starts at the last frame heard + kTypedDelay (never before what was already
+// sent); `expect` reports and never ends the run; `end` sends Bye and detaches (the next command attaches again); `help` lists the commands.
 
 #include <array>
 #include <cstdint>

@@ -427,3 +427,22 @@ Verifiable: the gate script passes in the simulator; the console result recorded
 
 Verifiable: `ctest --preset pc-debug` 103/103 (after the help change); `nnh run input --pc --script
 examples/input/tests/remote.nnhs` → `nnh: PASS (19 lines, frames 1-111)`, exit 0; release check ok; 0 broken links.
+
+## Amendment 2026-11-24: a script's input is exclusive (maintainer-approved)
+
+Spec FR-1 amendment and plan "Merge in core" amendment. Cause: an Old 3DS Circle Pad resting at raw (10, 14) of 156
+is past the 0.10 dead zone and leaked into `examples/hierarchy` `check.nnhs:49` through the merge.
+
+- [x] **A1** Wire: `Hello` flag bit 0 `kHelloExclusive` (`Message::exclusive`), other flag bits still `Range`;
+  round trip — `test_remote_wire.cpp`
+- [x] **A2** `RemoteInput::replace_into` and `rest_report` (stick past `kStickDeadZone`, buttons, touch) —
+  `test_remote_input.cpp`
+- [x] **A3** Session: exclusive from a flagged `Hello` until `Bye`/disconnect/off/plain `Hello`; one
+  `W remote <control> not at rest (...): ignored while the script runs` per busy control at attach —
+  `test_remote_exclusive.cpp`
+- [x] **A4** `nnh`: scripts send the flag (typed commands don't); the console's warning becomes an `nnh:` note —
+  `test_script_runner.cpp`, `test_script_interactive.cpp`
+- [x] **A5** ctest `hierarchy_check_script_resting_pad_pc` (`NNH_SIM_INPUT` resting pad): FAIL at line 49 without the
+  flag, PASS with it; 19 mutants on the new logic, all killed
+- [x] **A6** Docs: spec, plan, `testing-on-the-console.md`, `nnh-tool.md`, `debugging.md`, ROADMAP
+- [ ] **A7** Console: the hierarchy script on the Old 3DS XL passes with the resting pad, and the warning shows

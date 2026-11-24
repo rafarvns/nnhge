@@ -335,7 +335,8 @@ target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/s
 # so its behaviour tests are left out there (the wire, reader, schedule and merge stay: they are pure).
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     target_sources(nnh_tests PRIVATE remote/test_remote_frames.cpp remote/test_remote_screenshot.cpp
-                                     remote/test_remote_session.cpp actions/test_action_input_paths.cpp)
+                                     remote/test_remote_session.cpp remote/test_remote_exclusive.cpp
+                                     actions/test_action_input_paths.cpp)
     # Shutdown hooks run before the leak report, which Release doesn't have (spec 014 T3.3).
     target_sources(nnh_tests PRIVATE app/test_shutdown_hooks.cpp)
 endif()
@@ -553,6 +554,16 @@ if(TARGET hierarchy AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STRE
     set_tests_properties(hierarchy_check_script_pc PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+    # The same script on a console whose Circle Pad rests past the dead zone (an Old 3DS at raw (10, 14) of 156):
+    # a script owns the controls, so it still passes, and the console warns once (spec 013 amendment 2026-11-24).
+    add_test(NAME hierarchy_check_script_resting_pad_pc
+             COMMAND $<TARGET_FILE:nnh> run hierarchy --pc --no-build --script examples/hierarchy/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(hierarchy_check_script_resting_pad_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset};NNH_SIM_INPUT=circle=0.0641025641,0.0897435897"
+        PASS_REGULAR_EXPRESSION "nnh: the console's own controls are ignored while the script runs: Circle Pad not at rest.*nnh: PASS"
+        FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
 endif()
 # The data example's self-check in the simulator (spec 014 T8.3): the line the console script expects.

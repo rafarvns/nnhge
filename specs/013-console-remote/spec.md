@@ -35,6 +35,17 @@ Launcher → Y) and the PC does the rest. The same scripts run in the simulator,
   screen. Remote input is merged with the console's own input before the frame's input is read, so the game sees it
   exactly like real input (queries and events, spec 003) and needs no change. Inputs apply on a given frame, so a
   script is repeatable.
+  > **Amendment 2026-11-24 (approved by the maintainer).** The merge applies to interactive control only (typed
+  > commands, FR-5). While a **script** runs (`--script`, console or `--pc`) its input is **exclusive**: from the
+  > Hello's answer until the Bye (or the connection ending), the game reads only the script's controls, and the
+  > console's (or simulator's) own buttons, sticks and touch are ignored. Reason: an Old 3DS Circle Pad resting at raw
+  > (10, 14) of 156 is past the 0.10 dead zone and moved things under a script (`examples/hierarchy`
+  > `check.nnhs:49`). When a script attaches, the console logs one warning per control that is not at rest (a stick
+  > past the dead zone, buttons held, the screen touched), e.g. `W remote Circle Pad not at rest (0.064, 0.090):
+  > ignored while the script runs`, and `nnh` repeats it as an `nnh:` note. Engine controls read the same input
+  > (the overlay's SELECT+L doesn't toggle from the console during a script); leaving is still possible: HOME on the
+  > 3DS and closing the simulator's window are handled by the system, and stopping `nnh` (Ctrl+C) closes the
+  > connection, which gives the console its controls back.
 - **FR-2 Screenshots.** The PC can ask for a screenshot; the console sends both screens of the next finished frame
   (top 400×240, bottom 320×240, as the player sees them), saved on the PC as PNG next to the log in `build/logs/`, with
   the frame number in the name. The game keeps running; the frame taking the screenshot may be slower, and that frame
@@ -69,7 +80,10 @@ Launcher → Y) and the PC does the rest. The same scripts run in the simulator,
   screens.
 - **AC-3** Unit tests: the script parser (every command, errors with line numbers), the input merge (remote and real
   input together, hold/tap timing by frame, release on disconnect), the message codec; the console-side reader is a
-  fuzz target, run under ASan/UBSan on Linux.
+  fuzz target, run under ASan/UBSan on Linux. *(Amendment 2026-11-24:)* also exclusive script input (a busy console
+  reads as idle; interactive control still merges; the Bye, a disconnect or the remote going off end it), the
+  not-at-rest warning, the Hello flag, and `hierarchy_check_script_resting_pad_pc` (the hierarchy script with
+  `NNH_SIM_INPUT` resting the Circle Pad at (10, 14)/156 still passes).
 - **AC-4** `scripts/check_release_strings.sh` shows no remote-control code in a Release build.
 - **AC-5** Docs: the script format and commands in the nnh tool guide, a "testing on the console" guide, the
   debugging guide updated, CLAUDE.md commands.

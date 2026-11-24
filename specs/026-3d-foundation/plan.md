@@ -728,3 +728,54 @@ the maintainer's approval beyond the decisions above.
 - Fake pixels: `fake::enable_pixels_3d(true)`, `fake::pixel_3d(x, y)` (the picture of the frame that ended last);
   textures from `texture_create_rgba` copied, "FAKE" images become a gradient. 7 rasteriser tests + 2 end-to-end
   frames through core.
+
+### Stage 6 results and refinements (T6.1–T6.5)
+
+- `video3d_pc.cpp` holds init, meshes and the pass (no separate `pass3d_pc.cpp`/`mesh3d_pc.cpp`: ~150 lines);
+  `texels3d_pc.cpp` reads a texture back once and keeps its pixels as an `SDL_Texture` property with a cleanup
+  callback (freed with the texture, so no stale cache and no change to `texture_pc.cpp`).
+- **Contract addition**: `const char* video3d_self_test()` — the backend's own check, logged by core after the first
+  frame (Development; scripts can only expect lines from frame 1). PC: "3d tilt: PASS (simulator: no rotated screen to
+  match)"; fake: none.
+- T6.4: `scripts/check_png_hash.sh` (windowed default renderer, `NNH_SIM_RENDERER=sdl`, `SDL_VIDEO_DRIVER=offscreen`).
+  The two headless runs give identical PNGs; the windowed GPU-device run differs — but it differs for 2D-only examples
+  too (`examples/text`), so golden hashes are taken headless; the 3D pass itself is the same bytes on every renderer
+  (P15: composed on the CPU).
+- T6.5: the showcase's frames stay at 60 Hz in pc-debug on the maintainer's PC (688 triangles, 7 draws); P15's
+  read-back fallback was not needed. A per-stage timing of the pass alone is not exposed (the profiler has no 3D scope
+  yet: spec 023 adds a gfx submit scope).
+
+### Stage 7 results and refinements (T7.1–T7.6)
+
+- Files: `video3d_3ds.cpp` (target, shader, attribute layouts, meshes), `pass3d_3ds.cpp`, `lights3d_3ds.cpp`,
+  `tilt3d_3ds.cpp`, `shaders/mesh3d.v.pica`; picasso + bin2s through `ctr_add_shader_library` and
+  `dkp_add_embedded_binary_library` (header `nnh_mesh3d_shader_shbin.h`). 3ds-release and 3ds-dev build with no
+  warning; `examples/models` produces a `.3dsx`.
+- **Projection fix-up**: instead of a hand-written tilt/depth matrix, `F = Mtx_PerspTilt(60°, 400/240, 0.1, 100) ×
+  inverse(GL(same))` is taken once from citro3d itself; the Development self-test compares `F × GL(p)` with
+  `Mtx_PerspTilt(45°, …, 0.5, 50)` and `Mtx_OrthoTilt(±5, ±3, 1, 30)` (relative 1e-5) and logs `3d tilt: PASS|FAIL`.
+- **Lighting tables in the PICA200's layouts** (shared file `engine/platforms/shared/raster3d/light_tables.cpp`, used by
+  the simulator too): specular D0 on a signed N·H input, 128 entries over [0, 1) (x = i/128); distance attenuation
+  unsigned, 256 entries (x = i/256), scale 1/range per light; citro3d's `LightLut_FromArray` gets values and
+  differences. Highlights clamped where N·L ≤ 0 on both systems.
+- Shader rule found while building: picasso refuses a uniform as the second source (`mul r, uniform, input` order).
+- A material without vertex colours uses the fixed colour attribute (the loaders stop before the colour; the stride
+  skips it); the colour scale is always base × tint / 255.
+- Probes (T7.5) read back through `platform::remote_capture` after `end_frame` (Development); `test_probe.cpp` on fake.
+- T7.6: `examples/models/tests/smoke.nnhs` (DOWN in the showcase opens the smoke scene: a flat cube, A → lit and
+  textured) passes with `--pc`. Console run prepared for the lead (below, "Console runs").
+- **Open points only the console can settle**: the cull winding after the tilt (`GPU_CULL_BACK_CCW`), the D0 signed
+  layout, the alpha-test reference scale, depth GREATER after the frame-start clear to 0, the probe read-back of the
+  top framebuffer.
+
+### Stage 8 results (T8.1–T8.5)
+
+- `examples/models`: `world.cpp` (two converted models — `ship.gltf` textured hull + red wings, `pylon.gltf` vertex
+  colours — a cube, a sphere, a 12×12 checker floor, a cut-out fence, a blended glass pane), `showcase_scene.cpp` +
+  `showcase_draw.cpp`, `check_scene.cpp` + `probe_scenes.cpp` (six probe scenes: flat, textured, lit, cut-out, blend over
+  depth, 2D around 3D; expected colours worked out by hand from FR-10, no separate `shading_ref`), `bench_scene.cpp`,
+  `smoke_scene.cpp`; art by `art/make_models.py`.
+- PC: `3d: PASS A3BF4EDF`, `3d pixels: PASS` (all 15 probes); `tests/check.nnhs` passes with `--pc` (tag lines
+  `200,88 depth 6.62`, orthographic `200,81 depth 6.62`); ctest runs `models_self_check_pc` and `models_check_script_pc`.
+- The bench logs `rec` (the game's recording time) instead of the CPU time of the whole 3D work: culling, sorting and
+  submission happen inside `nnh::frame()`; frame time avg/worst/missed carry the rest.

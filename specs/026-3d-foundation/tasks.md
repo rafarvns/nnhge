@@ -133,27 +133,27 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 6 — PC backend (026a)
 
-- [ ] **T6.1** Rebase on `main`. `video3d_pc.cpp`, `mesh3d_pc.cpp` — test: conformance `test_video3d.cpp` with the pc
+- [x] **T6.1** Rebase on `main`. `video3d_pc.cpp`, `mesh3d_pc.cpp` — test: conformance `test_video3d.cpp` with the pc
   platform (headless) — covers FR-22
-- [ ] **T6.2** `texels3d_pc.cpp` (read-back cache by slot + generation) — test: conformance (a texture's texels equal
+- [x] **T6.2** `texels3d_pc.cpp` (read-back cache by slot + generation) — test: conformance (a texture's texels equal
   its PNG's) — covers FR-22
-- [ ] **T6.3** `pass3d_pc.cpp` (read-back when `below_2d`, rasterise, opaque upload) — test: a temporary example frame,
+- [x] **T6.3** `pass3d_pc.cpp` (read-back when `below_2d`, rasterise, opaque upload) — test: a temporary example frame,
   screenshot read by hand — covers FR-18, FR-22
-- [ ] **T6.4** Golden PNG hash check script `scripts/check_png_hash.sh`; identical hashes with GPU renderer,
+- [x] **T6.4** Golden PNG hash check script `scripts/check_png_hash.sh`; identical hashes with GPU renderer,
   `NNH_SIM_RENDERER=sdl` and `SDL_VIDEO_DRIVER=offscreen` on Windows — covers FR-23, AC-5
-- [ ] **T6.5** Measure pc-dev pass time (read-back, raster, upload); decide P15's fallback if read-back > 2 ms (note in
+- [x] **T6.5** Measure pc-dev pass time (read-back, raster, upload); decide P15's fallback if read-back > 2 ms (note in
   plan) — covers AC-8 (simulator)
 
 ## Stage 7 — 3DS backend, mono (026a)
 
-- [ ] **T7.1** `shaders/mesh3d.v.pica`; CMake `ctr_add_shader_library` + `dkp_add_embedded_binary_library`; clean 3DS
+- [x] **T7.1** `shaders/mesh3d.v.pica`; CMake `ctr_add_shader_library` + `dkp_add_embedded_binary_library`; clean 3DS
   build time measured — covers FR-31
-- [ ] **T7.2** `video3d_3ds.cpp` (left target D24S8, program, attribute layouts 12/16/20 with fixed attributes,
+- [x] **T7.2** `video3d_3ds.cpp` (left target D24S8, program, attribute layouts 12/16/20 with fixed attributes,
   depth off after `C2D_Prepare`), `app_3ds.cpp` command buffer, `mesh3d_3ds.cpp` — covers FR-26
-- [ ] **T7.3** `lights3d_3ds.cpp` (light env, LUTs from `light_tables.cpp`, distance attenuation) — covers FR-10, FR-11
-- [ ] **T7.4** `pass3d_3ds.cpp`, `tilt3d_3ds.cpp` (core projection × tilt/depth matrix; a Development self-test logs
+- [x] **T7.3** `lights3d_3ds.cpp` (light env, LUTs from `light_tables.cpp`, distance attenuation) — covers FR-10, FR-11
+- [x] **T7.4** `pass3d_3ds.cpp`, `tilt3d_3ds.cpp` (core projection × tilt/depth matrix; a Development self-test logs
   `3d tilt: PASS` when it matches `Mtx_PerspTilt` within 1e-5) — covers FR-10, FR-19, FR-22 (console counterpart)
-- [ ] **T7.5** `probe.cpp` (core, Dev only) + read-back through `remote_capture` — test: `test_probe.cpp` on fake —
+- [x] **T7.5** `probe.cpp` (core, Dev only) + read-back through `remote_capture` — test: `test_probe.cpp` on fake —
   covers FR-24
 - [ ] **T7.6** Console smoke (maintainer presses Y): temporary `MODELS_DEMO=smoke` draws a flat cube, then a lit
   textured one; `nnh run models --script examples/models/tests/smoke.nnhs` expects `3d tilt: PASS` and takes a
@@ -161,16 +161,16 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 8 — example (026a)
 
-- [ ] **T8.1** `examples/models/art/make_models.py` → `assets/models/ship.gltf/.bin`, `ship.png`, `fence.png`,
+- [x] **T8.1** `examples/models/art/make_models.py` → `assets/models/ship.gltf/.bin`, `ship.png`, `fence.png`,
   `checker.png`; `examples/models/CMakeLists.txt` (`ASSETS`, `max_draws_3d = 600`) — covers AC-6
-- [ ] **T8.2** Showcase scene (mono) + HUD + name tag + bottom-screen buttons — screenshots left eye, orthographic,
+- [x] **T8.2** Showcase scene (mono) + HUD + name tag + bottom-screen buttons — screenshots left eye, orthographic,
   debug draw (`NNH_EXIT_AFTER_FRAMES`), read; golden hashes recorded in `examples/models/tests/golden.txt` — covers AC-5,
   AC-6
-- [ ] **T8.3** `self_check.*` (AC-2's script, shared with `tests/models_example/test_self_check.cpp`) + `probe_scenes.*`
+- [x] **T8.3** `self_check.*` (AC-2's script, shared with `tests/models_example/test_self_check.cpp`) + `probe_scenes.*`
   + `shading_ref.*` (flat, textured quad, lit sphere, cut-out, blend over depth, 2D over 3D and behind) → `3d: PASS`,
   `3d pixels: PASS` on PC — covers AC-2, AC-7
-- [ ] **T8.4** Bench scene (mono cases of AC-8) → `3d bench: PASS <numbers>` lines — covers AC-8
-- [ ] **T8.5** `tests/check.nnhs` and `tests/bench.nnhs` (below), passing with `--pc` — covers AC-7
+- [x] **T8.4** Bench scene (mono cases of AC-8) → `3d bench: PASS <numbers>` lines — covers AC-8
+- [x] **T8.5** `tests/check.nnhs` and `tests/bench.nnhs` (below), passing with `--pc` — covers AC-7
 
 ## Stage 9 — mutation, Linux VM, opt-in (026a)
 

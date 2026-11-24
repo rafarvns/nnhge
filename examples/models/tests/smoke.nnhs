@@ -1,0 +1,19 @@
+# Spec 026 T7.6, the console smoke test of the 3D backend (spec 013 script). The backend's own check of its fixed
+# projection fix-up is logged at init ("3d tilt: PASS"); DOWN opens the smoke scene: a flat (unlit) cube, then (A) a
+# lit, textured one. Read both screenshots beside the PC's (same geometry; colours close).
+# PC:      nnh run models --pc --script examples/models/tests/smoke.nnhs
+# Console: nnh run models --script examples/models/tests/smoke.nnhs   (Homebrew Launcher open, press Y)
+fail-on "] E "
+fail-on "3d tilt: FAIL"
+expect "3d tilt: PASS" 120
+# (the showcase starts at frame 0, before the script can see its lines)
+wait 30
+tap DOWN
+expect "smoke: flat" 20
+wait 10
+screenshot flat
+tap A
+expect "smoke: lit" 30
+wait 10
+screenshot lit
+end

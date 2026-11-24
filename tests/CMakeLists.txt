@@ -1028,6 +1028,7 @@ target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
 # 3D foundation (spec 026): math, meshes, the 3D pass, the CPU rasteriser, the example's self-check.
 target_sources(nnh_tests PRIVATE
     gfx3d/test_pixels_fake.cpp
+    gfx3d/test_probe.cpp
     gfx3d/test_record.cpp
     gfx3d/test_screen_pass.cpp
     gfx3d/test_screen_project.cpp
@@ -1079,5 +1080,22 @@ if(NNH_BUILD_FUZZERS)
     target_compile_options(fuzz_mesh_reader PRIVATE -fsanitize=fuzzer,address)
     target_link_options(fuzz_mesh_reader PRIVATE -fsanitize=fuzzer,address)
 endif()
-# The 3D contract's conformance (spec 026): the fake platform now, the PC once its rasteriser lands (stage 6).
+# The 3D contract's conformance (spec 026): the fake platform and the PC simulator (headless).
 target_sources(nnh_conformance_fake PRIVATE platform_conformance/test_video3d.cpp)
+target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_video3d.cpp)
+# The models example (spec 026 AC-7): its check mode in the simulator (math golden, probe pixels) and its console script
+# played with --pc.
+if(TARGET models AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME models_self_check_pc COMMAND models)
+    set_tests_properties(models_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;MODELS_DEMO=check;NNH_EXIT_AFTER_FRAMES=80"
+        PASS_REGULAR_EXPRESSION "3d pixels: PASS" FAIL_REGULAR_EXPRESSION "3d: FAIL|3d pixels: FAIL|\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME models_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run models --pc --no-build --script examples/models/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(models_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+endif()

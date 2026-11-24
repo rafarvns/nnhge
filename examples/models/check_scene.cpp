@@ -54,18 +54,24 @@ void CheckScene::update() {
         return;
     }
     if (pixels_done_) return;
-    if (phase_ == 1) { // the request of the previous frame has its answer now
+    if (phase_ == 1) { // asked when phase 1 began; the answer comes a few frames later (gfx3d.hpp request_probes)
         ProbeExpect e[ProbeScenes::kMaxProbes];
-        nnh::Color got[ProbeScenes::kMaxProbes];
+        nnh::Color got[ProbeScenes::kMaxProbes] = {};
         const int n = probes_.expect(scene_, e);
         const int answered = nnh::gfx3d::probe_results(got, n);
+        if (answered < n && ++waited_ < kMaxProbeWait) return; // the same scene is drawn meanwhile
         for (int i = 0; i < n && !pixels_failed_; ++i) {
             if (answered == n && close(got[i], e[i].want, e[i].tolerance)) continue;
             pixels_failed_ = true;
+            if (answered < n) {
+                NNH_LOG_INFO(example, "3d pixels: FAIL %s: no answer after %d frames", ProbeScenes::name(scene_), waited_);
+                break;
+            }
             NNH_LOG_INFO(example, "3d pixels: FAIL %s %d,%d got %d,%d,%d want %d,%d,%d", ProbeScenes::name(scene_),
                          e[i].at.x, e[i].at.y, got[i].r, got[i].g, got[i].b, e[i].want.r, e[i].want.g, e[i].want.b);
         }
         phase_ = 0;
+        waited_ = 0;
         if (pixels_failed_ || ++scene_ == ProbeScenes::kScenes) {
             pixels_done_ = true;
             if (!pixels_failed_) NNH_LOG_INFO(example, "3d pixels: PASS");
@@ -77,9 +83,9 @@ void CheckScene::update() {
 }
 
 void CheckScene::draw() {
-    if (math_done_ && !pixels_done_) {
+    if (math_done_ && (!pixels_done_ || pixels_failed_)) { // a failed scene stays on screen, for its screenshot
         probes_.draw(scene_);
-        if (phase_ == 1) { // this frame is the one the request reads
+        if (phase_ == 1 && waited_ == 0) { // the frame phase 1 began: ask once
             ProbeExpect e[ProbeScenes::kMaxProbes];
             nnh::Probe at[ProbeScenes::kMaxProbes];
             const int n = probes_.expect(scene_, e);

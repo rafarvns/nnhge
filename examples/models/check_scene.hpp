@@ -26,7 +26,9 @@ private:
     bool math_done_ = false;
     bool verdict_logged_ = false;
     int scene_ = 0;  ///< probe scene being shown
-    int phase_ = 0;  ///< 0: drawing + request, 1: answer read
+    int phase_ = 0;  ///< 0: drawing, 1: asked, waiting for the answer
+    int waited_ = 0; ///< frames phase 1 has waited
+    static constexpr int kMaxProbeWait = 10;
     bool pixels_done_ = false;
     bool pixels_failed_ = false;
     char status_[96] = {};

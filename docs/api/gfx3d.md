@@ -92,7 +92,9 @@ are culled per material; triangles crossing the near plane are clipped.
 `stats()`: draws, culled, dropped, peak, triangles per eye, eyes, meshes and their bytes; the debug overlay shows a 3D
 line. `set_debug_draw(true)` (Debug/Development) draws each draw's box and the world axes as 2D lines on layer 15.
 `request_probes(screen, eye, points, n)` / `probe_results(out, n)` (Debug/Development): read back up to 32 pixels of the
-frame being drawn, answered the next frame — the example's check compares them with the formula.
+screen, read three frame ends after the request, so keep drawing the same picture until `probe_results` answers — the
+example's check compares them with the formula. On the Old 3DS the read-back still returns stale pixels (plan 026,
+"Console run 1 (026a)"): the console's pixel check is pending that fix; its screenshots are right.
 
 ## Determinism and tolerance
 

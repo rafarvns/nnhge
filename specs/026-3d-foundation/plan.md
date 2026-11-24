@@ -1,6 +1,6 @@
 # Plan 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run T10.1/T10.2 and Linux VM T9.3 pending)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run 1: smoke and math PASS, pixel check blocked by a 3DS read-back bug, bench over target; Linux VM T9.3 pending)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md)
 Decisions: [D41, D42, D43, D44](../../docs/architecture/decisions.md) (written with this plan; design until implemented)
 
@@ -812,3 +812,25 @@ the maintainer's approval beyond the decisions above.
   the console): throughput 12 032 triangles avg 16.67 ms worst 17.03, 0 missed; draws 256 worst 20.98, 7 missed,
   recording 0.22 ms; cpu 512 recording 0.43 ms; fill (3 full-screen blended planes) avg 18.6 ms, 118 missed — the CPU
   rasteriser is fill-bound there (~290 000 blended pixels a frame).
+
+## Console run 1 (026a, Old 3DS, 2026-11-24)
+
+- **Smoke** (`smoke.nnhs`): PASS. `3d tilt: PASS (perspective 2.5e-07, orthographic 4.5e-08)`; the `flat` (orange cube)
+  and `lit` (lit, textured checker cube) screenshots are right.
+- **Check** (`check.nnhs`): the math script matches the PC bit for bit (`95C33EC5 19D9D5B0 B657BA1D C074FBC1`,
+  `3d: PASS A3BF4EDF`); the showcase screenshot is right (sky, floor, sphere, ship, cube, blended plane, HUD, name
+  tag). **The pixel check fails**: the first probe (`flat` 200,120) reads 70,70,90 while the probe scene's own
+  screenshot (kept on screen after a failure, frame 98) shows the orange quad there. The read-back returns without an
+  error, so `remote_capture` hands back the shared buffer's older content (70,70,90 is the showcase's bottom-screen
+  button colour, the last screenshot copied into it): the display transfer it waits on has not landed when the bytes
+  are read. Screenshots, taken by the same call right after `end_frame()`, are right. Tried without success: reading
+  three frame ends after the request (kept: harmless). Kept for diagnosis: a warning when the read-back fails, a
+  "no answer" line instead of uninitialised colours, the failed probe scene left on screen. **Open**: the 3DS read-back
+  for probes (citro3d's `C3D_SyncDisplayTransfer` vs the frame's own queued transfers and PPF events) — for the
+  3DS specialist; until then the console's pixel check (AC-7's probe part) is pending.
+- **Bench** (`bench.nnhs`): `throughput 12000` 16.71 ms avg, 0/600 missed; `fill` 16.71 ms, 0 missed — the GPU side
+  holds 60 Hz. `draws 256` 29.21 ms avg (recording 2.757 ms), 598/600 missed; `cpu 512` 33.14 ms (recording 5.547 ms),
+  598/600 missed — about 100 µs per draw on the frame, mostly per-draw state submission: many small draws don't fit a
+  60 Hz frame on the Old 3DS. An optimisation round (fewer state changes and uniform uploads per draw, batching by
+  material) is queued before budgets are set.
+

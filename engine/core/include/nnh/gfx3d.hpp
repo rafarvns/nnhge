@@ -136,10 +136,10 @@ Ray3 screen_ray(const Camera3D& camera, Vec2 pixel);
 Stats3D stats();
 /// Debug/Development: draws each draw's bounds and the world axes as 2D lines on layer 15. Release: nothing.
 void set_debug_draw(bool on);
-/// Debug/Development: asks for up to 32 pixels of `eye` after this frame is drawn; read them with probe_results() from
-/// the next frame. @return false (nothing asked) in Release or when the request is invalid.
+/// Debug/Development: asks for up to 32 pixels of `eye`; they are read three frame ends after the request, so keep
+/// drawing the same picture until probe_results() answers. A new request discards the previous answer. @return false (nothing asked) in Release or when invalid.
 bool request_probes(Screen screen, Eye eye, const Probe* points, int count);
-/// The colours of the last answered request; @return how many (0 before an answer).
+/// The colours of the last answered request; @return how many (0 until it is answered).
 int probe_results(Color* out, int capacity);
 
 } // namespace gfx3d

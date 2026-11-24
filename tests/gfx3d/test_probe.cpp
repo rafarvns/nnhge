@@ -16,6 +16,9 @@ NNH_TEST(gfx3d_probes_are_read_back_after_the_frame) {
     nnh::Color got[2];
     CHECK(nnh::gfx3d::probe_results(got, 2) == 0); // not before the frame ends
     next_frame();
+    next_frame();
+    CHECK(nnh::gfx3d::probe_results(got, 2) == 0); // read three frame ends after the request
+    next_frame();
     if (nnh::build::kDevToolsEnabled) {
         CHECK(nnh::gfx3d::probe_results(got, 2) == 2);
         std::uint8_t want[4];

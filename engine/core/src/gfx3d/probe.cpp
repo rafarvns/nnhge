@@ -5,6 +5,8 @@
 
 #include "gfx3d/gfx3d_state.hpp"
 #include "nnh/build.hpp"
+#include "log/engine_channels.hpp"
+#include "nnh/platform/app.hpp"
 #include "nnh/platform/remote.hpp"
 
 namespace nnh {
@@ -12,10 +14,15 @@ namespace detail {
 namespace {
 
 constexpr int kMaxProbes = 32;
+/// Frame ends to wait before reading, so the picture has settled (the game keeps drawing the same scene until
+/// probe_results() answers). On the Old 3DS the read still returned stale pixels in spec 026's console run (the
+/// screenshots of the same frames are right): under investigation, see plan 026 "Console run 1 (026a)".
+constexpr int kCaptureAfterFrames = 3;
 
 struct Probes {
     Probe points[kMaxProbes];
-    int requested = 0; ///< pending for the frame being drawn
+    int requested = 0; ///< pending
+    int wait = 0;      ///< frame ends left before the read
     Color results[kMaxProbes];
     int answered = 0;
 };
@@ -35,11 +42,14 @@ Color read(const platform::ScreenPixels& s, int x, int y) {
 
 void gfx3d_probes_after_frame() {
     if constexpr (build::kDevToolsEnabled) {
-        if (g_probes.requested == 0) return;
+        if (g_probes.requested == 0 || --g_probes.wait > 0) return;
         platform::ScreenPixels px;
         const int n = g_probes.requested;
         g_probes.requested = 0;
-        if (!platform::remote_capture(Screen::Top, px)) return;
+        if (!platform::remote_capture(Screen::Top, px)) {
+            NNH_LOG_WARN(gfx, "3d probes: the screen read-back failed: %s", platform::last_error());
+            return;
+        }
         for (int i = 0; i < n; ++i) g_probes.results[i] = read(px, g_probes.points[i].x, g_probes.points[i].y);
         g_probes.answered = n;
     }
@@ -56,6 +66,8 @@ bool gfx3d::request_probes(Screen screen, Eye eye, const Probe* points, int coun
             return false;
         for (int i = 0; i < count; ++i) detail::g_probes.points[i] = points[i];
         detail::g_probes.requested = count;
+        detail::g_probes.wait = detail::kCaptureAfterFrames;
+        detail::g_probes.answered = 0;
         return true;
     }
 }

@@ -1,6 +1,6 @@
 # Tasks 024: Particles
 
-Status: implemented 2026-11-24 through stage 8 and the stage 11 docs (T9.1, T10.x and the merge T11.7 for the lead);
+Status: implemented 2026-11-24 through stage 8 and the stage 11 docs and stage 9 (T9.1 passed 2026-11-24; T10.x and the merge T11.7 for the lead);
 approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
@@ -274,7 +274,16 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-2's golden
+- [x] **T9.1** (done 2026-11-24, plan "Stage 9 results"). Four findings, each fixed with a regression test:
+  - the fuzz overflow: `t` past 2 for a birth pre-aged beyond a sub-frame lifetime; `t` is now clamped to 1 and the
+    golden is unchanged;
+  - GCC 14 refused braced descriptions: the `= {}` arrays;
+  - a GCC 13 crash: `Texture` was incomplete in `<nnh/particles.hpp>`;
+  - a test-only leak.
+
+  Then GCC 13 and 14 and ASan ctest 271/271 each, `nnh_tests` 2870 with leaks on clean, goldens identical, and
+  `fuzz_particle_ops` 600 s clean. The doors script under ASan fails only on the wall-clock 60 Hz verdict.
+  Original task: On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-2's golden
   and checkpoints, the expansion-equals-`build` tests, the preset tests, the D29 fixtures, `0xD5BD3020`, `5201E6CF`, the
   replay ctest with the tree's lines identical on all three; ASan/UBSan clean over compaction, the scratch chunks,
   forgotten batches, moved and destroyed emitters, scene binding and the misuse Release paths; libFuzzer

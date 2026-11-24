@@ -108,6 +108,44 @@ NNH_TEST(size_curve_exact_at_keys_and_within_bound_between) {
     CHECK(size_at(none, 0.7f, 3) == 3);
 }
 
+// Regression (stage 9, fuzz_particle_ops heap-buffer-overflow): a rate birth pre-aged by more than a lifetime under a
+// frame lives until the next update with age ≥ lifetime (FR-10; the largest-rate test relies on it), so t = age /
+// lifetime reached 2 and beyond and the segment walk ran past the curve's sentinel. t is now at most 1.
+NNH_TEST(life_fraction_is_at_most_one_past_the_lifetime) {
+    ParticleHot h;
+    ParticleCold c;
+    h.life = 1000;
+    c.inv_life = 1.0f / 1000.0f;
+    h.age = 999;
+    CHECK(life_fraction(h, c) < 1.0f);
+    h.age = 1000;
+    CHECK(life_fraction(h, c) == 1.0f);
+    h.age = 3686;
+    CHECK(life_fraction(h, c) == 1.0f);
+    h.life = 1;
+    c.inv_life = 1.0f;
+    h.age = 4095;
+    CHECK(life_fraction(h, c) == 1.0f);
+}
+
+NNH_TEST(particle_pre_aged_past_its_lifetime_looks_like_its_last_moment) {
+    nnh::ParticleDesc d;
+    d.rate = 600; // ten a frame, pre-aged round((9 − j) × 409.6) ticks
+    d.lifetime = {nnh::FrameTime::from_ticks(1000), nnh::FrameTime::from_ticks(1000)};
+    d.color_keys[0] = {0, nnh::rgba(255, 0, 0, 255)};
+    d.color_keys[1] = {1, nnh::rgba(0, 0, 255, 255)};
+    d.size = {4, 4};
+    d.size_keys[0] = {0, 1};
+    d.size_keys[1] = {1, 3};
+    nnh::ParticleEmitter e = particles_test::make(d, 16);
+    e.update();
+    CHECK(e.alive() == 10);
+    const nnh::ParticleView old = e.particle(0); // age 3686 of 1000
+    CHECK(old.color.r == 0 && old.color.b == 255 && old.size == 12);
+    const nnh::ParticleView young = e.particle(9); // age 0
+    CHECK(young.color.r == 255 && young.color.b == 0 && young.size == 4);
+}
+
 NNH_TEST(particle_view_colour_and_size_change_over_life) {
     nnh::ParticleDesc d;
     d.lifetime = {nnh::Frames{100}, nnh::Frames{100}};

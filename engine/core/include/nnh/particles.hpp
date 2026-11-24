@@ -24,6 +24,7 @@
 #include "nnh/gfx.hpp"
 #include "nnh/math.hpp"
 #include "nnh/result.hpp"
+#include "nnh/texture.hpp" // complete, not declared: GCC 13 crashes on draw(s, {.layer = n}) against an incomplete one
 #include "nnh/time.hpp"
 #include "nnh/transform.hpp"
 
@@ -31,7 +32,6 @@ namespace nnh {
 
 struct MemTag; // <nnh/memory.hpp>
 class Scene;   // <nnh/scene.hpp>
-class Texture; // <nnh/texture.hpp>
 
 namespace detail {
 struct ParticleBlock;
@@ -105,7 +105,9 @@ struct ParticleDesc {
     FrameTime delay{};    ///< before the first emission (once per start)
     FrameTime duration{}; ///< of the emission; 0: no end
     bool looping = false; ///< at the end of `duration`, start again (bursts re-armed)
-    ParticleBurst bursts[kMaxParticleBursts] = {};
+    // The arrays have no `= {}`: their elements' own member defaults apply either way, and with one GCC 13 and 14
+    // refuse a braced `{}` / `{.rate = ...}` ParticleDesc argument (as PrefabOptions::children, spec 022 stage 9).
+    ParticleBurst bursts[kMaxParticleBursts];
     // Shape, in local space (FR-8)
     ParticleShape shape = ParticleShape::Point;
     Vec2 box{};              ///< Box: size, centred on the origin
@@ -132,9 +134,9 @@ struct ParticleDesc {
     Color color_min = colors::white; ///< start colour: one random point between the two (every channel)
     Color color_max = colors::white;
     ParticleRange size{1, 1}; ///< start size ≥ 0: a scale of the frame, or the side in pixels without a texture
-    ParticleColorKey color_keys[kMaxParticleKeys] = {};
-    ParticleSizeKey size_keys[kMaxParticleKeys] = {};
-    ParticleFrame frames[kMaxParticleFrames] = {};
+    ParticleColorKey color_keys[kMaxParticleKeys];
+    ParticleSizeKey size_keys[kMaxParticleKeys];
+    ParticleFrame frames[kMaxParticleFrames];
     ParticleFrameMode frame_mode = ParticleFrameMode::First;
     std::uint8_t frame_repeats = 1; ///< OverLife: times through the frames, 1..255
     float frame_rate = 0;           ///< Rate: frames per second, 0..600

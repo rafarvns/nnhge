@@ -632,6 +632,7 @@ target_sources(nnh_tests PRIVATE
     particles/test_particle_budget.cpp
     particles/test_particle_cost.cpp
     particles/test_particle_misuse.cpp
+    particles/test_header_alone.cpp
     particles/test_prewarm.cpp
     particles/test_queries.cpp
     particles/test_random.cpp

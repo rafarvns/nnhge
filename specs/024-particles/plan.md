@@ -1,6 +1,6 @@
 # Plan 024: Particles
 
-Status: implemented 2026-11-24 (console T10.2 and Linux T9.1 pending); approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (Linux T9.1 passed 2026-11-24; console T10.2 pending); approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D39 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 022 (`Transform2D`, `WorldTransform2D`, `to_world`, `transform_point`, `transform_direction`, `inverse`,
 `bounds`, `is_finite`, the inline `sin_cos_inline`/`is_finite_bits` of `src/transform/sin_cos.hpp`, the mirror rule of
@@ -1016,3 +1016,61 @@ Miss model and expected console numbers (upper × 1.3 in brackets):
   (3ds-release): sprites 206 180 (+200), data 283 708 (+144), camera 222 308 (+144), platformer 377 852 (+32 040: the
   particles module and three emitters), particles 272 188. Build times and the data-only rebuild of a preset were not
   re-measured (the lead stopped parallel work to save quota): left for T11.4.
+
+### Stage 9 results
+
+On `nnhge-build` (VM 120), 2026-11-24, branch `fix-024`. Four findings, all fixed test-first:
+
+- **libFuzzer `fuzz_particle_ops`: heap-buffer-overflow in `color_at`** (`particle_appearance.hpp`, reached through
+  `particle()`; the draw expansion shares the code). Root cause: a world-space rate birth is pre-aged by `1 − f` of a
+  frame (up to 4095 ticks), and the lifetime may be as short as 1 tick. So a live particle can have age ≥ lifetime
+  until the next `update()` kills it, which the largest-rate test relies on: 8192 particles of 1 tick, all alive after
+  one update. `t = age / lifetime` then reached 2 and beyond (4095 for 1 tick), and the segment walk `while (t ≥
+  start[s+1]) ++s` passed the sentinel `start[count] = 2` and read past the curve. **Valid inputs were affected**
+  (any lifetime under a frame in world space with a rate).
+  - Fix: `life_fraction()` clamps `t` to 1 with an integer select on the bits (no `vmrs`). Nothing visible changes
+    for `t < 2`: past the last key both curves are a constant segment and OverLife frames already clamp to the last
+    one. So the golden `C5EF1A84`, the checkpoints and every other golden are unchanged.
+  - Regressions: `life_fraction_is_at_most_one_past_the_lifetime`,
+    `particle_pre_aged_past_its_lifetime_looks_like_its_last_moment`, and the crash bytes as
+    `particle_ops_target_survives_pre_age_past_lifetime_crash`. The project keeps no corpus, so that test is the
+    mini-fuzz home of the crash.
+  - The first attempt killed such births at once ("born dead"). It was rejected because it broke
+    `the_largest_rate_makes_8192_particles_a_frame`, which specifies the current behaviour.
+- **GCC 14: "cannot convert '<brace-enclosed initializer list>' to 'const ParticleDesc&'"** (`test_create.cpp`).
+  Same bug as spec 022's `PrefabOptions::children`: `bursts`, `color_keys`, `size_keys` and `frames` had `= {}`,
+  and their element types have member defaults. The `= {}` is dropped, with the same values and layout.
+  - Regressions: the `CreatesFromBracedDesc` `static_assert` and
+    `braced_desc_leaves_unnamed_array_elements_at_their_defaults`.
+- **GCC 13 internal compiler error** at `examples/particles/check_scene.cpp:61` (then `platformer/level_effects.cpp:135`).
+  Reduced on the VM: any `e.draw(screen, {.layer = n})` crashed GCC 13 while `Texture` was only forward-declared.
+  Overload resolution tries the designated list against the incomplete `const Texture&` of the textured `draw()`.
+  GCC 14 is fine, and so is GCC 13 once `<nnh/texture.hpp>` is included.
+  - Fix: `<nnh/particles.hpp>` includes `<nnh/texture.hpp>` (only `<cstdint>` and `result.hpp`, both already
+    there) instead of declaring `Texture`. Call sites are unchanged.
+  - Regression: `tests/particles/test_header_alone.cpp`, which includes the header first, with a `sizeof(Texture)`
+    and a `DrawsWithBracedOptions` `static_assert`. Rule added to [cpp.md](../../docs/tech/cpp.md#headers).
+- **LeakSanitizer**: one test-only leak. `emit_moved_from` in `test_particle_misuse.cpp` made an emitter inside the
+  asserting call, and the crash longjmp skipped its destructor. The emitter is now made by the test, as in 499f433.
+  No engine leak.
+- **ctest `platformer_doors_script_pc` under ASan**: an environment issue, not a 60 Hz verdict. The `_script_pc`
+  tests run `nnh run --no-build` on the build folder named after `NNH_PRESET`. The VM's folders (`asan`, `g13`) are
+  not preset names. `nnh` accepts only an `NNH_PRESET` starting with `pc-`, so it fell back to `pc-dev`, which is
+  configured but not built. Re-run with `build/pc-asan` linked to the ASan build: see the results below. The doors script also waits 10 frames instead of 3 after its last
+  `expect`, which silences `nnh`'s "input will probably reach the console late" lint.
+
+Results after the fixes (VM; Windows pc-debug ctest 278/278 and `nnh_tests` 2870, pc-release 259/259, 3ds-release,
+all without a warning):
+
+- GCC 13 and GCC 14: 0 warnings, ctest 271/271 each (`-E "nnh_script_pc_smoke|_script_pc"`).
+- clang 18 ASan/UBSan:
+  - ctest 271/271 (leaks off, as before: the simulator's processes report a Mesa EGL allocation from
+    `SDL_EGL_InitializeOffscreen`, third-party code).
+  - `nnh_tests` 2870 and `nnh_assetc_tests` 265 with leaks on: clean.
+- Goldens on all three: the 12 self-check and replay ctests pass, including particles `C5EF1A84`, transitions
+  `BFE1D810`, hierarchy `23DB5C36`, prefabs `7BB7901E` and pathfinding `1C0B5992`, plus the platformer replay.
+- Doors script under ASan (`NNH_PRESET=pc-asan`): all ten doors at the PC's frames (43, 132, … 89 apart), then
+  `60 Hz FAIL` (average 36.1 ms, worst 76.2 ms per frame with ASan and the software renderer). That is the wall-clock
+  verdict under the sanitiser, an environment limit, not a failure of the run.
+- libFuzzer `fuzz_particle_ops`: 600 s, 741 348 runs, cov 894, no finding. The crash input runs clean.
+- The data fuzz targets were not re-run in this round: no data code changed since stage 5.

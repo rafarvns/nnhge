@@ -20,7 +20,7 @@ expect "doors: 8 bonus -> level1 frame" 300
 expect "doors: 9 level1 -> bonus frame" 300
 expect "doors: 10 bonus -> level1 frame" 300
 expect "doors: done 10 irises" 300
-wait 3
+wait 10
 
 # The player stands left of level 1's door: walk in and catch the iris closing on it (both screens).
 press RIGHT

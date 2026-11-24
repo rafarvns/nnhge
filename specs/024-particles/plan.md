@@ -802,3 +802,31 @@ points); D29 is amended (two opt-in field rules, an engine-shipped opt-in schema
 (emitters are one more attachment user; particles zoom through the sprite placement); D37 is used as is. The patterns
 page gains a "Batch draw command" row. Flagged for the maintainer: AC-8's `hello` budget (decision 30), `emit512`
 (risk 1), the D29 amendment (decision 15).
+
+## Stage results and refinements
+
+### Stage 0 results
+
+Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-24, worktree `spec-024` at `18297dc` (spec 022
+complete and spec 025 merged). Scripts in `build/ref-024/` (not committed; adapted from `build/ref-022/`). Other
+worktrees (specs 023, 026, 027) were building on the same PC at the same time: every time below is noisy.
+
+- **`hello` sizes (bytes)**: pc-release `hello.exe` 278 856 (`text` 130 668, `data` 22 020, `bss` 211 696); pc-debug
+  1 297 082 (`text` 198 688); 3ds-release `hello.elf` 2 488 800 (`text` 201 124, `data` 28 352, `bss` 106 680),
+  `.3dsx` 246 512; 3ds-dev `hello.elf` 2 748 028 (`text` 217 896), `.3dsx` 268 012. `nm -C` lists saved
+  (`hello.pc.ref.nm`, `hello.3ds.ref.nm`).
+- **`.text` (3ds-release)**: sprites 205 980, platformer 345 812, data 283 564, camera 222 164.
+- **Build times** (3 runs, centiseconds): edit `examples/prefabs/room.cpp` → pc-debug `prefabs` 224 / 230 / 244,
+  3ds-release `prefabs_3dsx` 527 / 532 / 555; a data-only rebuild of `examples/data` (`goblin.enemy` touched) 91 / 85
+  / 116, no C++ compiled.
+- **Header cost**: a one-line TU including `<nnh/gfx.hpp>`, `<nnh/transform.hpp>`, `<nnh/time.hpp>`,
+  `<nnh/result.hpp>`: 8 037 preprocessed lines, `-fsyntax-only` 0.46–0.57 s (5 runs).
+- **3ds-dev disassembly** (`dis0/`): `draw_list.o`, `gfx_frame.o`, `draw2d.o`, `tile_batches.o`, `overlay.o`,
+  `camera_shake.o`, `draw2d_3ds.o`.
+- **Goldens** (their ctests): replay `platformer_replay_matches_script` with the tree's lines (spec 022's `E445E8B2`
+  set), `camera: PASS 5201E6CF`, `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7BB7901E`,
+  `hierarchy: PASS 23DB5C36`, `tweens: PASS B44CA3F6`, `pathfinding: PASS 1C0B5992`, `data check: PASS checksum
+  0xD5BD3020`. ctest pc-debug 273/273, pc-release 259/259; `nnh_tests` 2569 (pc-release 2529), `kMaxTests` 4096: 1527
+  left, no raise needed.
+- **Reference screenshots** (`ref/`, taken twice: identical): hello, sprites, sprites bench, scenes, camera zoom1,
+  queries all, entities, prefabs, hierarchy, pathfinding, platformer bench (top), level 1 at 90, replay at 64 and 312.

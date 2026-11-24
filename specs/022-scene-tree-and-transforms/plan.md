@@ -1,6 +1,6 @@
 # Plan 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, Linux T9.1 passed, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, Linux T9.1 passed, console T10.2 run 1 done (logic PASS; pass_move and spawn over target), T10.3 optimisation on the PC, console rerun pending (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D37 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds and remove hooks, handles, the destroy queue, quarantine, iteration guards, scene binding;
 D35), spec 021 (prefab libraries, the all-or-nothing reservation, placement, hooks, map objects; D36), spec 015 (the
@@ -1084,3 +1084,96 @@ Windows toolchain (WinLibs GCC) hid; each was fixed with a test first, then ever
   3ds-release without a warning; goldens `C8FB9A41`, `7BB7901E`, `23DB5C36` and the replay's `E445E8B2: 60 Hz PASS`
   unchanged; `prefab_spawn.o`, `library_add.o` and `prefab_flatten.o` (3ds-dev) byte-identical to stage 7's
   disassembly.
+
+### Console run 1 (T10.2 run 1, 2026-11-24, Old 3DS XL, Development build)
+
+`nnh run hierarchy --script examples/hierarchy/tests/check.nnhs` (log `build/logs/hierarchy-20261124-075952.txt` in the
+maintainer's checkout): every logic line equal to the PC's — the five checkpoints and **`hierarchy: PASS 23DB5C36`**,
+the yard's showcase lines as on the PC. The script ends `nnh: FAIL` only on the bench verdict:
+
+| Workload | Stage 7 estimate | Measured avg (worst) | Target | Verdict |
+|----------|------------------|----------------------|--------|---------|
+| pass_turn | 0.9–1.2 ms | 1.401 ms (1.553) | < 1.5 ms | PASS |
+| pass_move | 0.8–1.05 ms | **1.054 ms** (1.156) | < 1.0 ms | **FAIL** |
+| world_now | 1.0–1.3 ms | 1.187 ms (1.446) | < 1.5 ms | PASS |
+| spawn | 1.7–2.2 ms, ratio 0.6–1.3 | **3.162 ms** (3.596), hand 2.539, ratio 1.25 | < 2.2 ms, ≤ 1.3× | **FAIL** (ratio OK) |
+| reparent | 1.0–1.4 ms | 0.910 ms (1.349) | < 1.0 ms | PASS |
+
+Spec 021's prefabs bench in the same session (`prefabs-20261124-080651.txt`): `prefabs bench: PASS`, spawn 1.804 ms
+(hand 1.580, ratio 1.14), overrides 2.010, map 3.756, find 0.499 — within its budgets, but slower than spec 021's
+console run (spawn 1.626, hand 1.498, overrides 1.811, map 3.562).
+
+### Optimisation round (T10.3, on the PC; console rerun pending)
+
+What was slow, from the 3ds-dev disassembly (`propagate.o`, `prefab_tree.o`, `world_reserve_many.o`, `node_removed.o`,
+`prefab_spawn.o`) and PC timings of the spawn bench's parts:
+
+- **The pass left one line in five to a demand miss.** The 80-byte nodes repeat every 160 bytes (5 lines); the two
+  PLDs two nodes ahead (+0 and +48) asked for 4 of them, so every other node's second line — its local and sine cache,
+  read first — missed (≈ 110 cycles): 512 demand misses in each 1024-node pass, 0.13–0.2 ms of the 1.054. And the
+  finiteness test loaded the five local floats into VFP registers (`vldr`) and moved each to a core register (`vmov`)
+  before a test and a branch: 5 VFP→core transfers per node.
+- **The spawn phase is two-thirds spawning, a third destroying.** PC (pc-release, the bench's 64 trees, best of 1900
+  repetitions): prefab spawn 36.5 µs, destroy + flush 19.7; hand spawn 23.7, destroy 19.7. The tree spawn's overhead
+  over the hand calls: the room count, one `world_kinds_of` per entity (repeated prefabs looked up again), a `memset` of
+  the 512-byte reservation array (`ReserveEntity`'s default initializers), `Node(local)` + `Node::operator=` out of line
+  for each child entry's local (a root world and an 80-byte copy that the composition then overwrites), the post-order
+  and hook loop for trees without hooks, and no prefetch: the world's 256-entity arrays (20 KB of nodes) exceed the
+  16 KB L1, so each tree's copies and records missed. On the destroy side, the node hook made four out-of-line calls
+  (`tree_of` → `world_kind_of`, `unlink`, `world_dying`) for the cascade's leaves, which have nothing to do.
+- **The prefabs bench's dispatch** ran `record_of` (null, generation and bounds tests, the record's child count)
+  before spec 021's body for every spawn — 20 instructions more than spec 021's wrapper; the rest of spec 021's move
+  (1.626 → 1.804) came with byte-identical code (the hand side moved too, 1.498 → 1.580: code placement), not from the
+  dispatch.
+
+Changes (results bit-identical: `hierarchy: PASS 23DB5C36`, `prefabs: PASS 7BB7901E`, `entities: PASS C8FB9A41`,
+`tweens: PASS B44CA3F6`, replay `E445E8B2: 60 Hz PASS`, every `--pc` script PASS):
+
+1. **Pass** (risk 1(a)): three PLDs 32 bytes apart two nodes ahead — consecutive nodes leave no line unasked; the
+   finiteness test reads the five words as integers (`std::memcpy` per float, inlined to `ldr`) and tests them at once
+   (an all-ones exponent plus 2²³ carries into the sign bit: `local_finite`, `node_compute.hpp`, also used by
+   `world_now`); tests `local_finite_agrees_with_is_finite_bits_for_every_exponent_in_every_field`,
+   `local_finite_is_true_when_every_field_has_the_largest_finite_exponent`.
+2. **Tree spawn**: `ReserveEntity` without default initializers (no `memset`; `ReserveEntity{}` still zeroes); kinds
+   copied from an earlier entity of the same prefab (one world lookup per distinct prefab, as "Tree spawn" step 2
+   planned); an entry's local written into the copied node (`node.local = local`, the cache refreshed when the
+   rotation's bits changed — the same bytes as `Node(local)`, since a copied cache holds its rotation's sine and
+   `sin_cos(+0)` is `{0, 1}`); no post-order when no prefab of the tree has a hook.
+3. **Group reservation** (`world_reserve_many`): a PLD for the record two slots ahead (as `world_reserve`, plan 021)
+   and, per component, up to three PLDs for the slot one group later — the next tree of a burst finds its lines.
+4. **Node hook**: a node without parent and children returns at once; a childless one stops after leaving its parent.
+5. **Dispatch**: `prefab_spawn` reads the block's tree pointer first; a library without children goes straight to
+   spec 021's body (16 instructions to the call instead of 27; spec 021's own wrapper had 7); `prefab_spawn_one`
+   byte-identical.
+
+| Path (3ds-dev) | Before | After |
+|----------------|--------|-------|
+| pass, a child on the translation rule | 76 instructions, 2 PLDs, 5 `vldr`→`vmov` transfers, 5 branches on finiteness | 79 instructions, 3 PLDs, no transfer, 1 branch |
+| pass, node-array lines per 1024 nodes | 2560, of which 512 demand misses | 2560, all prefetched (prefab-built hierarchies in visiting order) |
+| tree spawn of the bench's tree (4 entities, 12 components) | ≈ 1400 instructions (stage 7) with `memset`, `Node::Node`, `Node::operator=`, 4 `world_kinds_of`, the post-order | ≈ 1100 + 24 PLDs (4 records, 20 component lines); the next tree's ≈ 14 lines asked for ahead |
+| cascade of that tree (node hooks) | 4 hooks, each `tree_of` → `world_kind_of`, `unlink`, `world_dying` | the 2 leaves: a load and two compares; ≈ 140 instructions fewer per tree |
+| `PrefabLibrary::spawn` of a library without children | 27 instructions to spec 021's body (spec 021: 7) | 16 |
+| `vmrs` in `propagate`, `world_now` | 4, 4 (the sine's clamp, rotation changed only) | 4, 4 |
+
+Object sizes (instructions + literals): `propagate` 591 → 609, `world_now` 488 → 506, `prefab_tree` 1216 → 1258,
+`world_reserve_many` 444 → 456, `node_removed` 78 → 89; `World::spawn`, `world_add`, `get`, `each`,
+`world_destroy`, `world_flush`, `prefab_spawn_one`, `prefab_map` and both examples' `bench.o` byte-identical. PC
+(pc-release, best of 1900): prefab spawn 36.5 → 32.4 µs, destroy 19.7 → 17.8; hand 23.7 → 23.3, 19.7 → 17.8.
+Mutation: 10 mutants over `local_finite`, `copy_kinds`, the hook skip, the node hook's two returns, the dispatch and
+the entry local, all killed by the module's tests.
+
+Old 3DS estimates for the rerun (stage 7's lesson applied: the upper ends are the likelier):
+
+| Workload | Run 1 | Expected after T10.3 | Target |
+|----------|-------|----------------------|--------|
+| pass_turn | 1.401 | 1.22–1.32 ms | < 1.5 |
+| pass_move | 1.054 | 0.87–0.96 ms (PASS, narrow) | < 1.0 |
+| world_now | 1.187 | 1.15–1.19 ms | < 1.5 |
+| spawn | 3.162, hand 2.539 | 2.7–2.95 ms, hand 2.45–2.50, ratio 1.1–1.2 (**still over 2.2**) | < 2.2, ≤ 1.3× |
+| reparent | 0.910 | 0.90–0.92 ms | < 1.0 |
+| prefabs bench spawn (spec 021) | 1.804, hand 1.580 | 1.76–1.80 ms | < 2.0 |
+
+The spawn target can't be reached by bit-identical local work: a third of the phase is spec 020's destroy and flush
+(the same for the hand calls, and byte-identical code by its guard), and the rest is dominated by the world's arrays
+streaming through the 16 KB L1. Next: T10.2 run 1 again on the console, then the budgets from that measurement with
+≈ 25 % margin (the maintainer's call).

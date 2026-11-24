@@ -208,6 +208,7 @@ add_executable(nnh_tests
     hierarchy/test_each_descendant.cpp
     hierarchy/test_hierarchy_misuse.cpp
     hierarchy/test_keep_world.cpp
+    hierarchy/test_node_compute.cpp
     hierarchy/test_node.cpp
     hierarchy/test_propagate.cpp
     hierarchy/test_queries.cpp

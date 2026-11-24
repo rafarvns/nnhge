@@ -4,14 +4,33 @@
 // other local reads its sine and cosine from the node's cache (the same bits as computing them). The rules are
 // transform/compose.hpp's, so compose(), the pass and world_now agree bit for bit.
 
+#include <cstring>
+
 #include "hierarchy/hierarchy_internal.hpp"
 
 namespace nnh::detail {
 
+/// The local's five words read as integers (plan 022 T10.3: one load multiple on the ARM11, no VFP-to-core transfer
+/// per float) and tested at once: an all-ones exponent plus 2²³ carries into the sign bit, any other doesn't. The same
+/// answer as is_finite_bits().
+NNH_DET_INLINE std::uint32_t word_at(const float& f) {
+    std::uint32_t b;
+    std::memcpy(&b, &f, sizeof b); // an integer load, inlined (a bit_cast of the value goes through a VFP register)
+    return b;
+}
+NNH_DET_INLINE std::uint32_t exponent_carry(std::uint32_t b) { return (b & kExponentBits) + 0x00800000u; }
+NNH_DET_INLINE bool local_finite(const Node& node) {
+    const Transform2D& l = node.local;
+    const std::uint32_t any = exponent_carry(word_at(l.position.x)) | exponent_carry(word_at(l.position.y)) |
+                              exponent_carry(word_at(l.rotation)) | exponent_carry(word_at(l.scale.x)) |
+                              exponent_carry(word_at(l.scale.y));
+    return (any & kSignBit) == 0;
+}
+
 /// The local the pass composes: the node's, or the identity when it isn't finite (`bad` set).
 NNH_DET_INLINE const Transform2D& usable_local(const Node& node, bool& bad) {
     static constexpr Transform2D kIdentity{};
-    if (is_finite_bits(node.local)) return node.local;
+    if (local_finite(node)) return node.local;
     bad = true;
     return kIdentity;
 }

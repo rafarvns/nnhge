@@ -9,10 +9,14 @@
 namespace nnh::detail {
 
 void node_removed(World& world, Entity e, Node& node) {
+    // A lone node — a cascade's leaves, which their parent's hook already unlinked — has nothing to do: no lookup, no
+    // call (plan 022 T10.3).
+    if (NA::parent(node) == kNoNode && NA::first(node) == kNoNode) return;
     const Tree t = tree_of(world);
     if (!t.valid()) return;
     const auto slot = static_cast<std::uint16_t>(&node - t.nodes);
     unlink(t, slot);
+    if (NA::first(node) == kNoNode) return;
     const bool dying = world_dying(world, e);
     for (std::uint16_t c = NA::first(node); c != kNoNode;) {
         const std::uint16_t next = NA::next(t.nodes[c]);

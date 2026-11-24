@@ -11,12 +11,15 @@ namespace detail {
 namespace {
 
 /// Two nodes ahead (a prefab-built hierarchy sits in consecutive slots in visiting order): the ARM11 has no hardware
-/// prefetcher. Integer arithmetic: an address past the array is a hint PLD never faults on.
+/// prefetcher. Three PLDs 32 bytes apart, so consecutive nodes leave no 32-byte line unasked (plan 022 T10.3: two
+/// PLDs at +0 and +48 missed one line in five, a demand miss every other node). Integer arithmetic: an address past
+/// the array is a hint PLD never faults on.
 NNH_DET_INLINE void prefetch_ahead(const Node* node) {
 #if defined(__GNUC__) || defined(__clang__)
     const std::uintptr_t at = reinterpret_cast<std::uintptr_t>(node) + 2u * sizeof(Node);
     __builtin_prefetch(reinterpret_cast<const void*>(at));
-    __builtin_prefetch(reinterpret_cast<const void*>(at + 48u));
+    __builtin_prefetch(reinterpret_cast<const void*>(at + 32u));
+    __builtin_prefetch(reinterpret_cast<const void*>(at + 64u));
 #else
     (void)node;
 #endif

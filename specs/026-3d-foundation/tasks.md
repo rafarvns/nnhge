@@ -255,8 +255,10 @@ build/pc-debug/tools/nnh/nnh run models --pc --script examples/models/tests/smok
 build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/smoke.nnhs        # console (Y)
 ```
 
-`smoke.nnhs`: `fail-on "] E "` · `wait 30` · `expect "3d tilt: PASS" 120` · `wait 3` · `screenshot flat` · `tap A` ·
-`expect "smoke: lit" 30` · `wait 10` · `screenshot lit` · `end`. Expected: `nnh: PASS`, exit 0; then read
+`smoke.nnhs` as committed (stage 7; passes with `--pc`): `fail-on "] E "` · `fail-on "3d tilt: FAIL"` ·
+`expect "3d tilt: PASS" 120` (logged after frame 1) · `wait 30` · `tap DOWN` (the showcase opens the smoke scene) ·
+`expect "smoke: flat" 20` · `wait 10` · `screenshot flat` · `tap A` · `expect "smoke: lit" 30` · `wait 10` ·
+`screenshot lit` · `end` (waits of 10 after each `expect`, per the console guide). Expected: `nnh: PASS`, exit 0; then read
 `build/logs/<run>/flat-top.png` and `lit-top.png` beside the PC's.
 
 ### T10.1 check and bench, mono (026a)
@@ -267,7 +269,9 @@ build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/check.nnh
 build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/bench.nnhs        # console (Y)
 ```
 
-`examples/models/tests/check.nnhs` (026a part):
+`examples/models/tests/check.nnhs` (026a part; the committed script passes with `--pc` and differs from this draft:
+the verdict comes a frame after the last checksum, the tag lines are `tag: 200,88 depth 6.62` and, orthographic,
+`tag: 200,81 depth 6.62`, and lines logged in the same frame are expected once):
 
 ```
 fail-on "] E "

@@ -808,3 +808,7 @@ the maintainer's approval beyond the decisions above.
   `devkitpro-3ds.md` (target, shader, tables, combiners, projection fix-up, open points), `project-structure.md`
   (`platforms/shared/raster3d`, `platforms/3ds/shaders`), D41–D44 change-log line, `REFERENCES.md`, `CLAUDE.md`,
   ROADMAP M8 and `specs/README.md` (026a built, console pending).
+- PC bench (simulator, pc-debug: core -O0, raster3d -O2; offscreen, 120 frames per case; the numbers say nothing about
+  the console): throughput 12 032 triangles avg 16.67 ms worst 17.03, 0 missed; draws 256 worst 20.98, 7 missed,
+  recording 0.22 ms; cpu 512 recording 0.43 ms; fill (3 full-screen blended planes) avg 18.6 ms, 118 missed — the CPU
+  rasteriser is fill-bound there (~290 000 blended pixels a frame).

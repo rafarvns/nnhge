@@ -148,19 +148,19 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 5: distance fields
 
-- [ ] **T5.1** Fields in one call: `field_internal.hpp`, `field_create.cpp` (double/single buffers, heap, move),
+- [x] **T5.1** Fields in one call: `field_internal.hpp`, `field_create.cpp` (double/single buffers, heap, move),
   `field_build.cpp` (begin fill, goals, Dijkstra with `d + S·w(c)` / `d + D·w(c)`, max cost, compaction). Test:
   `tests/pathfinding/test_field_build.cpp` (one and several goals, duplicates, max cost, weights, every mode, blocked
   goals ignored, blocked cells unreachable, outside goals (assert; Release ignored), against the multi-source
   reference on 300 seeded maps). Covers FR-16, FR-23.
-- [ ] **T5.2** Slices and buffers: `begin`/`step`/`cancel`/`building`/`ready`/`stale`/`settled`, the swap, the users
+- [x] **T5.2** Slices and buffers: `begin`/`step`/`cancel`/`building`/`ready`/`stale`/`settled`, the swap, the users
   count. Test: `tests/pathfinding/test_field_slices.cpp` (slices of 1, 37, 512 equal one call; the previous build answers
   during a double-buffered rebuild; single-buffered → not ready; stale on an edit; the map destroyed mid-build). Covers
   FR-17, FR-20.
-- [ ] **T5.3** [P] Queries: `field_query.cpp` — `distance`, `next` (argmin, neighbour-order ties, the rule, none at a goal
+- [x] **T5.3** [P] Queries: `field_query.cpp` — `distance`, `next` (argmin, neighbour-order ties, the rule, none at a goal
   or unreachable cell), `next_point`. Test: `tests/pathfinding/test_field_next.cpp` (brute-force `next`; field = the
   search's cost from every walkable cell on 200 seeded maps). Covers FR-18.
-- [ ] **T5.4** Stage end: the stage-end guards. Files: plan.md ("Stage 5 results"). Covers AC-8.
+- [x] **T5.4** Stage end: the stage-end guards. Files: plan.md ("Stage 5 results"). Covers AC-8.
 
 ## Stage 6: random references, the golden, fuzz
 

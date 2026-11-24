@@ -503,6 +503,9 @@ target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_S
 # Pathfinding on grids (spec 025): unit tests, references, the example's self-check, the fuzz target.
 target_sources(nnh_tests PRIVATE
     pathfinding/path_reference.cpp
+    pathfinding/test_field_build.cpp
+    pathfinding/test_field_next.cpp
+    pathfinding/test_field_slices.cpp
     pathfinding/test_find_basic.cpp
     pathfinding/test_find_costs.cpp
     pathfinding/test_follower.cpp

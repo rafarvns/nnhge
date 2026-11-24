@@ -891,3 +891,23 @@ on this PC at the same time (other agents): times below are noisy, sizes are exa
   it empty and arrived.
 - Tests: `test_smooth_walk.cpp` (2), `test_smooth.cpp` (7, incl. 500 seeded smoothings whose every segment passes the
   exact checker with the heaviest replaced weight), `test_follower.cpp` (6). Guards green.
+
+## Stage 5 refinements and results
+
+- **Fields** as planned: `field_build.cpp` settles a cell, computes `d + S·w(c)` and `d + D·w(c)` once and relaxes the
+  4 or 8 neighbours with loads, compares and stores (the side cells of a diagonal are the settled cell's orthogonal
+  bytes, loaded once); the heap is keyed `(d, padded index)` and compacted when full. `begin` checks every goal before
+  touching anything (an outside goal asserts first, so the Debug crash leaves the field as it was; Release ignores it).
+- **Single-buffered** fields are not ready from `begin` until the build finishes (a cancelled build leaves them not
+  ready: their only array was being rewritten); double-buffered ones keep answering from the front array, whose map size
+  is kept apart (`ans_w/ans_h/ans_stride`).
+- **A map destroyed mid-build**: the next `step()` ends the build (as `cancel()`), the last finished build keeps
+  answering (double-buffered), the block is freed by the field.
+- **`next()`** needs the map the field answers for (same size; else misuse, false); `next_point()` returns false
+  without asserting for a point outside the map (an agent pushed off the level).
+- **Memory** (tested through the tag): `header + 4 B × padded cells × (1 or 2) + 8 B × cells`.
+- Tests: `test_field_build.cpp` (8, incl. 300 seeded maps against the multi-source reference with caps),
+  `test_field_slices.cpp` (5), `test_field_next.cpp` (5: brute-force `next` on 100 maps (> 10 000 cells), neighbour-
+  order ties, the corner rule, `next_point`, field = the search's cost from every walkable cell on 200 maps with 1–2
+  goals). The pc-release run caught a wrong expected value in a Release-path check (34, octile, not 40) — fixed in the
+  test. Guards green.

@@ -23,7 +23,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 0: baseline
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-024/`, not committed): `hello.exe`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-024/`, not committed): `hello.exe`
   (pc-release, pc-debug) and `hello.elf`/`.3dsx` (3ds-release, 3ds-dev) sizes (`size`: text/data/bss, file bytes) and
   `nm -C` lists; `.text` of the 3ds-release `sprites`, `platformer`, `data`, `camera` ELFs; edit
   `examples/prefabs/room.cpp` → simulator and `.3dsx` times (the reference for the particles example's edit); clean
@@ -31,39 +31,39 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   + `<nnh/time.hpp>` + `<nnh/result.hpp>`; a data-only rebuild of `examples/data` (one asset edited) timed; 3ds-dev
   disassembly (`fcount.py`) of `DrawList::build`, `gfx_frame.o`, `draw2d.o`, `camera_shake.o`, `draw2d_3ds.o` saved in
   `build/ref-024/dis0/`. Files: plan.md ("Stage 0 results"). Covers III, FR-26, AC-8.
-- [ ] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-024/ref/`: `hello`, `sprites` (world and
+- [x] **T0.2** [P] Reference screenshots for AC-8 in `build/ref-024/ref/`: `hello`, `sprites` (world and
   `SPRITES_DEMO=bench`), `scenes`, `camera` (`CAMERA_DEMO=zoom1`), `queries` (`QUERIES_DEMO=all`), `entities`, `prefabs`,
   `hierarchy` (showcase), platformer `PLATFORMER_DEMO=bench` (top), level 1 at 90, `PLATFORMER_DEMO=replay` at 64 and
   312; `build/ref-024/compare.sh` retakes them into `now/`. (Level 1 and the replay are expected to change in stage 6:
   dust and puffs; new references are taken there.) Files: plan.md. Covers AC-8.
-- [ ] **T0.3** [P] Goldens and counts today: the replay ctest's last line as in the tree (spec 022's), `5201E6CF`,
+- [x] **T0.3** [P] Goldens and counts today: the replay ctest's last line as in the tree (spec 022's), `5201E6CF`,
   `4ACAA177`, `C8FB9A41`, `7BB7901E`, the hierarchy golden, `B44CA3F6`, `0xD5BD3020`; `nnh_tests` count against
   `kMaxTests` (this spec adds ≈ 300 tests: raise only if fewer than 400 are left, and note it for the merge). Files:
   plan.md. Covers VI.
 
 ## Stage 1: shared helpers and the emitter skeleton (pure)
 
-- [ ] **T1.1** Move the camera shake's finalizer to `engine/core/src/core/mix32.hpp` (inline `detail::mix32`, the same
+- [x] **T1.1** Move the camera shake's finalizer to `engine/core/src/core/mix32.hpp` (inline `detail::mix32`, the same
   body); `camera_shake.cpp` uses it. Test: `tests/camera/test_mix32.cpp` (known values of the finalizer); spec 018's
   tests and `camera: PASS 5201E6CF`; 3ds-dev `camera_shake.o` identical to T0.1's. Covers FR-15.
-- [ ] **T1.2** [P] `engine/core/src/gfx/sprite_place.hpp`: `snap`, `place_sprite`, `place_rect` (the code of
+- [x] **T1.2** [P] `engine/core/src/gfx/sprite_place.hpp`: `snap`, `place_sprite`, `place_rect` (the code of
   `draw_list.cpp`'s `sprite_item`/`shape_item` arithmetic, inline); `draw_list.cpp` uses them. Test:
   `tests/gfx/test_sprite_place.cpp` (items for zoom 0.5/1/2, flips by negative scale, pivots, rounding of halves);
   `tests/gfx/test_draw_list.cpp` unchanged and passing; 3ds-dev `draw_list.o` byte-identical to T0.1's. Covers FR-19.
-- [ ] **T1.3** The header and the description: `<nnh/particles.hpp>` (limits, enums, `ParticleRange`, `ParticleTimeRange`,
+- [x] **T1.3** The header and the description: `<nnh/particles.hpp>` (limits, enums, `ParticleRange`, `ParticleTimeRange`,
   `ParticleCount`, `ParticleBurst`, keys, `ParticleFrame`, `ParticleDesc`, `ParticleDrawOptions`, `ParticleStats`,
   `ParticleView`, `ParticleEmitter` declarations), `particle_desc_check.{hpp,cpp}` (every check of plan.md, the first bad
   field named), `ParticleEmitter::check`. Test: `tests/particles/test_desc_check.cpp` (the default valid; each limit both
   ways; unused-then-used keys and frames; unsorted keys; NaN anywhere; messages). Files: those, `engine/core/CMakeLists.txt`
   (the `_nnh_particles_sources` block after the hierarchy block, `-ffp-contract=off`), `tests/CMakeLists.txt` (024's block
   after the `entities_example` line). Covers FR-2, FR-3, FR-25.
-- [ ] **T1.4** Blocks: `particle_block.hpp` (header, hot 32 B and cold 16 B records `static_assert`ed, 32-byte
+- [x] **T1.4** Blocks: `particle_block.hpp` (header, hot 32 B and cold 16 B records `static_assert`ed, 32-byte
   alignment), `particle_derived.{hpp,cpp}` (per-frame units, segments, bucket tables, frame constants, variant flags),
   `emitter_create.cpp` (create, move, destroy, the `particles` tag, `capacity()`, `valid()`, `desc()`). Test:
   `tests/particles/test_create.cpp` (capacities 1/8192 accepted, 0/8193 refused; `OutOfMemory`; tag bytes = header +
   48 × capacity; a game tag; move leaves the source empty; empty emitters answer zero), `particles_fixture.hpp`. Covers
   FR-1, FR-24.
-- [ ] **T1.5** [P] The generator: `particle_random.hpp` (`base = mix(seed ^ mix(n))`, values by property index, floats
+- [x] **T1.5** [P] The generator: `particle_random.hpp` (`base = mix(seed ^ mix(n))`, values by property index, floats
   in [0, 1), integer ranges by `umull`). Test: `tests/particles/test_random.cpp` (part 1: known values, uniformity of
   10 000 values in 16 bins within a fixed bound, properties independent, integer ranges hit both ends). Covers FR-15.
 - [ ] **T1.6** Stage end: the stage-end guards; include check (`<nnh/particles.hpp>` pulls only its six includes and
@@ -72,25 +72,25 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 2: emission (pure)
 
-- [ ] **T2.1** Shapes and directions: `particle_shapes.{hpp,cpp}` (point; box area and edge by perimeter; disc by
+- [x] **T2.1** Shapes and directions: `particle_shapes.{hpp,cpp}` (point; box area and edge by perimeter; disc by
   `max(u₁, u₂)`; ring by the fixed mixture; arc; line; cone and outward directions; the Newton reciprocal square root;
   the per-emitter sampler pointer). Test: `tests/particles/test_shapes.cpp` (points inside / on the edge / in the ring
   / on the arc for 10 000 births; area uniformity by equal-area annuli and box quadrants, perimeter uniformity of edges,
   within fixed bounds), `tests/particles/test_directions.cpp` (cone limits, 2π spread, outward unit vectors within
   2⁻²⁰, the centre and point fallbacks, negative speeds). Covers FR-8, FR-9.
-- [ ] **T2.2** Births and on-demand emission: `emitter_emit.cpp` (`birth()` in property order, the birth map and its
+- [x] **T2.2** Births and on-demand emission: `emitter_emit.cpp` (`birth()` in property order, the birth map and its
   pure-translation skip, inherit velocity, rotation by the mirror rule, lifetime ticks, `1/lifetime`, start colour and
   size, the Random frame byte; `emit`, `emit_at(point)`, `emit_at(transform)`; the emission number; the full case:
   dropped and counted, one Debug/Development warning per emitter). Test: `tests/particles/test_order_full.cpp` (part 1:
   as many as fit, the rest dropped and counted, no assert, the warning once and not in Release),
   `tests/particles/test_random.cpp` (part 2: the same particles whatever the capacity — drops never shift later values;
   another emitter's calls change nothing). Covers FR-6, FR-15, FR-18.
-- [ ] **T2.3** The clock: `emitter_clock.cpp` (delay, `clock += 4096`, duration, looping, the 16.16 rate accumulator,
+- [x] **T2.3** The clock: `emitter_clock.cpp` (delay, `clock += 4096`, duration, looping, the 16.16 rate accumulator,
   bursts with cycles and intervals, hashed counts, `start`/`stop`/`emitting`, emission over, `finished()`). Test:
   `tests/particles/test_rate.cpp` (2.5/s → 25 in 600 frames and 150 in 3600 exactly; 0.5/s, 59.9/s, 491 520/s; delay;
   duration; looping), `tests/particles/test_bursts.cpp` (times, 1/4/endless cycles, intervals, count ranges, 8 bursts, a
   one-shot finishing). Covers FR-4, FR-5, FR-7.
-- [ ] **T2.4** Sub-frame spreading: rate births at their frame fraction on the interpolated transform (origin and
+- [x] **T2.4** Sub-frame spreading: rate births at their frame fraction on the interpolated transform (origin and
   drawing values, one sine only when the rotation's bits changed, `f = 1` the current map), pre-aged by `1 − f`;
   `set_transform`/`set_position` with `jump`; `emitter_transform.cpp`. Test: `tests/particles/test_subframe.cpp` (a fast
   straight emitter's births evenly spaced, a turning one along the arc, pre-ages, `jump` breaks it, local space not
@@ -99,30 +99,30 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 3: life, appearance, lifecycle (pure)
 
-- [ ] **T3.1** Motion: `emitter_update.cpp` (`update()`'s order: clock, motion, rate births, bursts, previous transform;
+- [x] **T3.1** Motion: `emitter_update.cpp` (`update()`'s order: clock, motion, rate births, bursts, previous transform;
   the `<spin, drag>` variants; `age += 4096` and death; stable compaction with cold moves; the velocity flush; bounds by
   integer keys; gravity mapped once per update). Test: `tests/particles/test_motion.cpp` (the order against a hand loop;
   px/s and px/s²; exact lifetimes in updates for `Frames{24}` and `Duration`s; the flush; no allocation),
   `tests/particles/test_order_full.cpp` (part 2: emission order through random deaths). Covers FR-3, FR-11, FR-17, FR-18.
-- [ ] **T3.2** Appearance: `particle_appearance.hpp` (`t`, segments through the bucket table, rounded channels, `mul8`,
+- [x] **T3.2** Appearance: `particle_appearance.hpp` (`t`, segments through the bucket table, rounded channels, `mul8`,
   size; the branch-free frame rule with its reciprocal). Test: `tests/particles/test_appearance.cpp` (keys exact, between
   keys within 1/256 of a `double` reference for flat and steep gradients, 0/1 key constant, `mul8` exhaustive over 256²),
   `tests/particles/test_frames.cpp` (first, random uniform, over life with repeats, at a rate; the reciprocal rule
   exhaustive over m < 2²⁴ for n = 1..16). Covers FR-12, FR-13.
-- [ ] **T3.3** Spaces: world and local storage, gravity world/local, the local drawing values (equal to
+- [x] **T3.3** Spaces: world and local storage, gravity world/local, the local drawing values (equal to
   `gfx::transformed`). Test: `tests/particles/test_space.cpp` (world trail stays behind; local particles follow a moving,
   rotated and mirrored transform; `world_gravity` both ways; the drawing values equal `gfx::transformed`'s for 1000
   seeded transforms). Covers FR-14.
-- [ ] **T3.4** Lifecycle and prewarm: `clear`, `restart` (clock, accumulator, bursts, emission number, previous transform,
+- [x] **T3.4** Lifecycle and prewarm: `clear`, `restart` (clock, accumulator, bursts, emission number, previous transform,
   prewarm), prewarm at creation, `set_desc` (tables rebuilt, live particles kept, a bad one asserts and changes nothing),
   `set_seed`. Test: `tests/particles/test_lifecycle.cpp` (stop lets particles finish; clear; restart reproduces the first
   run bit for bit; `emit`/`emit_at` while stopped), `tests/particles/test_prewarm.cpp` (prewarm = the same updates by
   hand; 600 accepted, 601 refused), `tests/particles/test_set_desc.cpp`. Covers FR-2, FR-6, FR-7.
-- [ ] **T3.5** [P] Queries and binding: `emitter_queries.cpp` (`particle()` views, `stats()`, `alive()`, `bounds()`),
+- [x] **T3.5** [P] Queries and binding: `emitter_queries.cpp` (`particle()` views, `stats()`, `alive()`, `bounds()`),
   `emitter_scene.cpp` (D30). Test: `tests/particles/test_queries.cpp`, `tests/particles/test_scene_binding.cpp` (updated
   before the scene's update, frozen under a pause scene, cleared after exit, moved while bound, destroyed while bound,
   `bind` twice ignored). Covers FR-17, FR-22.
-- [ ] **T3.6** Misuse and cost: every FR-25 case of plan.md asserts and is harmless on the Release path (pc-release);
+- [x] **T3.6** Misuse and cost: every FR-25 case of plan.md asserts and is harmless on the Release path (pc-release);
   allocation counter unchanged over 100 000 operations after creation; no log in the normal path; `events::stats()`
   unchanged. Test: `tests/particles/test_particle_misuse.cpp`, `tests/particles/test_particle_cost.cpp`. Covers FR-23,
   FR-24, FR-25.
@@ -130,27 +130,27 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 4: drawing
 
-- [ ] **T4.1** gfx's particle batches: `gfx/particle_batches.{hpp,cpp}` (records, the 32-batch table, the 128-item
+- [x] **T4.1** gfx's particle batches: `gfx/particle_batches.{hpp,cpp}` (records, the 32-batch table, the 128-item
   scratch, the `max_particles` budget, `gfx_record_particles`, `gfx_forget_particles`, the submit loop with chunks, the
   ops and their registrar); `GfxConfig::max_particles` (`app.hpp`), `gfx::Stats`' three fields (`gfx.hpp`), the splits
   array to 96 (`gfx_state.hpp`), the dispatch and null-checked calls in `gfx_frame.cpp` and `draw2d.cpp`, the
   `tile_batch` comment (`draw_list.hpp`). Test: `tests/particles/test_particle_budget.cpp` (part 1: no memory when 0;
   ≈ 8.2 KB when > 0; a fake expand function's items reach `draw_2d` in chunks between the pass's other calls; 33
   batches; budget drops identical however the batches are cut). Covers FR-19, FR-20.
-- [ ] **T4.2** The expansion: `particle_expand.cpp` (`<textured, local>` variants; the view; frames resolved against the
+- [x] **T4.2** The expansion: `particle_expand.cpp` (`<textured, local>` variants; the view; frames resolved against the
   texture; reach; the emitter and per-particle culling by integer keys; draw order; appearance; items through
   `sprite_place.hpp`; drawn/culled stats), `emitter_draw.cpp` (`draw()` overloads, outside a frame, `max_particles == 0`).
   Test: `tests/particles/test_expand.cpp` (items equal `DrawList::build`'s for the equivalent `gfx::draw` /
   `gfx::fill_rect` commands at zoom 0.5/1/2, `ignore_camera`, rotation, scale, flips, tint × opacity, every frame mode,
   whole texture and pivots, local mirrored emitters; whole-emitter and per-particle culling at exact boundaries; newest
   first). Covers FR-13, FR-14, FR-19.
-- [ ] **T4.3** Through the frame: Test: `tests/particles/test_draw.cpp` (one command per draw; sorted with sprites and
+- [x] **T4.3** Through the frame: Test: `tests/particles/test_draw.cpp` (one command per draw; sorted with sprites and
   tile batches by layer and call order, read from the fake's calls; read at submit (an update after the draw call
   shows); destroyed after its draw call (forgotten), moved (still drawn); destroyed texture (assert, skipped); both
   screens; drawn twice), `tests/particles/test_particle_budget.cpp` (part 2: `max_particles` 0 asserts with the fix,
   Release warns once; over the cap asserts, Release drops and warns once per frame; the stats; the overlay line only
   when the cap > 0). Files: `debug/overlay.cpp`. Covers FR-19, FR-20.
-- [ ] **T4.4** [P] 3DS: `app_3ds.cpp` sizes `C2D_Init` for `max_particles` more objects. Test: 3ds-release and 3ds-dev
+- [x] **T4.4** [P] 3DS: `app_3ds.cpp` sizes `C2D_Init` for `max_particles` more objects. Test: 3ds-release and 3ds-dev
   build without a warning; `examples/sprites` and the platformer's bench draw the same screenshots on PC (the gfx path
   with `max_particles` 0 is byte-identical: `compare.sh`). Covers FR-20, AC-8.
 - [ ] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical: with `max_particles` 0 the

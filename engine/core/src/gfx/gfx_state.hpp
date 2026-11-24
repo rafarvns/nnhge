@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "gfx/draw_list.hpp"
+#include "gfx/particle_batches.hpp"
 #include "gfx/texture_table.hpp"
 #include "gfx/tile_batches.hpp"
 #include "nnh/gfx.hpp"
@@ -58,7 +59,7 @@ struct GfxState {
     int dropped_total = 0;
     // Tile batches (spec 012): storage only when max_tiles > 0.
     TileBatches tiles;
-    TileSplit splits[kMaxTileBatches]; // one screen's split points, reused per pass
+    TileSplit splits[kMaxTileBatches + kMaxParticleBatches]; // one screen's split points, reused per pass
     int max_tiles = 0;
     int tiles_last_frame = 0;
     int dropped_tiles_total = 0;

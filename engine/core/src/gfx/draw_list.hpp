@@ -25,7 +25,9 @@ struct DrawCommand {
     bool ignore_camera = false;
     bool flip_x = false;
     bool flip_y = false;
-    std::int16_t tile_batch = -1; ///< >= 0: a tile batch (gfx/tile_batches.hpp), not a 2D item
+    /// >= 0: a tile batch (gfx/tile_batches.hpp), not a 2D item; >= 64 (kParticleBatchBase): a particle batch
+    /// (gfx/particle_batches.hpp)
+    std::int16_t tile_batch = -1;
     int texture_slot = -1; ///< Sprite: texture handle
     std::uint32_t texture_generation = 0;
     Region region{};      ///< Sprite: empty = whole texture

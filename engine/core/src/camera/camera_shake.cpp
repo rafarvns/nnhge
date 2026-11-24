@@ -2,20 +2,13 @@
 // and a smoothstep, no libm), so the same seed and calls shake the same on every system.
 
 #include "camera/camera_internal.hpp"
+#include "core/mix32.hpp"
 
 namespace nnh::detail::cam {
 namespace {
 
-/// An integer finalizer (lowbias32-style multiply/xor-shift): every input bit changes about half the output
-/// bits.
-std::uint32_t mix(std::uint32_t x) {
-    x ^= x >> 16;
-    x *= 0x7FEB352Du;
-    x ^= x >> 15;
-    x *= 0x846CA68Bu;
-    x ^= x >> 16;
-    return x;
-}
+/// The engine's integer finalizer (core/mix32.hpp, shared with the particles' generator since spec 024).
+std::uint32_t mix(std::uint32_t x) { return mix32(x); }
 
 constexpr float kTwoPowMinus23 = 1.0f / 8388608.0f;
 constexpr float kTwoPowMinus16 = 1.0f / 65536.0f;

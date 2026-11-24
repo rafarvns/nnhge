@@ -534,6 +534,34 @@ target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SO
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
+# Particles (spec 024): unit tests, the shared helpers' tests.
+target_sources(nnh_tests PRIVATE
+    camera/test_mix32.cpp
+    gfx/test_sprite_place.cpp
+    particles/test_appearance.cpp
+    particles/test_bursts.cpp
+    particles/test_create.cpp
+    particles/test_desc_check.cpp
+    particles/test_directions.cpp
+    particles/test_draw.cpp
+    particles/test_expand.cpp
+    particles/test_frames.cpp
+    particles/test_lifecycle.cpp
+    particles/test_motion.cpp
+    particles/test_order_full.cpp
+    particles/test_particle_budget.cpp
+    particles/test_particle_cost.cpp
+    particles/test_particle_misuse.cpp
+    particles/test_prewarm.cpp
+    particles/test_queries.cpp
+    particles/test_random.cpp
+    particles/test_rate.cpp
+    particles/test_scene_binding.cpp
+    particles/test_set_desc.cpp
+    particles/test_shapes.cpp
+    particles/test_space.cpp
+    particles/test_subframe.cpp
+)
 # The prefabs example's self-check (spec 021 T5.4, AC-2): prefab spawns against hand-written ones, golden checksum.
 set(_prefabs_example ${PROJECT_SOURCE_DIR}/examples/prefabs)
 # (Its sources are compiled into nnh_fuzz_targets, which nnh_tests links: the fuzz target drives the same operations.)

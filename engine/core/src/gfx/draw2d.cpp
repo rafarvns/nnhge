@@ -140,6 +140,7 @@ gfx::Stats gfx::stats() {
     s.tiles_last_frame = g.tiles_last_frame;
     s.max_tiles = g.max_tiles;
     s.dropped_tiles = g.dropped_tiles_total;
+    if (detail::g_gfx_particle_ops != nullptr) detail::g_gfx_particle_ops->stats(s);
     return s;
 }
 

@@ -2,7 +2,7 @@
 
 #include "gfx/draw_list.hpp"
 
-#include <cmath>
+#include "gfx/sprite_place.hpp"
 
 namespace nnh::detail {
 namespace {
@@ -10,31 +10,18 @@ namespace {
 using Item = platform::DrawItem2D;
 using Kind = Item::Kind;
 
-/// Whole pixels, halves rounded up (the same on every system, so PC and 3DS agree).
-float snap(float v) { return std::floor(v + 0.5f); }
-
 /// Fills `item` from `c` for a sprite. @return false if its texture is gone.
 bool sprite_item(const DrawCommand& c, Vec2 at, float z, const TextureTable& textures, Item& item) {
     const TextureData* texture = textures.get(c.texture_slot, c.texture_generation);
     if (texture == nullptr) return false;
     item.texture = texture->platform;
-    item.region = c.region.empty() ? Region{0, 0, texture->width, texture->height} : c.region;
-    // A negative scale mirrors the sprite: same as a flip with a positive scale.
-    item.flip_x = c.flip_x != (c.scale.x < 0);
-    item.flip_y = c.flip_y != (c.scale.y < 0);
-    const float sx = std::fabs(c.scale.x);
-    const float sy = std::fabs(c.scale.y);
-    item.w = static_cast<float>(item.region.w) * sx * z;
-    item.h = static_cast<float>(item.region.h) * sy * z;
-    item.pivot_x = c.pivot.x * sx * z;
-    item.pivot_y = c.pivot.y * sy * z;
-    item.rotation = c.rotation;
-    item.x = snap(at.x * z);
-    item.y = snap(at.y * z);
+    const Region region = c.region.empty() ? Region{0, 0, texture->width, texture->height} : c.region;
+    place_sprite(region, c.flip_x, c.flip_y, c.scale, c.pivot, c.rotation, at, z, item);
     return true;
 }
 
 /// `at` = position − camera, `z` = zoom (1 when ignoring the camera). Outlines and lines stay one pixel thick.
+/// Rectangles are place_rect()'s arithmetic (gfx/sprite_place.hpp), written out so the line shares its first steps.
 void shape_item(const DrawCommand& c, Vec2 at, Vec2 camera, float z, Item& item) {
     item.x = snap(at.x * z);
     item.y = snap(at.y * z);

@@ -33,6 +33,10 @@ struct GfxConfig {
     /// 3DS one citro2d quad (~192 bytes, Linear) each: a full 16x16 layer of the top screen is up to 416
     /// tiles. An Old 3DS draws 4 such layers + 300 sprites at 60 Hz (limits: 6 layers, or 600 sprites).
     int max_tiles = 0;
+    /// Particle quads per frame (both screens) drawn by ParticleEmitter::draw (<nnh/particles.hpp>); more are dropped.
+    /// 0 (default) = no particle drawing and no memory for it. Up to 65535. Costs ~8 KB once when > 0, and on 3DS one
+    /// citro2d quad (~192 bytes, Linear) each.
+    int max_particles = 0;
 };
 
 /// Audio capacities (see <nnh/audio.hpp>), allocated once at init().

@@ -830,3 +830,57 @@ worktrees (specs 023, 026, 027) were building on the same PC at the same time: e
   left, no raise needed.
 - **Reference screenshots** (`ref/`, taken twice: identical): hello, sprites, sprites bench, scenes, camera zoom1,
   queries all, entities, prefabs, hierarchy, pathfinding, platformer bench (top), level 1 at 90, replay at 64 and 312.
+
+### Stages 1–4 results (committed together)
+
+The simulation (stages 1–3) needs the emitter's destructor to forget its draws, which lives in the gfx particle
+batches (stage 4), so the four stages are one commit, as 022's stages 3 and 4 were.
+
+- **Spec 022 names** (the plan was written before it landed): all as the plan assumed — `Transform2D`,
+  `WorldTransform2D` (not an aggregate), `to_world`, `compose`, `transform_point`, `transform_direction`, `inverse`,
+  `bounds`, `is_finite`, `sin_cos`; inline `sin_cos_inline`/`is_finite_bits`/`float_bits` in `src/transform/sin_cos.hpp`,
+  `root_world` in `src/transform/compose.hpp`, `sin_quarter_inline` in `src/core/det_sine.hpp`; the mirror rule of
+  `gfx::transformed` (`src/gfx/draw_transform.cpp`). Used as they are; nothing moved.
+- **T1.1**: `detail::mix32` in `src/core/mix32.hpp`; `camera_shake.o` (3ds-dev) byte-identical to stage 0's.
+- **T1.2 refinement**: `place_sprite`/`place_rect`/`snap` in `gfx/sprite_place.hpp`. `DrawList::build` uses
+  `place_sprite` and keeps its own rectangle arithmetic (written out: the line shares its first two steps), which
+  `place_rect` repeats. 3ds-dev `draw_list.o`: the same 279 instructions; 3 differ only by commuted operands or the
+  register chosen (`cmp r2, ip` ↔ `cmp ip, r2`, `vadd`/`vmla` operand order) — not byte-identical, same arithmetic;
+  every zoom and draw-list test and every reference screenshot unchanged.
+- **Refinements (simulation)**:
+  - the rate is `rate_whole` particles per frame plus one per crossing of a 32-bit accumulator against
+    `60 × 65536` (the 16.16 step split at creation): no 64-bit division at run time; the clock and the bursts' next
+    firings are 64-bit (an endless emitter's clock never wraps);
+  - the rate runs on frames that start at or after the delay (`t0 ≥ 0`) and before the duration's end; a burst fires in
+    the first frame whose end passes its time (at most once per frame), so a looping clock never skips one; the delay
+    is waited once per start;
+  - a burst is used when `count.max > 0` (the default burst is unused);
+  - property indexes: the ring's mixture pick is a 12th property (`kPropShapeD`, appended);
+  - `start()` on a stopped (not only an ended) emission restarts its clock, delay and bursts; `finished()` of an empty
+    emitter is false ("queries answer zero"); an emitter with no rate and no burst is finished whenever it has no
+    particle;
+  - world-space births under a mirrored transform flip the spin as well as the rotation (visual mirror);
+  - checks added to the plan's list: `size.min/max ≥ 0` and used size keys' `size ≥ 0` (culling's largest size);
+    messages name array items as `color_keys[2].at`;
+  - per-frame constants (speed, gravity, spin) are flushed below 2⁻⁶⁰ at creation, birth velocities after the birth
+    map, motion velocities in the drag variant, so no value enters the subnormal range;
+  - `emit_at(point)` in local space takes the point in the emitter's frame (the identity's axes);
+  - misuse texts exist only in Debug/Development (`NNH_PARTICLE_MISUSE`), the full-emitter warning too.
+- **Refinements (drawing)**:
+  - `GfxParticleOps::submit` returns nothing and asserts on a stale texture itself (fewer bytes in every game's
+    `submit_screen`); a texture handle that is already stale at the draw call is refused there (as `gfx::draw` refuses
+    an empty texture), and a texture destroyed during the frame stays until its end, so the submit-time check is a
+    safety net;
+  - culling uses the conservative reach `L1 corner reach × largest size × max |scale| + 2 px`, the same for the whole
+    batch (tested at the exact key boundary); a whole emitter is skipped by its bounds grown by it;
+  - squares in local space are `|scale.x| × size` by `|scale.y| × size` (not rotated);
+  - the drop count when the budget is spent: the expand function is called once more with capacity 0 and counts the
+    visible particles left (culled ones are not drops).
+- **Memory**: 48 B per particle (`ParticleHot` 32 + `ParticleCold` 16, `static_assert`ed); the header
+  (`kParticleHeaderBytes`) is < 2.6 KB on PC (tested); gfx storage with `max_particles > 0`: 32 records + 128 items
+  (tested equal to the gfx tag's growth, < 10 KB).
+- **T4.6 `hello`**: pc-release `.text` +128 B (budget 256), `.bss` +256, `.data` 0; 3ds-release `.text` **+144 B
+  (budget 128: over by 16 B, flagged)**, `.bss` +256, `.data` 0; `nm`: only `nnh::detail::g_gfx_particle_ops` is new
+  (PC and 3DS). Per function (3ds-release objects built from stage 0's and today's sources): `submit_screen` +60,
+  `gfx_init` +32, `free_all` +24, `gfx_submit` +16. Moving the dispatch out of line (the plan's remedy) made it worse
+  (+100: a call passing the camera), so the inline dispatch stays.

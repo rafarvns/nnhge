@@ -130,21 +130,21 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 4: smoothing and following
 
-- [ ] **T4.1** The walk: `smooth_walk.hpp` — centres at odd doubled coordinates, the `(2a + 1)·|dy|` vs `(2b + 1)·|dx|`
+- [x] **T4.1** The walk: `smooth_walk.hpp` — centres at odd doubled coordinates, the `(2a + 1)·|dy|` vs `(2b + 1)·|dx|`
   compare, corners (x-neighbour, y-neighbour, diagonal), cells crossed through their interior vs touched. Test:
   `tests/pathfinding/test_smooth_walk.cpp` (equal to `collision::cells_crossed` on a 16-px grid, cell for cell and
   corner for corner, for 20 000 seeded centre pairs on maps up to 64 × 64, plus horizontal, vertical and 45° cases). A
   PC micro-measurement of the walk against spec 019's `GridWalk` over the same pairs, recorded (decision 18). Covers
   FR-15.
-- [ ] **T4.2** `smooth_path`: the greedy run, the weight rule (no heavier than the replaced part), the corner rule per
+- [x] **T4.2** `smooth_path`: the greedy run, the weight rule (no heavier than the replaced part), the corner rule per
   mode, first and last kept, the anchor unchecked, in place, the buffer contract. Test: `tests/pathfinding/test_smooth.cpp`
   (open room → 2 waypoints; L-shaped corridor → 3; a corner it must not cut in each mode; a heavier cell it must not
   cross; a blocked start; every segment of 500 seeded smoothings passes the sampled checker). Files: `smooth.cpp`.
   Covers FR-15.
-- [ ] **T4.3** [P] The follower: `follower.cpp`. Test: `tests/pathfinding/test_follower.cpp` (radius advance, several
+- [x] **T4.3** [P] The follower: `follower.cpp`. Test: `tests/pathfinding/test_follower.cpp` (radius advance, several
   waypoints in one call, overshoot of the last point then arrival, empty list, NaN position and radius (assert;
   Release unchanged), the same bits for the same inputs with `-ffp-contract=off`). Covers FR-19.
-- [ ] **T4.4** Stage end: the stage-end guards. Files: plan.md ("Stage 4 results", the walk measurement). Covers AC-8.
+- [x] **T4.4** Stage end: the stage-end guards. Files: plan.md ("Stage 4 results", the walk measurement). Covers AC-8.
 
 ## Stage 5: distance fields
 

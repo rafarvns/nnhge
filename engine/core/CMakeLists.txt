@@ -240,6 +240,7 @@ endif()
 # (cell <-> world, the follower) are built without fused multiply-add, so PC and 3DS give the same bits. Optional: a
 # game that doesn't call it links none of it.
 set(_nnh_pathfinding_sources
+    src/pathfinding/follower.cpp
     src/pathfinding/footprint.cpp
     src/pathfinding/map_create.cpp
     src/pathfinding/map_edit.cpp
@@ -251,6 +252,7 @@ set(_nnh_pathfinding_sources
     src/pathfinding/search_path.cpp
     src/pathfinding/search_step.cpp
     src/pathfinding/searcher_create.cpp
+    src/pathfinding/smooth.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_pathfinding_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

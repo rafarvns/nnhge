@@ -505,6 +505,7 @@ target_sources(nnh_tests PRIVATE
     pathfinding/path_reference.cpp
     pathfinding/test_find_basic.cpp
     pathfinding/test_find_costs.cpp
+    pathfinding/test_follower.cpp
     pathfinding/test_footprint.cpp
     pathfinding/test_inspect.cpp
     pathfinding/test_limits_partial.cpp
@@ -519,6 +520,8 @@ target_sources(nnh_tests PRIVATE
     pathfinding/test_reference_self.cpp
     pathfinding/test_searcher_reuse.cpp
     pathfinding/test_slicing.cpp
+    pathfinding/test_smooth.cpp
+    pathfinding/test_smooth_walk.cpp
     pathfinding/test_tie_order.cpp
 )
 add_test(NAME unit COMMAND nnh_tests)

@@ -870,3 +870,24 @@ on this PC at the same time (other agents): times below are noisy, sizes are exa
   restart, stale with the current cells, a moved map, a destroyed map two ways), `test_searcher_reuse.cpp` (4: 10 000
   searches = fresh searchers, the stamp wrap, two interleaved searchers, sizes), `test_inspect.cpp` (3),
   `test_path_misuse.cpp` (2), `test_path_cost.cpp` (2). All path tests run in 2.3 s in pc-debug. Guards green.
+
+## Stage 4 refinements and results
+
+- **The walk** (`smooth_walk.hpp`, decision 18): one compare per step, `(2kx + 1)·|dy|` against `(2ky + 1)·|dx|`, which
+  also orders the steps once an axis is done (no special cases); a corner is reported on the diagonal cell with the walk's
+  signs, its side cells being `(x, y − sy)` (the x-neighbour) and `(x − sx, y)` (the y-neighbour), spec 019's order.
+  Equal to `collision::cells_crossed` cell for cell and corner for corner on 20 000 seeded centre pairs (short ones
+  on 9 × 9 for frequent corners, long ones on 64 × 64), plus horizontal, vertical and 45° cases.
+- **PC measurement** (decision 18, pc-release GCC 16, 200 000 random pairs on 64 × 64, three runs, noisy machine): the
+  integer walk 118–124 ns per segment, `cells_crossed` (spec 019's `GridWalk`, lattice path, plus the cell lookups and
+  the output) 846–884 ns: ≈ 7×. The copy stays.
+- **Corners with `Never`** (4 neighbours): treated as OnlyIfNoObstacles (both side cells walkable) — a 4-neighbour
+  agent can't squeeze through a corner either; the spec's text names only the other modes.
+- **Weights**: a cell crossed through its interior must be no heavier than the heaviest path cell of the replaced
+  part `path[a + 1 .. j]` (the anchor excluded, so a blocked or heavy start is never checked); side cells at a corner
+  are only checked by the rule.
+- **Follower**: advances only from its current waypoint (never skips one that isn't within the radius), arrival only
+  at the last; an empty list or a bad `reset` (null points with a count, negative count, NaN or negative radius) leaves
+  it empty and arrived.
+- Tests: `test_smooth_walk.cpp` (2), `test_smooth.cpp` (7, incl. 500 seeded smoothings whose every segment passes the
+  exact checker with the heaviest replaced weight), `test_follower.cpp` (6). Guards green.

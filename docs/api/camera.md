@@ -209,3 +209,8 @@ Zoom outside 0.5–4 or NaN, a negative or non-finite dead zone, smoothing outsi
 `shake_speed` outside (0, 1], a negative gap, non-finite offsets, limits or targets, negative limit sizes, a negative
 or non-finite `max_shake`, NaN trauma: **assert** in Debug/Development. Release clamps the value (or keeps the
 previous one for NaN; a bad target skips that update) and logs one error per rig on the channel `camera`.
+
+## Following a child node
+
+A rig follows any point: after `Hierarchy::propagate()`, `rig.update(tree.world_transform(rider)->position())`
+follows a rider on a moving cart (update → pass → rig → draw; [hierarchy.md](hierarchy.md)).

@@ -104,3 +104,6 @@ game's call, before the camera and drawing).
 
 - Robert Nystrom, *Game Programming Patterns*: [State](https://gameprogrammingpatterns.com/state.html)
   (including pushdown automata — our scene stack).
+
+> Naming: the ROADMAP's "scene tree" (Godot's word for nested nodes) is NNHGE's [hierarchy](../api/hierarchy.md) of
+> nodes; a **scene** stays a game mode on the scene stack.

@@ -225,3 +225,16 @@ NNH_TEST(world_reserve_many_inside_a_hook_and_an_iteration) {
     });
     CHECK(visited == 2 && w.storage<Vel>().count() == 4); // the fresh ones were not visited
 }
+
+NNH_TEST(world_reserve_many_reports_dropped_tags) {
+    World w = make(8, 8); // two tags per entity
+    const Tag three[3] = {kTags[0], kTags[1], kTags[2]};
+    ReserveEntity list[2] = {{0, 0, three, 2}, {0, 0, three, 3}};
+    const int kinds[1] = {0};
+    Entity out[2];
+    void* comps[1];
+    ReserveRefusal why{};
+    CHECK(nnh::detail::world_reserve_many(w, list, 2, kinds, out, comps, why, nullptr));
+    CHECK(why == ReserveRefusal::TagsDropped && w.has_tag(out[1], kTags[1]) && !w.has_tag(out[1], kTags[2]));
+    CHECK(nnh::detail::world_reserve_many(w, list, 1, kinds, out, comps, why, nullptr) && why == ReserveRefusal::None);
+}

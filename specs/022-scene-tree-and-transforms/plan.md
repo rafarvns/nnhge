@@ -1,6 +1,6 @@
 # Plan 022: Scene tree and transforms
 
-Status: approved 2026-11-23 (overnight pre-approval)
+Status: implemented 2026-11-24, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D37 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds and remove hooks, handles, the destroy queue, quarantine, iteration guards, scene binding;
 D35), spec 021 (prefab libraries, the all-or-nothing reservation, placement, hooks, map objects; D36), spec 015 (the
@@ -1006,3 +1006,50 @@ Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at co
 
   If reparent or pass_move miss on the console, T10.3 applies risk 1's list (the reparent first: the subtree walk
   skipped for leaves, one reciprocal for the three divisions, the walk fix-up loops skipped when no walk is active).
+
+### Stage 10: the values to expect (completes "Stage 10: console run (prepared)" above)
+
+T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh cmake --build --preset 3ds-dev
+--target hierarchy_3dsx platformer_3dsx prefabs_3dsx entities_3dsx` (no warning), `build/ref-022/dis.sh` against the
+Stage 7 table, `hello.elf` 2 482 372 bytes. Then, Old 3DS, Homebrew Launcher → **Y** before each run:
+
+1. `build/pc-debug/tools/nnh/nnh run hierarchy --script examples/hierarchy/tests/check.nnhs` — expect
+   `hierarchy: 10000 sum D22B93EC`, `20000 sum 9DB7C5E5`, `30000 sum 820ED1D5`, `40000 sum 5ED71B4D`, `50000 sum
+   23DB5C36`, **`hierarchy: PASS 23DB5C36`**; `yard: restarted nodes 12`; `picked: crate slot 10 gen 2 depth 0 at
+   200,218`; `attached: crate to hand at 200,218`; `dropped: crate at 200,218`; `picked: gun slot 1 gen 2 depth 1 at
+   104,120`; `destroyed: ship + 3 children`; `yard: restarted nodes 12`; `detached: 2 children`; then the five
+   `hierarchy bench:` lines (pass_turn < 1.5, pass_move < 1, world_now < 1.5, spawn < 2.2 with ratio ≤ 1.3, reparent
+   < 1 ms) and the verdict; `nnh: PASS (85 lines, …)`. Record the bench numbers in "Console run 1"; per the Stage 7
+   table, reparent (and possibly pass_move and the spawn ratio) may miss: then T10.3.
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` — the 15 lines of
+   "Stage 6 results" (`replay: 60 level1 x 121 y 242 coins 1 sum 24157F9E` … `replay: 840 bonus x 437 y 162 coins 0 sum
+   56B8179C`) and **`replay: done 900 frames sum E445E8B2: 60 Hz PASS`**; `nnh: PASS (81 lines, …)`.
+3. `… nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS 4 layers + 300 sprites, …`.
+4. `… nnh run prefabs --script examples/prefabs/tests/check.nnhs` → `prefabs: PASS 7BB7901E`, `prefabs bench: PASS`
+   (the dispatcher adds a lookup and a branch before spec 021's unchanged spawn body).
+5. `… nnh run entities --script examples/entities/tests/check.nnhs` → `entities: PASS C8FB9A41`, `entities bench: PASS`.
+
+### Stage 8 results
+
+- **T8.1 mutation** (`build/ref-022/mutants.py`, `mutants2.py`; the whole `nnh_tests` per mutant, pc-debug): 40 mutants
+  over the sine, composition, affine, relative, bounds, links, attach, the pass, `world_now`, the remove hook, the walk,
+  `Node`'s copy, `world_reserve_many`, `world_module`, the tree spawn and its registration, the dispatcher, the draw
+  merge and the platformer's barrel angles. 39 killed; 1 equivalent (`t4`: the integer path's threshold moved from
+  |q| ≥ 2²³ to 2²⁴ — between them q is whole and the float path also gives f = 0 and the same quadrant). One survivor
+  (`TagsDropped` from the group reservation) became the test `world_reserve_many_reports_dropped_tags`; two mutants
+  whose patterns had gone stale were rewritten and are killed.
+- **T8.2**: `scripts/check_release_strings.sh` passes on the 3ds-release and pc-release `hierarchy` executables (no new
+  Development-only text).
+- **T8.3 opt-in** (`build/ref-022/probe/`, linked against the 3ds-release `libnnh_core.a` with `--gc-sections`): a
+  transform-only game links no `nnh::World` and no hierarchy symbol; a game with prefabs without children links no
+  `Hierarchy`, `node_removed`, `propagate`, `tree_spawn` or `kPrefabTreeOps`; `hello` sizes and `nm` equal T0.1 on PC
+  and 3DS; `linkcheck.sh` clean.
+- **T8.4**: every reference screenshot identical (the platformer's three new ones from T6.3); `level`, `gate`,
+  `zoom_gate`, prefabs, entities, tweens and hierarchy scripts PASS with `--pc`. `.text` (3ds-release): platformer
+  381 492 (+19 924: the hierarchy and the turret art code), prefabs 346 724 (+3 200: registration of children and the
+  dispatcher; no tree code), entities 271 024 (unchanged), hierarchy 326 108. Edit `examples/hierarchy/yard.cpp` →
+  pc-debug 1.96–2.04 s (prefabs' room.cpp 2.19–2.31 s at T0.1), `.3dsx` 3.83–3.96 s (5.00–5.11 s): within constitution
+  III. Headers (`-E` lines, `-fsyntax-only`): `hierarchy.hpp` 8 983 (0.43–0.49 s), `prefabs.hpp` 9 036, `transform.hpp`
+  143 (0.29–0.34 s).
+- **Guards at the end**: pc-debug ctest 271/271, pc-release 259/259, `nnh_tests` 2441 (pc-release: every test of its flavour), every
+  preset without a warning, goldens `C8FB9A41`, `7BB7901E`, `B44CA3F6`, `23DB5C36`, replay `E445E8B2: 60 Hz PASS`.

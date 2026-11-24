@@ -22,3 +22,8 @@ position += velocity * speed;
 
 Positions are `float` so movement can be smooth; drawing rounds the final screen position to whole
 pixels ([rendering.md](../architecture/rendering.md)).
+
+## Transforms
+
+Positions, rotations and scales composed through parents (with the same bits on every system) are
+`<nnh/transform.hpp>`'s values: see [transform.md](transform.md) and, for entities, [hierarchy.md](hierarchy.md).

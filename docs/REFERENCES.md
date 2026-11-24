@@ -149,3 +149,11 @@ Projects to study (learn from them; check licenses before reusing any code). Res
 ## Gap we fill
 No maintained project combines: modern C++ engine + documented API + desktop simulator + console-side
 companion that drives PC builds + native `.cia` output. cpp3ds came closest and stopped.
+
+## Scene tree and transforms (spec 022)
+
+Written from the published designs, no code copied: Godot's `Node2D`, `Transform2D`, `Node.reparent` and `_ready`
+order; Unity's `Transform`, `SetParent(worldPositionStays)` and `lossyScale`; Bevy's `Transform`/`GlobalTransform`
+propagation; flecs' `ChildOf` and cascading deletes; Michele Caini's "ECS back and forth" part 4 (EnTT hierarchies);
+Bitsquid's transform component; Robert Nystrom, *Game Programming Patterns*, "Dirty Flag" (links in
+[spec 022](../specs/022-scene-tree-and-transforms/spec.md#prior-art)).

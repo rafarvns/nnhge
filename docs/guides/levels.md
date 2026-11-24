@@ -243,3 +243,9 @@ const int things = map.add_object_layer("things").value();              // objec
 A map built in code sizes its capacities itself (`TilemapDesc`): there is no file to take them from. Choose
 Tiled for levels you draw by hand, code for levels you generate or for tests; a game can mix both, and edit a
 loaded map in code too.
+
+## Map objects that spawn hierarchies
+
+Tiled has no object parenting: a map object names one prefab, and if that prefab has children (spec 022,
+[prefabs.md](../api/prefabs.md#children)) the object spawns the whole hierarchy, its bounds placing the root and every
+child's spawn hook seeing the same map object.

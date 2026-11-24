@@ -1,6 +1,6 @@
 # Spec 022: Scene tree and transforms
 
-Status: approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item as recommended;
+Status: implemented 2026-11-24, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
 to review in the morning, especially decision 24, the platformer's replay lines)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 020](../020-entities/spec.md) (worlds, component kinds and their remove hooks, handles, the

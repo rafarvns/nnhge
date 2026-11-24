@@ -242,3 +242,10 @@ a bound world, a command on an empty or moved-from world, `at` on a stale entity
 `add_tag(kNoTag)` or past `tags_per_entity`, `bind` twice or while iterating/clearing, destroying a world inside
 its own iteration or hook (Release frees it when the outermost operation ends, without more hooks). A full world
 asserts too: its capacity is the game's budget (pools are where "full" is normal).
+
+## The engine's node kind (spec 022)
+
+The engine ships exactly one component kind: `nnh::Node` (`nnh::node_component(capacity)`), which puts an entity in a
+[hierarchy](hierarchy.md). It is registered like any kind; its remove hook makes destroying a parent destroy its
+children through the destroy queue (breadth-first, each descendant's hooks with its data intact) and removing it make
+the children roots. Worlds without it are unchanged.

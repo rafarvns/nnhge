@@ -225,8 +225,14 @@ spec; the order below is a proposal.
   ([api/prefabs.md](api/prefabs.md), [levels guide](guides/levels.md#placing-prefabs-in-tiled), demo
   [`examples/prefabs`](../examples/prefabs/main.cpp)). The platformer's coins, turrets and sparkles are prefabs (replay
   lines unchanged)
-- [ ] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
-  that follow the parent (a gun on a ship, a hat on a head)
+- [x] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
+  that follow the parent (a gun on a ship, a hat on a head) — [spec 022](../specs/022-scene-tree-and-transforms/spec.md)
+  (implemented 2026-11-24; console check T10.2 pending). Named hierarchy, nodes and transforms in code (a "scene" is a
+  game mode): `<nnh/transform.hpp>` (deterministic values: composition, points, inverses, bounds, an exact-quarter-turn
+  sine), `<nnh/hierarchy.hpp>` (the engine's `Node` component kind, attach/detach keeping world or local, one pass per
+  frame, `world_now`, cascading destroys), prefabs with children, `gfx::draw` of a world transform; demo
+  `examples/hierarchy`; the platformer's turrets have barrel children ([hierarchy.md](api/hierarchy.md),
+  [transform.md](api/transform.md))
 - [x] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): named clips declared in code (frames of a
   sprite sheet, timings, loop), events on frames (a footstep sound), and a simple state machine (idle, run, jump);
   optionally read from Aseprite files — [spec 016](../specs/016-sprite-animation/spec.md) (implemented 2026-11-22;

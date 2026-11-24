@@ -119,6 +119,14 @@ map)` (a Tiled object's `prefab` property, else its type; unknown explicit names
 guide [levels.md](docs/guides/levels.md#placing-prefabs-in-tiled)). The platformer's coins, turrets and sparkles are
 prefabs (replay lines unchanged); the example's self-check (golden `7BB7901E`) compares prefab spawns with hand-written
 ones over 50 000 operations.
+Scene tree and transforms (spec 022, implemented, console T10.2 pending; D37; demo `examples/hierarchy`):
+`<nnh/transform.hpp>` (only `<nnh/math.hpp>`) — `Transform2D`, `WorldTransform2D` (affine map + drawing values),
+`compose`/`to_world`/`transform_point`/`inverse`/`relative`/`bounds`, `sin_cos` (libm-free, exact quarter turns
+`kQuarterTurn`…), the same bits everywhere ([api/transform.md](docs/api/transform.md)); `<nnh/hierarchy.hpp>` — the
+engine's one component kind `nnh::Node` (`node_component(cap)`), `Hierarchy` view: `attach/detach(…, KeepWorld|KeepLocal)`,
+`can_attach`, queries, `each_descendant`, `propagate()` once per frame (update → pass → camera → draw), `world_now`,
+destroying a parent destroys its children; prefabs with children (`nnh::child()`, `spawn_under`); `gfx::draw(screen,
+tex, world, options)` ([api/hierarchy.md](docs/api/hierarchy.md)). The platformer's turrets have barrel children.
 Tweens and timers (spec 015, implemented; demo `examples/tweens`): `<nnh/tween.hpp>` — 19
 libm-free easings (same bits everywhere), `nnh::Timer`, `TweenSet` (float/Vec2/Color by pointer or setter, loops,
 yoyo, sequences, `after`/`every`, callbacks or your own finish events) on the frame clock (`Frames`/`FrameTime` in
@@ -206,6 +214,7 @@ build/pc-debug/tools/nnh/nnh run data [--pc] --script examples/data/tests/check.
 QUERIES_DEMO=all NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/queries.png build/pc-debug/examples/queries/queries.exe   # first|all|cast|water|touch|check|bench
 build/pc-debug/tools/nnh/nnh run queries [--pc] --script examples/queries/tests/check.nnhs  # rays, touches, self-check 4ACAA177, bench
 build/pc-debug/tools/nnh/nnh run prefabs [--pc] --script examples/prefabs/tests/check.nnhs  # room, touch spawns, self-check 7BB7901E, bench
+build/pc-debug/tools/nnh/nnh run hierarchy [--pc] --script examples/hierarchy/tests/check.nnhs  # yard, self-check 23DB5C36, bench
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

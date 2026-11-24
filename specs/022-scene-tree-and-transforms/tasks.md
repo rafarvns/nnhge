@@ -1,6 +1,6 @@
 # Tasks 022: Scene tree and transforms
 
-Status: approved 2026-11-23 (overnight pre-approval)
+Status: implemented 2026-11-24, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -255,18 +255,18 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 8: mutation testing, opt-in checks
 
-- [ ] **T8.1** Mutation pass as in plans 019–021: hand mutants (`build/ref-022/mutants.py`, applied one at a time by
+- [x] **T8.1** Mutation pass as in plans 019–021: hand mutants (`build/ref-022/mutants.py`, applied one at a time by
   `mutate.py`, the whole `nnh_tests` each) of `src/transform/*`, `src/core/det_sine.cpp`, `src/hierarchy/*`,
   `src/entities/world_reserve_many.cpp` and `world_module.cpp`, the prefab tree and registration changes, `gfx/
   draw_transform.cpp`, the headers' templates and the platformer's barrels; Release-path mutants in pc-release;
   survivors become tests or are argued equivalent. Files: plan.md ("Mutation testing"). Covers VI.
-- [ ] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `hierarchy`
+- [x] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `hierarchy`
   executables passes (add Development-only texts to its list if any). Covers FR-22, FR-23.
-- [ ] **T8.3** [P] Opt-in by linking: probes (`build/ref-022/probe_*`, not committed) linked against the 3ds-release
+- [x] **T8.3** [P] Opt-in by linking: probes (`build/ref-022/probe_*`, not committed) linked against the 3ds-release
   libraries: a transform-only game (`compose`, `sin_cos`) has no `nnh::World` symbol; a game with prefabs without
   children has no `nnh::Hierarchy`, `node_removed`, `prefab_tree` or `propagate` symbol; `hello` sizes and `nm` equal
   T0.1 on PC and 3DS. Files: plan.md ("Stage 8 results"). Covers FR-24, AC-8.
-- [ ] **T8.4** Regression and build times: `compare.sh` (every reference of T0.2 identical, the platformer's new ones
+- [x] **T8.4** Regression and build times: `compare.sh` (every reference of T0.2 identical, the platformer's new ones
   from T6.3); every example's console script passes with `--pc` (actions, animation, camera, data, entities, foundation
   ×2, input, platformer `gate`, `level`, `zoom_gate`, prefabs, queries, tweens, hierarchy); `.text` of the platformer,
   `prefabs`, `entities`, `hierarchy` recorded; edit `examples/hierarchy/yard.cpp` → simulator and `.3dsx` times against
@@ -283,7 +283,7 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
+- [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
   builds of `hierarchy`, `platformer`, `prefabs` and `entities` without a warning; T7.6's table still true; `hello.elf`
   sizes as in T0.1; plan.md's "Stage 10: console run (prepared)" completed with the recorded goldens, checkpoints and
   showcase lines. Covers AC-8, II.
@@ -307,7 +307,7 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/transform.md` (values, units, the composition order,
+- [x] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/transform.md` (values, units, the composition order,
   mirroring, determinism and the exactness rules, the snap, edge cases, shear and the drawing approximation, points,
   inverses, `relative`, bounds, the accuracy numbers, the subnormal and signed-zero notes) and `docs/api/hierarchy.md`
   (the node kind and its registration, attach/detach and modes, `can_attach`, queries, `each_descendant`'s rules, the
@@ -315,17 +315,17 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   `detach_children`, removal, drawing, the bounds-to-body pattern, following a node with a camera, prefab children and
   `spawn_under`, costs, memory, misuse, pitfalls: centred pivots for mirrors, node copies without links); header
   comments (allocates? per-frame safe? misuse?). Covers VIII, AC-9.
-- [ ] **T11.2** Other pages: `docs/api/math.md` (link to transforms), `entities.md` (the engine's one component kind,
+- [x] **T11.2** Other pages: `docs/api/math.md` (link to transforms), `entities.md` (the engine's one component kind,
   cascades), `prefabs.md` (children, `child()`, `max_children`, `spawn_under`, `place(&Node::local)`), `gfx.md` (drawing
   a node), `camera.md` (following a child), `docs/guides/levels.md` (map objects spawn hierarchies),
   `docs/architecture/patterns.md` (the row: implemented), `scenes.md` (the naming note), `docs/REFERENCES.md` (Godot,
   Unity, Bevy, flecs, EnTT, Bitsquid, *Game Programming Patterns*' Dirty Flag), `CLAUDE.md` (layout paragraph and the
   hierarchy script command), the `nnh-architecture` skill's pattern list; `python -I scripts/docs_tool.py check` → 0
   broken links. Covers AC-9.
-- [ ] **T11.3** `docs/architecture/decisions.md`: D37 change-log note "implemented" with the stage refinements; D35 and
+- [x] **T11.3** `docs/architecture/decisions.md`: D37 change-log note "implemented" with the stage refinements; D35 and
   D36 notes confirmed. Covers AC-9.
-- [ ] **T11.4** Final measurements (header costs, build times, `hello` sizes, `.text` growth) in plan.md and
+- [x] **T11.4** Final measurements (header costs, build times, `hello` sizes, `.text` growth) in plan.md and
   `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.5** `docs/ROADMAP.md`: the "Scene tree and transforms" checkbox (the title kept, a note: hierarchy, nodes and
+- [x] **T11.5** `docs/ROADMAP.md`: the "Scene tree and transforms" checkbox (the title kept, a note: hierarchy, nodes and
   transforms), with the implemented summary.
-- [ ] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").

@@ -151,3 +151,9 @@ with 300 sprites, or 600 sprites with 4 layers): the benchmark of
 [`examples/platformer`](../../examples/platformer/main.cpp) (SELECT twice on the console, after level 1 and the
 bonus level; `PLATFORMER_DEMO=bench` on PC); A there runs its automatic gate, which finds the limits by itself
 (`PLATFORMER_DEMO=gate`, or the script `examples/platformer/tests/gate.nnhs` with `nnh run`).
+
+## Drawing a world transform
+
+`gfx::draw(screen, texture, world, options)` draws at a `WorldTransform2D`'s position with its rotation added and its
+scale multiplied into `options`; `gfx::transformed(world, options)` gives the merged options (a mirrored world
+subtracts the given rotation). For nodes and pivots see [hierarchy.md](hierarchy.md#drawing-collision-boxes-the-camera).

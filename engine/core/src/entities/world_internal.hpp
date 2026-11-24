@@ -1,6 +1,7 @@
 #pragma once
 // Worlds (spec 020): the cold part of a world's block and the helpers its source files share.
 
+#include "entities/entities_internal.hpp"
 #include "nnh/entities.hpp"
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
@@ -39,6 +40,7 @@ struct WorldCold {
     World* owner = nullptr; ///< the bound World object (bound worlds don't move)
     Scene* scene = nullptr;
     SceneAttachment node{};
+    WorldModuleState modules{}; ///< spec 022: the hierarchy's words (last: no earlier field moves)
 };
 
 MemTag& entities_memory_tag();

@@ -75,18 +75,18 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 2: entities-internal additions (pure)
 
-- [ ] **T2.1** `WorldModuleState` at the end of `WorldCold` (zeroed at creation), `world_module_state`, `world_dying`,
+- [x] **T2.1** `WorldModuleState` at the end of `WorldCold` (zeroed at creation), `world_module_state`, `world_dying`,
   `world_busy`. Test: `tests/entities/test_world_module.cpp` (zero at creation; dying inside a destroy's hooks and while
   queued, false after; busy inside `each` and hooks). Files: `src/entities/entities_internal.hpp`, `world_internal.hpp`,
   `world_module.cpp`. Covers FR-11, FR-23.
-- [ ] **T2.2** `world_reserve_many`: room found first (the k-th free entity and kind slots by bit scans from the hint,
+- [x] **T2.2** `world_reserve_many`: room found first (the k-th free entity and kind slots by bit scans from the hint,
   no state change), then taken with `take_entity`/`attach_component`; refusals as the first failing `world_reserve`
   would count them; `Clearing`, `Empty`. Test: `tests/entities/test_world_reserve_many.cpp` (twin worlds on 20 seeded
   sequences of 2000 operations: `world_reserve_many(n ≤ 32)` vs `n` × `world_reserve` — every record word, bitmap,
   counter, owner and component byte equal; each refusal leaves the world byte-identical but its counter; inside a
   remove hook and an iteration (fresh, not visited)). Files: `src/entities/world_reserve_many.cpp`. Covers FR-17.
-- [ ] **T2.3** [P] Stage end: the stage-end guards; `test_world_reserve.cpp` unchanged and passing.
-- [ ] **T2.4** ARM guard: 3ds-dev disassembly of `World::spawn` (109), `world_add` (143), `world_destroy`/`process` and
+- [x] **T2.3** [P] Stage end: the stage-end guards; `test_world_reserve.cpp` unchanged and passing.
+- [x] **T2.4** ARM guard: 3ds-dev disassembly of `World::spawn` (109), `world_add` (143), `world_destroy`/`process` and
   `examples/entities` `bench.o` identical to T0.1 (the cold part grew at its end only). Files: plan.md ("Stage 2
   results"). Covers II, FR-24.
 

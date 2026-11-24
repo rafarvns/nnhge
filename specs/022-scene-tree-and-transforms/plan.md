@@ -861,3 +861,23 @@ Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at co
   the same as `math.hpp`'s 0.26–0.31 s); it has no inline float arithmetic. Guards: pc-debug ctest 268/268, pc-release
   258/258, `nnh_tests` 2353, 3ds-release and 3ds-dev without a warning, `hello` sizes and `nm` unchanged, `World::spawn`,
   `world_add`, `prefab_spawn` and `examples/entities` `bench.o` byte-identical.
+
+### Stage 2 results
+
+- **T2.1**: `WorldModuleState` is the last member of `WorldCold` (`modules`); `world_module_state`, `world_dying`,
+  `world_busy(const World&)` in `src/entities/world_module.cpp`. `world_internal.hpp` now includes
+  `entities_internal.hpp` (for the struct).
+- **T2.2 refinements**: the group's kind ranges are consecutive from 0 (`ReserveEntity::first_kind`), so the room
+  check touches only the kinds the group names (no 32-int array clearing: an earlier draft's two `memset` calls are
+  gone); free slots are counted from each table's hint with `x &= x − 1` (no popcount call into libgcc). Room is decided
+  exactly as `count` `world_reserve()` calls would (entity i needs the (i+1)-th free entity slot, then one more slot of
+  each of its kinds, in order); the refusal is counted on that call's counter and nothing else changes (not even a
+  hint). Proven on 20 seeded sequences of 2000 operations against one-by-one `world_reserve()` (`same_state` every 64
+  steps), plus refusals, hooks and iterations; a mutant of the room check is killed.
+- **T2.4 ARM guard** (3ds-dev, `dis2/` vs `dis0/`): `examples/entities` `bench.o`, `world_spawn.o` (`World::spawn` 109),
+  `world_components.o` (`world_add` 143), `world_destroy.o`, `world_tags.o`, `world_flush.o`, `tags_find.o`,
+  `world_reserve.o`, `world_lifetime.o`, `world_scene.o`, `pool_core.o`, `prefab_spawn.o`, `prefab_map.o`:
+  byte-identical. New: `world_reserve_many` 294 instructions, `fits` 113, `free_slots` 34; no call, `vmrs`,
+  `__aeabi_*` or `memset`.
+- Guards: pc-debug ctest 268/268, pc-release 258/258, `nnh_tests` 2360 (pc-release 2320), 3ds builds without a warning,
+  `hello` sizes and `nm` unchanged; entities, prefabs, tweens self-checks and the replay ctest pass.

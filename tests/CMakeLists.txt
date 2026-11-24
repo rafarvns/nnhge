@@ -161,7 +161,9 @@ add_executable(nnh_tests
     entities/test_world_misuse.cpp
     entities/test_world_scene.cpp
     entities/test_world_model.cpp
+    entities/test_world_module.cpp
     entities/test_world_reserve.cpp
+    entities/test_world_reserve_many.cpp
     entities/world_fixture.cpp
     events/test_capacities.cpp
     events/test_dispatch.cpp

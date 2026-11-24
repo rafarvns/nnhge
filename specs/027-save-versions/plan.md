@@ -1069,3 +1069,12 @@ One mutant of the first list was equivalent too (a path-count condition) and was
 Docs: `docs/api/saves.md` (new), `fs.md`, `data.md`, `architecture/security.md`, `decisions.md` (D45/D46
 implemented), `patterns.md`, `REFERENCES.md`, `CLAUDE.md`, `ROADMAP.md`, `specs/README.md`, statuses. Stage 9 (Linux,
 VM 120) and stage 10 (console) are the lead's and the maintainer's; T11.7 (merge) is the lead's.
+
+## Maintainer decisions after the implementation (2026-11-24)
+
+- **Stack:** the ≈ 1.5 KB file-load peak (≈ 2.9 KB at 8 levels) is accepted; the < 1 KiB target is retired. The 3DS
+  main thread's stack is 32 KB by default, and lowering it would mean changing spec 002's `Result` (used by every
+  module) or the load API. `docs/api/saves.md` states the measured stack use.
+- **Code size:** the module's ≈ 22.6 KB of 3ds-release `.text` (codec ≈ 14.6 KB, against the 7–10 KB estimate) is
+  accepted: the module is opt-in (`hello` is byte-identical), so only games that use structured saves pay it.
+

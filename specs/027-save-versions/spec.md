@@ -114,7 +114,9 @@ raw `nnh::save` keeps working unchanged.
   provides; the engine gives each save type's **maximum encoded size** as a compile-time constant (every string full,
   every list full), so a game can size a static buffer exactly. Store, load, encode, decode, migrations and dumps
   allocate nothing and call no `virtual` function; their own stack use stays small and is stated by the plan (target:
-  under 1 KiB besides the game's struct and buffer — the 3DS main thread's stack is small). Separate calls encode a
+  under 1 KiB besides the game's struct and buffer — the 3DS main thread's stack is small; **decided 2026-11-24 by
+  the maintainer**: the measured ≈ 1.5 KB for a file load (≈ 2.9 KB at 8 levels) is accepted, the main thread's stack
+  being 32 KB by default, rather than changing spec 002's `Result` or the load API). Separate calls encode a
   value into a buffer and decode one from a buffer, for games that embed a save in their own file or keep several in
   one (the file calls are built on them).
 

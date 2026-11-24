@@ -190,7 +190,8 @@ blob. They get versions, migrations and the backup for free.
 load needs room for the whole file: `LimitReached` otherwise). Keep it static or in a scene — the 3DS main thread's
 stack is small. `encode(value, out, capacity)` and `decode(data, size, value)` work in memory (a save inside the game's
 own file, several in one blob); `store`/`load` are built on them. Nothing allocates; the stack a load uses is about
-1.5 KB on the 3DS for a three-level save (plan 027 stage 7), more for deeper nesting.
+1.5 KB on the 3DS for a three-level save (plan 027 stage 7; about 2.9 KB at 8 levels). The module adds about
+22.6 KB of code to a 3DS game that uses it (the codec about 14.6 KB); games without structured saves pay nothing.
 
 ## The dump
 

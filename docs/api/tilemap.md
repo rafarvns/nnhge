@@ -347,6 +347,9 @@ const collision::Grid fish_grid = map.collision_grid(kWorld); // ...and not here
   keeps the default set with one warning. `collision_layers` on a layer without `collision`, or on a tile without
   `solid`/`one_way`, is accepted and does nothing.
 
+Pathfinding over a map (spec 025): a [path map](pathfinding.md) per kind of mover, synced from `collision_grid(mask)`, with
+weights from a tile property ([pathfinding.md](pathfinding.md#weights-from-tiled)).
+
 ## Objects
 
 ```cpp

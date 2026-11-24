@@ -96,6 +96,16 @@ A plain `int` property named `collision_layers` works too (without a Tiled proje
 "collision_layers" must not be 0: untick collision instead`). On a layer without `collision`, or a tile without
 `solid`/`one_way`, it is accepted and does nothing. It also stays readable as an ordinary property.
 
+### Slow tiles for pathfinding
+
+[Pathfinding](../api/pathfinding.md) (spec 025) searches a copy of the level's collision with a **weight** per cell:
+how costly entering it is. Give the ground tiles an int property, for example `path_cost` (road 1, floor 2, swamp 4,
+water 8), in the tileset editor. The game reads it once into a table per tile id and hands `sync` a two-line weight
+callback ([the pattern](../api/pathfinding.md#weights-from-tiled), [`examples/pathfinding`](../../examples/pathfinding/level.cpp)):
+searches then go round the swamp when the road is shorter in cost. Walls stay what `collision` and `solid` say (a
+blocked cell); a tile without the property gets weight 1. Make one path map per kind of mover with
+`collision_grid(mask)` (boats and walkers).
+
 ## 5. Layers, parallax and flips
 
 - **Tile layers** keep their order, name, offset, opacity, visibility, parallax factor and flipped tiles

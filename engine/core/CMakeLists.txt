@@ -236,6 +236,31 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_query_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
     set_source_files_properties(${_nnh_query_sqrt_source} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
+# Pathfinding on grids (spec 025, D40): searches, fields, smoothing and footprints are integer-only; the float parts
+# (cell <-> world, the follower) are built without fused multiply-add, so PC and 3DS give the same bits. Optional: a
+# game that doesn't call it links none of it.
+set(_nnh_pathfinding_sources
+    src/pathfinding/field_build.cpp
+    src/pathfinding/field_create.cpp
+    src/pathfinding/field_query.cpp
+    src/pathfinding/follower.cpp
+    src/pathfinding/footprint.cpp
+    src/pathfinding/map_create.cpp
+    src/pathfinding/map_edit.cpp
+    src/pathfinding/map_geometry.cpp
+    src/pathfinding/map_sync.cpp
+    src/pathfinding/open_heap.cpp
+    src/pathfinding/path_check.cpp
+    src/pathfinding/search_begin.cpp
+    src/pathfinding/search_path.cpp
+    src/pathfinding/search_step.cpp
+    src/pathfinding/searcher_create.cpp
+    src/pathfinding/smooth.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_pathfinding_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_pathfinding_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 # Object pools (spec 020, D35): integer-only; a game that includes <nnh/pool.hpp> links only what it calls.
 set(_nnh_pool_sources
     src/pool/pool_core.cpp

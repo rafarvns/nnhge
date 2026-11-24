@@ -501,6 +501,21 @@ if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL 
         PASS_REGULAR_EXPRESSION "data check: PASS checksum 0xD5BD3020 [(]4 enemies, 3 items, 1 settings, index 595 bytes[)]"
         FAIL_REGULAR_EXPRESSION "data check: FAIL|\\] E " TIMEOUT 120)
 endif()
+# The pathfinding example's self-check in the simulator (spec 025 T7.3, AC-5) and its console script played with --pc.
+if(TARGET pathfinding AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME pathfinding_self_check_pc COMMAND pathfinding)
+    set_tests_properties(pathfinding_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PATHFINDING_DEMO=check;NNH_EXIT_AFTER_FRAMES=80"
+        PASS_REGULAR_EXPRESSION "pathfinding: PASS 1C0B5992" FAIL_REGULAR_EXPRESSION "pathfinding: FAIL|\\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME pathfinding_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run pathfinding --pc --no-build --script examples/pathfinding/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(pathfinding_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port)
+endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 # The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
 target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/tweens/self_check.cpp)
@@ -529,6 +544,45 @@ target_sources(nnh_tests PRIVATE hierarchy_example/test_self_check.cpp)
 # The actions example's self-check and log lines (spec 017 T6.4).
 target_sources(nnh_tests PRIVATE actions_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/actions/action_log.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/actions/self_check.cpp)
+# Pathfinding on grids (spec 025): unit tests, references, the example's self-check, the fuzz target.
+target_sources(nnh_tests PRIVATE
+    pathfinding/path_reference.cpp
+    pathfinding/test_field_build.cpp
+    pathfinding/test_field_next.cpp
+    pathfinding/test_field_slices.cpp
+    pathfinding/test_find_basic.cpp
+    pathfinding/test_find_costs.cpp
+    pathfinding/test_follower.cpp
+    pathfinding/test_footprint.cpp
+    pathfinding/test_inspect.cpp
+    pathfinding/test_limits_partial.cpp
+    pathfinding/test_neighbors.cpp
+    pathfinding/test_open_heap.cpp
+    pathfinding/test_path_cost.cpp
+    pathfinding/test_path_map_create.cpp
+    pathfinding/test_path_map_edit.cpp
+    pathfinding/test_path_map_sync.cpp
+    pathfinding/test_path_misuse.cpp
+    pathfinding/test_path_points.cpp
+    pathfinding/test_reference_random.cpp
+    pathfinding/test_reference_self.cpp
+    pathfinding/test_searcher_reuse.cpp
+    pathfinding/test_slicing.cpp
+    pathfinding/test_smooth.cpp
+    pathfinding/test_smooth_walk.cpp
+    pathfinding/test_tie_order.cpp
+    pathfinding_example/test_self_check.cpp
+    fuzz/test_fuzz_path_ops.cpp
+    ${PROJECT_SOURCE_DIR}/examples/pathfinding/check_maps.cpp
+    ${PROJECT_SOURCE_DIR}/examples/pathfinding/self_check.cpp
+)
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_path_ops.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_path_ops fuzz/libfuzzer_path_ops.cpp)
+    target_link_libraries(fuzz_path_ops PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_path_ops PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_path_ops PRIVATE -fsanitize=fuzzer,address)
+endif()
 add_test(NAME unit COMMAND nnh_tests)
 
 # Platform contract conformance: the same tests against each platform library.

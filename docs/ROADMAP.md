@@ -278,8 +278,15 @@ spec; the order below is a proposal.
   from a table in the assets, the system language picked by default; the built-in font covers Latin-1
 - [ ] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves
-- [ ] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
-  allocation while searching
+- [x] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
+  allocation while searching — [spec 025](../specs/025-grid-pathfinding/spec.md), **implemented 2026-11-24**, Old 3DS
+  check pending (T10.2): `<nnh/pathfinding.hpp>` — path maps baked from any `collision::Grid` (blocked cells and weights
+  1–255 from a tile property, agent sizes 1–4, region syncs for doors, a version counter), integer A* searchers with a
+  fixed tie order (the same cells on PC and 3DS: golden `1C0B5992`), expansion limits, partial paths, time slicing and
+  stale flags, smoothing into waypoints (spec 019's exact walk in integers), double-buffered distance fields for crowds
+  with `next`, a squared-distance path follower; nothing allocates after creation; optional (D40). Demo
+  `examples/pathfinding` (a keep made in Tiled, a hero, 32 chasers, doors, the island, a 2 × 2 hero, debug views,
+  self-check and bench) ([api/pathfinding.md](api/pathfinding.md))
 - [x] **Raycasts and shape queries** (Godot RayCast2D, Unity Physics2D.Raycast): line of sight, "what's under
   this point", against tiles and boxes, filtered by layers — [spec 019](../specs/019-collision-layers-and-queries/spec.md),
   **implemented 2026-11-23**; Old 3DS check passed: rays from → to against grids (an exact Amanatides & Woo walk:

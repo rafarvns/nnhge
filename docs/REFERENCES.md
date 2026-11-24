@@ -138,6 +138,32 @@ Projects to study (learn from them; check licenses before reusing any code). Res
 - **Robert Nystrom, *Game Programming Patterns*, Prototype** — spawning by copying a prototype, data-driven prototypes
   with a base (spec 021's variants and data-asset values): https://gameprogrammingpatterns.com/prototype.html
 
+Pathfinding on grids (spec 025, D40) — written from the published algorithms and the engines' documentation; no code
+copied:
+
+- **Godot `AStarGrid2D` / `AStar2D`** — solid cells and weight scales, regions, the four diagonal modes, partial paths
+  (the names of spec 025's `Diagonals`; `AStar2D`'s arbitrary graphs are a non-goal):
+  https://docs.godotengine.org/en/stable/classes/class_astargrid2d.html ·
+  https://docs.godotengine.org/en/stable/classes/class_astar2d.html
+- **A\* Pathfinding Project** (Unity) grid graphs — neighbours, corner cutting, penalties, erosion for bigger agents
+  (agent footprints): https://arongranberg.com/astar/docs/gridgraph.html
+- **Unity NavMesh** — a walkable surface baked ahead of time, as path maps are baked from grids:
+  https://docs.unity3d.com/Manual/nav-BuildingNavMesh.html
+- **Amit Patel, Red Blob Games** — introduction and implementation of A*, tie-breaking, heuristics and their scale,
+  flow fields for tower defence: https://www.redblobgames.com/pathfinding/a-star/introduction.html ·
+  https://www.redblobgames.com/pathfinding/a-star/implementation.html · http://theory.stanford.edu/~amitp/GameProgramming/ ·
+  https://www.redblobgames.com/pathfinding/tower-defense/
+- **P. E. Hart, N. J. Nilsson, B. Raphael**, "A Formal Basis for the Heuristic Determination of Minimum Cost Paths",
+  IEEE Transactions on Systems Science and Cybernetics, 1968 — A* and admissible heuristics
+- **Brian Walker**, "The Incredible Power of Dijkstra Maps" (RogueBasin) — one map toward many goals (distance fields):
+  https://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps
+- **Elijah Emerson**, "Crowd Pathfinding and Steering Using Flow Field Tiles", *Game AI Pro*, 2013 — integration
+  fields: http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter23_Crowd_Pathfinding_and_Steering_Using_Flow_Field_Tiles.pdf
+- **Daniel Harabor, Alban Grastien**, "Online Graph Pruning for Pathfinding on Grid Maps", AAAI 2011 (Jump Point
+  Search; a non-goal for weighted grids): https://users.cecs.anu.edu.au/~dharabor/data/papers/harabor-grastien-aaai11.pdf
+- **Adi Botea, Martin Müller, Jonathan Schaeffer**, "Near Optimal Hierarchical Path-Finding", Journal of Game
+  Development, 2004 (HPA*; a non-goal): https://webdocs.cs.ualberta.ca/~mmueller/ps/hpastar.pdf
+
 ## Real-world 3DS engine write-ups
 - Silent Hill 2 → 3DS (C engine on libctru + citro3d, offline asset packer, linear-memory budgeting):
   https://ankush.one/blogs/silent-hill-2-3ds-port/

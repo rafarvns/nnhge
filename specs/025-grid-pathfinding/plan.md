@@ -1,6 +1,6 @@
 # Plan 025: Pathfinding on grids
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (stages 0-8 and 11; Linux T9.1 and Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D40 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 012 (`collision::Grid`, `Cell`, spec 012's half-open cell rule; tilemaps, tile properties, `set_tile`), spec
 019 (`collision_grid(mask)`, the exact grid walk and its corner rule, `cells_crossed`), spec 002 (asserts, logs,
@@ -699,6 +699,30 @@ brings the console back to the Homebrew Launcher; logs and screenshots in `build
    exactly the `replay: … sum` lines **in the tree at that time**, `replay: done 900 frames sum <last>: 60 Hz PASS`;
    `nnh: PASS (79 lines, …)`. A different sum is a defect (025 touches nothing the platformer runs).
 
+**Completed with the recorded values (stage 7).** Before the console, on the PC: `scripts/dkp.sh cmake --build --preset
+3ds-release` and `scripts/dkp.sh cmake --build --preset 3ds-dev --target pathfinding_3dsx platformer_3dsx` without a
+warning; `sh build/ref-025/sizes.sh now` equal to `build/ref-025/base/sizes.txt` (hello unchanged). Then, Homebrew
+Launcher open on the Old 3DS, press **Y**, and on the PC:
+
+```sh
+build/pc-debug/tools/nnh/nnh run pathfinding --script examples/pathfinding/tests/check.nnhs   # ~75 s: 3 700 frames
+```
+
+Expected, every line as the `--pc` run's (`nnh: PASS (104 lines, …)` on the PC): `field: built 3,3 settled 1135 frames
+3`; `pathfinding: check started`; `pathfinding: 64 sum 8332890F`, `128 sum BF55A00B`, `192 sum B3E6C49A`, `256 sum
+C825A5E7`, `320 sum 77C6FFC5`, `384 sum E738F010`, `448 sum 528F7687`, `512 sum 1C0B5992`; **`pathfinding: PASS
+1C0B5992`**; `pathfinding: showcase`; `hero: paused`; `goal: 24,5 found cells 22 cost 438 expanded 251 waypoints 3`;
+`door: 1 closed version 2`; `replan: version 2 found cells 48 cost 1040 expanded 777 waypoints 9`; `goal: 34,7 partial
+cells 41 cost 1012 expanded 1134 waypoints 7`; `hero: 2x2`; `goal: 24,20 partial cells 18 cost 428 expanded 378
+waypoints 3`; `mode: never`; `hero: 1x1`; `hero: walking`; `pathfinding bench: maze path 405 cells, 494 expanded; smooth
+path 200 cells; replans 32 pairs, 4518 expanded; astar 81359 expanded` (the counts must match the PC's); then the eleven
+bench lines and the verdict. **Expected verdict from the pre-check: `pathfinding bench: FAIL (replans, next, …)`**
+(`field slices`, `astar`, `field one` and `sync` at risk): the script then fails at its verdict line, after every number
+is logged — record them under "Console run 1" and go on with T10.3 (find the cost in the 3ds-dev disassembly, apply risk
+1's list without changing a result, run again; then set the budgets from the measurement with ≈ 25 % margin in the spec's
+AC-7, `bench_scene.cpp` and `docs/api/pathfinding.md`). Screenshots (`build/logs/pathfinding-*/`): start, door-open,
+door-closed, partial, big, walking, bench — the same pictures as the `--pc` run's. Run 2 (the platformer) as above.
+
 ## Decisions taken (overnight, to review)
 
 The spec's "Decisions to take" are approved as recommended. Its open questions and these plan-level decisions were
@@ -780,3 +804,296 @@ not amended (filtered grids are read through the unchanged `Grid` callback; the 
 `collision/grid_internal.hpp` for spec 012's cell rule, as D36/D37 use other modules' internal headers). The spec's
 memory estimates (searchers ≤ 8 B, fields ≤ 4 B per cell) are not met and are flagged (decision 9, risk 2). The
 patterns page gains a "Time-sliced job" row.
+
+## Stage 0 results
+
+Windows, WinLibs GCC 16.2, devkitARM; built in the `spec-025` worktree from `main` at `1e4570b`. Three other builds ran
+on this PC at the same time (other agents): times below are noisy, sizes are exact.
+
+- **Sizes** (`build/ref-025/base/sizes.txt`, `nm -C` lists beside it): `hello.exe` pc-release 278 856 B, pc-debug
+  1 297 082 B; `hello.elf` 3ds-release 2 488 800 B (`.3dsx` 246 512), 3ds-dev 2 748 028 B (`.3dsx` 268 012). `.text` of
+  the 3ds-release examples: queries 256 004, entities 250 580, prefabs 313 548, platformer 327 132.
+- **Headers** (one-line TUs, best of 5 `-fsyntax-only`, pc GCC): `<nnh/collision.hpp>` 691 lines 301 ms;
+  `<nnh/collision.hpp>` + `<nnh/result.hpp>` 7 745 lines 421 ms; `<nnh/tilemap.hpp>` 8 485 lines 435 ms.
+- **Disassembly** of `collision::detail::first_cell` and `collision::cell_at` (3ds-dev `grid.o`, `point_queries.o`) in
+  `build/ref-025/dis0/`.
+- **Screenshots** (T0.2): `build/ref-025/ref/` — hello, queries (`all` at 30), entities (60), prefabs (60), platformer
+  (90), replay (64, 312); `build/ref-025/compare.sh now` retakes and compares them.
+- **Goldens and counts** (T0.3): ctest `platformer_replay_matches_script` with the tree's `replay: done 900 frames sum
+  B2418A28: 60 Hz PASS`; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7BB7901E`; 2 414 tests in
+  `nnh_tests`, `kMaxTests` 4096 (1 682 left: not raised).
+- **Not measured**: the clean `nnh_core` time and the edit-a-game-file times at stage 0 (three parallel builds made them
+  meaningless); the edit times of `examples/pathfinding` are measured against `examples/queries` in the same session at
+  T8.4.
+- Guards: `build/ref-025/guards.sh` (builds without warnings, both ctests, 3DS presets, sizes and `nm` against the base,
+  untouched headers and platformer, docs links).
+
+## Stage 1 refinements and results
+
+- **Header** as sketched, plus `PathSearcher::valid()`, `DistanceField::width()/height()/valid()` and
+  `friend struct detail::PathAccess` in the three classes (the internal accessor the searcher, fields and tests use;
+  no public API).
+- **Regions** (`fill`, `sync(grid, region)`): clipped to the map; a negative size or a non-empty region entirely
+  outside the map is misuse (assert, nothing changed); an empty region is accepted and still increments the version
+  (every accepted call does, as written).
+- **Queries on an invalid (empty) map** (`blocked`, `weight`, accessors) answer blocked / 0 without asserting; commands
+  on it (`sync`, `set_cell`, `fill`, `set_diagonals`, `cell_center`, `cell_at`) assert. `blocked`/`weight` outside a valid
+  map assert as the misuse table says (Release: blocked).
+- **Memory**: exactly `sizeof(PathMapBlock)` (96 B on 64-bit) + (W + 2)(H + 2) (+ W·H for agent sizes 2–4), tested
+  through the tag's stats.
+- **Header cost** (T1.6): `<nnh/pathfinding.hpp>` 8 023 lines, 437 ms against 421 ms for `collision.hpp` + `result.hpp`
+  (+16 ms, within 0.05 s); it pulls only `collision.hpp`, `math.hpp`, `result.hpp` (and `assert.hpp`, `build.hpp`,
+  `detail/printf_format.hpp` through it) and `<cstdint>`.
+- Tests: `test_path_map_create.cpp` (10), `test_path_map_sync.cpp` (9), `test_path_map_edit.cpp` (5),
+  `test_footprint.cpp` (3), `test_path_points.cpp` (5). Guards: all green (ctest 268 pc-debug, 258 pc-release), sizes and
+  `nm` identical to stage 0.
+
+## Stage 2 refinements and results
+
+- **Open set** as planned (`open_heap.{hpp,cpp}`): 16-byte entries `{h, f, seq, cell}`, `(f, h)` compared as one 64-bit
+  key then `seq` descending, hole sifts, the one-entry buffer (`offer`/`take`; a held entry that loses replaces the
+  heap's top with one sift-down, so taking never grows the heap), compaction by a predicate then Floyd's heapify.
+  The searcher compacts before an `offer` that finds the heap full (an `offer` adds at most one heap entry).
+- **Cells in entries** are packed `(y << 16) | x`; neighbours move them by constant packed deltas (`kPackedDelta`),
+  and the record index is `(y + 1) · stride + x + 1` (one multiply). Partial ties on the row-major index compare the
+  packed cells (the same order).
+- **Records** `{g, meta}`, meta = stamp (28 bits) | closed | dir; "reached this search" is `meta >> 4 == stamp`; the
+  start's record is stamped at `begin` (so `reached(from)` is true from the start, also for `from == to`).
+- **The expansion** (`search_step.cpp`): `Expander<M>` per mode, the orthogonal bytes loaded once and reused for the
+  diagonal rule; the heuristic scale is skipped when 16. The mode, costs and scale are captured at `begin` (a
+  `set_diagonals` during a sliced search applies to the next search).
+- **`step()` misuse**: `step()` with no search begun since creation or `cancel()` (status None) asserts; `step()`
+  after a finished search returns true silently (a round-robin loop may call it).
+- Tests: `path_reference.{hpp,cpp}` (RefMap copy of what searches see, Dijkstra, the literal A*, the multi-source
+  field, path validator, an **exact** segment checker — every cell whose open interior the centre line crosses, by
+  corner cross products, and every lattice corner on the segment — instead of 1/64 sampling, which can miss thin
+  slivers), `test_reference_self.cpp` (6), `test_neighbors.cpp` (6), `test_open_heap.cpp` (4), `test_find_basic.cpp`
+  (9), `test_find_costs.cpp` (4), `test_tie_order.cpp` (5: straight, diagonal-vs-straight by lower h — path (0,0),
+  (1,1), (2,1), 3 expansions; the symmetric pillar by the most recent push — over the top, 7 expansions; equal weights
+  both ways; **find = literal A\* on 300 seeded maps × 3 searches**, scale 16 and 24).
+- **Probe** (T2.6, `build/ref-025/probe/`): a 3ds-release program calling only `PathMap::create` and `find` links 20
+  pathfinding symbols (create, the searcher, begin/step/finish, misuse) and nothing of sync, fields, smoothing or the
+  follower; one calling only `collision::move` links none. Guards green; sizes and `nm` unchanged.
+
+## Stage 3 refinements and results
+
+- **Limits, partial paths, slicing** as planned; the stage-2 code already held them (the tests were written against
+  it; the mutation pass in stage 8 is what proves they bite).
+- **The doomed block** (map destroyed during sliced work): `~PathMap` marks the block doomed and clears its own pointer
+  *before* the assert, so the Debug crash path and the Release path leave the same state; the searcher's next `step()`
+  ends `Invalid` and frees the block, and so do `cancel()`, a new `begin()` and the searcher's destructor (tested
+  through `mem::live_allocations()`).
+- **`step()` after a finished search** returns true and changes nothing; a negative step size asserts and returns
+  whether the search is finished.
+- **Cost test**: `nnh::events::Stats` has no publish counter, so FR-21 is checked through its counters (subscribers,
+  dropped events) and by the module never including `<nnh/events.hpp>`; no console line is written in the normal path
+  (fake platform's `console_lines`).
+- Tests: `test_limits_partial.cpp` (8: the goal as the limit-th pop, every status, crafted partial ties, an island's
+  shore, blocked goal / limit / start-only partials, a 63 × 63 comb map with a searcher of exactly its size at scales 16
+  and 64 against the literal A*), `test_slicing.cpp` (6: slices 1/7/64/whole = find on 300 searches, cancel and
+  restart, stale with the current cells, a moved map, a destroyed map two ways), `test_searcher_reuse.cpp` (4: 10 000
+  searches = fresh searchers, the stamp wrap, two interleaved searchers, sizes), `test_inspect.cpp` (3),
+  `test_path_misuse.cpp` (2), `test_path_cost.cpp` (2). All path tests run in 2.3 s in pc-debug. Guards green.
+
+## Stage 4 refinements and results
+
+- **The walk** (`smooth_walk.hpp`, decision 18): one compare per step, `(2kx + 1)·|dy|` against `(2ky + 1)·|dx|`, which
+  also orders the steps once an axis is done (no special cases); a corner is reported on the diagonal cell with the walk's
+  signs, its side cells being `(x, y − sy)` (the x-neighbour) and `(x − sx, y)` (the y-neighbour), spec 019's order.
+  Equal to `collision::cells_crossed` cell for cell and corner for corner on 20 000 seeded centre pairs (short ones
+  on 9 × 9 for frequent corners, long ones on 64 × 64), plus horizontal, vertical and 45° cases.
+- **PC measurement** (decision 18, pc-release GCC 16, 200 000 random pairs on 64 × 64, three runs, noisy machine): the
+  integer walk 118–124 ns per segment, `cells_crossed` (spec 019's `GridWalk`, lattice path, plus the cell lookups and
+  the output) 846–884 ns: ≈ 7×. The copy stays.
+- **Corners with `Never`** (4 neighbours): treated as OnlyIfNoObstacles (both side cells walkable) — a 4-neighbour
+  agent can't squeeze through a corner either; the spec's text names only the other modes.
+- **Weights**: a cell crossed through its interior must be no heavier than the heaviest path cell of the replaced
+  part `path[a + 1 .. j]` (the anchor excluded, so a blocked or heavy start is never checked); side cells at a corner
+  are only checked by the rule.
+- **Follower**: advances only from its current waypoint (never skips one that isn't within the radius), arrival only
+  at the last; an empty list or a bad `reset` (null points with a count, negative count, NaN or negative radius) leaves
+  it empty and arrived.
+- Tests: `test_smooth_walk.cpp` (2), `test_smooth.cpp` (7, incl. 500 seeded smoothings whose every segment passes the
+  exact checker with the heaviest replaced weight), `test_follower.cpp` (6). Guards green.
+
+## Stage 5 refinements and results
+
+- **Fields** as planned: `field_build.cpp` settles a cell, computes `d + S·w(c)` and `d + D·w(c)` once and relaxes the
+  4 or 8 neighbours with loads, compares and stores (the side cells of a diagonal are the settled cell's orthogonal
+  bytes, loaded once); the heap is keyed `(d, padded index)` and compacted when full. `begin` checks every goal before
+  touching anything (an outside goal asserts first, so the Debug crash leaves the field as it was; Release ignores it).
+- **Single-buffered** fields are not ready from `begin` until the build finishes (a cancelled build leaves them not
+  ready: their only array was being rewritten); double-buffered ones keep answering from the front array, whose map size
+  is kept apart (`ans_w/ans_h/ans_stride`).
+- **A map destroyed mid-build**: the next `step()` ends the build (as `cancel()`), the last finished build keeps
+  answering (double-buffered), the block is freed by the field.
+- **`next()`** needs the map the field answers for (same size; else misuse, false); `next_point()` returns false
+  without asserting for a point outside the map (an agent pushed off the level).
+- **Memory** (tested through the tag): `header + 4 B × padded cells × (1 or 2) + 8 B × cells`.
+- Tests: `test_field_build.cpp` (8, incl. 300 seeded maps against the multi-source reference with caps),
+  `test_field_slices.cpp` (5), `test_field_next.cpp` (5: brute-force `next` on 100 maps (> 10 000 cells), neighbour-
+  order ties, the corner rule, `next_point`, field = the search's cost from every walkable cell on 200 maps with 1–2
+  goals). The pc-release run caught a wrong expected value in a Release-path check (34, octile, not 40) — fixed in the
+  test. Guards green.
+
+## Stage 6 refinements and results
+
+- **AC-2** (`test_reference_random.cpp`): pc-debug runs 512 maps (all path tests together took 5.6 s in Debug, over
+  the 5 s budget with 2048), pc-dev/pc-release run **2048 maps**: 8 192 searches (2 647 Found, 2 723 Partial, 2 048
+  sliced; limits 1–60 on a quarter, scale 40 on a fifth), 2 048 fields (1–4 goals, a seventh capped at 200) with every
+  cell's `next` checked to lower the cost-to-go by exactly its step, 26 990 smoothed segments against the exact checker
+  — all equal to the references (pc-release: 3.1 s for every path test).
+- **Maps** (`examples/pathfinding/check_maps.{hpp,cpp}`): `rooms` (8 × 8 blocks, a 6–7-cell room in each, joined right
+  and down; 29 % walls at 64 × 64 and 128 × 128, 100/100 seeded pairs connected), `maze` (iterative backtracker with
+  a caller-given stack; 54 % walls at 48 × 48), `swamp` (4 × 4 weight patches, a walled island). `ByteGrid` gives the
+  `collision::Grid` callback and the weight callback over the same bytes (so `sync(grid, weights)` is exercised).
+- **The golden** (`self_check.{hpp,cpp}`): as planned, M4 being a copy of M1's bytes at agent size 2 (its doors toggle
+  its own copy). The fields' `next` asks 64 seeded cells; door edits rotate fill / set_cell / region sync. Recorded in
+  pc-debug, equal in pc-release: **`kPathfindingCheckGolden = 1C0B5992`**, checkpoints `8332890F BF55A00B B3E6C49A
+  C825A5E7 77C6FFC5 E738F010 528F7687 1C0B5992`. The same in slices of 8 searches (64 frames) as in one run.
+- **Hand check** (T6.2): flipping the `seq` tie (`a.seq < b.seq`) moves the golden to `23575D7F` and fails 8 tests
+  (the golden, the literal-A* comparisons, the heap order tests, AC-2); restored.
+- **Fuzz** (T6.3): `tests/fuzz/fuzz_path_ops.{hpp,cpp}` (own header: `fuzz_targets.hpp` untouched for the merge),
+  `libfuzzer_path_ops.cpp`, mini-fuzz `test_fuzz_path_ops.cpp` (200 inputs ≤ 4 KiB): paths valid, sliced = one-shot
+  (status, cost, cells, expansions, every cell), waypoints keep both ends, `next` lowers the distance; misuse values only
+  in Release builds. In `tests/CMakeLists.txt`: one `target_sources(nnh_fuzz_targets ...)` and an
+  `if(NNH_BUILD_FUZZERS)` with `fuzz_path_ops`, both in 025's block.
+- Guards green.
+
+## Stage 7 refinements and results
+
+- **Level** (`art/make_level.py` → `assets/levels/keep.tmj`; `art/make_art.py` → `assets/art/tiles.png`, 8 tiles):
+  48 × 30; `ground` tiles carry `path_cost` (road 1, floor and doorways 2, swamp 4, water 8 — floor 2 so roads matter;
+  the plan named swamp 3); `walls` (layer property `collision`) holds walls, deep water and closed doors; three `door`
+  points, open at start (A closes/opens them in turn: the `door` tile on `walls`, then a one-cell region sync of both
+  maps); shallow water (weight 8) around deep water around an island; the thick wall's corridor at row 20 is one cell
+  wide. Actors are shapes (hero green, chasers red, goal yellow).
+- **Weights pattern** (`level.cpp`): `cost[id]` from each tile's `path_cost`, a callback returning
+  `cost[map.tile(ground, x, y).id]` — well under 15 lines, so no `sync(tilemap)` convenience (decision 24 holds).
+- **Controls** as planned plus **D-Pad Down = pause the hero** (it still plans): the script pauses it so its door and
+  mode lines come from the spawn cell, whatever it walked.
+- **Frame order**: the hero and the crowd update *before* the frame's controls, so a re-plan caused by a door or a mode
+  change is logged the frame after the change (an `expect` window starts after the previous line's frame). The check
+  scene logs its verdict the frame after the last checkpoint for the same reason.
+- **Script waits** are `wait 10` after an `expect` (the guide's minimum; the parser warns below it), not 3.
+- **Bench**: workloads as planned; judged on the average except `maze slices` and `field slices` (the worst slice: AC-7
+  says "every slice"); `next_crowd` logged, never judged; the door's tile edits are untimed (`prepare_door`), its 3 × 3
+  sync timed. The smoothing path is two searches on `rooms(128, 128, 7)` joined end to end, first 200 cells (no single
+  seeded pair reached 200). A first line logs the sizes: maze path 405 cells / 494 expanded, smooth path 200 cells,
+  replans 32 pairs **4 518 expanded**, astar 32 pairs 81 359 expanded.
+- **Screenshots** read back (pc-debug, frame 40, hero paused at the spawn): `explored` (705 expanded cells tinted, the
+  frontier outlined, the raw path through the corridor, 47 cells, cost 834), `smoothed` (5 waypoints), `field` (heat map
+  on both screens), `partial` (the island: 34 cells to the lake's edge, every reachable cell expanded), `door-closed`
+  (cost 1040, round through the corridor) and `door-open` (cost 438, through door 1), `big` (the 2 × 2 hero, partial on
+  its side of the one-cell corridor and doors).
+- **Self-check in the example**: `PATHFINDING_DEMO=check` logs the 8 checkpoints at frames 8..64, `pathfinding: PASS
+  1C0B5992`, then `pathfinding: showcase`; ctest `pathfinding_self_check_pc` (2.6 s).
+- **Script** `examples/pathfinding/tests/check.nnhs` with `--pc` (pc-debug): `nnh: PASS (104 lines, frames 1-3681)`;
+  ctest `pathfinding_check_script_pc` (71 s, `RESOURCE_LOCK nnh_remote_port`). Its lines: `field: built 3,3 settled 1135
+  frames 3`; the 8 checkpoints and `PASS 1C0B5992`; `pathfinding: showcase`; `hero: paused`; `goal: 24,5 found cells 22
+  cost 438 expanded 251 waypoints 3`; `door: 1 closed version 2`; `replan: version 2 found cells 48 cost 1040 expanded
+  777 waypoints 9`; `goal: 34,7 partial cells 41 cost 1012 expanded 1134 waypoints 7`; `hero: 2x2`; `goal: 24,20
+  partial cells 18 cost 428 expanded 378 waypoints 3`; `mode: never`; `hero: 1x1`; `hero: walking`; the bench lines and
+  `pathfinding bench: PASS` (Debug: not judged).
+- **PC bench** (pc-dev, GCC 16 -O2, three other builds running — noisy, and PC numbers say nothing about the console):
+  astar 0.200 µs per expanded cell (worst frame 0.386); maze one 0.043 ms; maze slices avg 0.025, worst 0.058 ms;
+  replans 1.086 ms; field one 0.667 ms; field slices avg 0.163, worst 7.656 ms (one preempted frame); next 0.034 ms;
+  next_crowd 0.020 ms; smooth 0.012 ms; sync 0.140 ms; door 0.002 ms.
+
+## Stage 7 ARM pre-check (T7.6)
+
+3ds-dev objects (`arm-none-eabi-objdump -drC`, listings in `build/ref-025/dis/`). **Found and fixed before any console
+run (no result changes; golden unchanged):** GCC kept `Expander::relax` out of line (28 call sites in
+`search_step.o`), and `OpenHeap::take` too — a call, spills and reloads per neighbour. They are now forced inline
+(`NNH_PATH_INLINE`, as `det_sine.hpp` does), and so are the field heap's `before/heap_push/sift_down/side_ok`. After the
+fix the expansion loop calls only `open_compact` (cold, never in practice) and `search_finish` (once); `field_run`
+calls nothing; there is no `__aeabi_*` anywhere in the module and no `vmrs` in search, field, smoothing or sync (only in
+float geometry, the follower and misuse checks); one `memset` (the field's `begin` fill, 4 B × padded cells); heap
+entries move with four-word `ldm`/`stm`; the `(f, h)` key compares with `cmp`/`sbcs`; `step × w` is one `mul` (run-time
+costs: no shift-add chain). `search_step.o` grew to 6 939 instructions (four modes × eight inlined relaxations: about
+7 KB per mode, within the 16 KB I-cache for the one mode a game uses).
+
+From the listing (OnlyIfNoObstacles): a pop through the buffer ≈ 12 instructions, through the heap ≈ 14 per sift level
+(two stack reloads: register pressure); a skipped neighbour 3–4; a reached-not-lower one ≈ 8; a relaxed and offered
+one ≈ 38 (heuristic 9, record 6, partial 7 when on, offer 8–16, sift-up ≈ 10 per level). Misses: the map at 1 B per
+cell (a 3 × 3 block is 3 lines), records at 8 B (5 lines), the heap's top in L1; fields 4 B per cell (3 lines) plus
+the map's 3; `next` for scattered agents misses on nearly every row it reads.
+
+| AC-7 workload | Work (measured on PC) | Estimate (1.9 CPI + 110 per miss; × 1.3 upper) | Target | Verdict |
+|---------------|-----------------------|-------------------------------------------------|--------|---------|
+| astar, per expanded cell | 81 359 expansions in 32 searches | 190–270 instr, 1.0–2.5 misses → 1.8–2.9 µs (3.8) | < 2.5 µs | **at risk** |
+| maze one | 494 expansions (corridors: ≈ 1.2 pushes each) | 1.3–2.0 µs each → 0.65–1.0 ms (1.3) | < 8 ms | PASS |
+| maze slices (worst) | 256 expansions | 0.33–0.51 ms (0.67) | < 0.8 ms | PASS |
+| replans | **4 518 expansions** (≈ 7 per path cell: weights 1/3/8 average 2.1 against a weight-1 heuristic) + 32 begins | 1.8–2.9 µs each → 8.2–13 ms (17) | < 3 ms | **FAIL expected** (the plan assumed 770–1 600 expansions) |
+| field one | ≈ 2 900 settled | 150–210 instr + 1–2 misses → 1.6–2.3 µs → 4.6–6.7 ms (8.7) | < 8 ms | **at risk** |
+| field slices (worst) | 512 settled (+ the begin fill in a build's first) | 0.8–1.2 ms (1.6) | < 1 ms | **at risk, likely FAIL** |
+| next, 256 scattered agents | 8 neighbours, 2 arrays | ≈ 100 instr + 4–6 misses → 1.9–3.2 µs → 0.48–0.82 ms (1.1) | < 0.3 ms | **FAIL expected** (as the plan said) |
+| smooth, 200 cells | ≈ 3 000 walk steps | ≈ 12 instr per step → 0.25–0.5 ms (0.65) | < 1 ms | PASS |
+| sync 64 × 64 (tilemap callback + table) | 4 096 cells, two calls each | 170–280 cycles each → 2.6–4.3 ms (5.6) | < 5 ms | **at risk** |
+| door 3 × 3 | 9 cells + the call | 0.01–0.02 ms (0.03) | < 0.05 ms | PASS |
+
+Expected console verdict: `pathfinding bench: FAIL (replans, next, …)` — the run fails at the verdict, after every
+number is logged. The remaining "no result change" mitigations (risk 1: a per-cell allowed-steps byte, `pld` and a
+batch `next`, a 4-ary heap, packed field words, direct `cells` reads in sync) can't reduce `replans`' expansion count,
+which comes from the workload's weights; they are left for T10.3 with the console's numbers (the
+measurement-with-margin policy) rather than guessed now.
+
+## Mutation testing (T8.1)
+
+58 hand mutants (`build/ref-025/mutants.py`, applied one at a time by `mutate.py`; each rebuilds `nnh_tests` and runs
+every `path*`/`pathfinding*` test; 54 in pc-debug, 4 Release-path mutants in pc-release): the order's keys and its
+`seq` tie, the buffer, the heap's sifts, compaction and heapify, the strict-g rule, reopening, the neighbour order, each
+diagonal rule and a diagonal's side cells and cost, the limit, staleness, partial ties (index, g, scaled h), the heuristic
+scale and octile formula, the blocked-goal answer, the stamp wrap, the stale flag, the default limit, footprints (edge,
+max, range), one-way cells, versions, the walk's corners and tie, smoothing's corner cells, weight rule and Never rule,
+the field's diagonal cost, cap, side cells, swap, stale skip and duplicate goals, `next`'s ties, goal and rule, the
+follower, region clipping, the path prefix, inspection stamps, the doomed map, and Release clamps and ignores.
+
+**First pass: 52 killed, 6 survived.** Three were real gaps, now tested and killed: `field-dup-goal` (a duplicate goal
+settled twice: the several-goals test now checks `settled()` against the same build without duplicates),
+`follower-radius` (`<` for `<=`: a waypoint exactly on the radius is now passed), `rel-follower-nan` (Release: a NaN
+position must leave an arrived follower arrived). Three are **equivalent** and stay:
+- `heap-offer-keeps-worse` — which child the buffer holds doesn't change the pop order: `take()` always compares it with
+  the heap's top (only speed changes);
+- `stale-entry-kept` (the pop's `g == f − h` check dropped) — a newer entry for a cell has the same h and a strictly
+  lower g, so it pops first and closes the cell; the closed check then rejects every older one (the g check matters only
+  in compaction, which keeps it);
+- `follower-arrived` (arrival without "at the last waypoint") — the advance loop stops before the last point only when
+  the point is out of the radius, so the extra condition never decides.
+
+**Score: 55 of 58 killed (94.8 %); every non-equivalent mutant killed.** Results in `build/ref-025/mutation.txt`.
+
+## Stage 8 refinements and results
+
+- **Release strings** (T8.2): `scripts/check_release_strings.sh` passes on the 3ds-release `pathfinding.elf` (4.49 MB)
+  and the pc-release `pathfinding.exe`.
+- **Opt-in by linking** (T8.3, `build/ref-025/probe/`, against the 3ds-release libraries): a program calling only
+  `PathMap::create` and `find` links 22 pathfinding symbols (map create, searcher, begin/step/finish, misuse) and no
+  sync, field, smoothing or follower code (`.text` 154 764 B, 135 020 before the forced inlining of stage 7); one calling
+  only `collision::move` links none (`.text` 42 152). `hello` sizes and `nm` lists equal stage 0's at every stage end.
+- **Regression** (T8.4): `compare.sh now` — hello, queries, entities, prefabs, platformer, replay 64/312 byte-identical
+  to stage 0; every example's `--pc` script ctest passes (prefabs, pathfinding); `.text` of the 3ds-release queries,
+  entities, prefabs and platformer ELFs unchanged; `pathfinding` `.text` 294 340 B.
+- **Build times** (T8.4, pc-debug simulator / 3ds-dev `.3dsx` after touching one game file, three runs, noisy):
+  `examples/pathfinding/hero.cpp` 1.90–1.94 s / 4.55–4.62 s; `examples/queries/queries_scene.cpp` 1.86–1.90 s /
+  3.81–3.88 s (the 3DS times include `dkp.sh`'s MSYS2 start). Within constitution III (< 2 s, < 5 s).
+- **Header** (T11.4): `<nnh/pathfinding.hpp>` 8 023 preprocessed lines, 405 ms `-fsyntax-only` against 408 ms for
+  `collision.hpp` + `result.hpp`.
+
+## Stage 9: Linux checks (left to the lead)
+
+On `nnhge-build` (VM 120), as specs 020–021: GCC 13, GCC 14 and clang 18 with ASan/UBSan — `nnh_tests` and ctest pass;
+the golden `1C0B5992` and its checkpoints, AC-2 (2 048 maps in pc-dev/pc-release), the walk = `cells_crossed` and the
+replay ctest identical on all three; libFuzzer `fuzz_path_ops` 10 minutes (`-DNNH_BUILD_FUZZERS=ON`, clang).
+
+## Stage 11 results
+
+- `docs/api/pathfinding.md` (maps, syncing, weights from Tiled, agent sizes, the diagonal rules drawn in text, costs and
+  the 32-bit bound, searches and statuses, the total order, slicing and stale results, re-planning, smoothing, fields
+  and crowds with the naive flee, the follower, memory, cost, misuse). The diagonal rules are drawn as text diagrams in
+  the page instead of `docs/images/pathfinding/*.png` (no image pipeline needed; the wiki renders them as they are).
+- Links: `collision.md` (end of "Grids"), `tilemap.md` (end of "Collision layers"), `guides/levels.md` ("Slow tiles for
+  pathfinding" at the end of "4. Collision"); `patterns.md` (the Time-sliced job row points at the module);
+  `decisions.md` (D40 implemented, change-log entry); `REFERENCES.md` (025's block); `CLAUDE.md` (layout paragraph after
+  "Collision layers and queries", two commands after `ANIMATION_DEMO=check`); `ROADMAP.md` (the item checked);
+  `specs/README.md` and the three spec files' status. `python -I scripts/docs_tool.py check`: 0 broken links.

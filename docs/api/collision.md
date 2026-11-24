@@ -61,6 +61,9 @@ A `Grid` owns nothing: it points at cells the game keeps alive. Two ways to desc
 Cell `(x, y)` covers `[origin.x + x·cell_w, origin.x + (x+1)·cell_w) × [origin.y + y·cell_h, …)`. The origin may be
 negative or fractional. A grid with zero size, or with neither `cells` nor `cell`, is all `outside`.
 
+Paths through a grid (spec 025): [pathfinding.md](pathfinding.md) copies any grid into a path map (blocked cells and
+weights) and searches it.
+
 ## Moving a box
 
 ```cpp

@@ -191,3 +191,28 @@ NNH_TEST(world_moved_from_or_empty_asserts_on_commands_and_answers_nothing) {
     World empty;
     CHECK(empty.stats().capacity == 0 && !empty.bound());
 }
+
+// Regression (spec 022 stage 9, clang ASan): T{} leaves a padded kind's padding bytes as the allocator gave them, so
+// two worlds made alike differed byte for byte depending on what the heap held before (the prefab twin tests compare
+// whole component arrays). The block now starts zeroed: worlds made alike are alike, whatever memory they got.
+NNH_TEST(worlds_made_alike_have_the_same_component_bytes_whatever_memory_they_get) {
+    struct Padded {
+        bool on = false; // then 3 bytes of padding
+        int count = 0;
+    };
+    const ComponentDesc kinds[] = {nnh::component<Padded>(4)};
+    nnh::platform_fake::set_alloc_fill(0xAB);
+    auto a = World::create({.max_entities = 4}, kinds);
+    nnh::platform_fake::set_alloc_fill(0x5C);
+    auto b = World::create({.max_entities = 4}, kinds);
+    nnh::platform_fake::set_alloc_fill(-1);
+    CHECK(a.ok() && b.ok());
+    if (!a.ok() || !b.ok()) return;
+    const nnh::detail::KindHot& x = nnh::WorldAccess::hot(a.value())->kinds[0];
+    const nnh::detail::KindHot& y = nnh::WorldAccess::hot(b.value())->kinds[0];
+    const auto* p = static_cast<const unsigned char*>(x.data);
+    const auto* q = static_cast<const unsigned char*>(y.data);
+    bool same = true;
+    for (std::size_t i = 0; i < sizeof(Padded) * 5; ++i) same = same && p[i] == q[i]; // 4 slots and the scratch
+    CHECK(same);
+}

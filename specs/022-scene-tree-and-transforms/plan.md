@@ -1,6 +1,6 @@
 # Plan 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, Linux T9.1 passed, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D37 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds and remove hooks, handles, the destroy queue, quarantine, iteration guards, scene binding;
 D35), spec 021 (prefab libraries, the all-or-nothing reservation, placement, hooks, map objects; D36), spec 015 (the
@@ -1053,3 +1053,34 @@ Stage 7 table, `hello.elf` 2 482 372 bytes. Then, Old 3DS, Homebrew Launcher →
   143 (0.29–0.34 s).
 - **Guards at the end**: pc-debug ctest 271/271, pc-release 259/259, `nnh_tests` 2441 (pc-release: every test of its flavour), every
   preset without a warning, goldens `C8FB9A41`, `7BB7901E`, `B44CA3F6`, `23DB5C36`, replay `E445E8B2: 60 Hz PASS`.
+
+### Stage 9 results
+
+Run on `nnhge-build` (VM 120) with spec 025's tree (both merged on main). The first run found three problems that the
+Windows toolchain (WinLibs GCC) hid; each was fixed with a test first, then everything was rerun.
+
+- **GCC 13 and 14 refused every braced options argument of `PrefabLibrary::add`** (`no matching function`, "cannot
+  convert `{...}` to `const nnh::PrefabOptions&`"): all prefab tests and the `prefabs`, `hierarchy` and `platformer`
+  examples failed to compile; `data_schema_program_writes_the_fixtures_schema` and `platformer_replay_matches_script`
+  failed only as fallout. Reduced: a braced argument for a template's aggregate parameter is refused when the aggregate
+  has an array member with a `= {}` default initialiser whose element type has default member initialisers (spec 022's
+  `PrefabChild children[8] = {}`; clang 18 and GCC 15 accept it). Fix: the array is declared without `= {}` — each
+  `PrefabChild` member already has its default, so aggregate and default initialisation give the same values; API and
+  layout unchanged. Regression: `AddsWithBracedOptions` (a `static_assert` over a requires-expression in
+  `tests/prefabs/test_add.cpp`, a clear message on a refusing compiler) and `braced_options_leave_unnamed_children_null`.
+- **Worlds made alike differed in padding bytes** (clang ASan, `map_coins_equal_the_hand_written_coins` and
+  `a_sparkle_prefab_equals_the_hand_written_burst_tween_included`, only in the full run): `World::create` placed `T{}`
+  in every slot of an uninitialised block, and aggregate initialisation leaves padding as the heap had it (here
+  `level::Turret`'s three bytes after `bool sees`), so the twin worlds' byte comparisons depended on earlier tests.
+  Not a sanitizer report, but non-deterministic world bytes. Fix: `World::create` zeroes its block before building it
+  (load time, once). Regression: `worlds_made_alike_have_the_same_component_bytes_whatever_memory_they_get`, with a new
+  fake-platform control `platform_fake::set_alloc_fill(byte)` (test support) that fills new heap blocks; it failed on
+  clang before the fix (GCC at -O0 happened to zero the padding).
+- **LeakSanitizer**: four allocations from spec 025's misuse tests (see its plan's "Stage 9 results").
+- **After the fixes**: GCC 13 ctest 269/269 and GCC 14 269/269 (the `*_check_script_pc` ctests excluded: the build
+  directories are not `pc-*` presets), no warning; clang 18 ASan/UBSan ctest 269/269, `nnh_tests` 2571 tests with
+  leaks on and `nnh_assetc_tests` 265, clean. libFuzzer: `fuzz_hierarchy_ops` 600 s, 182 702 runs, cov 1588;
+  `fuzz_transform` 600 s, 56 827 497 runs, cov 114; no finding. Windows pc-debug 273/273, pc-release 259/259,
+  3ds-release without a warning; goldens `C8FB9A41`, `7BB7901E`, `23DB5C36` and the replay's `E445E8B2: 60 Hz PASS`
+  unchanged; `prefab_spawn.o`, `library_add.o` and `prefab_flatten.o` (3ds-dev) byte-identical to stage 7's
+  disassembly.

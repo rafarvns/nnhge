@@ -1,5 +1,6 @@
 // Fake platform: memory regions with configurable capacities (contract nnh/platform/memory.hpp).
-// Vram blocks are filled with a pattern; freeing checks it, so tests prove core never writes into VRAM.
+// Vram blocks are filled with a pattern; freeing checks it, so tests prove core never writes into VRAM. Other blocks
+// may be filled with a chosen byte (set_alloc_fill) to prove core initialises what it reads.
 
 #include <cstdint>
 #include <cstdlib>
@@ -38,7 +39,11 @@ void* platform::region_alloc(MemRegion region, std::size_t size, std::size_t ali
     const std::uintptr_t aligned = (start + align - 1) & ~(static_cast<std::uintptr_t>(align) - 1);
     *reinterpret_cast<Prefix*>(aligned - sizeof(Prefix)) = Prefix{raw, size};
     c.region_used[r] += size;
-    if (region == MemRegion::Vram) std::memset(reinterpret_cast<void*>(aligned), kVramPattern, size);
+    if (region == MemRegion::Vram) {
+        std::memset(reinterpret_cast<void*>(aligned), kVramPattern, size);
+    } else if (c.alloc_fill >= 0) {
+        std::memset(reinterpret_cast<void*>(aligned), c.alloc_fill, size);
+    }
     return reinterpret_cast<void*>(aligned);
 }
 
@@ -59,5 +64,7 @@ std::size_t platform::region_capacity(MemRegion region) {
 void platform_fake::set_region_capacity(MemRegion region, std::size_t bytes) {
     detail::controls().region_capacity[static_cast<int>(region)] = bytes;
 }
+
+void platform_fake::set_alloc_fill(int byte) { detail::controls().alloc_fill = byte < 0 ? -1 : (byte & 0xFF); }
 
 } // namespace nnh

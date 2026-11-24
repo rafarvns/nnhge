@@ -62,6 +62,7 @@ check results, not how the code got there, so refactoring doesn't break them.
 
 Tests include `nnh/platform_fake.hpp` to script input (`set_held_buttons`, `set_quit_requested`) and
 inspect what core asked the platform to do (`state().frames_begun`, drawn texts, clear colors).
+`set_alloc_fill(byte)` fills new heap blocks with a byte, to prove core initialises every byte it compares or hashes.
 The same contract is checked on every platform by `tests/platform_conformance/`.
 
 ## Don'ts

@@ -55,7 +55,8 @@ public:
 `World::create(desc, kinds)` builds a world in one block: `WorldDesc{.max_entities (1..65 535), .tags_per_entity
 (0..8, default 4), .memory_tag (default `entities`)}` and an array of component kinds (1..32). Errors come back as a
 `Result`: `InvalidArgument` (a capacity or tag count out of range, no kind or more than 32, a kind listed twice, a kind
-capacity outside 1..max_entities), `OutOfMemory`. Every component slot is constructed with `T{}` at creation. A world
+capacity outside 1..max_entities), `OutOfMemory`. The block starts zeroed, then every component slot is constructed with `T{}`: two worlds made alike
+have the same bytes, padding included, whatever the heap held before (load time, once). A world
 is movable while unbound, not copyable; its destructor destroys every entity (remove hooks run, ascending slots) and
 frees the block. A default-constructed or moved-from world is empty: commands assert, queries answer "nothing".
 To make many entities of one kind — the same components, values and tags — declare it once as a

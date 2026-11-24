@@ -1,10 +1,11 @@
 // Creating a world (spec 020 FR-9, FR-10): validation (Result errors, never asserts), one block of tagged memory laid
-// out by world_layout(), the kind tables, the entity records (generation 1, no kind, no tag) and a T{} in every
-// component slot.
+// out by world_layout() and zeroed, the kind tables, the entity records (generation 1, no kind, no tag) and a T{} in
+// every component slot.
 
 #include "entities/block_layout.hpp"
 #include "entities/world_internal.hpp"
 
+#include <cstring>
 #include <new>
 
 NNH_MEM_TAG(entities);
@@ -125,6 +126,9 @@ Result<World> World::create(const WorldDesc& desc, const ComponentDesc* kinds, i
     if (bytes == nullptr) {
         return Error::make(ErrorCode::OutOfMemory, "World::create: no memory for %zu bytes", l.total);
     }
+    // Zeroed first (load time, once): T{} leaves padding as the allocator gave it, and worlds made alike must be alike
+    // byte for byte (prefab twins, replays) whatever the heap held before.
+    std::memset(bytes, 0, l.total);
     World world;
     WorldAccess::set(world, detail::build(desc, kinds, count, l, bytes));
     return Result<World>(static_cast<World&&>(world));

@@ -1,6 +1,6 @@
 # Tasks 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (stages 0-8 and 11; Linux T9.1 and Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -240,11 +240,14 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-3's golden
+- [x] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-3's golden
   and checkpoints, AC-2's random references, the walk = `cells_crossed`, the replay ctest with the tree's lines
   identical on all three; ASan/UBSan clean over compaction, the doomed block, sliced searches and builds, the
   stamp wrap and in-place smoothing; libFuzzer `fuzz_path_ops` 10 minutes, clean. Files: tasks.md (results), plan.md
   ("Stage 9 results"). Covers I, X, AC-1, AC-3.
+  **Done 2026-11-24** (plan.md "Stage 9 results"): GCC 13 and 14 passed; `fuzz_path_ops` 600 s, 1 573 982 runs, cov
+  1765, no finding. LeakSanitizer found test-only leaks (a map or searcher made inside a call that asserts: the crash
+  longjmps past its destructor), fixed in the tests; the joint run with spec 022's fixes is clean with leaks on.
 
 ## Stage 10: console check (the only steps on the 3DS)
 

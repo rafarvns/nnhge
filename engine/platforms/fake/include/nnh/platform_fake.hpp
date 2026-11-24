@@ -156,6 +156,10 @@ void advance_time(Duration elapsed);
 /// Bytes region_alloc() may hand out in a region (defaults: heap 64 MB, linear 32 MB, vram 6 MB).
 void set_region_capacity(MemRegion region, std::size_t bytes);
 
+/// Fills each new Heap and Linear block with `byte` (0..255) instead of leaving what malloc returns; −1 (the default,
+/// and after reset()) turns it off. Proves core initialises every byte it later compares or hashes.
+void set_alloc_fill(int byte);
+
 /// The next `count` fs_write() calls fail after writing half the data (a torn write, e.g. power loss).
 /// Files live in memory and survive nnh::shutdown()/init() until reset().
 void fail_next_writes(int count);

@@ -1,6 +1,6 @@
 # Tasks 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, Linux T9.1 passed, console T10.2 pending (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -274,12 +274,17 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-2's golden
+- [x] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-2's golden
   and checkpoints, the twin-world tests (`test_world_reserve_many`, `test_tree_spawn`), the accuracy and exactness tests,
   spec 020's `C8FB9A41`, spec 021's `7BB7901E`, the replay ctest with T6.3's lines and `tweens` identical on all three
   (they are assertions); ASan/UBSan clean over the walk cursor, cascades from hooks, the tree spawn's stack lists and
   the misuse Release paths; libFuzzer `fuzz_hierarchy_ops` and `fuzz_transform`, 10 minutes each, clean. Files:
   tasks.md (results), plan.md ("Stage 9 results"). Covers I, X, FR-19, AC-1, AC-2.
+  **Done 2026-11-24** after three fixes (plan.md "Stage 9 results"): GCC 13/14 refused every braced `{.tags = ...}`
+  options argument of `PrefabLibrary::add` (fixed in `<nnh/prefabs.hpp>`), worlds kept the heap's bytes in component
+  padding (the block is now zeroed at creation), and three spec 025 misuse tests leaked under LeakSanitizer. Then GCC 13
+  ctest 269/269, GCC 14 269/269, clang 18 ASan/UBSan ctest 269/269 and `nnh_tests` 2571 with leaks on, clean;
+  `fuzz_hierarchy_ops` 600 s 182 702 runs cov 1588, `fuzz_transform` 600 s 56 827 497 runs cov 114, no finding.
 
 ## Stage 10: console check (the only steps on the 3DS)
 

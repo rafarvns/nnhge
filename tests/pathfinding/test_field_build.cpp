@@ -127,6 +127,7 @@ namespace {
 
 DistanceField* g_f = nullptr;
 const PathMap* g_map = nullptr;
+const PathMap* g_big = nullptr; // 32 × 1, made by the test: an assert longjmps past a local's destructor (a leak)
 void goal_outside() {
     const CellPos goals[] = {{9, 0}, {0, 0}};
     g_f->build(*g_map, goals, 2);
@@ -134,10 +135,8 @@ void goal_outside() {
 void negative_count() { g_f->build(*g_map, nullptr, -1); }
 void null_goals() { g_f->build(*g_map, nullptr, 2); }
 void map_too_big() {
-    const char* rows[] = {"................................"};
-    const PathMap big = path_test::ascii_map(rows, 1);
     const CellPos goal{0, 0};
-    g_f->build(big, &goal, 1);
+    g_f->build(*g_big, &goal, 1);
 }
 void empty_map() {
     const CellPos goal{0, 0};
@@ -152,8 +151,11 @@ NNH_TEST(path_field_misuse_asserts_and_ignores_in_release) {
     const char* rows[] = {"....", "...."};
     const PathMap map = path_test::ascii_map(rows, 2);
     DistanceField f = field(8, 8);
+    const char* long_row[] = {"................................"};
+    const PathMap big = path_test::ascii_map(long_row, 1);
     g_f = &f;
     g_map = &map;
+    g_big = &big;
     CHECK(path_test::asserts_or_is_ignored(goal_outside));
     if (!nnh::build::kAssertsEnabled) CHECK(f.ready() && f.distance({3, 1}) == 34); // the outside goal ignored
     const CellPos goal{0, 0};

@@ -128,15 +128,13 @@ namespace {
 
 PathSearcher* g_s = nullptr;
 const PathMap* g_map = nullptr;
+// Made by the test, not inside the asserting calls: an assert longjmps past a local's destructor (a leak).
+PathSearcher* g_small = nullptr; // 4 × 4
+const PathMap* g_big = nullptr;  // 19 × 1
 PathResult g_r;
 void from_outside() { g_r = g_s->find(*g_map, {-1, 0}, {1, 1}); }
 void to_outside() { g_r = g_s->find(*g_map, {0, 0}, {1, 9}); }
-void map_too_big() {
-    const char* rows[] = {"..................."};
-    const PathMap big = path_test::ascii_map(rows, 1);
-    PathSearcher small = path_test::take(PathSearcher::create(4, 4));
-    g_r = small.find(big, {0, 0}, {1, 0});
-}
+void map_too_big() { g_r = g_small->find(*g_big, {0, 0}, {1, 0}); }
 void empty_map() {
     const PathMap empty;
     g_r = g_s->find(empty, {0, 0}, {1, 0});
@@ -151,8 +149,13 @@ NNH_TEST(path_find_misuse_asserts_and_is_invalid_in_release) {
     const char* rows[] = {"..", ".."};
     const PathMap map = path_test::ascii_map(rows, 2);
     PathSearcher s = searcher();
+    const char* long_row[] = {"..................."};
+    const PathMap big = path_test::ascii_map(long_row, 1);
+    PathSearcher small = path_test::take(PathSearcher::create(4, 4));
     g_s = &s;
     g_map = &map;
+    g_small = &small;
+    g_big = &big;
     for (auto fn : {from_outside, to_outside, map_too_big, empty_map, negative_limit, scale_too_low, scale_too_high}) {
         g_r = {};
         CHECK(path_test::asserts_or_is_ignored(fn));

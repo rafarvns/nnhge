@@ -49,7 +49,7 @@ class Node {
     std::uint16_t next_ = detail::kNoNode;
     std::uint16_t prev_ = detail::kNoNode; ///< the first child's prev is the last child
     std::uint8_t depth_ = 0;
-    std::uint8_t flags_ = 0;
+    [[maybe_unused]] std::uint8_t flags_ = 0; ///< spare (keeps the 80-byte layout); unused today
     std::uint16_t children_ = 0;
 
 public:

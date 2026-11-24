@@ -1,6 +1,6 @@
 # Plan 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (stages 0-8 and 11; Linux T9.1 and Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D40 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 012 (`collision::Grid`, `Cell`, spec 012's half-open cell rule; tilemaps, tile properties, `set_tile`), spec
 019 (`collision_grid(mask)`, the exact grid walk and its corner rule, `cells_crossed`), spec 002 (asserts, logs,
@@ -1085,6 +1085,18 @@ position must leave an arrived follower arrived). Three are **equivalent** and s
 On `nnhge-build` (VM 120), as specs 020–021: GCC 13, GCC 14 and clang 18 with ASan/UBSan — `nnh_tests` and ctest pass;
 the golden `1C0B5992` and its checkpoints, AC-2 (2 048 maps in pc-dev/pc-release), the walk = `cells_crossed` and the
 replay ctest identical on all three; libFuzzer `fuzz_path_ops` 10 minutes (`-DNNH_BUILD_FUZZERS=ON`, clang).
+
+## Stage 9 results
+
+- GCC 13 and GCC 14 built and passed `nnh_tests` and ctest (this spec's own VM run); `fuzz_path_ops` 600 s, 1 573 982
+  runs, cov 1765, no finding.
+- LeakSanitizer (clang 18, leaks on) reported 2 037 bytes in four allocations, all test-only: a `PathMap` or
+  `PathSearcher` created inside a function run by `run_expecting_crash` leaks because the assert longjmps past its
+  destructor — `step_without_begin` (`test_path_misuse.cpp`), `map_too_big` (`test_find_basic.cpp`, a map and a
+  searcher) and `map_too_big` (`test_field_build.cpp`). Fixed as spec 020 did: the objects are made by the test and
+  reached through file-scope pointers, so nothing is constructed inside the asserting call.
+- Rerun with spec 022's stage 9 fixes ([plan 022](../022-scene-tree-and-transforms/plan.md#stage-9-results)): GCC 13
+  and 14 ctest 269/269, clang ASan/UBSan ctest 269/269 and `nnh_tests` 2571 with leaks on, clean.
 
 ## Stage 11 results
 

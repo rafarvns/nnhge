@@ -163,3 +163,19 @@ NNH_TEST(the_array_form_registers_component_values) {
     const ComponentValue broken[] = {{.id = nnh::kind_id<Coin>(), .value = &coin, .size = 4, .align = 3}};
     CHECK(add_error(lib.add("broken", {}, broken, 1)) == ErrorCode::InvalidArgument);
 }
+
+// Regression (spec 022 stage 9, Linux): with `children[...] = {}` in PrefabOptions, GCC 13 and 14 refused every braced
+// `{.tags = ...}` options argument of the variadic add() ("cannot convert ... to const PrefabOptions&").
+template <typename T>
+concept AddsWithBracedOptions = requires(PrefabLibrary& lib, nnh::Tag tag, const T& value) {
+    lib.add("x", {.tags = {tag}}, value);
+    lib.add("x", {.tags = {tag}, .children = {nnh::child(Prefab{})}}, value);
+};
+static_assert(AddsWithBracedOptions<Coin>, "PrefabLibrary::add must accept braced options on every compiler");
+
+NNH_TEST(braced_options_leave_unnamed_children_null) {
+    const nnh::PrefabOptions options{.tags = {kCoinTag}};
+    nnh::PrefabOptions plain; // default-initialised: each member's own default
+    CHECK(!options.children[0].prefab && options.children[7].tree == nullptr && !options.children[3].has_local);
+    CHECK(!plain.children[0].prefab && plain.children[7].tree == nullptr && plain.children[5].local.scale.x == 1);
+}

@@ -15,14 +15,12 @@ using nnh::PathStatus;
 namespace {
 
 PathSearcher* g_s = nullptr;
+PathSearcher* g_fresh = nullptr; // never begun; made by the test: an assert longjmps past a local's destructor (a leak)
 const PathMap* g_map = nullptr;
 int g_n = 0;
 bool g_done = false;
 
-void step_without_begin() {
-    PathSearcher fresh = path_test::take(PathSearcher::create(4, 4));
-    g_done = fresh.step(3);
-}
+void step_without_begin() { g_done = g_fresh->step(3); }
 void negative_step() { g_done = g_s->step(-1); }
 void path_null_with_capacity() { g_n = g_s->path(nullptr, 3); }
 void path_negative_capacity() {
@@ -46,7 +44,9 @@ NNH_TEST(path_searcher_misuse_asserts_and_is_harmless_in_release) {
     const char* rows[] = {"S..", "..G"};
     const PathMap map = path_test::ascii_map(rows, 2);
     PathSearcher s = path_test::take(PathSearcher::create(4, 4));
+    PathSearcher fresh = path_test::take(PathSearcher::create(4, 4));
     g_s = &s;
+    g_fresh = &fresh;
     g_map = &map;
     const PathResult found = s.find(map, {0, 0}, {2, 1});
     CHECK(found.status == PathStatus::Found);

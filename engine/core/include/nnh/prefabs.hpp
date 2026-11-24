@@ -104,7 +104,9 @@ struct PrefabOptions {
     SpawnHook on_spawn{};          ///< runs after the base's hooks
     /// Spec 022: child prefabs spawned with this one as a hierarchy (the first null prefab ends the list). The prefab
     /// and every child need the nnh::Node kind; a variant inherits its base's children and appends these.
-    PrefabChild children[kMaxPrefabChildren] = {};
+    /// No `= {}` here: every PrefabChild member has its own default, and with one GCC 13 and 14 reject a braced
+    /// `{.tags = ...}` argument for add()'s options (an array of default-initialised aggregates in a template call).
+    PrefabChild children[kMaxPrefabChildren];
 };
 
 /// What a spawn does when a capacity it needs is full (FR-8). Either way nothing is created and the library counts a

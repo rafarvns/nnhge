@@ -227,7 +227,7 @@ spec; the order below is a proposal.
   lines unchanged)
 - [x] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
   that follow the parent (a gun on a ship, a hat on a head) — [spec 022](../specs/022-scene-tree-and-transforms/spec.md)
-  (implemented 2026-11-24; console check T10.2 pending). Named hierarchy, nodes and transforms in code (a "scene" is a
+  (implemented 2026-11-24; Linux checks passed; console check T10.2 pending). Named hierarchy, nodes and transforms in code (a "scene" is a
   game mode): `<nnh/transform.hpp>` (deterministic values: composition, points, inverses, bounds, an exact-quarter-turn
   sine), `<nnh/hierarchy.hpp>` (the engine's `Node` component kind, attach/detach keeping world or local, one pass per
   frame, `world_now`, cascading destroys), prefabs with children, `gfx::draw` of a world transform; demo
@@ -279,7 +279,7 @@ spec; the order below is a proposal.
 - [ ] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves
 - [x] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
-  allocation while searching — [spec 025](../specs/025-grid-pathfinding/spec.md), **implemented 2026-11-24**, Old 3DS
+  allocation while searching — [spec 025](../specs/025-grid-pathfinding/spec.md), **implemented 2026-11-24**, Linux checks passed, Old 3DS
   check pending (T10.2): `<nnh/pathfinding.hpp>` — path maps baked from any `collision::Grid` (blocked cells and weights
   1–255 from a tile property, agent sizes 1–4, region syncs for doors, a version counter), integer A* searchers with a
   fixed tie order (the same cells on PC and 3DS: golden `1C0B5992`), expansion limits, partial paths, time slicing and

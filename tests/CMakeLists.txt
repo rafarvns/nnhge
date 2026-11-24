@@ -506,13 +506,19 @@ target_sources(nnh_tests PRIVATE
     pathfinding/test_find_basic.cpp
     pathfinding/test_find_costs.cpp
     pathfinding/test_footprint.cpp
+    pathfinding/test_inspect.cpp
+    pathfinding/test_limits_partial.cpp
     pathfinding/test_neighbors.cpp
     pathfinding/test_open_heap.cpp
+    pathfinding/test_path_cost.cpp
     pathfinding/test_path_map_create.cpp
     pathfinding/test_path_map_edit.cpp
     pathfinding/test_path_map_sync.cpp
+    pathfinding/test_path_misuse.cpp
     pathfinding/test_path_points.cpp
     pathfinding/test_reference_self.cpp
+    pathfinding/test_searcher_reuse.cpp
+    pathfinding/test_slicing.cpp
     pathfinding/test_tie_order.cpp
 )
 add_test(NAME unit COMMAND nnh_tests)

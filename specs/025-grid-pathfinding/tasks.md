@@ -107,26 +107,26 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 3: bounds, partial paths, slicing, reuse, inspection, misuse
 
-- [ ] **T3.1** Limits and partial paths: the limit checked before each pop (the goal as the limit-th pop is Found),
+- [x] **T3.1** Limits and partial paths: the limit checked before each pop (the goal as the limit-th pop is Found),
   LimitReached, partial tracking at every g assignment (unscaled h, then g, then row-major index), Partial for an
   unreachable goal, a blocked goal and a limit. Test: `tests/pathfinding/test_limits_partial.cpp` (every status; crafted
   ties for the closest cell; an island's shore; a comb map keeping ≈ 4/5 of its cells open never overflows; without the
   option NoPath/LimitReached with 0 cells). Covers FR-11, FR-12, FR-13.
-- [ ] **T3.2** Time slicing: `begin`/`step`/`cancel`/`running`/`result` (`Running`), stale at the end, the map's users
+- [x] **T3.2** Time slicing: `begin`/`step`/`cancel`/`running`/`result` (`Running`), stale at the end, the map's users
   count and the doomed block. Test: `tests/pathfinding/test_slicing.cpp` (slices of 1, 7, 64 and the whole equal `find`
   on 300 seeded searches; cancel; begin while running restarts; an edit mid-search → stale and the search continues
   over current cells; the map moved mid-search → the same result; destroyed mid-search → assert, Release path `Invalid`
   and the block freed by the searcher (allocation counter back to its start)). Covers FR-14, FR-23.
-- [ ] **T3.3** [P] Reuse: Test: `tests/pathfinding/test_searcher_reuse.cpp` (10 000 searches on one searcher equal
+- [x] **T3.3** [P] Reuse: Test: `tests/pathfinding/test_searcher_reuse.cpp` (10 000 searches on one searcher equal
   fresh searchers'; maps smaller than the searcher; across the stamp wrap via `detail::path_searcher_set_stamp`; two
   searchers sliced over one map, interleaved; `static_assert`s: record 8, entry 16). Covers FR-7.
-- [ ] **T3.4** [P] Inspection: `reached`, `expanded`, `cost_to` during a sliced search and after. Test:
+- [x] **T3.4** [P] Inspection: `reached`, `expanded`, `cost_to` during a sliced search and after. Test:
   `tests/pathfinding/test_inspect.cpp`. Covers FR-20.
-- [ ] **T3.5** Misuse and cost: every row of plan.md's misuse table for maps and searchers, asserting (Debug) and on
+- [x] **T3.5** Misuse and cost: every row of plan.md's misuse table for maps and searchers, asserting (Debug) and on
   the Release path (pc-release run). Test: `tests/pathfinding/test_path_misuse.cpp`; `tests/pathfinding/test_path_cost.cpp`
   (no allocation after creation over 10 000 operations, no log line, `events::stats()` unchanged, the weight callback
   the only callback). Covers FR-21, FR-22, FR-23.
-- [ ] **T3.6** Stage end: the stage-end guards. Files: plan.md ("Stage 3 results"). Covers AC-8.
+- [x] **T3.6** Stage end: the stage-end guards. Files: plan.md ("Stage 3 results"). Covers AC-8.
 
 ## Stage 4: smoothing and following
 

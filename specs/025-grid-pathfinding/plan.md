@@ -850,3 +850,23 @@ on this PC at the same time (other agents): times below are noisy, sizes are exa
 - **Probe** (T2.6, `build/ref-025/probe/`): a 3ds-release program calling only `PathMap::create` and `find` links 20
   pathfinding symbols (create, the searcher, begin/step/finish, misuse) and nothing of sync, fields, smoothing or the
   follower; one calling only `collision::move` links none. Guards green; sizes and `nm` unchanged.
+
+## Stage 3 refinements and results
+
+- **Limits, partial paths, slicing** as planned; the stage-2 code already held them (the tests were written against
+  it; the mutation pass in stage 8 is what proves they bite).
+- **The doomed block** (map destroyed during sliced work): `~PathMap` marks the block doomed and clears its own pointer
+  *before* the assert, so the Debug crash path and the Release path leave the same state; the searcher's next `step()`
+  ends `Invalid` and frees the block, and so do `cancel()`, a new `begin()` and the searcher's destructor (tested
+  through `mem::live_allocations()`).
+- **`step()` after a finished search** returns true and changes nothing; a negative step size asserts and returns
+  whether the search is finished.
+- **Cost test**: `nnh::events::Stats` has no publish counter, so FR-21 is checked through its counters (subscribers,
+  dropped events) and by the module never including `<nnh/events.hpp>`; no console line is written in the normal path
+  (fake platform's `console_lines`).
+- Tests: `test_limits_partial.cpp` (8: the goal as the limit-th pop, every status, crafted partial ties, an island's
+  shore, blocked goal / limit / start-only partials, a 63 × 63 comb map with a searcher of exactly its size at scales 16
+  and 64 against the literal A*), `test_slicing.cpp` (6: slices 1/7/64/whole = find on 300 searches, cancel and
+  restart, stale with the current cells, a moved map, a destroyed map two ways), `test_searcher_reuse.cpp` (4: 10 000
+  searches = fresh searchers, the stamp wrap, two interleaved searchers, sizes), `test_inspect.cpp` (3),
+  `test_path_misuse.cpp` (2), `test_path_cost.cpp` (2). All path tests run in 2.3 s in pc-debug. Guards green.

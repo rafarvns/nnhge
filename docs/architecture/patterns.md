@@ -16,6 +16,7 @@ here once accepted.
 | **RAII handles** | `Subscription`, textures, sounds | Resources and subscriptions are released automatically; no manual cleanup lists. |
 | **Object Pool** | bullets, particles, entities: `<nnh/pool.hpp>` ([api/pool.md](../api/pool.md)) and `<nnh/entities.hpp>` ([api/entities.md](../api/entities.md)), spec 020, D35 | No heap allocation per frame; predictable memory on 3DS. |
 | **Prototype** | prefabs: `<nnh/prefabs.hpp>` ([api/prefabs.md](../api/prefabs.md)), spec 021, D36 | A kind of thing is declared once, by name, as component values (variants flattened from a base) and spawned by copying them: no spawn function per kind, levels name what to spawn. |
+| **Transform hierarchy (Composite)** | nodes: `<nnh/hierarchy.hpp>` over `<nnh/transform.hpp>`, spec 022, D37 (design) | Parent/child entities whose local transforms follow their parent: one explicit pass computes world transforms (no dirty flags, no per-object `virtual`), destroying a parent destroys its subtree through the world's destroy queue. |
 | **Command** | input actions (later) | Map buttons to actions, enable remapping and replays. |
 
 ### Example: Bridge without virtual

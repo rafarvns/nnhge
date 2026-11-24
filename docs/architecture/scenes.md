@@ -85,6 +85,14 @@ Cost for a scene with nothing attached: one pointer and a null check per frame a
 no bound set links only `scene_notify()` (+176 bytes of code on the 3DS, measured in
 [plan 015](../../specs/015-tweens-and-timers/plan.md)).
 
+## Scenes are not a scene tree
+
+Godot calls its tree of objects a "scene tree". In NNHGE a scene is a game mode on the stack above; objects with a
+parent and children (a gun on a ship) are entities with the engine's node component — the **hierarchy**, with
+**nodes** and **transforms** ([spec 022](../../specs/022-scene-tree-and-transforms/spec.md), decision D37, design).
+A world holding nodes binds to a scene like any world; the hierarchy adds no scene notification (its pass is the
+game's call, before the camera and drawing).
+
 ## Rules
 
 - One scene per file pair (`level_scene.hpp/.cpp`), in the game's `scenes/` folder.

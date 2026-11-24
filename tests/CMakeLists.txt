@@ -420,6 +420,12 @@ if(TARGET camera AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;CAMERA_DEMO=check;NNH_EXIT_AFTER_FRAMES=615"
         PASS_REGULAR_EXPRESSION "camera: PASS 5201E6CF" FAIL_REGULAR_EXPRESSION "camera: FAIL" TIMEOUT 120)
 endif()
+# Scene transitions (spec 023): the example's self-check in the simulator (AC-3), its console script and the
+# platformer's door run played with nnh run --pc (AC-6, AC-7), as the maintainer plays them on the 3DS.
+if(NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(_sim_env "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy")
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+endif()
 # The queries example's self-check in the simulator (spec 019 AC-6): the verdict the console script waits for.
 if(TARGET queries AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME queries_self_check_pc COMMAND queries)
@@ -479,13 +485,28 @@ target_sources(nnh_tests PRIVATE
     input/test_input_block.cpp
     input/test_input_block_api.cpp
     scene/test_scene_hook.cpp
-    transition/test_requests.cpp
-    transition/test_timeline.cpp
+    transition/test_custom_effect.cpp
     transition/test_effect_area.cpp
     transition/test_effect_fill.cpp
     transition/test_effect_iris.cpp
     transition/test_effect_query.cpp
-    transition/test_geometry_properties.cpp)
+    transition/test_geometry_properties.cpp
+    transition/test_interruptions.cpp
+    transition/test_loading.cpp
+    transition/test_no_wrong_frame.cpp
+    transition/test_notifications.cpp
+    transition/test_overlay_order.cpp
+    transition/test_plain_loop.cpp
+    transition/test_requests.cpp
+    transition/test_scene_updates.cpp
+    transition/test_stack_change.cpp
+    transition/test_timeline.cpp
+    transition/test_transition_actions.cpp
+    transition/test_transition_cost.cpp
+    transition/test_transition_input.cpp
+    transitions_example/test_self_check.cpp
+    ${PROJECT_SOURCE_DIR}/examples/transitions/check_script.cpp
+    ${PROJECT_SOURCE_DIR}/examples/transitions/check_steps.cpp)
 target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_transition_geometry.cpp)
 if(NNH_BUILD_FUZZERS)
     add_executable(fuzz_transition_geometry fuzz/libfuzzer_transition_geometry.cpp)

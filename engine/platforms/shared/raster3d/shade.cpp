@@ -57,16 +57,16 @@ void shade(const platform::Pass3D& pass, const LightTables& tables, const platfo
         if (light.kind == 1) {
             l[0] = l[0] - attr[0], l[1] = l[1] - attr[1], l[2] = l[2] - attr[2];
             const float d = std::sqrt((l[0] * l[0] + l[1] * l[1]) + l[2] * l[2]);
-            att = lut_read(tables.distance, d * light.inv_range);
+            att = lut_read(tables.distance, kDistanceEntries, d * light.inv_range);
             unit(l);
         }
         const float nl = dot3(n, l);
         if (nl > 0.0f)
             for (int c = 0; c < 3; ++c) diffuse[c] = diffuse[c] + light.color[c] * (nl * att);
-        if (shiny) {
+        if (shiny && nl > 0.0f) { // highlights clamped where the light is behind the surface (as the PICA200)
             float h[3] = {l[0] + v[0], l[1] + v[1], l[2] + v[2]};
             unit(h);
-            const float f = lut_read(tables.specular[level], dot3(n, h)) * att;
+            const float f = lut_read(tables.specular[level], kSpecularEntries, dot3(n, h)) * att;
             for (int c = 0; c < 3; ++c) spec[c] = spec[c] + light.color[c] * f;
         }
     }

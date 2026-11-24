@@ -109,11 +109,13 @@ NNH_TEST(raster_sampling_filters_and_wraps) {
 NNH_TEST(raster_lighting_tables) {
     static r3::LightTables t;
     r3::make_light_tables(t);
-    CHECK(t.specular[0][255] == 1 && t.specular[0][0] == 0 && t.specular[3][255] == 1);
-    CHECK(std::fabs(t.specular[0][128] - (128.0f / 255) * (128.0f / 255)) < 1e-7f);
-    CHECK(t.distance[0] == 1 && t.distance[255] == 0);
-    CHECK(std::fabs(r3::lut_read(t.distance, 0.5f) - 0.25f) < 2e-5f);
-    CHECK(r3::lut_read(t.distance, 2.0f) == 0 && r3::lut_read(t.specular[7], -1) == 0);
+    // The PICA200's layouts: specular x = i/128 (signed input), distance x = i/256, one extra entry at x = 1.
+    CHECK(t.specular[0][128] == 1 && t.specular[0][0] == 0 && t.specular[3][128] == 1);
+    CHECK(t.specular[0][64] == 0.25f && t.specular[1][64] == 0.0625f);
+    CHECK(t.distance[0] == 1 && t.distance[256] == 0 && t.distance[128] == 0.25f);
+    CHECK(r3::lut_read(t.distance, r3::kDistanceEntries, 0.5f) == 0.25f);
+    CHECK(r3::lut_read(t.distance, r3::kDistanceEntries, 2.0f) == 0);
+    CHECK(r3::lut_read(t.specular[7], r3::kSpecularEntries, -1) == 0);
 }
 
 NNH_TEST(raster_lit_pixel_matches_the_formula) {

@@ -27,6 +27,9 @@ struct Video3DConfig {
 bool video3d_init(const Video3DConfig& config);
 /// Undoes video3d_init (core destroys every mesh first).
 void video3d_shutdown();
+/// Debug/Development: the backend's own check of its fixed transforms, as a log line core prints after
+/// video3d_init ("3d tilt: PASS ..." / "3d tilt: FAIL ..."), or nullptr when it has none.
+const char* video3d_self_test();
 
 /// Quantised vertices and 16-bit indices in the .nnhmesh layout (D42): position int16×4 · normal int8×4 ·
 /// [uv int16×2 when flags & 1] · [colour u8×4 when flags & 2]; stride 12, 16 or 20.

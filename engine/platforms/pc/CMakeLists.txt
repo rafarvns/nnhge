@@ -23,6 +23,7 @@ add_library(nnh_platform_pc STATIC
     src/sim_layout.cpp
     src/sim_settings.cpp
     src/system_pc.cpp
+    src/texels3d_pc.cpp
     src/texture_pc.cpp
     src/time_pc.cpp
     src/touch_pc.cpp
@@ -33,7 +34,7 @@ add_library(nnh_platform_pc STATIC
 )
 add_library(nnh::platform_pc ALIAS nnh_platform_pc)
 target_include_directories(nnh_platform_pc PRIVATE ../shared)
-target_link_libraries(nnh_platform_pc PRIVATE nnh::core_contract SDL3::SDL3)
+target_link_libraries(nnh_platform_pc PRIVATE nnh::core_contract SDL3::SDL3 nnh::raster3d) # raster3d: 3D (spec 026)
 nnh_engine_options(nnh_platform_pc)
 
 if(WIN32)

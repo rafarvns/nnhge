@@ -9,6 +9,7 @@ namespace nnh::detail {
 namespace {
 
 void after_frame() {
+    gfx3d_probes_after_frame();
     gfx3d_frame_done();
     mesh_flush_released();
 }

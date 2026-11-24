@@ -5,6 +5,7 @@
 #include "log/engine_channels.hpp"
 #include "memory/memory_internal.hpp"
 #include "mesh/mesh_internal.hpp"
+#include "nnh/build.hpp"
 #include "nnh/log.hpp"
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/video3d.hpp"
@@ -18,6 +19,7 @@ namespace {
 
 State3D g_3d;
 void* g_block = nullptr;
+const char* g_self_test = nullptr; // the backend's self-test line, logged once a frame has ended (scripts see it)
 
 constexpr std::size_t kPerDraw = sizeof(DrawRecord) + sizeof(Sphere) + 3 * sizeof(std::uint16_t) + sizeof(float) + 2 * sizeof(bool);
 
@@ -42,6 +44,7 @@ bool gfx3d_init(const GfxConfig& config) {
         g_block = nullptr;
         return false;
     }
+    if constexpr (build::kDevToolsEnabled) g_self_test = platform::video3d_self_test(); // logged after frame 1
     auto* p = static_cast<unsigned char*>(g_block);
     g_3d.records = reinterpret_cast<DrawRecord*>(p);
     p += sizeof(DrawRecord) * static_cast<std::size_t>(max_draws);
@@ -72,6 +75,10 @@ bool gfx3d_ready() { return g_3d.ready; }
 
 void gfx3d_frame_done() {
     if (!g_3d.ready) return;
+    if (g_self_test != nullptr) {
+        NNH_LOG_INFO(gfx, "%s", g_self_test);
+        g_self_test = nullptr;
+    }
     Stats3D& s = g_3d.last;
     s.draws = g_3d.count;
     s.culled = g_3d.frame_culled;

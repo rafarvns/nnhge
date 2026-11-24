@@ -60,6 +60,8 @@ bool gfx3d_ready();
 bool gfx3d_submit_screen(Screen screen);
 /// After the frame: stats kept, the records cleared for the next one.
 void gfx3d_frame_done();
+/// probe.cpp: answers a pending probe request from the frame that just ended (Debug/Development).
+void gfx3d_probes_after_frame();
 /// stats3d.cpp: the overlay's 3D line.
 bool gfx3d_overlay_line(char* out, int size);
 /// debug_draw3d.cpp: records the debug lines of `screen`'s draws (Debug/Development, when on).

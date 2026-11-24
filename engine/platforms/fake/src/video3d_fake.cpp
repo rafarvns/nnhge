@@ -132,6 +132,8 @@ void video3d_shutdown() {
     g_3d.initialized = false;
 }
 
+const char* video3d_self_test() { return nullptr; }
+
 bool mesh_create(const MeshUpload& upload, MeshInfo& out) {
     out = {};
     if (g_mesh_fails) {

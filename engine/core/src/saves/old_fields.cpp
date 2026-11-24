@@ -111,7 +111,8 @@ bool old_fields_get(const std::uint8_t* root, std::uint32_t size, const save::Fi
                     const SaveFieldInfo& field, void* out) {
     const Spot s = locate(root, size, path);
     if (s.what == Spot::What::None) return false;
-    save::Report scratch;
+    static save::Report
+        scratch; // counts nobody reads (the engine is single-threaded): not 350 bytes of stack
     SaveApply apply;
     apply.report = &scratch;
     auto* target = static_cast<std::uint8_t*>(out);

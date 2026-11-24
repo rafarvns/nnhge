@@ -938,3 +938,93 @@ Rebased on `main` at the start of the stage (specs 022 and 025 merged there): no
   values must re-encode stably; the view runs on paths taken from the input; the dump runs (Debug/Development). The
   mini-fuzz (2 seeds + the 3 goldens × 3000 mutants) accepts 1340 of 15 000 as given (pc-debug).
 - Tests: `test_reference.cpp` (5), `test_golden.cpp` (4; 3 in Release), `test_fuzz_saves.cpp` (2).
+
+## Stage 7 refinements and results
+
+- **Files**: as planned (`main.cpp`, `demos.hpp`, `summary.hpp`, `settings.{hpp,cpp}`, `tiny_game.{hpp,cpp}`,
+  `slots_panel.{hpp,cpp}`, `hud.{hpp,cpp}`, `showcase_scene.{hpp,cpp}`, `check_scene.{hpp,cpp}`, `check_golden.hpp`,
+  `bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}`, `CMakeLists.txt`, `tests/check.nnhs`) plus `slot_files.{hpp,cpp}` (slot
+  paths, `damage_save`, `install_golden`, a CRC-32 for the encode line: only public calls). **Damage** keeps the backup:
+  the broken payload is written through a scratch `nnh::save::write` (a valid CRC), read back whole and put in place of
+  the main file only with `fs::write_file`. The tiny game's **play time counts frames spent moving**, so the byte
+  counts and sums the script expects don't depend on how many frames the PC or the console took between commands.
+  The **reference values fill structs in place** (`fill_reference_v3(Progress&)` etc.; by-value wrappers for the
+  tests): a `Progress` is about 5 KB, never a temporary on the 3DS main thread's stack (the scenes live on the heap).
+  The check mode also removes `settings.sav` first, so two runs log the same settings line. The bench mutes log lines
+  below Error while a workload runs (a backup load logs a warning by design: the bench times the save, not the
+  remote log). `difficulty_names.cpp` registers `Difficulty` and `QuestState` (the example's dumps show
+  `difficulty (11) u8 = 1 (Normal)`).
+- **Check lines** (pc-debug and pc-dev; `check_golden.hpp`): `saves: check started`, `saves: v1 sum 0F3BA8C8 migrated
+  2`, `saves: v2 sum 1EFDB382 migrated 1`, `saves: v3 sum D15774A7 migrated 0`, `saves: encode crc 11363B5C bytes 3768`,
+  `saves: slot sum F6C8D12F`, `saves: backup used sum D15774A7`, `saves: summaries L300 empty empty`, `saves: removed
+  slot1 exists 0`, `saves: PASS`. With `slot_sum` set to 0 the check logged `saves: FAIL slot sum F6C8D12F` (checked
+  once). **Showcase lines** of the script: `saves: showcase slots empty empty empty`; `slot 1: stored 2206 bytes` (twice:
+  before and after `hold RIGHT 40`), `slot 2: selected`, `slot 2: stored 2206 bytes`, `name: Zoë`, `slot 3: selected`,
+  `slot 3: stored 2207 bytes`; `golden v1: loaded sum 0F3BA8C8 steps 2`; `slot 1: damaged`, `slot 1: loaded sum 4B109E8C
+  version 3 steps 0 unknown 0 dropped 0 adjusted 0 backup`; `slot 2: deleted`; `settings: volume 8 language English
+  stored`; then the bench lines.
+- **Screenshots** (`SAVES_SHOT=empty|saved|golden|backup`, 30 frames, read back): empty slots; three slots with their
+  summaries ("Ana L1", "Zoë L1 gems 12 1:06", "Bo L9"); golden v1 loaded ("Zoë Rangers level 37 gems 12345", 33 items,
+  `v1 -> v3 steps 2`); a load from the backup (`backup used`, slot 1 marked "(backup)"). The report shows on two lines
+  (one did not fit 400 pixels). `NNH_SAVE_DUMP=1` wrote `slot1.sav.txt` (read back: `save 'progress' v3 (2206 bytes)`,
+  names, enum names).
+- ctests `saves_self_check_pc` and `saves_check_script_pc` (`RESOURCE_LOCK nnh_remote_port;nnh_saves_data`) after the
+  queries block; the script passed twice in a row (`nnh: PASS (114 lines)`).
+- **PC bench** (pc-dev, three runs, other agents building on the same PC): encode 0.011–0.020 ms, decode 0.032–0.072
+  ms, decode v1 0.015–0.036 ms, store median 3.8–5.8 ms (max 4.2–22.8), load 0.6–0.9 ms, backup 1.2–1.6 ms, summaries
+  1.6–2.5 ms, raw write 4.0–5.3 ms; PASS.
+
+## Stage 7 ARM pre-check
+
+3ds-dev objects (`build/ref-027/armcheck.py`: per function the instructions, calls, VFP and `pld`;
+`stackcheck.py`: `-fstack-usage`):
+
+- **No FPU arithmetic in the codec**: the only VFP instructions in `save_apply.o` and `save_convert.o` are `vldr`/`vstr`
+  of one 8-byte constant (a struct zeroed through a d-register: a bit move, no conversion, no flush). `vcvt` appears
+  only in the dump's `printf` arguments (Debug/Development). **No `__aeabi_*` in the codec** (`__aeabi_uidivmod` is in
+  the dump's line breaking). `__ctzdi2` (64-bit `countr_zero`, a libgcc call) was in the conversions: replaced by
+  32-bit halves. `memcpy` only for packed sequences, strings and 8-byte loads; `memmove` only in the encoder's
+  length prefixes. `pld` added to the validator's field and row walks (`__builtin_prefetch`, 64 bytes ahead).
+- **Hot paths rebuilt without a byte changing** (goldens hold): same-kind bool and float sequences are checked and
+  copied inline (the 1024 explored flags were 1024 calls of `convert_scalar`); enum names are looked up once per run of
+  rows.
+- **Functions** (instructions, whole function): `put_fields` 107, `put_one` 124, `put_sequence` 448, `put_string` 82;
+  `Walk::fields` 127, `Walk::one` 126, `Walk::sequence` 520 (strings and rows inlined); `apply_fields` 142,
+  `apply_by_id` 89, `apply_field` 408 (`apply_one`/`apply_sequence` inlined), `apply_row` 153, `convert_scalar` 387,
+  `convert_string` 37; `locate` 478 (old fields).
+- **Estimates per AC-8 workload** (executed instructions × 1.3 plus about 110 cycles per 32-byte line missed, 268 MHz):
+  encode about 40 k instructions (640 row values × 45 with the path stack, 1024 flags × 6, 84 strings) + 280 lines
+  (5 KB read, 3.8 KB written), 83 k cycles: **about 0.31 ms** (< 0.5); decode: validation 25 k (the flag and bestiary
+  arrays are O(1) there), `T{}` 1.3 k stores, apply 75 k (640 values × 100, flags inline, bestiary one copy), × 1.3 +
+  400 lines, 175 k cycles: **about 0.65 ms** (< 1 ms; above the plan's 0.45–0.55); decode v1 (1.8 KB, 32 items, 3 view
+  lookups, a 33-item shift), 100 k cycles: **about 0.38 ms** (< 1.2). The card workloads are unchanged from the plan's
+  table (store 55–105 ms, 137 with margin: tight; load 10–25; backup 20–50; summaries 30–75).
+- **Stack** (3ds-dev frames): `save_load` 704, `load_one` 240, `save_decode_payload` 208, `save_validate_fields` 136,
+  `Walk::fields` 56 + `Walk::sequence` 64 per level, `apply_fields` 56 + `apply_by_id` 40 + `apply_field` 80 +
+  `apply_row` 64 per level, `save_run_steps` 40, `old_fields_get` 104 (its scratch report is static), `locate` 128,
+  `save_decode` 464. A file load of the three-level reference save peaks at **about 1.5 KB** (about 2.9 KB at 8
+  levels); a memory decode about 1.05 KB. **The plan's < 1 KiB target is missed**: a `Report` (350 bytes: 9 paths of 36
+  bytes) is returned inside a `Result`, whose constructor takes its value by copy (spec 002's `result.hpp`, not
+  changed); the internal calls already share one report (the first build measured 984 + 528 + 872 bytes for the same
+  three frames). Flagged for the maintainer; the 3DS main thread's stack (32 KB by default) has room.
+
+## Stage 10: console run (prepared)
+
+T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh cmake --build --preset 3ds-dev
+--target saves_3dsx actions_3dsx data_3dsx` without a warning; 3ds-release `hello.elf` equal to T0.1's (the stage-end
+guards). On the Old 3DS, each run: Homebrew Launcher, press **Y**, nobody touches the console after.
+
+1. `build/pc-debug/tools/nnh/nnh run saves --script examples/saves/tests/check.nnhs` (about 1 min): every line of
+   "Stage 7 refinements and results" equal to the PC's (the sums, `encode crc 11363B5C bytes 3768`, the byte counts
+   2206/2207, `loaded sum 4B109E8C … backup`, `settings: volume 8 language English stored`), then the bench lines and
+   `saves bench: PASS` (expected: encode 0.2–0.4 ms, decode 0.5–0.8, decode v1 0.3–0.5, store median 55–140 ms — the
+   most likely FAIL —, load 10–35, backup 20–65, summaries 30–100). Screenshots `check`, `empty`, `saved`, `golden`,
+   `backup`, `bench` in `build/logs/` read back. A FAIL fails the run after every number is logged: record them in
+   "Console run 1" and apply T10.3.
+2. `build/pc-debug/tools/nnh/nnh run actions --script examples/actions/tests/check.nnhs` (about 40 s): `actions: saved
+   40 bytes sum AAB4AA36`, `actions: PASS 7/7`, `nnh: PASS`.
+3. `build/pc-debug/tools/nnh/nnh run data --script examples/data/tests/check.nnhs` (about 20 s): `data check: PASS
+   checksum 0xD5BD3020 (4 enemies, 3 items, 1 settings, index 595 bytes)`, `nnh: PASS`.
+
+Optional (decision 21): copy `slot1.sav` from `sdmc:/3ds/saves/` into the simulator's data folder
+(`build/pc-debug/examples/saves/data/saves/`) and load it there (the same summary).

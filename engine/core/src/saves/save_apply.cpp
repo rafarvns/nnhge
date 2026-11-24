@@ -103,6 +103,22 @@ bool apply_sequence(SaveApply& a, const SaveFieldInfo& f, std::uint8_t* member, 
         std::memcpy(items, s.items, static_cast<std::size_t>(n) * f.stride); // the packed copy
         return true;
     }
+    if (from == f.kind &&
+        (from == WireKind::Bool || from == WireKind::F32)) { // the same kind: a check per item
+        for (std::uint32_t i = 0; i < n; ++i) {
+            const bool ok = from == WireKind::Bool ? s.items[i] <= 1 : f32_finite(load_u32(s.items + 4 * i));
+            if (!ok) {
+                a.enter(static_cast<std::uint16_t>(i), true);
+                a.note(SaveNote::Dropped);
+                a.leave();
+            } else if (from == WireKind::Bool) {
+                items[i] = s.items[i];
+            } else {
+                std::memcpy(items + static_cast<std::size_t>(i) * 4, s.items + 4 * i, 4);
+            }
+        }
+        return true;
+    }
     const int width = wire_width(from);
     for (std::uint32_t i = 0; i < n; ++i) {
         if (!convert_scalar(from, s.items + static_cast<std::size_t>(i) * static_cast<std::size_t>(width), f,

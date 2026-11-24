@@ -39,7 +39,8 @@ struct Hash {
     template <int N> void text(const nnh::data::String<N>& s) {
         const int n = s.size();
         byte(static_cast<std::uint8_t>(n));
-        for (int i = 0; i < n; ++i) byte(static_cast<std::uint8_t>(s.c_str()[i]));
+        for (int i = 0; i < n; ++i)
+            byte(static_cast<std::uint8_t>(s.c_str()[i]));
     }
     void item(const Item& it) {
         u16(it.kind);
@@ -62,26 +63,29 @@ struct Hash {
 
 std::uint32_t progress_sum(const Progress& p) {
     Hash h;
-    h.text(p.name);                                    // 1
-    h.u16(p.level);                                    // 2
-    h.u64(p.play_frames);                              // 5
-    h.f32(p.position.x);                               // 6
+    h.text(p.name);       // 1
+    h.u16(p.level);       // 2
+    h.u64(p.play_frames); // 5
+    h.f32(p.position.x);  // 6
     h.f32(p.position.y);
-    for (bool e : p.explored) h.byte(e ? 1 : 0);       // 7
-    h.byte(p.hero.hp);                                 // 8
+    for (bool e : p.explored)
+        h.byte(e ? 1 : 0); // 7
+    h.byte(p.hero.hp);     // 8
     h.byte(p.hero.max_hp);
     h.byte(p.hero.attack);
     h.byte(p.hero.defense);
     h.u16(static_cast<std::uint16_t>(p.inventory.size())); // 9
-    for (const Item& it : p.inventory) h.item(it);
-    h.u32(p.checkpoint.id);                            // 10
-    h.byte(static_cast<std::uint8_t>(p.difficulty));   // 11
-    h.u32(p.gems);                                     // 12
-    h.u16(p.room);                                     // 13
-    h.u16(p.tile);                                     // 14
-    h.u64(p.seed);                                     // 15
-    h.f64(p.best_time);                                // 17
-    for (std::uint16_t c : p.bestiary) h.u16(c);       // 18
+    for (const Item& it : p.inventory)
+        h.item(it);
+    h.u32(p.checkpoint.id);                          // 10
+    h.byte(static_cast<std::uint8_t>(p.difficulty)); // 11
+    h.u32(p.gems);                                   // 12
+    h.u16(p.room);                                   // 13
+    h.u16(p.tile);                                   // 14
+    h.u64(p.seed);                                   // 15
+    h.f64(p.best_time);                              // 17
+    for (std::uint16_t c : p.bestiary)
+        h.u16(c);                                       // 18
     h.u16(static_cast<std::uint16_t>(p.quests.size())); // 19
     for (const Quest& q : p.quests) {
         h.u16(q.id);

@@ -66,6 +66,10 @@ struct Walk {
 bool Walk::fields(const std::uint8_t*& p, const std::uint8_t* end, int depth) {
     std::uint32_t previous = 0;
     while (p < end) {
+#if defined(__GNUC__)
+        // A sequential walk: ask for the next lines (pld on the 3DS, which has no prefetcher).
+        __builtin_prefetch(p + 64);
+#endif
         const std::uint8_t wire = *p++;
         if (!wire_valid(wire)) return fail(true, "bad wire byte 0x%02X", static_cast<unsigned>(wire));
         std::uint32_t id = 0;
@@ -170,6 +174,9 @@ bool Walk::rows(std::uint32_t count, const std::uint8_t*& p, const std::uint8_t*
     if (count > 0 && depth + 1 > save::kMaxDepth) return fail(false, "nesting deeper than 8 levels");
     const std::uint8_t* region_end = p + bytes;
     for (std::uint32_t row = 0; row < count; ++row) {
+#if defined(__GNUC__)
+        __builtin_prefetch(p + 64);
+#endif
         path.push(static_cast<std::uint16_t>(row), true);
         const std::uint8_t* t = row_template;
         for (std::uint32_t i = 0; i < fields_in_row; ++i) {

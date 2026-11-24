@@ -1,10 +1,10 @@
-// The reference values of the saves example (reference.hpp). Integer arithmetic only (floats are made from their
-// bits), so every compiler and the 3DS build the same values.
+// The reference values of the saves example (reference.hpp). Integer arithmetic only (floats are made from
+// their bits), so every compiler and the 3DS build the same values.
 
 #include "reference.hpp"
 
 #include <cstring>
-
+#include <new>
 #include <nnh/detail/name_hash.hpp>
 
 namespace saves_example {
@@ -32,7 +32,7 @@ constexpr std::uint32_t kCoins = 123456;
 constexpr std::uint16_t kWeapon = 501;
 constexpr std::uint16_t kRoom = 12;
 constexpr std::uint16_t kTile = 345;
-constexpr std::uint64_t kSeed = 0x1234567890ull;      // above 2^32
+constexpr std::uint64_t kSeed = 0x1234567890ull;     // above 2^32
 constexpr std::uint64_t kPlayFrames = 5000000000ull; // above 2^32 (v2, v3)
 constexpr std::uint32_t kPlayTime = 3600000;         // v1's u32
 constexpr double kBestTime = 123.456;
@@ -41,14 +41,16 @@ constexpr double kBestTime = 123.456;
 template <class P, class ItemT, class QuestT> void fill_common(P& p, Sequence& seq, int items) {
     p.name.assign(kName);
     p.position = {123.25f, -45.5f};
-    for (int i = 0; i < kRooms; ++i) p.explored[i] = (seq.next() & 3u) == 0;
+    for (int i = 0; i < kRooms; ++i)
+        p.explored[i] = (seq.next() & 3u) == 0;
     for (int i = 0; i < items; ++i) {
         ItemT it{};
         it.kind = static_cast<std::uint16_t>(100 + i);
         it.count = static_cast<std::uint8_t>(1 + seq.next() % 20);
         it.quality = static_cast<std::uint8_t>(seq.next() % 5);
         it.durability = static_cast<std::uint16_t>(seq.next() % 1000);
-        it.wear = float_bits(i == 5 ? 0x00000123u : 0x3F000000u | (seq.next() & 0x7FFFFFu)); // item 5: subnormal
+        it.wear =
+            float_bits(i == 5 ? 0x00000123u : 0x3F000000u | (seq.next() & 0x7FFFFFu)); // item 5: subnormal
         it.bonus = seq.next();
         it.slot = static_cast<std::uint8_t>(i % 8);
         it.equipped = i == 3;
@@ -66,11 +68,12 @@ template <class P, class ItemT, class QuestT> void fill_common(P& p, Sequence& s
 }
 
 template <class P> void fill_v2_extras(P& p, Sequence& seq) {
-    for (std::uint16_t& count : p.bestiary) count = static_cast<std::uint16_t>(seq.next() % 60000);
+    for (std::uint16_t& count : p.bestiary)
+        count = static_cast<std::uint16_t>(seq.next() % 60000);
     for (auto& it : p.inventory) {
         const std::uint32_t c = seq.next();
-        it.dye = {static_cast<std::uint8_t>(c), static_cast<std::uint8_t>(c >> 8), static_cast<std::uint8_t>(c >> 16),
-                  255};
+        it.dye = {static_cast<std::uint8_t>(c), static_cast<std::uint8_t>(c >> 8),
+                  static_cast<std::uint8_t>(c >> 16), 255};
     }
     p.difficulty = Difficulty::Hard;
     p.best_time = kBestTime;
@@ -100,46 +103,45 @@ void fill_v3_extras(Progress& p) {
 
 } // namespace
 
-ProgressV1 reference_v1() {
+void fill_reference_v1(ProgressV1& p) {
+    ::new (&p) ProgressV1{};
     Sequence seq{1};
-    ProgressV1 p;
     fill_common<ProgressV1, ItemV1, QuestV1>(p, seq, 32);
     p.level = 37;
     p.coins = kCoins;
     p.weapon = kWeapon;
     p.play_time = kPlayTime;
     p.stats = {40, 50, 7};
-    return p;
 }
 
-ProgressV2 reference_v2() {
+void fill_reference_v2(ProgressV2& p) {
+    ::new (&p) ProgressV2{};
     Sequence seq{1};
-    ProgressV2 p;
     fill_common<ProgressV2, ItemV2, QuestV1>(p, seq, 64);
     fill_v2_extras(p, seq);
     p.coins = kCoins;
     p.location = static_cast<std::uint32_t>(kRoom) << 16 | kTile;
     p.stats = {40, 50, 7, 3};
-    return p;
 }
 
-Progress reference_v3() {
+void fill_reference_v3(Progress& p) {
+    ::new (&p) Progress{};
     Sequence seq{1};
-    Progress p;
     fill_common<Progress, Item, Quest>(p, seq, 64);
     fill_v2_extras(p, seq);
     fill_v3_extras(p);
-    return p;
 }
 
-Progress reference_v1_migrated() {
-    const ProgressV1 v1 = reference_v1();
-    Progress p; // T{}: what the fields the v1 file lacks keep
+void fill_reference_v1_migrated(Progress& p) {
+    static ProgressV1 v1; // static: no 3 KB temporary on the stack
+    fill_reference_v1(v1);
+    ::new (&p) Progress{}; // T{}: what the fields the v1 file lacks keep
     p.name.assign(v1.name.c_str());
     p.level = v1.level;
     p.play_frames = v1.play_time;
     p.position = v1.position;
-    for (int i = 0; i < kRooms; ++i) p.explored[i] = v1.explored[i];
+    for (int i = 0; i < kRooms; ++i)
+        p.explored[i] = v1.explored[i];
     p.hero.hp = v1.stats.hp;
     p.hero.max_hp = v1.stats.max_hp;
     p.hero.attack = v1.stats.attack;
@@ -161,19 +163,18 @@ Progress reference_v1_migrated() {
     }
     p.checkpoint = v1.checkpoint;
     p.seed = v1.seed;
-    for (const QuestV1& old : v1.quests) p.quests.push_back({old.id, old.state, old.progress, {}});
+    for (const QuestV1& old : v1.quests)
+        p.quests.push_back({old.id, old.state, old.progress, {}});
     p.gems = v1.coins / 10; // step 2 (no location in v1: room and tile keep their defaults)
-    return p;
 }
 
-Progress reference_v3_b() {
-    Progress p = reference_v3();
+void fill_reference_v3_b(Progress& p) {
+    fill_reference_v3(p);
     p.name.assign("Second Slot");
     p.level = 301;
     p.gems += 1;
     p.inventory.clear();
     p.explored[0] = !p.explored[0];
-    return p;
 }
 
 } // namespace saves_example

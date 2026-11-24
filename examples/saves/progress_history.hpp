@@ -1,13 +1,14 @@
 #pragma once
-// The saves example's earlier save versions (spec 027): what wrote the golden files v1.sav and v2.sav, and the docs'
-// "keep the old struct" pattern — another declaration of the same key with the old ids, which can load an old file
-// as it was written. The current game only needs progress.hpp.
+// The saves example's earlier save versions (spec 027): what wrote the golden files v1.sav and v2.sav, and
+// the docs' "keep the old struct" pattern — another declaration of the same key with the old ids, which can
+// load an old file as it was written. The current game only needs progress.hpp.
 
 #include "progress.hpp"
 
 namespace saves_example {
 
-// ---- Version 1 -------------------------------------------------------------------------------------------------
+// ---- Version 1
+// -------------------------------------------------------------------------------------------------
 
 struct StatsV1 {
     std::uint8_t hp = 10;
@@ -51,12 +52,14 @@ struct ProgressV1 {
     std::uint64_t seed = 0;
     nnh::data::List<QuestV1, 32> quests;
 };
-NNH_SAVE_TYPE(ProgressV1, "progress", NNH_SAVE_FIELD(name, 1), NNH_SAVE_FIELD(level, 2), NNH_SAVE_FIELD(coins, 3),
-              NNH_SAVE_FIELD(weapon, 4), NNH_SAVE_FIELD(play_time, 5), NNH_SAVE_FIELD(position, 6),
-              NNH_SAVE_FIELD(explored, 7), NNH_SAVE_FIELD(stats, 8), NNH_SAVE_FIELD(inventory, 9),
-              NNH_SAVE_FIELD(checkpoint, 10), NNH_SAVE_FIELD(seed, 15), NNH_SAVE_FIELD(quests, 19));
+NNH_SAVE_TYPE(ProgressV1, "progress", NNH_SAVE_FIELD(name, 1), NNH_SAVE_FIELD(level, 2),
+              NNH_SAVE_FIELD(coins, 3), NNH_SAVE_FIELD(weapon, 4), NNH_SAVE_FIELD(play_time, 5),
+              NNH_SAVE_FIELD(position, 6), NNH_SAVE_FIELD(explored, 7), NNH_SAVE_FIELD(stats, 8),
+              NNH_SAVE_FIELD(inventory, 9), NNH_SAVE_FIELD(checkpoint, 10), NNH_SAVE_FIELD(seed, 15),
+              NNH_SAVE_FIELD(quests, 19));
 
-// ---- Version 2 -------------------------------------------------------------------------------------------------
+// ---- Version 2
+// -------------------------------------------------------------------------------------------------
 
 struct StatsV2 {
     std::uint8_t hp = 10;

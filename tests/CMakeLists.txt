@@ -454,7 +454,23 @@ if(TARGET queries AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQU
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;QUERIES_DEMO=check;NNH_EXIT_AFTER_FRAMES=90"
         PASS_REGULAR_EXPRESSION "queries: PASS 4ACAA177" FAIL_REGULAR_EXPRESSION "queries: FAIL" TIMEOUT 120)
 endif()
-# The saves example (spec 027 AC-2, AC-6): its golden copies equal tests/data/saves.
+# The saves example (spec 027 AC-2, AC-6): its golden copies equal tests/data/saves; its check mode and its console
+# script played in the simulator (nnh run --pc), as the maintainer plays it on the 3DS.
+if(TARGET saves AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME saves_self_check_pc COMMAND saves)
+    set_tests_properties(saves_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;SAVES_DEMO=check;NNH_EXIT_AFTER_FRAMES=20"
+        PASS_REGULAR_EXPRESSION "saves: PASS" FAIL_REGULAR_EXPRESSION "saves: FAIL" TIMEOUT 120
+        RESOURCE_LOCK nnh_saves_data)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME saves_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run saves --pc --no-build --script examples/saves/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(saves_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK "nnh_remote_port;nnh_saves_data")
+endif()
 add_test(NAME saves_golden_copies_match
          COMMAND ${CMAKE_COMMAND} -DA=${CMAKE_CURRENT_SOURCE_DIR}/data/saves -DB=${PROJECT_SOURCE_DIR}/examples/saves/assets/golden
                  -P ${CMAKE_CURRENT_SOURCE_DIR}/saves/compare_golden.cmake)

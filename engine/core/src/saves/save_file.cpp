@@ -26,21 +26,22 @@ Error named(const char* file, const Error& e) {
     return Error::make(e.code, "%s: %s", file, e.message);
 }
 
-/// Reads and decodes one file. `damage`: the error is one the backup may cure (missing, unreadable,
-/// corrupted).
-Result<save::Report> load_one(const SaveTypeInfo& type, const char* file, void* value, void* buffer,
-                              std::size_t capacity, bool& damage) {
+/// Reads and decodes one file into `value` and `report`. `damage`: the error is one the backup may cure
+/// (missing, unreadable, corrupted).
+Result<void> load_one(const SaveTypeInfo& type, const char* file, void* value, void* buffer,
+                      std::size_t capacity, save::Report& report, bool& damage) {
     auto read = save_read_one(file, buffer, capacity, nullptr);
     if (!read) {
         damage = read.error().code != ErrorCode::LimitReached;
         return read.error(); // spec 002's messages already name the file
     }
-    auto decoded = save_decode_payload(type, static_cast<const std::uint8_t*>(buffer), read.value(), value);
+    auto decoded =
+        save_decode_payload(type, static_cast<const std::uint8_t*>(buffer), read.value(), value, report);
     if (!decoded) {
         damage = decoded.error().code == ErrorCode::Corrupted;
         return named(file, decoded.error());
     }
-    return decoded;
+    return {};
 }
 
 /// The two headers at the start of `file`: one size and one read of 16 + 32 bytes. `damage` as load_one's.
@@ -95,27 +96,36 @@ Result<save::Report> save_load(const SaveTypeInfo& type, const char* path, void*
         return Error::make(ErrorCode::InvalidArgument,
                            buffer == nullptr ? "no buffer" : "save path too long");
     }
+    // One Report (~350 bytes), the one returned: every path returns `result` (named return value, no copy).
+    Result<save::Report> result{save::Report{}};
+    save::Report& report = result.value();
     bool damage = false;
-    auto main = load_one(type, path, value, buffer, capacity, damage);
+    const auto main = load_one(type, path, value, buffer, capacity, report, damage);
     if (main) {
-        save_log_report(path, type, main.value(), nullptr);
-        return main;
+        save_log_report(path, type, report, nullptr);
+        return result;
     }
-    if (!damage) return main; // another type, a newer version or format, a raw file, a buffer too small
+    if (!damage) { // another type, a newer version or format, a raw file, a buffer too small
+        result = main.error();
+        return result;
+    }
     bool backup_damage = false;
-    auto old = load_one(type, backup, value, buffer, capacity, backup_damage);
+    const auto old = load_one(type, backup, value, buffer, capacity, report, backup_damage);
     if (old) {
-        old.value().used_backup = true;
-        save_log_report(path, type, old.value(), main.error().message);
-        return old;
+        report.used_backup = true;
+        save_log_report(path, type, report, main.error().message);
+        return result;
     }
-    if (!backup_damage) return old;
-    if (main.error().code == ErrorCode::NotFound && old.error().code == ErrorCode::NotFound) {
-        return Error::make(ErrorCode::NotFound, "%s not found", path);
+    if (!backup_damage) {
+        result = old.error();
+    } else if (main.error().code == ErrorCode::NotFound && old.error().code == ErrorCode::NotFound) {
+        result = Error::make(ErrorCode::NotFound, "%s not found", path);
+    } else {
+        NNH_LOG_WARN(saves, "save %s unusable (%s); backup unusable (%s)", path, main.error().message,
+                     old.error().message);
+        result = Error::make(ErrorCode::Corrupted, "%s and its backup are unusable", path);
     }
-    NNH_LOG_WARN(saves, "save %s unusable (%s); backup unusable (%s)", path, main.error().message,
-                 old.error().message);
-    return Error::make(ErrorCode::Corrupted, "%s and its backup are unusable", path);
+    return result;
 }
 
 } // namespace nnh::detail

@@ -15,11 +15,11 @@ NNH_LOG_CHANNEL_EXTERN(saves); // defined in save_report.cpp
 namespace nnh::detail {
 
 /// Validates the payload `data` (structured header + fields), checks its key and version against `type`, then
-/// resets `value` to T{}, applies the fields and runs the steps. `value` is unchanged on every error:
-/// Corrupted (structure), InvalidArgument (another key), Unsupported (a raw payload, a newer format or
-/// version). Messages don't name a file.
-Result<save::Report> save_decode_payload(const SaveTypeInfo& type, const std::uint8_t* data, std::size_t size,
-                                         void* value);
+/// resets `value` to T{}, applies the fields and runs the steps, filling `report`. `value` (and `report`) are
+/// unchanged on every error: Corrupted (structure), InvalidArgument (another key), Unsupported (a raw
+/// payload, a newer format or version). Messages don't name a file.
+Result<void> save_decode_payload(const SaveTypeInfo& type, const std::uint8_t* data, std::size_t size,
+                                 void* value, save::Report& report);
 
 /// Runs the steps from version `from` up to the type's current version on `value`. Returns the steps run. A
 /// missing step (impossible for a type that compiled) asserts in Debug/Development and is skipped in Release.

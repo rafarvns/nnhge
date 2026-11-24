@@ -1,8 +1,7 @@
 // NNH_SAVE_DUMP (spec 027, FR-17, plan decision 15): in Debug and Development builds, when the environment
 // variable was set at the first store (read once with std::getenv; the 3DS has no environment), every store
-// also writes
-// `<path>.txt`, the dump of what it stored, through fs_write and fs_append in 4 KB pieces (not atomic: a
-// debugging aid, outside FR-6's file operation count). Release compiles none of it.
+// also writes `<path>.txt`, the dump of what it stored, through fs_write and fs_append in 4 KB pieces (not
+// atomic: a debugging aid, outside FR-6's file operation count). Release compiles none of it.
 
 #include "nnh/fs.hpp"
 #include "nnh/platform/fs.hpp"

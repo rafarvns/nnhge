@@ -60,14 +60,25 @@ bool enum_allows(const EnumInfo* names, const Int& v) {
     return false;
 }
 
+/// Trailing zero bits of a non-zero 64-bit value, in 32-bit halves (no libgcc call on the 3DS's 32-bit ARM).
+int trailing_zeros(std::uint64_t v) {
+    const auto low = static_cast<std::uint32_t>(v);
+    return low != 0 ? std::countr_zero(low) : 32 + std::countr_zero(static_cast<std::uint32_t>(v >> 32));
+}
+
+int bit_length(std::uint64_t v) {
+    const auto high = static_cast<std::uint32_t>(v >> 32);
+    return high != 0 ? 64 - std::countl_zero(high) : 32 - std::countl_zero(static_cast<std::uint32_t>(v));
+}
+
 /// The IEEE bits of the integer, when exactly representable with `mantissa` stored bits.
 bool int_to_float_bits(const Int& v, int mantissa, int bias, std::uint64_t& bits) {
     if (v.magnitude == 0) {
         bits = 0;
         return true;
     }
-    const int length = 64 - std::countl_zero(v.magnitude);
-    const int significant = length - std::countr_zero(v.magnitude);
+    const int length = bit_length(v.magnitude);
+    const int significant = length - trailing_zeros(v.magnitude);
     if (significant > mantissa + 1) return false;
     const std::uint64_t normalized = v.magnitude << (64 - length); // the top bit at 63
     const std::uint64_t fraction = (normalized << 1) >> (64 - mantissa);
@@ -83,7 +94,7 @@ std::uint64_t f32_to_f64(std::uint32_t f) {
     std::uint64_t fraction = f & 0x7FFFFFu;
     if (exponent == 0) {
         if (fraction == 0) return sign;
-        const int top = 63 - std::countl_zero(fraction); // a subnormal: normalise (it is normal as a double)
+        const int top = bit_length(fraction) - 1; // a subnormal: normalise (it is normal as a double)
         fraction = (fraction << (52 - top)) & 0xFFFFFFFFFFFFFull;
         return sign | (static_cast<std::uint64_t>(top - 149 + 1023) << 52) | fraction;
     }

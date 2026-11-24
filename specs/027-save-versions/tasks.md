@@ -184,23 +184,23 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 7: `examples/saves` (PC), the bench and the ARM pre-check
 
-- [ ] **T7.1** The showcase: `tiny_game.{hpp,cpp}`, `slots_panel.{hpp,cpp}` (layout of plan.md, touch and buttons,
+- [x] **T7.1** The showcase: `tiny_game.{hpp,cpp}`, `slots_panel.{hpp,cpp}` (layout of plan.md, touch and buttons,
   summaries), `settings.{hpp,cpp}` (declarations and store in one source), `summary.hpp`, `hud.{hpp,cpp}` (the last
   report), `showcase_scene.{hpp,cpp}`, `main.cpp`, `demos.hpp`, `CMakeLists.txt` (`ASSETS assets`),
   `examples/CMakeLists.txt` (after `queries`). Test: PC screenshots `SAVES_SHOT=empty|saved|golden|backup` read back;
   `NNH_SAVE_DUMP=1` writes `slot1.sav.txt` (read back). Covers AC-5, FR-16, FR-17.
-- [ ] **T7.2** Check scene: `check_scene.{hpp,cpp}`, `check_golden.hpp` (values from pc-debug), the lines of plan.md;
+- [x] **T7.2** Check scene: `check_scene.{hpp,cpp}`, `check_golden.hpp` (values from pc-debug), the lines of plan.md;
   ctest `saves_self_check_pc` (after the `queries_self_check_pc` block). Test: the ctest passes in pc-debug and
   pc-dev; one value changed by hand fails it (checked once). Covers AC-6, FR-18.
-- [ ] **T7.3** [P] Bench: `bench.{hpp,cpp}` (the eight workloads of plan.md on the reference save), `bench_scene.{hpp,cpp}`
+- [x] **T7.3** [P] Bench: `bench.{hpp,cpp}` (the eight workloads of plan.md on the reference save), `bench_scene.{hpp,cpp}`
   (one SD operation per frame, the lines and the verdict; Debug `not judged (Debug)`). Test: a pc-dev run logs every
   line. Covers AC-8.
-- [ ] **T7.4** The script `examples/saves/tests/check.nnhs` (plan.md "Stage 10": every expected line, a `wait 3` after
+- [x] **T7.4** The script `examples/saves/tests/check.nnhs` (plan.md "Stage 10": every expected line, a `wait 3` after
   every `expect` an input follows, the touch coordinates of the layout) and ctest `saves_check_script_pc`
   (`RESOURCE_LOCK nnh_remote_port`). Test: `nnh run saves --pc --no-build --script examples/saves/tests/check.nnhs` →
   PASS, twice in a row (repeatable with files left from the first run). Files: plan.md ("Stage 7 results": every
   expected line). Covers AC-5, AC-6.
-- [ ] **T7.5** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
+- [x] **T7.5** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
   `src/saves/*` and the example's `bench.o`; per AC-8 path record instructions, calls, `pld`, any VFP instruction
   (none expected in the codec), `__aeabi_*` (none), `memcpy` (packed copies only); 3ds-dev `-fstack-usage` of
   `src/saves/*` summed along the deepest validate/apply path at 8 levels (< 1 KiB besides the struct and buffer);
@@ -237,7 +237,7 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
+- [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target saves_3dsx actions_3dsx data_3dsx` without a warning; T7.5's table still
   true; `hello.elf` equal to T0.1's; plan.md's "Stage 10: console run (prepared)" completed with the recorded sums, CRC,
   byte counts and showcase lines. Covers AC-7, II.

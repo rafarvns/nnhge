@@ -1,0 +1,114 @@
+# Spec 027 AC-5/AC-6/AC-8, automatic (spec 013): the check (the golden v1, v2, v3 files copied from the assets to the
+# data folder — the SD card on the 3DS — and loaded by the v3 code, the reference encoded, a slot stored twice, damaged
+# and loaded from its backup, the summaries: every value must be the PC's), then the showcase (slots stored, renamed,
+# the golden v1 loaded with its two steps, a slot damaged and loaded from its backup, a slot deleted, the settings
+# stored), and the bench (AC-8's targets) and its verdict.
+# PC:      nnh run saves --pc --script examples/saves/tests/check.nnhs
+# Console: nnh run saves --script examples/saves/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines are the PC's (pc-debug). The check's sums are tests/data/saves/README.md's and
+# examples/saves/check_golden.hpp's; the showcase's byte counts and sums change only if the tiny game or the moves
+# below change. The script removes its own files first: two runs in a row give the same lines.
+fail-on "] E "
+fail-on "saves: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "saves bench: FAIL"
+
+wait 30
+
+# The check (SELECT): one line per frame, then the verdict.
+tap SELECT
+expect "saves: check started" 30
+expect "saves: v1 sum 0F3BA8C8 migrated 2" 60
+expect "saves: v2 sum 1EFDB382 migrated 1" 60
+expect "saves: v3 sum D15774A7 migrated 0" 60
+expect "saves: encode crc 11363B5C bytes 3768" 30
+expect "saves: slot sum F6C8D12F" 60
+expect "saves: backup used sum D15774A7" 60
+expect "saves: summaries L300 empty empty" 60
+expect "saves: removed slot1 exists 0" 30
+expect "saves: PASS" 30
+wait 5
+screenshot check
+
+# Back to the showcase (SELECT): every slot empty (the check removed them).
+tap SELECT
+expect "saves: showcase slots empty empty empty" 30
+wait 3
+screenshot empty
+
+# X stores the game in slot 1; it moves right, slot 1 again; R picks slot 2; Rename; slot 3.
+tap X
+expect "slot 1: stored 2206 bytes" 30
+wait 3
+hold RIGHT 40
+tap X
+expect "slot 1: stored 2206 bytes" 30
+wait 3
+tap R
+expect "slot 2: selected" 10
+wait 3
+tap X
+expect "slot 2: stored 2206 bytes" 30
+wait 3
+touch 290 220
+expect "name: Zo" 10
+wait 3
+untouch
+wait 3
+tap R
+expect "slot 3: selected" 10
+wait 3
+tap X
+expect "slot 3: stored 2207 bytes" 30
+wait 5
+screenshot saved
+
+# Load golden v1 (touch): the v1 file copied from the assets and loaded with its two steps.
+touch 220 216
+expect "golden v1: loaded sum 0F3BA8C8 steps 2" 30
+wait 3
+untouch
+wait 5
+screenshot golden
+
+# Damage slot 1 (a valid CRC over a broken structure), then load it: its backup (the first store).
+touch 280 36
+expect "slot 1: damaged" 30
+wait 3
+untouch
+wait 3
+touch 120 36
+expect "slot 1: loaded sum 4B109E8C version 3 steps 0 unknown 0 dropped 0 adjusted 0 backup" 30
+wait 3
+untouch
+wait 5
+screenshot backup
+
+# Delete slot 2; Volume + (the settings file).
+touch 200 100
+expect "slot 2: deleted" 30
+wait 3
+untouch
+wait 3
+touch 76 216
+expect "settings: volume 8 language English stored" 30
+wait 3
+untouch
+wait 3
+
+# The bench (Y): 8 workloads, one line each, then the verdict.
+tap Y
+expect "saves bench: started" 30
+expect "saves bench: encode avg" 120
+expect "saves bench: decode avg" 120
+expect "saves bench: decode v1 avg" 120
+expect "saves bench: store median" 300
+expect "saves bench: load median" 120
+expect "saves bench: backup median" 200
+expect "saves bench: summaries median" 200
+expect "saves bench: raw write median" 300
+expect "saves bench: PASS" 30
+wait 10
+screenshot bench
+end

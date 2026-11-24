@@ -1,6 +1,7 @@
 #pragma once
-// The saves example's game state, version 3 (spec 027): the reference save of the golden files (AC-2). Declared in a
-// header (the "declarations in a header" pattern): every file that includes it can store and load a Progress.
+// The saves example's game state, version 3 (spec 027): the reference save of the golden files (AC-2).
+// Declared in a header (the "declarations in a header" pattern): every file that includes it can store and
+// load a Progress.
 //
 //   id  member (v3)    type (v3)                history
 //    1  name           String<24>               v1 String<12> (grew in v2)
@@ -24,7 +25,6 @@
 //   19  quests         List<Quest, 32>          v1 without note (v3)
 
 #include <cstdint>
-
 #include <nnh/gfx.hpp>
 #include <nnh/saves.hpp>
 
@@ -56,8 +56,9 @@ struct Item {
     nnh::data::String<8> label;
 };
 NNH_SAVE_STRUCT(Item, NNH_SAVE_FIELD(kind, 1), NNH_SAVE_FIELD(count, 2), NNH_SAVE_FIELD(quality, 3),
-                NNH_SAVE_FIELD(durability, 4), NNH_SAVE_FIELD(wear, 5), NNH_SAVE_FIELD(bonus, 6), NNH_SAVE_FIELD(dye, 7),
-                NNH_SAVE_FIELD(slot, 8), NNH_SAVE_FIELD(equipped, 9), NNH_SAVE_FIELD(label, 10));
+                NNH_SAVE_FIELD(durability, 4), NNH_SAVE_FIELD(wear, 5), NNH_SAVE_FIELD(bonus, 6),
+                NNH_SAVE_FIELD(dye, 7), NNH_SAVE_FIELD(slot, 8), NNH_SAVE_FIELD(equipped, 9),
+                NNH_SAVE_FIELD(label, 10));
 
 struct Quest {
     std::uint16_t id = 0;
@@ -68,7 +69,7 @@ struct Quest {
 NNH_SAVE_STRUCT(Quest, NNH_SAVE_FIELD(id, 1), NNH_SAVE_FIELD(state, 2), NNH_SAVE_FIELD(progress, 3),
                 NNH_SAVE_FIELD(note, 4));
 
-inline constexpr int kRooms = 1024; ///< explored flags: a 32 x 32 world of rooms
+inline constexpr int kRooms = 1024;                  ///< explored flags: a 32 x 32 world of rooms
 inline constexpr std::uint32_t kProgressVersion = 3; ///< the save version this game writes
 
 struct Progress {

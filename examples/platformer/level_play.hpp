@@ -51,6 +51,8 @@ class LevelPlay {
     ReplaySample sample();
     /// Live entities of the level's world (the HUD shows it).
     int entity_count() const { return world_.count(); }
+    /// From the next restart(), start 24 px left of the level's first door (the door run, spec 023).
+    void start_at_door(bool on) { start_at_door_ = on; }
 
   private:
     struct Door {
@@ -88,6 +90,7 @@ class LevelPlay {
     Door doors_[kMaxDoors] = {};
     int door_count_ = 0;
     bool in_door_ = false;
+    bool start_at_door_ = false; ///< restart() puts the player 24 px left of the first door (the door run)
     int draw_layer_[kMaxLayers] = {}; ///< draw layer of each map layer
     int layer_count_ = 0;
 };

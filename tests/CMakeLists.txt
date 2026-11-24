@@ -425,6 +425,14 @@ endif()
 if(NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     set(_sim_env "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy")
     get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    if(TARGET platformer)
+        add_test(NAME platformer_doors_script_pc
+                 COMMAND $<TARGET_FILE:nnh> run platformer --pc --no-build --script examples/platformer/tests/doors.nnhs
+                 WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+        set_tests_properties(platformer_doors_script_pc PROPERTIES ENVIRONMENT "${_sim_env};NNH_PRESET=${_preset}"
+            PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+            RESOURCE_LOCK nnh_remote_port)
+    endif()
 endif()
 # The queries example's self-check in the simulator (spec 019 AC-6): the verdict the console script waits for.
 if(TARGET queries AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -484,6 +492,9 @@ target_sources(nnh_tests PRIVATE
     fuzz/test_fuzz_transition_geometry.cpp
     input/test_input_block.cpp
     input/test_input_block_api.cpp
+    platformer/test_door_run.cpp
+    ${PROJECT_SOURCE_DIR}/examples/platformer/door_run.cpp
+    ${PROJECT_SOURCE_DIR}/examples/platformer/door_transition.cpp
     scene/test_scene_hook.cpp
     transition/test_custom_effect.cpp
     transition/test_effect_area.cpp

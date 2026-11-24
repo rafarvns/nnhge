@@ -843,3 +843,46 @@ Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `bui
   empty stack): a `cover()` in a game without scenes still reveals (FR-18).
 - `TransitionState`: 248 bytes on 32-bit (the callbacks 96, `FinishEvent` 40, four resolved effects 56, easings 16,
   timeline 20, counters and flags), ≤ 320 on 64-bit; `static_assert`ed.
+
+## Stage 5 results and refinements
+
+- Tests (42 more; `nnh_tests` 2486 → 2489 with stage 6): `test_scene_updates` (4), `test_stack_change` (5),
+  `test_overlay_order` (4), `test_custom_effect` (3), `test_loading` (4), `test_notifications` (3),
+  `test_interruptions` (6), `test_plain_loop` (3), `test_transition_input` (4), `test_transition_actions` (AC-4),
+  `test_no_wrong_frame` (AC-2: replace/push/pop/cover × fade, wipe ×4, split ×2, blinds, iris circle and diamond,
+  each with both reveal styles and BackOut, plus a tall wipe with a 24-pixel gap, a custom cover and all-zero
+  durations: 92 transitions checked frame by frame from the fake's submitted items), `test_transition_cost` (state size,
+  1000 transitions of every kind with no `operator new`, no engine allocation and no log line), and
+  `tests/transitions_example/test_self_check.cpp` (AC-3). The fake platform records 1024 items per frame.
+- **AC-3 goldens** (pc-debug, equal in pc-release and in the simulator's real engine, `TRANSITIONS_DEMO=check`):
+  checkpoints every 120 frames `89F4F944 4BF8CFEE 58AEC725 8284B4EA E271C1BB 70D4E35E C82DAF6F BF71A011 11D7022E`,
+  final **`B32C7A79`** (`kTransitionsCheckGolden`).
+- **Refinement: the self-check is driven by a bottom "driver" scene** (`CheckDriver`, check_scenes.hpp) whose
+  `draw()` plays one script frame: scenes don't update during transitions but every scene draws every frame, so the
+  same script runs under `nnh::run()` in the example and in a manual loop on the fake platform. A and B take turns,
+  C is pushed and popped; the steps live in `check_steps.cpp` (24 steps; the refused request at frame 340 mid-iris,
+  `reveal_at((40, 200))` from the iris's `on_covered`, plain `push(C)`/`pop()` at 955/965 in a covered phase). Notes
+  (enter/exit/update/callbacks) count only inside the script's frames (not the exits when it leaves).
+- **Refinement: frame times and rectangles are checksummed from the public queries** (`effect_rects` of what each
+  screen shows by the documented resolution); AC-2 proves they are what the overlay drew.
+- `scenes` (3ds-release) links no transition or input-block symbol (only `g_scene_transition`); `hello` unchanged
+  since stage 4 (text 201 276).
+
+## Stage 6 results and refinements
+
+- `ShowDemo{demo, at, door}`; `LevelPlay::enter_doors()` publishes the player's centre (one hunk), `restart()` starts
+  24 px left of the first door when `start_at_door_` (one hunk; the spawn takes the feet: the door's bottom), one
+  setter and one member next to `in_door_`. `Demos` takes a `DoorRun&`; a door request with no replay running
+  becomes `transition::replace(level, door_transition(at − camera))` (`door_transition.{hpp,cpp}`: tall iris, band 4,
+  36/6/36, QuadIn); `LevelScene::on_enter()` calls `reveal_at(player − camera)` while a transition runs; Y (or
+  `PLATFORMER_DEMO=doors`) starts the door run (`door_run.{hpp,cpp}`, frame times from the levels' `draw()`, which
+  runs every frame).
+- `tests/platformer/test_door_run.cpp` (3: the door transition's options, ten doors' lines and the verdict, a slow frame
+  fails); ctest `platformer_doors_script_pc` (`examples/platformer/tests/doors.nnhs`).
+- **PC door run** (pc-debug, frames since `doors: started`): `doors: 1 level1 -> bonus frame 12`, `2 … 101`, `3 …
+  190`, `4 … 279`, `5 … 368`, `6 … 457`, `7 … 546`, `8 … 635`, `9 … 724`, `10 … 813`; `doors: done 10 irises frames
+  891 worst 17.2 ms avg 16.7 ms: 60 Hz PASS`. One run of three on the loaded PC measured a 89.6 ms frame (Debug,
+  another build running): the same flakiness as the replay's 60 Hz verdict in pc-debug; the console is the judge.
+- **AC-7 screenshot**: `doors.nnhs`'s `door-iris` (frame 967, 42 frames after RIGHT): the circle closing on the player
+  at the door, a 4-pixel staircase edge, continued over the bottom screen — read back.
+- `platformer_replay_matches_script` passes with `level.nnhs` untouched (`B2418A28`).

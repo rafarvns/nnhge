@@ -90,7 +90,9 @@ void LevelPlay::spawn_things() {
 }
 
 void LevelPlay::restart() {
-    player_.spawn(spawn_);
+    player_.spawn(start_at_door_ && door_count_ > 0
+                      ? nnh::Vec2{doors_[0].bounds.x - 24, doors_[0].bounds.y + doors_[0].bounds.h} // feet
+                      : spawn_);
     spawn_things();
     collected_ = 0;
     turrets_.restart();
@@ -145,7 +147,8 @@ void LevelPlay::enter_doors() {
     for (int i = 0; i < door_count_; ++i) {
         if (!nnh::collision::overlaps(player_.box(), doors_[i].bounds)) continue;
         inside = true;
-        if (!in_door_) nnh::events::publish(ShowDemo{doors_[i].to});
+        const nnh::Rect p = player_.box(); // a door's request carries the player's centre (the iris closes on it)
+        if (!in_door_) nnh::events::publish(ShowDemo{doors_[i].to, {p.x + p.w / 2, p.y + p.h / 2}, true});
     }
     in_door_ = inside;
 }

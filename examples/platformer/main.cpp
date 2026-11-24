@@ -11,7 +11,8 @@
 // 60 frames (compare the PC's and the console's logs) and a 60 Hz verdict. START exits.
 //
 // PLATFORMER_DEMO picks the first demo: level1 (default), bonus, bench, gate (the benchmark's gate at once),
-// flips, replay (level 1 with the replay at once). Screenshots (Debug/Development):
+// flips, replay (level 1 with the replay at once), doors (the door run: ten iris transitions through the levels'
+// doors, spec 023; Y in a level starts it too). Screenshots (Debug/Development):
 //   NNH_SIM_INPUT="buttons=Right" NNH_EXIT_AFTER_FRAMES=120 NNH_SCREENSHOT=build/platformer.png \
 //   build/pc-debug/examples/platformer/platformer.exe
 // Console tests (spec 013): nnh run platformer --script examples/platformer/tests/level.nnhs (levels, replay)
@@ -91,6 +92,7 @@ struct Game {
     nnh::Tilemap level1;
     nnh::Tilemap bonus;
     Replay replay;
+    DoorRun doors;
     LevelScene level1_scene;
     LevelScene bonus_scene;
     Bench bench;
@@ -99,9 +101,9 @@ struct Game {
 
     Game(Art a, nnh::Tilemap l1, nnh::Tilemap b)
         : art(std::move(a)), level1(std::move(l1)), bonus(std::move(b)),
-          level1_scene(Demo::Level1, art, level1, "made in Tiled: levels/level1.tmj", replay),
-          bonus_scene(Demo::Bonus, art, bonus, "built in code: no file, no editor", replay), bench(art),
-          flips(art), demos({&level1_scene, &bonus_scene, &bench, &flips}, replay) {}
+          level1_scene(Demo::Level1, art, level1, "made in Tiled: levels/level1.tmj", replay, doors),
+          bonus_scene(Demo::Bonus, art, bonus, "built in code: no file, no editor", replay, doors), bench(art),
+          flips(art), demos({&level1_scene, &bonus_scene, &bench, &flips}, replay, doors) {}
     bool ready() const { return bench.ready() && flips.ready(); }
 };
 
@@ -130,6 +132,7 @@ int main() {
     if (error == nullptr) {
         if (env_is("gate")) game->bench.start_gate();
         if (env_is("replay")) game->replay.start();
+        if (env_is("doors")) game->doors.start(); // ten irises through the levels' doors (spec 023)
         nnh::run(game->demos.first(demo_from_env())); // until START; exits every scene at the end
     } else {
         while (nnh::frame() && !nnh::input::pressed(nnh::Button::Start))

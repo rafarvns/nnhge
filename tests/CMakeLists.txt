@@ -1027,6 +1027,7 @@ target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
 
 # 3D foundation (spec 026): math, meshes, the 3D pass, the CPU rasteriser, the example's self-check.
 target_sources(nnh_tests PRIVATE
+    gfx3d/test_pixels_fake.cpp
     gfx3d/test_record.cpp
     gfx3d/test_screen_pass.cpp
     gfx3d/test_screen_project.cpp
@@ -1044,8 +1045,10 @@ target_sources(nnh_tests PRIVATE
     mesh/test_mesh_validate.cpp
     mesh/test_primitives.cpp
     models_example/test_self_check.cpp
+    raster3d/test_raster.cpp
     ${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp
 )
+target_link_libraries(nnh_tests PRIVATE nnh::raster3d)
 set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp PROPERTIES
                             COMPILE_OPTIONS -ffp-contract=off)
 

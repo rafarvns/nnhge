@@ -118,17 +118,17 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 5 — CPU rasteriser (026a)
 
-- [ ] **T5.1** `engine/platforms/shared/raster3d/` library (`-O2 -ffp-contract=off` all flavours), `raster3d.hpp`,
+- [x] **T5.1** `engine/platforms/shared/raster3d/` library (`-O2 -ffp-contract=off` all flavours), `raster3d.hpp`,
   `vertex_stage.cpp` — test: `tests/raster3d/test_vertex_stage.cpp` — covers FR-22
-- [ ] **T5.2** `clip.cpp` (near/far + guard band) — test: `test_clip.cpp` (a triangle through the near plane clipped,
+- [x] **T5.2** `clip.cpp` (near/far + guard band) — test: `test_clip.cpp` (a triangle through the near plane clipped,
   not dropped) — covers FR-20, FR-22
-- [ ] **T5.3** `setup.cpp`, `raster.cpp` (28.4 edges, top-left rule, back-face cull, depth) — test: `test_coverage.cpp`
+- [x] **T5.3** `setup.cpp`, `raster.cpp` (28.4 edges, top-left rule, back-face cull, depth) — test: `test_coverage.cpp`
   (shared edge: no gap, no double), `test_depth.cpp` (intersecting triangles) — covers FR-22, AC-5
-- [ ] **T5.4** `sample.cpp` (nearest, bilinear, repeat/clamp/mirror), perspective-correct attributes — test:
+- [x] **T5.4** `sample.cpp` (nearest, bilinear, repeat/clamp/mirror), perspective-correct attributes — test:
   `test_sample.cpp`, `test_perspective.cpp` (checkerboard on a tilted plane) — covers FR-22, AC-5
-- [ ] **T5.5** `shade.cpp`, `lut.cpp` (shared tables), `blend.cpp` (cut-out, blend) — test: `test_shade.cpp` (lit pixels
+- [x] **T5.5** `shade.cpp`, `lut.cpp` (shared tables), `blend.cpp` (cut-out, blend) — test: `test_shade.cpp` (lit pixels
   = FR-10 ±1), `test_blend.cpp` — covers FR-10, FR-22, AC-5
-- [ ] **T5.6** Fake platform pixels (`fake::enable_pixels_3d`, `pixel_3d`, RGBA copies of fake textures) — test:
+- [x] **T5.6** Fake platform pixels (`fake::enable_pixels_3d`, `pixel_3d`, RGBA copies of fake textures) — test:
   `tests/gfx3d/test_pixels_fake.cpp` (an end-to-end frame through core) — covers FR-25
 
 ## Stage 6 — PC backend (026a)

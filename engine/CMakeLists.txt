@@ -8,6 +8,9 @@
 include(nnh_engine_options)
 
 add_subdirectory(core)
+if(NNH_PLATFORM STREQUAL "pc" OR NNH_BUILD_TESTS)
+    add_subdirectory(platforms/shared/raster3d) # the CPU rasteriser (spec 026, D41): PC simulator and fake pixels
+endif()
 add_subdirectory(platforms/${NNH_PLATFORM})
 if(NNH_BUILD_TESTS)
     add_subdirectory(platforms/fake)

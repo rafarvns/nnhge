@@ -60,6 +60,7 @@ bool texture_create(const void* data, std::size_t size, TextureInfo& out) {
     out.height = read_u16(bytes + 6);
     out.bytes = static_cast<std::size_t>(out.width) * static_cast<std::size_t>(out.height) * 4;
     ++mutable_state().live_textures;
+    platform_fake::detail::texture_recorded(out.handle, out.width, out.height, nullptr);
     return true;
 }
 
@@ -73,11 +74,13 @@ bool texture_create_rgba(const void* pixels, int width, int height, TextureInfo&
     out.bytes = static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4;
     ++mutable_state().live_textures;
     ++mutable_state().rgba_textures_created;
+    platform_fake::detail::texture_recorded(out.handle, width, height, pixels);
     return true;
 }
 
 void texture_destroy(TextureHandle handle) {
     if (handle != 0) --mutable_state().live_textures;
+    platform_fake::detail::texture_forgotten(handle);
 }
 
 void draw_2d(Screen screen, const DrawItem2D* items, int count) {

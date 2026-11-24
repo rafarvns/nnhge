@@ -243,6 +243,14 @@ const Fake3D& pass3d_log();
 void set_video3d_init_fails(bool fails);
 /// When true, mesh_create() fails (out of linear memory).
 void set_mesh_create_fails(bool fails);
+/// When on, begin_3d/draw_3d/end_3d also rasterise into a 400×240 top-screen picture with the engine's CPU
+/// rasteriser (spec 026 FR-25): cleared to the top clear colour at begin_frame (the fake draws no 2D pixels).
+/// Textures: RGBA copies of texture_create_rgba's pixels; "FAKE" images are a gradient (r = x·255/(w−1),
+/// g = y·255/(h−1), b = 0, a = 255).
+void enable_pixels_3d(bool on);
+/// A pixel of the picture of the frame that ended last.
+Color pixel_3d(int x, int y);
+
 /// The bytes a mesh was created with (vertices then indices), or nullptr for an unknown handle.
 const std::uint8_t* mesh_data(platform::MeshHandle handle, std::size_t& size);
 

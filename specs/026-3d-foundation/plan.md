@@ -713,3 +713,18 @@ the maintainer's approval beyond the decisions above.
   build doesn't garbage-collect sections, so any shared helper stays. Kept for the merge plan's single slice function;
   `.bss` +264 B (`TileSplit::layer` in the 64 split points); PC `.exe` +1 249 B (over the 1 KB budget by 225 B).
   Every example's screenshot unchanged.
+
+### Stage 5 results and refinements (T5.1–T5.6)
+
+- `engine/platforms/shared/raster3d/` as planned plus `raster3d.cpp` (clear, draw: vertex stage → clip → fan →
+  coverage → depth → shade → cut-out/blend). The lighting tables live there (`light_tables.cpp`, pure) rather than in
+  core's `gfx3d/`: platforms never call core, and the 3DS backend compiles the same file (stage 7).
+- Clipping: near, far and a ±8 NDC guard band (so 28.4 coordinates stay far from overflow); a triangle crossing the
+  camera plane becomes a fan.
+- Fill rule: edge functions in int64 at pixel centres, top-left edges inclusive (on the y-down screen with the
+  triangle normalised to a positive area: dy < 0, or dy = 0 and dx > 0); front faces are counter-clockwise in NDC.
+- Shading: `surface.rgb × min(ambient + Σ diffuse, 1) + Σ specular`, clamped — the diffuse sum is clamped before the
+  multiply, as the PICA200's fragment primary colour is. Depth: NDC z, less-than, cleared to +1.
+- Fake pixels: `fake::enable_pixels_3d(true)`, `fake::pixel_3d(x, y)` (the picture of the frame that ended last);
+  textures from `texture_create_rgba` copied, "FAKE" images become a gradient. 7 rasteriser tests + 2 end-to-end
+  frames through core.

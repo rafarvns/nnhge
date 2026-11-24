@@ -116,7 +116,8 @@ bool frame() {
     }
     detail::input_update(input_sample);
     detail::profile_frame_boundary();
-    detail::overlay_update(time::delta(), input::held_mask(), detail::input_pressed_mask(),
+    // Engine controls read the raw buttons: a game's or a transition's input block never blocks them (spec 023).
+    detail::overlay_update(time::delta(), detail::input_engine_held_mask(), detail::input_engine_pressed_mask(),
                            platform::poll_dev_requests());
     platform::begin_frame(detail::clear_color(Screen::Top), detail::clear_color(Screen::Bottom));
     g_frame_open = true;

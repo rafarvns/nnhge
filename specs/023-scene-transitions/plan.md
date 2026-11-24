@@ -1,6 +1,6 @@
 # Plan 023: Scene transitions
 
-Status: approved 2026-11-23 (overnight pre-approval)
+Status: implemented 2026-11-24, console run T10.2 and Linux checks T9.1 pending (approved 2026-11-23 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D38 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (the scene stack, deferred changes, `nnh::run()`), spec 004 (rectangles, layers, `ignore_camera`,
 recording and submit), spec 015 (the libm-free easings, `SmallFunction` callbacks, `FinishEvent`; D30), spec 017
@@ -736,3 +736,277 @@ not amended (its notifications follow the scene's `update()`); D32 is not amende
 queries); D28 noted (remote input is game input and is filtered); spec 001's "the top scene updates every frame" gains
 D38's exception. The patterns page gains an "Optional frame hook" row (D30, D32, D38). The iris's worst frame is
 flagged at risk and keeps the spec's measurement-with-margin fallback.
+
+## Stage 0 results (2026-11-24, worktree branch from `main` at 407ff10)
+
+Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `build/ref-023/` (not committed):
+`measure.sh` (sizes, `nm` lists, disassembly), `headers.sh` (header costs), `objsum.sh` (object disassembly sums),
+`edit_time.sh`, `compare.sh` (AC-9 screenshots).
+
+| Item | Value |
+|------|-------|
+| ctest | pc-debug 268/268, pc-release 258/258; `nnh_tests` 2353 tests (`kMaxTests` 4096: room for this spec's ≈ 200) |
+| Warnings | 0 in pc-debug, pc-release, 3ds-release, 3ds-dev |
+| `hello` | pc-release `.exe` 278 856 B (text 130 732), pc-debug 1 304 762 B; 3ds-release `.elf` text **201 188** (`.3dsx` 246 576 B); 3ds-dev `.3dsx` 268 108 B |
+| 3ds-release `.text` | `scenes` 206 492, `actions` 246 092, `platformer` 361 880 |
+| Headers (one-line TU, `g++ -E` lines / `-fsyntax-only` best of 3) | `scene.hpp` 565 / 300 ms, `gfx.hpp` 779 / 303 ms, `tween.hpp` 8 413 / 451 ms |
+| Edit `examples/scenes/title_scene.cpp` | simulator 2.0–2.3 s, `.3dsx` 3.3 s |
+| Goldens | replay `B2418A28` (spec 021's lines: this tree predates spec 022's T6.3), tweens `B44CA3F6`, entities `C8FB9A41`, prefabs `7BB7901E` |
+| AC-9 references | `build/ref-023/ref/`: hello, sprites, scenes title (30) and level (90, `NNH_SIM_INPUT=buttons=A`), tweens, actions, camera `zoom1`, platformer level 1 (90), replay 64 and 312; `compare.sh` retakes them identical |
+| Disassembly | 3ds-dev `input.o`, `scenes.o`, `scene_stack.o` in `build/ref-023/m-t0/dis/`; `input_update` is 54 instructions with one call (`shape_stick`) per stick; 3ds objects are built with one section per function (the linker drops unreferenced functions) |
+
+## Stage 1 results
+
+- `<nnh/ease.hpp>` holds `Ease`, `kEaseCount`, `EaseFn`, `ease()` and `Easing` verbatim; `<nnh/tween.hpp>` includes it.
+  A one-line TU including only `<nnh/ease.hpp>` preprocesses to `<cstdint>` and the system headers it pulls (461
+  lines, 314 ms). `FinishEvent` moved verbatim to `<nnh/detail/finish_event.hpp>`, included by `tween_detail.hpp`.
+- The 3ds-dev disassembly of every `src/tween/*.o` is identical to stage 0's (`objsum.sh`); `tweens: PASS B44CA3F6`
+  (`check.nnhs --pc`); spec 015's tests and compile-fail tests pass unchanged; stage-end guards green (ctest 268/258,
+  0 warnings on the four presets, actions and input scripts PASS, `compare.sh` identical, docs 0 broken links).
+- `tween.hpp` grew by 32 preprocessed lines (the new headers' comments): 8 445, `-fsyntax-only` unchanged.
+- Refinement (tooling): the actions example saves rebound controls (`controls.bin`) when its script runs, which
+  changes its screenshot; `compare.sh` deletes that file before retaking the reference.
+
+## Stage 2 results and refinements
+
+- Tests: `tests/input/test_input_block.cpp` (9, the pure filter) and `test_input_block_api.cpp` (9: queries idle, no
+  input event while blocked — not even the release of what was held when the block started —, held controls wait for
+  their release, `touch_position()` keeps the last point, the game's block never lifts a transition's, init lifts the
+  block, the overlay toggle works while blocked, remote input blocked, actions idle and held bindings waiting); seen red
+  with a stub filter, then green. `nnh_tests` 2371, ctest 268/258, guards green.
+- **Refinement: the raw buttons for engine controls live in `input.cpp`** (an 8-byte `InputState engine`, updated
+  every frame) instead of in `InputBlock`: `detail::input_engine_held_mask()`/`input_engine_pressed_mask()` always
+  return the raw buttons (the old masks differed only by the D-Pad mirror's bits, which SELECT + L never reads), and
+  `InputBlock` is 8 bytes (filtered mask, blockers, three flags).
+- **Refinement: the filter applies the sample itself.** `detail::g_input_filter` is `void (*)(const InputSample&)`;
+  when set, `input_update()` hands it the raw sample and returns; the filter copies, filters, calls
+  `detail::input_apply()` and, while blocking, `detail::input_forget_edges()` (a blocked frame has no edge, so the
+  buttons held when the block starts are not "released"). Both helpers are in `input.cpp` but referenced only by
+  `input_block.cpp`, so the 3DS linker drops them from games that never block. A first version (the filter returning
+  a filtered copy to `input_update()`) cost 160 bytes of `hello` text; this one costs **56 bytes** (201 188 → 201 244,
+  within the 96-byte budget): `input_update` is now 11 instructions (the engine mask, one load and branch, a tail call
+  to `input_apply`).
+- `hello`'s 3ds-release `nm` list differs only by the input path: `+ input_apply`, `+ g_input_filter`,
+  `+ input_engine_held_mask`, `+ input_engine_pressed_mask`, `− input_pressed_mask`, `− input::held_mask` (no longer
+  called by `app.cpp`); no `InputBlock` symbol. pc-release `hello.exe` +812 bytes (the PC links whole objects).
+- `input_reset()` (from `nnh::init()`) clears the filter pointer: a block never survives `shutdown()`/`init()`.
+
+## Stage 3 results and refinements
+
+- Tests (42, seen red with stubbed geometry, then green): `test_effect_fill.cpp` (q and ext rounding, fade alpha table,
+  wipes ×4 and continued, split ⌈e/2⌉/⌊e/2⌋ and the continued centred band, blinds ⌊i·L/N⌋ for 2/7/8/32 bars both
+  ways and continued, clamps), `test_effect_iris.cpp` (isqrt exact below 2²⁰ and on 200 000 seeded values, the
+  documented bands of a half-closed circle and diamond at (200, 120), merged rows, centres inside/outside/±4096, bands
+  1/4/16, counts), `test_effect_area.cpp` (tall wipes with gaps 0 and 24, the inset, the gap drawn nowhere, a tall iris
+  on a bottom point, the per-screen resolution table), `test_effect_query.cpp` (no init, capacity, colour, `max_rects`,
+  `draw_effect` = `effect_rects` with a moved and zoomed camera), `test_geometry_properties.cpp` (2000 seeded effects ×
+  10 growing coverages: inside, disjoint, area monotonic, full at 1, counts; area summed over disjoint rectangles
+  instead of a rasteriser: 0.3 s in Debug instead of 16 s), mini-fuzz `test_fuzz_transition_geometry.cpp` (300 random
+  inputs, NaN/∞/huge centres and coverages, enum bytes out of range) on `tests/fuzz/fuzz_transition_geometry.cpp`
+  (`fuzz_transition_geometry` with `NNH_BUILD_FUZZERS`, declared in 023's CMake block).
+- **Refinement: the sink takes an internal `PixelRect` (ints)**; `effect_rects` converts to `Rect` (exact).
+- **Refinement: `ResolvedEffect` is 14 bytes** (kind, direction, shape, bars, band, continued, centre `i16` × 2,
+  colour); the centre is resolved per screen (non-tall: the point in that screen's coordinates, default its middle;
+  tall: in area pixels, a bottom-screen point moved by (40, 240 + gap)).
+- **Refinement: `max_rects(iris, tall)` counts one more band** (2 × (⌊(240 + band − 2) / band⌋ + 1) + 2: a band
+  may straddle the bottom screen's top edge when the gap isn't a multiple of the band); band 4: 122 per screen, 124
+  in the tall area (FR-21's 128 holds); band 1: 482 either way.
+- The iris visits only the bands that meet the target screen's rows (one division per screen for the first band).
+- `<nnh/transition.hpp>` pulls only `ease`, `gfx`, `math`, `time`, `assert`, `build` and the two small detail headers
+  (no tween set, audio, tilemap, actions, camera or entities); 8 476 preprocessed lines / 432 ms `-fsyntax-only`
+  (`small_function.hpp`'s `<new>`/`<type_traits>`/`<utility>` are most of it; `scene.hpp` + `gfx.hpp`: 565 + 779).
+- Guards green (ctest 268/258, `nnh_tests` 2413, 0 warnings on four presets, scripts PASS, `compare.sh` identical);
+  `hello` unchanged since stage 2 (text 201 244, same `nm` list).
+
+## Stage 4 results and refinements
+
+- Tests: `tests/scene/test_scene_hook.cpp` (9: the halves equal `update_and_draw()` call for call, nothing on an empty
+  stack, the transition change through the deferred path, the tolerant pop, delegation to a test hook, the cancel at
+  `shutdown()` and at the end of `run()`, `run()` looping while the hook runs on an empty stack, the pending count),
+  `tests/transition/test_timeline.cpp` (11), `test_requests.cpp` (11: each request, plain changes instant, the refusal
+  logged once per running transition, each misuse asserting or clamped/refused on the Release path, queries frame by
+  frame, `reveal_at`, the waiting scene's count); `test_scene_stack.cpp`, `test_run.cpp`, `test_scene_attachments.cpp`
+  unchanged and green. `nnh_tests` 2444; guards green.
+- **Refinement: the transition's tolerant pop logs in the transition module**, not in the stack:
+  `Op::TransitionPop` pops nothing on an empty stack silently, and `transition_enqueue_change()` logs the error when it
+  enqueues a pop on a stack the game emptied. The stack's log string cost `hello` 100 bytes (every game links
+  `apply_pending`); without it the scene hook costs `hello` **32 bytes** (`scenes_shutdown`'s cancel check and the
+  4-byte pointer): **`hello` +88 bytes of 3DS text since stage 0** (201 188 → 201 276, budget 96). `scenes`: `+`
+  the null check in `update_and_draw` (8 bytes: `0x20`), `run()` 132 bytes.
+- **Refinement: queries read between frames show the state the next frame starts in** (the end of a frame already
+  moved the phase: after the last out frame, `phase()` is Covered with `phase_progress()` 0). Inside a frame (scenes'
+  `update`/`draw`, callbacks, custom effects) they are that frame's, as the tests read them.
+- **Refinement: a change enqueued during the frame it is requested in** (O = 0 and a request before
+  `update_and_draw()`, from an event handler or `on_enter()`) is applied at the start of the next frame, so that
+  first frame is drawn covered without counting as a covered frame (on_covered always follows the change).
+- **Refinement: the in phase is skipped only over a stack the transition's own change emptied** (`op != Cover` and an
+  empty stack): a `cover()` in a game without scenes still reveals (FR-18).
+- `TransitionState`: 248 bytes on 32-bit (the callbacks 96, `FinishEvent` 40, four resolved effects 56, easings 16,
+  timeline 20, counters and flags), ≤ 320 on 64-bit; `static_assert`ed.
+
+## Stage 5 results and refinements
+
+- Tests (42 more; `nnh_tests` 2486 → 2489 with stage 6): `test_scene_updates` (4), `test_stack_change` (5),
+  `test_overlay_order` (4), `test_custom_effect` (3), `test_loading` (4), `test_notifications` (3),
+  `test_interruptions` (6), `test_plain_loop` (3), `test_transition_input` (4), `test_transition_actions` (AC-4),
+  `test_no_wrong_frame` (AC-2: replace/push/pop/cover × fade, wipe ×4, split ×2, blinds, iris circle and diamond,
+  each with both reveal styles and BackOut, plus a tall wipe with a 24-pixel gap, a custom cover and all-zero
+  durations: 92 transitions checked frame by frame from the fake's submitted items), `test_transition_cost` (state size,
+  1000 transitions of every kind with no `operator new`, no engine allocation and no log line), and
+  `tests/transitions_example/test_self_check.cpp` (AC-3). The fake platform records 1024 items per frame.
+- **AC-3 goldens** (pc-debug, equal in pc-release and in the simulator's real engine, `TRANSITIONS_DEMO=check`):
+  checkpoints every 120 frames `89F4F944 4BF8CFEE 58AEC725 8284B4EA E271C1BB 70D4E35E C82DAF6F BF71A011 11D7022E`,
+  final **`B32C7A79`** (`kTransitionsCheckGolden`).
+- **Refinement: the self-check is driven by a bottom "driver" scene** (`CheckDriver`, check_scenes.hpp) whose
+  `draw()` plays one script frame: scenes don't update during transitions but every scene draws every frame, so the
+  same script runs under `nnh::run()` in the example and in a manual loop on the fake platform. A and B take turns,
+  C is pushed and popped; the steps live in `check_steps.cpp` (24 steps; the refused request at frame 340 mid-iris,
+  `reveal_at((40, 200))` from the iris's `on_covered`, plain `push(C)`/`pop()` at 955/965 in a covered phase). Notes
+  (enter/exit/update/callbacks) count only inside the script's frames (not the exits when it leaves).
+- **Refinement: frame times and rectangles are checksummed from the public queries** (`effect_rects` of what each
+  screen shows by the documented resolution); AC-2 proves they are what the overlay drew.
+- `scenes` (3ds-release) links no transition or input-block symbol (only `g_scene_transition`); `hello` unchanged
+  since stage 4 (text 201 276).
+
+## Stage 6 results and refinements
+
+- `ShowDemo{demo, at, door}`; `LevelPlay::enter_doors()` publishes the player's centre (one hunk), `restart()` starts
+  24 px left of the first door when `start_at_door_` (one hunk; the spawn takes the feet: the door's bottom), one
+  setter and one member next to `in_door_`. `Demos` takes a `DoorRun&`; a door request with no replay running
+  becomes `transition::replace(level, door_transition(at − camera))` (`door_transition.{hpp,cpp}`: tall iris, band 4,
+  36/6/36, QuadIn); `LevelScene::on_enter()` calls `reveal_at(player − camera)` while a transition runs; Y (or
+  `PLATFORMER_DEMO=doors`) starts the door run (`door_run.{hpp,cpp}`, frame times from the levels' `draw()`, which
+  runs every frame).
+- `tests/platformer/test_door_run.cpp` (3: the door transition's options, ten doors' lines and the verdict, a slow frame
+  fails); ctest `platformer_doors_script_pc` (`examples/platformer/tests/doors.nnhs`).
+- **PC door run** (pc-debug, frames since `doors: started`): `doors: 1 level1 -> bonus frame 12`, `2 … 101`, `3 …
+  190`, `4 … 279`, `5 … 368`, `6 … 457`, `7 … 546`, `8 … 635`, `9 … 724`, `10 … 813`; `doors: done 10 irises frames
+  891 worst 17.2 ms avg 16.7 ms: 60 Hz PASS`. One run of three on the loaded PC measured a 89.6 ms frame (Debug,
+  another build running): the same flakiness as the replay's 60 Hz verdict in pc-debug; the console is the judge.
+- **AC-7 screenshot**: `doors.nnhs`'s `door-iris` (frame 967, 42 frames after RIGHT): the circle closing on the player
+  at the door, a 4-pixel staircase edge, continued over the bottom screen — read back.
+- `platformer_replay_matches_script` passes with `level.nnhs` untouched (`B2418A28`).
+
+## Stage 7 results and refinements
+
+- `examples/transitions` (13 sources ≤ 200 lines, `art/make_art.py` → `assets/art/tiles.png`, `art/make_music.py` →
+  `assets/music/loop.ogg`, 32 kHz, 4 bars at 120 bpm, `LOOPSTART=0`): title → room 1 (fade, music faded in from
+  `on_covered`), two rooms as code-built tile maps (`world.cpp`), the HUD on the bottom screen, LEFT/RIGHT effect, L
+  reveal, R screens, touch → iris centre, A change, B loading step (curtain + bar, 40 slices, hold 20), X loading scene
+  (`title_scene.cpp`'s `LoadingScene`, a second transition from its `update()`), SELECT self-check, Y bench, START.
+  Refinement: `title_scene.cpp` holds the title and the loading scene (one file pair), and the check scene's glue is in
+  `main.cpp` (`log_checkpoint`); `bench.{hpp,cpp}` + `bench_scene.{hpp,cpp}` as planned.
+- **Refinement: `loading_progress()` reads 0 when no transition runs** (it kept the last transition's value, so the
+  self-check's sum depended on what ran before it: started by SELECT after the title's fade it differed from
+  `TRANSITIONS_DEMO=check`). **AC-3 goldens re-recorded** (pc-debug = pc-release = the simulator, from boot or from
+  SELECT): checkpoints `DA198EA8 E37BCD73 611CBFC8 6926151E 772D4A96 32B87B97 2576DBF6 DABFC1BC 836B1ECE`, final
+  **`BFE1D810`** (stage 5's values are superseded).
+- **Refinement: the `gfx submit` profile scope is Development-only** (`#if NNH_FLAVOR_DEVELOPMENT` in `gfx_submit()`, as
+  the plan's text says): in Debug it added a scope to every frame and broke spec 002's profiler tests, which count
+  scopes. Release and Debug objects are unchanged.
+- The input log counts what scenes see from the transition's first frame (`frames() > 0`): the request's own frame
+  still read the press that started it.
+- `examples/transitions/tests/check.nnhs`: PASS twice with `--pc` (112 lines, frames 1–3824): the ten checkpoints
+  and `transitions: PASS BFE1D810`; fade with B tapped during it → `transition: done frame 1377 seen 0`; four RIGHTs →
+  `settings: iris both reverse`; touch → `iris centre: bottom 100,120`; iris `seen 0`; R R and LEFT ×3 → `wipe tall`,
+  `seen 0`; B → `transition: start replace curtain tall reverse out 24 hold 20 in 24`, `seen 0`; the bench lines and
+  `transitions bench: done`. Lines that come in one frame are expected once (the verdict and the room's return; the
+  bench's loading line, verdict and `done`); every input waits ≥ 10 frames after an `expect` (the tool warns otherwise).
+  ctests `transitions_self_check_pc` and `transitions_check_script_pc` (023's ctest block after `camera_self_check_pc`).
+- Screenshots read back (`TRANSITIONS_SHOT=<mode> NNH_EXIT_AFTER_FRAMES=40`, coverage 0.25 with QuadIn): fade, wipe,
+  split, blinds, iris (a 4-pixel staircase circle on each screen), diamond, curtain (velvet rows and the gold hem over
+  the top quarter of both screens), tall (the wipe's first 120 rows of the 480-row area: half the top screen); at 61
+  the fade covers both screens; `TRANSITIONS_SHOT=loading` at 80: the curtain down on both screens with the bar half
+  full. Four are in `docs/images/transitions/`.
+- **PC bench (pc-dev, `TRANSITIONS_DEMO=bench`)**: base submit 0.133 ms; fade 0.440, wipe 0.273, split 0.294, blinds8
+  0.252, iris 0.305 (rects 240 of 244), loading engine 0.435 ms average → `FAIL (fade, wipe, split, loading engine)`.
+  Not representative: on the PC the submit includes the SDL software renderer filling every overlay pixel (a
+  full-screen rectangle pair costs ≈ 0.3 ms there; on the 3DS the GPU fills them after `C2D_DrawRectSolid` has queued
+  six vertices). The `transition` scope alone is a few µs. The console judges AC-8 (T10.2); the PC bench is not.
+  pc-debug logs `not judged (Debug)`.
+
+## Stage 7 ARM pre-check (T7.7, 3ds-dev objects, before any console run)
+
+| Hot path | Disassembly | Plan's assumption | Verdict |
+|----------|-------------|-------------------|---------|
+| `scenes::update_and_draw` | 8 instructions: one load, one branch, a tail call | one load and branch | ✓ |
+| `input_update` | 11 instructions: the engine mask (2 loads, 2 stores), one load and branch, a tail call to `input_apply` (the old body, unchanged) | one load and branch | ✓ (+1 call per frame) |
+| iris band loop (`geometry_iris`) | per cut band ≈ 20 instructions of setup, the inlined bit-method square root (≈ 7 × 3 to place the bit + ≈ 8 × 8 iterations for r² < 2¹⁶), 2 calls to `RectTarget::emit` (≈ 15 instructions each, then the sink); ≈ 120 instructions per band; no `__aeabi_*`, no `vmrs`, no `memcpy` in the loop; one `__aeabi_idivmod` per call, only when the target starts below row 0 (the tall bottom screen) | 100–130 | ✓ |
+| blinds (`geometry_fill`) | one `__aeabi_idivmod` per call; per bar ≈ 14 instructions and one emit | one udivmod per screen | ✓ |
+| the step (`transition_frame` → `timeline_step`) | one `vdiv` and one `ease()` call per out/in frame; `vmrs` only in the clamp/ratchet compares of the step (4 per frame), not per band | one ease, one vdiv | ✓ |
+| `effect_area` (`resolve_effect`, `max_rects`) | float compares (`vmrs`) and two `__aeabi_idiv` in `max_rects_resolved`: request time only | — | ✓ (not per frame) |
+| the rectangle path | unchanged gfx code: `fill_rect` → `DrawList::record` → build → `draw_2d` (counted in the plan's table) | 800–1270 cycles, × 1.3 | — |
+
+Expected console numbers (the plan's table, unchanged by the disassembly): fade/wipe 0.010–0.017 ms, split
+0.018–0.029, blinds8 0.066–0.105, iris average 0.60–0.95 ms (worst 1.05–1.60, rects 244), loading engine 0.012–0.020
+— PASS, the iris's worst frame the one at risk (risk 1). A cheap win kept in reserve (no result changes): start the
+square root's bit at 2¹⁶ when r² < 2³² is known to fit (saves ≈ 20 instructions per band).
+
+## Stage 10: prepared commands (completed by stage 7)
+
+On the PC first (T10.1): `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh cmake --build --preset
+3ds-dev --target transitions_3dsx platformer_3dsx actions_3dsx` (both 0 warnings at stage 7); `hello.elf` text 201 276
+(T0.1 + 88). Then on the Old 3DS, nobody touching it after Y — open the Homebrew Launcher, press **Y**, then:
+
+1. `build/pc-debug/tools/nnh/nnh run transitions --script examples/transitions/tests/check.nnhs` (≈ 65 s): expected
+   `transitions: 120 sum DA198EA8` … `transitions: 1080 sum 836B1ECE`, **`transitions: PASS BFE1D810`**, the showcase's
+   `seen 0` lines and `iris centre: bottom 100,120`, the bench lines and `transitions bench: PASS` (or `FAIL (...)`:
+   record the numbers in "Console run 1"); screenshots `fade-mid`, `iris-mid`, `tall-mid`, `curtain-mid`,
+   `loading-bar` compared with the `--pc` run's (same geometry, fade colours within one step).
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/doors.nnhs` (≈ 20 s): `doors: 1
+   level1 -> bonus frame 12` … `doors: 10 bonus -> level1 frame 813`, `doors: done 10 irises frames 891 … 60 Hz
+   PASS`, the `door-iris` screenshot.
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (≈ 40 s): the tree's
+   replay lines (`B2418A28` here; spec 022's after the merge), `60 Hz PASS`.
+4. `build/pc-debug/tools/nnh/nnh run actions --script examples/actions/tests/check.nnhs` (≈ 30 s): PASS as before.
+
+## Mutation testing (T8.1)
+
+56 hand mutants (`build/ref-023/mutate2.py`, not committed), each applied alone with the whole `nnh_tests` (pc-debug):
+the geometry (split halves, blinds' running remainder, edges, continue forms, fade alpha rounding, the iris's ⌈√⌉, band
+sampling, `dy ≥ r`, the diamond, the square root's compare, the last merged run, the tall inset and gap, rounding of
+centres and q, the tall band count, the bottom-in resolution), the timeline (both ratchets, at least one covered
+frame, the in phase's skip, the in ratio, half-up rounding of durations), the frame (the block lifted, the waiting count
+released, `on_finished`, the finish event, the waiting frame, which scene updates, the in phase skipped over an emptied
+stack), loading (`on_covered` only once, no step after done, clamping), the overlay (layer 15, the in effects), the
+queries (`none()` coverage), the requests (refusal, the immediate change with O = 0, the pending count, `reveal_at`
+before the in phase only, `block_input`), the input block (released buttons dropping out, held buttons filtered,
+touch, sticks, edge-free blocked frames, the filter leaving the path, init's reset, raw engine masks), the scene hook
+(the cancel at shutdown, `run()`'s condition, the tolerant pop) and the platformer's door code (ten doors, the first
+frame unmeasured, the tall iris).
+
+- **55 killed, 1 equivalent: score 100 % of the non-equivalent mutants.** Two survivors of the first pass became tests:
+  `the_filter_leaves_the_input_path_once_nothing_is_held` (the filter pointer cleared once nothing is held) and
+  `the_door_runs_first_frame_is_not_measured`; a third, `a_zero_out_request_from_an_event_handler_covers_after_the_change`,
+  was written for the waiting frame (killing the mutant that skips it).
+- Equivalent: `at_least = max(H, 1)` → `H` — the covered phase can only end once the loading step reported done, which
+  needs one stepped covered frame, so "at least one covered frame" holds either way (the max stays for clarity).
+- The Release path (misuse clamped/refused with logs) is covered by `test_requests.cpp` in pc-release (ctest 258/258);
+  no separate Release mutants were run (deviation from plans 019–022: their Release mutants were in modules with more
+  Release-only code).
+
+## Stage 8 results
+
+- `scripts/check_release_strings.sh`: ok on the 3ds-release `transitions.elf` and the pc-release `transitions.exe`.
+- Opt-in by linking (T8.3): `hello`'s 3ds-release text 201 276 (T0.1 + 88 ≤ 96), its `nm` list differing from T0.1
+  only by `input_apply`, `g_input_filter`, `input_engine_held_mask`, `input_engine_pressed_mask` (−`input_pressed_mask`,
+  −`input::held_mask`) and `g_scene_transition`; `scenes` links no `transition` or input-block symbol (only
+  `g_scene_transition`); the geometry objects (`effect_query.o`, `effect_area.o`, `effect_fill.o`, `effect_iris.o`)
+  reference only each other, `gfx::fill_rect` and the C runtime: a game calling only `draw_effect`/`effect_rects` links
+  no `transition_frame`/`transition_request` code.
+- 3ds-release `.text`: `scenes` 206 636 (+144), `actions` 246 268 (+176: the input path), `platformer` 373 904 (+12 024:
+  the transition module and the doors), `transitions` 330 524.
+- Regression (T8.4): every example's console script with `--pc` (pc-debug unless noted): actions, animation, camera,
+  data, entities, foundation `assert_crash` and `cpu_fault` (both PASS; the simulator then waits on its crash screen
+  for START, as before), input, prefabs, queries, tweens (`B44CA3F6`), transitions (`BFE1D810`), platformer `doors`
+  PASS. Platformer `level`: the replay's sums are the tree's (`B2418A28`, `level.nnhs` untouched) with `60 Hz PASS`
+  in pc-dev (one Debug run on the loaded PC missed one frame: 29.4 ms); `gate` and `zoom_gate` PASS in pc-dev with the default renderer
+  (with the offscreen software renderer the bench misses every frame in any flavor: that renderer is not what the gate
+  measures; 023 changes no tile or sprite code). ctest `platformer_replay_matches_script` passes at every stage.
+  `compare.sh` identical at every stage.
+- Build times: edit `examples/transitions/room_scene.cpp` → simulator 2.0–2.1 s (stage 0's `scenes/title_scene.cpp`:
+  2.0–2.3 s), → `.3dsx` 3.9 s (3.3 s; the example links more of the engine). `nnh_tests` 2492 (+139), ctest pc-debug
+  271 (+3), pc-release 258.
+- Final stage-end guards (stage 8): ctest 271/258, `nnh_tests` 2492, 0 warnings on pc-debug, pc-release, 3ds-release
+  and 3ds-dev, tweens/actions/input scripts PASS, `level.nnhs` untouched, `compare.sh` identical (the actions example
+  also keeps a `controls.bin.bak`: `compare.sh` deletes both before its shot), docs 0 broken links.

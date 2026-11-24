@@ -164,6 +164,21 @@ copied:
 - **Adi Botea, Martin Müller, Jonathan Schaeffer**, "Near Optimal Hierarchical Path-Finding", Journal of Game
   Development, 2004 (HPA*; a non-goal): https://webdocs.cs.ualberta.ca/~mmueller/ps/hpastar.pdf
 
+Scene transitions (spec 023, D38) — read for their designs; no code copied:
+
+- **Godot** — `change_scene_to_file` with a `CanvasLayer` fade autoload (the overlay that must outlive both scenes):
+  https://docs.godotengine.org/en/stable/tutorials/scripting/change_scenes_manually.html
+- **Unity** — `SceneManager.LoadSceneAsync` with `allowSceneActivation` and a tweened canvas (the stack change held
+  until covered; loading progress): https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.LoadSceneAsync.html
+- **HaxeFlixel** — `FlxTransitionableState`, `TransitionData` (fade, tiles, in/out per state):
+  https://api.haxeflixel.com/flixel/addons/transition/FlxTransitionableState.html
+- **Defold Monarch** — screen transitions with per-screen handlers and input focus taken while they play:
+  https://github.com/britzl/monarch
+- **citro2d** — `C2D_Fade` (rejected: per-system data, invisible to tests) and `C2D_DrawRectSolid`, what the overlay's
+  rectangles cost on the 3DS: https://citro2d.devkitpro.org/
+- **Butano** (GBA) — window-based iris and fade helpers on fixed hardware:
+  https://gvaliente.github.io/butano/
+
 ## Real-world 3DS engine write-ups
 - Silent Hill 2 → 3DS (C engine on libctru + citro3d, offline asset packer, linear-memory budgeting):
   https://ankush.one/blogs/silent-hill-2-3ds-port/

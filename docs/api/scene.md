@@ -56,8 +56,8 @@ in `on_exit` if it shouldn't react while off the stack (or while paused under an
 | `scenes::pop()` | removes the top scene; the one below updates again |
 | `scenes::replace(scene)` | pop + push in one step (on an empty stack: push) |
 | `scenes::top()` / `scenes::size()` | the top scene (or nullptr) / how many scenes are on the stack |
-| `scenes::update_and_draw()` | top `update()`, then every `draw()`; called by `run()` |
-| `nnh::run(first)` | pushes `first` and loops `frame()` + `update_and_draw()` until the stack is empty or `frame()` returns false; exits every scene left |
+| `scenes::update_and_draw()` | top `update()`, then every `draw()`; called by `run()` (while a [transition](#transitions) runs: its frame) |
+| `nnh::run(first)` | pushes `first` and loops `frame()` + `update_and_draw()` until the stack is empty (and no transition runs) or `frame()` returns false; exits every scene left |
 
 - **Changes are deferred**: they take effect at the start of the next `nnh::frame()` (the end of the
   current frame), in request order, before input is read and events are delivered. A scene can
@@ -103,19 +103,30 @@ while the scene is on top and ends the binding when it leaves the stack: a pushe
 controls off and its own on, and controls held at the switch don't leak into the other context
 ([api/actions.md](actions.md#contexts-and-scenes)).
 
+## Transitions
+
+`nnh::transition::replace/push/pop/cover` ([transition.md](transition.md), spec 023, D38) change the stack behind a
+fade, wipe, split, blinds, iris or your own effect. While one runs, `scenes::update_and_draw()` runs the transition's
+frame instead: **no scene updates** (unless its options say `update_out`/`update_in`) — the one exception to "the top
+scene updates every frame" —, every scene draws, then the overlay is drawn over them; the change itself goes through
+the deferred path above (the same `on_exit`/`on_enter` order and checks). `run()` keeps looping while a transition
+runs on an empty stack (one that popped the last scene finishes its covered phase) and cancels a running transition
+silently before it exits the scenes; `shutdown()` does the same. Plain `push/pop/replace` stay instant.
+
 ## Without run()
 
 `run()` is optional. A manual loop works the same and can mix scenes with other code:
 
 ```cpp
 nnh::scenes::push(title);
-while (nnh::frame() && nnh::scenes::size() > 0) {
+while (nnh::frame() && (nnh::scenes::size() > 0 || nnh::transition::running())) {
     nnh::scenes::update_and_draw();
-    // anything else, e.g. a debug HUD
+    // anything else, e.g. a debug HUD: drawn after a transition's overlay, so it stays visible
 }
 ```
 
-A game that doesn't use scenes at all keeps its plain `while (nnh::frame())` loop.
+(`|| nnh::transition::running()` only matters to a game that pops its last scene through a transition.) A game that
+doesn't use scenes at all keeps its plain `while (nnh::frame())` loop.
 
 ## Example
 

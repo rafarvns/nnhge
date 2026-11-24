@@ -31,6 +31,10 @@ class Title final : public nnh::Scene {
 
 ![The 19 easing curves, from examples/tweens](../images/tween-easings.png)
 
+`Ease`, `ease()` and `Easing` live in the light header `<nnh/ease.hpp>` (only `<cstdint>`), which `<nnh/tween.hpp>`
+includes: code that only needs the curves (scene transitions' `out_ease`/`in_ease`, [transition.md](transition.md))
+includes it alone.
+
 `nnh::ease(curve, t)` evaluates one of 19 curves (Robert Penner's equations) at progress `t`:
 `Linear`, and `In`, `Out`, `InOut` of `Quad`, `Cubic`, `Sine`, `Back` (overshoot 1.70158), `Elastic` (period 0.3,
 0.45 in-out) and `Bounce` — `nnh::Ease::BackOut`, `nnh::kEaseCount` = 19. It is a pure function: use it in your own

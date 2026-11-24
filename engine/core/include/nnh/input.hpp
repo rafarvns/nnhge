@@ -121,5 +121,20 @@ TouchPoint touch_position();
 void set_circle_pad_mirrors_dpad(bool enabled);
 bool circle_pad_mirrors_dpad();
 
+/// Blocks the game's input (cut-scenes, dialogs): from the next nnh::frame(), every query reads idle (no button
+/// held, sticks centred, no touch, no edges) and no ButtonPressed/ButtonReleased/TouchStarted/TouchEnded or action
+/// event is queued — remote input from `nnh run --script` included. When unblocked, every control still held stays
+/// blocked until it is released (so a press held through a dialog never reaches the game); touch_position() keeps
+/// the last point seen before. Engine controls (the debug overlay's SELECT + L, the simulator's keys) are never
+/// blocked. A scene transition's block (<nnh/transition.hpp>) is separate: one never lifts the other. Lifted by
+/// init(). Cheap; no allocation. A game that never calls it pays one pointer check per frame.
+/// @code
+/// nnh::input::set_blocked(true);   // the cut-scene starts
+/// nnh::input::set_blocked(false);  // it ended: A, still held from skipping it, waits for its release
+/// @endcode
+void set_blocked(bool blocked);
+/// True while the game or a transition blocks input.
+bool blocked();
+
 } // namespace input
 } // namespace nnh

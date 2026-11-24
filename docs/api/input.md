@@ -88,6 +88,19 @@ the previous frame. Within a frame: all presses first, then all releases, each i
 Inside a handler, the queries agree with the event. Use queries for continuous state ("is Left held?")
 and events for moments ("Start was pressed").
 
+## Blocking input
+
+`nnh::input::set_blocked(true)` (cut-scenes, dialogs) makes every query read idle from the next `nnh::frame()`: no
+button held, sticks centred, no touch, no edges — and no `ButtonPressed`/`ButtonReleased`/`TouchStarted`/`TouchEnded`
+or action event is queued (not even the release of what was held when the block started). Remote input from
+`nnh run --script` is game input and is blocked too. `set_blocked(false)` lifts it, but **every control still held
+stays blocked until it is released** (a stick until it returns to its dead zone), so a press held through a dialog
+never reaches the game; `touch_position()` keeps the last point seen before the block. `input::blocked()` is true while
+the game or a [scene transition](transition.md#input-is-blocked) blocks: the two are separate blockers, one never lifts
+the other. Engine controls (the debug overlay's SELECT + L, the simulator's keys) read the raw buttons and are never
+blocked. `nnh::init()` lifts every block. A game that never blocks pays one pointer check per frame and links none of
+the block's code (spec 023, D38).
+
 ## PC simulator controls
 
 Keyboard, mouse and one gamepad work at the same time: buttons combine, and for each stick the input

@@ -97,6 +97,8 @@ nnh::music::stop(0.5f);                                 // fade out, no event
   in its first 4 KB.
 - Streaming happens in `nnh::frame()`: a frame longer than ~0.5 s (e.g. loading many files) can make the
   music stutter. Load at the start of a scene.
+- Fading the music with a scene transition: `music::stop(transition::seconds(transition::timing().out))` when it
+  starts, `music::play(..., {.fade_in = ...in...})` from its `on_covered` ([transition.md](transition.md#music)).
 
 ## Events
 

@@ -17,6 +17,7 @@ namespace {
 
 struct Input {
     detail::InputState buttons;
+    detail::InputState engine; // raw buttons, for engine controls (never blocked)
     detail::TouchState touch;
     Stick circle_pad;
     Stick c_stick;
@@ -32,12 +33,15 @@ bool has(std::uint32_t mask, Button button) { return (mask & static_cast<std::ui
 
 } // namespace
 
+void (*detail::g_input_filter)(const platform::InputSample&) = nullptr;
+
 void detail::input_reset() {
     g_input = {};
     g_input.has_c_stick = system::has(Capability::CStick);
+    g_input_filter = nullptr; // a block doesn't survive shutdown() and init()
 }
 
-void detail::input_update(const platform::InputSample& sample) {
+void detail::input_apply(const platform::InputSample& sample) {
     g_input.circle_pad = shape_stick(sample.circle_x, sample.circle_y);
     g_input.c_stick = g_input.has_c_stick ? shape_stick(sample.cstick_x, sample.cstick_y) : Stick{};
     g_input.mirrored = g_input.mirror_enabled ? dpad_mirror(g_input.circle_pad, g_input.mirrored) : 0;
@@ -45,7 +49,22 @@ void detail::input_update(const platform::InputSample& sample) {
     g_input.touch.update(sample.touching, sample.touch_x, sample.touch_y);
 }
 
-std::uint32_t detail::input_pressed_mask() { return g_input.buttons.pressed(); }
+void detail::input_forget_edges() {
+    g_input.buttons.previous = g_input.buttons.held;
+    g_input.touch.previous = g_input.touch.touching;
+}
+
+void detail::input_update(const platform::InputSample& raw) {
+    g_input.engine.update(raw.buttons);
+    if (g_input_filter != nullptr) [[unlikely]] { // the input block (spec 023): one load and a branch otherwise
+        g_input_filter(raw);
+        return;
+    }
+    input_apply(raw);
+}
+
+std::uint32_t detail::input_engine_held_mask() { return g_input.engine.held; }
+std::uint32_t detail::input_engine_pressed_mask() { return g_input.engine.pressed(); }
 
 void detail::input_publish_events() {
     // Presses first, then releases, each in Button bit order (A, B, X, Y, ...); then touch.

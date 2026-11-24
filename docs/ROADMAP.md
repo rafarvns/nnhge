@@ -111,6 +111,12 @@ Spec 019 (collision layers and queries), 2026-11-23, same machine (devkitARM upd
 simulator 1.5–1.6 s, → `.3dsx` 2.8 s; clean `nnh_core` 5.3 → 5.7 s (21 new files); `<nnh/collision.hpp>` 151 → 691
 preprocessed lines (`<cstdint>`), 0.28–0.34 s alone. Details: plan 019, "Stage 0 results" and "Stage 11 results".
 
+Spec 023 (scene transitions), 2026-11-24, same machine: Release `hello.elf` text 201,188 → 201,276 (+88 of the 96-byte
+budget: the input filter's check and raw engine buttons, 56; the scene stack's transition hook in `scenes_shutdown`,
+32), its `nm` list differing only by the input path's accessors and the hook pointer; `scenes` +144 bytes; no
+transition or input-block symbol in either. `<nnh/transition.hpp>` 8,476 preprocessed lines, 0.43 s alone;
+`<nnh/ease.hpp>` 461 lines. Details: plan 023, "Stage 0 results" to "Stage 8 results".
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -169,7 +175,10 @@ preprocessed lines (`<cstdint>`), 0.28–0.34 s alone. Details: plan 019, "Stage
 
 ## M7 — Game structure
 - [x] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (implemented 2026-11-22): pure `<nnh/collision.hpp>` (box queries, `collision::move` through any grid, one-way cells, no tunnelling; [api/collision.md](api/collision.md)); `<nnh/tilemap.hpp>` — maps built in code or drawn in Tiled (`.tmj` assets converted by `nnh-assetc` at build time, D27, and loaded with `load_tilemap`; bounded and fuzzed readers), objects, properties, animated tiles, a collision grid ([api/tilemap.md](api/tilemap.md), guide [Levels in Tiled](guides/levels.md)); `gfx::draw_tilemap` as tile batches (D26). **Old 3DS XL: 4 full 16×16 layers + 300 sprites at 60 Hz (avg 16.7 ms, worst 17.4 ms, 0 missed of 600); limits 6 layers / 600 sprites.** `examples/platformer`: level 1 from Tiled, the bonus level in code, a replay checked against `tests/level.nnhs`. Still with the maintainer: T7.4 (`tests/level.nnhs` on the Old 3DS); Linux, ASan/UBSan and the three libFuzzer targets ran clean on the build VM
-- [ ] Scene transitions (scenes, saves and tweens: done)
+- [x] Scene transitions (spec 023, implemented on PC; the Old 3DS run T10.2 is pending): `<nnh/transition.hpp>` —
+  replace/push/pop/cover through a fade, wipe, split, blinds, iris or a custom effect, on one or both screens or one
+  tall area, a loading step while covered, input blocked (`input::set_blocked` too), whole frames, self-check
+  `BFE1D810`; the platformer's doors close an iris on the player ([api/transition.md](api/transition.md))
 - [x] Entities/components — [spec 020](../specs/020-entities/spec.md), **implemented 2026-11-23**, passed on the Old 3DS and
   on Linux (GCC 13/14, ASan, 10 min fuzz): `<nnh/entities.hpp>` — a `World` in one block, the game's plain structs as components in
   stable-slot arrays per kind, 32-bit generational handles that detect stale use, `each<A, B...>` in the first kind's

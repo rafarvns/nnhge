@@ -17,6 +17,7 @@ void SceneStack::enqueue(Op op, Scene* scene) {
 void SceneStack::request_push(Scene& scene) { enqueue(Op::Push, &scene); }
 void SceneStack::request_pop() { enqueue(Op::Pop, nullptr); }
 void SceneStack::request_replace(Scene& scene) { enqueue(Op::Replace, &scene); }
+void SceneStack::request_transition_pop() { enqueue(Op::TransitionPop, nullptr); }
 
 void SceneStack::do_push(Scene& scene) {
     NNH_VERIFY(!scene.on_stack_, "scene pushed while already on the scene stack");
@@ -54,15 +55,26 @@ void SceneStack::apply_pending() {
                 if (size_ > 0) do_pop();
                 do_push(*request.scene);
                 break;
+            case Op::TransitionPop: // the game may have emptied the stack meanwhile (the transition logs it)
+                if (size_ > 0) do_pop();
+                break;
             }
         }
     }
 }
 
 void SceneStack::update_and_draw() {
+    update_top(); // requests from update() are only queued: the stack is stable while drawing
+    draw_all();
+}
+
+void SceneStack::update_top() {
     if (size_ == 0) return;
     scene_notify(*stack_[size_ - 1], SceneHook::BeforeUpdate); // only the top scene's attachments (D30)
-    stack_[size_ - 1]->update(); // requests from update() are only queued: the stack is stable while drawing
+    stack_[size_ - 1]->update();
+}
+
+void SceneStack::draw_all() {
     for (int i = 0; i < size_; ++i) stack_[i]->draw();
 }
 

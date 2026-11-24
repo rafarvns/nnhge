@@ -12,13 +12,20 @@ public:
     void request_push(Scene& scene);
     void request_pop();
     void request_replace(Scene& scene);
+    /// A transition's pop (spec 023): like request_pop(), but on an empty stack it pops nothing (silently: the
+    /// transition module logs the error when it enqueues it on an empty stack).
+    void request_transition_pop();
 
     /// Applies queued changes in order, calling on_exit()/on_enter(). Changes requested by those callbacks
     /// are applied too, in the same call.
     void apply_pending();
 
-    /// Top update(), then draw() bottom to top.
+    /// Top update(), then draw() bottom to top: update_top() then draw_all().
     void update_and_draw();
+    /// The top scene's update(), D30's BeforeUpdate notification first (nothing on an empty stack).
+    void update_top();
+    /// Every scene's draw(), bottom to top.
+    void draw_all();
 
     /// Drops pending changes and exits every scene, top first.
     void clear();
@@ -28,7 +35,7 @@ public:
     int pending() const { return pending_count_; }
 
 private:
-    enum class Op : unsigned char { Push, Pop, Replace };
+    enum class Op : unsigned char { Push, Pop, Replace, TransitionPop };
     struct Request {
         Op op;
         Scene* scene;

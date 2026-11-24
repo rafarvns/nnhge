@@ -50,7 +50,8 @@ public:
     virtual void on_enter() {}
     /// Called when the scene leaves the stack (pop, replace, end of run(), shutdown()).
     virtual void on_exit() {}
-    /// Game logic for one frame. Only the top scene updates.
+    /// Game logic for one frame. Only the top scene updates — and, while a scene transition runs
+    /// (<nnh/transition.hpp>), none does unless the transition's options say so.
     virtual void update() {}
     /// Drawing only. Every scene on the stack draws, bottom to top (a pause menu draws over its level).
     virtual void draw() {}
@@ -79,7 +80,9 @@ void pop();                 ///< removes the top scene; the one below updates ag
 void replace(Scene& scene); ///< pop + push in one step (title -> level)
 
 /// Updates the top scene, then draws every scene bottom to top. nnh::run() calls it each frame; call it
-/// yourself in a manual `while (nnh::frame())` loop.
+/// yourself in a manual `while (nnh::frame())` loop. While a transition runs, it runs the transition's frame
+/// instead (which scene updates, every scene's draw, then the transition's overlay): a manual loop that uses
+/// transitions loops `while (nnh::frame() && (nnh::scenes::size() > 0 || nnh::transition::running()))`.
 void update_and_draw();
 
 /// The scene on top, or nullptr.
@@ -90,8 +93,10 @@ int size();
 } // namespace scenes
 
 /// Runs the game with scenes: pushes `first`, then each frame calls scenes::update_and_draw(), until
-/// the stack becomes empty or the system asks to quit (nnh::frame() returns false). On the way out, every
-/// scene left on the stack gets on_exit(). Call nnh::init() before and nnh::shutdown() after.
+/// the stack becomes empty (and no transition runs: one that popped the last scene finishes its covered phase
+/// first) or the system asks to quit (nnh::frame() returns false). On the way out, a running transition is
+/// cancelled silently and every scene left on the stack gets on_exit(). Call nnh::init() before and
+/// nnh::shutdown() after.
 void run(Scene& first);
 
 } // namespace nnh

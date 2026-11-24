@@ -3,6 +3,7 @@
 // (demos.hpp) handles. Engine events (nnh::ButtonPressed, ...) live in the engine's headers.
 
 #include <cstdint>
+#include <nnh/math.hpp>
 
 /// The example's demos, in SELECT order.
 enum class Demo : std::uint8_t { Level1, Bonus, Bench, Flips };
@@ -22,7 +23,11 @@ struct PlayerHit {
     int hits; ///< hits in the level so far
 };
 
-/// Request: switch to `demo` (published by a level's door and by the replay; handled by Demos).
+/// Request: switch to `demo` (published by a level's door and by the replay; handled by Demos). A door's request
+/// (`door`) goes through an iris closing on `at`, the player's centre in world pixels (spec 023); the replay's is
+/// instant.
 struct ShowDemo {
     Demo demo;
+    nnh::Vec2 at{};
+    bool door = false;
 };

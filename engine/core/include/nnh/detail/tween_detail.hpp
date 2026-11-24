@@ -4,6 +4,7 @@
 /// the setter adapter, the copy of a game event published on finish, and the packed start request that the
 /// thin templates hand to non-template code. Not for game code.
 
+#include "nnh/detail/finish_event.hpp"
 #include "nnh/detail/small_function.hpp"
 #include "nnh/detail/type_id.hpp"
 #include "nnh/math.hpp"
@@ -54,33 +55,7 @@ template <typename T> class Setter {
     SetterFn fn_;
 };
 
-/// A copy of one of the game's events, published on the bus when a tween, timer or sequence finishes
-/// (spec 015 FR-11): `.publish = IntroFinished{}`. Trivially copyable, at most 32 bytes, aligned to at
-/// most 8.
-struct FinishEvent {
-    static constexpr std::size_t kMaxSize = 32;
-
-    FinishEvent() = default;
-    // Not for callables: `after(t, [this] {...})` must pick the callback overload.
-    template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, FinishEvent> &&
-                                                      !std::is_invocable_v<const T&>>>
-    FinishEvent(const T& event) // NOLINT(google-explicit-constructor): `.publish = IntroFinished{}`
-        : type(type_id<T>()), size(static_cast<std::uint32_t>(sizeof(T))) {
-        static_assert(std::is_trivially_copyable_v<T>,
-                      "nnh: events published on finish must be trivially copyable");
-        static_assert(
-            sizeof(T) <= kMaxSize,
-            "nnh: event published on finish too large (max 32 bytes): send an id instead of the data");
-        static_assert(alignof(T) <= 8, "nnh: event published on finish is over-aligned (max 8)");
-        std::memcpy(bytes, &event, sizeof(T));
-    }
-
-    explicit operator bool() const { return type != nullptr; }
-
-    TypeId type = nullptr;
-    std::uint32_t size = 0;
-    alignas(8) unsigned char bytes[kMaxSize] = {};
-};
+// FinishEvent (the copy of a game event published on finish) lives in nnh/detail/finish_event.hpp.
 
 /// How a tween gets its end value: `to` an end, `by` a delta from the captured start, or `from_to` both
 /// given.

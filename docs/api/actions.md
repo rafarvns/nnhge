@@ -121,6 +121,11 @@ doesn't press either.
 Note for screenshots: `NNH_SIM_INPUT` holds its controls from the first frame, so they are blocked; drive actions
 with a script (`nnh run --pc --script`) instead.
 
+**Under an input block** (`input::set_blocked`, or a [scene transition](transition.md#input-is-blocked); spec 023):
+actions read the blocked queries, so every action reads idle and no `ActionPressed` is queued; a binding whose control
+is still held when the block ends stays unpressed until that control is released and pressed again (the confirm press
+that started a transition never presses `jump` in the next scene). D32 is unchanged.
+
 ## Remapping
 
 ```cpp

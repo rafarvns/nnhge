@@ -1,0 +1,31 @@
+# Spec 023 AC-7/AC-8, automatic (spec 013): the door run — Y in level 1 starts each level 24 px left of its door and
+# runs right, so ten doors change level through an iris closing on the player (both screens) and reopening on the
+# new level's start; the verdict is 60 Hz over the run. Then one more door by hand, with a screenshot mid-iris.
+# PC:      nnh run platformer --pc --script examples/platformer/tests/doors.nnhs
+# Console: nnh run platformer --script examples/platformer/tests/doors.nnhs   (Homebrew Launcher open, press Y)
+fail-on "] E "
+fail-on "60 Hz FAIL"
+
+wait 30
+tap Y
+expect "doors: started" 10
+expect "doors: 1 level1 -> bonus frame" 300
+expect "doors: 2 bonus -> level1 frame" 300
+expect "doors: 3 level1 -> bonus frame" 300
+expect "doors: 4 bonus -> level1 frame" 300
+expect "doors: 5 level1 -> bonus frame" 300
+expect "doors: 6 bonus -> level1 frame" 300
+expect "doors: 7 level1 -> bonus frame" 300
+expect "doors: 8 bonus -> level1 frame" 300
+expect "doors: 9 level1 -> bonus frame" 300
+expect "doors: 10 bonus -> level1 frame" 300
+expect "doors: done 10 irises" 300
+wait 3
+
+# The player stands left of level 1's door: walk in and catch the iris closing on it (both screens).
+press RIGHT
+wait 42
+screenshot door-iris
+release RIGHT
+wait 120
+end

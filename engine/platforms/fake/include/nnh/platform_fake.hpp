@@ -17,7 +17,7 @@
 
 namespace nnh::platform_fake {
 
-inline constexpr int kMaxRecordedItems = 64;
+inline constexpr int kMaxRecordedItems = 1024; ///< whole frames of transition overlays (spec 023 AC-2)
 inline constexpr int kMaxRecordedCalls = 32;
 inline constexpr int kMaxRecordedTileBatches = 16;
 inline constexpr int kMaxRecordedTileQuads = 512;

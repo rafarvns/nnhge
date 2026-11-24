@@ -10,6 +10,24 @@
 namespace nnh::detail {
 namespace {
 
+/// The ARM11 has no hardware prefetcher (plan 022 T10.3; as world_reserve(), plan 021): ask for a record two slots
+/// ahead, and for each component the slot a group later — trees spawned in a row take consecutive slots, so the next
+/// tree's copies find their lines. Up to three PLDs 32 bytes apart (a node is 80 bytes). Integer arithmetic: an address
+/// past the block is a hint PLD never faults on.
+inline void prefetch(std::uintptr_t at) {
+#if defined(__GNUC__) || defined(__clang__)
+    __builtin_prefetch(reinterpret_cast<const void*>(at));
+#else
+    (void)at;
+#endif
+}
+inline void prefetch_component(const unsigned char* slot, int size, int group) {
+    const std::uintptr_t at = reinterpret_cast<std::uintptr_t>(slot) + static_cast<std::uintptr_t>(size * group);
+    prefetch(at);
+    if (size > 32) prefetch(at + 32u);
+    if (size > 64) prefetch(at + 64u);
+}
+
 /// Free slots (neither live nor quarantined) of `table`, counted from its hint and capped at `wanted`: no state
 /// change (the words below the hint have none). Padding bits read as taken.
 int free_slots(const SlotTable& table, int wanted) {
@@ -76,11 +94,15 @@ Entity world_reserve_many(World& world, const ReserveEntity* list, int count, co
         const int entity = w->entities.find_free();
         out[i] = take_entity(*w, entity);
         std::uint32_t* r = record_at(*w, static_cast<std::uint32_t>(entity));
+        prefetch(reinterpret_cast<std::uintptr_t>(r) +
+                 static_cast<std::uintptr_t>(w->record_words) * 2u * sizeof(std::uint32_t));
         for (int j = 0; j < d.kind_count; ++j) {
             const int k = kinds[d.first_kind + j];
             const int slot = w->kinds[k].slots.find_free();
             attach_component(*w, k, entity, r, slot);
-            components[at++] = component_at(*w, k, slot);
+            unsigned char* p = component_at(*w, k, slot);
+            prefetch_component(p, w->kinds[k].size, count);
+            components[at++] = p;
         }
         const int n = d.tag_count < w->tags ? d.tag_count : w->tags;
         for (int t = 0; t < n; ++t) r[2 + t] = static_cast<std::uint32_t>(d.tags[t]); // a new record has no tag

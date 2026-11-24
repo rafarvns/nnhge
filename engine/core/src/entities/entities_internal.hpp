@@ -54,12 +54,13 @@ bool world_dying(const World& world, Entity e);
 bool world_busy(const World& world);
 
 /// One entity of a group reservation: its kinds (indices `first_kind`.. into the call's `kinds`; the entities' ranges
-/// follow each other from 0) and tags.
+/// follow each other from 0) and tags. No default member initializers (plan 022 T10.3): a tree spawn's stack array of
+/// 32 is written entry by entry, not cleared by a memset call first; `ReserveEntity{}` still zeroes.
 struct ReserveEntity {
-    int first_kind = 0;
-    int kind_count = 0;
-    const Tag* tags = nullptr;
-    int tag_count = 0;
+    int first_kind;
+    int kind_count;
+    const Tag* tags;
+    int tag_count;
 };
 /// All or nothing for `count` entities (spec 022 FR-17): exactly what `count` world_reserve() calls in a row would take
 /// — the lowest free entity slots and, per kind, its lowest free slots, in list order — or nothing, counting the

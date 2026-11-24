@@ -182,8 +182,12 @@ void run_hooks(PrefabBlock& b, int index, World& world, Entity e, const SpawnSou
 
 Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
                     const ComponentValue* overrides, int count) {
-    const PrefabRecord* r = record_of(b, prefab);
-    if (r != nullptr && r->child_count != 0) return spawn_tree(b, world, prefab, source, overrides, count); // spec 022
+    // A library without a prefab with children (no tree pointer) goes straight to spec 021's body: one load and a
+    // branch (plan 022 T10.3); the record is looked up here only when some prefab has children.
+    if (b != nullptr && b->tree != nullptr) {
+        const PrefabRecord* r = record_of(b, prefab);
+        if (r != nullptr && r->child_count != 0) return spawn_tree(b, world, prefab, source, overrides, count);
+    }
     return prefab_spawn_one(b, world, prefab, source, overrides, count);
 }
 

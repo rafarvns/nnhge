@@ -46,6 +46,18 @@ int flatten_tree(const PrefabBlock& b, int root, TreeEntity* out) {
     return n;
 }
 
+/// Entity `i`'s kinds copied from an earlier entity of the same prefab (a tree repeats its parts: one world lookup per
+/// distinct prefab, plan 022 "Tree spawn" step 2). False when `i` is the first of its prefab.
+bool copy_kinds(const TreeEntity* list, const ReserveEntity* reserve, int i, int entries, int* kinds, int used) {
+    for (int j = 1; j < i; ++j) { // not the root: its kinds may be followed by the overrides' extras
+        if (list[j].prefab != list[i].prefab) continue;
+        const int* from = kinds + reserve[j].first_kind;
+        for (int k = 0; k < entries; ++k) kinds[used + k] = from[k];
+        return true;
+    }
+    return false;
+}
+
 void refuse_full(PrefabBlock& b, int index, const char* what) {
     ++b.counts.misses;
     if (b.when_full == WhenFull::Miss) return;
@@ -157,12 +169,15 @@ Entity tree_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource
     std::int8_t by_entry[kMaxPrefabEntries];
     const ComponentValue* extra[kMaxPrefabEntries];
     int extras = 0, used = 0;
+    int hooks = 0; // no hook anywhere in the tree: no post-order (plan 022 T10.3)
     for (int i = 0; i < n; ++i) {
         const PrefabRecord& ri = b->records[list[i].prefab];
         const PrefabEntry* entries = b->entries + ri.first;
-        if (world_kinds_of(world, &entries[0].id, sizeof(PrefabEntry), ri.entries, kinds + used) >= 0 ||
-            (i == 0 && count > 0 &&
-             !root_overrides(world, entries, ri.entries, overrides, count, matched, by_entry, kinds, extra, extras))) {
+        hooks |= ri.hooks;
+        if (!(i > 0 && copy_kinds(list, reserve, i, ri.entries, kinds, used)) &&
+            (world_kinds_of(world, &entries[0].id, sizeof(PrefabEntry), ri.entries, kinds + used) >= 0 ||
+             (i == 0 && count > 0 &&
+              !root_overrides(world, entries, ri.entries, overrides, count, matched, by_entry, kinds, extra, extras)))) {
             ++b->counts.misses;
             prefab_misuse("PrefabLibrary::spawn(): a component kind the world doesn't store");
             return {};
@@ -212,7 +227,10 @@ Entity tree_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource
     // The nodes: entry locals, links in creation order, depths, worlds (as attach keep-local).
     for (int i = 0; i < n; ++i) {
         Node& node = *nodes[i];
-        if (list[i].entry != nullptr && list[i].entry->has_local != 0) node = Node(list[i].entry->local);
+        // An entry's local: `node = Node(local)` byte for byte without the calls — the links stay, the world is
+        // composed below, and the sine cache is refreshed when the rotation's bits changed (a copied cache always
+        // holds its rotation's sine, and sin_cos(+0) is the default {0, 1}).
+        if (list[i].entry != nullptr && list[i].entry->has_local != 0) node.local = list[i].entry->local;
         const SinCos sc = cached_sin_cos(node);
         const auto slot = static_cast<std::uint16_t>(&node - t.nodes);
         const std::uint16_t up = i == 0 ? under : static_cast<std::uint16_t>(nodes[list[i].parent] - t.nodes);
@@ -225,6 +243,7 @@ Entity tree_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource
         child_world(t.nodes[up].world(), node.local, sc, NA::world(node));
     }
     ++b->counts.spawns;
+    if (hooks == 0) return made[0];
     // The hooks, children before parents, each entity's chain base first; every SpawnInfo has the root's object.
     SpawnInfo root_info{}, child_info{};
     if (source != nullptr) {

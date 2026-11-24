@@ -83,6 +83,7 @@ class LevelPlay {
     Sparkles sparkles_{world_, prefabs_};
     nnh::Entity player_entity_{};
     TurretBook turrets_{world_};
+    nnh::Hierarchy tree_{world_}; ///< the turrets' barrels (spec 022): the pass runs after the turrets aim
     int coin_count_ = 0; ///< coins at the start
     int collected_ = 0;
     Door doors_[kMaxDoors] = {};

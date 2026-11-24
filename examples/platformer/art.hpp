@@ -9,6 +9,7 @@
 struct Art {
     nnh::Texture tiles;  ///< 128x64, 16x16 tiles
     nnh::Texture player; ///< 64x16, 4 frames
+    nnh::Texture turret; ///< 32x16: the base (0, 0, 16, 16) and the barrel (16, 0, 12, 4) (art/make_turret.py)
 };
 
 namespace tile {

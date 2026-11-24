@@ -946,3 +946,26 @@ Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at co
   `kPrefabTreeOps` or `tree_spawn`. 3ds-dev: `tree_spawn` 1061 instructions (3 `memset` calls for its stack arrays and 2
   `vmrs` from the inlined sine: revisited at T7.6), `examples/entities` `bench.o`, `World::spawn`, `world_add`,
   `world_destroy`, `prefab_map` byte-identical.
+
+### Stage 6 results
+
+- **T6.1/T6.2**: `level::Barrel` and the engine's node kind registered last in `level::create_world` (8 each); the
+  library gains `barrel` (Node + Barrel, tag `barrel`); `turret` gains a stored `Node()`, the child entry
+  `child(barrel)` and the hook `centre_node` (its node at the box's centre; placement stays `&Body::box`, so the collision
+  box's bytes are the old ones: test `a_map_turret_has_a_barrel_child_at_its_centre`). **Refinement**: `TurretBook`
+  keeps its constructor and builds its own `Hierarchy` from the world (no caller change); `barrel_angle(velocity)` maps
+  aim()'s 8 velocities to `k · kQuarterTurn / 2` and `muzzle(tree, barrel)` is
+  `transform_point(world_now(barrel).map, kMuzzle)`; a `Barrel::lit` flag follows the turret's sight. `LevelPlay` holds a
+  `Hierarchy` and calls `propagate()` right after the turrets aim; turrets and barrels are drawn from their world
+  transforms with `art/turret.png` (`art/make_turret.py`: base 16×16, barrel 12×4 with its pivot at the back).
+- **T6.3 replay lines** (pc-debug; pc-dev prints the same 16 lines): every sum changed, the x, y and coins columns did
+  not. Old last line `replay: done 900 frames sum B2418A28`; new `replay: done 900 frames sum E445E8B2: 60 Hz PASS`.
+  New lines: 60 `24157F9E`, 120 `104F45AC`, 180 `F5960502`, 240 `47EEE513`, 300 `E75B36CF`, 360 `4FD2991F`, 420
+  `FF0D0210`, 480 `21A9AEE5`, 540 `E83994ED`, 600 `0789E72C`, bonus 660 `476B2ECD`, 720 `9D8D7F7D`, 780 `6F069DC5`, 840
+  `56B8179C`. ctest `platformer_replay_matches_script` passes; `nnh run platformer --pc --no-build --script
+  examples/platformer/tests/level.nnhs` → `nnh: PASS (81 lines)`. The PC's 60 Hz verdict of the replay is wall-clock and
+  flipped once in each of pc-debug and pc-dev under load (sums identical); the console's verdict is the one that counts.
+- **T6.4**: `gate.nnhs --pc` and `zoom_gate.nnhs --pc` PASS (with the simulator's normal renderer; forcing SDL's software
+  renderer makes the tile gate miss its frames, as before spec 022). New references for level 1 at 90 and the replay at
+  64 and 312 (barrels visible, aimed at the player); the bench's top screen identical. Guards: pc-debug ctest 269/269,
+  pc-release 259/259, `nnh_tests` 2440, 3ds builds without a warning, `hello` unchanged.

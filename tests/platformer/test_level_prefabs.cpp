@@ -51,13 +51,38 @@ NNH_TEST(the_level_prefabs_hold_their_kinds_tags_and_placements) {
     CHECK(p.library.kinds(p.coin, kinds, 2) == 2 && kinds[0] == nnh::kind_id<Body>() && kinds[1] == nnh::kind_id<Coin>());
     CHECK(p.library.tags(p.coin, tags, 2) == 1 && tags[0] == level::kCoinTag);
     CHECK(p.library.value<Body>(p.coin)->layers == layers::kCoin && p.library.value<Coin>(p.coin)->value == 1);
-    CHECK(p.library.kinds(p.turret, kinds, 2) == 2 && kinds[1] == nnh::kind_id<Turret>());
+    nnh::KindId turret_kinds[4] = {};
+    CHECK(p.library.kinds(p.turret, turret_kinds, 4) == 3 && turret_kinds[1] == nnh::kind_id<Turret>() &&
+          turret_kinds[2] == nnh::kind_id<nnh::Node>());
+    nnh::Prefab children[2] = {};
+    CHECK(p.library.children(p.turret, children, 2) == 1 && children[0] == p.barrel); // spec 022: its barrel
+    CHECK(p.library.kinds(p.barrel, kinds, 2) == 2 && kinds[1] == nnh::kind_id<level::Barrel>());
     CHECK(p.library.value<Body>(p.turret)->layers == layers::kEnemy);
     CHECK(p.library.kinds(p.spark, kinds, 2) == 2 && kinds[0] == nnh::kind_id<Spark>() &&
           kinds[1] == nnh::kind_id<Velocity>());
     CHECK(p.library.tags(p.spark, tags, 2) == 1 && tags[0] == level::kFxTag);
     CHECK(p.library.value<Spark>(p.spark)->alpha == 1.0f);
-    CHECK(p.library.stats().prefabs == 3 && p.library.stats().entries == 6);
+    CHECK(p.library.stats().prefabs == 4 && p.library.stats().entries == 9);
+}
+
+NNH_TEST(a_map_turret_has_a_barrel_child_at_its_centre) {
+    // Spec 022 T6.1: the turret's Body keeps the map's rectangle (the bytes of the pre-barrel turret); its node sits at
+    // the box's centre and its first child is the barrel.
+    level::LevelPrefabs p = make_prefabs();
+    World w = make_world();
+    auto made = nnh::Tilemap::create({.width = 8, .height = 4, .max_object_layers = 1, .max_objects = 4,
+                                      .max_properties = 4, .string_bytes = 256});
+    nnh::Tilemap map = std::move(made.value());
+    const int layer = map.add_object_layer("things").value();
+    CHECK(map.add_object(layer, {.name = "t", .type = "turret", .bounds = {32, 48, 16, 16}}).ok());
+    CHECK(p.library.spawn_map_objects(w, map).spawned == 1);
+    nnh::Hierarchy tree(w);
+    const nnh::Entity turret = w.first(level::kTurretTag);
+    const Body expected{{32, 48, 16, 16}, layers::kEnemy};
+    CHECK(std::memcmp(w.get<Body>(turret), &expected, sizeof expected) == 0);
+    CHECK(tree.local(turret)->position == (nnh::Vec2{40, 56}) && tree.child_count(turret) == 1);
+    const nnh::Entity barrel = tree.first_child(turret);
+    CHECK(w.has<level::Barrel>(barrel) && w.has_tag(barrel, level::kBarrelTag) && barrel.slot() == turret.slot() + 1);
 }
 
 NNH_TEST(map_coins_equal_the_hand_written_coins) {
@@ -67,7 +92,8 @@ NNH_TEST(map_coins_equal_the_hand_written_coins) {
     World b = make_world();
     const nnh::MapSpawnSummary s = p.library.spawn_map_objects(a, map);
     CHECK(s.spawned == 3 && s.skipped == 2 && s.unknown == 0 && s.misses == 0);
-    // Before prefabs: spawn_coin(world, bounds, value) and TurretBook::spawn_turret(world, box), in object order.
+    // Before prefabs: spawn_coin(world, bounds, value) and TurretBook::spawn_turret(world, box), in object order (spec
+    // 022: the turret with its node and barrel).
     for (const auto& [bounds, value] : {std::pair{nnh::Rect{34, 18, 12, 12}, 5}, std::pair{nnh::Rect{50, 18, 12, 12}, 1}}) {
         const Entity e = b.spawn();
         b.add<Body>(e, {bounds, layers::kCoin});
@@ -77,7 +103,15 @@ NNH_TEST(map_coins_equal_the_hand_written_coins) {
     const Entity t = b.spawn();
     b.add<Body>(t, {{64, 96, 16, 16}, layers::kEnemy});
     b.add<Turret>(t);
+    b.add<nnh::Node>(t, nnh::Node());
     b.add_tag(t, level::kTurretTag);
+    // Spec 022: its barrel child, then the turret's hook centres its node.
+    const Entity barrel = b.spawn();
+    b.add<nnh::Node>(barrel, nnh::Node());
+    b.add<level::Barrel>(barrel);
+    b.add_tag(barrel, level::kBarrelTag);
+    nnh::Hierarchy(b).attach(barrel, t, nnh::Reparent::KeepLocal);
+    b.get<nnh::Node>(t)->local.position = {72, 104};
     // Turret has padding (bool, int): a copy of the stored Turret{} and the slot's own Turret{} agree on members
     // (what the replay hashes), not necessarily on padding bytes. Compare the members, then zero both objects.
     Turret* ta = a.get<Turret>(t);

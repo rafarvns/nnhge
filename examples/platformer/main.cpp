@@ -106,7 +106,7 @@ struct Game {
 };
 
 std::unique_ptr<Game> make_game(const char*& error) {
-    Art art{load("art/tiles", error), load("art/player", error)};
+    Art art{load("art/tiles", error), load("art/player", error), load("art/turret", error)};
     if (error != nullptr) return nullptr;
     nnh::Tilemap level1 = load_level1(error);
     nnh::Tilemap bonus = error == nullptr ? build_bonus(art.tiles, error) : nnh::Tilemap{};

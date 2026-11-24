@@ -14,6 +14,8 @@ nnh::Result<nnh::World> create_world(nnh::TweenSet* tweens) {
                                   if (tweens != nullptr) tweens->kill(s.fade);
                               }),
         nnh::component<Velocity>(kMaxSparks),
+        nnh::node_component(kMaxNodes), // spec 022: turrets and their barrels
+        nnh::component<Barrel>(kMaxNodes),
     };
     return nnh::World::create({.max_entities = kMaxEntities, .tags_per_entity = 2}, kinds);
 }

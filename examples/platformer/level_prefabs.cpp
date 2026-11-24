@@ -11,18 +11,30 @@ void read_value(nnh::World& w, nnh::Entity e, const nnh::SpawnInfo& info) {
     if (Coin* coin = w.get<Coin>(e)) coin->value = info.object->properties.get_int("value", 1);
 }
 
+/// A turret's node sits at its box's centre (its collision box keeps the map's rectangle: placement stays the box).
+void centre_node(nnh::World& w, nnh::Entity e, const nnh::SpawnInfo&) {
+    const Body* body = w.get<Body>(e);
+    nnh::Node* node = w.get<nnh::Node>(e);
+    if (body == nullptr || node == nullptr) return;
+    node->local.position = {body->box.x + body->box.w * 0.5f, body->box.y + body->box.h * 0.5f};
+}
+
 } // namespace
 
 nnh::Result<LevelPrefabs> create_level_prefabs(nnh::TweenSet* tweens) {
-    auto made = nnh::PrefabLibrary::create({.max_prefabs = 3, .max_entries = 6, .value_bytes = 128});
+    auto made = nnh::PrefabLibrary::create({.max_prefabs = 4, .max_entries = 9, .value_bytes = 256, .max_children = 1});
     if (!made) return made.error();
     LevelPrefabs p;
     p.library = static_cast<nnh::PrefabLibrary&&>(made.value());
     const nnh::Placement box = nnh::place(&Body::box);
     auto coin = p.library.add("coin", {.tags = {kCoinTag}, .place = box, .on_spawn = read_value},
                               Body{{0, 0, 12, 12}, layers::kCoin}, Coin{1});
-    auto turret = p.library.add("turret", {.tags = {kTurretTag}, .place = box}, Body{{0, 0, 16, 16}, layers::kEnemy},
-                                Turret{});
+    auto barrel = p.library.add("barrel", {.tags = {kBarrelTag}}, nnh::Node(), Barrel{});
+    if (!barrel) return barrel.error();
+    auto turret = p.library.add("turret",
+                                {.tags = {kTurretTag}, .place = box, .on_spawn = centre_node,
+                                 .children = {nnh::child(barrel.value())}},
+                                Body{{0, 0, 16, 16}, layers::kEnemy}, Turret{}, nnh::Node());
     // The fade writes alpha through a setter that captures the world and the handle (so it stops once the sparkle
     // is gone) and destroys the sparkle when it ends; Spark's remove hook kills it if the sparkle goes first.
     auto spark = p.library.add(
@@ -45,6 +57,7 @@ nnh::Result<LevelPrefabs> create_level_prefabs(nnh::TweenSet* tweens) {
     p.coin = coin.value();
     p.turret = turret.value();
     p.spark = spark.value();
+    p.barrel = barrel.value();
     return p;
 }
 

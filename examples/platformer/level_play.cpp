@@ -123,7 +123,9 @@ void LevelPlay::update(const PlayerInput& input, bool doors) {
     take_coins();
     const int hits = turrets_.hits();
     turrets_.update(grid_, player_entity_); // after the player: they aim at this frame's position
-    if (turrets_.hits() != hits) nnh::events::publish(PlayerHit{turrets_.hits()});    if (doors) enter_doors();
+    tree_.propagate(); // spec 022: the barrels' world transforms, after the turrets aimed, before the camera and drawing
+    if (turrets_.hits() != hits) nnh::events::publish(PlayerHit{turrets_.hits()});
+    if (doors) enter_doors();
     look_ahead_ = look_ahead_step(look_ahead_, player_.facing_left());
     camera_.set_offset({look_ahead_, 0});
     camera_.update(box); // after moving the player: this frame's position
@@ -191,13 +193,14 @@ void LevelPlay::draw_turrets() {
     namespace gfx = nnh::gfx;
     const nnh::Rect p = player_.box();
     const nnh::Vec2 target{p.x + p.w * 0.5f, p.y + p.h * 0.5f};
-    world_.each<level::Turret, level::Body>([&](nnh::Entity, level::Turret& t, level::Body& body) {
-        const nnh::Rect box = body.box;
-        const nnh::Vec2 eye{box.x + box.w * 0.5f, box.y + box.h * 0.5f};
-        gfx::fill_rect(kTop, {box.x + 2, box.y + 6, box.w - 4, box.h - 6}, nnh::rgb(70, 74, 90), {.layer = kThings});
-        gfx::fill_rect(kTop, {eye.x - 3, box.y + 2, 6, 6}, t.sees ? nnh::rgb(255, 70, 60) : nnh::rgb(120, 120, 130),
-                       {.layer = kThings});
-        if (t.sees) gfx::draw_line(kTop, eye, target, nnh::rgba(255, 70, 60, 150), {.layer = kThings});
+    // Spec 022: the base and its barrel (a child node) drawn from their world transforms; the barrel turns as it aims.
+    world_.each<level::Turret, nnh::Node>([&](nnh::Entity e, level::Turret& t, nnh::Node& node) {
+        gfx::draw(kTop, art_.turret, node.world(), {.region = {0, 0, 16, 16}, .pivot = {8, 8}, .layer = kThings});
+        if (const nnh::Node* barrel = world_.get<nnh::Node>(tree_.first_child(e)))
+            gfx::draw(kTop, art_.turret, barrel->world(),
+                      {.region = {16, 0, 12, 4}, .pivot = {0, 2}, .tint = t.sees ? nnh::rgb(255, 150, 140) : nnh::colors::white,
+                       .layer = kThings});
+        if (t.sees) gfx::draw_line(kTop, node.world().position(), target, nnh::rgba(255, 70, 60, 150), {.layer = kThings});
     });
     for (auto [h, b] : turrets_.bullets().items()) {
         // In flight: centred on its position; stuck: just outside the wall, along the wall's normal.

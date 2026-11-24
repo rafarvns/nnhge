@@ -40,16 +40,35 @@ nnh::Vec2 TurretBook::aim(nnh::Vec2 d) {
     return {1.375f * sx, 1.375f * sy};            // a diagonal (about 1.94 px per frame)
 }
 
+float TurretBook::barrel_angle(nnh::Vec2 v) {
+    int k = 0; // eighth turns, clockwise from +x on the y-down screen
+    if (v.y == 0) {
+        k = v.x > 0 ? 0 : 4;
+    } else if (v.x == 0) {
+        k = v.y > 0 ? 2 : -2;
+    } else {
+        k = v.x > 0 ? (v.y > 0 ? 1 : -1) : (v.y > 0 ? 3 : -3);
+    }
+    return static_cast<float>(k) * nnh::kQuarterTurn * 0.5f;
+}
+
+nnh::Vec2 TurretBook::muzzle(const nnh::Hierarchy& tree, nnh::Entity barrel) {
+    return nnh::transform_point(tree.world_now(barrel).map, kMuzzle);
+}
+
 void TurretBook::look(const collision::Grid& grid, nnh::Vec2 target) {
     // Ascending Turret slots = spawn order = the map's object order among turrets (the old book's index order).
-    world_.each<level::Turret, level::Body>([&](nnh::Entity, level::Turret& t, level::Body& body) {
+    world_.each<level::Turret, level::Body>([&](nnh::Entity e, level::Turret& t, level::Body& body) {
         const nnh::Vec2 eye = centre(body.box);
         const nnh::Vec2 d = target - eye;
         const bool in_range = d.x <= kRangeX && d.x >= -kRangeX && d.y <= kRangeY && d.y >= -kRangeY;
         t.sees = in_range && collision::line_of_sight(grid, eye, target, {.ignore_one_way = true});
         if (t.cooldown > 0) --t.cooldown;
+        const nnh::Entity barrel = tree_.first_child(e);
+        if (level::Barrel* b = world_.get<level::Barrel>(barrel)) b->lit = t.sees;
+        if (t.sees && barrel) tree_.local(barrel)->rotation = barrel_angle(aim(d));
         if (t.sees && t.cooldown == 0) {
-            shoot(eye, aim(d));
+            shoot(barrel ? muzzle(tree_, barrel) : eye, aim(d));
             t.cooldown = kFirePeriod;
         }
     });
@@ -100,8 +119,13 @@ std::uint32_t TurretBook::state() {
     std::uint32_t sum = 2166136261u;
     sum = add_word(sum, static_cast<std::uint32_t>(hits_));
     sum = add_word(sum, static_cast<std::uint32_t>(flash_));
-    world_.each<level::Turret>([&](nnh::Entity, level::Turret& t) {
+    world_.each<level::Turret>([&](nnh::Entity e, level::Turret& t) {
         sum = add_word(sum, (t.sees ? 0x100u : 0u) | static_cast<std::uint32_t>(t.cooldown));
+        if (const nnh::WorldTransform2D* w = tree_.world_transform(tree_.first_child(e))) {
+            sum = add_word(sum, bits(w->map.origin.x));
+            sum = add_word(sum, bits(w->map.origin.y));
+            sum = add_word(sum, bits(w->rotation));
+        }
     });
     for (auto [h, b] : bullets_.items()) {
         sum = add_word(sum, bits(b.position.x));

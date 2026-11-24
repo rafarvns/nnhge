@@ -192,18 +192,18 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 6: the platformer adopts barrels (replay lines regenerated)
 
-- [ ] **T6.1** Art and kinds: `art/make_turret.py` → `assets/art/turret.png` (original base and barrel); `level::Barrel`,
+- [x] **T6.1** Art and kinds: `art/make_turret.py` → `assets/art/turret.png` (original base and barrel); `level::Barrel`,
   `node_component(8)` registered after the existing kinds; the library's `barrel` prefab and the `turret` prefab's node,
   child entry and centring hook (`max_children` 1). Test: `tests/platformer/test_level_prefabs.cpp` (a turret from a
   map object has a barrel child at the box's centre; its Body equals the old one's bytes). Files:
   `examples/platformer/level_world.*`, `level_prefabs.*`, `art/*`, `CMakeLists.txt`. Covers AC-4.
-- [ ] **T6.2** Aim and fire: `TurretBook` with a `Hierarchy`; the barrel turns to one of the 8 angles of `aim(d)` while
+- [x] **T6.2** Aim and fire: `TurretBook` with a `Hierarchy`; the barrel turns to one of the 8 angles of `aim(d)` while
   the turret sees the player; shots from `transform_point(world_now(barrel).map, kMuzzle)`; `state()` hashes each barrel's
   stored world origin and rotation; `LevelPlay` calls `propagate()` after the turrets and before the camera; turrets
   and barrels drawn with `gfx::draw(kTop, tex, world, options)`. Test: `tests/platformer/test_barrels.cpp` (8 directions
   → 8 angles; the muzzle point for each, exact on the axes; a shot starts there), `test_turrets.cpp` (expected starts
   updated: from the muzzle). Files: `turrets.*`, `level_play.*`. Covers AC-4.
-- [ ] **T6.3** Regenerate the replay lines (plan "The platformer"): the ctest fails as expected; `PLATFORMER_DEMO=replay
+- [x] **T6.3** Regenerate the replay lines (plan "The platformer"): the ctest fails as expected; `PLATFORMER_DEMO=replay
   NNH_EXIT_AFTER_FRAMES=920 build/pc-debug/examples/platformer/platformer.exe` → copy the 15 `replay: … sum` lines into
   `examples/platformer/tests/level.nnhs` (the last up to its colon); pc-release prints the same lines; the header
   comment says why (spec 022 T6.3); the x, y and coins columns unchanged — else stop and explain in plan.md; ctest
@@ -211,7 +211,7 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   examples/platformer/tests/level.nnhs` → PASS; new references for level 1 at 90 and the replay at 64 and 312 (barrels
   visible: read back), the bench screenshot identical. One commit with the barrels. Files: `tests/level.nnhs`, plan.md
   ("Stage 6 results": old and new last lines). Covers AC-4.
-- [ ] **T6.4** Stage end: the stage-end guards (new lines); `gate.nnhs --pc`, `zoom_gate.nnhs --pc` PASS. Covers AC-4, AC-8.
+- [x] **T6.4** Stage end: the stage-end guards (new lines); `gate.nnhs --pc`, `zoom_gate.nnhs --pc` PASS. Covers AC-4, AC-8.
 
 ## Stage 7: `examples/hierarchy` (PC)
 

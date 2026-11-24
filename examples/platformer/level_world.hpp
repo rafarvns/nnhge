@@ -8,6 +8,7 @@
 
 #include <nnh/collision.hpp>
 #include <nnh/entities.hpp>
+#include <nnh/hierarchy.hpp>
 #include <nnh/math.hpp>
 #include <nnh/result.hpp>
 #include <nnh/tween.hpp>
@@ -34,6 +35,11 @@ struct Spark {
     float alpha = 0;
     nnh::TweenHandle fade{};
 };
+/// A turret's barrel (spec 022 AC-4): a child node of its turret, turned toward the player while the turret sees it.
+struct Barrel {
+    int frame = 0;  ///< the barrel's image (one for now)
+    bool lit = false; ///< drawn lit while its turret sees the player
+};
 /// Pixels per frame.
 struct Velocity {
     nnh::Vec2 v{};
@@ -43,15 +49,18 @@ inline constexpr nnh::Tag kPlayerTag = nnh::tag("player");
 inline constexpr nnh::Tag kCoinTag = nnh::tag("coin");
 inline constexpr nnh::Tag kTurretTag = nnh::tag("turret");
 inline constexpr nnh::Tag kFxTag = nnh::tag("fx");
-static_assert(nnh::tags_distinct(kPlayerTag, kCoinTag, kTurretTag, kFxTag));
+inline constexpr nnh::Tag kBarrelTag = nnh::tag("barrel");
+static_assert(nnh::tags_distinct(kPlayerTag, kCoinTag, kTurretTag, kFxTag, kBarrelTag));
 
 inline constexpr int kMaxEntities = 256;
 inline constexpr int kMaxCoins = 128;
 inline constexpr int kMaxTurrets = 4;
 inline constexpr int kMaxSparks = 96;
+inline constexpr int kMaxNodes = 8; ///< the turrets and their barrels (spec 022)
 
-/// A level's world: Body, Coin, Turret, Spark and Velocity kinds, two tags per entity. Spark's remove hook kills its
-/// fade in `tweens` (when given: bind the world before that set). Fails only when out of memory.
+/// A level's world: Body, Coin, Turret, Spark and Velocity kinds, then (spec 022: registered last, so the others keep
+/// their indices) the engine's Node and Barrel; two tags per entity. Spark's remove hook kills its fade in `tweens` (when
+/// given: bind the world before that set). Fails only when out of memory.
 nnh::Result<nnh::World> create_world(nnh::TweenSet* tweens = nullptr);
 
 } // namespace level

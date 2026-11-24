@@ -392,6 +392,7 @@ target_include_directories(nnh_tests PRIVATE ${_3ds_src})
 # 60 Hz meter, player physics) are pure files of the example, tested like core logic.
 set(_platformer ${PROJECT_SOURCE_DIR}/examples/platformer)
 target_sources(nnh_tests PRIVATE
+    platformer/test_barrels.cpp
     platformer/test_level_camera.cpp
     platformer/test_level_prefabs.cpp
     platformer/test_coins.cpp

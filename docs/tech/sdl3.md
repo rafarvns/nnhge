@@ -26,6 +26,8 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 | `remote_capture_pc.cpp` | Screenshots for the remote: `SDL_RenderReadPixels` of a screen's render target after `end_frame()` → RGBA8 rows |
 | `debug_text_pc.cpp` | SDL's 8×8 debug font, for the crash screen only (it must work when the engine is broken); game and debug text use the engine's built-in font |
 | `texture_pc.cpp` (also) | `texture_create_rgba`: `SDL_CreateTexture` + `SDL_UpdateTexture` (the built-in font) |
+| `video3d_pc.cpp` | 3D (spec 026, D41): meshes copied to the heap; each pass rasterised on the CPU (`engine/platforms/shared/raster3d/`) into a 400×240 RGBA8 + depth buffer that starts as the clear colour or as the top target read back (`SDL_RenderReadPixels`) when 2D was drawn below the world, then put back with `SDL_UpdateTexture` + `SDL_RenderTexture` (`SDL_BLENDMODE_NONE`, 1:1); `video3d_self_test` reports no tilt to check |
+| `texels3d_pc.cpp` | A texture's pixels for the rasteriser: read back once (drawn into a temporary target without blending or colour modulation) and kept as an `SDL_Texture` property with a cleanup callback, so they go with the texture |
 
 ## How the 3DS is simulated
 
@@ -43,13 +45,20 @@ timing. Games never see SDL: it is linked `PRIVATE` and its headers never appear
 - The game owns `main()`: the backend defines `SDL_MAIN_HANDLED`, includes `<SDL3/SDL_main.h>` and calls
   `SDL_SetMainReady()` before `SDL_Init`.
 
-## Renderer (2D now, 3D later)
+## Renderer (2D on SDL, 3D on the CPU)
 
 The renderer is created with `SDL_CreateGPURenderer(nullptr, window)` (SDL 3.4): SDL's 2D renderer on
-an `SDL_GPUDevice` (D3D12/Vulkan/Metal), the device the future 3D renderer will share
-([rendering.md](../architecture/rendering.md), D20). If no GPU device is available (headless runs, VMs,
-old drivers) it falls back to `SDL_CreateRenderer`. Both give byte-identical screenshots of the examples
-on the maintainer's PC (checked with `NNH_SIM_RENDERER=sdl`).
+an `SDL_GPUDevice` (D3D12/Vulkan/Metal, D20). If no GPU device is available (headless runs, VMs, old drivers) it
+falls back to `SDL_CreateRenderer`.
+
+3D doesn't use the GPU device (decision D41, spec 026): the engine's CPU rasteriser draws the 3D pass into its own
+buffers with fixed-point edges and a fixed sequence of float operations (`-O2 -ffp-contract=off` in every flavour), and
+the finished picture is copied onto the top target opaque. So 3D works headless and with SDL's default renderer, and
+the 3D pixels are the same on every renderer and host compiler. `scripts/check_png_hash.sh <exe> <frames>` runs a
+game windowed (GPU device), with `NNH_SIM_RENDERER=sdl` and with `SDL_VIDEO_DRIVER=offscreen` and compares the
+screenshots: the two headless ones match (the models example's golden hashes are recorded from them); on the
+maintainer's Windows PC the windowed GPU-device screenshot differs from them already for 2D-only examples
+(`examples/text`: semi-transparent shadows round differently), so whole-picture goldens use the headless renderers.
 
 Headless runs (`SDL_VIDEO_DRIVER=offscreen`) use whatever renderer the offscreen driver offers: on Linux
 the screenshots matched the windowed ones exactly; on Windows SDL's software renderer differs by ±1 in

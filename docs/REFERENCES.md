@@ -183,3 +183,24 @@ order; Unity's `Transform`, `SetParent(worldPositionStays)` and `lossyScale`; Be
 propagation; flecs' `ChildOf` and cascading deletes; Michele Caini's "ECS back and forth" part 4 (EnTT hierarchies);
 Bitsquid's transform component; Robert Nystrom, *Game Programming Patterns*, "Dirty Flag" (links in
 [spec 022](../specs/022-scene-tree-and-transforms/spec.md#prior-art)).
+
+## 3D foundation (spec 026)
+
+Written from published documentation only; nothing copied.
+
+- [citro3d](https://github.com/devkitPro/citro3d) headers (`c3d/light.h`, `c3d/lightlut.h`, `c3d/maths.h`,
+  `c3d/renderqueue.h`) and devkitPro's [3ds-examples graphics/gpu](https://github.com/devkitPro/3ds-examples/tree/master/graphics/gpu)
+  (`fragment_light`: the normal-quaternion method of our vertex shader; `composite_scene`: citro3d between citro2d's
+  flush and prepare); [citro2d base.c](https://github.com/devkitPro/citro2d/blob/master/source/base.c).
+- [3dbrew GPU/Fragment Lighting](https://3dbrew.org/wiki/GPU/Fragment_Lighting), [GPU/Internal Registers](https://www.3dbrew.org/wiki/GPU/Internal_Registers),
+  [GPU/Shader Instruction Set](https://www.3dbrew.org/wiki/GPU/Shader_Instruction_Set).
+- [Khronos glTF 2.0](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html) and
+  [`KHR_materials_unlit`](https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_materials_unlit);
+  cgltf and tinygltf (MIT) read as references only.
+- Fabian Giesen, [Triangle rasterization in practice](https://fgiesen.wordpress.com/2013/02/08/triangle-rasterization-in-practice/)
+  (fixed-point edges, the top-left rule); Chris Hecker, [perspective texture mapping](https://www.chrishecker.com/Miscellaneous_Technical_Articles).
+- David Eberly, "A Fast and Accurate Algorithm for Computing SLERP" (JGT 2011): the recurrence of `slerp`, here with
+  16 terms and a fitted last coefficient.
+- [raylib](https://www.raylib.com/cheatsheet/raylib_cheatsheet_v4.0.pdf) (`Camera3D`, `GenMesh*`, `GetWorldToScreen`),
+  [Godot's 3D transparency limits](https://docs.godotengine.org/en/stable/tutorials/3d/3d_rendering_limitations.html) and
+  [Unity's Camera.WorldToScreenPoint](https://docs.unity3d.com/ScriptReference/Camera.WorldToScreenPoint.html): API shapes.

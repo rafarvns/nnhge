@@ -165,6 +165,16 @@ limits (`set_limits(map.bounds())`), seeded trauma shake, zoom about the centre,
 screens as one world) or two rigs for two views, `to_world`/`to_screen`, `debug_draw()`. `Camera2D::zoom` (0.5–4)
 is applied by core to sprites, text, shapes and tile layers (snapped tile edges, row chunks below zoom 1; zoom 1
 byte-identical) ([api/camera.md](docs/api/camera.md), [gfx.md#zoom](docs/api/gfx.md#zoom)).
+3D foundation (spec 026, part 026a mono implemented, console run pending; 026b stereo planned; D41–D44; demo
+`examples/models`): `<nnh/math3d.hpp>` — `Vec3`, `Quat`, `Mat4`, `Transform3D`, `look_at`, `perspective`, `slerp`… with
+the same bits on PC and 3DS ([api/math3d.md](docs/api/math3d.md)); `<nnh/mesh.hpp>` — `create_mesh`, `make_cube/plane/
+sphere`, `load_mesh("models/ship")` from glTF 2.0 converted by `nnh-assetc mesh` into quantised `.nnhmesh` (fixtures in
+`tests/data/gltf/`), `Material3D` ([api/mesh.md](docs/api/mesh.md), guide [models.md](docs/guides/models.md));
+`<nnh/gfx3d.hpp>` — `Camera3D`, `Lighting` (ambient + 4), `gfx3d::draw` recorded like 2D and drawn between the 2D layers
+at the world layer (default 8), opaque then blended back to front, culling, `to_screen`/`screen_ray`, stats, probes
+([api/gfx3d.md](docs/api/gfx3d.md)); on by `AppConfig::gfx.max_draws_3d` (default 0: a 2D game links no 3D code); the
+simulator draws 3D with the engine's CPU rasteriser (`engine/platforms/shared/raster3d/`), the 3DS with citro3d
+(`engine/platforms/3ds/shaders/mesh3d.v.pica`).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
@@ -226,6 +236,8 @@ QUERIES_DEMO=all NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/queries.png build
 build/pc-debug/tools/nnh/nnh run queries [--pc] --script examples/queries/tests/check.nnhs  # rays, touches, self-check 4ACAA177, bench
 build/pc-debug/tools/nnh/nnh run prefabs [--pc] --script examples/prefabs/tests/check.nnhs  # room, touch spawns, self-check 7BB7901E, bench
 build/pc-debug/tools/nnh/nnh run hierarchy [--pc] --script examples/hierarchy/tests/check.nnhs  # yard, self-check 23DB5C36, bench
+build/pc-debug/tools/nnh/nnh run models [--pc] --script examples/models/tests/check.nnhs   # 3D: self-check A3BF4EDF, probe pixels, to_screen
+MODELS_DEMO=check NNH_EXIT_AFTER_FRAMES=70 build/pc-debug/examples/models/models.exe     # showcase (default)|check|bench|smoke
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

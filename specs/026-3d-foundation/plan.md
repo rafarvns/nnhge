@@ -1,6 +1,6 @@
 # Plan 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run T10.1/T10.2 and Linux VM T9.3 pending)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md)
 Decisions: [D41, D42, D43, D44](../../docs/architecture/decisions.md) (written with this plan; design until implemented)
 
@@ -797,3 +797,14 @@ the maintainer's approval beyond the decisions above.
   example's screenshot is unchanged (`scripts/example_shots.sh`, `audio` and `foundation` excluded: live timings);
   every earlier script passing in ctest. 2D-only games keep citro2d's targets (the 3D target replaces the top one only
   in `video3d_init`). Edit-one-game-`.cpp` times unchanged within noise (pc-debug 1.6 s, 3ds-release 3.0 s).
+- T3.8's rebuild check (stage 9): touching `pylon.gltf` (pc-debug) or `ship.bin` (3ds-release) reconverts only that model
+  and the asset index (`Model models/ship.gltf`, `Asset index for models`).
+
+### Stage 10 (026a docs: T10.3, T10.4; the console run T10.1–T10.2 is the lead's)
+
+- New pages: `docs/api/math3d.md`, `docs/api/mesh.md`, `docs/api/gfx3d.md`, guide `docs/guides/models.md`; links from
+  `math.md`, `gfx.md`, `texture.md`, `assets.md`; `rendering.md` (the 3D pass, the world layer, the hook, the CPU
+  rasteriser — the "3D will need a GPU device" text replaced), `sdl3.md` (D41: 3D on the CPU, the renderer comparison),
+  `devkitpro-3ds.md` (target, shader, tables, combiners, projection fix-up, open points), `project-structure.md`
+  (`platforms/shared/raster3d`, `platforms/3ds/shaders`), D41–D44 change-log line, `REFERENCES.md`, `CLAUDE.md`,
+  ROADMAP M8 and `specs/README.md` (026a built, console pending).

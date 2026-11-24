@@ -1,6 +1,6 @@
 # Tasks 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run T10.1/T10.2 and Linux VM T9.3 pending)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -188,10 +188,10 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 - [ ] **T10.1** Console run (fully prepared below), mono — covers AC-7, AC-8, FR-24
 - [ ] **T10.2** Record results in spec/plan/docs (tolerances confirmed or set; bench numbers; targets per policy) — covers
   AC-8, FR-24
-- [ ] **T10.3** `docs/api/math3d.md`, `docs/api/mesh.md`, `docs/api/gfx3d.md` (+ header comments), guide
+- [x] **T10.3** `docs/api/math3d.md`, `docs/api/mesh.md`, `docs/api/gfx3d.md` (+ header comments), guide
   `docs/guides/models.md` (Blender glTF export: +Y up, apply transforms, PNG beside, `.bin` naming, what is ignored);
   links from `math.md`, `gfx.md`, `texture.md`, `assets.md` — covers AC-10
-- [ ] **T10.4** `docs/architecture/rendering.md` (the 3D pass, world layer, hook, PC rasteriser — replaces "the same
+- [x] **T10.4** `docs/architecture/rendering.md` (the 3D pass, world layer, hook, PC rasteriser — replaces "the same
   `SDL_GPUDevice`" and "3D will need a GPU device"), `docs/tech/sdl3.md` ("Renderer: 2D now, 3D later" → the CPU
   rasteriser, D41), `docs/tech/devkitpro-3ds.md` (targets, shader, LUTs, VRAM, costs), `project-structure.md`
   (`shared/raster3d`, `src/math3d`, `mesh`, `gfx3d`), D41–D44 change-log "implemented (026a)", `docs/REFERENCES.md`,

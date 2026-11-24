@@ -248,3 +248,10 @@ never through `#ifdef` in game code.
   loses, a field build that checks its goals before touching anything, a hero/crowd update order and verdict lines a
   frame apart for scripts, the hot helpers forced inline after the ARM pre-check (no result change). The golden
   `1C0B5992` holds the total order; AC-2's literal reference A* equals `find` on 2 048 random maps.
+- 2026-11-24: D41–D44 **implemented for 026a** (mono 3D: math, meshes and the glTF converter, recording and the 3D
+  pass among the 2D layers, the CPU rasteriser on PC and fake, the citro3d backend; console run pending). Refinements in
+  plan 026 "Stage results": `Camera3D::near_plane`/`far_plane` (not `near`/`far`, which `<windows.h>` defines away),
+  pure `gfx3d::to_screen(camera, …)`/`screen_ray(camera, …)` overloads, the lighting tables in the PICA200's layouts
+  shared from `engine/platforms/shared/raster3d/light_tables.cpp`, the 3DS projection fix-up taken from citro3d's own
+  `Mtx_PerspTilt`. D43's hook costs `hello` +256 B of 3DS `.text` (over P14's 128 B budget: the shared 2D slice
+  function), measured and recorded.

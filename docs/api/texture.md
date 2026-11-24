@@ -50,3 +50,8 @@ Handles kept after `nnh::shutdown()` are harmless (`valid()` is false, `reset()`
 | `Unsupported` | called before `nnh::init()` |
 
 Each failure is also logged on the `gfx` channel with the image name.
+
+## Textures in 3D
+
+A 3D material names a texture by value with `nnh::texture_id(texture)`; models loaded with `load_mesh` own their
+textures ([mesh.md](mesh.md)). The same size rules apply.

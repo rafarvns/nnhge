@@ -157,3 +157,8 @@ bonus level; `PLATFORMER_DEMO=bench` on PC); A there runs its automatic gate, wh
 `gfx::draw(screen, texture, world, options)` draws at a `WorldTransform2D`'s position with its rotation added and its
 scale multiplied into `options`; `gfx::transformed(world, options)` gives the merged options (a mirrored world
 subtracts the given rotation). For nodes and pivots see [hierarchy.md](hierarchy.md#drawing-collision-boxes-the-camera).
+
+## 3D on the top screen
+
+Meshes drawn between the 2D layers (the world layer, default 8: 2D below it is under the 3D world):
+[gfx3d.md](gfx3d.md), meshes and materials in [mesh.md](mesh.md) (spec 026).

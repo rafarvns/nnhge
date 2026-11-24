@@ -154,7 +154,7 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 5: prefabs with children, the golden script
 
-- [ ] **T5.1** Registration: `PrefabChild`, `nnh::child()`, `detail::kPrefabTreeOps` (`prefab_tree.cpp`, `node_kind`),
+- [x] **T5.1** Registration: `PrefabChild`, `nnh::child()`, `detail::kPrefabTreeOps` (`prefab_tree.cpp`, `node_kind`),
   `PrefabOptions::children`, `PrefabLibraryDesc::max_children`, the record's `child_count`, the child array and tree facts
   (only when `max_children > 0`), inherited children in variants, every check (a child of another library, a
   `PrefabChild` not from `child()`, no node kind, 9 entries, 33 entities, 129 components, height 16, the capacity), the
@@ -162,31 +162,31 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   refusal; spec 021's layout tests unchanged with `max_children = 0`). Files: `prefabs.hpp`, `detail/prefab_values.hpp`,
   `src/prefabs/prefab_internal.hpp`, `library_layout.*`, `library_add.cpp`, `prefab_flatten.cpp`, `prefab_tree_plan.cpp`,
   `library_queries.cpp`. Covers FR-16.
-- [ ] **T5.2** Tree spawn: the dispatch in `prefab_spawn`, the creation list, kinds, `world_reserve_many`, copies,
+- [x] **T5.2** Tree spawn: the dispatch in `prefab_spawn`, the creation list, kinds, `world_reserve_many`, copies,
   placement, the root's world after placement, children linked keep-local with their entry locals, post-order hooks
   (each chain base first), the root's handle. Test: `tests/prefabs/test_tree_spawn.cpp` (twin worlds: prefab trees vs
   the plan's hand-written equivalent — handles, slots, bytes, tags, links, world bits; hooks find children ready; a hook
   destroying its own entity or spawning under itself). Files: `src/prefabs/prefab_spawn.cpp`, `prefab_tree.cpp`.
   Covers FR-17.
-- [ ] **T5.3** All or nothing and `spawn_under`: full world, each kind full (root's, a child's, an override-only kind),
+- [x] **T5.3** All or nothing and `spawn_under`: full world, each kind full (root's, a child's, an override-only kind),
   too deep under a parent — nothing created, misses in the library and the world, `WhenFull::Assert` vs `Miss`; inside
   `clear()` null, nothing counted; under a parent: position local, depth, attach keep-local. Test:
   `tests/prefabs/test_tree_all_or_nothing.cpp`, `tests/prefabs/test_spawn_under.cpp`. Covers FR-17, FR-18.
-- [ ] **T5.4** Map objects with children: `make_fixtures.py` writes `tests/data/maps/good_prefab_trees.tmj` (objects of
+- [x] **T5.4** Map objects with children: `make_fixtures.py` writes `tests/data/maps/good_prefab_trees.tmj` (objects of
   types `ship` and `crate`, one `prefab` = `ship_shielded`); converted for `nnh_tests`; ctest
   `map_convert_accepts_good_prefab_trees`. Test: `tests/prefabs/test_map_trees.cpp` (whole hierarchies in map order, the
   root placed by the object, every `SpawnInfo` carrying the root's object, the summary). Covers FR-18.
-- [ ] **T5.5** Self-check (AC-2): `examples/hierarchy/check_kinds.hpp`, `self_check_defs.cpp` (the hand table written
+- [x] **T5.5** Self-check (AC-2): `examples/hierarchy/check_kinds.hpp`, `self_check_defs.cpp` (the hand table written
   independently), `self_check_sides.{hpp,cpp}` (`Side<true>` through the library, `Side<false>` by hand, the same hook
   code), `self_check.{hpp,cpp}` (plan's 12 prefabs, kinds A–D, two worlds of 1024 × 4 tags, 50 000 operations, a pass
   every 64 with `world_now` = stored on every node, per-step handle comparison, full-state hashes every 1000 and after
   clears, checkpoints every 10 000); goldens from pc-debug in `kHierarchyCheckGolden`, equal in pc-release. Test:
   `tests/hierarchy_example/test_self_check.cpp`; a one-value mistake in the hand table fails. Files: those,
   `tests/CMakeLists.txt`. Covers AC-2, FR-17, FR-19.
-- [ ] **T5.6** [P] Fuzz: `tests/fuzz/fuzz_hierarchy_ops.cpp` (every 4 bytes one self-check operation, both sides
+- [x] **T5.6** [P] Fuzz: `tests/fuzz/fuzz_hierarchy_ops.cpp` (every 4 bytes one self-check operation, both sides
   compared), `tests/fuzz/fuzz_transform.cpp` (random float bits into every transform function: no UB, `sin_cos` finite,
   `inverse` refusals by exponent); mini-fuzz in `nnh_tests`, libFuzzer with `NNH_BUILD_FUZZERS`. Covers X, FR-23.
-- [ ] **T5.7** Stage end: the stage-end guards (`7BB7901E` with the dispatch in); `compare.sh`; `linkcheck.sh`: only
+- [x] **T5.7** Stage end: the stage-end guards (`7BB7901E` with the dispatch in); `compare.sh`; `linkcheck.sh`: only
   `prefab_tree.o` refers to hierarchy symbols among prefab objects, and only `nnh::child()`'s `kPrefabTreeOps` refers to
   `prefab_tree.o`. Files: plan.md ("Stage 5 results": goldens and checkpoints, the script's reach). Covers FR-24, AC-8.
 

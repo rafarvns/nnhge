@@ -14,8 +14,8 @@ may come from [data assets](data.md). One block of memory per library; nothing a
 registrations and spawns give the same handles and bytes on PC and 3DS.
 
 Optional (constitution XI): a game that doesn't include the header links none of it, and a game that spawns only from
-code links no tilemap code (the map calls are in their own object file). The header includes only
-`<nnh/entities.hpp>` and `<nnh/math.hpp>`.
+code links no tilemap code (the map calls are in their own object file); one whose prefabs have no [children](#children)
+links no hierarchy code. The header includes only `<nnh/entities.hpp>`, `<nnh/math.hpp>` and `<nnh/transform.hpp>`.
 
 ```cpp
 struct Body { nnh::Rect box{}; nnh::collision::Layers layers = nnh::collision::kNoLayers; };
@@ -141,6 +141,49 @@ the world's (its spawn misses, or the full kind's misses). What else happens is 
 
 A kind the world doesn't store always asserts. Inside the world's `clear()` (spawns refused by spec 020) a spawn
 returns null without a miss or an assert.
+
+## Children
+
+A prefab may list up to `kMaxPrefabChildren` (8) **child entries** (spec 022): each an already registered prefab of the
+same library, made by `nnh::child(prefab)` or `nnh::child(prefab, local)` (the local replaces the child prefab's own
+`nnh::Node` local in that slot). One spawn then makes the whole [hierarchy](hierarchy.md):
+
+```cpp
+const nnh::Prefab muzzle = lib.add("muzzle", {}, nnh::Node({.position = {6, 0}})).value();
+const nnh::Prefab gun = lib.add("gun", {.children = {nnh::child(muzzle)}}, nnh::Node({.position = {10, 0}})).value();
+const nnh::Prefab ship = lib.add("ship", {.place = nnh::place(&nnh::Node::local),
+                                          .children = {nnh::child(gun, {.position = {12, -4}, .rotation = 0.1f})}},
+                                 nnh::Node(), Body{}).value();
+lib.spawn(world, ship, {100, 60});           // ship + gun + muzzle, all or nothing
+lib.spawn_under(world, gun, hand_entity);    // a gun spawned in a hand (its position local to the hand)
+```
+
+- **Registration.** The parent and every child prefab need the `nnh::Node` kind (`InvalidArgument`); a child must be a
+  prefab of this library made by `nnh::child()` (`InvalidArgument`); children nest; a spawn makes at most
+  `kMaxPrefabTree` (32) entities and `kMaxPrefabTreeComponents` (128) components, no deeper than 16 levels
+  (`LimitReached`). The library's `PrefabLibraryDesc::max_children` (child entries over all prefabs, default 0) must have
+  room (`LimitReached`); with 0 the block is laid out as without children. A variant inherits its base's children and
+  may append its own (8 in all). `children(prefab, out, capacity)` lists them in entry order.
+- **Spawning.** All or nothing: the world must have an entity slot for every entity and a slot in every kind (overrides
+  included), else nothing is created and the refusal is a miss as for a single prefab (`WhenFull`). Entities are created
+  **parent first, then children depth-first in entry order**, each exactly as a single spawn makes one; each child is
+  linked last under its parent with its entry's local (as `attach(child, parent, Reparent::KeepLocal)`); every world is
+  computed; then the hooks run **children before parents** (a ship's hook finds its gun ready), each `SpawnInfo` carrying
+  the root's map object (children have no position). The root's handle is returned. The result is bit for bit the
+  hand-written `spawn`/`add`/`add_tag`/`attach` calls in that order followed by the hooks in that order (the
+  [hierarchy self-check](../../examples/hierarchy/self_check.cpp) proves it over 50 000 operations). The position and
+  overrides apply to the root only.
+- **Under a parent.** `spawn_under(world, prefab, parent[, at])` (with or without children) attaches the root keep-local
+  as `parent`'s last child; `at` goes into the placement member and is local to the parent. A hierarchy that would be
+  deeper than 16 levels there is refused as a full capacity.
+- **Placement through the node.** `nnh::place(&nnh::Node::local)` writes a spawn's position into the node's local
+  position. Prefab hierarchies compute the root's world after placement; a single-entity prefab keeps spec 021's spawn
+  path, so its stored world is the stored value's until the next pass.
+- **Opt-in.** The tree code is linked only through `nnh::child()` and `spawn_under()`: a game whose prefabs have no
+  children links no hierarchy code. A prefab without children is stored and spawned exactly as before (one extra load
+  and branch).
+- **Maps.** A map object naming a prefab with children spawns its whole hierarchy, the object's bounds placing the
+  root. Tiled has no object parenting, so maps never express hierarchies themselves ([levels.md](../guides/levels.md)).
 
 ## Map objects
 

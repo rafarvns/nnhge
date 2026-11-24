@@ -60,6 +60,9 @@ struct Affine2D {
 /// product of scales (Unity's lossyScale) — which are exact when the chain has no shear (every non-uniform scale sits on
 /// a node whose descendants aren't rotated relative to it, or it is a mirror). 36 bytes.
 struct WorldTransform2D {
+    /// Not an aggregate (on purpose): a braced position like `{x, y}` must never initialise one, so
+    /// gfx::draw(screen, texture, {x, y}, options) keeps picking the Vec2 overload.
+    constexpr WorldTransform2D() = default;
     Affine2D map{};
     float rotation = 0; ///< accumulated; a mirrored parent turns its children the other way
     Vec2 scale{1, 1};   ///< product of scales; a negative component = mirrored

@@ -10,6 +10,7 @@ namespace nnh::detail {
 
 struct LibraryLayout {
     std::size_t hashes = 0, table = 0, records = 0, names = 0, entries = 0, values = 0;
+    std::size_t children = 0, facts = 0; ///< spec 022: after the values, only when max_children > 0
     std::size_t total = 0;
     int table_size = 0; ///< a power of two ≥ 2 × max_prefabs
 };

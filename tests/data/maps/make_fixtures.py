@@ -1,5 +1,5 @@
 """Generates the tileset images of the map converter fixtures (spec 012 T5.7, T5.9) and the prefab objects map
-good_prefabs.tmj (spec 021 T5.1). The outputs are committed; rerun only to change them:
+good_prefabs.tmj (spec 021 T5.1) and good_prefab_trees.tmj (spec 022 T5.4). The outputs are committed; rerun only to change them:
 python -I tests/data/maps/make_fixtures.py   (standard library only).
 
 The other Tiled files (*.tmj, *.tsj) next to them are written by hand. The converter reads only a PNG's size; the
@@ -85,6 +85,30 @@ def prefab_map():
         f.write("\n")
 
 
+def prefab_tree_map():
+    """Objects naming prefab hierarchies (spec 022 FR-18): ships (a gun with a muzzle each), a shielded ship by its
+    `prefab` property, a crate (no children) and a door (skipped)."""
+    things = [
+        obj(1, "s1", "ship", 32, 16, 16, 16),
+        obj(2, "c1", "crate", 64, 40, 12, 12),
+        obj(3, "s2", "ship", 96, 24, point=True, props=[prop("prefab", "string", "ship_shielded")]),
+        obj(4, "door", "door", 8, 8, 16, 32),
+        obj(5, "s3", "ship", 112, 48, point=True),
+    ]
+    data = {
+        "type": "map", "version": "1.10", "tiledversion": "1.10.2", "orientation": "orthogonal",
+        "renderorder": "right-down", "infinite": False, "width": 8, "height": 4, "tilewidth": 16, "tileheight": 16,
+        "nextlayerid": 2, "nextobjectid": 6, "tilesets": [],
+        "layers": [
+            {"id": 1, "type": "objectgroup", "name": "things", "draworder": "topdown", "opacity": 1,
+             "visible": True, "objects": things},
+        ],
+    }
+    with open(os.path.join(HERE, "good_prefab_trees.tmj"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(data, f, indent=1)
+        f.write("\n")
+
+
 def main():
     png("good.png", 64, 32)       # 8 tiles of 16x16 (tiles/good.tsj)
     png("second.png", 64, 64)     # 9 tiles of 16x16 with margin 1 and spacing 4 (embedded in good.tmj)
@@ -92,6 +116,7 @@ def main():
     png("wide.png", 64, 16)       # 2 tiles of 32x16 (non-square)
     png("big.png", 1024, 1024, gray=True)  # 16384 tiles of 8x8: over 8191 ids
     prefab_map()
+    prefab_tree_map()
 
 
 if __name__ == "__main__":

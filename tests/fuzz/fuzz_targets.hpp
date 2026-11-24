@@ -61,4 +61,12 @@ int world_ops_target(const std::uint8_t* data, std::size_t size);
 /// (examples/prefabs/self_check.hpp), run on a prefab-spawning world and its hand-written twin; a difference aborts.
 int prefab_ops_target(const std::uint8_t* data, std::size_t size);
 
+/// Hierarchies (spec 022, fuzz_hierarchy_ops.cpp): every 4 bytes are one operation of the hierarchy self-check
+/// (examples/hierarchy/self_check.hpp), run on a prefab-hierarchy world and its hand-written twin; a difference aborts.
+int hierarchy_ops_target(const std::uint8_t* data, std::size_t size);
+
+/// Transforms (spec 022, fuzz_transform.cpp): 64 bytes of float bits into every transform function; a broken promise
+/// (sin_cos range, is_finite, the inverse's exponent rule, the pure-translation rule) aborts.
+int transform_target(const std::uint8_t* data, std::size_t size);
+
 } // namespace nnh::fuzz

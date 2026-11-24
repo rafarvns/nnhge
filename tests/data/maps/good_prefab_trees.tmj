@@ -1,0 +1,91 @@
+{
+ "type": "map",
+ "version": "1.10",
+ "tiledversion": "1.10.2",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "infinite": false,
+ "width": 8,
+ "height": 4,
+ "tilewidth": 16,
+ "tileheight": 16,
+ "nextlayerid": 2,
+ "nextobjectid": 6,
+ "tilesets": [],
+ "layers": [
+  {
+   "id": 1,
+   "type": "objectgroup",
+   "name": "things",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "objects": [
+    {
+     "id": 1,
+     "name": "s1",
+     "type": "ship",
+     "x": 32,
+     "y": 16,
+     "width": 16,
+     "height": 16,
+     "rotation": 0,
+     "visible": true
+    },
+    {
+     "id": 2,
+     "name": "c1",
+     "type": "crate",
+     "x": 64,
+     "y": 40,
+     "width": 12,
+     "height": 12,
+     "rotation": 0,
+     "visible": true
+    },
+    {
+     "id": 3,
+     "name": "s2",
+     "type": "ship",
+     "x": 96,
+     "y": 24,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "prefab",
+       "type": "string",
+       "value": "ship_shielded"
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "name": "door",
+     "type": "door",
+     "x": 8,
+     "y": 8,
+     "width": 16,
+     "height": 32,
+     "rotation": 0,
+     "visible": true
+    },
+    {
+     "id": 5,
+     "name": "s3",
+     "type": "ship",
+     "x": 112,
+     "y": 48,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    }
+   ]
+  }
+ ]
+}

@@ -11,6 +11,7 @@
 
 #include "nnh/detail/type_id.hpp"
 #include "nnh/math.hpp"
+#include "nnh/transform.hpp"
 
 namespace nnh {
 
@@ -82,13 +83,14 @@ ComponentValue component_value(const T& value) {
     return v;
 }
 
-/// `nnh::place(&Body::box)`: the member that receives a spawn's position. M is nnh::Vec2 or nnh::Rect (checked at
-/// compile time); `keep_size` keeps a Rect's w, h when the spawn comes from a rectangle map object. Builds one C{} to
-/// measure the member's offset (C is default-constructible, as every component).
+/// `nnh::place(&Body::box)`: the member that receives a spawn's position. M is nnh::Vec2, nnh::Rect or nnh::Transform2D
+/// (its position: `nnh::place(&nnh::Node::local)`, spec 022) (checked at compile time); `keep_size` keeps a Rect's w, h
+/// when the spawn comes from a rectangle map object. Builds one C{} to measure the member's offset (C is
+/// default-constructible, as every component).
 template <typename C, typename M>
 Placement place(M C::*member, bool keep_size = false) {
-    static_assert(std::is_same_v<M, Vec2> || std::is_same_v<M, Rect>,
-                  "nnh::place: the placement member must be an nnh::Vec2 or an nnh::Rect");
+    static_assert(std::is_same_v<M, Vec2> || std::is_same_v<M, Rect> || std::is_same_v<M, Transform2D>,
+                  "nnh::place: the placement member must be an nnh::Vec2, an nnh::Rect or an nnh::Transform2D");
     static_assert(sizeof(C) <= 0xFFFF, "nnh::place: the component is too large");
     const C probe{};
     const auto* base = reinterpret_cast<const unsigned char*>(&probe);

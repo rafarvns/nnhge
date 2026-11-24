@@ -20,6 +20,13 @@ NNH_TEST(node_is_80_bytes_with_identity_defaults) {
     CHECK(nnh::detail::NA::parent(n) == nnh::detail::kNoNode && nnh::detail::NA::first(n) == nnh::detail::kNoNode);
 }
 
+NNH_TEST(node_default_equals_a_node_made_at_the_identity) {
+    // Bit for bit (no −0 in the identity's map): a prefab's stored Node() and a hand-made Node({}) are the same bytes.
+    const Node a, b(Transform2D{});
+    CHECK(std::memcmp(&a, &b, sizeof a) == 0);
+    CHECK(same_bits(nnh::to_world({}), nnh::WorldTransform2D{}));
+}
+
 NNH_TEST(node_made_at_a_local_holds_its_root_world) {
     const Transform2D l{.position = {3.5f, -2}, .rotation = 0.6f, .scale = {2, -1}};
     const Node n(l);

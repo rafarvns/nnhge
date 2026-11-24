@@ -47,10 +47,30 @@ struct PrefabRecord {
     std::uint16_t place_offset = 0;
     std::uint16_t hook_base = kNoHookBase; ///< the nearest base with its own hook
     std::uint8_t hooks = 0;       ///< hooks in the chain, its own included, ≤ 8
-    std::uint8_t spare = 0;
+    std::uint8_t child_count = 0; ///< spec 022: child entries (0: spawned exactly as spec 021's)
     Tag tags[kMaxPrefabTags] = {};
     SpawnHook hook{};             ///< its own hook (empty when none)
 };
+
+// ---- Spec 022: prefab hierarchies (plan 022 "Prefab additions") ----
+
+struct PrefabTreeOps;
+/// One child entry: the child prefab's index and an optional local transform for its node. 24 bytes.
+struct PrefabChildEntry {
+    std::uint16_t prefab = 0;
+    std::uint8_t has_local = 0;
+    std::uint8_t spare = 0;
+    Transform2D local{};
+};
+/// What a spawn of the prefab makes (itself and its children's trees). 6 bytes per prefab when max_children > 0.
+struct PrefabTreeFacts {
+    std::uint16_t first_child = 0; ///< its first child entry
+    std::uint8_t entities = 1;     ///< ≤ 32
+    std::uint8_t components = 0;   ///< ≤ 128
+    std::uint8_t height = 0;       ///< levels below it (a leaf: 0), ≤ 15
+    std::uint8_t spare = 0;
+};
+inline constexpr int kMaxPrefabTreeLevels = 16; ///< kMaxHierarchyDepth, without the hierarchy header
 
 /// The block's header.
 struct PrefabBlock {
@@ -72,6 +92,12 @@ struct PrefabBlock {
     std::uint16_t stamp = 0;   ///< the handles' high half, 1..65535
     WhenFull when_full = WhenFull::Assert;
     bool doomed = false;       ///< destroyed inside its own hook: freed when the outermost spawn returns
+    // Spec 022 (at the end: no earlier field moves). Null and 0 when max_children is 0.
+    PrefabChildEntry* children = nullptr;
+    PrefabTreeFacts* facts = nullptr; ///< per prefab
+    const PrefabTreeOps* tree = nullptr; ///< set by the first prefab registered with children
+    int max_children = 0;
+    int children_used = 0;
 };
 
 inline constexpr int kNameBytes = 32; ///< 31 characters and the NUL
@@ -113,7 +139,16 @@ struct SpawnSource {
     int object_index = -1;
 };
 
-/// The spawn (FR-5..FR-8): checks, kinds, overrides, the world's reservation, copies, placement, hooks.
+/// The tree code's entry points (prefab_tree.cpp): the node kind's type id (checked at registration) and the spawn of
+/// a hierarchy (`parent`: spawn_under's, else null).
+struct PrefabTreeOps {
+    TypeId node_kind = nullptr;
+    Entity (*spawn)(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
+                    const ComponentValue* overrides, int count, Entity parent) = nullptr;
+};
+
+/// The spawn (FR-5..FR-8): checks, kinds, overrides, the world's reservation, copies, placement, hooks — or, for a
+/// prefab with children (spec 022), the tree code through the block's pointer.
 Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
                     const ComponentValue* overrides, int count);
 
@@ -158,12 +193,25 @@ struct PrefabPlan {
     std::uint8_t hooks = 0;
     std::uint32_t offsets[kMaxPrefabEntries] = {}; ///< per own value (call order): its offset in the value bytes
     int value_end = 0;
+    // Spec 022: children (the base's, then the options'), and the tree's facts.
+    int child_total = 0;
+    std::uint16_t child_prefab[kMaxPrefabChildren] = {};
+    bool child_has_local[kMaxPrefabChildren] = {};
+    Transform2D child_local[kMaxPrefabChildren] = {};
+    const PrefabTreeOps* tree = nullptr;
+    int tree_entities = 1, tree_components = 0, height = 0;
 };
 
 /// Flattens `values` over the options' base (FR-4): entries, tags, placement, hook chain. Returns false with `error`
 /// (InvalidArgument or LimitReached) and leaves the block untouched.
 bool flatten(const PrefabBlock& b, const PrefabOptions& options, const ComponentValue* values, int count,
              PrefabPlan& plan, Error& error);
+
+/// Spec 022: the children of a flattened plan (prefab_tree_plan.cpp): checks and the tree's facts. False with `error`.
+bool plan_children(const PrefabBlock& b, const PrefabOptions& options, const ComponentValue* values, PrefabPlan& plan,
+                   Error& error);
+/// Writes the plan's child entries and facts for prefab `index` (nothing when the library keeps no facts).
+void commit_children(PrefabBlock& b, int index, const PrefabPlan& plan);
 
 } // namespace detail
 } // namespace nnh

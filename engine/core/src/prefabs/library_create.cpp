@@ -35,6 +35,8 @@ bool validate(const PrefabLibraryDesc& desc, Error& error) {
         return invalid(error, "max_entries outside 0..65535", desc.max_entries);
     if (desc.value_bytes < 0 || desc.value_bytes > (1 << 20))
         return invalid(error, "value_bytes outside 0..1 MiB", desc.value_bytes);
+    if (desc.max_children < 0 || desc.max_children > 65535)
+        return invalid(error, "max_children outside 0..65535", desc.max_children);
     return true;
 }
 
@@ -54,6 +56,13 @@ PrefabBlock* build(const PrefabLibraryDesc& desc, const LibraryLayout& l, unsign
     b->value_capacity = desc.value_bytes;
     b->stamp = next_stamp();
     b->when_full = desc.when_full;
+    if (desc.max_children > 0) {
+        b->children = reinterpret_cast<PrefabChildEntry*>(bytes + l.children);
+        b->facts = reinterpret_cast<PrefabTreeFacts*>(bytes + l.facts);
+        for (int i = 0; i < desc.max_children; ++i) ::new (static_cast<void*>(b->children + i)) PrefabChildEntry{};
+        for (int i = 0; i < desc.max_prefabs; ++i) ::new (static_cast<void*>(b->facts + i)) PrefabTreeFacts{};
+        b->max_children = desc.max_children;
+    }
     return b;
 }
 

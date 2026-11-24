@@ -100,10 +100,19 @@ void run_hooks(PrefabBlock& b, int index, World& world, Entity e, const SpawnSou
     --b.spawn_depth;
 }
 
+/// Spec 022: a prefab with children goes to the tree code (prefab_tree.cpp, reached only through the block's pointer:
+/// this file never names it). Out of line, cold, with prefab_spawn's own parameters: a tail call that leaves the
+/// dispatch a lookup and a branch (plan 022 "Prefab additions", T7.6).
+[[gnu::noinline, gnu::cold]] Entity spawn_tree(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
+                                               const ComponentValue* overrides, int count) {
+    return b->tree->spawn(b, world, prefab, source, overrides, count, Entity{});
+}
+
 } // namespace
 
-Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
-                    const ComponentValue* overrides, int count) {
+/// Spec 021's spawn of one entity, unchanged (its own object code: plan 022 T7.6 compares it with spec 021's).
+[[gnu::noinline]] Entity prefab_spawn_one(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
+                                          const ComponentValue* overrides, int count) {
     if (b == nullptr) {
         prefab_misuse("PrefabLibrary::spawn() on an empty or moved-from library");
         return {};
@@ -169,6 +178,13 @@ Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSour
         if (b->doomed && b->spawn_depth == 0) library_teardown(b);
     }
     return e;
+}
+
+Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
+                    const ComponentValue* overrides, int count) {
+    const PrefabRecord* r = record_of(b, prefab);
+    if (r != nullptr && r->child_count != 0) return spawn_tree(b, world, prefab, source, overrides, count); // spec 022
+    return prefab_spawn_one(b, world, prefab, source, overrides, count);
 }
 
 } // namespace detail

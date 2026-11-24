@@ -3,11 +3,13 @@
 /// Prefabs (spec 021, decision D36): named prototypes of entities — component values, tags, an optional placement
 /// member and an optional spawn hook, optionally based on another prefab — registered in a library the game owns and
 /// spawned into a spec 020 World, each copy bit for bit what spawn() + add<T>(e, value) per component + add_tag per tag
-/// would make. A Tiled object names a prefab by its `prefab` property or its type. See docs/api/prefabs.md.
+/// would make. A Tiled object names a prefab by its `prefab` property or its type. A prefab may list child prefabs
+/// (spec 022): one spawn then makes the whole hierarchy of nodes, all or nothing. See docs/api/prefabs.md.
 ///
 /// Optional (constitution XI): a game that doesn't include this header links none of it; a game that spawns only from
-/// code links no tilemap code (the map calls live in their own object file). Light: <nnh/entities.hpp> and
-/// <nnh/math.hpp>; the tilemap types are only forward-declared.
+/// code links no tilemap code (the map calls live in their own object file), and one whose prefabs have no children
+/// links no hierarchy code. Light: <nnh/entities.hpp>, <nnh/math.hpp> and <nnh/transform.hpp>; the tilemap types are
+/// only forward-declared.
 ///
 /// @code
 /// struct Body { nnh::Rect box; nnh::collision::Layers layers = nnh::collision::kNoLayers; };
@@ -29,6 +31,7 @@
 #include "nnh/entities.hpp"
 #include "nnh/math.hpp"
 #include "nnh/result.hpp"
+#include "nnh/transform.hpp"
 
 namespace nnh {
 
@@ -39,6 +42,10 @@ class PrefabLibrary;
 
 namespace detail {
 struct PrefabBlock;
+struct PrefabTreeOps; // src/prefabs/prefab_internal.hpp
+/// The prefab-tree code (src/prefabs/prefab_tree.cpp), named only by nnh::child(): a game whose prefabs have no
+/// children links none of it (nor any hierarchy code).
+extern const PrefabTreeOps kPrefabTreeOps;
 } // namespace detail
 
 /// A registered prefab: its index (bits 0–15) and its library's stamp (bits 16–31); 0 is the null prefab. Trivially
@@ -49,6 +56,24 @@ inline constexpr int kMaxPrefabs = 1024;     ///< prefabs per library
 inline constexpr int kMaxPrefabEntries = 32; ///< component entries per prefab (as spec 020's 32 kinds)
 inline constexpr int kMaxPrefabTags = 8;     ///< tags per prefab (as spec 020's 8 tags per entity)
 inline constexpr int kMaxPrefabHooks = 8;    ///< a prefab's hook plus its bases' hooks
+
+inline constexpr int kMaxPrefabChildren = 8;        ///< child entries per prefab (a variant's inherited ones count)
+inline constexpr int kMaxPrefabTree = 32;           ///< entities one spawn of a prefab hierarchy makes
+inline constexpr int kMaxPrefabTreeComponents = 128; ///< components one spawn of a prefab hierarchy makes
+
+/// A child entry of a prefab (spec 022 FR-16): made by nnh::child().
+struct PrefabChild {
+    Prefab prefab{};
+    Transform2D local{};    ///< replaces the child prefab's own nnh::Node local in this slot of the hierarchy
+    bool has_local = false; ///< else the child prefab's own Node local
+    const detail::PrefabTreeOps* tree = nullptr; ///< set by child(): links the tree code only for games that use it
+};
+/// `.children = {nnh::child(gun, {.position = {12, -4}, .rotation = 0.1f})}`: `prefab` (registered earlier in the same
+/// library, with the nnh::Node kind) spawned as a child, in entry order, with its own local or `local`.
+inline PrefabChild child(Prefab prefab) { return {prefab, {}, false, &detail::kPrefabTreeOps}; }
+inline PrefabChild child(Prefab prefab, const Transform2D& local) {
+    return {prefab, local, true, &detail::kPrefabTreeOps};
+}
 
 /// A prefab's name as its FNV-1a 32 hash (the hash of tags, data paths and sprite names): the same bits from a literal
 /// at compile time and from a string at run time.
@@ -77,6 +102,9 @@ struct PrefabOptions {
     Tag tags[kMaxPrefabTags] = {}; ///< `.tags = {kEnemy, kFlying}`; the first kNoTag ends the list
     Placement place{};             ///< `.place = nnh::place(&Body::box)`; a variant inherits its base's
     SpawnHook on_spawn{};          ///< runs after the base's hooks
+    /// Spec 022: child prefabs spawned with this one as a hierarchy (the first null prefab ends the list). The prefab
+    /// and every child need the nnh::Node kind; a variant inherits its base's children and appends these.
+    PrefabChild children[kMaxPrefabChildren] = {};
 };
 
 /// What a spawn does when a capacity it needs is full (FR-8). Either way nothing is created and the library counts a
@@ -93,6 +121,7 @@ struct PrefabLibraryDesc {
     int value_bytes = 0;                ///< stored values with their alignment, 0..1 MiB (variants: their own only)
     WhenFull when_full = WhenFull::Assert;
     MemTag* memory_tag = nullptr;       ///< default: the engine's `prefabs`
+    int max_children = 0;               ///< child entries over all prefabs, 0..65535 (0: no hierarchies, spec 021's layout)
 };
 
 /// Counts since creation, and what is used of each capacity.
@@ -187,6 +216,14 @@ public:
     /// The array form (`at` may be null). A kind given twice asserts; the second is ignored.
     Entity spawn_with(World& world, Prefab prefab, const Vec2* at, const ComponentValue* overrides, int count);
 
+    // ---- Hierarchies (spec 022 FR-17, FR-18; the hierarchy code is linked by these and by nnh::child()) ----
+
+    /// The prefab (with or without children) spawned as the last child of node `parent` of the same world, attached
+    /// keep-local; `at` (when given) is written into the placement member and is local to `parent`. All or nothing; a
+    /// hierarchy that would be deeper than kMaxHierarchyDepth under `parent` is refused as a full capacity (WhenFull).
+    Entity spawn_under(World& world, Prefab prefab, Entity parent);
+    Entity spawn_under(World& world, Prefab prefab, Entity parent, Vec2 at);
+
     // ---- Map objects (FR-9) ----
 
     /// Every object (or one layer's) in map order: its string property `prefab` names the prefab, else its type;
@@ -210,6 +247,8 @@ public:
     int kinds(Prefab prefab, KindId* out, int capacity) const;
     /// Writes up to `capacity` tags in order and returns how many the prefab has.
     int tags(Prefab prefab, Tag* out, int capacity) const;
+    /// Writes up to `capacity` child prefabs in entry order (a variant's inherited ones first) and returns how many.
+    int children(Prefab prefab, Prefab* out, int capacity) const;
     template <typename T>
     bool has(Prefab prefab) const {
         return stored_value(prefab, kind_id<T>()) != nullptr;

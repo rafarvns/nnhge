@@ -1,5 +1,6 @@
 // A prefab library's block layout (spec 021 FR-1): header, hashes, the name table, records, names (Debug/Development),
-// entries, values. Every part aligned to its type, the values to 16 (the most a prefab value may need).
+// entries, values (and, with max_children > 0, spec 022's child entries and tree facts). Every part aligned to its type,
+// the values to 16 (the most a prefab value may need).
 
 #include "prefabs/library_layout.hpp"
 
@@ -26,6 +27,12 @@ LibraryLayout library_layout(const PrefabLibraryDesc& desc, bool names) {
     at = l.entries = align_up(at, alignof(PrefabEntry));
     at = l.values = align_up(at + sizeof(PrefabEntry) * static_cast<std::size_t>(desc.max_entries), 16);
     l.total = at + static_cast<std::size_t>(desc.value_bytes);
+    if (desc.max_children > 0) { // spec 022: child entries and per-prefab tree facts after the values
+        l.children = align_up(l.total, alignof(PrefabChildEntry));
+        l.facts = align_up(l.children + sizeof(PrefabChildEntry) * static_cast<std::size_t>(desc.max_children),
+                           alignof(PrefabTreeFacts));
+        l.total = l.facts + sizeof(PrefabTreeFacts) * prefabs;
+    }
     return l;
 }
 

@@ -911,3 +911,38 @@ Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at co
   `prefab_spawn` byte-identical.
 - **Guards**: pc-debug ctest 268/268, pc-release 258/258, `nnh_tests` 2414, 3ds-release and 3ds-dev without a warning,
   `hello` sizes and `nm` unchanged, every reference screenshot identical (T4.9).
+
+### Stage 5 results
+
+- **Goldens (T5.5)**: `kHierarchyCheckGolden` **`23DB5C36`**; checkpoints `D22B93EC` (10 000), `9DB7C5E5` (20 000),
+  `820ED1D5` (30 000), `5ED71B4D` (40 000), `23DB5C36` (50 000); the same in pc-debug and pc-release. The script's
+  reach: 6059 spawns (606 from hooks), 6781 misses (full kinds and worlds), 1719 attaches and 9219 refused `can_attach`
+  answers, 649 detaches, 680 node removals, 462 walks, 86 cascades from remove hooks, 11 clears, 781 passes with 557 209
+  `world_now` comparisons, 61 full-state comparisons, up to 908 live entities and depth 7. A one-value mistake in the
+  hand table (the tower's D value) fails it (12 failed checks).
+- **Refinement (zero signs)**: the root rule computes `map.y.x` as `0 − s·sy` (not `−s·sy`), so the identity's world is
+  exactly `WorldTransform2D{}` and a default `Node` equals `Node(Transform2D{})` byte for byte — found by the self-check
+  (a prefab's stored `Node()` against the hand side's `Node({})`); regression test `node_default_equals_a_node_made_at_the_identity`.
+- **Refinement (`WorldTransform2D` is not an aggregate)**: with `<nnh/transform.hpp>` reachable through
+  `<nnh/prefabs.hpp>`, a braced position `{x, y}` brace-elided into the aggregate `WorldTransform2D` and made existing
+  `gfx::draw(screen, texture, {x, y}, options)` calls ambiguous (the 3DS build of the platformer caught it). A defaulted
+  constructor makes it a non-aggregate (still trivially copyable); test `draw_with_a_braced_position_still_picks_the_vec2_overload`.
+- **Refinement (dispatch)**: spec 021's spawn body is now `detail::prefab_spawn_one` (no-inline, byte-identical to
+  spec 021's `prefab_spawn`: 491 instructions, empty diff), and `detail::prefab_spawn` is a 34-instruction dispatcher
+  (`record_of`, the `child_count` test, a tail call to `prefab_spawn_one` or to the cold `spawn_tree`, which calls
+  `b->tree->spawn`). A first draft put the test inside the body: register allocation moved and the body grew to 516.
+- **Refinement (spawn_under without children)**: `tree_spawn` uses `type_id<Node>()` directly (the block's tree pointer
+  is set only once a prefab with children is registered) and reads tree facts only when the library keeps them;
+  `spawn_under` of a prefab without the node kind is misuse.
+- **Refinement (layout)**: the block header gains five fields at its end; the child entries and tree facts follow the
+  values only when `max_children > 0` (spec 021's layout tests unchanged).
+- **T5.6 fuzz**: `fuzz_hierarchy_ops` (bytes → self-check operations, both sides compared) and `fuzz_transform` (float
+  bits into every function: `sin_cos` range, `is_finite`, the inverse's exponent rule, the pure-translation rule) with
+  mini-fuzz tests in `nnh_tests` and libFuzzer executables under `NNH_BUILD_FUZZERS`.
+- **T5.7**: pc-debug ctest 269/269, pc-release 259/259, `nnh_tests` 2436 (pc-release 2396), 3ds-release and 3ds-dev
+  without a warning, `hello` sizes and `nm` unchanged, every reference screenshot identical; `replay … B2418A28: 60 Hz
+  PASS`, `entities: PASS C8FB9A41`, `prefabs: PASS 7BB7901E`, `tweens: PASS B44CA3F6` (each `--pc` script PASS);
+  `linkcheck.sh`: only `prefab_tree.o` refers to hierarchy code among the prefab objects and no core object names
+  `kPrefabTreeOps` or `tree_spawn`. 3ds-dev: `tree_spawn` 1061 instructions (3 `memset` calls for its stack arrays and 2
+  `vmrs` from the inlined sine: revisited at T7.6), `examples/entities` `bench.o`, `World::spawn`, `world_add`,
+  `world_destroy`, `prefab_map` byte-identical.

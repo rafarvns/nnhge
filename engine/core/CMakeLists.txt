@@ -272,6 +272,7 @@ set(_nnh_prefabs_sources
     src/prefabs/prefab_flatten.cpp
     src/prefabs/prefab_map.cpp
     src/prefabs/prefab_spawn.cpp
+    src/prefabs/prefab_tree_plan.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_prefabs_sources})
 # Transforms (spec 022, D37): the shared deterministic sine and every float operation of the transform values. No fused
@@ -291,9 +292,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 # Hierarchies (spec 022, D37): the engine's node component kind, links, the pass, world_now, walks, cascades. Every
 # float operation shares the transforms' inline code, so the same rule: no fused multiply-add. gfx/draw_transform.cpp
-# (a node's sprite) is in its own object: games that never draw a transform link none of it.
+# (a node's sprite) is in its own object: games that never draw a transform link none of it. prefabs/prefab_tree.cpp
+# (prefab hierarchies) is reached only through nnh::child() and spawn_under(): prefabs without children link none of it.
 set(_nnh_hierarchy_sources
     src/gfx/draw_transform.cpp
+    src/prefabs/prefab_tree.cpp
     src/hierarchy/attach.cpp
     src/hierarchy/descendant_walk.cpp
     src/hierarchy/hierarchy_debug_draw.cpp

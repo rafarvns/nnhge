@@ -30,6 +30,14 @@ int PrefabLibrary::tags(Prefab prefab, Tag* out, int capacity) const {
     return r->tag_count;
 }
 
+int PrefabLibrary::children(Prefab prefab, Prefab* out, int capacity) const {
+    const detail::PrefabRecord* r = detail::record_of(block_, prefab);
+    if (r == nullptr || r->child_count == 0) return 0;
+    const detail::PrefabChildEntry* c = block_->children + block_->facts[prefab.slot()].first_child;
+    for (int i = 0; i < r->child_count && i < capacity; ++i) out[i] = detail::prefab_at(*block_, c[i].prefab);
+    return r->child_count;
+}
+
 const void* PrefabLibrary::stored_value(Prefab prefab, KindId kind) const {
     const detail::PrefabRecord* r = detail::record_of(block_, prefab);
     if (r == nullptr) return nullptr;

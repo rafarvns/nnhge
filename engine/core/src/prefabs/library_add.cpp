@@ -1,7 +1,7 @@
 // Registering a prefab (spec 021 FR-2, FR-3, FR-15): every check before anything is written — the name and its hash,
 // the values, the flattened result (prefab_flatten.cpp), the capacities with each value's alignment — then the
 // record, the entries, the values copy-constructed in call order, the hash in the table and the name
-// (Debug/Development).
+// (Debug/Development); spec 022's child entries and tree facts (prefab_tree_plan.cpp).
 
 #include "prefabs/prefab_internal.hpp"
 
@@ -81,6 +81,7 @@ void commit(PrefabBlock& b, const char* name, const PrefabOptions& options, cons
         for (; n < kNameBytes - 1 && name[n] != '\0'; ++n) out[n] = name[n];
         out[n] = '\0';
     }
+    commit_children(b, index, plan);
     b.prefabs = index + 1;
     b.entries_used += plan.entries;
     b.value_used = plan.value_end;
@@ -103,7 +104,7 @@ Result<Prefab> PrefabLibrary::add(const char* name, const PrefabOptions& options
     if (b->table[detail::table_probe(*b, plan.hash)] != 0)
         return Error::make(ErrorCode::InvalidArgument, "PrefabLibrary::add: \"%s\": the name's hash is registered", name);
     if (!detail::check_values(values, count, error) || !detail::flatten(*b, options, values, count, plan, error) ||
-        !detail::check_capacities(*b, values, count, plan, error))
+        !detail::plan_children(*b, options, values, plan, error) || !detail::check_capacities(*b, values, count, plan, error))
         return error;
     detail::commit(*b, name, options, values, count, plan);
     return detail::prefab_at(*b, b->prefabs - 1);

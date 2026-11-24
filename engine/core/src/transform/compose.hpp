@@ -19,11 +19,13 @@ NNH_DET_INLINE bool pure_translation(const Transform2D& local) {
            float_bits(local.scale.y) == kOneBits;
 }
 
-/// A root: map.x = (c·sx, s·sx), map.y = (−s·sy, c·sy), origin = position; drawing values = the local's bits.
+/// A root: map.x = (c·sx, s·sx), map.y = (0 − s·sy, c·sy), origin = position; drawing values = the local's bits. The
+/// subtraction from +0 (not a negation) makes the identity's map exactly Affine2D{} (no −0), so a default Node and a
+/// Node made at the identity hold the same bits.
 NNH_DET_INLINE void root_world(const Transform2D& local, SinCos sc, WorldTransform2D& out) {
     out.map.x.x = sc.cos * local.scale.x;
     out.map.x.y = sc.sin * local.scale.x;
-    out.map.y.x = -sc.sin * local.scale.y;
+    out.map.y.x = 0.0f - sc.sin * local.scale.y;
     out.map.y.y = sc.cos * local.scale.y;
     out.map.origin = local.position;
     out.rotation = local.rotation;

@@ -6,6 +6,8 @@
 #include "gfx_fixture.hpp"
 #include "nnh/transform.hpp"
 
+#include <type_traits>
+
 namespace fake = nnh::platform_fake;
 using gfx_test::load;
 using gfx_test::restart;
@@ -13,6 +15,11 @@ using nnh::DrawOptions;
 using nnh::Screen;
 using nnh::Vec2;
 using nnh::WorldTransform2D;
+
+NNH_TEST(draw_with_a_braced_position_still_picks_the_vec2_overload) {
+    static_assert(!std::is_aggregate_v<WorldTransform2D> && std::is_trivially_copyable_v<WorldTransform2D>);
+    static_assert(!std::is_constructible_v<WorldTransform2D, float, float>);
+}
 
 NNH_TEST(transformed_merges_rotation_and_scale_and_keeps_the_rest) {
     const WorldTransform2D w = nnh::to_world({.position = {40, 30}, .rotation = 0.5f, .scale = {2, 2}});

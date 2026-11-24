@@ -559,6 +559,7 @@ target_sources(nnh_tests PRIVATE
     saves/test_blob.cpp
     saves/test_declare.cpp
     saves/test_dump.cpp
+    saves/test_edges.cpp
     saves/test_encode.cpp
     saves/test_encode_sequences.cpp
     saves/test_evolution.cpp
@@ -625,6 +626,7 @@ if(NOT MSVC)
                  "bad_key_long|save_error_bad_key_use_1_to_16"
                  "bad_key_empty|save_error_bad_key_use_1_to_16"
                  "version_zero|save_error_version_must_be_at_least_1"
+                 "version_twice|save_error_version_given_twice"
                  "step_at_current|save_error_step_from_a_version_not_below_the_current_one"
                  "two_steps|save_error_two_steps_for_one_version"
                  "step_gap|save_error_missing_migration_step"

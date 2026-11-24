@@ -18,6 +18,10 @@ forbidden="$forbidden"'|NNH_REMOTE|remote_open|remote_log_line|parse_remote_addr
 # Input actions (spec 017 FR-9, FR-24): the Development warning about unusable actions (the debug view is compiled
 # out with it).
 forbidden="$forbidden"'|unusable on this system'
+# Structured saves (spec 027 FR-17): the dump's texts and NNH_SAVE_DUMP, and saved member names (kept only in
+# Debug/Development; the saves example's `play_frames` and `best_time` stand for them). Check a game that saves on its
+# .3dsx or .exe: a 3DS .elf keeps DWARF, whose type descriptions name every struct member.
+forbidden="$forbidden"'|\(not 0/1\)|\(retired\) |NNH_SAVE_DUMP|play_frames|best_time'
 
 if grep -aEq "$forbidden" "$binary"; then
     echo "FAIL: $binary contains debug-only strings:"

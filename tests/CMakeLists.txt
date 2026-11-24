@@ -475,8 +475,21 @@ target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
 target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
 # Scene transitions and the input block (spec 023): every test of the spec in one block (merge notes, plan 023).
 target_sources(nnh_tests PRIVATE
+    fuzz/test_fuzz_transition_geometry.cpp
     input/test_input_block.cpp
-    input/test_input_block_api.cpp)
+    input/test_input_block_api.cpp
+    transition/test_effect_area.cpp
+    transition/test_effect_fill.cpp
+    transition/test_effect_iris.cpp
+    transition/test_effect_query.cpp
+    transition/test_geometry_properties.cpp)
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_transition_geometry.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_transition_geometry fuzz/libfuzzer_transition_geometry.cpp)
+    target_link_libraries(fuzz_transition_geometry PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_transition_geometry PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_transition_geometry PRIVATE -fsanitize=fuzzer,address)
+endif()
 # The queries example's self-check (spec 019 T7.3, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.

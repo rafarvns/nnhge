@@ -790,3 +790,30 @@ Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `bui
   `+ input_engine_held_mask`, `+ input_engine_pressed_mask`, `− input_pressed_mask`, `− input::held_mask` (no longer
   called by `app.cpp`); no `InputBlock` symbol. pc-release `hello.exe` +812 bytes (the PC links whole objects).
 - `input_reset()` (from `nnh::init()`) clears the filter pointer: a block never survives `shutdown()`/`init()`.
+
+## Stage 3 results and refinements
+
+- Tests (42, seen red with stubbed geometry, then green): `test_effect_fill.cpp` (q and ext rounding, fade alpha table,
+  wipes ×4 and continued, split ⌈e/2⌉/⌊e/2⌋ and the continued centred band, blinds ⌊i·L/N⌋ for 2/7/8/32 bars both
+  ways and continued, clamps), `test_effect_iris.cpp` (isqrt exact below 2²⁰ and on 200 000 seeded values, the
+  documented bands of a half-closed circle and diamond at (200, 120), merged rows, centres inside/outside/±4096, bands
+  1/4/16, counts), `test_effect_area.cpp` (tall wipes with gaps 0 and 24, the inset, the gap drawn nowhere, a tall iris
+  on a bottom point, the per-screen resolution table), `test_effect_query.cpp` (no init, capacity, colour, `max_rects`,
+  `draw_effect` = `effect_rects` with a moved and zoomed camera), `test_geometry_properties.cpp` (2000 seeded effects ×
+  10 growing coverages: inside, disjoint, area monotonic, full at 1, counts; area summed over disjoint rectangles
+  instead of a rasteriser: 0.3 s in Debug instead of 16 s), mini-fuzz `test_fuzz_transition_geometry.cpp` (300 random
+  inputs, NaN/∞/huge centres and coverages, enum bytes out of range) on `tests/fuzz/fuzz_transition_geometry.cpp`
+  (`fuzz_transition_geometry` with `NNH_BUILD_FUZZERS`, declared in 023's CMake block).
+- **Refinement: the sink takes an internal `PixelRect` (ints)**; `effect_rects` converts to `Rect` (exact).
+- **Refinement: `ResolvedEffect` is 14 bytes** (kind, direction, shape, bars, band, continued, centre `i16` × 2,
+  colour); the centre is resolved per screen (non-tall: the point in that screen's coordinates, default its middle;
+  tall: in area pixels, a bottom-screen point moved by (40, 240 + gap)).
+- **Refinement: `max_rects(iris, tall)` counts one more band** (2 × (⌊(240 + band − 2) / band⌋ + 1) + 2: a band
+  may straddle the bottom screen's top edge when the gap isn't a multiple of the band); band 4: 122 per screen, 124
+  in the tall area (FR-21's 128 holds); band 1: 482 either way.
+- The iris visits only the bands that meet the target screen's rows (one division per screen for the first band).
+- `<nnh/transition.hpp>` pulls only `ease`, `gfx`, `math`, `time`, `assert`, `build` and the two small detail headers
+  (no tween set, audio, tilemap, actions, camera or entities); 8 476 preprocessed lines / 432 ms `-fsyntax-only`
+  (`small_function.hpp`'s `<new>`/`<type_traits>`/`<utility>` are most of it; `scene.hpp` + `gfx.hpp`: 565 + 779).
+- Guards green (ctest 268/258, `nnh_tests` 2413, 0 warnings on four presets, scripts PASS, `compare.sh` identical);
+  `hello` unchanged since stage 2 (text 201 244, same `nm` list).

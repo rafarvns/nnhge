@@ -200,6 +200,19 @@ target_sources(nnh_core PRIVATE ${_nnh_camera_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_camera_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Scene transitions (spec 023, D38): integer effect geometry and the frame timeline (spec 015's easings of an exact
+# ratio); no fused multiply-add, so coverage and rectangles have the same bits on every compiler and on the 3DS. A
+# game that never requests a transition links none of it; one that only calls draw_effect links only the geometry.
+set(_nnh_transition_sources
+    src/transition/effect_area.cpp
+    src/transition/effect_fill.cpp
+    src/transition/effect_iris.cpp
+    src/transition/effect_query.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_transition_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_transition_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 # Zoomed drawing (spec 018, D33): positions × zoom, then rounded; no fused multiply-add, so PC and 3DS put every
 # zoomed draw on the same pixels.
 set(_nnh_zoom_sources

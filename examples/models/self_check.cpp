@@ -6,7 +6,7 @@
 #include <bit>
 
 #include "nnh/detail/name_hash.hpp"
-#include "nnh/math3d.hpp"
+#include "nnh/gfx3d.hpp"
 
 namespace models {
 namespace {
@@ -36,7 +36,7 @@ void SelfCheck::mix(float f) { mix(std::bit_cast<std::uint32_t>(f)); }
 
 void SelfCheck::one() {
     using namespace nnh;
-    const std::uint32_t kind = hash(0) % 6u;
+    const std::uint32_t kind = hash(0) % 8u;
     const Vec3 a{value(1, 64), value(2, 64), value(3, 64)};
     const Vec3 b{value(4, 2), value(5, 2), value(6, 2)};
     const Quat q = quat_axis_angle(Vec3{b.x, b.y, b.z + 4.0f}, value(7, 8));
@@ -77,6 +77,25 @@ void SelfCheck::one() {
         const Quat l = look_rotation(b + Vec3{0.01f, 0, 0});
         for (const float f : vp.m) mix(f);
         mix(l.x), mix(l.y), mix(l.z), mix(l.w);
+        break;
+    }
+    case 6: { // to_screen with a camera placed by look-at (perspective or orthographic)
+        Camera3D cam;
+        cam.position = Vec3{b.x * 4.0f, b.y * 4.0f + 1.0f, 6.0f + b.z};
+        gfx3d::point_at(cam, Vec3{});
+        if ((hash(20) & 1u) != 0) cam.projection = Projection::Orthographic;
+        const ScreenPoint p = gfx3d::to_screen(cam, Vec3{a.x / 16.0f, a.y / 16.0f, a.z / 16.0f});
+        mix(p.pixel.x), mix(p.pixel.y), mix(p.depth);
+        mix(static_cast<std::uint32_t>(p.in_front) | (static_cast<std::uint32_t>(p.in_view) << 1));
+        break;
+    }
+    case 7: { // the ray under a pixel
+        Camera3D cam;
+        cam.position = a;
+        cam.rotation = q;
+        cam.fov_y = 0.6f + value(21, 0.4f) + 0.4f;
+        const Ray3 r = gfx3d::screen_ray(cam, Vec2{value(22, 200) + 200, value(23, 120) + 120});
+        mix(r.origin.x), mix(r.origin.y), mix(r.origin.z), mix(r.direction.x), mix(r.direction.y), mix(r.direction.z);
         break;
     }
     default: { // points projected to clip space, homogeneous and divided

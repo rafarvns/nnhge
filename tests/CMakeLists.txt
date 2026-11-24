@@ -1027,6 +1027,9 @@ target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
 
 # 3D foundation (spec 026): math, meshes, the 3D pass, the CPU rasteriser, the example's self-check.
 target_sources(nnh_tests PRIVATE
+    gfx3d/test_record.cpp
+    gfx3d/test_screen_pass.cpp
+    gfx3d/test_screen_project.cpp
     math3d/test_conventions.cpp
     math3d/test_mat4.cpp
     math3d/test_math3d_accuracy.cpp

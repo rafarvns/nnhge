@@ -1,7 +1,7 @@
 #pragma once
 // The models example's self-check (spec 026 AC-2/AC-7): a fixed, seeded script of 50 000 operations of the 3D math
 // (transforms composed and inverted, quaternions built, multiplied and interpolated, look-at and projections, points
-// projected) whose result bits are folded into one checksum. The same golden on every host compiler and on the 3DS.
+// projected with to_screen, rays cast with screen_ray) whose result bits are folded into one checksum. The same golden on every host compiler and on the 3DS.
 // Pure: no graphics; shared with tests/models_example/test_self_check.cpp.
 
 #include <cstdint>
@@ -33,6 +33,6 @@ private:
 };
 
 /// The golden checksum of the whole script (recorded from the simulator; the console must print the same).
-inline constexpr std::uint32_t kSelfCheckGolden = 0x436E15A9u; // stage 1: math only
+inline constexpr std::uint32_t kSelfCheckGolden = 0xA3BF4EDFu; // math, to_screen, screen_ray (stage 4)
 
 } // namespace models

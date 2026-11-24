@@ -91,7 +91,7 @@ DrawList::BuildResult DrawList::build(Screen screen, Camera2D camera, const Text
     for (int n = 0; n < total && result.items < out_capacity; ++n) {
         const DrawCommand& c = storage_[order_[n]];
         if (c.tile_batch >= 0) {
-            if (result.splits < split_capacity) splits[result.splits++] = {result.items, c.tile_batch};
+            if (result.splits < split_capacity) splits[result.splits++] = {result.items, c.tile_batch, c.layer};
             continue;
         }
         const Vec2 cam = c.ignore_camera ? Vec2{} : camera.position;

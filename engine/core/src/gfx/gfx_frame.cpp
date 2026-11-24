@@ -79,23 +79,13 @@ int submit_tiles(Screen screen, int index, Camera2D camera) {
     return 0;
 }
 
-/// The screen's 2D pass: the sorted items, cut by tile batches where they sit among them.
+/// The screen's 2D pass: the sorted items, cut by tile batches where they sit among them. With 3D on, the 3D module
+/// submits screens that have 3D draws itself (the same 2D slices around its pass, spec 026 D43).
 void submit_screen(Screen screen) {
-    detail::GfxState& g = g_state;
-    const Camera2D camera = g_cameras[screen == Screen::Top ? 0 : 1];
-    const auto result =
-        g.draws.build(screen, camera, g.textures, g.pass, g.max_draws, g.splits, detail::kMaxTileBatches);
-    int stale_tiles = 0;
-    int from = 0;
-    for (int i = 0; i < result.splits; ++i) {
-        const detail::TileSplit split = g.splits[i];
-        if (split.at > from) platform::draw_2d(screen, g.pass + from, split.at - from);
-        from = split.at;
-        stale_tiles += submit_tiles(screen, split.batch, camera);
-    }
-    if (result.items > from) platform::draw_2d(screen, g.pass + from, result.items - from);
-    NNH_ASSERT(result.stale == 0, "%d sprites drawn with a texture destroyed earlier", result.stale);
-    NNH_ASSERT(stale_tiles == 0, "%d tile batches drawn with a tileset texture destroyed earlier", stale_tiles);
+    if (g_3d_on && detail::g_gfx_3d_ops->submit_screen(screen)) return;
+    const detail::Pass2D pass = detail::gfx_build_pass(screen);
+    const int stale_tiles = detail::gfx_submit_slice(screen, 0, pass.items, 0, pass.splits);
+    detail::gfx_check_stale(pass, stale_tiles);
 }
 
 /// Allocates the tile batch records and quad scratch (nothing when max_tiles is 0). @return false if out of memory.
@@ -111,6 +101,23 @@ bool tiles_init(int max_tiles) {
 }
 
 } // namespace
+
+// The 2D part of submit_screen (spec 026 extracted it unchanged so the 3D pass can sit between two slices): items
+// [item_from, item_to) of the built pass with the tile batches [split_from, split_to) where they sit among them.
+int detail::gfx_submit_slice(Screen screen, int item_from, int item_to, int split_from, int split_to) {
+    GfxState& g = g_state;
+    const Camera2D camera = g_cameras[screen == Screen::Top ? 0 : 1];
+    int stale_tiles = 0;
+    int from = item_from;
+    for (int i = split_from; i < split_to; ++i) {
+        const TileSplit split = g.splits[i];
+        if (split.at > from) platform::draw_2d(screen, g.pass + from, split.at - from);
+        from = split.at;
+        stale_tiles += submit_tiles(screen, split.batch, camera);
+    }
+    if (item_to > from) platform::draw_2d(screen, g.pass + from, item_to - from);
+    return stale_tiles;
+}
 
 detail::GfxState& detail::gfx_state() { return g_state; }
 Camera2D* detail::gfx_cameras() { return g_cameras; }

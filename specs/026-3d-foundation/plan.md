@@ -684,3 +684,32 @@ the maintainer's approval beyond the decisions above.
 - CMake: `.gltf`/`.glb` → `.nnhmesh` step with a depfile (model, buffers, PNGs), P25 buffers not packed, two sources
   becoming the same asset refused; `gltf`, `glb`, `nnhmesh` are reserved data keys. The `ninja -d explain` check of
   "editing one model reconverts only it" runs with the example's two models in stage 8.
+
+### Stage 4 results and refinements (T4.1–T4.11)
+
+- **API deviations (recorded for the maintainer)**: `Camera3D::near_plane`/`far_plane` instead of `near`/`far`
+  (`<windows.h>` defines `near` and `far` as empty macros: a Windows game including it would break the struct);
+  pure overloads `gfx3d::to_screen(const Camera3D&, Vec3)` and `gfx3d::screen_ray(const Camera3D&, Vec2)` (the top
+  screen's 400×240) so the self-check and tools use them without an engine; `request_probes`/`probe_results` exist but
+  answer nothing until stage 7.
+- Record = 92 bytes (model rows 48, material 28, mesh 6, submesh 1, flags 1, tint 4, call 2, padding 2); with the
+  world sphere, view depth, two order entries, sort scratch and two flags: **120 bytes per draw** (measured: 7 680 B
+  for 64), one heap block under tag `gfx3d`.
+- Order: the opaque pass walks every visible draw in call order drawing only its non-blended submeshes; the blended
+  pass walks the draws having a blended submesh, sorted back to front by the view depth of their sphere's centre
+  (bottom-up stable merge sort), drawing only those submeshes. So a mixed model's glass waits for every opaque draw.
+- Culling in view space (no plane extraction): near/far by the sphere's depth, sides by |x| − ahead·tan ≤ r·√(1+tan²)
+  (tan from `sin_cos`), orthographic by half extents; a mesh destroyed mid-frame stays drawable that frame.
+- `gfx/world_split.*` and `gfx_submit_slice` as planned; `gfx_build_pass` and `gfx_check_stale` are inline in
+  `gfx_state.hpp`. **Merge watch-out**: `submit_screen` is now `hook → gfx_build_pass → gfx_submit_slice →
+  gfx_check_stale`; 024's split dispatch goes inside `gfx_submit_slice`'s loop, 023's profile scope stays in
+  `gfx_submit`.
+- Golden (T4.10): kinds 6 (`to_screen`, perspective or orthographic, flags) and 7 (`screen_ray`) joined the script;
+  frustum and order decisions are pinned by unit tests instead (the console can't reach them through the public API).
+  **New golden `A3BF4EDF`** (checkpoints `95C33EC5`, `19D9D5B0`, `B657BA1D`, `C074FBC1`).
+- No allocation over 100 frames of 256 draws (operator new and `nnh::mem` counted); no event published.
+- **hello (P14) over budget**: 3DS Release `.text` 201 380 B = **+256 B** against the baseline (stage 2: +72 B for the
+  hook). The extraction of `gfx_submit_slice` (an out-of-line function the 2D path now calls) costs ~180 B; the 3DS
+  build doesn't garbage-collect sections, so any shared helper stays. Kept for the merge plan's single slice function;
+  `.bss` +264 B (`TileSplit::layer` in the 64 split points); PC `.exe` +1 249 B (over the 1 KB budget by 225 B).
+  Every example's screenshot unchanged.

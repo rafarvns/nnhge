@@ -86,34 +86,34 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 4 — recording and the 3D pass on the fake platform (026a)
 
-- [ ] **T4.1** Rebase on `main`. `GfxConfig::max_draws_3d` (last member), `gfx/gfx3d_hook.*`, `gfx3d_ops.cpp`
+- [x] **T4.1** Rebase on `main`. `GfxConfig::max_draws_3d` (last member), `gfx/gfx3d_hook.*`, `gfx3d_ops.cpp`
   (registrar + link anchor used by `record.cpp` and `mesh_table.cpp`), `gfx3d_init.cpp` (records, spheres, order,
   keys; contract `video3d_init`) — test: `tests/gfx3d/test_init3d.cpp` (0 → nothing reserved; capacity → bytes as plan)
   — covers FR-26, FR-31
-- [ ] **T4.2** `<nnh/gfx3d.hpp>` types; `record.cpp` + `material_check.cpp` (finite bits, bottom row, submesh, stale
+- [x] **T4.2** `<nnh/gfx3d.hpp>` types; `record.cpp` + `material_check.cpp` (finite bits, bottom row, submesh, stale
   mesh, enums, shininess, stale texture → untextured + assert; Release clamps); world sphere at record — test:
   `test_record.cpp`, `test_material.cpp`, `test_misuse3d.cpp` — covers FR-9, FR-17, FR-29
-- [ ] **T4.3** `camera3d.cpp` (`set_camera` validation, `point_at`), `lighting.cpp` (defaults, ≤ 4, world → view),
+- [x] **T4.3** `camera3d.cpp` (`set_camera` validation, `point_at`), `lighting.cpp` (defaults, ≤ 4, world → view),
   `light_tables.cpp` (D0 levels, distance table) — test: `test_camera3d.cpp`, `test_lighting.cpp`,
   `test_light_tables.cpp` — covers FR-11, FR-12
-- [ ] **T4.4** `frustum.cpp`, `cull.cpp` (sphere vs planes; counted) — test: `test_cull.cpp` (inside, outside,
+- [x] **T4.4** `frustum.cpp`, `cull.cpp` (sphere vs planes; counted) — test: `test_cull.cpp` (inside, outside,
   straddling, behind, ortho) — covers FR-20
-- [ ] **T4.5** `order.cpp` (opaque/cut-out in call order; blended by centre depth, stable merge sort, ties by call) —
+- [x] **T4.5** `order.cpp` (opaque/cut-out in call order; blended by centre depth, stable merge sort, ties by call) —
   test: `test_order.cpp` — covers FR-19
-- [ ] **T4.6** `TileSplit::layer` in `draw_list`; `gfx/world_split.*`; `gfx_submit_slice` extracted in `gfx_frame.cpp`;
+- [x] **T4.6** `TileSplit::layer` in `draw_list`; `gfx/world_split.*`; `gfx_submit_slice` extracted in `gfx_frame.cpp`;
   hook calls — test: `tests/gfx/test_world_split.cpp`; every existing `tests/gfx` test unchanged; a 2D-only frame's
   platform call log byte-identical to before (`test_screen_pass.cpp`) — covers FR-18, AC-9
-- [ ] **T4.7** `submit3d.cpp`, `screen_pass.cpp` (split, cull, order, per draw MV with quantisation fold, cofactor
+- [x] **T4.7** `submit3d.cpp`, `screen_pass.cpp` (split, cull, order, per draw MV with quantisation fold, cofactor
   normal matrix, uv decode, resolved material; `begin_3d/draw_3d/end_3d`; `below_2d`), `eye_setup.cpp` (mono) — test:
   `test_screen_pass.cpp` (2D below → 3D → 2D above → debug last; world layer 0 and 16), FR-25 log — covers FR-18,
   FR-19, FR-25
-- [ ] **T4.8** `screen_project.cpp` (`to_screen`, `screen_ray`) — test: `test_screen_project.cpp` (round trips, flags,
+- [x] **T4.8** `screen_project.cpp` (`to_screen`, `screen_ray`) — test: `test_screen_project.cpp` (round trips, flags,
   ortho) — covers FR-13
-- [ ] **T4.9** `stats3d.cpp`, overlay line, `debug_draw3d.cpp` (Debug/Dev lines on layer 15) — test:
+- [x] **T4.9** `stats3d.cpp`, overlay line, `debug_draw3d.cpp` (Debug/Dev lines on layer 15) — test:
   `test_stats3d.cpp`, `test_debug_draw3d.cpp` — covers FR-28
-- [ ] **T4.10** Golden part 2: frustum tests, recorded frame orders, `to_screen`/`screen_ray` added → final `3d` golden
+- [x] **T4.10** Golden part 2: frustum tests, recorded frame orders, `to_screen`/`screen_ray` added → final `3d` golden
   (50 000 ops) — test: `test_golden_3d.cpp` — covers AC-2, FR-21
-- [ ] **T4.11** [P] `test_no_alloc.cpp` (100 frames of 256 draws, zero allocations); grep check "no `publish`" — covers
+- [x] **T4.11** [P] `test_no_alloc.cpp` (100 frames of 256 draws, zero allocations); grep check "no `publish`" — covers
   FR-27, FR-30
 
 ## Stage 5 — CPU rasteriser (026a)

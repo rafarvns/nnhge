@@ -6,6 +6,7 @@
 #include <cstdio>
 
 #include "debug/dev_tools.hpp"
+#include "gfx/gfx3d_hook.hpp"
 #include "nnh/build.hpp"
 #include "nnh/debug.hpp"
 #include "nnh/input.hpp"
@@ -82,6 +83,10 @@ void draw_memory(int& y, int line) {
                   static_cast<double>(g.texture_bytes) / 1048576.0);
     detail::debug_record_text(Screen::Bottom, 4, y, text, colors::white);
     y += line;
+    if (detail::g_gfx_3d_ops != nullptr && detail::g_gfx_3d_ops->overlay_line(text, sizeof text)) { // spec 026: 3D
+        detail::debug_record_text(Screen::Bottom, 4, y, text, colors::white);
+        y += line;
+    }
     if (g.max_tiles > 0) { // games without tilemaps don't see the line
         std::snprintf(text, sizeof text, "tiles %d/%d  dropped %d", g.tiles_last_frame, g.max_tiles,
                       g.dropped_tiles);

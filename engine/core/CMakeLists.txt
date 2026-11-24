@@ -376,8 +376,21 @@ endif()
 # hook pointer) is always linked; everything else only through the hook's registrar (gfx3d_ops.cpp, plan P14).
 set(_nnh_gfx3d_sources
     src/gfx/gfx3d_hook.cpp
+    src/gfx/world_split.cpp
+    src/gfx3d/camera3d.cpp
+    src/gfx3d/cull.cpp
+    src/gfx3d/debug_draw3d.cpp
     src/gfx3d/gfx3d_init.cpp
     src/gfx3d/gfx3d_ops.cpp
+    src/gfx3d/lighting.cpp
+    src/gfx3d/material_check.cpp
+    src/gfx3d/order.cpp
+    src/gfx3d/probe.cpp
+    src/gfx3d/record.cpp
+    src/gfx3d/screen_pass.cpp
+    src/gfx3d/screen_project.cpp
+    src/gfx3d/stats3d.cpp
+    src/gfx3d/submit3d.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_gfx3d_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

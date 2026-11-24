@@ -108,7 +108,7 @@ destroys from hooks queued), `add/get/has/remove<T>`, `each<A, B...>` (first kin
 inside), `storage<T>()` views (box views read bodies in place, `owner(slot)`), tags `nnh::tag("enemy")` with
 `find`/`first`/`each_tagged`; both bind to a scene through D30 (flush before update, clear after `on_exit`)
 ([api/entities.md](docs/api/entities.md)). The platformer's coins, turrets and sparkles are entities, its bullets a pool.
-Prefabs (spec 021, implemented, console check pending; D36; demo `examples/prefabs`): `<nnh/prefabs.hpp>` —
+Prefabs (spec 021, implemented, console and Linux checks passed; D36; demo `examples/prefabs`): `<nnh/prefabs.hpp>` —
 `PrefabLibrary::create(desc)` (one block), `add(name, {.base, .tags, .place = nnh::place(&Body::box), .on_spawn},
 values...)` (FNV-1a names, a colliding name refused; variants flattened at registration, unreplaced values shared),
 `find(name)` → `Prefab` handle, `spawn(world, p[, at])` / `spawn_with(world, p[, at], overrides...)` — bit for bit what

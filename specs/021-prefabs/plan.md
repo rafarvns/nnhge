@@ -1,6 +1,6 @@
 # Plan 021: Prefabs
 
-Status: implemented 2026-11-23, console check (T10.2) pending · approved 2026-11-23 by the maintainer, with the plan's
+Status: implemented 2026-11-23; Linux T9.1 and Old 3DS T10.2 passed (2026-11-23) · approved 2026-11-23 by the maintainer, with the plan's
 six decisions as recommended
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D36 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds, `ComponentDesc`, tags, handles, quarantine, `SmallFunction` hooks; D35), spec 002
@@ -895,7 +895,9 @@ PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs an
    (X); `prefabs bench: started`, then `prefabs bench: spawn avg X ms worst Y ms hand H ms ratio R (target < 2.0 ms,
    <= 1.25) PASS|FAIL`, `prefabs bench: overrides avg … (target < 2.2 ms)`, `prefabs bench: map avg … (target < 4.0
    ms)`, `prefabs bench: find avg … (target < 0.5 ms)`, and the verdict `prefabs bench: PASS` or
-   `prefabs bench: FAIL (<names>)`; `nnh: PASS (114 lines, …)`. **Expected from the ARM pre-check**: every logic line
+   `prefabs bench: FAIL (<names>)`; `nnh: PASS (124 lines, …)` (114 before the second console run: a `wait 3` now
+   follows every `expect` that an input follows, because on the console the input for frame 107 once reached it on
+   frame 108). **Expected from the ARM pre-check**: every logic line
    and the self-check equal the PC's; spawn ≈ 1.3–1.4 ms with a ratio ≈ 0.9, overrides ≈ 1.45–1.6 ms, map ≈ 2.0–2.6
    ms PASS; `find` ≈ 0.40–0.48 ms, at risk. A FAIL fails the run (`fail-on "prefabs bench: FAIL"`) after every number is
    logged: record them here; T10.3 then applies the plan's risk 1–3 mitigations, or the maintainer sets the budget from
@@ -1098,6 +1100,34 @@ map walk alone (`check_map_objects` over the bench's map) took 0.022 ms of the 0
 without a warning; `compare.sh` every reference identical; `--pc` scripts: `prefabs/check.nnhs` PASS
 (`prefabs: PASS 7BB7901E`), `entities/check.nnhs` PASS (`C8FB9A41`), `platformer/level.nnhs` PASS
 (`sum B2418A28: 60 Hz PASS`); `docs_tool.py check` 0 broken links.
+
+## Console run 2 and budgets set (2026-11-23)
+
+Old 3DS, Development, after the optimisation round. The first attempt stopped at line 51 (`the input for frame 107
+reached the console on frame 108`): an input right after an `expect` had a one-frame lead, too short on the console
+some of the time. A `wait 3` now follows every `expect` that an input follows (10 places; the script has 124 lines).
+The rerun: every logic line and `prefabs: PASS 7BB7901E` as on the PC; bench spawn 1.626 ms avg (worst 1.880, hand
+1.520, ratio 1.07), overrides 1.811 (2.389), map 3.562 (4.580), find 0.500 (0.581); `nnh: PASS (124 lines)`. The round
+did better than its estimate for map (−36 %, estimated −17 to −28 %) and about as estimated for find (−25 %).
+
+**Budgets** (bench policy: optimise, then set from the measurement with ~25 % margin; `bench_scene.cpp`, spec AC-7):
+spawn < 2 ms and ≤ 1.25× (unchanged), overrides < 2.3 ms, map < 4.5 ms, find < 0.65 ms. The run with them: spawn
+1.620, overrides 1.807, map 3.576, find 0.500 ms, `prefabs bench: PASS`, `nnh: PASS (124 lines)`. The target in the
+log line is now printed with `%g` (it printed 0.65 as `0.7`).
+
+Also on the Old 3DS (after stage 11, before the round, whose changes don't touch their paths): platformer
+`level.nnhs` PASS (replay lines unchanged, `sum B2418A28: 60 Hz PASS`, worst 18.6 ms, missed 0), `gate.nnhs` PASS,
+entities `check.nnhs` PASS (`C8FB9A41`; bench each 0.474, find 0.144, get 4.776, storage get 4.198, pool 0.441 ms:
+spec 020's third run within 0.002 ms). The script runs now end with the console back in the Homebrew Launcher
+(`nnh run --script` sends `Bye{quit}` on the console too, spec 013 plan).
+
+## Stage 9 results (T9.1, VM 120, 2026-11-23)
+
+GCC 13, GCC 14 and clang 18 with ASan/UBSan: no warning, every ctest passed but `prefabs_check_script_pc` (in all
+three), which is the build folder's name and not the code: `nnh` takes `NNH_PRESET` only when it names a `pc-…` preset,
+so in the VM's `build/g13`-style folders it looked for `build/pc-dev` (the same reason `nnh_script_pc_smoke` is left out
+there; on Windows pc-debug it passes). `nnh_tests` under ASan with leaks on: 2312 tests, 0 failures; `nnh_assetc_tests`
+265, 0 failures. `fuzz_prefab_ops` 600 s: 364 243 runs, cov 1176, no finding.
 
 ## Stage 11 results
 

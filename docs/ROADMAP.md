@@ -217,7 +217,7 @@ spec; the order below is a proposal.
   lines unchanged by the swap)
 - [x] **Prefabs** (Unity prefabs, Godot packed scenes): entity templates registered in code by name (a function or a
   set of components and values), spawned many times and overridden per copy; a Tiled object can name one —
-  [spec 021](../specs/021-prefabs/spec.md), **implemented 2026-11-23**, Old 3DS check pending: a `PrefabLibrary` the
+  [spec 021](../specs/021-prefabs/spec.md), **implemented 2026-11-23**, passed on the Old 3DS (spawn 1.63 ms for 256, map 3.56 ms for 512 objects): a `PrefabLibrary` the
   game owns (one block), prefabs as component values + tags + a placement member + a spawn hook, variants flattened at
   registration, `spawn`/`spawn_with` bit for bit what hand-written `spawn`/`add`/`add_tag` make (all or nothing
   through one entities-internal reservation, D36), per-copy overrides and positions, Tiled objects naming prefabs by

@@ -1,6 +1,6 @@
 # Spec 021: Prefabs
 
-Status: implemented 2026-11-23, console check (plan 021 T10.2) pending · approved 2026-11-23 by the maintainer, every
+Status: implemented 2026-11-23; Linux T9.1 and Old 3DS T10.2 passed (2026-11-23) · approved 2026-11-23 by the maintainer, every
 "Decisions to take" item as recommended
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 020](../020-entities/spec.md) (worlds, component kinds and their `ComponentDesc`, tags, handles,
@@ -224,6 +224,11 @@ doesn't use prefabs pays nothing, and entities keep working without them.
   console measurement with margin and written in the spec and the docs with the measured numbers (the maintainer's
   policy for benches, as in specs 019 and 020). Spec 012's tile gate, spec 020's bench and the platformer's 60 Hz
   replay verdict still pass.
+  **Budgets set (2026-11-23).** The first console run missed map (5.57 ms) and find (0.67 ms); after the optimisation
+  round ([plan 021](plan.md#optimisation-round-t103)) the Old 3DS measured spawn 1.626 ms (ratio 1.07), overrides
+  1.811 ms, map 3.562 ms and find 0.500 ms. The budgets, from that measurement with ~25 % margin: spawn **under 2 ms**
+  and ≤ 1.25× (unchanged), overrides **under 2.3 ms**, map **under 4.5 ms**, find **under 0.65 ms**. A second run
+  with these budgets passed.
 - **AC-8 Opt-in.** `examples/hello` builds with the same executable size as before on PC and 3DS;
   `examples/entities` (which keeps its hand-written spawns as the "without prefabs" reference), `examples/sprites`,
   `examples/scenes`, `examples/camera` and `examples/queries` keep their screenshots pixel-identical and their scripts

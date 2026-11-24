@@ -1,7 +1,6 @@
 # Tasks 021: Prefabs
 
-Status: implemented 2026-11-23 (stages 0–8 and 11); stage 9 (Linux) and stage 10 (console) left to the lead and the
-maintainer · approved 2026-11-23, with the plan's six decisions as recommended
+Status: implemented 2026-11-23; Linux T9.1 and Old 3DS T10.2 passed (2026-11-23) · approved 2026-11-23, with the plan's six decisions as recommended
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -236,18 +235,20 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the AC-2 golden,
+- [x] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; the AC-2 golden,
   the twin-world tests, the reservation tests, spec 020's goldens (`C8FB9A41`) and the platformer's replay
   (`B2418A28`) identical on all three (they are test assertions); ASan/UBSan clean over the `Counted` balance tests,
   shared variant values, the library destroyed from its hook (Release path) and hooks that destroy their copy;
   libFuzzer `fuzz_prefab_ops` 10 minutes, clean. Files: tasks.md (results). Covers I, X, FR-13, AC-1, AC-2.
+  **Done** (2026-11-23, plan.md "Stage 9 results"): all clean; `prefabs_check_script_pc` fails there only because the
+  VM's build folders are not `pc-…` presets (as `nnh_script_pc_smoke`); fuzz 364 243 runs, no finding.
 
 ## Stage 10: console check (the only steps on the 3DS)
 
 - [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
   builds of `prefabs`, `platformer` and `entities` without a warning; T7.6's table still true; `hello.elf` sizes as in
   T0.1. Files: plan.md ("Stage 10: console run (prepared)": commands and every expected line). Covers AC-8, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Four runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** Old 3DS, nobody touching it after Y. Four runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run prefabs --script examples/prefabs/tests/check.nnhs` → every `prefabs: <n> sum`
      line and `prefabs: PASS` equal the PC's, the map, `spawned:`, `selected:` and `missed:` lines as on the PC, the
      bench lines and the verdict (numbers recorded); screenshots read back;
@@ -258,16 +259,18 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
      C8FB9A41` and `entities bench: PASS` (spec 020's budgets after the reservation refactor).
   Files: plan.md ("Stage 10 results": verdicts, bench numbers, log paths). Covers AC-4, AC-6, AC-7.
   **Run 1 done** (2026-11-23, plan.md "Console run 1"): logic all PASS (`7BB7901E`); bench spawn and overrides PASS,
-  `map` 5.572 ms and `find` 0.669 ms FAIL → T10.3. Runs 2–4 not reported yet.
-- [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
+  `map` 5.572 ms and `find` 0.669 ms FAIL → T10.3. Runs 2–4 PASS (plan.md "Console run 2 and budgets set"):
+  replay lines unchanged and `60 Hz PASS`, `gate.nnhs` PASS, entities `C8FB9A41` and bench PASS (spec 020's numbers).
+- [x] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risks 1–3 without changing a result (every golden holds), then T10.2 run 1 again; if still missed, the
   maintainer sets the budget from the measurement with margin, written in the spec's AC-7 and `docs/api/prefabs.md`
   with the numbers. Files: plan.md ("Console bench refinement"). Covers AC-7.
   **Optimisation round done on the PC** (plan.md "Optimisation round"): the map walk reads the map in place with
   memoised property names and prefab names and prefetches; the run-time hash uses `mul`; tilemap property lookups
   inline; the reservation prefetches the next record. Tests first: `test_map_names.cpp` (3 tests),
-  `the_run_time_hashes_match_fnv1a_for_every_length_alignment_and_byte`. Pending: T10.2 run 1 again on the console,
-  then the maintainer's budgets.
+  `the_run_time_hashes_match_fnv1a_for_every_length_alignment_and_byte`. **Run 1 again** on the console: every target
+  met (map 3.562, find 0.500 ms); budgets set from it with ~25 % margin (overrides 2.3, map 4.5, find 0.65 ms; spawn
+  unchanged) and a rerun passed (plan.md "Console run 2 and budgets set").
 
 ## Stage 11: docs, roadmap, status
 

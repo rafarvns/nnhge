@@ -37,6 +37,7 @@ expect "map: spawned 14 skipped 1 unknown 0 misses 0" 20
 wait 10
 tap R
 expect "selected: flying_walker kinds Body,Walker,Bob tags enemy,flying" 10
+wait 3
 touch 80 64
 expect "spawned: flying_walker slot 14 gen 1 at 120,64 tags enemy,flying" 5
 wait 3
@@ -48,6 +49,7 @@ expect "selected: coin kinds Body,Coin tags coin" 10
 wait 3
 tap R
 expect "selected: enemies/beetle kinds Body,Walker,Stats tags enemy,roster" 10
+wait 3
 touch 120 100
 expect "spawned: enemies/beetle slot 15 gen 1 at 160,100 tags enemy,roster" 5
 wait 3
@@ -66,32 +68,40 @@ tap L
 wait 3
 tap L
 expect "selected: walker kinds Body,Walker tags enemy" 10
+wait 3
 touch 30 40
 expect "spawned: walker slot 17 gen 1 at 70,40 tags enemy" 5
+wait 3
 untouch
 wait 3
 touch 60 40
 expect "spawned: walker slot 18 gen 1 at 100,40 tags enemy" 5
+wait 3
 untouch
 wait 3
 touch 90 40
 expect "spawned: walker slot 19 gen 1 at 130,40 tags enemy" 5
+wait 3
 untouch
 wait 3
 touch 120 40
 expect "spawned: walker slot 20 gen 1 at 160,40 tags enemy" 5
+wait 3
 untouch
 wait 3
 touch 150 40
 expect "spawned: walker slot 21 gen 1 at 190,40 tags enemy" 5
+wait 3
 untouch
 wait 3
 touch 180 40
 expect "spawned: walker slot 22 gen 1 at 220,40 tags enemy" 5
+wait 3
 untouch
 wait 3
 touch 210 40
 expect "missed: walker (misses 1)" 5
+wait 3
 untouch
 wait 5
 screenshot miss

@@ -201,13 +201,16 @@ indices. `spawn_map_objects` reads the map's entries in place: per object a memo
 of its type or `prefab` name (one `find` per distinct name per call), then the spawn; the `MapObject` is built only for
 objects that spawn.
 
-Old 3DS numbers (`examples/prefabs`' bench, Development build), **provisional**: the budgets are set from the next
-console measurement (spec 021 AC-7). The first console run gave 256 spawns of a 3-component prefab with 2 tags plus
-their destroys 1.62 ms (1.08 × the hand-written calls; target < 2 ms, ≤ 1.25 ×), the same with an override and a
-position 1.92 ms (< 2.2 ms), 512 map objects 5.57 ms and 1000 finds of 9-character names 0.67 ms — the last two over
-their targets (< 4 ms, < 0.5 ms) before the optimisation round of [plan 021](../../specs/021-prefabs/plan.md#optimisation-round-t103),
-which expects ≈ 4.0–4.6 ms and ≈ 0.41–0.47 ms. Look names up at load and spawn by handle; a level of a few hundred
-objects costs a few milliseconds once.
+Old 3DS numbers (`examples/prefabs`' bench, Development build, 2026-11-23; spec 021 AC-7 sets the budgets from them):
+
+| Workload | Old 3DS | Budget |
+|---|---|---|
+| 256 spawns of a 3-component prefab with 2 tags, plus their destroys and a flush | 1.63 ms (1.07 × the same calls written by hand) | < 2 ms, ≤ 1.25 × |
+| the same with a component override and a position each | 1.81 ms | < 2.3 ms |
+| 512 map objects (two prefabs, a hook reading one property each) | 3.56 ms | < 4.5 ms |
+| 1000 `find` of 9-character names over 128 prefabs | 0.50 ms | < 0.65 ms |
+
+Look names up at load and spawn by handle; a level of a few hundred objects costs a few milliseconds once.
 
 ## Misuse
 

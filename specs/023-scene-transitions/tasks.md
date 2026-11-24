@@ -1,6 +1,6 @@
 # Tasks 023: Scene transitions
 
-Status: implemented 2026-11-24 (stages 0–8 and 11; Linux checks T9.1 and the console run T10.2 pending; merge T11.7 by the lead)
+Status: implemented 2026-11-24 (stages 0–8 and 11; Linux checks T9.1 passed; the console run T10.2 pending; merge T11.7 by the lead)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -266,7 +266,10 @@ replay lines **present in the tree** (never edited by this spec); `actions` and 
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-3's golden
+- [x] **T9.1** (done 2026-11-24, plan "Stage 9 results"). GCC 13, GCC 14 and clang 18 ASan/UBSan: ctest 271/271 each
+  after spec 024's fixes; the first round's failures were in particles, not here. `fuzz_transition_geometry` 600 s,
+  6 500 974 runs, cov 198, no finding. The doors script under ASan failed only on the environment (no preset build
+  folder). Original task: On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-3's golden
   and checkpoints, the geometry exact tables and properties, the replay ctest with the tree's lines, `B44CA3F6`
   identical on all three (they are assertions); ASan/UBSan clean over the hook's cancel paths, `on_finished` starting a
   transition, the sink and the filter; libFuzzer `fuzz_transition_geometry` 10 minutes, clean. Files: tasks.md

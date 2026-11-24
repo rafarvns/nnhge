@@ -13,6 +13,7 @@ using nnh::Vec2;
 namespace {
 
 ParticleEmitter* g_e = nullptr;
+ParticleEmitter* g_moved = nullptr; // moved from by the test: an assert longjmps past a local's destructor (a leak)
 int g_n = 0;
 
 void update_empty() {
@@ -23,11 +24,7 @@ void emit_empty() {
     ParticleEmitter empty;
     g_n = empty.emit(3);
 }
-void emit_moved_from() {
-    ParticleEmitter a = particles_test::make({}, 4);
-    ParticleEmitter b = static_cast<ParticleEmitter&&>(a);
-    g_n = a.emit(1);
-}
+void emit_moved_from() { g_n = g_moved->emit(1); }
 void emit_negative() { g_n = g_e->emit(-2); }
 void emit_at_nan() { g_n = g_e->emit_at(Vec2{NAN, 0}, 1); }
 void emit_at_bad_transform() {
@@ -64,7 +61,10 @@ NNH_TEST(particle_misuse_asserts_and_is_harmless_in_release) {
     ParticleEmitter e = particles_test::make({}, 8);
     e.set_position({3, 4});
     e.emit(2);
+    ParticleEmitter a = particles_test::make({}, 4);
+    const ParticleEmitter b = static_cast<ParticleEmitter&&>(a);
     g_e = &e;
+    g_moved = &a;
     for (auto fn : {update_empty, emit_empty, emit_moved_from, emit_negative, emit_at_nan, emit_at_bad_transform,
                     transform_nan, world_transform_inf, position_nan, particle_out_of_range, particle_negative,
                     stop_empty, bind_empty}) {

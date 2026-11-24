@@ -1,6 +1,6 @@
 # Plan 023: Scene transitions
 
-Status: implemented 2026-11-24, console run T10.2 and Linux checks T9.1 pending (approved 2026-11-23 overnight)
+Status: implemented 2026-11-24, Linux checks T9.1 passed 2026-11-24, console run T10.2 pending (approved 2026-11-23 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D38 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (the scene stack, deferred changes, `nnh::run()`), spec 004 (rectangles, layers, `ignore_camera`,
 recording and submit), spec 015 (the libm-free easings, `SmallFunction` callbacks, `FinishEvent`; D30), spec 017
@@ -1010,3 +1010,23 @@ frame unmeasured, the tall iris).
 - Final stage-end guards (stage 8): ctest 271/258, `nnh_tests` 2492, 0 warnings on pc-debug, pc-release, 3ds-release
   and 3ds-dev, tweens/actions/input scripts PASS, `level.nnhs` untouched, `compare.sh` identical (the actions example
   also keeps a `controls.bin.bak`: `compare.sh` deletes both before its shot), docs 0 broken links.
+
+## Stage 9 results
+
+On `nnhge-build` (VM 120), 2026-11-24, `main` with specs 022–025 merged, then branch `fix-024`:
+
+- The first round found nothing in the transition code. Its GCC 13 and 14 build failures and the ASan leak were all
+  in spec 024's particles. See [024's Stage 9 results](../024-particles/plan.md#stage-9-results): `ParticleDesc`'s
+  `= {}` arrays, a GCC 13 crash on `draw(screen, {.layer = n})` with `Texture` incomplete, and a test-only leak.
+- After those fixes: GCC 13, GCC 14 and clang 18 ASan/UBSan ctest 271/271 each (`-E "nnh_script_pc_smoke|_script_pc"`).
+  `nnh_tests` 2870 under ASan with leaks on: clean. The transitions self-check prints `BFE1D810` and the tweens check
+  `B44CA3F6` on all three.
+- `platformer_doors_script_pc` failed under ASan in the first round. The cause was the environment, not this spec:
+  the VM's build folder isn't a preset name, so `nnh run --no-build` fell back to `pc-dev`, which wasn't built.
+  Re-run with `NNH_PRESET=pc-asan` linked to the ASan build: all ten doors at the PC's frames, then `60 Hz FAIL`
+  (average 36.1 ms, worst 76.2 ms under the sanitiser and the software renderer). That is the wall-clock verdict, an
+  environment limit like the bench under the offscreen renderer (Stage 8 results). `doors.nnhs` now waits 10 frames
+  after its last `expect` (it had 3; `nnh` warned that the next input would reach the console late).
+- The 12 self-check and replay ctests pass on all three compilers (leaks off for the simulator processes: Mesa's EGL
+  allocation in SDL's offscreen init is reported by LeakSanitizer).
+- libFuzzer `fuzz_transition_geometry` ran 600 s: 6 500 974 runs, cov 198, no finding.

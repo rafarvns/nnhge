@@ -116,7 +116,9 @@ world space). To follow an entity or a [node](hierarchy.md), copy its world tran
 hierarchy's pass), then `update()`.
 
 Rate births in world space are spread along the emitter's movement and turn since the previous update and pre-aged by
-their part of the frame, so a fast emitter leaves an even trail. `set_transform(t, true)` / `set_position(p, true)`
+their part of the frame, so a fast emitter leaves an even trail. With a lifetime under one frame, a birth can be
+pre-aged past it: it lives until the next `update()` and looks like its last moment (the gradient's and curve's values
+at the end of the life). `set_transform(t, true)` / `set_position(p, true)`
 (**jump**) cancels that and the inherited velocity across a teleport.
 
 ## Determinism and seeds

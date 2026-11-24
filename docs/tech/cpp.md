@@ -38,6 +38,13 @@ Public functions document: does it allocate? is it per-frame safe? what happens 
 - Hide implementation: opaque handles, internal headers in `engine/core/src/`, or PIMPL. Changing an
   implementation must not recompile games.
 - `#pragma once`. Include order: own header, standard library, third party, project (clang-format regroups).
+- Braced options must compile on GCC 13 and 14 (found on the Linux build VM, specs 022 and 024):
+  - No `= {}` on an array member whose element type has default member initialisers: the elements' defaults apply
+    anyway. With it, GCC 13 and 14 refuse a braced `{.x = ...}` argument of that aggregate.
+  - A function overloaded so that a braced options argument is tried against `const T&` needs `T` complete in the
+    header (include it, don't forward-declare it). Otherwise GCC 13 crashes (`draw(screen, {.layer = n})` against
+    `draw(screen, const Texture&, ...)`).
+  - Lock each in with a `static_assert` over a `requires` expression, in a test that includes the header first.
 
 ## Types and style
 

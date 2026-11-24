@@ -72,6 +72,24 @@ NNH_TEST(empty_particle_emitter_answers_zero) {
     CHECK(e.transform().position().x == 0);
 }
 
+// Regression (spec 024 stage 9, Linux): with `= {}` on ParticleDesc's arrays, GCC 13 and 14 refused every braced
+// description argument ("cannot convert '<brace-enclosed initializer list>' to 'const ParticleDesc&'").
+template <typename D>
+concept CreatesFromBracedDesc = requires(const D& d) {
+    ParticleEmitter::create({}, 1);
+    ParticleEmitter::create({.rate = 10, .bursts = {{.count = {1, 2}}}, .frames = {{.region = {0, 0, 4, 4}}}}, 1);
+    ParticleEmitter::check({.color_keys = {{.at = 0}, {.at = 1}}});
+};
+static_assert(CreatesFromBracedDesc<ParticleDesc>, "ParticleEmitter::create must accept a braced desc everywhere");
+
+NNH_TEST(braced_desc_leaves_unnamed_array_elements_at_their_defaults) {
+    const ParticleDesc braced{.rate = 10, .bursts = {{.count = {1, 2}}}};
+    ParticleDesc plain; // default-initialised: each element's own member defaults
+    CHECK(braced.bursts[0].count.max == 2 && braced.bursts[1].count.max == 0 && braced.bursts[1].cycles == 1);
+    CHECK(braced.color_keys[0].at < 0 && braced.size_keys[7].size == 1 && braced.frames[3].region.w == -1);
+    CHECK(plain.bursts[2].cycles == 1 && plain.color_keys[5].at < 0 && plain.frames[0].center_pivot);
+}
+
 NNH_TEST(many_particle_emitters_live_together) {
     ParticleEmitter e[16];
     for (int i = 0; i < 16; ++i) {

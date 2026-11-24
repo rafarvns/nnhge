@@ -1,6 +1,6 @@
 # Spec 024: Particles
 
-Status: implemented 2026-11-24 (Old 3DS T10.2 and Linux T9.1 pending; FR-21/AC-3 by the fallback the spec allows,
+Status: implemented 2026-11-24 (Linux T9.1 passed 2026-11-24; Old 3DS T10.2 pending; FR-21/AC-3 by the fallback the spec allows,
 see plan "Stage 5 results"). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take"
 item and open question as recommended; to review in the morning). Implemented after spec 022 (it uses 022's transform value and sine)
 Author: NNHGE maintainers · Date: 2026-11-23

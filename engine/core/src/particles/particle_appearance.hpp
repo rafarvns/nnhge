@@ -34,9 +34,14 @@ inline Color unpack_color(std::uint32_t c) {
             static_cast<std::uint8_t>(c >> 24)};
 }
 
-/// The fraction of its life a particle has lived: t ≥ 0 (and < 1 up to rounding).
+/// The fraction of its life a particle has lived: 0 ≤ t ≤ 1. A rate birth pre-aged by more than its lifetime lives
+/// until the next update with age ≥ lifetime (FR-10): it gets t = 1, its last moment (the curves are constant past their
+/// last key, OverLife frames clamp), never t ≥ 2, where the segment walk would pass the sentinel (a fuzz finding).
+/// The clamp is an integer select on the bits (t ≥ 0, so they order as the values).
 inline float life_fraction(const ParticleHot& h, const ParticleCold& c) {
-    return static_cast<float>(h.age) * c.inv_life;
+    constexpr std::uint32_t kOne = 0x3F800000u; // 1.0f
+    const std::uint32_t tb = std::bit_cast<std::uint32_t>(static_cast<float>(h.age) * c.inv_life);
+    return std::bit_cast<float>(tb < kOne ? tb : kOne);
 }
 
 /// The segment holding `t` (t ≥ 0; starts are ≥ 0 and the sentinel 2, so their bits order as their values).

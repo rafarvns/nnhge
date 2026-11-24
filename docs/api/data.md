@@ -94,6 +94,10 @@ Not supported (a compile error): pointers, references, `double`, 64-bit integers
 other non-trivially-copyable members, arrays or lists of arrays/lists, unions. Every supported kind is trivially
 copyable: copy, store, compare and save loaded structs like any plain struct.
 
+The value types (`data::String`, `data::List`, `data::Ref`, the media references) and their kinds serve
+[structured saves](saves.md) too (spec 027), which add `double` and 64-bit integers for save files only; including
+`<nnh/data.hpp>` for them links no data-asset code.
+
 ## 2. Write the files (text)
 
 One file per asset in the `ASSETS` folder, named `<name>.<key>`: `enemies/goblin.enemy`. The extension selects the

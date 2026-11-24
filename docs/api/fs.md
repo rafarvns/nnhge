@@ -43,6 +43,10 @@ if (auto r = nnh::save::read("slot1.sav", &p, sizeof p, &version); !r) {
   backup (and logs a warning). Errors: `NotFound`, `Corrupted` (file and backup unusable), `LimitReached`
   (buffer too small), `IoError`.
 - Store plain data (fixed-size structs, no pointers); bump `version` when the layout changes.
+- Raw saves are the struct's bytes: a field added, moved or widened in an update makes old saves unreadable, and the
+  PC's and the 3DS's layouts may differ. For game progress and settings that evolve between releases, use
+  **[structured saves](saves.md)** (`<nnh/saves.hpp>`, spec 027): fields by stable ids, versions and migrations, the
+  same bytes everywhere, through this same container (atomic write, `.bak`, CRC-32).
 
 ## Files
 

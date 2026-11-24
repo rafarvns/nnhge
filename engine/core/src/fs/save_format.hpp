@@ -38,4 +38,9 @@ struct SaveView {
 /// Validates a complete save file in memory: header, exact length, CRC. The view points into `data`.
 Result<SaveView> validate_save(const std::uint8_t* data, std::size_t size);
 
+/// Reads and checks one save file exactly as nnh::save::read does for the main file or its backup (no fallback):
+/// header, length, capacity (LimitReached), CRC. NotFound, Corrupted, LimitReached, IoError. For spec 027's
+/// structured saves, which choose the backup themselves. Defined at the end of save.cpp.
+Result<std::size_t> save_read_one(const char* path, void* buffer, std::size_t capacity, std::uint16_t* version_out);
+
 } // namespace nnh::detail

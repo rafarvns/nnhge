@@ -480,6 +480,26 @@ if(TARGET queries AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQU
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;QUERIES_DEMO=check;NNH_EXIT_AFTER_FRAMES=90"
         PASS_REGULAR_EXPRESSION "queries: PASS 4ACAA177" FAIL_REGULAR_EXPRESSION "queries: FAIL" TIMEOUT 120)
 endif()
+# The saves example (spec 027 AC-2, AC-6): its golden copies equal tests/data/saves; its check mode and its console
+# script played in the simulator (nnh run --pc), as the maintainer plays it on the 3DS.
+if(TARGET saves AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME saves_self_check_pc COMMAND saves)
+    set_tests_properties(saves_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;SAVES_DEMO=check;NNH_EXIT_AFTER_FRAMES=20"
+        PASS_REGULAR_EXPRESSION "saves: PASS" FAIL_REGULAR_EXPRESSION "saves: FAIL" TIMEOUT 120
+        RESOURCE_LOCK nnh_saves_data)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME saves_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run saves --pc --no-build --script examples/saves/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(saves_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK "nnh_remote_port;nnh_saves_data")
+endif()
+add_test(NAME saves_golden_copies_match
+         COMMAND ${CMAKE_COMMAND} -DA=${CMAKE_CURRENT_SOURCE_DIR}/data/saves -DB=${PROJECT_SOURCE_DIR}/examples/saves/assets/golden
+                 -P ${CMAKE_CURRENT_SOURCE_DIR}/saves/compare_golden.cmake)
 # The entities example's self-check in the simulator (spec 020 T7.4, AC-6): the verdict the console script waits for.
 if(TARGET entities AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME entities_self_check_pc COMMAND entities)
@@ -611,6 +631,97 @@ if(NNH_BUILD_FUZZERS)
 endif()
 # The queries example's self-check (spec 019 T7.3, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
+# Structured saves (spec 027): the codec, evolution, migrations, files, power cuts, golden files, fuzz.
+target_sources(nnh_tests PRIVATE
+    platform_fake/test_power_cut_fake.cpp
+    saves/test_backup.cpp
+    saves/test_blob.cpp
+    saves/test_declare.cpp
+    saves/test_dump.cpp
+    saves/test_edges.cpp
+    saves/test_encode.cpp
+    saves/test_encode_sequences.cpp
+    saves/test_evolution.cpp
+    saves/test_file.cpp
+    saves/test_fit.cpp
+    saves/test_golden.cpp
+    saves/test_header.cpp
+    saves/test_migrations.cpp
+    saves/test_old_fields.cpp
+    saves/test_power_cut.cpp
+    saves/test_raw_unchanged.cpp
+    saves/test_reference.cpp
+    saves/test_round_trip.cpp
+    saves/test_save_cost.cpp
+    saves/test_save_misuse.cpp
+    saves/test_slots.cpp
+    saves/test_summary.cpp
+    saves/test_validate.cpp
+    saves/test_versions.cpp
+    saves/test_wire.cpp)
+# The reference save (AC-2): the saves example's Progress and its history, compiled into the tests (its NNH_DATA_ENUM
+# names are not: they would change spec 014's registry tests). make_saves_golden writes tests/data/saves by hand.
+set(_saves_example_sources ${PROJECT_SOURCE_DIR}/examples/saves/progress_migrate.cpp
+                           ${PROJECT_SOURCE_DIR}/examples/saves/progress_sum.cpp
+                           ${PROJECT_SOURCE_DIR}/examples/saves/reference.cpp)
+target_sources(nnh_tests PRIVATE ${_saves_example_sources})
+add_executable(make_saves_golden EXCLUDE_FROM_ALL saves/make_saves_golden.cpp ${_saves_example_sources})
+target_include_directories(make_saves_golden PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src ${PROJECT_SOURCE_DIR}/examples)
+target_link_libraries(make_saves_golden PRIVATE nnh::core nnh::platform_fake)
+# The structured-save fuzz target (AC-4): its own header (fuzz/fuzz_saves.hpp); a mini-fuzz in nnh_tests, and a
+# libFuzzer executable with NNH_BUILD_FUZZERS (clang, Linux).
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_saves.cpp)
+target_sources(nnh_tests PRIVATE fuzz/test_fuzz_saves.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_saves fuzz/libfuzzer_saves.cpp)
+    target_link_libraries(fuzz_saves PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_saves PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_saves PRIVATE -fsanitize=fuzzer,address)
+endif()
+# Save declarations (spec 027 T2.3, AC-1): a correct one compiles with -Werror; each mistake fails to compile AND says
+# what is wrong. `~` separates alternatives (any one passes): GCC's wording, then clang's.
+if(NOT MSVC)
+    set(_save_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    set(_save_cases ${CMAKE_CURRENT_SOURCE_DIR}/saves/compile_fail)
+    add_test(NAME saves_declaration_accepts_good COMMAND ${_save_check} -Werror ${_save_cases}/good.cpp)
+    foreach(case "unknown_member|damgae[^ ]* is not a member~no member named .damgae."
+                 "pointer|saved fields can't be pointers or references"
+                 "std_string|saved fields must be trivially copyable"
+                 "union|unions aren't saved field kinds"
+                 "char|character types aren't saved field kinds"
+                 "const_member|saved fields can't be const or volatile"
+                 "id_zero|save_error_field_id_must_be_1_to_65535"
+                 "id_65536|save_error_field_id_must_be_1_to_65535"
+                 "duplicate_id|save_error_field_id_used_twice"
+                 "retired_used|save_error_retired_id_used_by_a_field"
+                 "retired_twice|save_error_retired_id_listed_twice"
+                 "nested_undeclared|needs its own NNH_SAVE_STRUCT"
+                 "too_many_fields|save_error_more_than_128_fields"
+                 "too_deep|save_error_nesting_deeper_than_8_levels"
+                 "root_too_big|a save type can be at most 64 KiB"
+                 "array_too_big|an array in a save holds at most 65535 items"
+                 "max_size_too_big|save_error_max_encoded_size_over_256_KiB"
+                 "bad_key_upper|save_error_bad_key_use_1_to_16"
+                 "bad_key_long|save_error_bad_key_use_1_to_16"
+                 "bad_key_empty|save_error_bad_key_use_1_to_16"
+                 "version_zero|save_error_version_must_be_at_least_1"
+                 "version_twice|save_error_version_given_twice"
+                 "step_at_current|save_error_step_from_a_version_not_below_the_current_one"
+                 "two_steps|save_error_two_steps_for_one_version"
+                 "step_gap|save_error_missing_migration_step"
+                 "version_in_struct|save_error_NNH_SAVE_VERSION_or_NNH_SAVE_STEP_in_a_struct_or_summary"
+                 "summary_stored|only an NNH_SAVE_TYPE can be encoded or stored"
+                 "undeclared_stored|this type has no save declaration")
+        string(REPLACE "|" ";" case "${case}")
+        list(GET case 0 name)
+        list(GET case 1 expected)
+        string(REPLACE "~" ";" expected "${expected}")
+        add_test(NAME saves_declaration_rejects_${name} COMMAND ${_save_check} ${_save_cases}/${name}.cpp)
+        set_tests_properties(saves_declaration_rejects_${name} PROPERTIES WILL_FAIL TRUE)
+        add_test(NAME saves_declaration_explains_${name} COMMAND ${_save_check} ${_save_cases}/${name}.cpp)
+        set_tests_properties(saves_declaration_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+    endforeach()
+endif()
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.

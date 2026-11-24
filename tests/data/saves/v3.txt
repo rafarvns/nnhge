@@ -1,0 +1,953 @@
+save 'progress' v3 (3768 bytes)
+name (1) string = "Zo\xC3\xAB Rangers"
+level (2) u16 = 300
+play_frames (5) u64 = 5000000000
+position (6) vec2 = (123.25, -45.5) [42F68000 C2360000]
+explored (7) bool[1024]
+  [0] true false true false false false false false false false true false false false false false
+  [16] true false false false false false false true true true true false false false false false
+  [32] true false true false true true false false false false false false false false false true
+  [48] false false false false true true true false false false false true false false false false
+  [64] false false false true true true true true false false false false false false false false
+  [80] false false true false true true true true true false false false false true false true
+  [96] false false false false false false false false false false true false true true false false
+  [112] false true false false false false true false true false true true false false false false
+  [128] false true true true true true false false false false true false false false true true
+  [144] false false false false false false false false false true false true true false false true
+  [160] true false false false false false false false false true false false false false false false
+  [176] false false false true false false true true false true false false true false true false
+  [192] false false false false false false true true false false false false false false false false
+  [208] false true false false false false false false false false false false false false false false
+  [224] false true false false false false true false false true false false false true false false
+  [240] false false false true false false false true true true false false false false false false
+  [256] false true false false false false false false false false false false true false false false
+  [272] true true false false false false true false false false true false false false false false
+  [288] false false false false false false true true false false true false false false true true
+  [304] false false false false false false true false true false true true true true false false
+  [320] false true false false true false true false true false false false true false true true
+  [336] false false false true false false true true true false true false true true true false
+  [352] true false false false false false false false false true false false false false false false
+  [368] false true false true true true true false false true false false false true false false
+  [384] false false false false false false false false true false false true false false false true
+  [400] false false false false false false false false false false true false false true false false
+  [416] true false true false false false true false false true false true false false true false
+  [432] false true false false false true false false false false false false false false true false
+  [448] false false false false true true false false false false false true true false false true
+  [464] true true true false false false true false true true false false false false true false
+  [480] false false false false false false true false true true false false true false false true
+  [496] false false false false false false false false true true false true false false false false
+  [512] false true false false false false false false true false false false false true false false
+  [528] false false true false false false false false true false true false true true false false
+  [544] false true false true false false false false false true false false true false false false
+  [560] false false false false false false false false false false false false false false true false
+  [576] false true true false false false false false false false true false false false false false
+  [592] false false false false false true false false false false false false false false false true
+  [608] false false false false false false false false false false false true false false false false
+  [624] false false false true true false false false false false false true false false false false
+  [640] false true false false true true false true false false false false false false false false
+  [656] true false true false true false false false false false false false false false false true
+  [672] true false false false false false false false false true false true true false false true
+  [688] false false false false false false false true true true false false false false false false
+  [704] false false false false false true false false false true false false false false false false
+  [720] false false true false false false true false false false false false false true false false
+  [736] true true false false false true false true false false true false false false true false
+  [752] false false false false true false true false false false false false false false false false
+  [768] false false false false false false false false false false false false false false false false
+  [784] false true false false false true false false false false false false true false false false
+  [800] false false false false false true true false false false false false false false true true
+  [816] false false false true false false false false true true false true false true true false
+  [832] true true false false false true false false false false false false false false false false
+  [848] true true true true true false false true false false false true false false false true
+  [864] false false true false true false false false false true false false false true true false
+  [880] false false false false false false true false false false true false true false false true
+  [896] true false false false false true true true false false false true false false true false
+  [912] false false false false false false false false false true true false false false false false
+  [928] false false false false false false false true true true false true true false false true
+  [944] true false false false false false true true false true false false false false true false
+  [960] false false false false false false false false false false false false false true false false
+  [976] false false false false false true false false true false true false false false false false
+  [992] false false false false false false false false true false true true true false true false
+  [1008] false false true false true false false true false false true true false false false true
+hero (8) struct
+  hp (1) u8 = 40
+  max_hp (2) u8 = 50
+  attack (3) u8 = 7
+  defense (4) u8 = 3
+inventory (9) struct list[64]
+  [0]
+    kind (1) u16 = 100
+    count (2) u8 = 13
+    quality (3) u8 = 2
+    durability (4) u16 = 911
+    wear (5) f32 = 0.975274444 [3F79AB96]
+    bonus (6) u32 = 1546511686
+    dye (7) color = #501C62FF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it00"
+  [1]
+    kind (1) u16 = 101
+    count (2) u8 = 14
+    quality (3) u8 = 2
+    durability (4) u16 = 804
+    wear (5) f32 = 0.635523736 [3F22B1AF]
+    bonus (6) u32 = 3817417677
+    dye (7) color = #B2B4FCFF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [2]
+    kind (1) u16 = 102
+    count (2) u8 = 14
+    quality (3) u8 = 2
+    durability (4) u16 = 538
+    wear (5) f32 = 0.970457852 [3F786FED]
+    bonus (6) u32 = 2722396250
+    dye (7) color = #D9A2C6FF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [3]
+    kind (1) u16 = 103
+    count (2) u8 = 6
+    quality (3) u8 = 4
+    durability (4) u16 = 962
+    wear (5) f32 = 0.846410811 [3F58AE61]
+    bonus (6) u32 = 3527121868
+    dye (7) color = #6DA1C5FF
+    slot (8) u8 = 3
+    equipped (9) bool = true
+    label (10) string = ""
+  [4]
+    kind (1) u16 = 104
+    count (2) u8 = 2
+    quality (3) u8 = 0
+    durability (4) u16 = 492
+    wear (5) f32 = 0.562850237 [3F1016F4]
+    bonus (6) u32 = 2778647721
+    dye (7) color = #302464FF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it04"
+  [5]
+    kind (1) u16 = 105
+    count (2) u8 = 14
+    quality (3) u8 = 4
+    durability (4) u16 = 375
+    wear (5) f32 = 4.07777853e-43 [00000123]
+    bonus (6) u32 = 3194727906
+    dye (7) color = #B4422BFF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [6]
+    kind (1) u16 = 106
+    count (2) u8 = 2
+    quality (3) u8 = 3
+    durability (4) u16 = 753
+    wear (5) f32 = 0.570943117 [3F122954]
+    bonus (6) u32 = 2962428107
+    dye (7) color = #38B854FF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [7]
+    kind (1) u16 = 107
+    count (2) u8 = 10
+    quality (3) u8 = 3
+    durability (4) u16 = 3
+    wear (5) f32 = 0.695592999 [3F321262]
+    bonus (6) u32 = 3653995904
+    dye (7) color = #488A93FF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+  [8]
+    kind (1) u16 = 108
+    count (2) u8 = 19
+    quality (3) u8 = 0
+    durability (4) u16 = 216
+    wear (5) f32 = 0.910998046 [3F69372B]
+    bonus (6) u32 = 1968516044
+    dye (7) color = #E979D9FF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it08"
+  [9]
+    kind (1) u16 = 109
+    count (2) u8 = 19
+    quality (3) u8 = 2
+    durability (4) u16 = 784
+    wear (5) f32 = 0.854841948 [3F5AD6EC]
+    bonus (6) u32 = 197358660
+    dye (7) color = #63E6EAFF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [10]
+    kind (1) u16 = 110
+    count (2) u8 = 4
+    quality (3) u8 = 4
+    durability (4) u16 = 613
+    wear (5) f32 = 0.855556428 [3F5B05BF]
+    bonus (6) u32 = 1098499541
+    dye (7) color = #AB086AFF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [11]
+    kind (1) u16 = 111
+    count (2) u8 = 18
+    quality (3) u8 = 2
+    durability (4) u16 = 226
+    wear (5) f32 = 0.734000087 [3F3BE76E]
+    bonus (6) u32 = 2641757178
+    dye (7) color = #3EBB53FF
+    slot (8) u8 = 3
+    equipped (9) bool = false
+    label (10) string = ""
+  [12]
+    kind (1) u16 = 112
+    count (2) u8 = 16
+    quality (3) u8 = 0
+    durability (4) u16 = 567
+    wear (5) f32 = 0.895871878 [3F6557DC]
+    bonus (6) u32 = 3346456254
+    dye (7) color = #C5F77CFF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it12"
+  [13]
+    kind (1) u16 = 113
+    count (2) u8 = 3
+    quality (3) u8 = 0
+    durability (4) u16 = 888
+    wear (5) f32 = 0.938668847 [3F704C9A]
+    bonus (6) u32 = 2182997396
+    dye (7) color = #C6B2B4FF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [14]
+    kind (1) u16 = 114
+    count (2) u8 = 6
+    quality (3) u8 = 3
+    durability (4) u16 = 333
+    wear (5) f32 = 0.616705477 [3F1DE069]
+    bonus (6) u32 = 3894421074
+    dye (7) color = #A5B5AFFF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [15]
+    kind (1) u16 = 115
+    count (2) u8 = 10
+    quality (3) u8 = 2
+    durability (4) u16 = 694
+    wear (5) f32 = 0.985259533 [3F7C39F8]
+    bonus (6) u32 = 2284071425
+    dye (7) color = #7ECE7DFF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+  [16]
+    kind (1) u16 = 116
+    count (2) u8 = 19
+    quality (3) u8 = 3
+    durability (4) u16 = 43
+    wear (5) f32 = 0.92670846 [3F6D3CC4]
+    bonus (6) u32 = 2116037955
+    dye (7) color = #08AEF1FF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it16"
+  [17]
+    kind (1) u16 = 117
+    count (2) u8 = 20
+    quality (3) u8 = 4
+    durability (4) u16 = 67
+    wear (5) f32 = 0.634185374 [3F2259F9]
+    bonus (6) u32 = 120995312
+    dye (7) color = #261658FF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [18]
+    kind (1) u16 = 118
+    count (2) u8 = 10
+    quality (3) u8 = 1
+    durability (4) u16 = 981
+    wear (5) f32 = 0.969378114 [3F78292A]
+    bonus (6) u32 = 2461809648
+    dye (7) color = #B21CE8FF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [19]
+    kind (1) u16 = 119
+    count (2) u8 = 11
+    quality (3) u8 = 1
+    durability (4) u16 = 807
+    wear (5) f32 = 0.946667135 [3F7258C7]
+    bonus (6) u32 = 582168554
+    dye (7) color = #784C0BFF
+    slot (8) u8 = 3
+    equipped (9) bool = false
+    label (10) string = ""
+  [20]
+    kind (1) u16 = 120
+    count (2) u8 = 16
+    quality (3) u8 = 0
+    durability (4) u16 = 760
+    wear (5) f32 = 0.794495821 [3F4B6414]
+    bonus (6) u32 = 4236029456
+    dye (7) color = #724691FF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it20"
+  [21]
+    kind (1) u16 = 121
+    count (2) u8 = 4
+    quality (3) u8 = 1
+    durability (4) u16 = 854
+    wear (5) f32 = 0.779945314 [3F47AA7F]
+    bonus (6) u32 = 2508654541
+    dye (7) color = #9F13F2FF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [22]
+    kind (1) u16 = 122
+    count (2) u8 = 14
+    quality (3) u8 = 3
+    durability (4) u16 = 245
+    wear (5) f32 = 0.955772519 [3F74AD82]
+    bonus (6) u32 = 3723756317
+    dye (7) color = #CFBA6FFF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [23]
+    kind (1) u16 = 123
+    count (2) u8 = 7
+    quality (3) u8 = 0
+    durability (4) u16 = 330
+    wear (5) f32 = 0.510482907 [3F02AF02]
+    bonus (6) u32 = 785925877
+    dye (7) color = #F14E41FF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+  [24]
+    kind (1) u16 = 124
+    count (2) u8 = 1
+    quality (3) u8 = 1
+    durability (4) u16 = 477
+    wear (5) f32 = 0.761964977 [3F431023]
+    bonus (6) u32 = 779723360
+    dye (7) color = #C2E539FF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it24"
+  [25]
+    kind (1) u16 = 125
+    count (2) u8 = 1
+    quality (3) u8 = 3
+    durability (4) u16 = 275
+    wear (5) f32 = 0.911643326 [3F696175]
+    bonus (6) u32 = 3695457951
+    dye (7) color = #D30509FF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [26]
+    kind (1) u16 = 126
+    count (2) u8 = 17
+    quality (3) u8 = 0
+    durability (4) u16 = 346
+    wear (5) f32 = 0.673769295 [3F2C7C25]
+    bonus (6) u32 = 2582162206
+    dye (7) color = #F65EEAFF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [27]
+    kind (1) u16 = 127
+    count (2) u8 = 2
+    quality (3) u8 = 2
+    durability (4) u16 = 110
+    wear (5) f32 = 0.744109392 [3F3E7DF4]
+    bonus (6) u32 = 1369887971
+    dye (7) color = #8663F0FF
+    slot (8) u8 = 3
+    equipped (9) bool = false
+    label (10) string = ""
+  [28]
+    kind (1) u16 = 128
+    count (2) u8 = 8
+    quality (3) u8 = 0
+    durability (4) u16 = 96
+    wear (5) f32 = 0.70191133 [3F33B076]
+    bonus (6) u32 = 136293859
+    dye (7) color = #73927EFF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it28"
+  [29]
+    kind (1) u16 = 129
+    count (2) u8 = 19
+    quality (3) u8 = 2
+    durability (4) u16 = 646
+    wear (5) f32 = 0.644815505 [3F2512A1]
+    bonus (6) u32 = 2493720753
+    dye (7) color = #98928BFF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [30]
+    kind (1) u16 = 130
+    count (2) u8 = 12
+    quality (3) u8 = 2
+    durability (4) u16 = 986
+    wear (5) f32 = 0.847175598 [3F58E080]
+    bonus (6) u32 = 3168244543
+    dye (7) color = #ECAA3BFF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [31]
+    kind (1) u16 = 131
+    count (2) u8 = 13
+    quality (3) u8 = 3
+    durability (4) u16 = 806
+    wear (5) f32 = 0.590432227 [3F172691]
+    bonus (6) u32 = 2336812808
+    dye (7) color = #5ED6AEFF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+  [32]
+    kind (1) u16 = 132
+    count (2) u8 = 18
+    quality (3) u8 = 0
+    durability (4) u16 = 622
+    wear (5) f32 = 0.825393736 [3F534D01]
+    bonus (6) u32 = 3827451541
+    dye (7) color = #4F622AFF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it32"
+  [33]
+    kind (1) u16 = 133
+    count (2) u8 = 13
+    quality (3) u8 = 1
+    durability (4) u16 = 51
+    wear (5) f32 = 0.824177802 [3F52FD51]
+    bonus (6) u32 = 2103254639
+    dye (7) color = #F86BD3FF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [34]
+    kind (1) u16 = 134
+    count (2) u8 = 19
+    quality (3) u8 = 3
+    durability (4) u16 = 134
+    wear (5) f32 = 0.888021052 [3F635559]
+    bonus (6) u32 = 4034451747
+    dye (7) color = #DDA224FF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [35]
+    kind (1) u16 = 135
+    count (2) u8 = 10
+    quality (3) u8 = 1
+    durability (4) u16 = 900
+    wear (5) f32 = 0.571118236 [3F1234CE]
+    bonus (6) u32 = 420219576
+    dye (7) color = #872E3FFF
+    slot (8) u8 = 3
+    equipped (9) bool = false
+    label (10) string = ""
+  [36]
+    kind (1) u16 = 136
+    count (2) u8 = 5
+    quality (3) u8 = 1
+    durability (4) u16 = 429
+    wear (5) f32 = 0.863416255 [3F5D08D9]
+    bonus (6) u32 = 3692608105
+    dye (7) color = #FB5C0EFF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it36"
+  [37]
+    kind (1) u16 = 137
+    count (2) u8 = 19
+    quality (3) u8 = 3
+    durability (4) u16 = 116
+    wear (5) f32 = 0.98372525 [3F7BD56B]
+    bonus (6) u32 = 3156518921
+    dye (7) color = #8095FFFF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [38]
+    kind (1) u16 = 138
+    count (2) u8 = 17
+    quality (3) u8 = 0
+    durability (4) u16 = 70
+    wear (5) f32 = 0.718432784 [3F37EB36]
+    bonus (6) u32 = 2278462558
+    dye (7) color = #18A0FAFF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [39]
+    kind (1) u16 = 139
+    count (2) u8 = 9
+    quality (3) u8 = 1
+    durability (4) u16 = 949
+    wear (5) f32 = 0.522996604 [3F05E31B]
+    bonus (6) u32 = 2661362654
+    dye (7) color = #E9933FFF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+  [40]
+    kind (1) u16 = 140
+    count (2) u8 = 10
+    quality (3) u8 = 1
+    durability (4) u16 = 169
+    wear (5) f32 = 0.521049082 [3F056379]
+    bonus (6) u32 = 4197211384
+    dye (7) color = #DA7133FF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it40"
+  [41]
+    kind (1) u16 = 141
+    count (2) u8 = 12
+    quality (3) u8 = 0
+    durability (4) u16 = 840
+    wear (5) f32 = 0.784981191 [3F48F487]
+    bonus (6) u32 = 3818367661
+    dye (7) color = #088B24FF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [42]
+    kind (1) u16 = 142
+    count (2) u8 = 5
+    quality (3) u8 = 4
+    durability (4) u16 = 771
+    wear (5) f32 = 0.943163216 [3F717325]
+    bonus (6) u32 = 3081471303
+    dye (7) color = #429BC6FF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [43]
+    kind (1) u16 = 143
+    count (2) u8 = 8
+    quality (3) u8 = 2
+    durability (4) u16 = 473
+    wear (5) f32 = 0.852703571 [3F5A4AC8]
+    bonus (6) u32 = 9832578
+    dye (7) color = #AFB5EDFF
+    slot (8) u8 = 3
+    equipped (9) bool = false
+    label (10) string = ""
+  [44]
+    kind (1) u16 = 144
+    count (2) u8 = 10
+    quality (3) u8 = 3
+    durability (4) u16 = 331
+    wear (5) f32 = 0.545938671 [3F0BC2A3]
+    bonus (6) u32 = 3213758212
+    dye (7) color = #DCF7A2FF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it44"
+  [45]
+    kind (1) u16 = 145
+    count (2) u8 = 12
+    quality (3) u8 = 3
+    durability (4) u16 = 408
+    wear (5) f32 = 0.511824012 [3F0306E6]
+    bonus (6) u32 = 2818668793
+    dye (7) color = #3AA7F0FF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [46]
+    kind (1) u16 = 146
+    count (2) u8 = 6
+    quality (3) u8 = 4
+    durability (4) u16 = 15
+    wear (5) f32 = 0.884700716 [3F627BBF]
+    bonus (6) u32 = 1203574039
+    dye (7) color = #33F119FF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [47]
+    kind (1) u16 = 147
+    count (2) u8 = 14
+    quality (3) u8 = 2
+    durability (4) u16 = 401
+    wear (5) f32 = 0.741718411 [3F3DE142]
+    bonus (6) u32 = 2233273740
+    dye (7) color = #1C54F5FF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+  [48]
+    kind (1) u16 = 148
+    count (2) u8 = 13
+    quality (3) u8 = 0
+    durability (4) u16 = 579
+    wear (5) f32 = 0.985022902 [3F7C2A76]
+    bonus (6) u32 = 2544036134
+    dye (7) color = #774F25FF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it48"
+  [49]
+    kind (1) u16 = 149
+    count (2) u8 = 20
+    quality (3) u8 = 1
+    durability (4) u16 = 780
+    wear (5) f32 = 0.666925967 [3F2ABBA9]
+    bonus (6) u32 = 3025849069
+    dye (7) color = #E37D65FF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [50]
+    kind (1) u16 = 150
+    count (2) u8 = 17
+    quality (3) u8 = 2
+    durability (4) u16 = 23
+    wear (5) f32 = 0.8957479 [3F654FBC]
+    bonus (6) u32 = 1021483981
+    dye (7) color = #2D2395FF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [51]
+    kind (1) u16 = 151
+    count (2) u8 = 8
+    quality (3) u8 = 2
+    durability (4) u16 = 811
+    wear (5) f32 = 0.585421145 [3F15DE29]
+    bonus (6) u32 = 4288294118
+    dye (7) color = #869871FF
+    slot (8) u8 = 3
+    equipped (9) bool = false
+    label (10) string = ""
+  [52]
+    kind (1) u16 = 152
+    count (2) u8 = 9
+    quality (3) u8 = 3
+    durability (4) u16 = 190
+    wear (5) f32 = 0.662906229 [3F29B439]
+    bonus (6) u32 = 2491715335
+    dye (7) color = #5A4DFBFF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it52"
+  [53]
+    kind (1) u16 = 153
+    count (2) u8 = 16
+    quality (3) u8 = 0
+    durability (4) u16 = 737
+    wear (5) f32 = 0.876562595 [3F606668]
+    bonus (6) u32 = 3921509648
+    dye (7) color = #4FCB0FFF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [54]
+    kind (1) u16 = 154
+    count (2) u8 = 13
+    quality (3) u8 = 3
+    durability (4) u16 = 565
+    wear (5) f32 = 0.838245034 [3F56973A]
+    bonus (6) u32 = 3878085403
+    dye (7) color = #D6EF27FF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [55]
+    kind (1) u16 = 155
+    count (2) u8 = 5
+    quality (3) u8 = 3
+    durability (4) u16 = 737
+    wear (5) f32 = 0.833530605 [3F556243]
+    bonus (6) u32 = 1793408541
+    dye (7) color = #1DDDF8FF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+  [56]
+    kind (1) u16 = 156
+    count (2) u8 = 18
+    quality (3) u8 = 4
+    durability (4) u16 = 567
+    wear (5) f32 = 0.826317906 [3F538992]
+    bonus (6) u32 = 2000902513
+    dye (7) color = #86059EFF
+    slot (8) u8 = 0
+    equipped (9) bool = false
+    label (10) string = "it56"
+  [57]
+    kind (1) u16 = 157
+    count (2) u8 = 10
+    quality (3) u8 = 0
+    durability (4) u16 = 275
+    wear (5) f32 = 0.895415664 [3F6539F6]
+    bonus (6) u32 = 2352809698
+    dye (7) color = #5F4DF6FF
+    slot (8) u8 = 1
+    equipped (9) bool = false
+    label (10) string = ""
+  [58]
+    kind (1) u16 = 158
+    count (2) u8 = 13
+    quality (3) u8 = 1
+    durability (4) u16 = 448
+    wear (5) f32 = 0.504682183 [3F0132DA]
+    bonus (6) u32 = 3291434575
+    dye (7) color = #8093A3FF
+    slot (8) u8 = 2
+    equipped (9) bool = false
+    label (10) string = ""
+  [59]
+    kind (1) u16 = 159
+    count (2) u8 = 20
+    quality (3) u8 = 3
+    durability (4) u16 = 944
+    wear (5) f32 = 0.608477473 [3F1BC52E]
+    bonus (6) u32 = 3349225803
+    dye (7) color = #9E3B78FF
+    slot (8) u8 = 3
+    equipped (9) bool = false
+    label (10) string = ""
+  [60]
+    kind (1) u16 = 160
+    count (2) u8 = 6
+    quality (3) u8 = 3
+    durability (4) u16 = 218
+    wear (5) f32 = 0.694018066 [3F31AB2B]
+    bonus (6) u32 = 2793809378
+    dye (7) color = #2AFAA2FF
+    slot (8) u8 = 4
+    equipped (9) bool = false
+    label (10) string = "it60"
+  [61]
+    kind (1) u16 = 161
+    count (2) u8 = 17
+    quality (3) u8 = 3
+    durability (4) u16 = 244
+    wear (5) f32 = 0.662401676 [3F299328]
+    bonus (6) u32 = 2881086529
+    dye (7) color = #D64CC6FF
+    slot (8) u8 = 5
+    equipped (9) bool = false
+    label (10) string = ""
+  [62]
+    kind (1) u16 = 162
+    count (2) u8 = 13
+    quality (3) u8 = 4
+    durability (4) u16 = 664
+    wear (5) f32 = 0.541021049 [3F0A805B]
+    bonus (6) u32 = 1080432229
+    dye (7) color = #6A89DCFF
+    slot (8) u8 = 6
+    equipped (9) bool = false
+    label (10) string = ""
+  [63]
+    kind (1) u16 = 163
+    count (2) u8 = 17
+    quality (3) u8 = 1
+    durability (4) u16 = 78
+    wear (5) f32 = 0.787106156 [3F497FCA]
+    bonus (6) u32 = 243918773
+    dye (7) color = #FF869CFF
+    slot (8) u8 = 7
+    equipped (9) bool = false
+    label (10) string = ""
+checkpoint (10) ref = 0x39088AEC
+difficulty (11) u8 = 2
+gems (12) u32 = 12345
+room (13) u16 = 12
+tile (14) u16 = 345
+seed (15) u64 = 78187493520
+best_time (17) f64 = 123.456 [405EDD2F1A9FBE77]
+bestiary (18) u16[512]
+  [0] 22545 54162 43194 10996 27990 39574 31229 13468
+  [8] 27361 55194 48042 55622 129 31069 6901 48939
+  [16] 5969 15147 56744 36293 56153 16855 10885 35608
+  [24] 5130 10742 6118 26953 43 31697 59971 26475
+  [32] 9407 53243 10798 45077 43213 347 2860 42087
+  [40] 52122 25204 2485 7221 53375 30211 34663 52864
+  [48] 47136 2498 4102 31582 25015 48864 2090 53163
+  [56] 3638 38065 24074 51646 12690 24129 24863 33233
+  [64] 52700 25307 56248 30838 31234 33420 21322 27669
+  [72] 1312 11576 56799 48996 37883 43384 36229 18398
+  [80] 59107 41396 51911 39647 47569 7595 18022 48829
+  [88] 46434 43160 24088 51905 51018 59100 54369 10034
+  [96] 51062 130 18335 15699 37335 16187 4503 8558
+  [104] 42112 3745 54422 16000 50884 3125 17852 33679
+  [112] 6778 18702 27009 34174 24439 4988 52705 58691
+  [120] 58422 12151 15688 48509 30719 4355 56992 49770
+  [128] 21557 42696 16625 10464 34959 38819 23962 35281
+  [136] 59018 39481 40374 34774 45106 29925 21055 41803
+  [144] 25554 32552 50614 31210 20503 59103 48437 40586
+  [152] 16456 38964 6378 1978 7615 33437 53682 16993
+  [160] 27466 33843 45783 24138 2164 27111 46578 33646
+  [168] 29341 29245 44277 8147 37248 20451 22137 33675
+  [176] 41747 12885 5586 31784 32438 26715 54436 20451
+  [184] 30360 14051 1262 30156 21031 20284 42032 51484
+  [192] 3334 1373 49416 26157 1136 38091 4017 32071
+  [200] 47152 19452 50917 53534 26728 25355 53322 54453
+  [208] 32015 17406 2096 16841 47350 47378 43741 53089
+  [216] 20316 8420 25726 56912 2775 15847 51104 44285
+  [224] 45291 23601 30494 37559 8807 59173 37682 33412
+  [232] 43902 32416 8345 234 30468 48552 41610 47132
+  [240] 41305 13007 37845 25313 45723 29703 32288 54523
+  [248] 34238 26545 3366 3022 57855 59935 12432 30460
+  [256] 36903 40842 8408 36274 8820 47506 20138 22719
+  [264] 41273 46186 59767 25944 36113 51642 46137 4645
+  [272] 59781 18539 58427 37215 50234 54131 24641 22610
+  [280] 23974 10450 59971 35325 54067 32410 1165 14129
+  [288] 35492 53800 17381 53713 33849 55841 57412 47109
+  [296] 51157 1649 7745 12340 8 47480 5980 12691
+  [304] 44114 33745 9050 34447 55205 22875 10073 57835
+  [312] 20105 41664 29331 15408 56653 16877 47806 9076
+  [320] 32503 33248 46772 37283 19800 52787 10871 48667
+  [328] 49040 58193 13240 13536 20403 51031 59696 26536
+  [336] 28110 12290 59424 14240 19986 33374 15406 56710
+  [344] 52311 27720 1266 4186 57358 54486 56839 50117
+  [352] 41730 37962 24267 37596 40859 29573 55559 12121
+  [360] 56581 18195 4801 56289 9965 55352 11613 33191
+  [368] 25894 5119 49166 37186 39875 25823 18846 53438
+  [376] 12501 51135 10457 24371 38609 46069 35606 13538
+  [384] 45171 23164 36827 53644 14927 36436 28407 53972
+  [392] 37024 18763 24665 18637 39876 9664 3521 27646
+  [400] 40888 52040 20955 15511 8139 1857 6323 13504
+  [408] 35331 30353 23252 54469 49853 13864 46166 38533
+  [416] 28027 15901 57876 5624 51121 57592 40063 32656
+  [424] 1312 33867 13450 5108 33396 21636 53265 36770
+  [432] 56491 6567 14765 12139 8093 704 26559 13473
+  [440] 8659 9080 22385 48499 43888 38593 18756 50513
+  [448] 44651 23761 22022 9338 57060 36691 59004 17592
+  [456] 100 48224 17696 11676 39432 24077 24154 6266
+  [464] 33511 34906 32569 1927 4209 12799 46120 16103
+  [472] 23739 46031 22071 13583 8553 21571 34057 43304
+  [480] 20250 27070 22041 11943 32899 15760 33058 44191
+  [488] 36210 39972 57523 1499 48702 38995 29372 14263
+  [496] 53493 51928 55431 17502 26593 33940 17272 22465
+  [504] 54656 7152 35397 59925 23019 47313 2425 42437
+quests (19) struct list[20]
+  [0]
+    id (1) u16 = 1000
+    state (2) u8 = 0
+    progress (3) u16 = 38
+    note (4) string = "find the \"key\""
+  [1]
+    id (1) u16 = 1001
+    state (2) u8 = 1
+    progress (3) u16 = 59
+    note (4) string = ""
+  [2]
+    id (1) u16 = 1002
+    state (2) u8 = 2
+    progress (3) u16 = 62
+    note (4) string = "q"
+  [3]
+    id (1) u16 = 1003
+    state (2) u8 = 0
+    progress (3) u16 = 53
+    note (4) string = ""
+  [4]
+    id (1) u16 = 1004
+    state (2) u8 = 1
+    progress (3) u16 = 58
+    note (4) string = "q"
+  [5]
+    id (1) u16 = 1005
+    state (2) u8 = 2
+    progress (3) u16 = 85
+    note (4) string = ""
+  [6]
+    id (1) u16 = 1006
+    state (2) u8 = 0
+    progress (3) u16 = 58
+    note (4) string = "q"
+  [7]
+    id (1) u16 = 1007
+    state (2) u8 = 1
+    progress (3) u16 = 51
+    note (4) string = ""
+  [8]
+    id (1) u16 = 1008
+    state (2) u8 = 2
+    progress (3) u16 = 1
+    note (4) string = "q"
+  [9]
+    id (1) u16 = 1009
+    state (2) u8 = 0
+    progress (3) u16 = 8
+    note (4) string = ""
+  [10]
+    id (1) u16 = 1010
+    state (2) u8 = 1
+    progress (3) u16 = 91
+    note (4) string = "q"
+  [11]
+    id (1) u16 = 1011
+    state (2) u8 = 2
+    progress (3) u16 = 62
+    note (4) string = ""
+  [12]
+    id (1) u16 = 1012
+    state (2) u8 = 0
+    progress (3) u16 = 54
+    note (4) string = "q"
+  [13]
+    id (1) u16 = 1013
+    state (2) u8 = 1
+    progress (3) u16 = 88
+    note (4) string = ""
+  [14]
+    id (1) u16 = 1014
+    state (2) u8 = 2
+    progress (3) u16 = 35
+    note (4) string = "q"
+  [15]
+    id (1) u16 = 1015
+    state (2) u8 = 0
+    progress (3) u16 = 13
+    note (4) string = ""
+  [16]
+    id (1) u16 = 1016
+    state (2) u8 = 1
+    progress (3) u16 = 21
+    note (4) string = "q"
+  [17]
+    id (1) u16 = 1017
+    state (2) u8 = 2
+    progress (3) u16 = 63
+    note (4) string = ""
+  [18]
+    id (1) u16 = 1018
+    state (2) u8 = 0
+    progress (3) u16 = 98
+    note (4) string = "q"
+  [19]
+    id (1) u16 = 1019
+    state (2) u8 = 1
+    progress (3) u16 = 74
+    note (4) string = ""

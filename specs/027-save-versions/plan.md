@@ -1,6 +1,6 @@
 # Plan 027: Save data with versions
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24, console check (T10.2) pending (approved 2026-11-24 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D45, D46 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`nnh::save`'s `NNHS` container, its write procedure and `read_one`, `nnh::fs` paths, `Result`, logs,
 asserts, profiler, `detail::crc32`), spec 014 (`data::String`, `data::List`, `data::Ref`, the media references, the
@@ -706,3 +706,366 @@ D29 is **not** amended (its traits and value types are reused read-only; `FieldK
 spec 002's save procedure is reused as is, with one appended internal accessor. The patterns page gains a "Versioned
 schema" row. Flagged for the maintainer: the compile-time chain check (decision 6), `std::getenv` in core (decision 15),
 `schema_registry.o` for enum names (decision 22), the store median (decision 20).
+
+## Stage 0 results
+
+Measured 2026-11-24 on the maintainer's Windows machine (WinLibs GCC 15, devkitARM), in the `spec-027` worktree at
+`bafd9f2`, before any spec 027 change. Scripts in `build/ref-027/` (not committed). Other agents were building on the
+same PC at the same time: timings are noisy.
+
+- **T0.1** `hello` sizes (`size`: text / data / bss, file bytes): pc-release `hello.exe` 130 668 / 22 020 / 211 696
+  (278 856 bytes); pc-debug 198 688 / 26 756 / 214 352 (1 297 082); 3ds-release `hello.elf` 201 124 / 28 352 / 106 680
+  (`.3dsx` 246 512 bytes); 3ds-dev 217 896 / 32 872 / 109 288 (`.3dsx` 268 012). `nm -C` lists saved
+  (`sizes-0/hello-*.nm`). `hello` links no `nnh::save::write` (pc-release and 3ds-release `nm`): `save.o` is not in
+  it, so the appended `save_read_one` can't reach it. `.text` of 3ds-release ELFs: `actions` 245 996, `data` 319 428,
+  `foundation` 206 936. Edit `examples/data/main.cpp` → simulator (pc-debug `data`) 2.15, 1.87, 1.86 s; → `.3dsx`
+  (3ds-release `data_3dsx`) 5.54, 5.45, 5.49 s. Clean `nnh_core` (pc-debug, parallel) 10.5 s. Header cost
+  (`header_cost.sh`, one-line TU, `g++ -std=c++20 -fsyntax-only`, best of 5): `<nnh/data.hpp>` 10 078 preprocessed
+  lines, 0.43 s; `<nnh/fs.hpp>` 7 640 lines, 0.38 s. 3ds-dev disassembly of `save.o` and `save_format.o` saved in
+  `dis0/`.
+- **T0.2** Pins (`tests/saves/test_raw_unchanged.cpp`, values from the untouched spec 002 and 017 code): a 100-byte
+  blob (`i * 7 + 3`) written by `nnh::save::write` with version 7 is a 116-byte file of CRC-32 `0x7E97C64D`; the
+  bindings blob of a four-action set (spec 017's test set, Jump rebound to Y) saved with `save_to(..., 5)` is 28 bytes
+  of CRC-32 `0xE82EA36E`; the fake's call sequence of a `save::write` over an existing save is `WSXNN` (write temp,
+  size, remove backup, two renames) and of a `save::read` `SRR`; NNH Link's `link.sav` goes through the untouched
+  `save::write`/`read` with its own `Storage::kFormat`.
+- **T0.3** ctest pc-debug 271/271 (`data check: PASS checksum 0xD5BD3020`, `camera: PASS 5201E6CF`, `queries: PASS
+  4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7BB7901E`, `hierarchy: PASS 23DB5C36`, `tweens: PASS B44CA3F6`,
+  `platformer_replay_matches_script`), pc-release 259/259; `actions/tests/check.nnhs --pc` → `actions: saved 40 bytes
+  sum AAB4AA36`, `actions: PASS 7/7`, `nnh: PASS (77 lines)`. `nnh_tests` 2440 tests against `kMaxTests` 4096: 1656
+  left, no change needed.
+
+## Stage 1 refinements and results
+
+- **Files** as planned: `src/saves/save_wire.hpp` (wire byte, canonical varints, widths, little-endian loads and
+  stores, `take_varint` for validated data), `save_header.{hpp,cpp}`, `save_validate.{hpp,cpp}`, and
+  `save_report.cpp` (for now `FieldPath::format`, which the validator's messages use). `<nnh/saves.hpp>` starts with
+  the limits, `WireKind`, `WireShape`, `FieldPath` and `path()` (the rest in stage 2). `FieldPath` gained `valid()`
+  (a path that grew past 16 steps, or a negative item index, names nothing) and engine-use `push`/`pop`.
+- **Messages are at most 63 characters** (`nnh::Error`), so the raw-file refusal is "a raw nnh::save file (read it
+  with save::read)" (the file layer prefixes the path), and the newer-format one "format 2; this engine reads 1". The
+  validator's reasons are `field <path>: <what>`; when the id itself is the fault the path ends in `?` (`field 4.?:
+  bad id`). Its wording: bad wire byte 0xNN, bad id, id not ascending, value / string cut short, string is not UTF-8,
+  string holds a NUL, bad length, struct length exceeds the file, nesting deeper than 8 levels, bad count, list count
+  N exceeds the file, length N exceeds the file, items don't fill their length, template of N fields, template: bad
+  wire byte / bad id / bad size, template ids not ascending, template cut short.
+- **Depth**: the root's fields are level 1, a struct value's fields one level more, the rows of a struct sequence one
+  level more than the sequence's field; an empty struct list is accepted whatever its template holds (no level is
+  entered). A key with a NUL among its bytes is refused (`bad key`), so a key compare can't stop early.
+- **Fake platform** (insertions as planned, plus one): `cut_power_after(ops, torn)`, `restore_power()`,
+  `truncate_file()`, and **`fs_log()` / `clear_fs_log()`** — one letter per contract call (S size, R read, W write, A
+  append, N rename, X remove) — so the tests compare call *sequences* (T0.2's "counts per function"); `count_call()`
+  takes the letter, which touches each fs function's first line. A cut append keeps half its bytes when torn.
+- **T1.3** `detail::save_read_one` appended to `save.cpp` (it calls the anonymous `read_one`; GCC doesn't inline it).
+  3ds-dev `save.o`: every existing function byte-identical to `dis0/` (only the new section added); `save_format.o`
+  identical.
+- Tests: `test_wire.cpp` (9), `test_header.cpp` (6), `test_validate.cpp` (15: every one-value kind and every sequence
+  shape accepted; every bound both ways with hand-written bytes; the two messages of the spec; eight levels accepted
+  and nine refused, rows counted as a level; a 256 KiB adversarial file of 128-field rows validated in ≤ 2 steps per
+  byte), `test_raw_unchanged.cpp` (5), `tests/platform_fake/test_power_cut_fake.cpp` (8).
+- **T1.5** ctest pc-debug 271/271, pc-release 259/259; `nnh_tests` 2483 (pc-debug), 2443 (pc-release); pc-debug,
+  pc-release, 3ds-release and 3ds-dev without a warning; spec 014's data module untouched (`git diff --exit-code`);
+  `hello` sizes and `nm` lists equal T0.1's; `actions --pc` PASS 7/7 with `saved 40 bytes sum AAB4AA36`.
+
+## Stage 2 refinements and results
+
+- **Files** as planned: `<nnh/saves.hpp>` (limits, `WireKind`, `WireShape`, `FieldPath`, `path()`, `Report`, `FileInfo`,
+  `OldFields`, `max_size`, `Buffer`, `encode`/`decode`/`store`/`load`/`info`/`exists`/`remove`, the dump calls, and a
+  short `nnh::detail` block declaring the non-template functions they call), `nnh/detail/save_schema.hpp`
+  (`SaveFieldInfo`, `SaveStep`, `SaveRole`, `SaveTypeInfo`, `SaveTag`, the `save_error_*` functions),
+  `save_kinds.hpp`, `save_tables.hpp`, `save_macros.hpp`. One more source: **`src/saves/save_enum.cpp`**
+  (`save_find_enum_names`, the only caller of spec 014's `find_enum`): an enum field's record points at a template
+  `save_enum_names_of<E>` that calls it, so only a game whose save has an enum field links it and, through it,
+  `schema_registry.o` (plan decision 22).
+- **Records**: `SaveFieldInfo` is 32 bytes on the 3DS (name, nested record, enum lookup, offset, stride, items offset,
+  count, id, capacity, kind, shape, width); `width` is the member's size for numbers, bools and enums (an enum's file
+  kind is its underlying type's), 0 otherwise. `SaveTypeInfo` keeps three sizes per struct: `max_fields` (its fields
+  with tags), `max_row` (a row of a sequence: values only) and `template_size`, so `max_size<T>()` is
+  `16 + key length + max_fields` at compile time.
+- **Checks** (all at compile time): as planned, plus a save struct needs at least one field
+  (`save_error_a_save_struct_needs_a_field`), an enum whose underlying type is `char`, `wchar_t` or `bool` is refused
+  (char's sign differs between systems), and **the step chain is complete from version 1**: every version 1 … c − 1
+  needs exactly one step, so a version-3 type without steps doesn't compile (decision 6's strict reading; a game that
+  bumps the version with nothing to convert writes an empty step). The macro parameter is `TypeName` (a parameter
+  named `Type` replaced `SaveRole::Type` in the expansion).
+- **Enum names in `nnh_tests`** come from the tests' data schema (`test_data::Element`, `NNH_DATA_ENUM` in
+  `tests/data_assets/test_types.cpp`): a new `NNH_DATA_ENUM` in `nnh_tests` would change spec 014's registry tests
+  (`count_enums == 1`, the pinned schema description). So the example's `difficulty_names.cpp` is linked by the
+  example only; in `nnh_tests` the reference save's `Difficulty` has no names and takes any `std::uint8_t` (the golden
+  values are valid enumerators, so the sums don't depend on it).
+- Tests: `test_declare.cpp` (10: every one-value kind and sequence shape deduced; enums by their underlying type and
+  their names looked up; fields sorted whatever the order; key, hash, version, role, depth; retired ids and steps in
+  order; a summary; the global namespace and a spec 014 data type that is also a save type; `max_size` against hand
+  sums, `Buffer` sizes; names only outside Release). Negative-compile ctests: `saves_declaration_accepts_good`
+  (`-Werror`) and 27 cases × (`rejects`, `explains`) — unknown member, pointer, `std::string`, union, `char`, const
+  member, id 0, id 65 536, an id twice, retired used, retired twice, nested without declaration, 129 fields, 9 levels,
+  root over 64 KiB, array of 65 536, max size over 256 KiB (64 KiB of `u8` fields with 3-byte ids), keys upper case /
+  17 characters / empty, version 0, a step at the current version, two steps for one version, a gap, a version in a
+  struct, a summary stored, an undeclared type stored. Files generated once by `build/ref-027/make_compile_fail.py`.
+- **T2.4** include check: `<nnh/saves.hpp>` pulls `nnh/data.hpp` (and its `assert`, `math`, `result`, `build`,
+  `detail/data_*`, `type_id`, `printf_format`), `nnh/result.hpp` and its own four detail headers — no gfx, audio,
+  tilemap or entities header. Header cost: 10 987 preprocessed lines and 0.461 s against `<nnh/data.hpp>`'s 10 078
+  and 0.453 s: +0.008 s (budget +0.05 s; risk 6 not triggered).
+
+## Stage 3 refinements and results
+
+- **File** as planned: `src/saves/save_encode.cpp` (≈ 190 lines). Every write checks the room left first (`LimitReached`
+  with nothing written past `capacity`, the message naming the size needed). A length prefix (a struct value, a string
+  sequence's or a struct sequence's `bytes`) is written after its content: one byte is reserved and the content moved
+  with one `memmove` when the length needs two or three bytes, so each value is encoded once (no size pass). A List's
+  count is clamped to its capacity (memory is never trusted). Fixed-width sequences are one `memcpy` (stride = wire
+  width for every fixed kind, little-endian), bool sequences one byte test per item. A string that isn't UTF-8 (a
+  game that wrote raw bytes into a `data::String`) asserts in Debug/Development and returns `InvalidArgument`
+  ("field 18: string is not UTF-8"; the encoder keeps a `FieldPath` for that message).
+- **Overhead measured** (FR-5; hand bytes in the tests): a one-value field costs 2 bytes of tag (3 for ids ≥ 128, 4 for
+  ≥ 16 384); a struct value +1 (+2 from 128 bytes of content); a string +1 (its length, not its capacity); a sequence
+  of numbers +1–3 (count); of strings +2–6 (count, bytes); of structs +2–6 plus a template of 1 + 2 bytes per item
+  field, once per sequence. The reference save's total is measured at stage 6.
+- Tests: `test_encode.cpp` (8: every one-value kind against hand bytes — including three enums of `u8` and `i64`
+  underlying types, a nested struct and every number at both signs —, a bool byte of 2 written as 1, defaults written,
+  the id-length overheads, nested structs by their own ids, a short buffer at 0/10/21/half/full − 1 bytes with
+  nothing written past it, strings of 0 to capacity bytes, a non-UTF-8 string), `test_encode_sequences.cpp` (5: every
+  sequence shape by hand, empty sequences with their template, an array of structs inside list rows, two-byte counts
+  and lengths, `max_size<T>()` equal to the encoded size of a full value for 10 shapes — including a 255 × 255-byte
+  string list (65 kB) and a three-byte string `bytes` length).
+- **T3.3** ctest pc-debug 326/326, pc-release; four presets without a warning; spec 014 untouched; `hello` unchanged.
+
+## Stage 4 refinements and results
+
+- **Files** as planned (`save_apply.{hpp,cpp}`, `save_convert.{hpp,cpp}`, `save_decode.cpp`, `save_migrate.cpp`,
+  `old_fields.cpp`), plus two internal headers: `save_cursor.hpp` (skipping a validated value and reading a sequence's
+  header, shared by the decoder, the view and the dump) and `save_internal.hpp` (`save_decode_payload`,
+  `save_run_steps`, and the stage 5 hooks). The `saves` log channel is defined in `save_report.cpp`.
+- **Decode order**: header (raw payload, format) → whole-structure validation → key (hash and text) → version → `T{}`
+  → fields → steps. So a damaged file is `Corrupted` before its key is looked at (stage 5 tries the backup for it).
+- **Merge by id**: a struct's file ids and its sorted fields and retired ids are walked together once (`Merge`), the
+  same code for tagged fields and for rows (whose ids come from the template); a row is merged per row, never through
+  a lookup table on the stack. **Lists** start from their item defaults: slots `[0, max(old count, n))` are reset
+  (`T{}` per struct item, zero for the others) before the file's items are applied, so a list item missing a field
+  gets the item struct's default, and freed slots keep the List invariant. **Arrays** keep `T{}`'s slot values as the
+  base (an array with fewer items keeps the defaults for the rest).
+- **Conversions** (`save_convert.cpp`, integer arithmetic only, `<bit>`'s `countl_zero`/`countr_zero`): as D46. A whole
+  sequence whose kind can't convert at all (string ↔ non-string, struct ↔ non-struct) is one drop; scalar sequences
+  drop per item. Same-kind integer, Color and reference sequences are one `memcpy`; float, Vec2 and bool sequences are
+  checked per item (finiteness, 0/1), enum sequences per item only when the enum has names.
+- **Enum names** are looked up once per run of the same field (`SaveApply::enum_names` keeps the last lookup), so the
+  rows of a list search the registry once (risk item 6 of the ARM plan).
+- **`OldFields::get`** converts into a temporary `T value{}` and copies it to `out` on success (so `out` is unchanged on
+  failure, and a struct, array or list starts from its defaults); a string longer than the target is cut (true), a
+  sequence into one value or the reverse is false. `old_fields.cpp` locates a path as a tagged value, an item, or a
+  row (template + row bytes), then converts with `apply_field`/`apply_row`.
+- **Missing step at run time**: the runner finds step v at index v − 1 (complete chain); a hand-built record with a null
+  step asserts in Debug/Development and skips it in Release (`migrated` then counts only the steps run).
+- Tests: `test_round_trip.cpp` (6), `test_evolution.cpp` (9), `test_fit.cpp` (9; the saturation test decodes 65 535 u16
+  of 300 plus one more into u8 fields: 65 536 drops reported as 65 535), `test_versions.cpp` (6),
+  `test_migrations.cpp` (5), `test_old_fields.cpp` (6), `test_summary.cpp` (4); `migration_types.hpp` (three versions
+  of one type with call-logging steps, and a summary). Enum names in tests: `test_data::Element` (stage 2 note).
+
+## Stage 5 refinements and results
+
+Rebased on `main` at the start of the stage (specs 022 and 025 merged there): no conflict.
+
+- **Files** as planned: `save_file.cpp` (`store`, `load`, `info`, `exists`, `remove`), the warning line in
+  `save_report.cpp`, `save_dump.cpp`, `save_dump_env.cpp`.
+- **Backup rules** (D46): a load tries `<path>.bak` when the main file is missing, unreadable (`IoError`), fails spec
+  002's checks (length, CRC) or fails the structural validation (`Corrupted`); never for another key, a newer version or
+  format, a raw file, or a buffer too small (`LimitReached`). When the backup is itself a save of another type or a raw
+  file, that error is returned (it names the backup file). Main and backup both missing: `NotFound`; otherwise both
+  unusable: `Corrupted` ("slot1.sav and its backup are unusable"), with one warning line giving both reasons.
+  Structured messages name the file (`mig.sav: field 7: list count 900 exceeds the file`; spec 002's read messages
+  already do); all are cut at 63 characters (`nnh::Error`).
+- **Warning line** (one per load that used the backup, dropped or adjusted): `save <path>: backup used (<main's
+  reason>)` or `save <path>: loaded`, then `; v1 -> v3 (2 steps)` when steps ran, `; unknown N (paths)`, `; dropped N
+  (paths)`, `; adjusted N (paths)` — the unknown count is in the line too (it was not in the plan's example), paths only
+  in Debug/Development. A load with nothing to report logs nothing (a migration alone included).
+- **`info`** reads `fs_size` + one `fs_read` of up to 48 bytes, checks the `NNHS` header and the file length, then the
+  structured header (no CRC); a missing or unusable main file gives its backup's header (`from_backup`); a raw file is
+  `Unsupported`. **`exists`** is false for a bad path. **`remove`** removes each of the three files that exists, then
+  `IoError` when one is still there.
+- **Dump format** (Debug/Development): first line `save '<key>' v<version> (<bytes> bytes)`; a field `name (id) kind =
+  value` (`kind` is the file's wire kind: `bool u8 i8 u16 i16 u32 i32 u64 i64 f32 f64 vec2 color ref texture sound
+  music string struct`); a struct `name (id) struct` with its fields two spaces deeper; a sequence `name (id) u16[3]`
+  (array) or `name (id) struct list[64]` (list), then items two spaces deeper — numbers 16 per line for 1-byte kinds,
+  4 for 8-byte kinds, 8 otherwise (`[0] 1 2 3`), strings one per line, struct rows as `[i]` with their values four
+  spaces deeper; strings quoted with `\"`, `\` and `\xNN` for bytes below 0x20 and from 0x7F (UTF-8 included, so the
+  text is ASCII); floats `%.9g [bits]`, doubles `%.17g [bits]`, vec2 `(x, y) [bits bits]`, colors `#RRGGBBAA`,
+  references `0xXXXXXXXX`; enums with `NNH_DATA_ENUM` names `5 (Fire)`; ids the schema doesn't know `#3 u32 = 120`,
+  retired ones `#3 (retired) u32 = 120` (values shown: a dump says what the file holds). A schema of another key is
+  ignored (ids only). Lines are built in a 600-byte buffer (`log_lines` cuts at the log's 160). Release:
+  `dump`/`dump_bytes`/`dump_file` return `Unsupported` and `save_dump.cpp` compiles none of the dump.
+- **`NNH_SAVE_DUMP`**: read once with `std::getenv` (any value but empty or `0`), overridable by
+  `detail::save_set_dump_override(-1|0|1)` (tests); the text goes out through a 4 KB static buffer, `fs_write` for the
+  first piece and `fs_append` for the next.
+- Tests: `test_file.cpp` (7: the `NNHS` file around the payload, CRC included; `WSN` for a first store and `WSXNN`
+  over a save — T0.2's raw sequence; a load is `SRR`; `NotFound`; no line for a clean or migrated load; one line with
+  `unknown 1` and `dropped 1 (5)`), `test_backup.cpp` (6), `test_slots.cpp` (7), `test_power_cut.cpp` (4: 0, 1 and 2
+  previous saves × a cut after 0–4 mutating calls × torn or not, then a load and another store; the cut between the two
+  renames loads the backup), `test_dump.cpp` (7 in Debug/Development: the exact text of a small value, unknown and
+  retired ids, a schema-free dump, a damaged buffer, a file with its backup, `<path>.txt` through the override, a
+  7 KB dump in two pieces; 1 in Release: `Unsupported`), `test_save_misuse.cpp` (6), `test_save_cost.cpp` (3: no
+  allocation over encode, decode, info, exists, dump and a migrated load; 128 visits for a 128-field struct; 1 + n + 3n
+  for n rows of three fields, generated by `build/ref-027/make_cost_test.py`), `test_blob.cpp` (1: an `ActionSet`'s
+  `NNHB` in a `List<std::uint8_t, 256>`, stored, loaded, `load_from` gives the rebinding back).
+
+## Stage 6 refinements and results
+
+- **Reference types** as the plan's table, in `examples/saves/progress.hpp` (v3, with `Hero`, `Item`, `Quest`,
+  `Difficulty`, `QuestState`, `Checkpoint`) and `progress_history.hpp` (`ProgressV1`, `ProgressV2` with their own
+  `StatsV1/V2`, `ItemV1/V2`, `QuestV1`). `ProgressV2` needs its own step from v1 (the chain rule):
+  `progress_v2_from_v1`, the same weapon-to-inventory conversion as `progress_from_v1` (one template in
+  `progress_migrate.cpp`). Step 2 sets `gems = coins / 10` and splits `location` into `room`/`tile` when the file has it
+  (a v1 file doesn't: they keep their defaults). `difficulty_names.cpp` (`NNH_DATA_ENUM` of `Difficulty` and
+  `QuestState`) is the example's only; `nnh_tests` and `make_saves_golden` don't link it, so their dumps show no enum
+  names (stage 2 note).
+- **Reference values** (`reference.cpp`): one FNV-1a sequence seeded with 1; floats made from their bits (item 5's
+  `wear` is the subnormal `0x00000123`); name "Zoë Rangers" (12 bytes); 32 items in v1, 64 in v2/v3; 20 quests; seed
+  `0x1234567890`; play time 3 600 000 (v1's u32) and 5 000 000 000 (v2, v3); best time 123.456; v3 labels on every
+  fourth item and notes on even quests (one with quotes, for the dump's escapes). `reference_v1_migrated()` is the
+  hand-made v1 → v3 expectation; `reference_v3_b()` the check mode's second store.
+- **Sizes** (smaller than the plan's estimates — the items' labels and quests' notes are short): v1 1769 bytes of
+  payload (plan ≈ 2.5 KB), v2 3590 (≈ 4.0 KB), v3 3768 (≈ 4.2 KB); `max_size<Progress>()` 4789 (≈ 4.9 KB). Framing in v3
+  (FR-5): header 24, tags 32, lengths and counts 23, the two templates 30, label and note lengths 84 — ≈ 190 bytes over
+  ≈ 3580 bytes of values: **5.3 %** (target < 25 %).
+- **Golden files** (`tests/data/saves/`, `README.md` with how and why): v1.sav 1785 bytes (payload CRC `692F89F1`),
+  v2.sav 3606 (`BB78EEE1`), v3.sav 3784 (`11363B5C`); loaded by the v3 code their `progress_sum` is `0F3BA8C8` (2 steps),
+  `1EFDB382` (1 step), `D15774A7` (no step); unknown, dropped and adjusted 0 each. `.gitattributes` gains `*.sav binary`
+  (one line; the `.txt` dumps are LF text). Copies in `examples/saves/assets/golden/`; ctest `saves_golden_copies_match`
+  (a `compare_golden.cmake` loop) placed after `queries_self_check_pc`'s block. `make_saves_golden` (EXCLUDE_FROM_ALL)
+  writes whole `NNHS` files with stdio (a host tool) and the dumps.
+- **Fuzz** (`tests/fuzz/fuzz_saves.{hpp,cpp}`, `libfuzzer_saves.cpp`, `test_fuzz_saves.cpp`): a reference type with
+  every kind and shape (ids 1–30, two retired, nested lists inside rows); each input is decoded as a payload as given,
+  then as fields behind a valid header, then as a whole file through `load` on the fake (size and CRC fixed); accepted
+  values must re-encode stably; the view runs on paths taken from the input; the dump runs (Debug/Development). The
+  mini-fuzz (2 seeds + the 3 goldens × 3000 mutants) accepts 1340 of 15 000 as given (pc-debug).
+- Tests: `test_reference.cpp` (5), `test_golden.cpp` (4; 3 in Release), `test_fuzz_saves.cpp` (2).
+
+## Stage 7 refinements and results
+
+- **Files**: as planned (`main.cpp`, `demos.hpp`, `summary.hpp`, `settings.{hpp,cpp}`, `tiny_game.{hpp,cpp}`,
+  `slots_panel.{hpp,cpp}`, `hud.{hpp,cpp}`, `showcase_scene.{hpp,cpp}`, `check_scene.{hpp,cpp}`, `check_golden.hpp`,
+  `bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}`, `CMakeLists.txt`, `tests/check.nnhs`) plus `slot_files.{hpp,cpp}` (slot
+  paths, `damage_save`, `install_golden`, a CRC-32 for the encode line: only public calls). **Damage** keeps the backup:
+  the broken payload is written through a scratch `nnh::save::write` (a valid CRC), read back whole and put in place of
+  the main file only with `fs::write_file`. The tiny game's **play time counts frames spent moving**, so the byte
+  counts and sums the script expects don't depend on how many frames the PC or the console took between commands.
+  The **reference values fill structs in place** (`fill_reference_v3(Progress&)` etc.; by-value wrappers for the
+  tests): a `Progress` is about 5 KB, never a temporary on the 3DS main thread's stack (the scenes live on the heap).
+  The check mode also removes `settings.sav` first, so two runs log the same settings line. The bench mutes log lines
+  below Error while a workload runs (a backup load logs a warning by design: the bench times the save, not the
+  remote log). `difficulty_names.cpp` registers `Difficulty` and `QuestState` (the example's dumps show
+  `difficulty (11) u8 = 1 (Normal)`).
+- **Check lines** (pc-debug and pc-dev; `check_golden.hpp`): `saves: check started`, `saves: v1 sum 0F3BA8C8 migrated
+  2`, `saves: v2 sum 1EFDB382 migrated 1`, `saves: v3 sum D15774A7 migrated 0`, `saves: encode crc 11363B5C bytes 3768`,
+  `saves: slot sum F6C8D12F`, `saves: backup used sum D15774A7`, `saves: summaries L300 empty empty`, `saves: removed
+  slot1 exists 0`, `saves: PASS`. With `slot_sum` set to 0 the check logged `saves: FAIL slot sum F6C8D12F` (checked
+  once). **Showcase lines** of the script: `saves: showcase slots empty empty empty`; `slot 1: stored 2206 bytes` (twice:
+  before and after `hold RIGHT 40`), `slot 2: selected`, `slot 2: stored 2206 bytes`, `name: Zoë`, `slot 3: selected`,
+  `slot 3: stored 2207 bytes`; `golden v1: loaded sum 0F3BA8C8 steps 2`; `slot 1: damaged`, `slot 1: loaded sum 4B109E8C
+  version 3 steps 0 unknown 0 dropped 0 adjusted 0 backup`; `slot 2: deleted`; `settings: volume 8 language English
+  stored`; then the bench lines.
+- **Screenshots** (`SAVES_SHOT=empty|saved|golden|backup`, 30 frames, read back): empty slots; three slots with their
+  summaries ("Ana L1", "Zoë L1 gems 12 1:06", "Bo L9"); golden v1 loaded ("Zoë Rangers level 37 gems 12345", 33 items,
+  `v1 -> v3 steps 2`); a load from the backup (`backup used`, slot 1 marked "(backup)"). The report shows on two lines
+  (one did not fit 400 pixels). `NNH_SAVE_DUMP=1` wrote `slot1.sav.txt` (read back: `save 'progress' v3 (2206 bytes)`,
+  names, enum names).
+- ctests `saves_self_check_pc` and `saves_check_script_pc` (`RESOURCE_LOCK nnh_remote_port;nnh_saves_data`) after the
+  queries block; the script passed twice in a row (`nnh: PASS (114 lines)`).
+- **PC bench** (pc-dev, three runs, other agents building on the same PC): encode 0.011–0.020 ms, decode 0.032–0.072
+  ms, decode v1 0.015–0.036 ms, store median 3.8–5.8 ms (max 4.2–22.8), load 0.6–0.9 ms, backup 1.2–1.6 ms, summaries
+  1.6–2.5 ms, raw write 4.0–5.3 ms; PASS.
+
+## Stage 7 ARM pre-check
+
+3ds-dev objects (`build/ref-027/armcheck.py`: per function the instructions, calls, VFP and `pld`;
+`stackcheck.py`: `-fstack-usage`):
+
+- **No FPU arithmetic in the codec**: the only VFP instructions in `save_apply.o` and `save_convert.o` are `vldr`/`vstr`
+  of one 8-byte constant (a struct zeroed through a d-register: a bit move, no conversion, no flush). `vcvt` appears
+  only in the dump's `printf` arguments (Debug/Development). **No `__aeabi_*` in the codec** (`__aeabi_uidivmod` is in
+  the dump's line breaking). `__ctzdi2` (64-bit `countr_zero`, a libgcc call) was in the conversions: replaced by
+  32-bit halves. `memcpy` only for packed sequences, strings and 8-byte loads; `memmove` only in the encoder's
+  length prefixes. `pld` added to the validator's field and row walks (`__builtin_prefetch`, 64 bytes ahead).
+- **Hot paths rebuilt without a byte changing** (goldens hold): same-kind bool and float sequences are checked and
+  copied inline (the 1024 explored flags were 1024 calls of `convert_scalar`); enum names are looked up once per run of
+  rows.
+- **Functions** (instructions, whole function): `put_fields` 107, `put_one` 124, `put_sequence` 448, `put_string` 82;
+  `Walk::fields` 127, `Walk::one` 126, `Walk::sequence` 520 (strings and rows inlined); `apply_fields` 142,
+  `apply_by_id` 89, `apply_field` 408 (`apply_one`/`apply_sequence` inlined), `apply_row` 153, `convert_scalar` 387,
+  `convert_string` 37; `locate` 478 (old fields).
+- **Estimates per AC-8 workload** (executed instructions × 1.3 plus about 110 cycles per 32-byte line missed, 268 MHz):
+  encode about 40 k instructions (640 row values × 45 with the path stack, 1024 flags × 6, 84 strings) + 280 lines
+  (5 KB read, 3.8 KB written), 83 k cycles: **about 0.31 ms** (< 0.5); decode: validation 25 k (the flag and bestiary
+  arrays are O(1) there), `T{}` 1.3 k stores, apply 75 k (640 values × 100, flags inline, bestiary one copy), × 1.3 +
+  400 lines, 175 k cycles: **about 0.65 ms** (< 1 ms; above the plan's 0.45–0.55); decode v1 (1.8 KB, 32 items, 3 view
+  lookups, a 33-item shift), 100 k cycles: **about 0.38 ms** (< 1.2). The card workloads are unchanged from the plan's
+  table (store 55–105 ms, 137 with margin: tight; load 10–25; backup 20–50; summaries 30–75).
+- **Stack** (3ds-dev frames): `save_load` 704, `load_one` 240, `save_decode_payload` 208, `save_validate_fields` 136,
+  `Walk::fields` 56 + `Walk::sequence` 64 per level, `apply_fields` 56 + `apply_by_id` 40 + `apply_field` 80 +
+  `apply_row` 64 per level, `save_run_steps` 40, `old_fields_get` 104 (its scratch report is static), `locate` 128,
+  `save_decode` 464. A file load of the three-level reference save peaks at **about 1.5 KB** (about 2.9 KB at 8
+  levels); a memory decode about 1.05 KB. **The plan's < 1 KiB target is missed**: a `Report` (350 bytes: 9 paths of 36
+  bytes) is returned inside a `Result`, whose constructor takes its value by copy (spec 002's `result.hpp`, not
+  changed); the internal calls already share one report (the first build measured 984 + 528 + 872 bytes for the same
+  three frames). Flagged for the maintainer; the 3DS main thread's stack (32 KB by default) has room.
+
+## Stage 10: console run (prepared)
+
+T10.1 on the PC: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh cmake --build --preset 3ds-dev
+--target saves_3dsx actions_3dsx data_3dsx` without a warning; 3ds-release `hello.elf` equal to T0.1's (the stage-end
+guards). On the Old 3DS, each run: Homebrew Launcher, press **Y**, nobody touches the console after.
+
+1. `build/pc-debug/tools/nnh/nnh run saves --script examples/saves/tests/check.nnhs` (about 1 min): every line of
+   "Stage 7 refinements and results" equal to the PC's (the sums, `encode crc 11363B5C bytes 3768`, the byte counts
+   2206/2207, `loaded sum 4B109E8C … backup`, `settings: volume 8 language English stored`), then the bench lines and
+   `saves bench: PASS` (expected: encode 0.2–0.4 ms, decode 0.5–0.8, decode v1 0.3–0.5, store median 55–140 ms — the
+   most likely FAIL —, load 10–35, backup 20–65, summaries 30–100). Screenshots `check`, `empty`, `saved`, `golden`,
+   `backup`, `bench` in `build/logs/` read back. A FAIL fails the run after every number is logged: record them in
+   "Console run 1" and apply T10.3.
+2. `build/pc-debug/tools/nnh/nnh run actions --script examples/actions/tests/check.nnhs` (about 40 s): `actions: saved
+   40 bytes sum AAB4AA36`, `actions: PASS 7/7`, `nnh: PASS`.
+3. `build/pc-debug/tools/nnh/nnh run data --script examples/data/tests/check.nnhs` (about 20 s): `data check: PASS
+   checksum 0xD5BD3020 (4 enemies, 3 items, 1 settings, index 595 bytes)`, `nnh: PASS`.
+
+Optional (decision 21): copy `slot1.sav` from `sdmc:/3ds/saves/` into the simulator's data folder
+(`build/pc-debug/examples/saves/data/saves/`) and load it there (the same summary).
+
+## Mutation testing
+
+`build/ref-027/mutants.py` (88 hand mutants: wire, header, validator, encoder, conversions, apply, decode, steps, view,
+file layer, report, dump file, 15 compile-time checks run against the negative-compile ctests, the fake's power cut),
+applied one at a time by `mutate.py` (pc-debug, whole `nnh_tests` or `ctest -R saves_declaration`). First pass: 15
+survivors (and 5 patterns to fix): a sequence one byte short, rows that can't fit (caught later with another message),
+a List count above capacity in memory, signed limits (`<` vs `<=`), the float exponent limit (2^128), list slots past
+the file's items with a default list, a bad bool byte inside a bool array, two keys of one FNV-1a hash ("bgpx_" and
+"b13ck"), a string list's item skip, a row read into a number, a damaged main file without backup (Corrupted, not
+NotFound), `info` on a cut file whose headers are whole, a load that only adjusted, `NNH_SAVE_VERSION` twice. Each got
+a test (`tests/saves/test_edges.cpp`, 13 tests) or a negative-compile case (`version_twice`). Second pass: **87 of 88
+killed**; 1 equivalent (`O1`: the view's early stop when the file's ids pass the one looked for is only a shortcut).
+One mutant of the first list was equivalent too (a path-count condition) and was replaced. Score 87/87 non-equivalent.
+
+## Stage 8 results
+
+- **T8.2** `check_release_strings.sh`: the dump's texts, `NNH_SAVE_DUMP` and two of the example's member names; checked
+  on `saves.3dsx` and pc-release `saves.exe` (ok) and on pc-debug `saves.exe` (FAIL, the positive control). A 3DS `.elf`
+  keeps DWARF (every struct member's name), so the names are checked on the `.3dsx`.
+- **T8.3** Probes (`build/ref-027/probe_*.cpp`, linked against pc-release `libnnh_core.a` with a map file): a save
+  without enums links no `src/data` object; with an enum field, only `save_enum.o` and `schema_registry.o`. The 3ds-release
+  `saves.elf` has no `data_load`, `data_index`, `index_validate` or `validate_data` symbol. `hello` sizes and `nm` equal
+  T0.1's at every stage. Saves module, 3ds-release objects (text + rodata): validate 4.0 KB, encode 3.5, file 3.4, apply
+  3.2, old fields 3.0, convert 1.8, report 1.5, header 1.2, decode 0.8, the rest < 0.3: ≈ 22.6 KB (the plan estimated
+  7–10 KB for the codec alone; the codec here is ≈ 14.6 KB).
+- **T8.4** Console scripts with `--pc`: actions (`saved 40 bytes sum AAB4AA36`, `PASS 7/7`), animation, camera, data,
+  entities, foundation `assert_crash` PASS; hierarchy, prefabs and saves PASS as ctests (`*_check_script_pc`), the
+  platformer replay ctest passes; the run of the remaining scripts (foundation `cpu_fault`, input, pathfinding,
+  platformer gate/level/zoom_gate, queries, tweens) was cut by the session stop: for the lead's post-merge run. Edit
+  `examples/saves/tiny_game.cpp` → simulator 1.86–1.94 s, `.3dsx` 3.76–3.89 s; edit `progress.hpp` (the declarations'
+  header, 7 sources) → 2.26–2.28 s, 5.38–5.53 s (constitution III: < 2 s / < 5 s for one game `.cpp`; the header edit
+  rebuilds several sources). `.text` of `actions`, `data`, `foundation` unchanged (none links saves).
+- Guards: ctest pc-debug 333/333, pc-release 317/317; `nnh_tests` 2745 (pc-debug), 2698 (pc-release); four presets
+  without a warning; spec 014 untouched; `hello` unchanged.
+
+## Stage 11
+
+Docs: `docs/api/saves.md` (new), `fs.md`, `data.md`, `architecture/security.md`, `decisions.md` (D45/D46
+implemented), `patterns.md`, `REFERENCES.md`, `CLAUDE.md`, `ROADMAP.md`, `specs/README.md`, statuses. Stage 9 (Linux,
+VM 120) and stage 10 (console) are the lead's and the maintainer's; T11.7 (merge) is the lead's.

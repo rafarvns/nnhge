@@ -208,3 +208,22 @@ velocity; emission: rate over time and bursts with cycles and intervals; shape; 
 sheet animation); LÖVE's `ParticleSystem` (a fixed buffer, `emit`, emission areas, up to 8 colours and sizes); Phaser 3's
 `ParticleEmitter` (flow and explode modes, `explode(count, x, y)`); Robert Nystrom, *Game Programming Patterns*,
 "Object Pool" and "Data Locality" (links in [spec 024](../specs/024-particles/spec.md#prior-art)).
+
+## Save data with versions (spec 027)
+
+Written from the published designs, no code copied (links in
+[spec 027](../specs/027-save-versions/spec.md#prior-art)):
+- **Protocol Buffers**: field numbers that never change or get reused (`reserved`), defaults for missing fields,
+  unknown fields skipped by their wire type — https://protobuf.dev/programming-guides/proto3/
+- **FlatBuffers**: explicit field ids and `deprecated` instead of removal — https://flatbuffers.dev/evolution/
+- **Serde** (Rust): `#[serde(default)]` for fields missing from old data, versioned structs converted in a chain —
+  https://serde.rs/field-attrs.html
+- **Godot** `ConfigFile`, `ResourceSaver` and the "Saving games" tutorial —
+  https://docs.godotengine.org/en/stable/tutorials/io/saving_games.html
+- **Unity** `JsonUtility` (missing fields keep their defaults) and `PlayerPrefs` —
+  https://docs.unity3d.com/ScriptReference/JsonUtility.html
+- **Butano** (GBA) `bn::sram`: a struct copied whole, what raw `nnh::save` does —
+  https://gvaliente.github.io/butano/namespacebn_1_1sram.html
+- **Pokémon Generation III** save blocks (alternating, checksummed, the previous one used on failure) —
+  https://bulbapedia.bulbagarden.net/wiki/Save_data_structure_(Generation_III)
+- **GBATEK**, GBA cart backup SRAM/FRAM — https://problemkaputt.de/gbatek-gba-cart-backup-sram-fram.htm

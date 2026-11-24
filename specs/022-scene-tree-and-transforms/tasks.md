@@ -1,6 +1,6 @@
 # Tasks 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set; console showcase `dropped:` line open (a regression from the 026a merge) (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -309,8 +309,8 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   0.910 PASS; prefabs bench PASS but spawn 1.626 → 1.804 ms since spec 021 (plan.md "Console run 1").
   **Run 2 (2026-11-24, after T10.3)**, plan.md "Console run 2 and budgets set": bench pass_turn 1.168, pass_move 0.813,
   world_now 1.112, spawn 2.89 (hand 2.915), reparent 0.923; prefabs `PASS 7BB7901E`, bench PASS; entities `PASS
-  C8FB9A41`, bench PASS; platformer level `E445E8B2` 60 Hz PASS. **Open**: the showcase's `dropped:` line on the
-  console (a regression from the spec 026a merge, bisected); gate.nnhs pending.
+  C8FB9A41`, bench PASS; platformer level `E445E8B2` 60 Hz PASS. Three runs with a resting Circle Pad past the dead zone logged a
+  moved `dropped:` line (no code bug; plan.md "Console run 2 and budgets set"); gate.nnhs pending.
 - [x] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risk 1's list without changing a result (every golden holds; tests first for any behaviour-preserving
   rewrite), then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin, written

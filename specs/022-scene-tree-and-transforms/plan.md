@@ -1,6 +1,6 @@
 # Plan 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set; console showcase `dropped:` line open (a regression from the 026a merge, see "Console run 2 and budgets set") (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D37 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds and remove hooks, handles, the destroy queue, quarantine, iteration guards, scene binding;
 D35), spec 021 (prefab libraries, the all-or-nothing reservation, placement, hooks, map objects; D36), spec 015 (the
@@ -1197,11 +1197,9 @@ Prefabs bench (spec 021) on the same code: spawn 1.631 ms (ratio 1.07), override
 0.494, spawn 1.382, find 0.144, get 4.377, pool 0.442). Platformer level (run 2): replay `E445E8B2`, 60 Hz PASS (worst
 18.6 ms, 0 missed).
 
-**Open: the showcase's drop.** On the console, `dropped: crate at 200.425,217.405` instead of `200,218` (the PC gives
-200,218); the bench numbers above come from a build with two extra log lines in `yard.cpp`, with which the drop is
-right. Bisected on the console: 499f433, 86db872 (spec 024 merge) and 1659d01 (spec 027 merge) give 200,218; c2181f6
-(spec 026a merge) and later give 200.425,217.405 — so not this round's change. The `carried` screenshot differs too
-(the ship's gun drawn at another angle) with no D-pad input: a value of the yard changes without input, depending on
-code layout (an uninitialised read or a stray write suspected). The self-check (`23DB5C36`) is unaffected. Under
-investigation; T10.2 run 1's script line 49 fails until it is fixed.
-
+**The showcase's drop (resolved: not a code bug).** Three console runs between 17:30 and 17:40 logged `dropped: crate
+at 200.425,217.405` instead of `200,218`; every run before and after passed. Cause (Noctowl's report, reproduced bit
+for bit on the PC with `NNH_SIM_INPUT="circle=0.0641025641,0.0897435897"`): the console's Circle Pad rested at raw
+(10, 14), just past the 0.1 dead zone, and the remote merges physical and script input (spec 013), so the ship moved
+for the 32 carried frames. An apparent bisection to the spec 026a merge was confounded by the time of the runs. Keep
+the console untouched while a script runs; making scripts own the controls is a follow-up for spec 013.

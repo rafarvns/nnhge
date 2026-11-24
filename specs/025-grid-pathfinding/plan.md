@@ -935,3 +935,81 @@ on this PC at the same time (other agents): times below are noisy, sizes are exa
   in Release builds. In `tests/CMakeLists.txt`: one `target_sources(nnh_fuzz_targets ...)` and an
   `if(NNH_BUILD_FUZZERS)` with `fuzz_path_ops`, both in 025's block.
 - Guards green.
+
+## Stage 7 refinements and results
+
+- **Level** (`art/make_level.py` → `assets/levels/keep.tmj`; `art/make_art.py` → `assets/art/tiles.png`, 8 tiles):
+  48 × 30; `ground` tiles carry `path_cost` (road 1, floor and doorways 2, swamp 4, water 8 — floor 2 so roads matter;
+  the plan named swamp 3); `walls` (layer property `collision`) holds walls, deep water and closed doors; three `door`
+  points, open at start (A closes/opens them in turn: the `door` tile on `walls`, then a one-cell region sync of both
+  maps); shallow water (weight 8) around deep water around an island; the thick wall's corridor at row 20 is one cell
+  wide. Actors are shapes (hero green, chasers red, goal yellow).
+- **Weights pattern** (`level.cpp`): `cost[id]` from each tile's `path_cost`, a callback returning
+  `cost[map.tile(ground, x, y).id]` — well under 15 lines, so no `sync(tilemap)` convenience (decision 24 holds).
+- **Controls** as planned plus **D-Pad Down = pause the hero** (it still plans): the script pauses it so its door and
+  mode lines come from the spawn cell, whatever it walked.
+- **Frame order**: the hero and the crowd update *before* the frame's controls, so a re-plan caused by a door or a mode
+  change is logged the frame after the change (an `expect` window starts after the previous line's frame). The check
+  scene logs its verdict the frame after the last checkpoint for the same reason.
+- **Script waits** are `wait 10` after an `expect` (the guide's minimum; the parser warns below it), not 3.
+- **Bench**: workloads as planned; judged on the average except `maze slices` and `field slices` (the worst slice: AC-7
+  says "every slice"); `next_crowd` logged, never judged; the door's tile edits are untimed (`prepare_door`), its 3 × 3
+  sync timed. The smoothing path is two searches on `rooms(128, 128, 7)` joined end to end, first 200 cells (no single
+  seeded pair reached 200). A first line logs the sizes: maze path 405 cells / 494 expanded, smooth path 200 cells,
+  replans 32 pairs **4 518 expanded**, astar 32 pairs 81 359 expanded.
+- **Screenshots** read back (pc-debug, frame 40, hero paused at the spawn): `explored` (705 expanded cells tinted, the
+  frontier outlined, the raw path through the corridor, 47 cells, cost 834), `smoothed` (5 waypoints), `field` (heat map
+  on both screens), `partial` (the island: 34 cells to the lake's edge, every reachable cell expanded), `door-closed`
+  (cost 1040, round through the corridor) and `door-open` (cost 438, through door 1), `big` (the 2 × 2 hero, partial on
+  its side of the one-cell corridor and doors).
+- **Self-check in the example**: `PATHFINDING_DEMO=check` logs the 8 checkpoints at frames 8..64, `pathfinding: PASS
+  1C0B5992`, then `pathfinding: showcase`; ctest `pathfinding_self_check_pc` (2.6 s).
+- **Script** `examples/pathfinding/tests/check.nnhs` with `--pc` (pc-debug): `nnh: PASS (104 lines, frames 1-3681)`;
+  ctest `pathfinding_check_script_pc` (71 s, `RESOURCE_LOCK nnh_remote_port`). Its lines: `field: built 3,3 settled 1135
+  frames 3`; the 8 checkpoints and `PASS 1C0B5992`; `pathfinding: showcase`; `hero: paused`; `goal: 24,5 found cells 22
+  cost 438 expanded 251 waypoints 3`; `door: 1 closed version 2`; `replan: version 2 found cells 48 cost 1040 expanded
+  777 waypoints 9`; `goal: 34,7 partial cells 41 cost 1012 expanded 1134 waypoints 7`; `hero: 2x2`; `goal: 24,20
+  partial cells 18 cost 428 expanded 378 waypoints 3`; `mode: never`; `hero: 1x1`; `hero: walking`; the bench lines and
+  `pathfinding bench: PASS` (Debug: not judged).
+- **PC bench** (pc-dev, GCC 16 -O2, three other builds running — noisy, and PC numbers say nothing about the console):
+  astar 0.200 µs per expanded cell (worst frame 0.386); maze one 0.043 ms; maze slices avg 0.025, worst 0.058 ms;
+  replans 1.086 ms; field one 0.667 ms; field slices avg 0.163, worst 7.656 ms (one preempted frame); next 0.034 ms;
+  next_crowd 0.020 ms; smooth 0.012 ms; sync 0.140 ms; door 0.002 ms.
+
+## Stage 7 ARM pre-check (T7.6)
+
+3ds-dev objects (`arm-none-eabi-objdump -drC`, listings in `build/ref-025/dis/`). **Found and fixed before any console
+run (no result changes; golden unchanged):** GCC kept `Expander::relax` out of line (28 call sites in
+`search_step.o`), and `OpenHeap::take` too — a call, spills and reloads per neighbour. They are now forced inline
+(`NNH_PATH_INLINE`, as `det_sine.hpp` does), and so are the field heap's `before/heap_push/sift_down/side_ok`. After the
+fix the expansion loop calls only `open_compact` (cold, never in practice) and `search_finish` (once); `field_run`
+calls nothing; there is no `__aeabi_*` anywhere in the module and no `vmrs` in search, field, smoothing or sync (only in
+float geometry, the follower and misuse checks); one `memset` (the field's `begin` fill, 4 B × padded cells); heap
+entries move with four-word `ldm`/`stm`; the `(f, h)` key compares with `cmp`/`sbcs`; `step × w` is one `mul` (run-time
+costs: no shift-add chain). `search_step.o` grew to 6 939 instructions (four modes × eight inlined relaxations: about
+7 KB per mode, within the 16 KB I-cache for the one mode a game uses).
+
+From the listing (OnlyIfNoObstacles): a pop through the buffer ≈ 12 instructions, through the heap ≈ 14 per sift level
+(two stack reloads: register pressure); a skipped neighbour 3–4; a reached-not-lower one ≈ 8; a relaxed and offered
+one ≈ 38 (heuristic 9, record 6, partial 7 when on, offer 8–16, sift-up ≈ 10 per level). Misses: the map at 1 B per
+cell (a 3 × 3 block is 3 lines), records at 8 B (5 lines), the heap's top in L1; fields 4 B per cell (3 lines) plus
+the map's 3; `next` for scattered agents misses on nearly every row it reads.
+
+| AC-7 workload | Work (measured on PC) | Estimate (1.9 CPI + 110 per miss; × 1.3 upper) | Target | Verdict |
+|---------------|-----------------------|-------------------------------------------------|--------|---------|
+| astar, per expanded cell | 81 359 expansions in 32 searches | 190–270 instr, 1.0–2.5 misses → 1.8–2.9 µs (3.8) | < 2.5 µs | **at risk** |
+| maze one | 494 expansions (corridors: ≈ 1.2 pushes each) | 1.3–2.0 µs each → 0.65–1.0 ms (1.3) | < 8 ms | PASS |
+| maze slices (worst) | 256 expansions | 0.33–0.51 ms (0.67) | < 0.8 ms | PASS |
+| replans | **4 518 expansions** (≈ 7 per path cell: weights 1/3/8 average 2.1 against a weight-1 heuristic) + 32 begins | 1.8–2.9 µs each → 8.2–13 ms (17) | < 3 ms | **FAIL expected** (the plan assumed 770–1 600 expansions) |
+| field one | ≈ 2 900 settled | 150–210 instr + 1–2 misses → 1.6–2.3 µs → 4.6–6.7 ms (8.7) | < 8 ms | **at risk** |
+| field slices (worst) | 512 settled (+ the begin fill in a build's first) | 0.8–1.2 ms (1.6) | < 1 ms | **at risk, likely FAIL** |
+| next, 256 scattered agents | 8 neighbours, 2 arrays | ≈ 100 instr + 4–6 misses → 1.9–3.2 µs → 0.48–0.82 ms (1.1) | < 0.3 ms | **FAIL expected** (as the plan said) |
+| smooth, 200 cells | ≈ 3 000 walk steps | ≈ 12 instr per step → 0.25–0.5 ms (0.65) | < 1 ms | PASS |
+| sync 64 × 64 (tilemap callback + table) | 4 096 cells, two calls each | 170–280 cycles each → 2.6–4.3 ms (5.6) | < 5 ms | **at risk** |
+| door 3 × 3 | 9 cells + the call | 0.01–0.02 ms (0.03) | < 0.05 ms | PASS |
+
+Expected console verdict: `pathfinding bench: FAIL (replans, next, …)` — the run fails at the verdict, after every
+number is logged. The remaining "no result change" mitigations (risk 1: a per-cell allowed-steps byte, `pld` and a
+batch `next`, a 4-ary heap, packed field words, direct `cells` reads in sync) can't reduce `replans`' expansion count,
+which comes from the workload's weights; they are left for T10.3 with the console's numbers (the
+measurement-with-margin policy) rather than guessed now.

@@ -23,7 +23,7 @@ public:
         : s_(s), cells_(s.map->cells), rec_(s.record), stamp_(s.stamp << kStampShift) {}
 
     /// Relaxes every neighbour of the closed cell `c` (padded index `i`, cost `g`).
-    void expand(std::uint32_t c, int i, std::uint32_t g) {
+    __attribute__((always_inline)) void expand(std::uint32_t c, int i, std::uint32_t g) {
         const int* off = s_.offsets;
         const std::uint32_t wn = cells_[i + off[0]];
         const std::uint32_t we = cells_[i + 1];
@@ -50,7 +50,7 @@ public:
     }
 
 private:
-    static bool allowed(std::uint32_t a, std::uint32_t b) {
+    __attribute__((always_inline)) static bool allowed(std::uint32_t a, std::uint32_t b) {
         if constexpr (M == Diagonals::Always) {
             return true;
         } else if constexpr (M == Diagonals::AtLeastOneWalkable) {
@@ -60,7 +60,7 @@ private:
         }
     }
 
-    void relax(int n, std::uint32_t c, int x, int y, int d, std::uint32_t ng) {
+    __attribute__((always_inline)) void relax(int n, std::uint32_t c, int x, int y, int d, std::uint32_t ng) {
         SearchRecord& r = rec_[n];
         if ((r.meta >> kStampShift) == (stamp_ >> kStampShift)) {
             if ((r.meta & kMetaClosed) != 0 || ng >= r.g) return; // closed, or not strictly lower
@@ -81,7 +81,7 @@ private:
 
     /// FR-13: the reached cell with the lowest unscaled h, then the lower g, then the lower row-major index (the
     /// packed cell's order).
-    void track(std::uint32_t nc, std::uint32_t hu, std::uint32_t ng) {
+    __attribute__((always_inline)) void track(std::uint32_t nc, std::uint32_t hu, std::uint32_t ng) {
         if (hu < s_.best_h || (hu == s_.best_h && (ng < s_.best_g || (ng == s_.best_g && nc < s_.best)))) {
             s_.best = nc;
             s_.best_h = hu;

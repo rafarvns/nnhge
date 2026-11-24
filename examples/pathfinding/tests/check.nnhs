@@ -1,0 +1,104 @@
+# Spec 025 AC-5/AC-7, automatic (spec 013): the self-check (its checksum lines must be the PC's bit for bit), then the
+# showcase: the first field toward the hero, a paused hero (its plans start from the spawn cell, whatever the timing)
+# planning across the keep, a door closing and the re-plan going round it, the island (a partial path to the shore),
+# the 2 x 2 hero refusing the one-cell corridor, the next diagonal mode, the hero walking, and the bench with its
+# verdict.
+# PC:      nnh run pathfinding --pc --script examples/pathfinding/tests/check.nnhs
+# Console: nnh run pathfinding --script examples/pathfinding/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines are the PC's (pc-debug). The checksum lines change only if self_check.cpp or the pathfinding
+# module change: then run `PATHFINDING_DEMO=check NNH_EXIT_AFTER_FRAMES=100 build/pc-debug/examples/pathfinding/
+# pathfinding.exe`, copy its lines here and the values into kPathfindingCheckGolden/kPathfindingCheckpoints.
+# Minimap touches: cell (x, y) is the point (16 + 6x + 3, 30 + 6y + 3).
+fail-on "] E "
+fail-on "pathfinding: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "pathfinding bench: FAIL"
+
+expect "field: built 3,3 settled 1135 frames 3" 20
+wait 10
+screenshot start
+
+# The self-check (SELECT): 512 searches, a checksum every 64, the verdict, then the showcase again.
+tap SELECT
+expect "pathfinding: check started" 20
+expect "pathfinding: 64 sum 8332890F" 30
+expect "pathfinding: 128 sum BF55A00B" 30
+expect "pathfinding: 192 sum B3E6C49A" 30
+expect "pathfinding: 256 sum C825A5E7" 30
+expect "pathfinding: 320 sum 77C6FFC5" 30
+expect "pathfinding: 384 sum E738F010" 30
+expect "pathfinding: 448 sum 528F7687" 30
+expect "pathfinding: 512 sum 1C0B5992" 30
+expect "pathfinding: PASS 1C0B5992" 30
+expect "pathfinding: showcase" 30
+expect "field: built 3,3 settled 1135 frames 3" 20
+wait 10
+
+# The hero holds still at its spawn (3, 3): every plan below starts there.
+tap DOWN
+expect "hero: paused" 10
+wait 10
+touch 163 63
+expect "goal: 24,5 found cells 22 cost 438 expanded 251 waypoints 3" 10
+wait 10
+untouch
+wait 10
+screenshot door-open
+
+# A: door 1 closes; the hero re-plans round it, through the one-cell corridor.
+tap A
+expect "door: 1 closed version 2" 10
+expect "replan: version 2 found cells 48 cost 1040 expanded 777 waypoints 9" 10
+wait 10
+screenshot door-closed
+
+# The island in the lake: deep water all round, a partial path to the closest shore.
+touch 223 75
+expect "goal: 34,7 partial" 10
+wait 10
+untouch
+wait 10
+screenshot partial
+
+# X: the 2 x 2 hero; the one-cell corridor refuses it (door 1 is closed): a partial path on its side.
+tap X
+expect "hero: 2x2" 10
+wait 10
+touch 163 153
+expect "goal: 24,20 partial" 10
+wait 10
+untouch
+wait 10
+screenshot big
+
+# L: the next diagonal mode (from the default, only-if-no-obstacles, to never), the hero re-plans.
+tap L
+expect "mode: never" 10
+wait 10
+tap X
+expect "hero: 1x1" 10
+wait 10
+tap DOWN
+expect "hero: walking" 10
+wait 120
+screenshot walking
+
+# The bench (Y): 11 workloads of 300 frames, one line each, then the verdict.
+tap Y
+expect "pathfinding bench: started" 20
+expect "pathfinding bench: astar avg" 400
+expect "pathfinding bench: maze one avg" 400
+expect "pathfinding bench: maze slices avg" 400
+expect "pathfinding bench: replans avg" 400
+expect "pathfinding bench: field one avg" 400
+expect "pathfinding bench: field slices avg" 400
+expect "pathfinding bench: next avg" 400
+expect "pathfinding bench: next_crowd avg" 400
+expect "pathfinding bench: smooth avg" 400
+expect "pathfinding bench: sync avg" 400
+expect "pathfinding bench: door avg" 400
+expect "pathfinding bench: PASS" 30
+wait 10
+screenshot bench
+end

@@ -185,33 +185,33 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 7: `examples/pathfinding` (PC), the bench and the ARM pre-check
 
-- [ ] **T7.1** Art, level and scaffolding: `art/make_art.py` (tiles, hero 1 × 1 and 2 × 2, chasers, marker),
+- [x] **T7.1** Art, level and scaffolding: `art/make_art.py` (tiles, hero 1 × 1 and 2 × 2, chasers, marker),
   `art/make_level.py` (`assets/levels/keep.tmj`: `ground` with `path_cost`, `collision` with walls and three doors,
   the island, the one-cell corridor, spawn objects), `level.{hpp,cpp}` (cost table from `path_cost`, two maps from
   `collision_grid()`, doors), `minimap.{hpp,cpp}`, `hud.{hpp,cpp}`, `showcase_scene.{hpp,cpp}`, `main.cpp`, `demos.hpp`,
   `CMakeLists.txt`, `examples/CMakeLists.txt` (between `input` and `platformer`). Test: PC screenshots of the level and
   the minimap read back. Covers AC-4.
-- [ ] **T7.2** Hero, crowd, debug view: `hero.{hpp,cpp}` (search, smoothing toggle, `cells_to_points`, follower,
+- [x] **T7.2** Hero, crowd, debug view: `hero.{hpp,cpp}` (search, smoothing toggle, `cells_to_points`, follower,
   `collision::move`, re-plan on a version change), `crowd.{hpp,cpp}` (32 chasers, a double-buffered field rebuilt in
   slices of 512 when the hero changes cell, `next_point`), `debug_view.{hpp,cpp}` (expanded cells, frontier, raw path vs
   waypoints, heat map), touch → goal, A/X/L/R/D-Pad Up, the log lines of plan.md; `PATHFINDING_SHOT` modes. Test: PC
   screenshots `explored`, `smoothed`, `field`, `partial`, `door-closed`, `door-open`, `big` read back (shapes, both
   screens). Covers AC-4, FR-20.
-- [ ] **T7.3** Check scene: SELECT (or `PATHFINDING_DEMO=check`) runs T6.2's script at 8 searches per frame and returns
+- [x] **T7.3** Check scene: SELECT (or `PATHFINDING_DEMO=check`) runs T6.2's script at 8 searches per frame and returns
   to the showcase (`pathfinding: showcase`); ctest `pathfinding_self_check_pc` (after the `data_self_check_pc` block).
   Files: `check_scene.{hpp,cpp}`, `tests/CMakeLists.txt`. Covers AC-3, AC-5.
-- [ ] **T7.4** [P] Bench: `bench.{hpp,cpp}` (workloads `astar`, `maze` one and slices, `replans`, `field` one and
+- [x] **T7.4** [P] Bench: `bench.{hpp,cpp}` (workloads `astar`, `maze` one and slices, `replans`, `field` one and
   slices, `next`, `next_crowd`, `smooth`, `sync`, `door` on the seeded maps and a code-built 64 × 64 `Tilemap`),
   `bench_scene.{hpp,cpp}` (300 frames each, average and worst, the lines and verdict; Debug `not judged (Debug)`); Y and
   `PATHFINDING_DEMO=bench`. Test: a pc-dev run logs every line. Covers AC-7.
-- [ ] **T7.5** The script `examples/pathfinding/tests/check.nnhs`: SELECT → every checkpoint and the PASS line;
+- [x] **T7.5** The script `examples/pathfinding/tests/check.nnhs`: SELECT → every checkpoint and the PASS line;
   `pathfinding: showcase`; fixed touches with their `goal:` lines; A → `door:` and `replan:` (a different cost); the
   island touch → `partial`; X → `hero: 2x2`, the corridor touch → its refusal; L → `mode:`; screenshots at fixed waits;
   a `wait 3` after every `expect` an input follows; Y → the bench lines and the verdict; `fail-on "pathfinding: FAIL"`,
   `fail-on "pathfinding bench: FAIL"`, `fail-on "] E "`; ctest `pathfinding_check_script_pc` (`RESOURCE_LOCK
   nnh_remote_port`). Test: `nnh run pathfinding --pc --no-build --script examples/pathfinding/tests/check.nnhs` → PASS,
   twice. Files: plan.md ("Stage 7 results": every expected line). Covers AC-5.
-- [ ] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
+- [x] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
   `src/pathfinding/*` and the example's `bench.o`; per AC-7 hot path record instructions, calls, stack reloads,
   `__aeabi_*`, `vmrs`, `memcpy`/`memset`, constant-multiply chains: the expansion per mode (pop through the buffer and
   through the heap, one neighbour skipped/relaxed/pushed), the heap's sift step, the field's settle and relaxation,

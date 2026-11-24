@@ -8,6 +8,9 @@
 
 #include <cstdint>
 
+/// Hot-path helpers are forced inline (the T7.6 ARM pre-check: no out-of-line calls in the expansion loop).
+#define NNH_PATH_INLINE inline __attribute__((always_inline))
+
 namespace nnh::detail {
 
 struct OpenEntry {
@@ -18,7 +21,7 @@ struct OpenEntry {
 };
 
 /// True when `a` pops before `b`: (f, h) as one 64-bit key, then the higher seq.
-inline bool open_before(const OpenEntry& a, const OpenEntry& b) {
+NNH_PATH_INLINE bool open_before(const OpenEntry& a, const OpenEntry& b) {
     const std::uint64_t ka = (static_cast<std::uint64_t>(a.f) << 32) | a.h;
     const std::uint64_t kb = (static_cast<std::uint64_t>(b.f) << 32) | b.h;
     return ka < kb || (ka == kb && a.seq > b.seq);
@@ -38,7 +41,7 @@ struct OpenHeap {
     bool full() const { return size >= capacity; }
 
     /// Into the heap (size < capacity).
-    void push(const OpenEntry& e) {
+    __attribute__((always_inline)) void push(const OpenEntry& e) {
         int i = size++;
         while (i > 0) {
             const int parent = (i - 1) >> 1;
@@ -50,7 +53,7 @@ struct OpenHeap {
     }
 
     /// Fills the hole at `i` with `e`, moving it down.
-    void sift_down(int i, const OpenEntry& e) {
+    __attribute__((always_inline)) void sift_down(int i, const OpenEntry& e) {
         const int n = size;
         while (true) {
             int c = 2 * i + 1;
@@ -65,7 +68,7 @@ struct OpenHeap {
 
     /// A child of the current expansion: held aside if it is the best so far (the previous best goes into the heap),
     /// else into the heap. The caller makes room first (at most one entry enters the heap).
-    void offer(const OpenEntry& e) {
+    __attribute__((always_inline)) void offer(const OpenEntry& e) {
         if (!has_held) {
             held = e;
             has_held = true;
@@ -78,7 +81,7 @@ struct OpenHeap {
     }
 
     /// The best entry (held or the heap's top); false when the set is empty.
-    bool take(OpenEntry& out) {
+    __attribute__((always_inline)) bool take(OpenEntry& out) {
         if (has_held) {
             has_held = false;
             if (size == 0 || open_before(held, data[0])) {

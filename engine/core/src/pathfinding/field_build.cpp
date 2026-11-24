@@ -7,17 +7,18 @@
 
 #include "pathfinding/field_internal.hpp"
 #include "pathfinding/neighbors.hpp"
+#include "pathfinding/open_heap.hpp" // NNH_PATH_INLINE
 #include "pathfinding/path_check.hpp"
 
 namespace nnh {
 namespace detail {
 namespace {
 
-bool before(const FieldEntry& a, const FieldEntry& b) {
+NNH_PATH_INLINE bool before(const FieldEntry& a, const FieldEntry& b) {
     return a.d < b.d || (a.d == b.d && a.cell < b.cell);
 }
 
-void heap_push(FieldBlock& f, FieldEntry e) {
+NNH_PATH_INLINE void heap_push(FieldBlock& f, FieldEntry e) {
     FieldEntry* h = f.heap;
     int i = f.heap_size++;
     while (i > 0) {
@@ -29,7 +30,7 @@ void heap_push(FieldBlock& f, FieldEntry e) {
     h[i] = e;
 }
 
-void sift_down(FieldBlock& f, int i, FieldEntry e) {
+NNH_PATH_INLINE void sift_down(FieldBlock& f, int i, FieldEntry e) {
     FieldEntry* h = f.heap;
     const int n = f.heap_size;
     while (true) {
@@ -54,7 +55,7 @@ void compact(FieldBlock& f) {
     for (int i = (kept >> 1) - 1; i >= 0; --i) sift_down(f, i, f.heap[i]);
 }
 
-bool side_ok(Diagonals mode, std::uint32_t a, std::uint32_t b) {
+NNH_PATH_INLINE bool side_ok(Diagonals mode, std::uint32_t a, std::uint32_t b) {
     if (mode == Diagonals::Always) return true;
     if (mode == Diagonals::AtLeastOneWalkable) return (a | b) != 0;
     return a != 0 && b != 0;

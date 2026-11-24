@@ -475,6 +475,21 @@ if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL 
         PASS_REGULAR_EXPRESSION "data check: PASS checksum 0xD5BD3020 [(]4 enemies, 3 items, 1 settings, index 595 bytes[)]"
         FAIL_REGULAR_EXPRESSION "data check: FAIL|\\] E " TIMEOUT 120)
 endif()
+# The pathfinding example's self-check in the simulator (spec 025 T7.3, AC-5) and its console script played with --pc.
+if(TARGET pathfinding AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME pathfinding_self_check_pc COMMAND pathfinding)
+    set_tests_properties(pathfinding_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PATHFINDING_DEMO=check;NNH_EXIT_AFTER_FRAMES=80"
+        PASS_REGULAR_EXPRESSION "pathfinding: PASS 1C0B5992" FAIL_REGULAR_EXPRESSION "pathfinding: FAIL|\\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME pathfinding_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run pathfinding --pc --no-build --script examples/pathfinding/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(pathfinding_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port)
+endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 # The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
 target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/tweens/self_check.cpp)

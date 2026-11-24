@@ -1,0 +1,19 @@
+# Embers rising from a brazier (spec 024 example). Edit a value and rebuild: only data is rebuilt.
+rate = 24
+shape = 3          # a line
+radius = 24        # its length
+angle = -1.5708    # up
+spread = 0.6
+speed_min = 15
+speed_max = 40
+gravity = [0, -20]
+damping = 0.5
+life_min = 50
+life_max = 110
+start = "#FFD050"
+end = "#FF300000"
+size_min = 0.75
+size_max = 1.25
+size_end = 0.25
+frame = 2          # ember
+seed = 17

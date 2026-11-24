@@ -63,6 +63,12 @@ ParticleExpandResult expand_particles(ParticleBlock& b, const ParticleExpandRequ
     const int n = b.alive;
     for (int k = q.first; k < n; ++k) {
         const int i = d.newest_first ? n - 1 - k : k;
+#if defined(__GNUC__)
+        // The walk is sequential (either way): fetch a few records ahead (the 3DS has no hardware prefetcher).
+        const int ahead = d.newest_first ? i - 4 : i + 4;
+        __builtin_prefetch(reinterpret_cast<const char*>(b.hot) + ahead * static_cast<int>(sizeof(ParticleHot)));
+        __builtin_prefetch(reinterpret_cast<const char*>(b.cold) + ahead * static_cast<int>(sizeof(ParticleCold)));
+#endif
         const ParticleHot& h = b.hot[i];
         const Vec2 p = Local ? map_point(map, {h.px, h.py}) : Vec2{h.px, h.py};
         const std::int32_t kx = order_key(p.x), ky = order_key(p.y);
@@ -81,8 +87,8 @@ ParticleExpandResult expand_particles(ParticleBlock& b, const ParticleExpandRequ
         const ParticleCold& c = b.cold[i];
         const float t = life_fraction(h, c);
         const float size = size_at(d.size, t, c.size);
+        // Every field written one by one (no `Item{}`: GCC makes that a memset call per particle on the 3DS).
         Item& item = q.out[out.written++];
-        item = Item{};
         item.layer = q.layer;
         item.color = unpack_color(mul_color(color_at(d.color, t, c.color), q.tint));
         const Vec2 at{p.x - q.camera.x, p.y - q.camera.y};
@@ -95,6 +101,11 @@ ParticleExpandResult expand_particles(ParticleBlock& b, const ParticleExpandRequ
             place_sprite(s.regions[f], false, false, scale, s.pivots[f], rotation, at, q.zoom, item);
         } else {
             item.kind = Item::Kind::FillRect;
+            item.flip_x = item.flip_y = false;
+            item.texture = 0;
+            item.region = {};
+            item.pivot_x = item.pivot_y = 0;
+            item.rotation = 0;
             const float sx = Local ? (b.now.scale.x < 0 ? -b.now.scale.x : b.now.scale.x) * size : size;
             const float sy = Local ? (b.now.scale.y < 0 ? -b.now.scale.y : b.now.scale.y) * size : size;
             const Vec2 corner{(p.x - sx * 0.5f) - q.camera.x, (p.y - sy * 0.5f) - q.camera.y};

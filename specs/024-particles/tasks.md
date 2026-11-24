@@ -66,7 +66,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 - [x] **T1.5** [P] The generator: `particle_random.hpp` (`base = mix(seed ^ mix(n))`, values by property index, floats
   in [0, 1), integer ranges by `umull`). Test: `tests/particles/test_random.cpp` (part 1: known values, uniformity of
   10 000 values in 16 bins within a fixed bound, properties independent, integer ranges hit both ends). Covers FR-15.
-- [ ] **T1.6** Stage end: the stage-end guards; include check (`<nnh/particles.hpp>` pulls only its six includes and
+- [x] **T1.6** Stage end: the stage-end guards; include check (`<nnh/particles.hpp>` pulls only its six includes and
   what they include; preprocessed lines and `-fsyntax-only` within 0.05 s of T0.1's set; no inline float arithmetic).
   Files: plan.md ("Stage 1 results"). Covers FR-26, III.
 
@@ -95,7 +95,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   `set_transform`/`set_position` with `jump`; `emitter_transform.cpp`. Test: `tests/particles/test_subframe.cpp` (a fast
   straight emitter's births evenly spaced, a turning one along the arc, pre-ages, `jump` breaks it, local space not
   spread, bursts not spread). Covers FR-10, FR-14.
-- [ ] **T2.5** Stage end: the stage-end guards. Files: plan.md ("Stage 2 results"). Covers AC-8.
+- [x] **T2.5** Stage end: the stage-end guards. Files: plan.md ("Stage 2 results"). Covers AC-8.
 
 ## Stage 3: life, appearance, lifecycle (pure)
 
@@ -126,7 +126,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   allocation counter unchanged over 100 000 operations after creation; no log in the normal path; `events::stats()`
   unchanged. Test: `tests/particles/test_particle_misuse.cpp`, `tests/particles/test_particle_cost.cpp`. Covers FR-23,
   FR-24, FR-25.
-- [ ] **T3.7** Stage end: the stage-end guards. Files: plan.md ("Stage 3 results"). Covers AC-8.
+- [x] **T3.7** Stage end: the stage-end guards. Files: plan.md ("Stage 3 results"). Covers AC-8.
 
 ## Stage 4: drawing
 
@@ -153,9 +153,9 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 - [x] **T4.4** [P] 3DS: `app_3ds.cpp` sizes `C2D_Init` for `max_particles` more objects. Test: 3ds-release and 3ds-dev
   build without a warning; `examples/sprites` and the platformer's bench draw the same screenshots on PC (the gfx path
   with `max_particles` 0 is byte-identical: `compare.sh`). Covers FR-20, AC-8.
-- [ ] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical: with `max_particles` 0 the
+- [x] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical: with `max_particles` 0 the
   draw lists are the same bytes). Files: plan.md ("Stage 4 results"). Covers AC-8.
-- [ ] **T4.6** `hello` budget: sizes against T0.1 (`.text` ≤ +128 B on 3ds-release, ≤ +256 B on pc-release; `.data`
+- [x] **T4.6** `hello` budget: sizes against T0.1 (`.text` ≤ +128 B on 3ds-release, ≤ +256 B on pc-release; `.data`
   unchanged; `.bss` ≈ +260 B), `nm` shows only `g_gfx_particle_ops` as new; the numbers in plan.md. If over budget, move
   the dispatch out of line behind the null check. Covers FR-26, AC-8.
 
@@ -189,7 +189,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   scratch with any camera and zoom; checks: alive ≤ capacity, bounds contain positions, no UB), `libfuzzer_particle_ops.cpp`,
   `tests/fuzz/test_fuzz_particle_ops.cpp` (mini-fuzz in `nnh_tests`). Files: `tests/CMakeLists.txt` (024's block).
   Covers X, FR-25.
-- [ ] **T5.6** Stage end: the stage-end guards; `compare.sh`. Files: plan.md ("Stage 5 results": golden, checkpoints,
+- [x] **T5.6** Stage end: the stage-end guards; `compare.sh`. Files: plan.md ("Stage 5 results": golden, checkpoints,
   the schema text, the preset messages). Covers AC-2, AC-3, AC-8.
 
 ## Stage 6: the platformer's effects (replay lines untouched)
@@ -207,32 +207,32 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   examples/platformer/tests/level.nnhs` → PASS; `git diff --exit-code examples/platformer/tests`; new references for
   level 1 at 90 and the replay at 64 and 312 (dust and puffs visible: read back), the bench screenshot identical.
   Files: plan.md ("Stage 6 results"). Covers AC-5.
-- [ ] **T6.3** Stage end: the stage-end guards; `gate.nnhs --pc`, `zoom_gate.nnhs --pc` PASS. Covers AC-5, AC-8.
+- [x] **T6.3** Stage end: the stage-end guards; `gate.nnhs --pc`, `zoom_gate.nnhs --pc` PASS. Covers AC-5, AC-8.
 
 ## Stage 7: `examples/particles` (PC), the bench and the ARM pre-check
 
-- [ ] **T7.1** Art, presets and the gallery: `art/make_art.py` → `assets/art/particles.png`, `assets/fx/embers.particles`
+- [x] **T7.1** Art, presets and the gallery: `art/make_art.py` → `assets/art/particles.png`, `assets/fx/embers.particles`
   and `sparks.particles`, `effects.{hpp,cpp}` (the gallery's descriptions), `gallery.{hpp,cpp}` (torch, smoke, rain and
   the code-built tile band, explosion, squares, embers), `ship.{hpp,cpp}`, `hud.{hpp,cpp}`, `showcase_scene.{hpp,cpp}`,
   `main.cpp`, `demos.hpp`, `CMakeLists.txt` (`DATA_SCHEMA ${NNH_PARTICLES_SCHEMA}`, `ASSETS assets`),
   `examples/CMakeLists.txt` (after `prefabs`). Test: PC screenshots `PARTICLES_SHOT=gallery` and `trail` read back.
   Covers AC-4, FR-21.
-- [ ] **T7.2** The bottom screen and controls: `touch_panel.{hpp,cpp}` (touch bursts with `emit_at` on the selected
+- [x] **T7.2** The bottom screen and controls: `touch_panel.{hpp,cpp}` (touch bursts with `emit_at` on the selected
   effect's bottom emitter, L/R selection, the stats and `gfx::stats()` lines), A/X/B/D-Pad Down, the log lines of
   plan.md (`burst:`, `done:`, `effect:`, `explosion:`, `space:`, `layer:`, `smoke:`); `PARTICLES_SHOT` modes. Test: PC
   screenshots `explosion`, `touch`, `local`, `world`, `full` read back; the lines in a `--pc` run. Covers AC-4, FR-6,
   FR-14, FR-18, FR-22.
-- [ ] **T7.3** Check scene: SELECT (or `PARTICLES_DEMO=check`) runs T5.1's script at 10 script frames per display
+- [x] **T7.3** Check scene: SELECT (or `PARTICLES_DEMO=check`) runs T5.1's script at 10 script frames per display
   frame, logs `particles: check started`, `particles: <frame> sum <checksum>` every 600 frames, `particles: PASS
   <checksum>` or `particles: FAIL frame <f> expected <x> got <y>`, draws the last frame and logs `particles: stats drawn
   <n> of <max> dropped <d>`; SELECT back to the showcase; ctest `particles_self_check_pc` (after the
   `entities_self_check_pc` block). Files: `check_scene.{hpp,cpp}`, `tests/CMakeLists.txt`. Covers AC-2, AC-6.
-- [ ] **T7.4** [P] Bench: `bench.{hpp,cpp}` (`update1024`, `update16x64`, `emit512`, `draw512`, `sprite512`, `frame`,
+- [x] **T7.4** [P] Bench: `bench.{hpp,cpp}` (`update1024`, `update16x64`, `emit512`, `draw512`, `sprite512`, `frame`,
   `offscreen`, a base run) and `bench_scene.{hpp,cpp}` (300 frames each (`frame` 600), the scene's scope + `gfx submit`
   − base, the lines and the verdict; Debug `not judged (Debug)`); Y and `PARTICLES_DEMO=bench`. Uses plan 023's `gfx
   submit` scope: if 023 isn't merged yet, copy its `gfx_frame.cpp` hunk byte for byte (plan.md "Merge notes"). Test: a
   pc-dev run logs every line. Covers AC-7.
-- [ ] **T7.5** The script `examples/particles/tests/check.nnhs`: SELECT → every checkpoint, the PASS line and the stats
+- [x] **T7.5** The script `examples/particles/tests/check.nnhs`: SELECT → every checkpoint, the PASS line and the stats
   line; SELECT → `particles: showcase`; a touch at (120, 64) → `burst: sparks 16 at 120,64 live 16`, then `done: sparks
   live 0 finished`; R → `effect: smoke` and a touch; A → `explosion:`; X twice → `space: local`, `space: world`; B →
   `layer: front`; D-Pad Down → `smoke: stopped`; screenshots at fixed waits; a `wait 3` after every `expect` that an input
@@ -240,7 +240,7 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   FAIL"`, `fail-on "] E "`; ctest `particles_check_script_pc` (`RESOURCE_LOCK nnh_remote_port`). Test: `nnh run
   particles --pc --no-build --script examples/particles/tests/check.nnhs` → PASS, twice. Files: plan.md ("Stage 7
   results": every expected line). Covers AC-4, AC-6.
-- [ ] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
+- [x] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
   `src/particles/*`, `src/gfx/particle_batches.o`, `draw_list.o`, `gfx_frame.o`, `draw2d.o`, `src/camera/camera_shake.o`,
   `draw2d_3ds.o` and the example's `bench.o`; per AC-7 hot path record instructions, calls, stack reloads, `pld`, `vmrs`,
   `vdiv`, `__aeabi_*`, `memcpy`/`memset`, `floorf`, constant-multiply chains: the update step per variant (≈ 45

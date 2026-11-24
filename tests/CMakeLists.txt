@@ -461,6 +461,21 @@ if(TARGET entities AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQ
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;ENTITIES_DEMO=check;NNH_EXIT_AFTER_FRAMES=70"
         PASS_REGULAR_EXPRESSION "entities: PASS C8FB9A41" FAIL_REGULAR_EXPRESSION "entities: FAIL" TIMEOUT 120)
 endif()
+# The particles example's self-check in the simulator (spec 024 T7.3, AC-6) and its console script played with --pc.
+if(TARGET particles AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME particles_self_check_pc COMMAND particles)
+    set_tests_properties(particles_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PARTICLES_DEMO=check;NNH_EXIT_AFTER_FRAMES=380"
+        PASS_REGULAR_EXPRESSION "particles: PASS C5EF1A84" FAIL_REGULAR_EXPRESSION "particles: FAIL|\\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME particles_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run particles --pc --no-build --script examples/particles/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(particles_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port)
+endif()
 # The prefabs example's self-check in the simulator (spec 021 T7.4, AC-6): the verdict the console script waits for; and
 # the console script itself played in the simulator (nnh run --pc), as the maintainer plays it on the 3DS.
 if(TARGET prefabs AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")

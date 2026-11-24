@@ -679,36 +679,35 @@ references), and 024's golden doesn't depend on theirs.
 
 ## Stage 10: console run (prepared)
 
-T10.1 on the PC first: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh cmake --build --preset
-3ds-dev --target particles_3dsx platformer_3dsx data_3dsx camera_3dsx`, without a warning; T7.6's table still
-describes the objects; 3ds-release `hello.elf` within T4.6's budget. Then on an Old 3DS, nobody touching it after Y.
-Five runs, each: open the Homebrew Launcher, press **Y**, then on the PC (`nnh` builds the Development `.3dsx`, sends
-it, plays the script and brings the console back to the Homebrew Launcher; logs and screenshots in `build/logs/`):
+Prepared at stage 7 (2026-11-24, branch `spec-024`); the expected values are pc-debug's. T10.1 on the PC first:
+`scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh cmake --build --preset 3ds-dev --target
+particles_3dsx platformer_3dsx data_3dsx camera_3dsx`, without a warning; T7.6's table still describes the objects;
+3ds-release `hello.elf` as at stage 4 (`.text` +144 B). Then on an Old 3DS, nobody touching it after Y. Five runs,
+each: open the Homebrew Launcher, press **Y**, then on the PC (`nnh` builds the Development `.3dsx`, sends it, plays the
+script and brings the console back to the Homebrew Launcher; logs and screenshots in `build/logs/`):
 
 1. `build/pc-debug/tools/nnh/nnh run particles --script examples/particles/tests/check.nnhs` (≈ 2 min). Expected, as on
-   the PC (pc-debug), with the values recorded in "Stage 5 results" and "Stage 7 results": `particles: check started`,
-   `particles: 600 sum <c1>` … `particles: 3600 sum <c6>`, **`particles: PASS <golden>`**, `particles: stats drawn <n>
-   of 4096 dropped 0`; `particles: showcase`; after the touch at (120, 64) `burst: sparks 16 at 120,64 live 16` and
-   later `done: sparks live 0 finished`; R → `effect: smoke`, a touch → `burst: smoke …`; A → `explosion: <n> live
-   <n>`; X → `space: local`, X → `space: world`; B → `layer: front`; D-Pad Down → `smoke: stopped`; then `particles bench:
-   started`, `update1024 … (target < 1.2 ms)`, `update16x64 … (target < 1.4 ms)`, `emit512 … (target < 1 ms)`, `draw
-   particle P us sprite S us ratio R (target <= 0.75)`, `frame worst W ms missed M of 600`, `offscreen submit X ms culled
-   512`, and the verdict `particles bench: PASS` or `particles bench: FAIL (<names>)`; `nnh: PASS (<n> lines, …)`.
-   **Expected from the ARM pre-check** (T7.6 refines it): every logic line equal to the PC's; `update1024` 0.45–0.65 ms,
-   `update16x64` 0.55–0.8, `frame` worst 9–12 ms with 0 missed, `offscreen` ≈ 0 — PASS; the draw ratio 0.52–0.70 —
-   tight; `emit512` 1.05–1.35 ms — likely FAIL. A FAIL fails the run (`fail-on "particles bench: FAIL"`) after every
-   number is logged: record them in "Console run 1"; T10.3 applies risk 1's list, or the budgets are set from the
-   measurement with margin. Read the screenshots (gallery, check, touch burst, explosion, local, layer, bench): the
-   same pictures as the `--pc` run's, rotated sprites within a pixel.
+   the PC: `particles: showcase`; `particles: check started`, `particles: 600 sum D39517FF`, `1200 sum 640E6215`,
+   `1800 sum 35C3F348`, `2400 sum 2E105955`, `3000 sum 6BA1B564`, `3600 sum C5EF1A84`, **`particles: PASS C5EF1A84`**,
+   `particles: stats drawn 586 of 4096 dropped 0`; `burst: sparks 16 at 120,64 live 16`, `done: sparks live 0
+   finished`; `effect: smoke`, `burst: smoke 10 at 200,120 live 10`; `explosion: 75 live 75`; `space: local`, `space:
+   world`; `layer: front`; `smoke: stopped`; `particles bench: started`, `base gfx submit avg …`, `update1024 … (target
+   < 1.2 ms)`, `update16x64 … (target < 1.4 ms)`, `emit512 … (target < 1 ms)`, `draw512 avg …`, `draw particle P us
+   sprite S us ratio R (target <= 0.75)`, `offscreen submit X ms culled 512`, `frame worst W ms missed M of 600`, and
+   the verdict. **Expected from T7.6**: every logic line equal to the PC's; `update1024` 0.85–0.95 ms and
+   `update16x64` 0.95–1.05 ms (tight PASS), `emit512` 2.2–2.6 ms (**FAIL expected**), the ratio 0.63–0.74 (tight),
+   `frame` worst ≈ 10–11 ms with 0 missed, `offscreen` ≈ 0. A FAIL fails the run (`fail-on "particles bench: FAIL"`)
+   after every number is logged: record them in "Console run 1"; T10.3 applies risk 1's list (stage 7's order), or
+   the budgets are set from the measurement with ≈ 25 % margin. Read the screenshots (gallery, touch, explosion, local,
+   layer, bench): the same pictures as the `--pc` run's, rotated sprites within a pixel.
 2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (≈ 40 s). Expected:
-   exactly the `replay: … sum` lines **in the tree** (spec 022's, unedited), `replay: done 900 frames sum <last>: 60 Hz
-   PASS`; `nnh: PASS (79 lines, …)`. A different sum is a defect (the effects touch nothing hashed). Read the level
-   screenshot: landing dust visible.
+   exactly the `replay: … sum` lines in the tree (spec 022's, unedited), `replay: done 900 frames sum E445E8B2: 60 Hz
+   PASS`; `nnh: PASS (81 lines, …)`. A different sum is a defect (the effects touch nothing hashed).
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (≈ 2.5 min). Expected:
    `bench: PASS 4 layers + 300 sprites, …` (the submit dispatch changed); `nnh: PASS`.
 4. `build/pc-debug/tools/nnh/nnh run data --script examples/data/tests/check.nnhs` (≈ 20 s). Expected, unchanged since
-   spec 014: `data check: PASS checksum 0xD5BD3020 (4 enemies, 3 items, 1 settings, index 595 bytes)` (the D29
-   amendment changed no existing description); `nnh: PASS`.
+   spec 014: `data check: PASS checksum 0xD5BD3020 (4 enemies, 3 items, 1 settings, index 595 bytes)` (D29 was not
+   amended: stage 5's fallback); `nnh: PASS`.
 5. `build/pc-debug/tools/nnh/nnh run camera --script examples/camera/tests/check.nnhs` (≈ 30 s). Expected, unchanged since
    spec 018: `camera: PASS 5201E6CF` (the shake's hash moved to `src/core/mix32.hpp`); `nnh: PASS`.
 
@@ -932,3 +931,60 @@ batches (stage 4), so the four stages are one commit, as 022's stages 3 and 4 we
 - **T6.3** `gate.nnhs --pc` and `zoom_gate.nnhs --pc` on pc-debug report `bench: FAIL` (avg 52.8 / 34.5 ms, every frame
   missed): the gate is a wall-clock benchmark of a Debug simulator on a loaded PC (it is judged on the console, T10.2
   run 3); not a particle regression (the gate's scenes have no `LevelPlay`).
+
+### Stage 7 results
+
+- **Example** `examples/particles/` (refinement of the file list: the ship lives in `gallery.cpp`, the HUD in
+  `showcase_scene.cpp`; presets in `presets.{hpp,cpp}` + `data_types.cpp` by the stage 5 fallback): `main.cpp`,
+  `demos.hpp`, `effects.{hpp,cpp}`, `gallery.{hpp,cpp}`, `touch_panel.{hpp,cpp}`, `showcase_scene.{hpp,cpp}`,
+  `self_check.{hpp,cpp}`, `check_scene.{hpp,cpp}`, `bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}`, `art/make_art.py` →
+  `assets/art/particles.png` (64 × 64, original), `assets/fx/{embers,sparks}.particles`, `tests/check.nnhs`.
+  `AppConfig::gfx = {.max_draws = 4096, .max_tiles = 512, .max_particles = 4096}`.
+- **Screenshots read back** (`PARTICLES_SHOT=gallery|trail|explosion|touch|local|world|full`, frames 40–60): the
+  gallery (torch, chimney smoke, rain over and under the brick band, the ship and its trail, fountain squares, embers),
+  the explosion ring, a touch burst on the bottom screen, local space (the trail carried by the ship) against world
+  space (a trail left behind), the full case (`full: sparks live 256 dropped 144`).
+- **Log lines** (pc-debug, `check.nnhs --pc` PASS, 89 lines, frames 1–3325): `particles: showcase` (logged in the
+  scene's first update, a frame the remote sees), `particles: check started`, `particles: 600 sum D39517FF`, `1200 sum
+  640E6215`, `1800 sum 35C3F348`, `2400 sum 2E105955`, `3000 sum 6BA1B564`, `3600 sum C5EF1A84`, `particles: PASS
+  C5EF1A84`, `particles: stats drawn 586 of 4096 dropped 0`; touch (120, 64) → `burst: sparks 16 at 120,64 live 16`,
+  then `done: sparks live 0 finished`; R → `effect: smoke`, touch (200, 120) → `burst: smoke 10 at 200,120 live 10`;
+  A → `explosion: 75 live 75`; X → `space: local`, X → `space: world`; B → `layer: front`; D-Pad Down → `smoke:
+  stopped`; Y → `particles bench: started` … `particles bench: PASS` (Debug: not judged). Script timeouts are frames;
+  every input follows a `wait 10` after an `expect` (the parser warns below it).
+- **ctests**: `particles_self_check_pc` and `particles_check_script_pc` after the `entities_self_check_pc` block.
+- **PC bench** (pc-dev, a loaded PC, software SDL renderer: indicative only): base submit 0.038 ms; `update1024`
+  0.023 ms (worst 0.045); `update16x64` 0.027 ms; `emit512` 0.079 ms; `draw512` 2.33 ms; draw particle 4.54 µs against
+  a sprite's 4.26 µs, ratio 1.07 (the PC's per-item SDL cost dominates both: the target is the console's); `offscreen`
+  0.023 ms, culled 512; `frame` worst 25 ms, 3 of 600 missed (other builds running). The PC's verdict, FAIL (sprite512,
+  frame), says nothing about the console.
+
+### Stage 7 ARM pre-check (T7.6, 3ds-dev disassembly in `build/ref-024/dis7/`)
+
+| Hot path | Measured | Calls, `vmrs`, `__aeabi_*`, `memcpy`/`memset` | Plan |
+|----------|----------|------------------------------------------------|------|
+| `move_particles<spin, drag>`, per survivor | 68 instructions (the cold move as `ldm`/`stm` of 4 words), 1 `pld` 4 records ahead, 2 stack reloads | none | ≈ 45 + 1 `pld` |
+| `move_particles`, the other variants | 86–123 instructions per function | none; no `vmrs` | — |
+| `birth` | 286 instructions, + `particle_direction` 180 (an inline `sin_cos`, 2 `vmrs`) + the sampler (circle 222 with its own `sin_cos`, 4 `vmrs`) | one indirect call (the sampler), one call (the direction); 1 `vdiv` (`1/life`) | ≈ 300 in all |
+| `rate_births` | 277 (the interpolation inline; one sine only when the axes change) | `birth` calls, 2 `vmrs` | — |
+| expansion `<textured, world>`, per particle | ≈ 200 of 302 instructions | 2 `floorf` (the shared `snap`), 1 `vmrs` (the shared flip test); a `memset` per item found and removed (fields written one by one); `pld` of hot and cold records 4 ahead added | 180–220, 2 `floorf` |
+| `ParticleBatches::submit`, per chunk | 92 instructions | `draw_2d` per 128 items | — |
+| `DrawList::build`, `camera_shake.o` | 279 instructions (3 commuted operands); byte-identical | unchanged | unchanged |
+
+Miss model and expected console numbers (upper × 1.3 in brackets):
+
+- `update1024`: ≈ 68 × 1.6–1.8 + 30 cycles of VFP chains + 60 (the hot line, prefetched) + 30 (half a cold line
+  moved) ≈ 230 cycles per particle → 0.88 ms, + ≈ 17 births × ≈ 1 200 cycles ≈ 0.08 ms → **0.85–0.95 ms (1.2)**: a
+  tight PASS (the plan's 0.45–0.65 was low: the compaction's cold copy and the bounds' four key updates are more
+  instructions than counted).
+- `update16x64`: + 16 × ≈ 2 000 cycles of per-emitter work → **0.95–1.05 ms (1.35)**: a tight PASS.
+- `emit512`: ≈ 690 instructions per circle birth with a full-turn cone (two `sin_cos`) ≈ 1 100–1 300 cycles + fresh
+  lines ≈ 60 → **2.2–2.6 ms (3.4)**: **FAIL expected** (risk 1, worse than planned: the direction's sine is a second
+  `sin_cos`, the ring mixture and the colour channels add ≈ 250). T10.3's list, in this order: (b) for a circle with a
+  full-turn cone, take the direction from the sampled angle (no second sine); (a) births in pairs; then the
+  measurement-with-margin policy.
+- draw: the expansion ≈ 200 × 1.8 + 2 `floorf` ≈ 40 + misses ≈ 60 (prefetched) ≈ 460 cycles ≈ 1.7 µs, + the
+  platform's ≈ 6.3–6.8 µs → 8.0–8.5 µs against a sprite's 11.5–12.8 µs → **ratio 0.63–0.74 (0.82)**: tight.
+- `frame`: ≈ 0.45 ms of update (560 particles) + 512 × 8.0–8.5 µs + 300 × 11.5–12.8 µs + ≈ 1.5 ms → **9.7–10.7 ms
+  (13.9)**: PASS, 0 missed expected.
+- `offscreen`: one bounds test per batch → **≈ 0 ms**: PASS by construction.

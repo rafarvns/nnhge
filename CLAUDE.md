@@ -182,7 +182,7 @@ limits (`set_limits(map.bounds())`), seeded trauma shake, zoom about the centre,
 screens as one world) or two rigs for two views, `to_world`/`to_screen`, `debug_draw()`. `Camera2D::zoom` (0.5–4)
 is applied by core to sprites, text, shapes and tile layers (snapped tile edges, row chunks below zoom 1; zoom 1
 byte-identical) ([api/camera.md](docs/api/camera.md), [gfx.md#zoom](docs/api/gfx.md#zoom)).
-Scene transitions (spec 023, implemented, console run pending; D38; demo `examples/transitions`):
+Scene transitions (spec 023, implemented, console run 1 done, bench rerun pending after T10.3; D38; demo `examples/transitions`):
 `<nnh/transition.hpp>` — `transition::replace/push/pop/cover(scene, {.effect, .reveal, .bottom, .tall, .out, .hold,
 .in, .out_ease, .loading, .on_covered, .on_finished, .publish, ...})`: out → covered (the stack change through spec
 001's deferred path, `on_covered`, a loading step per frame, the hold) → in, whole 60 Hz frames, easings from

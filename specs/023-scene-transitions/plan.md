@@ -1,6 +1,8 @@
 # Plan 023: Scene transitions
 
-Status: implemented 2026-11-24, Linux checks T9.1 passed 2026-11-24, console run T10.2 pending (approved 2026-11-23 overnight)
+Status: implemented 2026-11-24, Linux checks T9.1 passed 2026-11-24, console run 1 done 2026-11-24 (logic and doors
+PASS; bench FAIL split, loading engine), optimisation round T10.3 done on the PC, console rerun pending (approved
+2026-11-23 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D38 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 001 (the scene stack, deferred changes, `nnh::run()`), spec 004 (rectangles, layers, `ignore_camera`,
 recording and submit), spec 015 (the libm-free easings, `SmallFunction` callbacks, `FinishEvent`; D30), spec 017
@@ -398,7 +400,10 @@ the budget is set from the measurement with ≈ 25 % margin and written in the s
 comes from the profiler; submit cost comes from a new Development-only `NNH_PROFILE_SCOPE("gfx submit")` in
 `detail::gfx_submit()` (Release unchanged). Each workload's cost per frame = `transition` + (`gfx submit` − the base
 run's average `gfx submit`), the base being 300 frames of the same bench scene with no transition. The loading
-workload subtracts its own nested `bench slice` scope (the game's slice).
+workload subtracts its own nested `bench slice` scope (the game's slice). *Amended by T10.3 (see "Optimisation round
+(T10.3)"): the profiler's own cost is taken out (two `transition` scopes a frame, each worth an empty `bench probe`
+scope of the same frame), the loading step does no work of its own and opens no scope, the showcase's music is stopped,
+and a `rect` run (no transition, one game-drawn solid rectangle per screen) logs gfx's share, not judged.*
 
 ### Self-check and bench (AC-3, AC-6, AC-8)
 
@@ -1030,3 +1035,103 @@ On `nnhge-build` (VM 120), 2026-11-24, `main` with specs 022–025 merged, then 
 - The 12 self-check and replay ctests pass on all three compilers (leaks off for the simulator processes: Mesa's EGL
   allocation in SDL's offscreen init is reported by LeakSanitizer).
 - libFuzzer `fuzz_transition_geometry` ran 600 s: 6 500 974 runs, cov 198, no finding.
+
+## Console run 1 (T10.2, 2026-11-24, Old 3DS, Development build)
+
+Run 1 (`transitions` `check.nnhs`): the self-check **`transitions: PASS BFE1D810`** (every checkpoint equal to the PC's);
+the bench (average ms per frame over 300 frames):
+
+| Workload | Average | Worst | Target | Verdict |
+|----------|---------|-------|--------|---------|
+| base gfx submit | 0.26 | — | — | — |
+| fade | 0.0957 | — | < 0.1 | PASS |
+| wipe | 0.0962 | — | < 0.1 | PASS |
+| split | 0.1106 | — | < 0.1 | **FAIL** |
+| blinds8 | 0.1747 | — | < 0.3 | PASS |
+| iris | 0.96 | 1.75 | < 2 | PASS |
+| loading engine | 0.1046 | — | < 0.05 | **FAIL** |
+
+Run 2 (`platformer` `doors.nnhs`): the ten doors, **`60 Hz PASS`**, worst frame 20.9 ms. Runs 3 (`level.nnhs`) and 4
+(`actions`) were not part of this report.
+
+Reading the numbers: one more rectangle per screen costs ≈ 5.6 µs (blinds8 − fade over 14 rectangles; split − fade
+gives 7.5 µs over 2), close to the plan's 3.9–6.2 µs. But fade, with two rectangles, costs 0.096 ms where the plan
+expected 0.010–0.017: ≈ 0.084 ms a frame is fixed, the same in every workload, and nothing in the plan's instruction
+counts explains it. Loading − fade = 0.0089 ms although a loading frame does less geometry than a fade frame.
+
+## Optimisation round (T10.3)
+
+### What was slow (3ds-dev disassembly, `transitions.elf`)
+
+1. **The profiler measured itself (a measurement artefact: ≈ 0.009 ms in every workload, ≈ 0.018 ms in loading).**
+   `NNH_PROFILE_SCOPE` reads `platform::ticks_ns()` twice: `svcGetSystemTick` (a supervisor call), then two
+   `__aeabi_uldivmod` calls (libgcc's `__udivmoddi4`, a bit-by-bit loop: ≈ 12 iterations for `ticks / 268 111 856`,
+   ≈ 30 for `rest · 10⁹ / 268 111 856`, ≈ 330 instructions); the destructor also searches the frame's scope table before
+   its read. About one `ticks_ns()` of that falls inside the scope it measures. The hook opens **two** `transition`
+   scopes a frame (around the step, then around the overlay and the end of the frame), so every workload carried two
+   scopes' own cost. The loading workload carried a third: its slice ran a 5000-step loop inside a nested `bench slice`
+   scope whose time was subtracted, but the nested scope's own entry and exit (both reads) stayed in the outer one.
+   Loading − fade = 0.0089 ms is that nested scope; one scope's share inside its parent is therefore ≈ 4.4 µs.
+2. **citro2d's texture → solid switch (real, gfx's: ≈ 0.03–0.05 ms).** The bench scene draws only text (textured
+   quads). The overlay's solid rectangle changes citro2d's source: `C2D_DrawRectangle` → `C2Di_Update` with the source
+   dirty flushes the batch (`C3D_DrawElements` → `C3Di_UpdateContext`, which runs `C3D_UpdateUniforms` twice, each a
+   scan of 96 dirty bytes: ≈ 1 000 instructions per flush) and rewrites four texenv stages. Per transition frame: the
+   top screen's rectangle (text → solid), the bottom screen's text (solid → texture) and rectangle, and the next frame's
+   first text: ≈ 2 extra flushes and 4 texenv rebuilds, ≈ 2 600–3 400 instructions, plus ≈ 2–3 KB of citro2d code the
+   base frames never run (cold every frame). Any game drawing a solid shape after textured draws pays this once per
+   switch: it is part of the overlay's real cost, but not the transition module's code.
+3. **The engine's own fixed path is short but cold.** Hook, step, `ease()`, the overlay on two screens and two recorded
+   rectangles ≈ 600 instructions (≈ 3 µs warm) spread over ≈ 45 lines of code that the rest of the frame (text, submit,
+   citro2d, the remote poll) evicts: ≈ 0.02 ms. In run 1 the showcase's music also kept decoding on the main thread
+   (stb_vorbis between frames), evicting more.
+4. **Per rectangle, the recording went through the public call.** `to_gfx` → `gfx::fill_rect` (`frame_open()`,
+   `gfx_state()` twice, a 64-byte `memset`, the 80-byte command built on the stack) → `gfx_record` →
+   `DrawList::record`: ≈ 187 instructions per rectangle before the submit's own share.
+5. **The iris's square root** started its bit at 2³⁰ and shifted it down two places at a time to the value: ≈ 8 steps
+   (24 instructions) per cut band for the usual r² < 2¹⁶.
+
+### What changed (no result moved)
+
+| Change | Where | Instructions (3ds-dev) | Kind |
+|--------|-------|------------------------|------|
+| The overlay records its rectangles directly: one `gfx_drawing()` check and one `DrawCommand` per screen (what `fill_rect` builds: `FillRect`, the clamped layer, `ignore_camera`, the colour); per rectangle only the position and size are set before `detail::gfx_record` (risk 1 (a)) | `transition/effect_query.cpp` | per rectangle 187 → 73; per screen ≈ 60 once (`gfx_drawing`, a 69-byte `memset`, the clamp) | engine |
+| `isqrt` places its first bit with one `clz` (`std::countl_zero`) | `transition/effect_iris.cpp` | per cut band ≈ 120 → ≈ 102 (placement 24 → 6) | engine |
+| The profiler's own cost taken out: an empty `bench probe` scope each frame; a workload frame's cost = `transition` − 2 × probe + (submit − base submit); the base line logs the probe's average | `examples/transitions/bench_scene.cpp` | — | measurement |
+| The loading step does no work and opens no scope (nothing of the game's left to subtract) | `bench_scene.cpp` | — | measurement |
+| The bench stops the music when it starts | `bench_scene.cpp` | — | measurement |
+| Scopes summed by name (an unoptimised build may keep two copies of the `"transition"` literal, the profiler's key) | `bench_scene.cpp` | — | measurement |
+| A `rect` run after the base: no transition, the bench scene draws one 1 × 1 solid rectangle per screen at layer 15 and logs `transitions bench: rect avg X ms worst Y ms (gfx share, one solid rectangle per screen, not judged)`: the console's own number for item 2 | `bench.{hpp,cpp}`, `bench_scene.cpp`, `tests/check.nnhs` (one `expect`) | — | measurement (informative) |
+
+Targets unchanged. Tests: `draw_effect_records_exactly_what_fill_rect_records` (new, `test_effect_query.cpp`: every
+field of every item and the screen calls equal to `fill_rect`'s, for six effects, layers 99 and −5 and a zoomed
+camera); the existing exhaustive `isqrt` tests. Mutants: 8 on the record path and 5 on `isqrt`, 12 killed; the one
+survivor (removing the `v == 0` guard) is equivalent on both CPUs — the guard only avoids an undefined shift. Every golden
+holds: `transitions: PASS BFE1D810` (ctest `transitions_self_check_pc` and the unit test), `doors.nnhs --pc`, the full
+pc-debug ctest.
+
+### Expected on the Old 3DS (console rerun)
+
+Run 1's numbers less what was removed (one scope ≈ 4.4 µs; a rectangle ≈ 114 instructions ≈ 0.55 µs cheaper to record;
+a cut iris band ≈ 18 instructions cheaper); the music's share is unknown (0–0.01 ms more off each):
+
+| Workload | Run 1 | Expected | Target |
+|----------|-------|----------|--------|
+| fade | 0.0957 | 0.076–0.086 | < 0.1: PASS |
+| wipe | 0.0962 | 0.076–0.086 | < 0.1: PASS |
+| split | 0.1106 | 0.090–0.100 | < 0.1: borderline |
+| blinds8 | 0.1747 | 0.145–0.157 | < 0.3: PASS |
+| iris avg (worst) | 0.96 (1.75) | 0.86–0.87 (≈ 1.59) | < 2: PASS |
+| loading engine | 0.1046 | 0.075–0.086 | < 0.05: **still FAIL** |
+| rect (new, not judged) | — | 0.03–0.05 | — |
+
+What is left in fade and loading is item 2 (gfx's batch break, which the `rect` line now shows on its own) and item 3
+(cold code): neither changes without changing how citro2d is used or how the code is laid out. If the rerun still misses
+a target, the maintainer's policy applies: the budget is the measurement + ≈ 25 %, written in the spec's AC-8,
+`bench.cpp` and `docs/api/transition.md` ("Console run 2 and budgets set").
+
+Rerun (Homebrew Launcher open, press **Y** for each):
+
+```sh
+build/pc-debug/tools/nnh/nnh run transitions --script examples/transitions/tests/check.nnhs
+build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/doors.nnhs
+```

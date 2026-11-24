@@ -26,5 +26,6 @@ private:
     int slices_ = 0;
     bool done_ = false;
     BenchStats stats_[static_cast<int>(BenchLoad::Count)]{};
+    BenchStats probe_{}; ///< the empty `bench probe` scope: one profiler scope's own cost
     char shown_[512] = {};
 };

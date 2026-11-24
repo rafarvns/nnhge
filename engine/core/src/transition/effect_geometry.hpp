@@ -78,7 +78,8 @@ ResolvedEffect resolve_effect(const transition::Effect& effect, Screen screen, E
 void draw_screen_effect(const ResolvedEffect& fx, Screen screen, EffectArea area, int q, RectSink sink, void* ctx);
 /// The colour drawn at q (a fade's alpha = (q · 255 + 32768) >> 16; others opaque).
 Color effect_color_q(const ResolvedEffect& fx, int q);
-/// Records a resolved built-in effect with gfx::fill_rect (ignore_camera, `layer`). effect_query.cpp.
+/// Records a resolved built-in effect: exactly gfx::fill_rect's commands (ignore_camera, `layer`), built once per
+/// screen. Nothing outside a frame. effect_query.cpp.
 void draw_resolved(const ResolvedEffect& fx, Screen screen, EffectArea area, int q, int layer);
 /// Most rectangles per screen for a resolved effect.
 int max_rects_resolved(const ResolvedEffect& fx, bool tall);

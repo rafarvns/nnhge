@@ -1,6 +1,7 @@
 # Spec 023: Scene transitions
 
-Status: implemented 2026-11-24, Linux checks T9.1 passed 2026-11-24, console run T10.2 pending (approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
+Status: implemented 2026-11-24, Linux checks T9.1 passed 2026-11-24, console run 1 done 2026-11-24 (logic and doors PASS,
+bench split and loading over target), optimisation round T10.3 done on the PC, console rerun pending (approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
 question as recommended; to review in the morning). The decision row is D38 (D37 is spec 022's)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 001](../001-event-bus-and-scenes/spec.md) (the scene stack, deferred `push`/`pop`/`replace`,

@@ -7,12 +7,16 @@ namespace tr = nnh::transition;
 namespace {
 
 constexpr BenchWorkload kWorkloads[] = {
-    {"base", 0}, {"fade", 0.1}, {"wipe", 0.1}, {"split", 0.1}, {"blinds8", 0.3}, {"iris", 2.0}, {"loading engine", 0.05},
+    {"base", 0},   {"rect", 0},    {"fade", 0.1},          {"wipe", 0.1}, {"split", 0.1},
+    {"blinds8", 0.3}, {"iris", 2.0}, {"loading engine", 0.05},
 };
+static_assert(sizeof kWorkloads / sizeof kWorkloads[0] == static_cast<int>(BenchLoad::Count));
 
 } // namespace
 
 const BenchWorkload& bench_workload(BenchLoad load) { return kWorkloads[static_cast<int>(load)]; }
+
+bool bench_transition(BenchLoad load) { return load != BenchLoad::Base && load != BenchLoad::Rect; }
 
 tr::Options bench_options(BenchLoad load, tr::LoadingStep slice) {
     tr::Options o;
@@ -34,6 +38,13 @@ tr::Options bench_options(BenchLoad load, tr::LoadingStep slice) {
 
 void format_bench_line(char* out, std::size_t size, BenchLoad load, const BenchStats& s, bool judged) {
     const BenchWorkload& w = bench_workload(load);
+    if (load == BenchLoad::Rect) {
+        std::snprintf(out, size,
+                      "transitions bench: rect avg %.4f ms worst %.4f ms (gfx share, one solid rectangle per screen, "
+                      "not judged)",
+                      s.average(), s.worst_ms);
+        return;
+    }
     char rects[24] = "";
     if (load == BenchLoad::Iris) std::snprintf(rects, sizeof rects, "rects %d ", s.rects);
     const char* verdict = !judged ? "not judged (Debug)" : (s.average() < w.target_ms ? "PASS" : "FAIL");

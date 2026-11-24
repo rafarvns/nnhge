@@ -300,6 +300,14 @@ set(_nnh_prefabs_sources
     src/prefabs/prefab_tree_plan.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_prefabs_sources})
+# Structured saves (spec 027, D45, D46): integer-only codec (floats move as bits), no allocation. Each file is linked
+# only by a game that reaches it: a game without <nnh/saves.hpp> links none of them.
+set(_nnh_saves_sources
+    src/saves/save_header.cpp
+    src/saves/save_report.cpp
+    src/saves/save_validate.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_saves_sources})
 # Transforms (spec 022, D37): the shared deterministic sine and every float operation of the transform values. No fused
 # multiply-add, so compositions, points, inverses and the sine have the same bits on every compiler and on the 3DS.
 # A game that uses only <nnh/transform.hpp> links these objects and no entities code.

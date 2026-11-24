@@ -706,3 +706,63 @@ D29 is **not** amended (its traits and value types are reused read-only; `FieldK
 spec 002's save procedure is reused as is, with one appended internal accessor. The patterns page gains a "Versioned
 schema" row. Flagged for the maintainer: the compile-time chain check (decision 6), `std::getenv` in core (decision 15),
 `schema_registry.o` for enum names (decision 22), the store median (decision 20).
+
+## Stage 0 results
+
+Measured 2026-11-24 on the maintainer's Windows machine (WinLibs GCC 15, devkitARM), in the `spec-027` worktree at
+`bafd9f2`, before any spec 027 change. Scripts in `build/ref-027/` (not committed). Other agents were building on the
+same PC at the same time: timings are noisy.
+
+- **T0.1** `hello` sizes (`size`: text / data / bss, file bytes): pc-release `hello.exe` 130 668 / 22 020 / 211 696
+  (278 856 bytes); pc-debug 198 688 / 26 756 / 214 352 (1 297 082); 3ds-release `hello.elf` 201 124 / 28 352 / 106 680
+  (`.3dsx` 246 512 bytes); 3ds-dev 217 896 / 32 872 / 109 288 (`.3dsx` 268 012). `nm -C` lists saved
+  (`sizes-0/hello-*.nm`). `hello` links no `nnh::save::write` (pc-release and 3ds-release `nm`): `save.o` is not in
+  it, so the appended `save_read_one` can't reach it. `.text` of 3ds-release ELFs: `actions` 245 996, `data` 319 428,
+  `foundation` 206 936. Edit `examples/data/main.cpp` → simulator (pc-debug `data`) 2.15, 1.87, 1.86 s; → `.3dsx`
+  (3ds-release `data_3dsx`) 5.54, 5.45, 5.49 s. Clean `nnh_core` (pc-debug, parallel) 10.5 s. Header cost
+  (`header_cost.sh`, one-line TU, `g++ -std=c++20 -fsyntax-only`, best of 5): `<nnh/data.hpp>` 10 078 preprocessed
+  lines, 0.43 s; `<nnh/fs.hpp>` 7 640 lines, 0.38 s. 3ds-dev disassembly of `save.o` and `save_format.o` saved in
+  `dis0/`.
+- **T0.2** Pins (`tests/saves/test_raw_unchanged.cpp`, values from the untouched spec 002 and 017 code): a 100-byte
+  blob (`i * 7 + 3`) written by `nnh::save::write` with version 7 is a 116-byte file of CRC-32 `0x7E97C64D`; the
+  bindings blob of a four-action set (spec 017's test set, Jump rebound to Y) saved with `save_to(..., 5)` is 28 bytes
+  of CRC-32 `0xE82EA36E`; the fake's call sequence of a `save::write` over an existing save is `WSXNN` (write temp,
+  size, remove backup, two renames) and of a `save::read` `SRR`; NNH Link's `link.sav` goes through the untouched
+  `save::write`/`read` with its own `Storage::kFormat`.
+- **T0.3** ctest pc-debug 271/271 (`data check: PASS checksum 0xD5BD3020`, `camera: PASS 5201E6CF`, `queries: PASS
+  4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7BB7901E`, `hierarchy: PASS 23DB5C36`, `tweens: PASS B44CA3F6`,
+  `platformer_replay_matches_script`), pc-release 259/259; `actions/tests/check.nnhs --pc` → `actions: saved 40 bytes
+  sum AAB4AA36`, `actions: PASS 7/7`, `nnh: PASS (77 lines)`. `nnh_tests` 2440 tests against `kMaxTests` 4096: 1656
+  left, no change needed.
+
+## Stage 1 refinements and results
+
+- **Files** as planned: `src/saves/save_wire.hpp` (wire byte, canonical varints, widths, little-endian loads and
+  stores, `take_varint` for validated data), `save_header.{hpp,cpp}`, `save_validate.{hpp,cpp}`, and
+  `save_report.cpp` (for now `FieldPath::format`, which the validator's messages use). `<nnh/saves.hpp>` starts with
+  the limits, `WireKind`, `WireShape`, `FieldPath` and `path()` (the rest in stage 2). `FieldPath` gained `valid()`
+  (a path that grew past 16 steps, or a negative item index, names nothing) and engine-use `push`/`pop`.
+- **Messages are at most 63 characters** (`nnh::Error`), so the raw-file refusal is "a raw nnh::save file (read it
+  with save::read)" (the file layer prefixes the path), and the newer-format one "format 2; this engine reads 1". The
+  validator's reasons are `field <path>: <what>`; when the id itself is the fault the path ends in `?` (`field 4.?:
+  bad id`). Its wording: bad wire byte 0xNN, bad id, id not ascending, value / string cut short, string is not UTF-8,
+  string holds a NUL, bad length, struct length exceeds the file, nesting deeper than 8 levels, bad count, list count
+  N exceeds the file, length N exceeds the file, items don't fill their length, template of N fields, template: bad
+  wire byte / bad id / bad size, template ids not ascending, template cut short.
+- **Depth**: the root's fields are level 1, a struct value's fields one level more, the rows of a struct sequence one
+  level more than the sequence's field; an empty struct list is accepted whatever its template holds (no level is
+  entered). A key with a NUL among its bytes is refused (`bad key`), so a key compare can't stop early.
+- **Fake platform** (insertions as planned, plus one): `cut_power_after(ops, torn)`, `restore_power()`,
+  `truncate_file()`, and **`fs_log()` / `clear_fs_log()`** — one letter per contract call (S size, R read, W write, A
+  append, N rename, X remove) — so the tests compare call *sequences* (T0.2's "counts per function"); `count_call()`
+  takes the letter, which touches each fs function's first line. A cut append keeps half its bytes when torn.
+- **T1.3** `detail::save_read_one` appended to `save.cpp` (it calls the anonymous `read_one`; GCC doesn't inline it).
+  3ds-dev `save.o`: every existing function byte-identical to `dis0/` (only the new section added); `save_format.o`
+  identical.
+- Tests: `test_wire.cpp` (9), `test_header.cpp` (6), `test_validate.cpp` (15: every one-value kind and every sequence
+  shape accepted; every bound both ways with hand-written bytes; the two messages of the spec; eight levels accepted
+  and nine refused, rows counted as a level; a 256 KiB adversarial file of 128-field rows validated in ≤ 2 steps per
+  byte), `test_raw_unchanged.cpp` (5), `tests/platform_fake/test_power_cut_fake.cpp` (8).
+- **T1.5** ctest pc-debug 271/271, pc-release 259/259; `nnh_tests` 2483 (pc-debug), 2443 (pc-release); pc-debug,
+  pc-release, 3ds-release and 3ds-dev without a warning; spec 014's data module untouched (`git diff --exit-code`);
+  `hello` sizes and `nm` lists equal T0.1's; `actions --pc` PASS 7/7 with `saved 40 bytes sum AAB4AA36`.

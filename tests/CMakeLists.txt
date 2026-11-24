@@ -532,6 +532,13 @@ target_link_libraries(nnh_actions_bench PRIVATE nnh::core nnh::platform_fake)
 target_sources(nnh_tests PRIVATE camera_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/camera/self_check.cpp)
 # The queries example's self-check (spec 019 T7.3, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
+# Structured saves (spec 027): the codec, evolution, migrations, files, power cuts, golden files, fuzz.
+target_sources(nnh_tests PRIVATE
+    platform_fake/test_power_cut_fake.cpp
+    saves/test_header.cpp
+    saves/test_raw_unchanged.cpp
+    saves/test_validate.cpp
+    saves/test_wire.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # The prefabs example's self-check (spec 021 T5.4, AC-2): prefab spawns against hand-written ones, golden checksum.

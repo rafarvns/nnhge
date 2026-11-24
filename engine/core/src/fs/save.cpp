@@ -79,3 +79,13 @@ Result<std::size_t> read(const char* path, void* buffer, std::size_t capacity, s
 }
 
 } // namespace nnh::save
+
+namespace nnh::detail {
+
+// Spec 027 (structured saves): the backup is read through this file's own read_one, so the structured layer keeps
+// spec 002's checks and messages. Appended; nothing above changes.
+Result<std::size_t> save_read_one(const char* path, void* buffer, std::size_t capacity, std::uint16_t* version_out) {
+    return save::read_one(path, buffer, capacity, version_out);
+}
+
+} // namespace nnh::detail

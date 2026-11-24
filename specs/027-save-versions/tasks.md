@@ -23,7 +23,7 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 0: baseline
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-027/`, not committed): `hello.exe`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-027/`, not committed): `hello.exe`
   (pc-release, pc-debug) and `hello.elf`/`.3dsx` (3ds-release, 3ds-dev) sizes (`size`: text/data/bss, file bytes) and
   `nm -C` lists (does `hello` link `save.o`? does the 3DS link use `--gc-sections`? — decides whether the appended
   `save_read_one` can reach `hello`); `.text` of the 3ds-release `actions`, `data`, `foundation` ELFs; edit
@@ -31,18 +31,18 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
   preprocessed lines and `-fsyntax-only` time of one-line TUs including `<nnh/data.hpp>` and `<nnh/fs.hpp>`; 3ds-dev
   disassembly of `save.o` and `save_format.o` saved in `build/ref-027/dis0/`. Files: plan.md ("Stage 0 results").
   Covers III, FR-20, AC-7.
-- [ ] **T0.2** [P] Pins: the bytes `nnh::save::write` produces for a fixed 100-byte blob with version 7 on the fake (CRC-32
+- [x] **T0.2** [P] Pins: the bytes `nnh::save::write` produces for a fixed 100-byte blob with version 7 on the fake (CRC-32
   of the whole file and its size), the `NNHB` blob of the actions example's fixed set (`save_to`), the fake's fs call
   sequence of one `save::write` over an existing file and of one `save::read` (counts per function), `link.sav`'s format
   constant. Files: plan.md ("Stage 0 results"). Covers AC-7, FR-6.
-- [ ] **T0.3** [P] Goldens and counts today: `0xD5BD3020`, `actions: PASS 7/7` and its `saved 40 bytes sum` line,
+- [x] **T0.3** [P] Goldens and counts today: `0xD5BD3020`, `actions: PASS 7/7` and its `saved 40 bytes sum` line,
   `5201E6CF`, `4ACAA177`, `C8FB9A41`, `7BB7901E`, the hierarchy golden, `B44CA3F6`; `nnh_tests` count against
   `kMaxTests` (4096; this spec adds ≈ 250 tests: raise only if fewer than 400 are left, and note it for the merge).
   Files: plan.md. Covers VI.
 
 ## Stage 1: wire primitives, the validator, spec 002's accessor, fake power cuts (pure)
 
-- [ ] **T1.1** Wire primitives: `src/saves/save_wire.hpp` (wire kinds and shapes, the wire byte, canonical varint read
+- [x] **T1.1** Wire primitives: `src/saves/save_wire.hpp` (wire kinds and shapes, the wire byte, canonical varint read
   and write ≤ 3 bytes, widths per kind, `static_assert` little-endian), `save_header.{hpp,cpp}` (build and parse the
   structured header: magic `NNSV`, format 1, key length and characters, flags 0, version ≥ 1, FNV-1a key hash). Test:
   `tests/saves/test_wire.cpp` (varints 0, 127, 128, 16 383, 16 384, 2²¹ − 1 against hand bytes; overlong and 4-byte
@@ -50,24 +50,24 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
   wrong refused with its message; format 2 → `Unsupported`; a raw payload recognised). Files: those,
   `engine/core/CMakeLists.txt` (the `_nnh_saves_sources` block after the prefabs block's `target_sources` line),
   `tests/CMakeLists.txt` (027's block after the `queries_example` line). Covers FR-5, FR-6, FR-14.
-- [ ] **T1.2** The schema-free validator: `save_validate.{hpp,cpp}` (the bounded walk of plan.md: ids ascending, depth
+- [x] **T1.2** The schema-free validator: `save_validate.{hpp,cpp}` (the bounded walk of plan.md: ids ascending, depth
   ≤ 8, lengths/counts before use, struct and `bytes` exact fills, templates 1..128 ascending, strings through
   `detail::utf8_valid` and no NUL; reasons with the field path; a step counter for the linear-time test). Test:
   `tests/saves/test_validate.cpp` (every bound both ways with hand-written payloads; messages
   `field 7: list count 900 exceeds the file`, `field 9[12].4: string is not UTF-8`; a 256 KiB adversarial file of
   nested sequences validated within a fixed step count; unknown fields of every kind skipped by length). Covers FR-5,
   FR-14, X.
-- [ ] **T1.3** Spec 002's accessor: `detail::save_read_one` appended after `} // namespace nnh::save` in
+- [x] **T1.3** Spec 002's accessor: `detail::save_read_one` appended after `} // namespace nnh::save` in
   `src/fs/save.cpp`, declared after `validate_save` in `save_format.hpp`. Test: `tests/saves/test_raw_unchanged.cpp`
   (T0.2's pins: raw file bytes, `NNHB` bytes, fs call sequences; `save_read_one` equals `read_one`'s behaviour: missing,
   short, bad CRC, too large); `tests/fs/test_save.cpp` unchanged and passing; 3ds-dev `save.o`'s existing functions
   byte-identical to T0.1's. Covers FR-7, FR-20, AC-7.
-- [ ] **T1.4** [P] Fake power cuts: `platform_fake.hpp` (`cut_power_after(ops, torn)`, `restore_power()`,
+- [x] **T1.4** [P] Fake power cuts: `platform_fake.hpp` (`cut_power_after(ops, torn)`, `restore_power()`,
   `truncate_file(path, size)` after `corrupt_file`), `fs_fake.cpp` (the guard line in the four mutating functions, the
   state, the reset). Test: `tests/platform_fake/test_power_cut_fake.cpp` (cut after 0..4 operations: the cut write keeps
   half, a cut rename/remove does nothing, later mutating calls fail without effect, reads work, `restore_power()` and
   `reset()` end it; `fail_next_writes` unchanged). Covers AC-3.
-- [ ] **T1.5** Stage end: the stage-end guards. Files: plan.md ("Stage 1 results"). Covers AC-7.
+- [x] **T1.5** Stage end: the stage-end guards. Files: plan.md ("Stage 1 results"). Covers AC-7.
 
 ## Stage 2: declarations and compile-time checks
 

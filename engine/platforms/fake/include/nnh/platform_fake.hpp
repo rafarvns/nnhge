@@ -163,6 +163,21 @@ void fail_next_writes(int count);
 /// Flips the bits of one byte of a stored file (simulates corruption on the SD card).
 void corrupt_file(const char* path, std::size_t byte_index);
 
+/// A power cut (spec 027 AC-3): the next `ops` mutating fs calls (fs_write, fs_append, fs_rename, fs_remove) run,
+/// the one after is cut (a write or append keeps half its bytes when `torn`, else nothing; a rename or remove does
+/// nothing), and every later mutating call does nothing and fails until restore_power() or reset(), as after a
+/// reboot. Reads keep working.
+void cut_power_after(int ops, bool torn = true);
+void restore_power();
+
+/// Cuts a stored file to its first `size` bytes (nothing when it is missing or not longer).
+void truncate_file(const char* path, std::size_t size);
+
+/// The fs contract calls since reset() or clear_fs_log(), one letter each (the first 255): S fs_size, R fs_read,
+/// W fs_write, A fs_append, N fs_rename, X fs_remove.
+const char* fs_log();
+void clear_fs_log();
+
 /// Capabilities reported by the platform (default: SecondScreen only).
 void set_capabilities(std::initializer_list<Capability> capabilities);
 

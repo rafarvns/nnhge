@@ -100,6 +100,7 @@ wait 10
 tap Y
 expect "transitions bench: started" 20
 expect "transitions bench: base gfx submit avg" 400
+expect "transitions bench: rect avg" 400
 expect "transitions bench: fade avg" 400
 expect "transitions bench: wipe avg" 400
 expect "transitions bench: split avg" 400

@@ -225,19 +225,29 @@ these links the geometry and none of the transition's frame code.
 
 Phases, coverage bits, rectangles and the stack-change frames are the same on every host compiler and on the 3DS
 (integer geometry, whole frames, spec 015's easings, `-ffp-contract=off`): the example's self-check checksums 1200
-frames of them (`transitions: PASS BFE1D810`, recorded on the PC; the console's run is pending). The fade's blend is the GPU's: its colour may differ by one step per
+frames of them (`transitions: PASS BFE1D810`, recorded on the PC and the same on the Old 3DS). The fade's blend is the GPU's: its colour may differ by one step per
 channel between PC and 3DS; geometry never does.
 
 ## Costs
 
 - State: 248 bytes on the 3DS (≤ 256), ≤ 320 on 64-bit PCs; nothing allocates, ever; no `virtual`; no log line in the
-  normal path. The step and the overlay's recording are one profile scope, `transition`.
+  normal path. The step and the overlay's recording are timed under one profile scope name, `transition` (opened twice
+  a frame: around the step, then around the overlay and the end of the frame).
 - Draws per frame: the table above, per screen (an iris at band 4: up to 244 for both screens).
 - Games that never use transitions: the scene stack pays one null check per frame, the input path one load and branch;
-  `hello` grew 88 bytes of 3DS text. Old 3DS timings: see [plan 023](../../specs/023-scene-transitions/plan.md)
-  ("Stage 7 ARM pre-check"; the console run is pending). The example's bench (`TRANSITIONS_DEMO=bench`, Y) judges the
-  Old 3DS targets in Development builds; on the PC its numbers include the SDL software renderer filling the overlay's
-  pixels (≈ 0.3 ms per full-screen pair) and fail the console's targets: the console is the judge.
+  `hello` grew 88 bytes of 3DS text.
+- Old 3DS, Development build (provisional: the budgets are set after the console rerun). Run 1 measured ≈ 0.096 ms a
+  frame for a fade or a wipe on both screens, 0.11 for a split, 0.17 for 8 blinds, 0.96 for an iris at band 4 (worst
+  frame 1.75), 0.10 for a frame with a loading step; ≈ 5.6 µs per extra rectangle. Most of a fade's cost is fixed: the
+  first solid rectangle after textured draws makes citro2d flush its batch and switch its texture setup (on each screen),
+  and the transition's code runs once a frame, out of the cache. After the optimisation round (rectangles recorded
+  directly, the profiler's own cost out of the bench) the expected numbers are ≈ 0.08, 0.09–0.10, 0.15, 0.87 (worst
+  ≈ 1.6) and ≈ 0.08 ms. Details: [plan 023](../../specs/023-scene-transitions/plan.md) ("Console run 1", "Optimisation
+  round (T10.3)").
+- The example's bench (`TRANSITIONS_DEMO=bench`, Y) judges the Old 3DS targets in Development builds and logs gfx's
+  share of one solid rectangle per screen apart (`transitions bench: rect …`). On the PC its numbers include the SDL
+  software renderer filling the overlay's pixels (≈ 0.3 ms per full-screen pair) and fail the console's targets: the
+  console is the judge.
 
 ## Misuse
 

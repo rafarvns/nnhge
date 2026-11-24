@@ -1,6 +1,7 @@
 // The effect geometry as public pure queries and a plain draw call (spec 023 FR-9): what the transitions draw,
 // usable with no transition, no scene stack and (except draw_effect) no init.
 
+#include "gfx/gfx_state.hpp"
 #include "nnh/transition.hpp"
 #include "transition/effect_geometry.hpp"
 
@@ -22,18 +23,12 @@ void to_array(void* ctx, const detail::PixelRect& r) {
     ++sink->count;
 }
 
-struct DrawSink {
-    Screen screen;
-    Color color;
-    ShapeOptions options;
-};
-
-void to_gfx(void* ctx, const detail::PixelRect& r) {
-    const auto* sink = static_cast<const DrawSink*>(ctx);
-    gfx::fill_rect(sink->screen,
-                   Rect{static_cast<float>(r.x), static_cast<float>(r.y), static_cast<float>(r.w),
-                        static_cast<float>(r.h)},
-                   sink->color, sink->options);
+/// Records one rectangle: the command gfx::fill_rect builds, filled once per screen (`ctx`), only its place set here.
+void to_draw_list(void* ctx, const detail::PixelRect& r) {
+    auto* command = static_cast<detail::DrawCommand*>(ctx);
+    command->position = Vec2{static_cast<float>(r.x), static_cast<float>(r.y)};
+    command->second = Vec2{static_cast<float>(r.w), static_cast<float>(r.h)};
+    detail::gfx_record(*command);
 }
 
 detail::EffectArea area_of(const transition::Placement& p) {
@@ -42,9 +37,18 @@ detail::EffectArea area_of(const transition::Placement& p) {
 
 } // namespace
 
+// What gfx::fill_rect(rect, colour, {.layer, .ignore_camera = true}) records for each rectangle, bit for bit, with its
+// checks and command built once per screen instead of once per rectangle (plan 023 T10.3; pinned by
+// tests/transition/test_effect_query.cpp).
 void detail::draw_resolved(const ResolvedEffect& fx, Screen screen, EffectArea area, int q, int layer) {
-    DrawSink sink{screen, effect_color_q(fx, q), ShapeOptions{.layer = layer, .ignore_camera = true}};
-    draw_screen_effect(fx, screen, area, q, &to_gfx, &sink);
+    if (!gfx_drawing()) return; // outside a frame: nothing (the geometry has no other effect)
+    DrawCommand command;
+    command.kind = platform::DrawItem2D::Kind::FillRect;
+    command.screen = screen;
+    command.layer = gfx_clamp_layer(layer);
+    command.ignore_camera = true;
+    command.color = effect_color_q(fx, q);
+    draw_screen_effect(fx, screen, area, q, &to_draw_list, &command);
 }
 
 int transition::max_rects(const Effect& effect, bool tall) {

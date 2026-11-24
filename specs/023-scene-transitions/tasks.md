@@ -1,6 +1,7 @@
 # Tasks 023: Scene transitions
 
-Status: implemented 2026-11-24 (stages 0–8 and 11; Linux checks T9.1 passed; the console run T10.2 pending; merge T11.7 by the lead)
+Status: implemented 2026-11-24 (stages 0–8 and 11; Linux checks T9.1 passed; console run 1 done, optimisation round
+T10.3 done on the PC, the console rerun pending; merge T11.7 by the lead)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -292,11 +293,17 @@ replay lines **present in the tree** (never edited by this spec); `actions` and 
      lines, `60 Hz PASS`;
   4. `build/pc-debug/tools/nnh/nnh run actions --script examples/actions/tests/check.nnhs` → PASS as before.
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths). Covers AC-6, AC-7, AC-8.
+  *Runs 1 and 2 done 2026-11-24: `PASS BFE1D810`, doors `60 Hz PASS` (worst 20.9 ms); bench FAIL (split 0.1106 ms,
+  loading engine 0.1046 ms), numbers in plan.md "Console run 1".*
 - [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risk 1's list without changing a result (every golden holds, or AC-3's golden re-recorded on the PC first
   for option (c)); then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin,
   written in the spec's AC-8, `bench_scene.cpp` and `docs/api/transition.md` with the numbers. Files: plan.md
   ("Optimisation round", "Console run 2 and budgets set"). Covers AC-8.
+  *Optimisation round done on the PC 2026-11-24 (plan.md "Optimisation round (T10.3)"): the bench's profiler self-cost,
+  nested loading scope and music removed from the measurement, a `rect` line for gfx's share; the overlay records
+  rectangles directly (187 → 73 instructions each) and `isqrt` starts with `clz`; every golden unchanged. Pending: the
+  console rerun of run 1 (and doors), then budgets from the measurement if loading still misses.*
 
 ## Stage 11: docs, roadmap, status
 

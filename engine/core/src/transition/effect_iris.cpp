@@ -3,6 +3,8 @@
 // fully covered bands merge into one rectangle (at most one run above and one below the shape). Integer-only: the
 // square root is the bit method (no libm, no VFP), no division in the band loop.
 
+#include <bit>
+
 #include "transition/effect_geometry.hpp"
 
 namespace nnh::detail {
@@ -29,9 +31,11 @@ struct FullRun {
 } // namespace
 
 std::uint32_t isqrt(std::uint32_t v) {
+    if (v == 0) return 0;
     std::uint32_t result = 0;
-    std::uint32_t bit = 1u << 30;
-    while (bit > v) bit >>= 2;
+    // The highest power of four ≤ v in one count (ARM `clz`): the old `while (bit > v) bit >>= 2` from 2³⁰ found the
+    // same bit in up to 15 steps (plan 023 T10.3).
+    std::uint32_t bit = 1u << ((31 - std::countl_zero(v)) & ~1);
     while (bit != 0) {
         if (v >= result + bit) {
             v -= result + bit;

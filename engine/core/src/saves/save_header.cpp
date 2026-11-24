@@ -2,10 +2,10 @@
 
 #include "saves/save_header.hpp"
 
-#include <cstring>
-
 #include "nnh/detail/name_hash.hpp"
 #include "saves/save_wire.hpp"
+
+#include <cstring>
 
 namespace nnh::detail {
 
@@ -43,8 +43,8 @@ Result<SaveStructHeader> parse_save_struct_header(const std::uint8_t* data, std:
     h.version = load_u32(data + 8);
     h.key_hash = load_u32(data + 12);
     if (h.format > save::kFormatVersion) {
-        return Error::make(ErrorCode::Unsupported, "format %u; this engine reads %u", static_cast<unsigned>(h.format),
-                           static_cast<unsigned>(save::kFormatVersion));
+        return Error::make(ErrorCode::Unsupported, "format %u; this engine reads %u",
+                           static_cast<unsigned>(h.format), static_cast<unsigned>(save::kFormatVersion));
     }
     if (h.format == 0) return Error::make(ErrorCode::Corrupted, "format 0");
     if (h.key_length == 0 || h.key_length > save::kMaxKeyLength) {
@@ -57,8 +57,10 @@ Result<SaveStructHeader> parse_save_struct_header(const std::uint8_t* data, std:
     if (h.version == 0) return Error::make(ErrorCode::Corrupted, "save version 0");
     std::memcpy(h.key, data + kSaveStructHeaderSize, h.key_length);
     h.key[h.key_length] = '\0';
-    if (std::strlen(h.key) != h.key_length || !save_key_valid(h.key)) return Error::make(ErrorCode::Corrupted, "bad key");
-    if (fnv1a32(h.key, h.key_length) != h.key_hash) return Error::make(ErrorCode::Corrupted, "key hash mismatch");
+    if (std::strlen(h.key) != h.key_length || !save_key_valid(h.key))
+        return Error::make(ErrorCode::Corrupted, "bad key");
+    if (fnv1a32(h.key, h.key_length) != h.key_hash)
+        return Error::make(ErrorCode::Corrupted, "key hash mismatch");
     h.size = kSaveStructHeaderSize + h.key_length;
     return h;
 }

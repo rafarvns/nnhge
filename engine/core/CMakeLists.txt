@@ -303,6 +303,7 @@ target_sources(nnh_core PRIVATE ${_nnh_prefabs_sources})
 # Structured saves (spec 027, D45, D46): integer-only codec (floats move as bits), no allocation. Each file is linked
 # only by a game that reaches it: a game without <nnh/saves.hpp> links none of them.
 set(_nnh_saves_sources
+    src/saves/save_enum.cpp
     src/saves/save_header.cpp
     src/saves/save_report.cpp
     src/saves/save_validate.cpp

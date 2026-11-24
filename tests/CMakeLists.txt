@@ -535,10 +535,54 @@ target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_S
 # Structured saves (spec 027): the codec, evolution, migrations, files, power cuts, golden files, fuzz.
 target_sources(nnh_tests PRIVATE
     platform_fake/test_power_cut_fake.cpp
+    saves/test_declare.cpp
     saves/test_header.cpp
     saves/test_raw_unchanged.cpp
     saves/test_validate.cpp
     saves/test_wire.cpp)
+# Save declarations (spec 027 T2.3, AC-1): a correct one compiles with -Werror; each mistake fails to compile AND says
+# what is wrong. `~` separates alternatives (any one passes): GCC's wording, then clang's.
+if(NOT MSVC)
+    set(_save_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    set(_save_cases ${CMAKE_CURRENT_SOURCE_DIR}/saves/compile_fail)
+    add_test(NAME saves_declaration_accepts_good COMMAND ${_save_check} -Werror ${_save_cases}/good.cpp)
+    foreach(case "unknown_member|damgae[^ ]* is not a member~no member named .damgae."
+                 "pointer|saved fields can't be pointers or references"
+                 "std_string|saved fields must be trivially copyable"
+                 "union|unions aren't saved field kinds"
+                 "char|character types aren't saved field kinds"
+                 "const_member|saved fields can't be const or volatile"
+                 "id_zero|save_error_field_id_must_be_1_to_65535"
+                 "id_65536|save_error_field_id_must_be_1_to_65535"
+                 "duplicate_id|save_error_field_id_used_twice"
+                 "retired_used|save_error_retired_id_used_by_a_field"
+                 "retired_twice|save_error_retired_id_listed_twice"
+                 "nested_undeclared|needs its own NNH_SAVE_STRUCT"
+                 "too_many_fields|save_error_more_than_128_fields"
+                 "too_deep|save_error_nesting_deeper_than_8_levels"
+                 "root_too_big|a save type can be at most 64 KiB"
+                 "array_too_big|an array in a save holds at most 65535 items"
+                 "max_size_too_big|save_error_max_encoded_size_over_256_KiB"
+                 "bad_key_upper|save_error_bad_key_use_1_to_16"
+                 "bad_key_long|save_error_bad_key_use_1_to_16"
+                 "bad_key_empty|save_error_bad_key_use_1_to_16"
+                 "version_zero|save_error_version_must_be_at_least_1"
+                 "step_at_current|save_error_step_from_a_version_not_below_the_current_one"
+                 "two_steps|save_error_two_steps_for_one_version"
+                 "step_gap|save_error_missing_migration_step"
+                 "version_in_struct|save_error_NNH_SAVE_VERSION_or_NNH_SAVE_STEP_in_a_struct_or_summary"
+                 "summary_stored|only an NNH_SAVE_TYPE can be encoded or stored"
+                 "undeclared_stored|this type has no save declaration")
+        string(REPLACE "|" ";" case "${case}")
+        list(GET case 0 name)
+        list(GET case 1 expected)
+        string(REPLACE "~" ";" expected "${expected}")
+        add_test(NAME saves_declaration_rejects_${name} COMMAND ${_save_check} ${_save_cases}/${name}.cpp)
+        set_tests_properties(saves_declaration_rejects_${name} PROPERTIES WILL_FAIL TRUE)
+        add_test(NAME saves_declaration_explains_${name} COMMAND ${_save_check} ${_save_cases}/${name}.cpp)
+        set_tests_properties(saves_declaration_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
+    endforeach()
+endif()
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # The prefabs example's self-check (spec 021 T5.4, AC-2): prefab spawns against hand-written ones, golden checksum.

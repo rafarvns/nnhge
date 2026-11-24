@@ -71,26 +71,26 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 2: declarations and compile-time checks
 
-- [ ] **T2.1** The header and the schema records: `<nnh/saves.hpp>` (limits, `WireKind`, `WireShape`, `FieldPath`,
+- [x] **T2.1** The header and the schema records: `<nnh/saves.hpp>` (limits, `WireKind`, `WireShape`, `FieldPath`,
   `path()`, `Report`, `FileInfo`, `OldFields` and the template declarations), `nnh/detail/save_schema.hpp`
   (`SaveFieldInfo`, `SaveTypeInfo`, `SaveEntry`, `SaveStep`, `SaveTag`, `save_error_*`), `nnh/detail/save_kinds.hpp`
   (the wrapper over spec 014's traits: `double`, 64-bit integers, arrays ≤ 65 535, element checks with messages). Test:
   `tests/saves/test_declare.cpp` (part 1: kinds, widths, signs, shapes, capacities, enum and ref targets for every member
   type; `FieldPath` building and `format`). Covers FR-1, FR-3.
-- [ ] **T2.2** Tables and macros: `nnh/detail/save_tables.hpp` (`make_save_field` with the nested record found by ADL,
+- [x] **T2.2** Tables and macros: `nnh/detail/save_tables.hpp` (`make_save_field` with the nested record found by ADL,
   `make_save_table` sorting fields by id, retired ids, steps, the complete-chain check, `make_save_type`, depth, root
   size, `max_size`), `nnh/detail/save_macros.hpp` (`NNH_SAVE_TYPE/STRUCT/SUMMARY/FIELD/RETIRED/VERSION/STEP`, names `""`
   under `NNH_FLAVOR_RELEASE`). Test: `tests/saves/test_declare.cpp` (part 2: the tables of a type, a struct, a summary,
   in the global namespace and in a game namespace, in a header and in one source; a struct that is also an
   `NNH_DATA_TYPE`; `max_size` of hand-computed cases; names empty in pc-release). Covers FR-1, FR-2, FR-8, FR-12.
-- [ ] **T2.3** Negative-compile ctests: `tests/saves/compile_fail/` (`good.cpp` with `-Werror`; one file per case of
+- [x] **T2.3** Negative-compile ctests: `tests/saves/compile_fail/` (`good.cpp` with `-Werror`; one file per case of
   plan.md's AC-1 list: unknown member, pointer, `std::string`-like, union, `char`, `const`, id 0, id 65 536, duplicate
   id, retired used, retired twice, nested without declaration, 129 fields, 9 levels, root > 64 KiB, array of 65 536,
   max size > 256 KiB, bad keys, version 0, step at the current version, two steps for one version, a gap in the chain,
   `NNH_SAVE_VERSION` in a struct, a summary stored, an undeclared type stored). ctests `saves_declaration_rejects_<case>`
   (`WILL_FAIL`) and `saves_declaration_explains_<case>` (GCC's and clang's wording) in 027's block, under the
   data-schema block's condition. Covers FR-1, FR-2, FR-12, FR-21, AC-1.
-- [ ] **T2.4** Stage end: the stage-end guards; include check (`<nnh/saves.hpp>` pulls only `<nnh/data.hpp>`,
+- [x] **T2.4** Stage end: the stage-end guards; include check (`<nnh/saves.hpp>` pulls only `<nnh/data.hpp>`,
   `<nnh/result.hpp>` and the standard headers named; no gfx, audio, tilemap, entities header); preprocessed lines and
   `-fsyntax-only` within 0.05 s of `<nnh/data.hpp>` alone (else plan risk 6). Files: plan.md ("Stage 2 results").
   Covers III, FR-20.

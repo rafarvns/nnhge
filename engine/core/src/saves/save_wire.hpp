@@ -2,14 +2,14 @@
 // Wire primitives of structured saves (spec 027, D45): the wire byte, canonical varints, fixed widths and
 // little-endian loads and stores. Pure and inline; tested in tests/saves/test_wire.cpp.
 //
-//   field  = wire:u8 id:varint value      wire bits 0-4: kind, bits 5-6: shape (0 One, 1 Array, 2 List), bit 7: 0
-//   varint = unsigned LEB128, canonical (no needless continuation byte), at most 3 bytes (values < 2^21)
+//   field  = wire:u8 id:varint value      wire bits 0-4: kind, bits 5-6: shape (0 One, 1 Array, 2 List), bit
+//   7: 0 varint = unsigned LEB128, canonical (no needless continuation byte), at most 3 bytes (values < 2^21)
+
+#include "nnh/saves.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-
-#include "nnh/saves.hpp"
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
 #error "structured saves (spec 027) support little-endian systems only"
@@ -26,8 +26,12 @@ inline constexpr int kWireKindCount = 20; // WireKind::None .. WireKind::Struct
 constexpr std::uint8_t wire_byte(save::WireKind kind, save::WireShape shape) {
     return static_cast<std::uint8_t>(static_cast<unsigned>(kind) | (static_cast<unsigned>(shape) << 5));
 }
-constexpr save::WireKind wire_kind(std::uint8_t wire) { return static_cast<save::WireKind>(wire & 0x1F); }
-constexpr save::WireShape wire_shape(std::uint8_t wire) { return static_cast<save::WireShape>((wire >> 5) & 3); }
+constexpr save::WireKind wire_kind(std::uint8_t wire) {
+    return static_cast<save::WireKind>(wire & 0x1F);
+}
+constexpr save::WireShape wire_shape(std::uint8_t wire) {
+    return static_cast<save::WireShape>((wire >> 5) & 3);
+}
 
 /// A wire byte a file may hold: kind 1..19, shape 0..2, bit 7 clear.
 constexpr bool wire_valid(std::uint8_t wire) {
@@ -41,9 +45,11 @@ constexpr int wire_width(save::WireKind kind) {
     switch (kind) {
     case save::WireKind::Bool:
     case save::WireKind::U8:
-    case save::WireKind::I8: return 1;
+    case save::WireKind::I8:
+        return 1;
     case save::WireKind::U16:
-    case save::WireKind::I16: return 2;
+    case save::WireKind::I16:
+        return 2;
     case save::WireKind::U32:
     case save::WireKind::I32:
     case save::WireKind::F32:
@@ -51,16 +57,21 @@ constexpr int wire_width(save::WireKind kind) {
     case save::WireKind::DataRef:
     case save::WireKind::TextureRef:
     case save::WireKind::SoundRef:
-    case save::WireKind::MusicRef: return 4;
+    case save::WireKind::MusicRef:
+        return 4;
     case save::WireKind::U64:
     case save::WireKind::I64:
     case save::WireKind::F64:
-    case save::WireKind::Vec2: return 8;
-    default: return 0;
+    case save::WireKind::Vec2:
+        return 8;
+    default:
+        return 0;
     }
 }
 
-constexpr int varint_size(std::uint32_t value) { return value < 0x80u ? 1 : value < 0x4000u ? 2 : 3; }
+constexpr int varint_size(std::uint32_t value) {
+    return value < 0x80u ? 1 : value < 0x4000u ? 2 : 3;
+}
 
 /// Writes `value` (< 2^21) at `out`; returns the bytes written (1-3). The caller checks the room.
 inline int put_varint(std::uint8_t* out, std::uint32_t value) {
@@ -128,7 +139,11 @@ inline std::uint64_t load_u64(const std::uint8_t* p) {
     std::memcpy(&v, p, sizeof v);
     return v;
 }
-inline void store_u16(std::uint8_t* p, std::uint16_t v) { std::memcpy(p, &v, sizeof v); }
-inline void store_u32(std::uint8_t* p, std::uint32_t v) { std::memcpy(p, &v, sizeof v); }
+inline void store_u16(std::uint8_t* p, std::uint16_t v) {
+    std::memcpy(p, &v, sizeof v);
+}
+inline void store_u32(std::uint8_t* p, std::uint32_t v) {
+    std::memcpy(p, &v, sizeof v);
+}
 
 } // namespace nnh::detail

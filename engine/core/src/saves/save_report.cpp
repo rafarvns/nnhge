@@ -1,8 +1,8 @@
 // Field paths as text (FieldPath::format) and the load report's warning line (spec 027 FR-15).
 
-#include <cstdio>
-
 #include "nnh/saves.hpp"
+
+#include <cstdio>
 
 namespace nnh::save {
 
@@ -15,7 +15,8 @@ int FieldPath::format(char* out, std::size_t capacity) const {
         const bool item = is_item(i);
         const int length = std::snprintf(step, sizeof step, item ? "[%u]" : (i > 0 ? ".%u" : "%u"),
                                          static_cast<unsigned>(steps_[i]));
-        for (int k = 0; k < length && n + 1 < capacity; ++k) out[n++] = step[k];
+        for (int k = 0; k < length && n + 1 < capacity; ++k)
+            out[n++] = step[k];
         out[n] = '\0';
     }
     return static_cast<int>(n);

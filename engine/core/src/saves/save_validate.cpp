@@ -1,14 +1,14 @@
-// The schema-free structural check of a structured save's fields (save_validate.hpp). A recursive walk bounded by
-// the 8 struct levels; every length and count is checked against the bytes left before it is used.
+// The schema-free structural check of a structured save's fields (save_validate.hpp). A recursive walk
+// bounded by the 8 struct levels; every length and count is checked against the bytes left before it is used.
 
 #include "saves/save_validate.hpp"
+
+#include "saves/save_wire.hpp"
+#include "text/utf8.hpp"
 
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-
-#include "saves/save_wire.hpp"
-#include "text/utf8.hpp"
 
 namespace nnh::detail {
 namespace {
@@ -21,7 +21,8 @@ struct Walk {
     save::FieldPath path;
     Error error{};
 
-    /// Records the first fault: "field <path>: <reason>" (the path ends in "?" when the id itself is the fault).
+    /// Records the first fault: "field <path>: <reason>" (the path ends in "?" when the id itself is the
+    /// fault).
     bool fail(bool id_unknown, const char* format, ...) NNH_PRINTF_FORMAT(3, 4) {
         char reason[48];
         va_list args;
@@ -30,13 +31,15 @@ struct Walk {
         va_end(args);
         char where[64];
         const int n = path.format(where, sizeof where);
-        if (id_unknown) std::snprintf(where + n, sizeof where - static_cast<std::size_t>(n), "%s?", n > 0 ? "." : "");
+        if (id_unknown)
+            std::snprintf(where + n, sizeof where - static_cast<std::size_t>(n), "%s?", n > 0 ? "." : "");
         error = Error::make(ErrorCode::Corrupted, "field %s: %s", where, reason);
         return false;
     }
 
     bool string(const std::uint8_t*& p, const std::uint8_t* end) {
-        if (p >= end || end - (p + 1) < static_cast<std::ptrdiff_t>(*p)) return fail(false, "string cut short");
+        if (p >= end || end - (p + 1) < static_cast<std::ptrdiff_t>(*p))
+            return fail(false, "string cut short");
         const std::size_t length = *p++;
         const char* text = reinterpret_cast<const char*>(p);
         if (!utf8_valid(text, length)) return fail(false, "string is not UTF-8");
@@ -107,7 +110,8 @@ bool Walk::sequence(WireKind kind, const std::uint8_t*& p, const std::uint8_t* e
     p += n;
     if (kind == WireKind::String) return strings(count, p, end);
     if (kind == WireKind::Struct) return rows(count, p, end, depth);
-    const std::uint64_t bytes = static_cast<std::uint64_t>(count) * static_cast<std::uint64_t>(wire_width(kind));
+    const std::uint64_t bytes =
+        static_cast<std::uint64_t>(count) * static_cast<std::uint64_t>(wire_width(kind));
     if (static_cast<std::uint64_t>(end - p) < bytes) {
         return fail(false, "list count %lu exceeds the file", static_cast<unsigned long>(count));
     }
@@ -118,8 +122,10 @@ bool Walk::sequence(WireKind kind, const std::uint8_t*& p, const std::uint8_t* e
 bool Walk::strings(std::uint32_t count, const std::uint8_t*& p, const std::uint8_t* end) {
     std::uint32_t bytes = 0;
     if (!length(p, end, bytes)) return false;
-    if (static_cast<std::uint32_t>(end - p) < bytes) return fail(false, "length %lu exceeds the file", static_cast<unsigned long>(bytes));
-    if (count > bytes) return fail(false, "list count %lu exceeds the file", static_cast<unsigned long>(count));
+    if (static_cast<std::uint32_t>(end - p) < bytes)
+        return fail(false, "length %lu exceeds the file", static_cast<unsigned long>(bytes));
+    if (count > bytes)
+        return fail(false, "list count %lu exceeds the file", static_cast<unsigned long>(count));
     const std::uint8_t* region_end = p + bytes;
     for (std::uint32_t i = 0; i < count; ++i) {
         ++steps;
@@ -148,14 +154,16 @@ bool Walk::rows(std::uint32_t count, const std::uint8_t*& p, const std::uint8_t*
         ++p;
         std::uint32_t id = 0;
         const int m = get_varint(p, end, id);
-        if (m == 0 || id == 0 || id > static_cast<std::uint32_t>(save::kMaxId)) return fail(false, "template: bad id");
+        if (m == 0 || id == 0 || id > static_cast<std::uint32_t>(save::kMaxId))
+            return fail(false, "template: bad id");
         if (id <= previous) return fail(false, "template ids not ascending");
         p += m;
         previous = id;
     }
     std::uint32_t bytes = 0;
     if (!length(p, end, bytes)) return false;
-    if (static_cast<std::uint32_t>(end - p) < bytes) return fail(false, "length %lu exceeds the file", static_cast<unsigned long>(bytes));
+    if (static_cast<std::uint32_t>(end - p) < bytes)
+        return fail(false, "length %lu exceeds the file", static_cast<unsigned long>(bytes));
     if (static_cast<std::uint64_t>(count) * fields_in_row > bytes) {
         return fail(false, "list count %lu exceeds the file", static_cast<unsigned long>(count));
     }

@@ -766,3 +766,43 @@ same PC at the same time: timings are noisy.
 - **T1.5** ctest pc-debug 271/271, pc-release 259/259; `nnh_tests` 2483 (pc-debug), 2443 (pc-release); pc-debug,
   pc-release, 3ds-release and 3ds-dev without a warning; spec 014's data module untouched (`git diff --exit-code`);
   `hello` sizes and `nm` lists equal T0.1's; `actions --pc` PASS 7/7 with `saved 40 bytes sum AAB4AA36`.
+
+## Stage 2 refinements and results
+
+- **Files** as planned: `<nnh/saves.hpp>` (limits, `WireKind`, `WireShape`, `FieldPath`, `path()`, `Report`, `FileInfo`,
+  `OldFields`, `max_size`, `Buffer`, `encode`/`decode`/`store`/`load`/`info`/`exists`/`remove`, the dump calls, and a
+  short `nnh::detail` block declaring the non-template functions they call), `nnh/detail/save_schema.hpp`
+  (`SaveFieldInfo`, `SaveStep`, `SaveRole`, `SaveTypeInfo`, `SaveTag`, the `save_error_*` functions),
+  `save_kinds.hpp`, `save_tables.hpp`, `save_macros.hpp`. One more source: **`src/saves/save_enum.cpp`**
+  (`save_find_enum_names`, the only caller of spec 014's `find_enum`): an enum field's record points at a template
+  `save_enum_names_of<E>` that calls it, so only a game whose save has an enum field links it and, through it,
+  `schema_registry.o` (plan decision 22).
+- **Records**: `SaveFieldInfo` is 32 bytes on the 3DS (name, nested record, enum lookup, offset, stride, items offset,
+  count, id, capacity, kind, shape, width); `width` is the member's size for numbers, bools and enums (an enum's file
+  kind is its underlying type's), 0 otherwise. `SaveTypeInfo` keeps three sizes per struct: `max_fields` (its fields
+  with tags), `max_row` (a row of a sequence: values only) and `template_size`, so `max_size<T>()` is
+  `16 + key length + max_fields` at compile time.
+- **Checks** (all at compile time): as planned, plus a save struct needs at least one field
+  (`save_error_a_save_struct_needs_a_field`), an enum whose underlying type is `char`, `wchar_t` or `bool` is refused
+  (char's sign differs between systems), and **the step chain is complete from version 1**: every version 1 … c − 1
+  needs exactly one step, so a version-3 type without steps doesn't compile (decision 6's strict reading; a game that
+  bumps the version with nothing to convert writes an empty step). The macro parameter is `TypeName` (a parameter
+  named `Type` replaced `SaveRole::Type` in the expansion).
+- **Enum names in `nnh_tests`** come from the tests' data schema (`test_data::Element`, `NNH_DATA_ENUM` in
+  `tests/data_assets/test_types.cpp`): a new `NNH_DATA_ENUM` in `nnh_tests` would change spec 014's registry tests
+  (`count_enums == 1`, the pinned schema description). So the example's `difficulty_names.cpp` is linked by the
+  example only; in `nnh_tests` the reference save's `Difficulty` has no names and takes any `std::uint8_t` (the golden
+  values are valid enumerators, so the sums don't depend on it).
+- Tests: `test_declare.cpp` (10: every one-value kind and sequence shape deduced; enums by their underlying type and
+  their names looked up; fields sorted whatever the order; key, hash, version, role, depth; retired ids and steps in
+  order; a summary; the global namespace and a spec 014 data type that is also a save type; `max_size` against hand
+  sums, `Buffer` sizes; names only outside Release). Negative-compile ctests: `saves_declaration_accepts_good`
+  (`-Werror`) and 27 cases × (`rejects`, `explains`) — unknown member, pointer, `std::string`, union, `char`, const
+  member, id 0, id 65 536, an id twice, retired used, retired twice, nested without declaration, 129 fields, 9 levels,
+  root over 64 KiB, array of 65 536, max size over 256 KiB (64 KiB of `u8` fields with 3-byte ids), keys upper case /
+  17 characters / empty, version 0, a step at the current version, two steps for one version, a gap, a version in a
+  struct, a summary stored, an undeclared type stored. Files generated once by `build/ref-027/make_compile_fail.py`.
+- **T2.4** include check: `<nnh/saves.hpp>` pulls `nnh/data.hpp` (and its `assert`, `math`, `result`, `build`,
+  `detail/data_*`, `type_id`, `printf_format`), `nnh/result.hpp` and its own four detail headers — no gfx, audio,
+  tilemap or entities header. Header cost: 10 987 preprocessed lines and 0.461 s against `<nnh/data.hpp>`'s 10 078
+  and 0.453 s: +0.008 s (budget +0.05 s; risk 6 not triggered).

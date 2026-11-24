@@ -3,6 +3,7 @@
 // filtered, engine controls (the overlay toggle) never blocked, the game's and a transition's blocks independent.
 
 #include "input/input_block.hpp"
+#include "input/input_internal.hpp"
 #include "../remote/remote_fixture.hpp"
 #include "nnh/actions.hpp"
 #include "nnh/app.hpp"
@@ -98,6 +99,20 @@ NNH_TEST(held_controls_reach_the_game_only_after_release_and_press) {
     CHECK(nnh::frame());
     CHECK(nnh::input::pressed(Button::A) && nnh::input::touch_started());
     CHECK(seen.pressed == 1 && seen.touch_started == 1);
+    nnh::shutdown();
+}
+
+NNH_TEST(the_filter_leaves_the_input_path_once_nothing_is_held) {
+    restart();
+    nnh::input::set_blocked(true);
+    fake::set_held_buttons(bit(Button::A));
+    CHECK(nnh::frame());
+    nnh::input::set_blocked(false);
+    CHECK(nnh::frame());
+    CHECK(nnh::detail::g_input_filter != nullptr); // A still filtered
+    fake::set_held_buttons(0);
+    CHECK(nnh::frame());
+    CHECK(nnh::detail::g_input_filter == nullptr); // back to the plain path: one null check per frame
     nnh::shutdown();
 }
 

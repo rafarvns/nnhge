@@ -44,6 +44,15 @@ NNH_TEST(the_door_run_runs_right_and_counts_ten_doors) {
     CHECK(std::strstr(run.last_line(), ": 60 Hz PASS") != nullptr);
 }
 
+NNH_TEST(the_door_runs_first_frame_is_not_measured) {
+    DoorRun run;
+    run.start();
+    run.frame(80.0); // includes whatever came before the run (the level's load, the Y press's frame)
+    run.frame(16.7);
+    for (int i = 0; i < DoorRun::kDoors; ++i) run.door_done();
+    CHECK(run.meter().frames() == 1 && std::strstr(run.last_line(), ": 60 Hz PASS") != nullptr);
+}
+
 NNH_TEST(a_slow_frame_fails_the_door_runs_60_hz_verdict) {
     DoorRun run;
     run.start();

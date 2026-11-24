@@ -959,3 +959,54 @@ On the PC first (T10.1): `scripts/dkp.sh cmake --build --preset 3ds-release` and
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (≈ 40 s): the tree's
    replay lines (`B2418A28` here; spec 022's after the merge), `60 Hz PASS`.
 4. `build/pc-debug/tools/nnh/nnh run actions --script examples/actions/tests/check.nnhs` (≈ 30 s): PASS as before.
+
+## Mutation testing (T8.1)
+
+56 hand mutants (`build/ref-023/mutate2.py`, not committed), each applied alone with the whole `nnh_tests` (pc-debug):
+the geometry (split halves, blinds' running remainder, edges, continue forms, fade alpha rounding, the iris's ⌈√⌉, band
+sampling, `dy ≥ r`, the diamond, the square root's compare, the last merged run, the tall inset and gap, rounding of
+centres and q, the tall band count, the bottom-in resolution), the timeline (both ratchets, at least one covered
+frame, the in phase's skip, the in ratio, half-up rounding of durations), the frame (the block lifted, the waiting count
+released, `on_finished`, the finish event, the waiting frame, which scene updates, the in phase skipped over an emptied
+stack), loading (`on_covered` only once, no step after done, clamping), the overlay (layer 15, the in effects), the
+queries (`none()` coverage), the requests (refusal, the immediate change with O = 0, the pending count, `reveal_at`
+before the in phase only, `block_input`), the input block (released buttons dropping out, held buttons filtered,
+touch, sticks, edge-free blocked frames, the filter leaving the path, init's reset, raw engine masks), the scene hook
+(the cancel at shutdown, `run()`'s condition, the tolerant pop) and the platformer's door code (ten doors, the first
+frame unmeasured, the tall iris).
+
+- **55 killed, 1 equivalent: score 100 % of the non-equivalent mutants.** Two survivors of the first pass became tests:
+  `the_filter_leaves_the_input_path_once_nothing_is_held` (the filter pointer cleared once nothing is held) and
+  `the_door_runs_first_frame_is_not_measured`; a third, `a_zero_out_request_from_an_event_handler_covers_after_the_change`,
+  was written for the waiting frame (killing the mutant that skips it).
+- Equivalent: `at_least = max(H, 1)` → `H` — the covered phase can only end once the loading step reported done, which
+  needs one stepped covered frame, so "at least one covered frame" holds either way (the max stays for clarity).
+- The Release path (misuse clamped/refused with logs) is covered by `test_requests.cpp` in pc-release (ctest 258/258);
+  no separate Release mutants were run (deviation from plans 019–022: their Release mutants were in modules with more
+  Release-only code).
+
+## Stage 8 results
+
+- `scripts/check_release_strings.sh`: ok on the 3ds-release `transitions.elf` and the pc-release `transitions.exe`.
+- Opt-in by linking (T8.3): `hello`'s 3ds-release text 201 276 (T0.1 + 88 ≤ 96), its `nm` list differing from T0.1
+  only by `input_apply`, `g_input_filter`, `input_engine_held_mask`, `input_engine_pressed_mask` (−`input_pressed_mask`,
+  −`input::held_mask`) and `g_scene_transition`; `scenes` links no `transition` or input-block symbol (only
+  `g_scene_transition`); the geometry objects (`effect_query.o`, `effect_area.o`, `effect_fill.o`, `effect_iris.o`)
+  reference only each other, `gfx::fill_rect` and the C runtime: a game calling only `draw_effect`/`effect_rects` links
+  no `transition_frame`/`transition_request` code.
+- 3ds-release `.text`: `scenes` 206 636 (+144), `actions` 246 268 (+176: the input path), `platformer` 373 904 (+12 024:
+  the transition module and the doors), `transitions` 330 524.
+- Regression (T8.4): every example's console script with `--pc` (pc-debug unless noted): actions, animation, camera,
+  data, entities, foundation `assert_crash` and `cpu_fault` (both PASS; the simulator then waits on its crash screen
+  for START, as before), input, prefabs, queries, tweens (`B44CA3F6`), transitions (`BFE1D810`), platformer `doors`
+  PASS. Platformer `level`: the replay's sums are the tree's (`B2418A28`, `level.nnhs` untouched) with `60 Hz PASS`
+  in pc-dev (one Debug run on the loaded PC missed one frame: 29.4 ms); `gate` and `zoom_gate` PASS in pc-dev with the default renderer
+  (with the offscreen software renderer the bench misses every frame in any flavor: that renderer is not what the gate
+  measures; 023 changes no tile or sprite code). ctest `platformer_replay_matches_script` passes at every stage.
+  `compare.sh` identical at every stage.
+- Build times: edit `examples/transitions/room_scene.cpp` → simulator 2.0–2.1 s (stage 0's `scenes/title_scene.cpp`:
+  2.0–2.3 s), → `.3dsx` 3.9 s (3.3 s; the example links more of the engine). `nnh_tests` 2492 (+139), ctest pc-debug
+  271 (+3), pc-release 258.
+- Final stage-end guards (stage 8): ctest 271/258, `nnh_tests` 2492, 0 warnings on pc-debug, pc-release, 3ds-release
+  and 3ds-dev, tweens/actions/input scripts PASS, `level.nnhs` untouched, `compare.sh` identical (the actions example
+  also keeps a `controls.bin.bak`: `compare.sh` deletes both before its shot), docs 0 broken links.

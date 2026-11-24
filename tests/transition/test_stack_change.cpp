@@ -3,6 +3,9 @@
 
 #include <new>
 
+#include "nnh/events.hpp"
+#include "nnh/input.hpp"
+
 #include "transition/transition_internal.hpp"
 #include "transition_fixture.hpp"
 
@@ -38,6 +41,32 @@ NNH_TEST(the_change_happens_after_the_last_out_frame) {
     CHECK(a.exit_frame == last_out && b.enter_frame == last_out); // applied as the next frame starts
     CHECK(tr::phase() == tr::Phase::In); // its one covered frame ended: the next frame starts the in phase
     run_until_done();
+    nnh::shutdown();
+}
+
+NNH_TEST(a_zero_out_request_from_an_event_handler_covers_after_the_change) {
+    restart();
+    static Probe* target = nullptr;
+    static int covered = 0;
+    static bool changed_before_covered = false;
+    covered = 0;
+    Probe a, b;
+    target = &b;
+    nnh::scenes::push(a);
+    step();
+    // The request comes from an event handler: before this frame's update_and_draw(), so the transition's first frame
+    // is this one, but the change enqueued now applies only at the start of the next frame.
+    nnh::Subscription sub = nnh::events::subscribe<nnh::ButtonPressed>([](const nnh::ButtonPressed&) {
+        CHECK(tr::replace(*target, {.out = Frames{0}, .in = Frames{0}, .on_covered = [] {
+                                        ++covered;
+                                        changed_before_covered = nnh::scenes::top() == target;
+                                    }}));
+    });
+    fake::set_held_buttons(static_cast<std::uint32_t>(nnh::Button::A));
+    step(); // the request's frame: drawn covered, the old scene under the cover, no covered frame counted
+    CHECK(tr::running() && covered == 0 && nnh::scenes::top() == &a);
+    step(); // the change applied, the one covered frame
+    CHECK(covered == 1 && changed_before_covered && !tr::running());
     nnh::shutdown();
 }
 

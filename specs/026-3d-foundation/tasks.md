@@ -174,12 +174,12 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 9 — mutation, Linux VM, opt-in (026a)
 
-- [ ] **T9.1** `tests/models_example/` and full suite on Windows; `nnh_tests` timing — covers AC-1
-- [ ] **T9.2** Hand mutations (plan "Test strategy") each caught; note in plan — covers AC-1
+- [x] **T9.1** `tests/models_example/` and full suite on Windows; `nnh_tests` timing — covers AC-1
+- [x] **T9.2** Hand mutations (plan "Test strategy") each caught; note in plan — covers AC-1
 - [ ] **T9.3** VM 120 (start only if Bazzite is stopped; `free -m`): GCC 13/14 and clang 18 builds + ctest, ASan/UBSan,
   goldens equal to Windows (`3d` golden, PNG hashes with `SDL_VIDEO_DRIVER=offscreen` and `NNH_SIM_RENDERER=sdl`),
   libFuzzer gltf and mesh reader 10 min each clean; shut the VM down — covers AC-1, AC-4, AC-5
-- [ ] **T9.4** AC-9: `hello` sizes vs T0.2 (budget P14), `scripts/check_no_3d_symbols.sh` (3DS `.map`, PC `nm`), every
+- [x] **T9.4** AC-9: `hello` sizes vs T0.2 (budget P14), `scripts/check_no_3d_symbols.sh` (3DS `.map`, PC `nm`), every
   example's screenshot hash unchanged, every earlier script passing on PC, 2D-only VRAM report unchanged, build times —
   covers AC-9, FR-31
 

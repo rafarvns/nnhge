@@ -779,3 +779,21 @@ the maintainer's approval beyond the decisions above.
   `200,88 depth 6.62`, orthographic `200,81 depth 6.62`); ctest runs `models_self_check_pc` and `models_check_script_pc`.
 - The bench logs `rec` (the game's recording time) instead of the CPU time of the whole 3D work: culling, sorting and
   submission happen inside `nnh::frame()`; frame time avg/worst/missed carry the rest.
+
+### Stage 9 results (T9.1, T9.2, T9.4; T9.3 — the Linux VM — is the lead's)
+
+- T9.1: `nnh_tests` 2 674 tests (57 s, Windows pc-debug, other builds running), `nnh_assetc_tests` 275; ctest pc-debug
+  273/273 (plus the two models tests added in stage 8), pc-release 259/259.
+- T9.2 hand mutations (each applied, `nnh_tests` rebuilt, a filter run, reverted): **14 of 14 killed** — the eighth-turn
+  snap off, the 2⁻¹⁰⁰ threshold moved, the blended sort's tie rule (`<` → `<=`), the top-left bias removed, the culling
+  radius ignored, the quantisation's +½ removed, the index check `>=` → `>`, the affine check removed, the near-plane
+  clip distance, the blend's +127 rounding, the normal matrix's determinant (the cofactors of a column), slerp's
+  shortest-arc sign, the mirror wrap, the specular clamp where N·L ≤ 0.
+- T9.4 (AC-9): `scripts/check_no_3d_symbols.sh` finds no 3D symbol in `hello` (3DS `.elf`, PC `.exe`) besides the hook
+  pointer, and finds them in `models` (positive control). `hello`: 3DS Release `.text` 201 396 B (**+272 B**:
+  +72 the hook, ~+184 the shared 2D slice function, +16 the command-buffer size in `app_3ds.cpp`), `.bss` +264 B,
+  `.3dsx` 246 788 B (+276 B); PC Release `.exe` 279 942 B (+1 086 B). **Over P14's budget** (128 B / 1 KB) — reported to
+  the maintainer; the remedy would be garbage-collected sections on 3DS or duplicating the 2D slice loop. Every other
+  example's screenshot is unchanged (`scripts/example_shots.sh`, `audio` and `foundation` excluded: live timings);
+  every earlier script passing in ctest. 2D-only games keep citro2d's targets (the 3D target replaces the top one only
+  in `video3d_init`). Edit-one-game-`.cpp` times unchanged within noise (pc-debug 1.6 s, 3ds-release 3.0 s).

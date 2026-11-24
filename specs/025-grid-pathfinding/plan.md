@@ -1,6 +1,7 @@
 # Plan 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 run 1 done, T10.3 optimisation done on the PC, console
+rerun pending). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D40 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 012 (`collision::Grid`, `Cell`, spec 012's half-open cell rule; tilemaps, tile properties, `set_tile`), spec
 019 (`collision_grid(mask)`, the exact grid walk and its corner rule, `cells_crossed`), spec 002 (asserts, logs,
@@ -403,8 +404,8 @@ P = (W + 2) × (H + 2) padded cells.
 | `PathMap`, agent 1 | 1 B × P | 4.3 KB | 16.5 KB | 1.0 MiB | + 96-byte header; FR-1's "1 byte" |
 | `PathMap`, agent 2–4 | + 1 B × W·H | + 4 KB | + 16 KB | + 1 MiB | the source bytes |
 | `PathSearcher` | 8 B × P + 16 B × W·H | 98 KB | 388 KB | 24.0 MiB | records + heap; + 96-byte header |
-| `DistanceField`, double | 8 B × P + 8 B × W·H | 66 KB | 260 KB | 16.0 MiB | front, back, heap |
-| `DistanceField`, single | 4 B × P + 8 B × W·H | 49 KB | 194 KB | 12.0 MiB | |
+| `DistanceField`, double | 10 B × P + 8 B × W·H | 74.5 KB | 293 KB | 18.0 MiB | front, back (4 B distance + 1 B step each, T10.3; was 8 B × P), heap |
+| `DistanceField`, single | 5 B × P + 8 B × W·H | 53 KB | 211 KB | 13.0 MiB | (was 4 B × P) |
 | `PathResult` / `PathFollower` | — | 16 B / 20 B (3DS), 24 B (64-bit) | | | values |
 
 **Against the spec's estimate.** FR-7 expected ≤ 8 bytes per cell for a searcher and the spec's decision (a) says
@@ -558,6 +559,7 @@ regenerated lines after that merge) and `git diff --exit-code examples/platforme
 | `engine/core/src/pathfinding/smooth_walk.hpp` | new | the integer centre-to-centre walk (inline class) |
 | `engine/core/src/pathfinding/smooth.cpp` | new | `smooth_path` |
 | `engine/core/src/pathfinding/field_internal.hpp`, `field_create.cpp`, `field_build.cpp`, `field_query.cpp` | new | fields: block, create/move, Dijkstra slices, `distance`/`next`/`next_point` |
+| `engine/core/src/pathfinding/field_heap.hpp` | new (T10.3) | the field's 4-ary heap of 64-bit keys (inline) |
 | `engine/core/src/pathfinding/follower.cpp` | new | `PathFollower` |
 | `engine/core/CMakeLists.txt` | changed | one `_nnh_pathfinding_sources` block (with `-ffp-contract=off`), merge notes' anchor |
 | `tests/pathfinding/path_reference.{hpp,cpp}` | new | ASCII maps, seeded random maps, reference Dijkstra (std containers), the literal reference A*, path validator, sampled segment checker, brute-force erosion |
@@ -758,7 +760,9 @@ taken overnight, each the recommended or simplest option; the maintainer reviews
     outside the map are misuse.
 16. **Fields during a rebuild** (spec decision (a)) double-buffered by default; `double_buffered = false` gives the
     smaller single-buffered field whose queries report "not ready" while building.
-17. **Field heap order** `(d, cell index)`; `next` reads neighbours (no stored directions).
+17. **Field heap order** `(d, cell index)`; `next` reads neighbours (no stored directions). *Changed in T10.3 (no result
+    change):* the build stores each cell's `next` answer in a step byte, read while the map is the build's and unchanged;
+    otherwise `next` reads neighbours as before ("Optimisation round (T10.3)").
 18. **Open question 5**: smoothing uses its **own integer walk** copying spec 019's rules over the map's bytes (no
     collision-internal walk, no int64 or double), proven equal to `cells_crossed`; T4.1 also measures spec 019's
     `GridWalk` on the PC for the record.
@@ -1109,3 +1113,148 @@ replay ctest identical on all three; libFuzzer `fuzz_path_ops` 10 minutes (`-DNN
   `decisions.md` (D40 implemented, change-log entry); `REFERENCES.md` (025's block); `CLAUDE.md` (layout paragraph after
   "Collision layers and queries", two commands after `ANIMATION_DEMO=check`); `ROADMAP.md` (the item checked);
   `specs/README.md` and the three spec files' status. `python -I scripts/docs_tool.py check`: 0 broken links.
+
+## Console run 1 (T10.2)
+
+Old 3DS, Development `.3dsx`, `nnh run pathfinding --script examples/pathfinding/tests/check.nnhs`, 2026-11-24. **Logic:
+every line equal to the PC's** — the eight checkpoints and `pathfinding: PASS 1C0B5992`, the showcase lines (goals,
+door, re-plan, partial, 2 × 2 hero, mode, field). **Bench** (avg, worst; AC-7's targets as written; T7.6's estimate):
+
+| Workload | Avg | Worst | Target | Verdict | T7.6 estimate |
+|----------|-----|-------|--------|---------|---------------|
+| astar, per expanded cell | 4.257 µs | 4.416 | < 2.5 µs | FAIL | 1.8–2.9 |
+| maze one | 0.716 ms | | < 8 ms | PASS | 0.65–1.0 |
+| maze slices | 0.384 ms | 0.498 | < 0.8 ms worst | PASS | 0.33–0.51 |
+| replans (32 pairs, 4 518 expansions) | 15.065 ms | 16.589 | < 3 ms | FAIL | 8.2–13 |
+| field one | 8.282 ms | 8.337 | < 8 ms | FAIL | 4.6–6.7 |
+| field slices | 1.424 ms | 1.645 | < 1 ms worst | FAIL | 0.8–1.2 |
+| next (256 scattered agents) | 0.772 ms | 0.882 | < 0.3 ms | FAIL | 0.48–0.82 |
+| next_crowd | 0.634 ms | | not judged | | |
+| smooth | 0.224 ms | | < 1 ms | PASS | 0.25–0.5 |
+| sync | 3.856 ms | 5.939 | < 5 ms (avg) | PASS | 2.6–4.3 |
+| door | 0.039 ms | 0.123 | < 0.05 ms | PASS | 0.01–0.02 |
+
+Verdict `pathfinding bench: FAIL (astar, replans, field one, field slices, next)`; per expanded or settled cell the cost
+was ≈ 1.5–2× T7.6's estimate. T10.3 follows (risk 1's list first, no result may change), then the budgets.
+
+## Optimisation round (T10.3)
+
+Done on the PC in the `opt-025` worktree (from `main` at `499f433`); no console run yet.
+
+**A calibrated ARM11 model.** To find where the cycles go without the console, the module was run under a small ARMv6
+interpreter (scratch tools in `build/o25/`, not committed): the pathfinding sources and `check_maps.cpp` compiled with
+the 3ds-dev flags (the objects' instructions hash-identical to `build/3ds-dev`'s), stubs for memory and logging, and a
+driver running the bench's workloads between markers. Timing: 1 cycle per instruction, load results usable 3 cycles
+after issue, MUL +1 and UMULL +2 cycles, LDM/STM ⌈n/2⌉, a 2-bit predictor per branch (backward taken at first), a
+return stack, 6 cycles per mispredict, a 16 KB 4-way L1 D with 32-byte lines (random replacement, allocate on read and
+write, flushed at each workload's start) and 110 cycles per miss — textbook ARM11 values, nothing fitted. Against run 1
+it lands within −10 % … +14 %: astar 4.47 µs (console 4.26), replans 13.5 ms (15.1), maze one 0.70 ms (0.72), field
+one 7.87 ms (8.28), field slices worst 1.55 ms (1.65) and average 1.37 ms (1.42), next 0.88 ms (0.77), next_crowd
+0.61 ms (0.63).
+
+**Why T7.6 was ≈ 1.5–2× low.** Misses were about right (A* ≈ 2.8 per expansion); the **dynamic instruction counts**
+were 2.5–3× the listing-based guesses, and T7.6's 1.9 CPI did not hold for this branchy, register-starved code:
+
+- A* (645 instructions, 1 198 cycles per expansion; estimated 190–270): on the weighted rooms map the heap holds stale
+  entries and the one-entry buffer wins only ≈ 15 % of takes, so an expansion pays ≈ 8 sift levels and ≈ 20 key
+  compares (each ≈ 7 instructions with its seq tie test: ≈ 300 cycles), 13 mispredicts (≈ 80 cycles), ≈ 125 cycles of
+  load-use stalls (the orthogonal bytes spilled and reloaded per side check) and 2.8 misses (≈ 300 cycles: records,
+  heap children, map rows).
+- Fields (469 instructions per settled cell; estimated 150–210): the neighbour loop wasn't specialised (the mode
+  tested, the side cells read through tables and the orthogonal bytes spilled inside the loop), two-word `(d, cell)`
+  compares, 17 mispredicts.
+- `next` (349 instructions per agent; estimated 85–110): `neighbour_offsets` rebuilt per call (8 multiplies), the loop
+  over directions, and ≈ 3 misses on two arrays for scattered agents.
+
+**Changes (no result changes; every golden holds):**
+
+1. **Fields, the build**: one template per diagonal mode with the neighbour loop unrolled, the orthogonal walkability in
+   a 4-bit mask, `d + S·w` / `d + D·w` checked against `max_cost` once; the open set is a **4-ary heap of 64-bit keys**
+   `(d << 32) | padded index` (`field_heap.hpp`): one compare orders two entries, a node's four children share a
+   32-byte line (the array starts 8 bytes before a line), a pop walks the hole to a leaf and lifts the last entry
+   (fewer compares). Keys are unique (a cell is pushed only with a strictly lower d, a goal once), so the pops are the
+   sorted order whatever the heap's shape: the same settled cells in every slice.
+2. **Fields, `next`**: the build stores each cell's answer in a **step byte** (1 + the direction, beside each distance
+   array): a relaxation that sets a cell's distance stores the direction back to the settled cell, one that ties it
+   keeps the lower direction — every neighbour whose candidate equals d(p) is settled before p (step × weight ≥ 1), so
+   when p settles the neighbour-order argmin is complete, and it is exactly `next`'s minimum (Bellman). `next` reads the
+   byte while asked with the build's map (a new `PathMapBlock::serial`, unique per created map, never 0) at the version
+   the build began at; after any edit (versions only grow) or with another map it computes the answer from the current
+   cells as before. Tests first: three pinning that fallback (an edit, another map of the same size and version, a
+   double-buffered rebuild answering from the finished build) and the memory test (5 B per padded cell per array);
+   six hand mutants killed (no version check, no serial check, the back buffer's steps, no tie update, no clear at
+   `begin`, goals unmarked).
+3. **Fields, `begin`**: only the step bytes are cleared (4.3 KB at 64 × 64 instead of 17 KB of distances and the
+   steps): step 0 means "not reached by this build" (its distance word is stale), goals are marked `kGoalStep` (9);
+   `distance()` and the computed `next` read through the byte. A build's first slice no longer pays ≈ 0.2 ms of write
+   misses.
+4. **A\***: the plain pop refills the hole bottom-up (to a leaf along the better child, then the last entry lifted:
+   about half the compares of sifting it down); the heap array starts 16 bytes past a 32-byte line, so a node's two
+   children share a line (the searcher's block now puts the heap before the records). The buffer, the compares and the
+   total order are unchanged.
+
+**Tried and dropped** (no gain in the model): the A* loop on local copies of the block's constants, open set and
+sequence (aliasing was not the cost; register pressure is); a binary field heap with the bottom-up pop (+60 %
+mispredicts: the unrolled 4-ary code compiles to conditional moves); the 17 KB fill kept with the mask (slower per
+cell than the marker's worst slice gains); a relaxation that branches on the step byte first (a longer dependent load
+chain).
+
+**Not done from risk 1's list**: (a) a per-cell allowed-steps byte — the side checks are ≈ 5 % of an expansion and it
+would cost a byte per map cell and sync time (sync is the next workload at risk); (b) `pld` — the model can't say what
+the ARM11 MPCore does with it, and `next` no longer needs a batch form; (c) a 4-ary A* heap — compares, not lines,
+dominate A*, and a 4-ary level needs three; (d) packing weights into the field — superseded by the step byte; (e) sync
+— untouched, it passed.
+
+**Model, per unit, before → after** (instructions; cycles; misses; total):
+
+| Workload | Instructions | Cycles | Misses | Model total |
+|----------|--------------|--------|--------|-------------|
+| astar, per expansion | 645 → 619 | 1 198 → 1 142 | 2.88 → 2.61 | 4.47 → 4.26 µs |
+| replans, per expansion | 535 → 526 | 800 → 792 | 0.47 → 0.46 | 13.5 → 13.3 ms |
+| maze one, per expansion | 209 → 208 | 382 → 382 | 0.76 → 0.76 | 0.70 → 0.70 ms |
+| field one, per settled cell | 469 → 401 | 734 → 559 | 0.41 → 0.43 | 7.87 → 5.99 ms |
+| field slices (6 per build), worst / avg | 451–487 → 375–420 | | | 1.55 / 1.37 → 1.19 / 1.06 ms |
+| next, per agent | 349 → 84 | 923 → 207 | 3.20 → 0.81 | 0.88 → 0.20 ms |
+| next_crowd, per agent | 349 → 84 | 642 → 163 | 0.66 → 0.41 | 0.61 → 0.16 ms |
+
+**Old 3DS estimate after T10.3** (the model's new total × that workload's console/model ratio in run 1):
+
+| Workload | Run 1 | Estimate | Target | Expected |
+|----------|-------|----------|--------|----------|
+| astar | 4.257 µs | ≈ 4.06 µs | < 2.5 µs | FAIL |
+| maze one / maze slices worst | 0.716 / 0.498 ms | unchanged | < 8 / 0.8 ms | PASS |
+| replans | 15.065 ms | ≈ 14.9 ms | < 3 ms | FAIL |
+| field one | 8.282 ms | ≈ 6.3 ms | < 8 ms | PASS |
+| field slices worst (avg) | 1.645 (1.424) ms | ≈ 1.27 (1.10) ms | < 1 ms worst | FAIL |
+| next | 0.772 ms | ≈ 0.17 ms | < 0.3 ms | PASS |
+| next_crowd | 0.634 ms | ≈ 0.16 ms | not judged | |
+| smooth, sync, door | 0.224, 3.856, 0.039 ms | unchanged (code untouched) | | PASS |
+
+A* stays ≈ 1.6× its target and the re-plans ≈ 5×: the expansion count is fixed by the order (4 518), and per expansion
+the cost is ≈ 20 heap compares plus record misses — what's left is an algorithmic choice (a bucketed open set for small
+cost ranges, JPS for uniform costs, a stronger heuristic for weighted levels), not a tuning, so AC-7's policy applies:
+the budgets come from the next console measurement with ≈ 25 % margin.
+
+**PC bench** (pc-dev, GCC 16 -O2, avg / worst, other builds running: noisy, and the PC says little about the ARM11;
+before = a clean `git archive` of `499f433`): astar 0.183 / 0.386 → 0.187 / 0.349 µs; maze one 0.033 → 0.032 ms; maze
+slices 0.021 / 0.054 → 0.020 / 0.078 ms; replans 0.880 → 0.916 ms; field one 0.563 → 0.326 ms; field slices 0.103 /
+0.246 → 0.060 / 0.529 ms (one preempted frame); next 0.023 → 0.005 ms; next_crowd 0.020 → 0.005 ms; smooth 0.012 →
+0.011 ms; sync 0.101 → 0.113 ms; door 0.002 → 0.002 ms. The same expansion and size line (`maze path 405 cells, 494
+expanded; … replans 32 pairs, 4518 expanded; astar 81359 expanded`).
+
+**Memory**: fields + 1 byte per padded cell per distance array (64 × 64 double-buffered 66 → 74.5 KB); searcher and
+field blocks + 32 bytes (header alignment); the map's header is unchanged (the 4-byte serial fits its padding, 80 bytes
+on 64-bit).
+
+**Checks**: pc-debug and pc-release build with 0 warnings, ctest 273/273 and 259/259 (golden `1C0B5992` and its
+checkpoints, AC-2's 512 / 2 048 random maps against the literal A* and the brute-force references, the mini-fuzz, the
+`check.nnhs --pc` script, entities `C8FB9A41`, prefabs `7BB7901E`, hierarchy `23DB5C36`, the platformer replay
+`E445E8B2`); 3ds-release and 3ds-dev build every target with 0 warnings; the model's results checksum is the same before
+and after. `hello`: pc-release 278 856 B and 3ds-release `.3dsx` 246 512 B (stage 0's), `nm` lists identical to a clean
+build of `499f433`. `python -I scripts/docs_tool.py check`: 0 broken links.
+
+**Next (console, the maintainer presses Y):** Homebrew Launcher open on the Old 3DS, then on the PC
+`build/pc-debug/tools/nnh/nnh run pathfinding --script examples/pathfinding/tests/check.nnhs` (≈ 75 s). Expected: every
+logic line as in run 1 (`pathfinding: PASS 1C0B5992`), the bench lines near the estimates above, and the verdict
+`pathfinding bench: FAIL (astar, replans, field slices)` if the estimates hold. Then the budgets (spec AC-7,
+`bench_scene.cpp`, `docs/api/pathfinding.md`) from that run with ≈ 25 % margin, and T10.2 run 2 (the platformer).

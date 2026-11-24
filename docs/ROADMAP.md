@@ -280,7 +280,7 @@ spec; the order below is a proposal.
   with a version number and migration from older saves
 - [x] **Pathfinding on grids** (Godot AStarGrid2D): A* over a tilemap's walkable cells, bounded and without
   allocation while searching — [spec 025](../specs/025-grid-pathfinding/spec.md), **implemented 2026-11-24**, Linux checks passed, Old 3DS
-  check pending (T10.2): `<nnh/pathfinding.hpp>` — path maps baked from any `collision::Grid` (blocked cells and weights
+  run 1 (logic PASS, bench missed; T10.3 optimised on the PC, console rerun and budgets pending): `<nnh/pathfinding.hpp>` — path maps baked from any `collision::Grid` (blocked cells and weights
   1–255 from a tile property, agent sizes 1–4, region syncs for doors, a version counter), integer A* searchers with a
   fixed tie order (the same cells on PC and 3DS: golden `1C0B5992`), expansion limits, partial paths, time slicing and
   stale flags, smoothing into waypoints (spec 019's exact walk in integers), double-buffered distance fields for crowds

@@ -176,15 +176,35 @@ P = (width + 2) × (height + 2) padded cells.
 |--------|-------|---------|-----------|-------------|
 | `PathMap` | P (+ width × height for agent sizes 2–4) + 96 | 4.3 KB | 16.5 KB | 1 MiB |
 | `PathSearcher` | 8 × P + 16 × width × height | 98 KB | 388 KB | 24 MiB |
-| `DistanceField`, double-buffered | 8 × P + 8 × width × height | 66 KB | 260 KB | 16 MiB |
-| `DistanceField`, single | 4 × P + 8 × width × height | 49 KB | 194 KB | 12 MiB |
+| `DistanceField`, double-buffered | 10 × P + 8 × width × height | 74.5 KB | 293 KB | 18 MiB |
+| `DistanceField`, single | 5 × P + 8 × width × height | 53 KB | 211 KB | 13 MiB |
+
+A field keeps, per padded cell, a distance and a step byte (the answer `next` gives there): `next` with the map the
+field was built over, unchanged since, is one byte read; after an edit, or with another map, it computes the answer
+from the current cells (the same result the build would have stored on that map).
 
 Nothing allocates after `create`; nothing logs in the normal path; the only game code called is the weight callback,
-during `sync`. For a big level, search a **region** map around the action. Old 3DS costs: see
-[spec 025's bench](../../specs/025-grid-pathfinding/plan.md#stage-7-arm-pre-check-t76) (console measurement pending,
-T10.2): an expansion costs about 2–3 µs, so keep searches bounded (`max_expanded`), prefer one field for a crowd, and
-remember that heavy weights make the heuristic weak (a level averaging weight 2 expands several times the cells of an
-all-1 level).
+during `sync`. For a big level, search a **region** map around the action.
+
+**Old 3DS costs (provisional).** Measured on an Old 3DS (Development build, the example's bench, 2026-11-24, console
+run 1), then the field and `next` were optimised (spec 025 T10.3, no result change) and estimated from that run; the
+budgets are set from the next console measurement ([plan 025](../../specs/025-grid-pathfinding/plan.md#optimisation-round-t103)):
+
+| Workload | Console run 1 (avg) | After T10.3 (estimate) |
+|----------|---------------------|------------------------|
+| A*, per expanded cell (`rooms(128, 128)`, weights 1/3/8) | 4.3 µs | ≈ 4.1 µs |
+| 32 re-plans of 10–30 cells (4 518 expansions) | 15.1 ms | ≈ 14.9 ms |
+| one search across a 64 × 64 maze (494 expansions) | 0.72 ms | unchanged |
+| a 64 × 64 field, one call (2 872 cells) | 8.3 ms | ≈ 6.3 ms |
+| the same in slices of 512 cells, worst slice | 1.65 ms | ≈ 1.3 ms |
+| `next` for 256 scattered agents | 0.77 ms | ≈ 0.17 ms |
+| smoothing a 200-cell path | 0.22 ms | unchanged |
+| `sync` of 64 × 64 from a tilemap with a `path_cost` table | 3.9 ms | unchanged |
+
+So an expansion costs about 4 µs on weighted levels (about 1.5 µs in a corridor maze, where the heuristic is exact):
+keep searches bounded (`max_expanded`) or sliced, prefer one field for a crowd (its `next` is a byte read per agent),
+and remember that heavy weights make the heuristic weak (a level averaging weight 2 expands several times the cells of
+an all-1 level).
 
 ## Misuse
 

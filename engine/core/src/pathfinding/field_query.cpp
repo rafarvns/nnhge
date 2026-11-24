@@ -1,17 +1,54 @@
 // Field queries (spec 025 FR-18): distance, next (the neighbour minimising step x weight + distance, ties in the fixed
-// neighbour order, under the map's diagonal rule; no stored directions), next_point. Reads only.
+// neighbour order, under the map's diagonal rule), next_point. Reads only. When asked with the map the answering build
+// ran over, unchanged since its begin (same serial and version), next() reads the step that build stored (one byte,
+// T10.3); otherwise it computes the argmin over the current cells, as it always did.
 
 #include "pathfinding/field_internal.hpp"
 #include "pathfinding/neighbors.hpp"
 #include "pathfinding/path_check.hpp"
 
 namespace nnh {
+namespace {
+
+/// next() over the current cells and the answering distances.
+bool next_by_cells(const detail::FieldBlock& f, const detail::PathMapBlock& m, int c, CellPos at,
+                   CellPos& out) {
+    const std::uint32_t here = f.answer_distance(c);
+    if (here == 0 || here == kUnreachable) return false;
+    const std::uint8_t* cells = m.cells;
+    int off[8];
+    detail::neighbour_offsets(f.ans_stride, off);
+    const std::uint32_t wo[4] = {cells[c + off[0]], cells[c + 1], cells[c + off[2]], cells[c - 1]};
+    const Diagonals mode = m.diagonals;
+    const std::uint32_t steps[2] = {static_cast<std::uint32_t>(m.straight), static_cast<std::uint32_t>(m.diagonal)};
+    std::uint32_t best = kUnreachable;
+    int best_k = -1;
+    for (int k = 0; k < detail::direction_count(mode); ++k) {
+        const int n = c + off[k];
+        const std::uint32_t w = cells[n];
+        const std::uint32_t dn = f.answer_distance(n);
+        if (w == 0 || dn == kUnreachable) continue;
+        if (k >= 4 && !detail::diagonal_allowed(mode, wo[detail::kSideA[k - 4]] != 0, wo[detail::kSideB[k - 4]] != 0)) {
+            continue;
+        }
+        const std::uint32_t cost = steps[k >= 4 ? 1 : 0] * w + dn;
+        if (cost < best) {
+            best = cost;
+            best_k = k;
+        }
+    }
+    if (best_k < 0) return false;
+    out = {at.x + detail::kDirDx[best_k], at.y + detail::kDirDy[best_k]};
+    return true;
+}
+
+} // namespace
 
 std::uint32_t DistanceField::distance(CellPos cell) const {
     const detail::FieldBlock* f = block_;
     if (f == nullptr || !f->ready) return kUnreachable;
     if (!detail::cell_ok(f->ans_w, f->ans_h, cell.x, cell.y, "DistanceField::distance")) return kUnreachable;
-    return f->answer()[detail::padded_index(f->ans_stride, cell.x, cell.y)];
+    return f->answer_distance(detail::padded_index(f->ans_stride, cell.x, cell.y));
 }
 
 bool DistanceField::next(const PathMap& map, CellPos at, CellPos& out) const {
@@ -22,33 +59,15 @@ bool DistanceField::next(const PathMap& map, CellPos at, CellPos& out) const {
         detail::path_misuse("DistanceField::next: not the map the field was built over");
         return false;
     }
-    if (!detail::cell_ok(m->width, m->height, at.x, at.y, "DistanceField::next")) return false;
-    const std::uint32_t* d = f->answer();
-    const int c = detail::padded_index(f->ans_stride, at.x, at.y);
-    if (d[c] == 0 || d[c] == kUnreachable) return false;
-    const std::uint8_t* cells = m->cells;
-    int off[8];
-    detail::neighbour_offsets(f->ans_stride, off);
-    const std::uint32_t wo[4] = {cells[c + off[0]], cells[c + 1], cells[c + off[2]], cells[c - 1]};
-    const Diagonals mode = m->diagonals;
-    const std::uint32_t steps[2] = {static_cast<std::uint32_t>(m->straight), static_cast<std::uint32_t>(m->diagonal)};
-    std::uint32_t best = kUnreachable;
-    int best_k = -1;
-    for (int k = 0; k < detail::direction_count(mode); ++k) {
-        const int n = c + off[k];
-        const std::uint32_t w = cells[n];
-        if (w == 0 || d[n] == kUnreachable) continue;
-        if (k >= 4 && !detail::diagonal_allowed(mode, wo[detail::kSideA[k - 4]] != 0, wo[detail::kSideB[k - 4]] != 0)) {
-            continue;
-        }
-        const std::uint32_t cost = steps[k >= 4 ? 1 : 0] * w + d[n];
-        if (cost < best) {
-            best = cost;
-            best_k = k;
-        }
+    if (static_cast<unsigned>(at.x) >= static_cast<unsigned>(m->width) ||
+        static_cast<unsigned>(at.y) >= static_cast<unsigned>(m->height)) {
+        return detail::cell_ok(m->width, m->height, at.x, at.y, "DistanceField::next"); // reports it: false
     }
-    if (best_k < 0) return false;
-    out = {at.x + detail::kDirDx[best_k], at.y + detail::kDirDy[best_k]};
+    const int c = detail::padded_index(f->ans_stride, at.x, at.y);
+    if (m->serial != f->ans_serial || m->version != f->ans_version) return next_by_cells(*f, *m, c, at, out);
+    const int step = f->answer_steps()[c];
+    if (step == 0 || step == detail::kGoalStep) return false; // unreachable, or a goal
+    out = {at.x + detail::kDirDx[step - 1], at.y + detail::kDirDy[step - 1]};
     return true;
 }
 

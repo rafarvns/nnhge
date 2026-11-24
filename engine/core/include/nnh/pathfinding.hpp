@@ -233,8 +233,9 @@ struct DistanceFieldDesc {
 };
 
 /// Dijkstra from goal cells over a map (FR-16..FR-18): every cell's minimum cost to reach the nearest goal (what a
-/// search from that cell would cost), for crowds that share one goal. One block of tagged memory: 8 bytes per padded
-/// cell (4 single-buffered) + 8 per cell (the open set). Movable, not copyable.
+/// search from that cell would cost), for crowds that share one goal. One block of tagged memory: 10 bytes per padded
+/// cell (5 single-buffered: a distance and the step next() takes there) + 8 per cell (the open set). Movable, not
+/// copyable.
 class DistanceField {
 public:
     static Result<DistanceField> create(const DistanceFieldDesc& desc);
@@ -262,7 +263,9 @@ public:
     /// kUnreachable: blocked, too far, not ready.
     std::uint32_t distance(CellPos cell) const;
     /// The neighbour an agent at `at` should step into (the one minimising step x weight + its distance, ties in
-    /// neighbour order, under the map's diagonal rule); false at a goal, an unreachable cell or not ready.
+    /// neighbour order, under the map's diagonal rule); false at a goal, an unreachable cell or not ready. With the
+    /// map the answering build ran over, unchanged since, one byte read (the build stored the answer); otherwise
+    /// computed from the current cells. Per-frame safe for hundreds of agents.
     bool next(const PathMap& map, CellPos at, CellPos& out) const;
     /// next() through map.cell_at()/cell_center(): the point to walk toward.
     bool next_point(const PathMap& map, Vec2 at, Vec2& out) const;

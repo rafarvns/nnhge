@@ -1,5 +1,5 @@
-// Distance fields (spec 025 FR-16): one block of tagged memory (header, one or two u32 arrays per padded cell, the
-// 8-byte open set), moves, destruction (a running build lets its map go).
+// Distance fields (spec 025 FR-16): one block of tagged memory (header, the 8-byte open set, one or two u32 arrays per
+// padded cell and as many step bytes), moves, destruction (a running build lets its map go).
 
 #include <new>
 
@@ -9,7 +9,7 @@
 
 namespace nnh {
 
-static_assert(sizeof(detail::FieldEntry) == 8, "a field entry is 8 bytes");
+static_assert(sizeof(detail::FieldKey) == 8, "a field heap entry is 8 bytes");
 
 Result<DistanceField> DistanceField::create(const DistanceFieldDesc& desc) {
     const int k = detail::kMaxPathSide;
@@ -20,10 +20,12 @@ Result<DistanceField> DistanceField::create(const DistanceFieldDesc& desc) {
     const std::size_t records = static_cast<std::size_t>(desc.width + 2) * static_cast<std::size_t>(desc.height + 2);
     const std::size_t entries = static_cast<std::size_t>(desc.width) * static_cast<std::size_t>(desc.height);
     const std::size_t arrays = desc.double_buffered ? 2 : 1;
-    const std::size_t header = (sizeof(detail::FieldBlock) + 7) & ~static_cast<std::size_t>(7);
-    const std::size_t bytes = header + arrays * records * 4 + entries * sizeof(detail::FieldEntry);
+    // The heap starts 8 bytes before a 32-byte line: every node's four children share a line (field_heap.hpp).
+    const std::size_t header = ((sizeof(detail::FieldBlock) + 31) & ~static_cast<std::size_t>(31)) + 24;
+    const std::size_t heap_bytes = entries * sizeof(detail::FieldKey);
+    const std::size_t bytes = header + heap_bytes + arrays * records * (4 + 1);
     auto* raw = static_cast<unsigned char*>(
-        mem::alloc(MemRegion::Heap, desc.tag != nullptr ? *desc.tag : detail::path_memory_tag(), bytes, 8));
+        mem::alloc(MemRegion::Heap, desc.tag != nullptr ? *desc.tag : detail::path_memory_tag(), bytes, 32));
     if (raw == nullptr) {
         return Error::make(ErrorCode::OutOfMemory, "distance field %d x %d: no memory for %zu bytes", desc.width,
                            desc.height, bytes);
@@ -33,10 +35,12 @@ Result<DistanceField> DistanceField::create(const DistanceFieldDesc& desc) {
     b->height = desc.height;
     b->records = static_cast<int>(records);
     b->double_buffered = desc.double_buffered;
-    b->heap = reinterpret_cast<detail::FieldEntry*>(raw + header);
+    b->heap = reinterpret_cast<detail::FieldKey*>(raw + header);
     b->heap_capacity = static_cast<int>(entries);
-    b->dist[0] = reinterpret_cast<std::uint32_t*>(raw + header + entries * sizeof(detail::FieldEntry));
+    b->dist[0] = reinterpret_cast<std::uint32_t*>(raw + header + heap_bytes);
     b->dist[1] = desc.double_buffered ? b->dist[0] + records : b->dist[0];
+    b->steps[0] = reinterpret_cast<std::uint8_t*>(b->dist[0] + arrays * records);
+    b->steps[1] = desc.double_buffered ? b->steps[0] + records : b->steps[0];
     DistanceField f;
     f.block_ = b;
     return f;

@@ -1,6 +1,7 @@
 # Tasks 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 pending). Approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (stages 0-9 and 11; Old 3DS T10.2 run 1 done, T10.3 done on the PC, console rerun
+pending). Approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -262,11 +263,21 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` → the tree's replay
      lines, `60 Hz PASS`.
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths). Covers AC-5, AC-6, AC-7.
+  **Run 1 done 2026-11-24** (plan.md "Console run 1"): every logic line equal to the PC's (`pathfinding: PASS
+  1C0B5992`, the showcase lines); bench `FAIL (astar, replans, field one, field slices, next)` → T10.3. Run 1 is repeated
+  after T10.3; run 2 (the platformer) as written.
 - [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risk 1's list without changing a result (every golden holds); then T10.2 run 1 again; if still missed, the
   budget is set from the measurement with ≈ 25 % margin, written in the spec's AC-7, `bench_scene.cpp` and
   `docs/api/pathfinding.md` with the numbers. Files: plan.md ("Optimisation round", "Console run 2 and budgets set").
   Covers AC-7.
+  **Optimisation done on the PC 2026-11-24** (plan.md "Optimisation round (T10.3)"): fields specialised per mode with a
+  4-ary heap of 64-bit keys, `next` answered from a step byte the build stores, `begin` clearing only the step bytes;
+  A*'s plain pop bottom-up and its heap line-aligned; no result changed (goldens, AC-2, fuzz). New tests:
+  `path_field_next_after_a_map_edit_reads_the_current_cells`,
+  `path_field_next_with_another_map_of_the_same_size_and_version_reads_that_map`,
+  `path_field_next_during_a_double_buffered_rebuild_follows_the_finished_build`; the field memory test (5 B per padded
+  cell per array). **Pending:** the console rerun of T10.2 run 1, then the budgets from that measurement.
 
 ## Stage 11: docs, roadmap, status
 

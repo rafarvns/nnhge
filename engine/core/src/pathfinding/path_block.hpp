@@ -32,6 +32,7 @@ struct PathMapBlock {
     bool one_way_walkable = false;
     bool doomed = false;
     std::uint32_t version = 0;
+    std::uint32_t serial = 0; ///< unique per created map (never 0): a field's stored steps answer for it only
     int users = 0;
     std::uint8_t* cells = nullptr;  ///< (width + 2) x (height + 2): what searches read; the border is 0
     std::uint8_t* source = nullptr; ///< width x height, agent sizes 2-4 only: the cells as synced or set

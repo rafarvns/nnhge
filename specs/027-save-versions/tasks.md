@@ -164,23 +164,23 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 6: the reference save, golden files, fuzz
 
-- [ ] **T6.1** The reference types: `examples/saves/progress.hpp` (v3 types and declarations), `progress_history.hpp`
+- [x] **T6.1** The reference types: `examples/saves/progress.hpp` (v3 types and declarations), `progress_history.hpp`
   (`ProgressV1`, `ProgressV2`), `progress_migrate.cpp` (steps 1 and 2), `progress_sum.{hpp,cpp}` (FNV-1a over values in id
   order), `reference.{hpp,cpp}` (seeded values for each version, a subnormal `wear`, a two-byte character in the name),
   `difficulty_names.cpp` (`NNH_DATA_ENUM`), compiled into `nnh_tests` from 027's block. Test:
   `tests/saves/test_reference.cpp` (sizes ≈ plan.md's; v1 → v3 by hand equals the migrated load). Covers AC-2.
-- [ ] **T6.2** Golden files: `tests/saves/make_saves_golden.cpp` (`EXCLUDE_FROM_ALL`) writes `tests/data/saves/v{1,2,3}.sav`
+- [x] **T6.2** Golden files: `tests/saves/make_saves_golden.cpp` (`EXCLUDE_FROM_ALL`) writes `tests/data/saves/v{1,2,3}.sav`
   and `v{1,2,3}.txt`; `tests/data/saves/README.md` (how, and that a regeneration needs a reason in the commit); copies in
   `examples/saves/assets/golden/`; ctest `saves_golden_copies_match`. Test: `tests/saves/test_golden.cpp` (each file loads
   to its recorded sum and report; the reference encodes to `v3.sav`'s payload byte for byte; each dumps to its `.txt`).
   Files: plan.md ("Stage 6 results": the sums, CRCs, sizes). Covers AC-2, FR-4, FR-18.
-- [ ] **T6.3** [P] Fuzz: `tests/fuzz/fuzz_saves.{hpp,cpp}` (a reference type with every kind and shape; inputs decoded as
+- [x] **T6.3** [P] Fuzz: `tests/fuzz/fuzz_saves.{hpp,cpp}` (a reference type with every kind and shape; inputs decoded as
   given and as an `NNHS` file with the CRC and size fixed, through `load` on the fake too; every accepted input
   re-encoded and decoded to the same values; `OldFields` on paths taken from the input; `dump_bytes` in Debug),
   `libfuzzer_saves.cpp`, `tests/fuzz/test_fuzz_saves.cpp` (deterministic mini-fuzz seeded with the three goldens and a
   seed of every kind). Files: `tests/CMakeLists.txt` (027's block: `target_sources(nnh_fuzz_targets …)`, its own
   `if(NNH_BUILD_FUZZERS)`). Covers AC-4, X.
-- [ ] **T6.4** Stage end: the stage-end guards. Covers AC-2, AC-4.
+- [x] **T6.4** Stage end: the stage-end guards. Covers AC-2, AC-4.
 
 ## Stage 7: `examples/saves` (PC), the bench and the ARM pre-check
 

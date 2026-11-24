@@ -1,0 +1,448 @@
+save 'progress' v1 (1769 bytes)
+name (1) string = "Zo\xC3\xAB Rangers"
+level (2) u8 = 37
+#3 (retired) u32 = 123456
+#4 (retired) u16 = 501
+play_frames (5) u32 = 3600000
+position (6) vec2 = (123.25, -45.5) [42F68000 C2360000]
+explored (7) bool[1024]
+  [0] true false true false false false false false false false true false false false false false
+  [16] true false false false false false false true true true true false false false false false
+  [32] true false true false true true false false false false false false false false false true
+  [48] false false false false true true true false false false false true false false false false
+  [64] false false false true true true true true false false false false false false false false
+  [80] false false true false true true true true true false false false false true false true
+  [96] false false false false false false false false false false true false true true false false
+  [112] false true false false false false true false true false true true false false false false
+  [128] false true true true true true false false false false true false false false true true
+  [144] false false false false false false false false false true false true true false false true
+  [160] true false false false false false false false false true false false false false false false
+  [176] false false false true false false true true false true false false true false true false
+  [192] false false false false false false true true false false false false false false false false
+  [208] false true false false false false false false false false false false false false false false
+  [224] false true false false false false true false false true false false false true false false
+  [240] false false false true false false false true true true false false false false false false
+  [256] false true false false false false false false false false false false true false false false
+  [272] true true false false false false true false false false true false false false false false
+  [288] false false false false false false true true false false true false false false true true
+  [304] false false false false false false true false true false true true true true false false
+  [320] false true false false true false true false true false false false true false true true
+  [336] false false false true false false true true true false true false true true true false
+  [352] true false false false false false false false false true false false false false false false
+  [368] false true false true true true true false false true false false false true false false
+  [384] false false false false false false false false true false false true false false false true
+  [400] false false false false false false false false false false true false false true false false
+  [416] true false true false false false true false false true false true false false true false
+  [432] false true false false false true false false false false false false false false true false
+  [448] false false false false true true false false false false false true true false false true
+  [464] true true true false false false true false true true false false false false true false
+  [480] false false false false false false true false true true false false true false false true
+  [496] false false false false false false false false true true false true false false false false
+  [512] false true false false false false false false true false false false false true false false
+  [528] false false true false false false false false true false true false true true false false
+  [544] false true false true false false false false false true false false true false false false
+  [560] false false false false false false false false false false false false false false true false
+  [576] false true true false false false false false false false true false false false false false
+  [592] false false false false false true false false false false false false false false false true
+  [608] false false false false false false false false false false false true false false false false
+  [624] false false false true true false false false false false false true false false false false
+  [640] false true false false true true false true false false false false false false false false
+  [656] true false true false true false false false false false false false false false false true
+  [672] true false false false false false false false false true false true true false false true
+  [688] false false false false false false false true true true false false false false false false
+  [704] false false false false false true false false false true false false false false false false
+  [720] false false true false false false true false false false false false false true false false
+  [736] true true false false false true false true false false true false false false true false
+  [752] false false false false true false true false false false false false false false false false
+  [768] false false false false false false false false false false false false false false false false
+  [784] false true false false false true false false false false false false true false false false
+  [800] false false false false false true true false false false false false false false true true
+  [816] false false false true false false false false true true false true false true true false
+  [832] true true false false false true false false false false false false false false false false
+  [848] true true true true true false false true false false false true false false false true
+  [864] false false true false true false false false false true false false false true true false
+  [880] false false false false false false true false false false true false true false false true
+  [896] true false false false false true true true false false false true false false true false
+  [912] false false false false false false false false false true true false false false false false
+  [928] false false false false false false false true true true false true true false false true
+  [944] true false false false false false true true false true false false false false true false
+  [960] false false false false false false false false false false false false false true false false
+  [976] false false false false false true false false true false true false false false false false
+  [992] false false false false false false false false true false true true true false true false
+  [1008] false false true false true false false true false false true true false false false true
+hero (8) struct
+  hp (1) u8 = 40
+  max_hp (2) u8 = 50
+  attack (3) u8 = 7
+inventory (9) struct list[32]
+  [0]
+    kind (1) u16 = 100
+    count (2) u8 = 13
+    quality (3) u8 = 2
+    durability (4) u16 = 911
+    wear (5) f32 = 0.975274444 [3F79AB96]
+    bonus (6) u32 = 1546511686
+    slot (8) u8 = 0
+    equipped (9) bool = false
+  [1]
+    kind (1) u16 = 101
+    count (2) u8 = 14
+    quality (3) u8 = 2
+    durability (4) u16 = 804
+    wear (5) f32 = 0.635523736 [3F22B1AF]
+    bonus (6) u32 = 3817417677
+    slot (8) u8 = 1
+    equipped (9) bool = false
+  [2]
+    kind (1) u16 = 102
+    count (2) u8 = 14
+    quality (3) u8 = 2
+    durability (4) u16 = 538
+    wear (5) f32 = 0.970457852 [3F786FED]
+    bonus (6) u32 = 2722396250
+    slot (8) u8 = 2
+    equipped (9) bool = false
+  [3]
+    kind (1) u16 = 103
+    count (2) u8 = 6
+    quality (3) u8 = 4
+    durability (4) u16 = 962
+    wear (5) f32 = 0.846410811 [3F58AE61]
+    bonus (6) u32 = 3527121868
+    slot (8) u8 = 3
+    equipped (9) bool = true
+  [4]
+    kind (1) u16 = 104
+    count (2) u8 = 2
+    quality (3) u8 = 0
+    durability (4) u16 = 492
+    wear (5) f32 = 0.562850237 [3F1016F4]
+    bonus (6) u32 = 2778647721
+    slot (8) u8 = 4
+    equipped (9) bool = false
+  [5]
+    kind (1) u16 = 105
+    count (2) u8 = 14
+    quality (3) u8 = 4
+    durability (4) u16 = 375
+    wear (5) f32 = 4.07777853e-43 [00000123]
+    bonus (6) u32 = 3194727906
+    slot (8) u8 = 5
+    equipped (9) bool = false
+  [6]
+    kind (1) u16 = 106
+    count (2) u8 = 2
+    quality (3) u8 = 3
+    durability (4) u16 = 753
+    wear (5) f32 = 0.570943117 [3F122954]
+    bonus (6) u32 = 2962428107
+    slot (8) u8 = 6
+    equipped (9) bool = false
+  [7]
+    kind (1) u16 = 107
+    count (2) u8 = 10
+    quality (3) u8 = 3
+    durability (4) u16 = 3
+    wear (5) f32 = 0.695592999 [3F321262]
+    bonus (6) u32 = 3653995904
+    slot (8) u8 = 7
+    equipped (9) bool = false
+  [8]
+    kind (1) u16 = 108
+    count (2) u8 = 19
+    quality (3) u8 = 0
+    durability (4) u16 = 216
+    wear (5) f32 = 0.910998046 [3F69372B]
+    bonus (6) u32 = 1968516044
+    slot (8) u8 = 0
+    equipped (9) bool = false
+  [9]
+    kind (1) u16 = 109
+    count (2) u8 = 19
+    quality (3) u8 = 2
+    durability (4) u16 = 784
+    wear (5) f32 = 0.854841948 [3F5AD6EC]
+    bonus (6) u32 = 197358660
+    slot (8) u8 = 1
+    equipped (9) bool = false
+  [10]
+    kind (1) u16 = 110
+    count (2) u8 = 4
+    quality (3) u8 = 4
+    durability (4) u16 = 613
+    wear (5) f32 = 0.855556428 [3F5B05BF]
+    bonus (6) u32 = 1098499541
+    slot (8) u8 = 2
+    equipped (9) bool = false
+  [11]
+    kind (1) u16 = 111
+    count (2) u8 = 18
+    quality (3) u8 = 2
+    durability (4) u16 = 226
+    wear (5) f32 = 0.734000087 [3F3BE76E]
+    bonus (6) u32 = 2641757178
+    slot (8) u8 = 3
+    equipped (9) bool = false
+  [12]
+    kind (1) u16 = 112
+    count (2) u8 = 16
+    quality (3) u8 = 0
+    durability (4) u16 = 567
+    wear (5) f32 = 0.895871878 [3F6557DC]
+    bonus (6) u32 = 3346456254
+    slot (8) u8 = 4
+    equipped (9) bool = false
+  [13]
+    kind (1) u16 = 113
+    count (2) u8 = 3
+    quality (3) u8 = 0
+    durability (4) u16 = 888
+    wear (5) f32 = 0.938668847 [3F704C9A]
+    bonus (6) u32 = 2182997396
+    slot (8) u8 = 5
+    equipped (9) bool = false
+  [14]
+    kind (1) u16 = 114
+    count (2) u8 = 6
+    quality (3) u8 = 3
+    durability (4) u16 = 333
+    wear (5) f32 = 0.616705477 [3F1DE069]
+    bonus (6) u32 = 3894421074
+    slot (8) u8 = 6
+    equipped (9) bool = false
+  [15]
+    kind (1) u16 = 115
+    count (2) u8 = 10
+    quality (3) u8 = 2
+    durability (4) u16 = 694
+    wear (5) f32 = 0.985259533 [3F7C39F8]
+    bonus (6) u32 = 2284071425
+    slot (8) u8 = 7
+    equipped (9) bool = false
+  [16]
+    kind (1) u16 = 116
+    count (2) u8 = 19
+    quality (3) u8 = 3
+    durability (4) u16 = 43
+    wear (5) f32 = 0.92670846 [3F6D3CC4]
+    bonus (6) u32 = 2116037955
+    slot (8) u8 = 0
+    equipped (9) bool = false
+  [17]
+    kind (1) u16 = 117
+    count (2) u8 = 20
+    quality (3) u8 = 4
+    durability (4) u16 = 67
+    wear (5) f32 = 0.634185374 [3F2259F9]
+    bonus (6) u32 = 120995312
+    slot (8) u8 = 1
+    equipped (9) bool = false
+  [18]
+    kind (1) u16 = 118
+    count (2) u8 = 10
+    quality (3) u8 = 1
+    durability (4) u16 = 981
+    wear (5) f32 = 0.969378114 [3F78292A]
+    bonus (6) u32 = 2461809648
+    slot (8) u8 = 2
+    equipped (9) bool = false
+  [19]
+    kind (1) u16 = 119
+    count (2) u8 = 11
+    quality (3) u8 = 1
+    durability (4) u16 = 807
+    wear (5) f32 = 0.946667135 [3F7258C7]
+    bonus (6) u32 = 582168554
+    slot (8) u8 = 3
+    equipped (9) bool = false
+  [20]
+    kind (1) u16 = 120
+    count (2) u8 = 16
+    quality (3) u8 = 0
+    durability (4) u16 = 760
+    wear (5) f32 = 0.794495821 [3F4B6414]
+    bonus (6) u32 = 4236029456
+    slot (8) u8 = 4
+    equipped (9) bool = false
+  [21]
+    kind (1) u16 = 121
+    count (2) u8 = 4
+    quality (3) u8 = 1
+    durability (4) u16 = 854
+    wear (5) f32 = 0.779945314 [3F47AA7F]
+    bonus (6) u32 = 2508654541
+    slot (8) u8 = 5
+    equipped (9) bool = false
+  [22]
+    kind (1) u16 = 122
+    count (2) u8 = 14
+    quality (3) u8 = 3
+    durability (4) u16 = 245
+    wear (5) f32 = 0.955772519 [3F74AD82]
+    bonus (6) u32 = 3723756317
+    slot (8) u8 = 6
+    equipped (9) bool = false
+  [23]
+    kind (1) u16 = 123
+    count (2) u8 = 7
+    quality (3) u8 = 0
+    durability (4) u16 = 330
+    wear (5) f32 = 0.510482907 [3F02AF02]
+    bonus (6) u32 = 785925877
+    slot (8) u8 = 7
+    equipped (9) bool = false
+  [24]
+    kind (1) u16 = 124
+    count (2) u8 = 1
+    quality (3) u8 = 1
+    durability (4) u16 = 477
+    wear (5) f32 = 0.761964977 [3F431023]
+    bonus (6) u32 = 779723360
+    slot (8) u8 = 0
+    equipped (9) bool = false
+  [25]
+    kind (1) u16 = 125
+    count (2) u8 = 1
+    quality (3) u8 = 3
+    durability (4) u16 = 275
+    wear (5) f32 = 0.911643326 [3F696175]
+    bonus (6) u32 = 3695457951
+    slot (8) u8 = 1
+    equipped (9) bool = false
+  [26]
+    kind (1) u16 = 126
+    count (2) u8 = 17
+    quality (3) u8 = 0
+    durability (4) u16 = 346
+    wear (5) f32 = 0.673769295 [3F2C7C25]
+    bonus (6) u32 = 2582162206
+    slot (8) u8 = 2
+    equipped (9) bool = false
+  [27]
+    kind (1) u16 = 127
+    count (2) u8 = 2
+    quality (3) u8 = 2
+    durability (4) u16 = 110
+    wear (5) f32 = 0.744109392 [3F3E7DF4]
+    bonus (6) u32 = 1369887971
+    slot (8) u8 = 3
+    equipped (9) bool = false
+  [28]
+    kind (1) u16 = 128
+    count (2) u8 = 8
+    quality (3) u8 = 0
+    durability (4) u16 = 96
+    wear (5) f32 = 0.70191133 [3F33B076]
+    bonus (6) u32 = 136293859
+    slot (8) u8 = 4
+    equipped (9) bool = false
+  [29]
+    kind (1) u16 = 129
+    count (2) u8 = 19
+    quality (3) u8 = 2
+    durability (4) u16 = 646
+    wear (5) f32 = 0.644815505 [3F2512A1]
+    bonus (6) u32 = 2493720753
+    slot (8) u8 = 5
+    equipped (9) bool = false
+  [30]
+    kind (1) u16 = 130
+    count (2) u8 = 12
+    quality (3) u8 = 2
+    durability (4) u16 = 986
+    wear (5) f32 = 0.847175598 [3F58E080]
+    bonus (6) u32 = 3168244543
+    slot (8) u8 = 6
+    equipped (9) bool = false
+  [31]
+    kind (1) u16 = 131
+    count (2) u8 = 13
+    quality (3) u8 = 3
+    durability (4) u16 = 806
+    wear (5) f32 = 0.590432227 [3F172691]
+    bonus (6) u32 = 2336812808
+    slot (8) u8 = 7
+    equipped (9) bool = false
+checkpoint (10) ref = 0x39088AEC
+seed (15) u64 = 78187493520
+quests (19) struct list[20]
+  [0]
+    id (1) u16 = 1000
+    state (2) u8 = 0
+    progress (3) u16 = 77
+  [1]
+    id (1) u16 = 1001
+    state (2) u8 = 1
+    progress (3) u16 = 25
+  [2]
+    id (1) u16 = 1002
+    state (2) u8 = 2
+    progress (3) u16 = 22
+  [3]
+    id (1) u16 = 1003
+    state (2) u8 = 0
+    progress (3) u16 = 89
+  [4]
+    id (1) u16 = 1004
+    state (2) u8 = 1
+    progress (3) u16 = 41
+  [5]
+    id (1) u16 = 1005
+    state (2) u8 = 2
+    progress (3) u16 = 72
+  [6]
+    id (1) u16 = 1006
+    state (2) u8 = 0
+    progress (3) u16 = 46
+  [7]
+    id (1) u16 = 1007
+    state (2) u8 = 1
+    progress (3) u16 = 51
+  [8]
+    id (1) u16 = 1008
+    state (2) u8 = 2
+    progress (3) u16 = 81
+  [9]
+    id (1) u16 = 1009
+    state (2) u8 = 0
+    progress (3) u16 = 39
+  [10]
+    id (1) u16 = 1010
+    state (2) u8 = 1
+    progress (3) u16 = 38
+  [11]
+    id (1) u16 = 1011
+    state (2) u8 = 2
+    progress (3) u16 = 38
+  [12]
+    id (1) u16 = 1012
+    state (2) u8 = 0
+    progress (3) u16 = 34
+  [13]
+    id (1) u16 = 1013
+    state (2) u8 = 1
+    progress (3) u16 = 97
+  [14]
+    id (1) u16 = 1014
+    state (2) u8 = 2
+    progress (3) u16 = 47
+  [15]
+    id (1) u16 = 1015
+    state (2) u8 = 0
+    progress (3) u16 = 69
+  [16]
+    id (1) u16 = 1016
+    state (2) u8 = 1
+    progress (3) u16 = 76
+  [17]
+    id (1) u16 = 1017
+    state (2) u8 = 2
+    progress (3) u16 = 0
+  [18]
+    id (1) u16 = 1018
+    state (2) u8 = 0
+    progress (3) u16 = 54
+  [19]
+    id (1) u16 = 1019
+    state (2) u8 = 1
+    progress (3) u16 = 76

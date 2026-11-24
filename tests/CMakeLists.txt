@@ -454,6 +454,10 @@ if(TARGET queries AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQU
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;QUERIES_DEMO=check;NNH_EXIT_AFTER_FRAMES=90"
         PASS_REGULAR_EXPRESSION "queries: PASS 4ACAA177" FAIL_REGULAR_EXPRESSION "queries: FAIL" TIMEOUT 120)
 endif()
+# The saves example (spec 027 AC-2, AC-6): its golden copies equal tests/data/saves.
+add_test(NAME saves_golden_copies_match
+         COMMAND ${CMAKE_COMMAND} -DA=${CMAKE_CURRENT_SOURCE_DIR}/data/saves -DB=${PROJECT_SOURCE_DIR}/examples/saves/assets/golden
+                 -P ${CMAKE_CURRENT_SOURCE_DIR}/saves/compare_golden.cmake)
 # The entities example's self-check in the simulator (spec 020 T7.4, AC-6): the verdict the console script waits for.
 if(TARGET entities AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_test(NAME entities_self_check_pc COMMAND entities)
@@ -544,11 +548,13 @@ target_sources(nnh_tests PRIVATE
     saves/test_evolution.cpp
     saves/test_file.cpp
     saves/test_fit.cpp
+    saves/test_golden.cpp
     saves/test_header.cpp
     saves/test_migrations.cpp
     saves/test_old_fields.cpp
     saves/test_power_cut.cpp
     saves/test_raw_unchanged.cpp
+    saves/test_reference.cpp
     saves/test_round_trip.cpp
     saves/test_save_cost.cpp
     saves/test_save_misuse.cpp
@@ -557,6 +563,25 @@ target_sources(nnh_tests PRIVATE
     saves/test_validate.cpp
     saves/test_versions.cpp
     saves/test_wire.cpp)
+# The reference save (AC-2): the saves example's Progress and its history, compiled into the tests (its NNH_DATA_ENUM
+# names are not: they would change spec 014's registry tests). make_saves_golden writes tests/data/saves by hand.
+set(_saves_example_sources ${PROJECT_SOURCE_DIR}/examples/saves/progress_migrate.cpp
+                           ${PROJECT_SOURCE_DIR}/examples/saves/progress_sum.cpp
+                           ${PROJECT_SOURCE_DIR}/examples/saves/reference.cpp)
+target_sources(nnh_tests PRIVATE ${_saves_example_sources})
+add_executable(make_saves_golden EXCLUDE_FROM_ALL saves/make_saves_golden.cpp ${_saves_example_sources})
+target_include_directories(make_saves_golden PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src ${PROJECT_SOURCE_DIR}/examples)
+target_link_libraries(make_saves_golden PRIVATE nnh::core nnh::platform_fake)
+# The structured-save fuzz target (AC-4): its own header (fuzz/fuzz_saves.hpp); a mini-fuzz in nnh_tests, and a
+# libFuzzer executable with NNH_BUILD_FUZZERS (clang, Linux).
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_saves.cpp)
+target_sources(nnh_tests PRIVATE fuzz/test_fuzz_saves.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_saves fuzz/libfuzzer_saves.cpp)
+    target_link_libraries(fuzz_saves PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_saves PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_saves PRIVATE -fsanitize=fuzzer,address)
+endif()
 # Save declarations (spec 027 T2.3, AC-1): a correct one compiles with -Werror; each mistake fails to compile AND says
 # what is wrong. `~` separates alternatives (any one passes): GCC's wording, then clang's.
 if(NOT MSVC)

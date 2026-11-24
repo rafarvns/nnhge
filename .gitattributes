@@ -3,5 +3,6 @@
 *.wav binary
 *.ogg binary
 *.bin binary
+*.sav binary
 # A data file kept with CRLF line ends on purpose (spec 014: the reader accepts both)
 tests/data/data_assets/game/assets/enemies/bat.enemy -text

@@ -196,3 +196,8 @@ never through `#ifdef` in game code.
   A map destroyed during sliced work keeps its block alive until its last user lets go (the idea of spec 021's doomed
   library). The searchers' and fields' memory per cell (24 and 16 bytes) is above the spec's estimate (8 and 4): flagged
   in plan 025 for the maintainer. D39 stays reserved for spec 024.
+- 2026-11-24: D40 implemented (spec 025 stages 0-8, console run T10.2 pending): as designed, with the stage refinements
+  in plan 025 — packed `(y << 16) | x` cells in heap entries, the one-entry buffer replacing the heap's top when it
+  loses, a field build that checks its goals before touching anything, a hero/crowd update order and verdict lines a
+  frame apart for scripts, the hot helpers forced inline after the ARM pre-check (no result change). The golden
+  `1C0B5992` holds the total order; AC-2's literal reference A* equals `find` on 2 048 random maps.

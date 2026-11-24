@@ -99,6 +99,15 @@ tunnelling, no corner leaks) and boxes, `cells_crossed`, `line_of_sight`, `box_c
 `boxes_overlapping`, `cell_at`; no allocation, the same bits everywhere ([api/collision.md](docs/api/collision.md)).
 Tilemaps: layer sets per `collision` layer and solid/one-way tile (Tiled `collision_layers`), `collision_grid(mask)`
 ([api/tilemap.md](docs/api/tilemap.md#collision-layers)). The platformer uses layered coins and turrets.
+Pathfinding on grids (spec 025, implemented, console check pending; D40; demo `examples/pathfinding`):
+`<nnh/pathfinding.hpp>` — `PathMap::create(path_map_desc(grid))` (one block, 1 byte per cell: blocked or weight 1..255,
+agent sizes 1..4), `sync(grid[, region], PathWeights)` from any `collision::Grid` (a tilemap's `collision_grid(mask)`;
+weights from a `path_cost` tile property through a per-tile-id table), `set_cell`/`fill`, `version()`, `Diagonals`
+(Never/Always/AtLeastOneWalkable/OnlyIfNoObstacles); `PathSearcher` — integer A* with a fixed total order (f, lower h,
+most recent push; N E S W NE SE SW NW; strictly lower g), `find` or `begin`/`step(n)` (stale flag), `max_expanded`,
+`partial`, `heuristic_scale`, `path`/`path_points`, `reached`/`expanded`/`cost_to`; `smooth_path` (spec 019's walk in
+integers), `cells_to_points`; `DistanceField` (multi-goal Dijkstra, double-buffered, `next`/`next_point`);
+`PathFollower`. No allocation after creation; golden `1C0B5992` ([api/pathfinding.md](docs/api/pathfinding.md)).
 Entities, tags and object pools (spec 020, implemented, console and Linux checks passed; D35; demo `examples/entities`):
 `<nnh/pool.hpp>` — `Pool<T, N>` (inline, no allocation) and `Pool<T>::create(n)` (one block), `Handle<T>` (16-bit slot
 + 16-bit generation: stale use detected), lowest free slot, released slots quarantined until `flush()`, `items()`/`each`
@@ -199,6 +208,8 @@ build/pc-debug/tools/nnh/nnh serve                              # build server f
 NNH_LINK_DEMO=games NNH_EXIT_AFTER_FRAMES=20 NNH_SCREENSHOT=build/link.png build/pc-debug/apps/nnh-link/nnh-link.exe   # NNH Link screens
 NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/shot.png build/pc-debug/examples/hello/hello.exe
 ANIMATION_DEMO=check NNH_EXIT_AFTER_FRAMES=605 build/pc-debug/examples/animation/animation.exe   # showcase (default)|check|bench
+PATHFINDING_SHOT=explored NNH_EXIT_AFTER_FRAMES=40 NNH_SCREENSHOT=build/path.png build/pc-debug/examples/pathfinding/pathfinding.exe   # explored|smoothed|field|partial|door-closed|door-open|big
+build/pc-debug/tools/nnh/nnh run pathfinding [--pc] --script examples/pathfinding/tests/check.nnhs   # self-check 1C0B5992, doors, island, 2x2, bench
 PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png build/pc-debug/examples/platformer/platformer.exe   # level1 (default)|bonus|bench|gate|flips|replay
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs   # tile gate on the console (Development, HBL → Y): bench: PASS/FAIL
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs  # levels + replay on the console: checksums = PC's, 60 Hz PASS/FAIL

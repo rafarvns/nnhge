@@ -245,7 +245,12 @@ set(_nnh_pathfinding_sources
     src/pathfinding/map_edit.cpp
     src/pathfinding/map_geometry.cpp
     src/pathfinding/map_sync.cpp
+    src/pathfinding/open_heap.cpp
     src/pathfinding/path_check.cpp
+    src/pathfinding/search_begin.cpp
+    src/pathfinding/search_path.cpp
+    src/pathfinding/search_step.cpp
+    src/pathfinding/searcher_create.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_pathfinding_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

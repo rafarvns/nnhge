@@ -823,3 +823,30 @@ on this PC at the same time (other agents): times below are noisy, sizes are exa
 - Tests: `test_path_map_create.cpp` (10), `test_path_map_sync.cpp` (9), `test_path_map_edit.cpp` (5),
   `test_footprint.cpp` (3), `test_path_points.cpp` (5). Guards: all green (ctest 268 pc-debug, 258 pc-release), sizes and
   `nm` identical to stage 0.
+
+## Stage 2 refinements and results
+
+- **Open set** as planned (`open_heap.{hpp,cpp}`): 16-byte entries `{h, f, seq, cell}`, `(f, h)` compared as one 64-bit
+  key then `seq` descending, hole sifts, the one-entry buffer (`offer`/`take`; a held entry that loses replaces the
+  heap's top with one sift-down, so taking never grows the heap), compaction by a predicate then Floyd's heapify.
+  The searcher compacts before an `offer` that finds the heap full (an `offer` adds at most one heap entry).
+- **Cells in entries** are packed `(y << 16) | x`; neighbours move them by constant packed deltas (`kPackedDelta`),
+  and the record index is `(y + 1) · stride + x + 1` (one multiply). Partial ties on the row-major index compare the
+  packed cells (the same order).
+- **Records** `{g, meta}`, meta = stamp (28 bits) | closed | dir; "reached this search" is `meta >> 4 == stamp`; the
+  start's record is stamped at `begin` (so `reached(from)` is true from the start, also for `from == to`).
+- **The expansion** (`search_step.cpp`): `Expander<M>` per mode, the orthogonal bytes loaded once and reused for the
+  diagonal rule; the heuristic scale is skipped when 16. The mode, costs and scale are captured at `begin` (a
+  `set_diagonals` during a sliced search applies to the next search).
+- **`step()` misuse**: `step()` with no search begun since creation or `cancel()` (status None) asserts; `step()`
+  after a finished search returns true silently (a round-robin loop may call it).
+- Tests: `path_reference.{hpp,cpp}` (RefMap copy of what searches see, Dijkstra, the literal A*, the multi-source
+  field, path validator, an **exact** segment checker — every cell whose open interior the centre line crosses, by
+  corner cross products, and every lattice corner on the segment — instead of 1/64 sampling, which can miss thin
+  slivers), `test_reference_self.cpp` (6), `test_neighbors.cpp` (6), `test_open_heap.cpp` (4), `test_find_basic.cpp`
+  (9), `test_find_costs.cpp` (4), `test_tie_order.cpp` (5: straight, diagonal-vs-straight by lower h — path (0,0),
+  (1,1), (2,1), 3 expansions; the symmetric pillar by the most recent push — over the top, 7 expansions; equal weights
+  both ways; **find = literal A\* on 300 seeded maps × 3 searches**, scale 16 and 24).
+- **Probe** (T2.6, `build/ref-025/probe/`): a 3ds-release program calling only `PathMap::create` and `find` links 20
+  pathfinding symbols (create, the searcher, begin/step/finish, misuse) and nothing of sync, fields, smoothing or the
+  follower; one calling only `collision::move` links none. Guards green; sizes and `nm` unchanged.

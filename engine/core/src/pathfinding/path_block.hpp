@@ -40,6 +40,9 @@ struct PathMapBlock {
 /// Padded index of map cell (x, y).
 inline int padded_index(int stride, int x, int y) { return (y + 1) * stride + x + 1; }
 
+/// The centre of the agent's footprint anchored at `cell`, world pixels (map_geometry.cpp).
+Vec2 path_cell_center(const PathMapBlock& b, CellPos cell);
+
 /// The engine's default tag for maps, searchers and fields.
 MemTag& path_memory_tag();
 

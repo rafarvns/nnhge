@@ -7,13 +7,16 @@
 #include "pathfinding/path_check.hpp"
 
 namespace nnh {
-namespace {
 
-Vec2 center_of(const detail::PathMapBlock& b, CellPos c) {
+Vec2 detail::path_cell_center(const PathMapBlock& b, CellPos c) {
     const float half = static_cast<float>(b.agent) * 0.5f;
     return {b.origin.x + static_cast<float>(b.grid_x + c.x) * b.cell_w + half * b.cell_w,
             b.origin.y + static_cast<float>(b.grid_y + c.y) * b.cell_h + half * b.cell_h};
 }
+
+namespace {
+
+Vec2 center_of(const detail::PathMapBlock& b, CellPos c) { return detail::path_cell_center(b, c); }
 
 } // namespace
 

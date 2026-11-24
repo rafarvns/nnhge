@@ -73,7 +73,7 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
 
 ## Stage 2: the search (one-shot) and its total order
 
-- [ ] **T2.1** The references (test code first): `tests/pathfinding/path_reference.{hpp,cpp}` — ASCII maps (`#`, `.`,
+- [x] **T2.1** The references (test code first): `tests/pathfinding/path_reference.{hpp,cpp}` — ASCII maps (`#`, `.`,
   digits, `S`, `G`), seeded random maps (FNV-1a of seed, x, y, salt; sizes, blocked ratio, weights, modes, agent
   sizes), the reference Dijkstra (`std::priority_queue`), the **literal reference A*** (a `std::vector` open set
   scanned for the minimum `(f, h, −seq)`, decrease-key in place, FR-10's neighbour order, partial best by a final scan),
@@ -81,16 +81,16 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   summed cost), a sampled segment checker (points every 1/64 cell plus exact corner tests), brute-force erosion. Test:
   `tests/pathfinding/test_reference_self.cpp` (the references on hand-computed tiny cases agree with each other and with
   the expected numbers). Covers VI, AC-2.
-- [ ] **T2.2** Neighbours and heuristic: `neighbors.hpp`, `heuristic.hpp` (inline). Test:
+- [x] **T2.2** Neighbours and heuristic: `neighbors.hpp`, `heuristic.hpp` (inline). Test:
   `tests/pathfinding/test_neighbors.cpp` (order N, E, S, W, NE, SE, SW, NW; offsets from the stride; a diagonal gap
   between two walls passes only with Always; one wall passes with AtLeastOneWalkable; OnlyIfNoObstacles never cuts;
   Never has 4; octile/Manhattan values; `(h × scale) >> 4` for 16, 24, 64). Covers FR-6, FR-9.
-- [ ] **T2.3** [P] The open heap: `open_heap.{hpp,cpp}` — 16-byte entries, 64-bit `(f, h)` key then `seq` descending,
+- [x] **T2.3** [P] The open heap: `open_heap.{hpp,cpp}` — 16-byte entries, 64-bit `(f, h)` key then `seq` descending,
   hole sifts, the best-child buffer, lazy staleness, compaction and heapify (cold). Test:
   `tests/pathfinding/test_open_heap.cpp` (pop order = a sorted reference for 10 000 random keys with many ties; the same
   with the buffer in front; stale entries skipped; compaction through a test hook that shrinks the capacity gives the
   same pop order). Covers FR-10, FR-12.
-- [ ] **T2.4** Searchers and `find`: `search_internal.hpp`, `searcher_create.cpp` (create, 8-byte records, stamps,
+- [x] **T2.4** Searchers and `find`: `search_internal.hpp`, `searcher_create.cpp` (create, 8-byte records, stamps,
   move/destroy), `search_begin.cpp` (checks, start and goal rules, finish: status, cost, length), `search_step.cpp` (the
   expansion loop, one template per `Diagonals` mode, unrolled), `search_path.cpp` (`path`, `path_points`). Test:
   `tests/pathfinding/test_find_basic.cpp` (Found/NoPath/Invalid; from == to walkable and blocked; blocked start leaves;
@@ -98,11 +98,11 @@ the tree; `queries: PASS 4ACAA177`, `entities: PASS C8FB9A41`, `prefabs: PASS 7B
   until the next search), `tests/pathfinding/test_find_costs.cpp` (step × weight of entered cells, the start's weight
   never counts, every mode; Found cost = the reference Dijkstra's on 500 seeded maps; scales 24/64 within their bound).
   Covers FR-7, FR-8, FR-9, FR-11.
-- [ ] **T2.5** The total order: Test: `tests/pathfinding/test_tie_order.cpp` (hand-drawn ties with their expected cells
+- [x] **T2.5** The total order: Test: `tests/pathfinding/test_tie_order.cpp` (hand-drawn ties with their expected cells
   — open room straight and diagonal, a symmetric pillar, equal weights both ways, a parent kept on an equal g — and the
   literal reference A* giving the same status, cost, expansions and cells on 300 seeded maps of every mode). Covers
   FR-10.
-- [ ] **T2.6** Stage end: the stage-end guards; `hello` unchanged (no new symbol); a probe linking only `PathMap` and
+- [x] **T2.6** Stage end: the stage-end guards; `hello` unchanged (no new symbol); a probe linking only `PathMap` and
   `find` builds for 3ds-release. Files: plan.md ("Stage 2 results"). Covers FR-24, AC-8.
 
 ## Stage 3: bounds, partial paths, slicing, reuse, inspection, misuse

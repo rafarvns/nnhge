@@ -1025,6 +1025,22 @@ add_custom_target(nnh_test_sprites DEPENDS ${_ase_out}/good.nnhsprite)
 add_dependencies(nnh_tests nnh_test_sprites)
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
 
+# 3D foundation (spec 026): math, meshes, the 3D pass, the CPU rasteriser, the example's self-check.
+target_sources(nnh_tests PRIVATE
+    math3d/test_conventions.cpp
+    math3d/test_mat4.cpp
+    math3d/test_math3d_accuracy.cpp
+    math3d/test_math3d_exact.cpp
+    math3d/test_projection.cpp
+    math3d/test_quat.cpp
+    math3d/test_quat_interp.cpp
+    math3d/test_vec3.cpp
+    models_example/test_self_check.cpp
+    ${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp
+)
+set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp PROPERTIES
+                            COMPILE_OPTIONS -ffp-contract=off)
+
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 # then run e.g. build/pc-debug/tests/fuzz_save -max_total_time=60
 option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)

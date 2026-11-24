@@ -11,35 +11,35 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 0 — baseline (026a)
 
-- [ ] **T0.1** Worktree `spec-026` from `main`; check `nnh::sin_cos`, `src/transform/sin_cos.cpp`, `src/core/det_sine.hpp`
+- [x] **T0.1** Worktree `spec-026` from `main`; check `nnh::sin_cos`, `src/transform/sin_cos.cpp`, `src/core/det_sine.hpp`
   exist and their tests pass — files: none — test: `nnh_tests transform` — covers FR-3 (dependency)
-- [ ] **T0.2** Record baselines in plan 026 ("Stage 0 results"): `hello` sizes (3DS Release `.text`/`.3dsx`, PC Release
+- [x] **T0.2** Record baselines in plan 026 ("Stage 0 results"): `hello` sizes (3DS Release `.text`/`.3dsx`, PC Release
   `.exe`), 3DS memory report and VRAM of `hello`, clean engine build, edit-one-game-`.cpp` times (PC, 3DS), every
   example's screenshot hash (`NNH_EXIT_AFTER_FRAMES=30`) — test: script output saved under `build/baseline-026/` —
   covers FR-31, AC-9
 
 ## Stage 1 — 3D math (026a)
 
-- [ ] **T1.1** `<nnh/math3d.hpp>` skeleton, `Vec3/Vec4/Quat/Mat4/Transform3D/Ray3`, constexpr single-op helpers; CMake
+- [x] **T1.1** `<nnh/math3d.hpp>` skeleton, `Vec3/Vec4/Quat/Mat4/Transform3D/Ray3`, constexpr single-op helpers; CMake
   block `_nnh_math3d_sources` with `-ffp-contract=off` (+ `-fno-math-errno` for files using `sqrt`) — files:
   `math3d.hpp`, `engine/core/CMakeLists.txt` — test: `tests/math3d/test_vec3.cpp` (layout, defaults, trivially copyable)
   — covers FR-1
-- [ ] **T1.2** `dot`, `cross`, `length(_squared)`, `normalize` (2⁻¹⁰⁰ exponent test, assert), `math3d_internal.hpp` —
+- [x] **T1.2** `dot`, `cross`, `length(_squared)`, `normalize` (2⁻¹⁰⁰ exponent test, assert), `math3d_internal.hpp` —
   files: `vec3.cpp` — test: `test_vec3.cpp`, `test_conventions.cpp` (x × y = z) — covers FR-1, FR-2
-- [ ] **T1.3** Quaternions: `quat_axis_angle`, `quat_euler`, product, `conjugate`, `normalize`, `to_mat4` by numerators
+- [x] **T1.3** Quaternions: `quat_axis_angle`, `quat_euler`, product, `conjugate`, `normalize`, `to_mat4` by numerators
   over |q|², `rotate`; assert `sin_cos(kQuarterTurn/2)` has s == c bits (else the snap of plan P4) — files: `quat.cpp` —
   test: `test_quat.cpp`, `test_math3d_exact.cpp` (quarter/half/three-quarter turns about x, y, z map axes exactly) —
   covers FR-1, FR-3
-- [ ] **T1.4** `look_rotation` (Shepperd), `nlerp`, `slerp` (Eberly polynomial, shortest arc) — files: `quat_basis.cpp`,
+- [x] **T1.4** `look_rotation` (Shepperd), `nlerp`, `slerp` (Eberly polynomial, shortest arc) — files: `quat_basis.cpp`,
   `quat_interp.cpp` — test: `test_quat_interp.cpp` (t = 0/1 exact, midpoints, opposite hemispheres) — covers FR-1, FR-3
-- [ ] **T1.5** `Mat4` product, `transpose`, `transform_point/direction`, `Mat4 × Vec4`, `inverse` (cofactors, det test),
+- [x] **T1.5** `Mat4` product, `transpose`, `transform_point/direction`, `Mat4 × Vec4`, `inverse` (cofactors, det test),
   `inverse_affine`, `to_mat4(Transform3D)`, `is_finite` — files: `mat4.cpp`, `mat4_inverse.cpp`, `transform3d.cpp`,
   `finite3d.cpp` — test: `test_mat4.cpp`, `test_mat4_inverse.cpp`, `test_transform3d.cpp` (translation-only = one
   addition per axis) — covers FR-1, FR-3
-- [ ] **T1.6** `look_at`, `perspective`, `orthographic` (tan = s/c) — files: `projection.cpp` — test:
+- [x] **T1.6** `look_at`, `perspective`, `orthographic` (tan = s/c) — files: `projection.cpp` — test:
   `test_projection.cpp` (−z forward, near → −1, far → +1), `test_math3d_accuracy.cpp` (seeded inputs vs `double`: FR-3's
   bounds; write the measured maxima into plan 026 "Stage 1 results") — covers FR-1, FR-2, FR-3, AC-3
-- [ ] **T1.7** Golden script part 1 (math ops only) in `tests/gfx3d/golden_ops.cpp` (engine integer hash, no `rand`),
+- [x] **T1.7** Golden script part 1 (math ops only) in `tests/gfx3d/golden_ops.cpp` (engine integer hash, no `rand`),
   the checkpoints every 10 000 — test: `test_golden_3d.cpp` (`math` golden recorded) — covers AC-2
 
 ## Stage 2 — meshes from code (026a)

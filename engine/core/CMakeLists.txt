@@ -336,6 +336,23 @@ target_sources(nnh_core PRIVATE ${_nnh_hierarchy_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_hierarchy_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# 3D math (spec 026, D44): vectors, quaternions, matrices, projections. Only IEEE + - * /, a correctly rounded square
+# root (-fno-math-errno: one instruction, no libm) and sin_cos, without fused multiply-add: the same bits on every
+# compiler and on the 3DS. A game that doesn't use <nnh/math3d.hpp> links none of it.
+set(_nnh_math3d_sources
+    src/math3d/mat4.cpp
+    src/math3d/mat4_inverse.cpp
+    src/math3d/projection.cpp
+    src/math3d/quat.cpp
+    src/math3d/quat_basis.cpp
+    src/math3d/quat_interp.cpp
+    src/math3d/transform3d.cpp
+    src/math3d/vec3.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_math3d_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_math3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

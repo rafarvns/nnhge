@@ -591,3 +591,47 @@ Unchanged from the first check. Notes: III — the picasso step and the per-mode
 measured (T0.2/T9.4); VII — `gfx3d.hpp` passes the 150-line aim (comments), no `.cpp` near 400; XI — 3D is off by
 default and a 2D game links no 3D code (P14's null checks are the only cost, recorded against AC-9). No exception needs
 the maintainer's approval beyond the decisions above.
+
+## Stage results and refinements
+
+### Stage 0 results (T0.1–T0.2)
+
+- T0.1: spec 022 is on `main` with the names the plan expected: `nnh::sin_cos` and the quarter-turn constants in
+  `<nnh/transform.hpp>`, `detail::sin_cos_inline` in `src/transform/sin_cos.hpp`, `detail::sin_quarter_inline` in
+  `src/core/det_sine.hpp`; `nnh_tests transform` green.
+- T0.2 baselines (Windows, WinLibs GCC, devkitARM; builds of other worktrees ran at the same time, so times are noisy):
+
+  | Measure | Value |
+  |---------|-------|
+  | `hello` 3DS Release `.text` / `.data` / `.bss` | 201 124 / 28 352 / 106 680 B |
+  | `hello.3dsx` (3DS Release) | 246 512 B |
+  | `hello.exe` (PC Release) / its `.text` | 278 856 B / 130 668 B |
+  | edit `examples/hello/main.cpp` → rebuilt (pc-debug / 3ds-release) | 1.7 s / 3.0 s |
+  | pc-release, 3ds-release, 3ds-dev builds | 0 warnings |
+
+- `scripts/example_shots.sh [preset] [frames] [out]` (new) runs every example headless (`SDL_VIDEO_DRIVER=offscreen`,
+  software renderer, `NNH_SIM_RENDERER=sdl`) for 30 frames and prints each screenshot's SHA-256; the pc-debug list is
+  saved in `build/baseline-026/shots.txt` and compared at every stage end (AC-9: 2D frames byte-identical).
+
+### Stage 1 results and refinements (T1.1–T1.7)
+
+- Files: `is_finite(Mat4)` lives in `mat4.cpp` (no `finite3d.cpp`); the look basis shared by `look_rotation` and
+  `look_at` and the eighth-turn snap are in `quat_basis.cpp` (`math3d_internal.hpp` declares them).
+- **Eighth-turn snap (P4)**: rather than testing the bits of `sin_cos(kQuarterTurn/2)`, `quat_axis_angle` and
+  `perspective` pass every half angle through `detail::snap_eighth`: when |sin| and |cos| differ by at most 2⁻²⁰ both get
+  the larger magnitude with their own signs. Quarter, half and three-quarter turns (and their products) map axes to axes
+  exactly; `perspective(kQuarterTurn, …)` has a focal length of exactly 1.
+- **slerp**: Eberly's 8-term polynomial measured a worst error of 1.9·10⁻⁵ against `double` over the whole range
+  (x = cos θ ∈ [0, 1]), above FR-3's 2⁻¹⁸. The same recurrence with **16 terms** and the last pair scaled by
+  1 + μ = 1.9092 (fitted by search) measures **1.2·10⁻⁷** (float rounding); cost 16 multiply-adds per coefficient.
+- `normalize` is overloaded for `Vec3` and `Quat` (P3), so a braced argument is ambiguous: write
+  `normalize(Vec3{…})` (documented in the API page).
+- Degenerate look directions: `forward` parallel to `up` uses the up (0, 0, ∓1), so a camera looking straight down has
+  −z (north) at the top of the screen and +x on the right.
+- Measured accuracy (AC-3, `test_math3d_accuracy.cpp`, `test_quat_interp.cpp`): unit quaternions from axis-angle
+  8.7·10⁻⁷, rotated directions 1.4·10⁻⁶ (bound 2⁻¹⁸ = 3.8·10⁻⁶); points through chains of 8 transforms with coordinates up
+  to 4096: 3.5·10⁻⁶ of the magnitude (bound 2⁻¹⁶ = 1.5·10⁻⁵); slerp 1.2·10⁻⁷.
+- T1.7: the golden script lives in the example from the start (`examples/models/self_check.{hpp,cpp}`, compiled into
+  `nnh_tests` with `-ffp-contract=off`), so the console and the tests run the same code. Inputs are FNV-1a hashes scaled
+  by powers of two (exact); stage 1's math-only golden after 50 000 operations: `436E15A9` (checkpoints `376AB001`,
+  `804B29F2`, `C4D52290`, `48556FCB`). It changes once, in T4.10, when frustum tests, orders and `to_screen` join.

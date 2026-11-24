@@ -51,3 +51,12 @@ NNH_TEST(set_desc_arms_a_new_burst) {
     e.update();
     CHECK(e.alive() == 3);
 }
+
+NNH_TEST(set_desc_without_the_burst_lets_a_one_shot_finish) {
+    ParticleDesc shot;
+    shot.bursts[0] = {.at = nnh::Frames{10}, .count = {3, 3}};
+    ParticleEmitter e = particles_test::make(shot, 16);
+    CHECK(!e.finished()); // its burst is still to come
+    e.set_desc(ParticleDesc{}); // no burst any more: nothing left to emit
+    CHECK(e.finished());
+}

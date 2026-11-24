@@ -152,6 +152,22 @@ with 300 sprites, or 600 sprites with 4 layers): the benchmark of
 bonus level; `PLATFORMER_DEMO=bench` on PC); A there runs its automatic gate, which finds the limits by itself
 (`PLATFORMER_DEMO=gate`, or the script `examples/platformer/tests/gate.nnhs` with `nnh run`).
 
+### Particle batches
+
+`max_particles` (default 0, up to 65535) caps the particle quads drawn per frame (both screens) by
+`ParticleEmitter::draw` ([particles.md](particles.md#drawing)). 0 = no particle drawing and no memory for it; otherwise
+about 8 KB once (32 batch records and a 128-item scratch), and on 3DS ~192 bytes of `Linear` per quad (citro2d's
+buffer). Each emitter draw is **one** command of `max_draws`, sorted by layer and call order with sprites and tile
+layers; its particles are expanded at the end of the frame into the same 2D items a `gfx::draw` (or `fill_rect`) would
+make. Over the cap: Debug/Development assert, Release drops the extra particles and logs one warning per frame;
+drawing with `max_particles = 0` asserts with the fix. At most 32 particle draws per frame. `gfx::stats()` adds
+`particles_last_frame`, `max_particles` and `dropped_particles` (since `init()`); the debug overlay shows a `particles`
+line when `max_particles > 0`. A game that never draws or destroys an emitter links none of this code (D39).
+
+```cpp
+nnh::init({.title = "Fireworks", .gfx = {.max_particles = 2048}});
+```
+
 ## Drawing a world transform
 
 `gfx::draw(screen, texture, world, options)` draws at a `WorldTransform2D`'s position with its rotation added and its

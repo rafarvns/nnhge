@@ -150,12 +150,13 @@ NNH_TEST(particles_are_culled_one_by_one_at_the_reach_boundary) {
     e.emit_at(Vec2{-6, 100}, 1);     // exactly at the reach: kept
     e.emit_at(Vec2{-6.01f, 100}, 1); // just past it: culled
     e.emit_at(Vec2{406, 100}, 1);    // right edge: kept
+    e.emit_at(Vec2{406.5f, 100}, 1); // past it: culled
     e.emit_at(Vec2{200, 246.5f}, 1); // below: culled
     e.emit_at(Vec2{200, 120}, 1);
     CHECK(nnh::frame());
     e.draw(Screen::Top);
     CHECK(nnh::frame());
-    CHECK(e.stats().drawn == 3 && e.stats().culled == 2);
+    CHECK(e.stats().drawn == 3 && e.stats().culled == 3);
     CHECK(particles_test::fake::state().last_frame_item_count == 3);
     nnh::shutdown();
 }

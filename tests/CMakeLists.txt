@@ -555,6 +555,7 @@ target_sources(nnh_tests PRIVATE
     gfx/test_sprite_place.cpp
     particles/test_appearance.cpp
     particles/test_bursts.cpp
+    particles/test_clock_edges.cpp
     particles/test_create.cpp
     particles/test_desc_check.cpp
     particles/test_directions.cpp

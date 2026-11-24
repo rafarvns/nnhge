@@ -122,6 +122,11 @@ added and its scale multiplied into `options` (region, pivot, flips, tint, opaci
 no sprite component: draw your nodes in your own loop (`world.each<nnh::Node, Sprite>`). Centre pivots on mirrored
 sprites. Rotated texels are each backend's rasterisation (spec 004): compare logged values, not those pixels.
 
+**Particle emitters that follow a node.** After the pass, `emitter.set_transform(node.world())` then
+`emitter.update()`: a world-space emitter leaves a trail behind the node, a local-space one carries its particles with
+it, turned and mirrored ([particles.md](particles.md#world-and-local-space-following-things)). The platformer's muzzle
+flashes start at a barrel's stored world transform this way.
+
 ### Collision boxes that follow
 
 `nnh::bounds(world.map, local_box)` is the axis-aligned box of a local rectangle under a world transform (the enclosing

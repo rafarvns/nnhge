@@ -83,6 +83,8 @@ NNH_TEST(level_effects_puff_where_a_bullet_stops_on_a_wall) {
         ++frames;
     }
     CHECK(l.fx.puff().alive() == LevelEffects::kWallPuff);
+    for (int f = 0; f < 5; ++f) l.frame(); // still stuck: no second puff
+    CHECK(l.fx.puff().stats().emitted == LevelEffects::kWallPuff);
     for (int i = 0; i < l.fx.puff().alive(); ++i) CHECK(l.fx.puff().particle(i).velocity.x < 0); // along the normal
 }
 
@@ -91,6 +93,8 @@ NNH_TEST(level_effects_flash_at_the_muzzle_and_puff_on_a_hit) {
     l.prefabs.library.spawn_with(l.world, l.prefabs.turret, level::Body{Rect{32, 64, 16, 16}, layers::kEnemy});
     l.player.spawn({100, 80}); // on the floor in front of the wall, level with the turret
     l.frame();
+    CHECK(l.fx.flash().stats().emitted == LevelEffects::kMuzzleFlash);
+    l.frame(); // cooling down: no flash
     CHECK(l.fx.flash().stats().emitted == LevelEffects::kMuzzleFlash);
     CHECK(l.fx.flash().particle(0).position.x > 40); // out of the barrel, to the right
     int frames = 0;

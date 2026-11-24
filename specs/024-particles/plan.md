@@ -1,6 +1,6 @@
 # Plan 024: Particles
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 (console T10.2 and Linux T9.1 pending); approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D39 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 022 (`Transform2D`, `WorldTransform2D`, `to_world`, `transform_point`, `transform_direction`, `inverse`,
 `bounds`, `is_finite`, the inline `sin_cos_inline`/`is_finite_bits` of `src/transform/sin_cos.hpp`, the mirror rule of
@@ -988,3 +988,31 @@ Miss model and expected console numbers (upper × 1.3 in brackets):
 - `frame`: ≈ 0.45 ms of update (560 particles) + 512 × 8.0–8.5 µs + 300 × 11.5–12.8 µs + ≈ 1.5 ms → **9.7–10.7 ms
   (13.9)**: PASS, 0 missed expected.
 - `offscreen`: one bounds test per batch → **≈ 0 ms**: PASS by construction.
+
+### Stage 8 results
+
+- **T8.1 mutation pass** (`build/ref-024/mutants.py`, 65 hand mutants of `src/particles/*`, `gfx/particle_batches.cpp`,
+  `gfx_frame.cpp`'s dispatch, `sprite_place.hpp` and the platformer's effects; each against the whole `nnh_tests`,
+  pc-release — the Release path of the misuse tests): **62 killed, 3 equivalent**. Nine survivors of the first run
+  became tests (`tiny_velocities_flush_to_zero_under_drag` checks one frame after the threshold,
+  `flush_threshold_is_two_to_the_minus_60`, `rate_births_come_before_bursts_in_a_frame`, the three tests of
+  `test_clock_edges.cpp` (a looping duration of 10.5 frames keeps its remainder, a looping burst-only emitter is never
+  finished, `start()` while emitting changes nothing), a particle just right of the view culled,
+  `set_desc_without_the_burst_lets_a_one_shot_finish`, and the platformer's puff and flash counted again a few frames
+  later); each re-run killed it. Equivalent: m04 (`h.px + h.vx` after `h.vx = vx`), m40 (the OverLife clamp: `m mod n`
+  keeps any frame valid and `t` reaches 1 only by rounding), m42 (the bucket table's `<=`: the forward walk corrects
+  the start). The run was interrupted once with a mutant applied (`particle_batches.cpp`); it was restored by hand and
+  checked (`git diff` clean).
+- **T8.2**: `scripts/check_release_strings.sh` passes on the 3ds-release and pc-release `particles` executables; the
+  Release binaries keep only the two budget warnings (`… particles dropped this frame …`, `particles not drawn:
+  AppConfig::gfx.max_particles is 0`, as the tile ones); no misuse text, no "emitter full" warning.
+- **T8.3 opt-in by linking** (undefined symbols of the 3ds-release objects instead of probe programs): only
+  `emitter_create.o` reaches gfx (`gfx_forget_particles` → `particle_batches.o` and its registrar); only
+  `emitter_draw.o` references `particle_expand` and `gfx_record_particles`; `particle_batches.o` references only
+  `g_gfx_particle_ops`; no particles object references `nnh::data::` or another module's header. So a game that only
+  updates emitters links the ops (so `max_particles` works) but no expansion; `hello` has no particle symbol (only the
+  null `g_gfx_particle_ops`).
+- **T8.4**: every reference screenshot identical (the replay at 312 is stage 6's new reference); `.text`
+  (3ds-release): sprites 206 180 (+200), data 283 708 (+144), camera 222 308 (+144), platformer 377 852 (+32 040: the
+  particles module and three emitters), particles 272 188. Build times and the data-only rebuild of a preset were not
+  re-measured (the lead stopped parallel work to save quota): left for T11.4.

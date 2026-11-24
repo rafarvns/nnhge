@@ -87,6 +87,20 @@ receiving screen pixels:
   destination rectangle (a diagonal flip with unequal sides uses a pre-swapped rectangle); the fake platform records
   the zoomed items, batches and quads for tests.
 
+## Particle batches (D39)
+
+A second kind of batch command ([particles.md](../api/particles.md), spec 024): `ParticleEmitter::draw` records a
+particle batch (`{expand function, source = the emitter's block, texture or none, tint × opacity, layer,
+ignore_camera}`) in a table of 32 per frame, and one draw-list command whose `tile_batch` index is 64 + i. The draw
+list is unchanged: any batch index makes a split point (a screen holds up to 64 tile and 32 particle splits). At
+submit, `gfx_frame.cpp` sends a split below 64 to the tile path and one from 64 to the particle batches through
+`detail::g_gfx_particle_ops` — null unless `gfx/particle_batches.o` is linked (its static registrar sets it before
+`main()`), so a game without particles pays a few null checks. The batch's expand function (in the particles module)
+reads the emitter then, skips it when its bounds grown by its largest quad miss the view, and writes the visible
+particles' `DrawItem2D`s through the placement shared with `DrawList::build` (`gfx/sprite_place.hpp`: camera, zoom,
+rounding) into a 128-item scratch, sent with `platform::draw_2d` chunk by chunk within `AppConfig::gfx.max_particles`.
+No contract change; the 3DS sizes citro2d for `max_particles` more objects. A destroyed emitter forgets its batches.
+
 ## Why record instead of drawing on the spot
 
 - **Order by layer** without making the game sort its calls.

@@ -6,6 +6,7 @@
 
 #include "alloc_counter.hpp"
 #include "nnh/memory.hpp"
+#include "particles/particle_bits.hpp"
 #include "particles_fixture.hpp"
 
 using nnh::Frames;
@@ -80,11 +81,38 @@ NNH_TEST(tiny_velocities_flush_to_zero_under_drag) {
     d.damping = 59;
     d.lifetime = {Frames{100}, Frames{100}};
     ParticleEmitter e = particles_test::make(d, 4);
-    e.emit(1);
-    for (int i = 0; i < 40; ++i) e.update();
-    const nnh::ParticleView v = e.particle(0);
-    CHECK(particles_test::bits(v.velocity.x) == 0); // +0, never a subnormal
-    CHECK(particles_test::bits(v.velocity.y) == 0);
+    e.emit(1); // 1.7e-17 px per frame: kept (above 2^-60)
+    CHECK(particles_test::bits(e.particle(0).velocity.x) != 0);
+    e.update(); // × (1 − 59/60) = 2.8e-19: below 2^-60, so +0 (a normal float on the PC, but the rule is the same)
+    CHECK(particles_test::bits(e.particle(0).velocity.x) == 0);
+    for (int i = 0; i < 40; ++i) {
+        e.update();
+        const nnh::ParticleView v = e.particle(0);
+        CHECK(particles_test::bits(v.velocity.x) == 0); // +0, never a subnormal
+        CHECK(particles_test::bits(v.velocity.y) == 0);
+    }
+}
+
+NNH_TEST(flush_threshold_is_two_to_the_minus_60) {
+    const float at = std::bit_cast<float>(0x21800000u);    // 2^-60
+    const float below = std::bit_cast<float>(0x217FFFFFu); // just under it
+    CHECK(nnh::detail::flush_tiny(at) == at && nnh::detail::flush_tiny(-at) == -at);
+    CHECK(particles_test::bits(nnh::detail::flush_tiny(below)) == 0);
+    CHECK(particles_test::bits(nnh::detail::flush_tiny(-below)) == 0);
+}
+
+NNH_TEST(rate_births_come_before_bursts_in_a_frame) {
+    ParticleDesc d;
+    d.rate = 120; // two a frame, at fractions 0.5 and 1
+    d.bursts[0] = {.count = {3, 3}};
+    d.lifetime = {Frames{100}, Frames{100}};
+    ParticleEmitter e = particles_test::make(d, 16);
+    e.set_position({100, 0});
+    e.update();
+    CHECK(e.alive() == 5);
+    CHECK(e.particle(0).position.x > 49.99f && e.particle(0).position.x < 50.01f); // the rate's, spread
+    CHECK(e.particle(1).position.x == 100);
+    for (int i = 2; i < 5; ++i) CHECK(e.particle(i).position.x == 100 && e.particle(i).age.ticks == 0); // the burst
 }
 
 NNH_TEST(update_allocates_nothing) {

@@ -98,6 +98,10 @@ under `parent` — position through the parent's inverse (within FR-3's bound), 
 (exact without shear; for power-of-two scales and quarter turns the round trip `compose(parent, relative(...))` gives
 back the drawing values bit for bit). It needs no sine.
 
+Particle emitters take these values as their place: `ParticleEmitter::set_transform(Transform2D)` or
+`(WorldTransform2D)`; a local-space emitter draws its particles through the map by the mirror rule above
+([particles.md](particles.md#world-and-local-space-following-things)).
+
 ## Bounds
 
 `bounds(map, rect)` is the axis-aligned box of a local rectangle (a collision box) under a map: an unrotated map gives

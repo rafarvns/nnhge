@@ -1,6 +1,7 @@
 # Tasks 024: Particles
 
-Status: approved 2026-11-24 (overnight pre-approval)
+Status: implemented 2026-11-24 through stage 8 and the stage 11 docs (T9.1, T10.x and the merge T11.7 for the lead);
+approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -166,18 +167,18 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   goldens from pc-debug in `kParticlesCheckGolden`/`kParticlesCheckpoints`, equal in pc-release. Test:
   `tests/particles_example/test_self_check.cpp` (on the fake platform; a one-value change in the script fails it —
   checked once by hand). Files: those, `tests/CMakeLists.txt` (024's block). Covers AC-2, FR-16.
-- [ ] **T5.2** D29 amendment, part 1 (core): `FieldOptions::ascending`/`up_to` (`data.hpp`), `FieldInfo`'s two bools,
+- [~] **T5.2** (not done: presets by the spec's fallback, plan "Stage 5 results") D29 amendment, part 1 (core): `FieldOptions::ascending`/`up_to` (`data.hpp`), `FieldInfo`'s two bools,
   `data_tables.hpp`, `schema_write.cpp` (tokens only when set), `schema_check.cpp` (valid places), `data_validate.cpp`
   (ascending → `Corrupted`), `data_apply.cpp` (`up_to` arrays: written items only). Test:
   `tests/data_assets/test_ascending.cpp`, `tests/data_assets/test_up_to.cpp`; every existing data test and fixture
   unchanged; the description text of `examples/data`'s schema byte-identical to T0.1's (fingerprints unchanged). Covers
   FR-21, X.
-- [ ] **T5.3** D29 amendment, part 2 (converter): `tools/assetc/src/schema_read.cpp` (the tokens),
+- [~] **T5.3** (not done: presets by the spec's fallback, plan "Stage 5 results") D29 amendment, part 2 (converter): `tools/assetc/src/schema_read.cpp` (the tokens),
   `data_values.cpp`/`data_writer.cpp` (`file:line` messages; short `up_to` arrays with their count). Test:
   `tools/assetc/tests/` (schema read, conversion, the fuzz target still clean), fixtures
   `tests/data/data_assets/bad/not_ascending.enemy` and `too_many_up_to.enemy` with their messages (ctests
   `data_convert_rejects_*`); `data check: PASS checksum 0xD5BD3020 (… index 595 bytes)`. Covers FR-21, AC-3.
-- [ ] **T5.4** The preset schema: `engine/core/schemas/particles_schema.cpp`, `NNH_PARTICLES_SCHEMA` in
+- [~] **T5.4** (not done: presets by the spec's fallback, plan "Stage 5 results") The preset schema: `engine/core/schemas/particles_schema.cpp`, `NNH_PARTICLES_SCHEMA` in
   `cmake/nnh_data.cmake`; a test schema program writes `tests/data/particles/schema.nnhschema` (ctest compares it to the
   committed copy); fixtures `tests/data/particles/good/sparks.particles` (E6's description) and `bad/{unsorted_keys,
   too_many_keys,out_of_range,unknown_shape}.particles` with messages; ctests `particles_preset_accepts_good`,
@@ -252,20 +253,20 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 8: mutation testing, opt-in checks
 
-- [ ] **T8.1** Mutation pass as in plans 019–025: hand mutants (`build/ref-024/mutants.py`, applied one at a time by
+- [x] **T8.1** Mutation pass as in plans 019–025: hand mutants (`build/ref-024/mutants.py`, applied one at a time by
   `mutate.py`, the whole `nnh_tests` each) of `src/particles/*` (the update order, the flush, compaction, the accumulator,
   bursts, `finished()`, the sampler densities, the outward normalisation, the mirror rule, segments and `mul8`, the frame
   rule, culling, the budget), `src/gfx/particle_batches.cpp`, `sprite_place.hpp`, the D29 rules and the platformer's
   effects; Release-path mutants in pc-release; survivors become tests or are argued equivalent. Files: plan.md
   ("Mutation testing"). Covers VI.
-- [ ] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `particles`
+- [x] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `particles`
   executables (the drop warning and misuse texts are Debug/Development only). Covers FR-18, FR-25.
-- [ ] **T8.3** [P] Opt-in by linking: probes (`build/ref-024/probe_*`, not committed) linked against the 3ds-release
+- [x] **T8.3** [P] Opt-in by linking: probes (`build/ref-024/probe_*`, not committed) linked against the 3ds-release
   libraries: a game that only updates emitters links no data code and no `particle_expand` code; a game that draws
   them has `g_gfx_particle_ops` set at `init()` (the probe logs it); a particles game without the preset schema has no
   `data::` symbol (the 3DS map file); `hello` has no particle symbol and sizes within T4.6's budget. Files: plan.md
   ("Stage 8 results"). Covers FR-26, AC-8.
-- [ ] **T8.4** Regression and build times: `compare.sh` (every T0.2 reference identical, the platformer's new ones from
+- [~] **T8.4** (screenshots and .text done; build times left) Regression and build times: `compare.sh` (every T0.2 reference identical, the platformer's new ones from
   T6.2); every example's console script passes with `--pc`; `.text` of `sprites`, `platformer`, `data`, `camera`,
   `particles` recorded; edit `examples/particles/gallery.cpp` → simulator and `.3dsx` times against T0.1's and constitution
   III; edit `assets/fx/embers.particles` → a data-only rebuild (no C++ compiled; time recorded). Files: plan.md ("Stage 8
@@ -306,26 +307,26 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/particles.md`: emitters and capacities, the description
+- [x] **T11.1** (the Old 3DS costs added after T10.2) `docs/api/particles.md`: emitters and capacities, the description
   and its units, emission (rate, bursts, one-shots, on demand), shapes and directions, motion and damping, colour, size
   and frames over life, local and world space, following an entity or a node (copy its world transform after the pass),
   sub-frame spreading and `jump`, determinism and seeds, update order and scene binding, drawing, layers, culling,
   `max_particles`, the full case, presets (the schema line in `DATA_SCHEMA`, the ticks table, the key rules), stats,
   costs, memory, misuse, pitfalls (squares don't rotate; switching space needs a restart; bound emitters follow the
   previous transform); header comments (allocates? per-frame safe? misuse?). Covers VIII, AC-9.
-- [ ] **T11.2** Other pages: `docs/api/gfx.md` (capacities, stats, particle batches; after the tile section), `app.md`
+- [x] **T11.2** Other pages: `docs/api/gfx.md` (capacities, stats, particle batches; after the tile section), `app.md`
   (`max_particles`), `docs/api/data.md` (`.ascending`, `.up_to`, the engine's preset schema), `transform.md`/`hierarchy.md`
   (the follow-a-node pattern), `animation.md` (frames from a sprite library), `docs/architecture/rendering.md`
   ("Particle batches (D39)" after "Zoom (D33)"), `project-structure.md` (`engine/core/schemas/`), `patterns.md` (the row:
   implemented), `docs/REFERENCES.md` (Godot, Unity, LÖVE, Phaser, Nystrom), `CLAUDE.md` (layout paragraph after
   "Sprite animation", commands after the `nnh run data` line, `particles/` in the layout); `python -I
   scripts/docs_tool.py check` → 0 broken links. Covers AC-9.
-- [ ] **T11.3** `docs/architecture/decisions.md`: D39 change-log note "implemented" with the stage refinements; the D29
+- [x] **T11.3** `docs/architecture/decisions.md`: D39 change-log note "implemented" with the stage refinements; the D29
   amendment note confirmed. Covers AC-9.
 - [ ] **T11.4** Final measurements (header costs, build times, data-only rebuild, `hello` sizes, `.text` growth) in
   plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.5** `docs/ROADMAP.md`: the "Particles" checkbox, with the implemented summary.
-- [ ] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.5** `docs/ROADMAP.md`: the "Particles" checkbox, with the implemented summary.
+- [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
 - [ ] **T11.7** (the lead, after 022 and whichever of 023/025 are done) Merge `spec-024` into `main` per plan.md's
   "Merge notes"; then the full ctest (pc-debug, pc-release), every example's `--pc` script, AC-2's golden, 022's, 023's
   and 025's goldens and the replay ctest with the tree's lines, one 3ds-release build; T10.2 run 2 is repeated if a merge

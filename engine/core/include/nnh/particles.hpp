@@ -10,10 +10,9 @@
 /// float operation lives in src/particles/*.cpp, compiled with -ffp-contract=off).
 ///
 /// @code
-/// nnh::ParticleDesc sparks{.speed = {60, 120}, .spread = nnh::kFullTurn, .gravity = {0, 200},
+/// nnh::ParticleDesc sparks{.spread = nnh::kFullTurn, .speed = {60, 120}, .gravity = {0, 200},
 ///                          .lifetime = {nnh::Frames{20}, nnh::Frames{30}}, .color_min = nnh::colors::yellow,
-///                          .color_max = nnh::colors::yellow};
-/// sparks.size = {2, 3};
+///                          .color_max = nnh::colors::yellow, .size = {2, 3}};
 /// auto fx = nnh::ParticleEmitter::create(sparks, 256);      // in on_enter (allocates once)
 /// fx.value().emit_at(coin_position, 16);                     // when a coin is taken
 /// fx.value().update();                                       // once per frame

@@ -41,11 +41,13 @@ void BenchScene::on_enter() {
     if (!bench_) NNH_LOG_ERROR(example, "particles bench: FAIL no memory");
 }
 
+// A workload's cost per frame: its own time less the timer's (the base run times an empty call: two time::now()
+// reads, each a system tick and a 64-bit division on the 3DS), plus its share of gfx submit (spec 024 T10.3).
 double BenchScene::cost(Phase p) const {
     const Sum& s = sums_[p];
     const Sum& b = sums_[kBase];
     const double n = s.n > 0 ? s.n : 1, bn = b.n > 0 ? b.n : 1;
-    return s.own / n + (s.submit / n - b.submit / bn);
+    return (s.own / n - b.own / bn) + (s.submit / n - b.submit / bn);
 }
 
 void BenchScene::finish() {
@@ -54,8 +56,9 @@ void BenchScene::finish() {
     char line[128] = {};
     bool pass = true;
     if (p == kBase) {
-        std::snprintf(line, sizeof line, "particles bench: base gfx submit avg %.4f ms",
-                      sums_[p].submit / (sums_[p].n > 0 ? sums_[p].n : 1));
+        const double n = sums_[p].n > 0 ? sums_[p].n : 1;
+        std::snprintf(line, sizeof line, "particles bench: base gfx submit avg %.4f ms timer %.4f ms",
+                      sums_[p].submit / n, sums_[p].own / n);
     } else if (p == kDraw512) {
         std::snprintf(line, sizeof line, "particles bench: draw512 avg %.3f ms", cost(p));
     } else if (p == kSprite512) {

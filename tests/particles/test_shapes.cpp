@@ -140,3 +140,20 @@ NNH_TEST(reciprocal_sqrt_is_within_float_precision) {
         CHECK(std::fabs(nnh::detail::reciprocal_sqrt(x) - exact) / exact < 1e-6);
     }
 }
+
+NNH_TEST(ring_pick_threshold_splits_the_24_bit_picks_exactly) {
+    // m < fraction_threshold(x) ⇔ m · 2⁻²⁴ < x, for every 24-bit pick m near the threshold and at the ends.
+    const float fractions[] = {0.0f, 1.0f, 0.5f, 2.0f * 12 / 42, 2.0f * 5 / 35, 1.0f / 3, 0.999999f, 1.0e-9f,
+                               5.9604645e-8f, 0.70710677f, 2.0f * 17 / 34};
+    for (float x : fractions) {
+        const std::uint32_t t = nnh::detail::fraction_threshold(x);
+        CHECK(t <= 16777216u);
+        for (std::int64_t m = static_cast<std::int64_t>(t) - 3; m <= static_cast<std::int64_t>(t) + 3; ++m) {
+            if (m < 0 || m >= 16777216) continue;
+            const float pick = static_cast<float>(m) * (1.0f / 16777216.0f);
+            CHECK((static_cast<std::uint32_t>(m) < t) == (pick < x));
+        }
+        CHECK((0u < t) == (0.0f < x));
+        CHECK((16777215u < t) == (static_cast<float>(16777215) * (1.0f / 16777216.0f) < x));
+    }
+}

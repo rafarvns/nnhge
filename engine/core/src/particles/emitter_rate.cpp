@@ -50,7 +50,7 @@ void rate_births(ParticleBlock& b) {
     b.next_number += count;
     if (!d.world) {
         const BirthMap m = birth_map(b, emitter_place(b));
-        for (int j = 0; j < made; ++j) birth(b, first + static_cast<std::uint32_t>(j), m, 0.0f);
+        d.births(b, first, made, m, 0.0f);
         return;
     }
     const float f0 = static_cast<float>(kRateThreshold - a0) * d.rate_first;

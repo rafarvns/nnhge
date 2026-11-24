@@ -25,15 +25,12 @@ struct ParticleCurve {
 using ParticleColorCurve = ParticleCurve<4>;
 using ParticleSizeCurve = ParticleCurve<1>;
 
-struct ParticleDerived;
+struct ParticleBlock;
+struct BirthMap;
 
-/// A shape sample in local space: a position and, when the shape gives one, an outward unit direction.
-struct ShapeSample {
-    Vec2 position{};
-    Vec2 outward{};
-    bool has_outward = false;
-};
-using ShapeSampler = void (*)(const ParticleDerived& d, std::uint32_t base, ShapeSample& out);
+/// Writes `count` particles numbered from `first` at index alive onwards (room must exist), each pre-aged by `pre_age`
+/// of a frame: the births of one shape, its sampler and direction inline (particle_births.cpp).
+using BirthsFn = void (*)(ParticleBlock& b, std::uint32_t first, int count, const BirthMap& at, float pre_age);
 
 struct ParticleDerived {
     // Emission
@@ -45,11 +42,13 @@ struct ParticleDerived {
     float rate_first = 0;   ///< frame fraction per unit of (threshold − accumulator): 1 / step
     float rate_spacing = 0; ///< frame fraction between two crossings: threshold / step
     // Shape
-    ShapeSampler sample = nullptr;
+    BirthsFn births = nullptr; ///< the shape's births
     Vec2 box{};
     Vec2 half_box{};
     float edge_top = 0, edge_right = 0, edge_bottom = 0, perimeter = 0; ///< Box edge: cumulative lengths
     float inner = 0, ring_span = 0, ring_uniform = 0; ///< Circle: radius = inner + span × x
+    /// Circle: the pick's 24-bit integer m takes the uniform fraction when m < ring_pick (m · 2⁻²⁴ < ring_uniform)
+    std::uint32_t ring_pick = 0;
     float arc_start = 0, arc = 0;
     float length = 0;
     // Direction and speed, per frame
@@ -66,7 +65,7 @@ struct ParticleDerived {
     float spin_min = 0, spin_span = 0;
     std::uint32_t life_min = 0, life_count = 1; ///< ticks: min + hash_below(h, count)
     // Appearance
-    std::uint8_t color_min[4] = {};
+    float color_base[4] = {}; ///< the description's color_min channels as floats (exact)
     float color_span[4] = {};
     float size_min = 0, size_span = 0;
     float largest_size = 0; ///< the largest start size × the largest size key (culling)
@@ -84,6 +83,9 @@ struct ParticleDerived {
 
 /// Fills `out` from a checked description.
 void particle_derive(const ParticleDesc& desc, ParticleDerived& out);
+
+/// The smallest m with m · 2⁻²⁴ ≥ `fraction` (0..1): m < it ⇔ m · 2⁻²⁴ < fraction, for every 24-bit m.
+std::uint32_t fraction_threshold(float fraction);
 
 /// Builds a curve from used keys (`at` ≥ 0, ascending): none → `fallback`, one → constant.
 void build_color_curve(const ParticleColorKey* keys, int count, ParticleColorCurve& out);

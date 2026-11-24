@@ -310,6 +310,7 @@ add_executable(nnh_tests
     transform/test_compose.cpp
     transform/test_relative.cpp
     transform/test_sin_cos.cpp
+    transform/test_sin_cos_flat.cpp
     tween/test_ease.cpp
     tween/test_ease_golden.cpp
     tween/test_ease_math.cpp
@@ -741,9 +742,11 @@ target_sources(nnh_tests PRIVATE
     camera/test_mix32.cpp
     gfx/test_sprite_place.cpp
     particles/test_appearance.cpp
+    particles/test_birth_golden.cpp
     particles/test_bursts.cpp
     particles/test_clock_edges.cpp
     particles/test_create.cpp
+    particles/test_cull_reach.cpp
     particles/test_desc_check.cpp
     particles/test_directions.cpp
     particles/test_draw.cpp

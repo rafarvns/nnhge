@@ -80,10 +80,11 @@ void derive_shape(const ParticleDesc& d, ParticleDerived& out) {
     out.ring_span = d.radius - d.inner_radius;
     const float sum = d.inner_radius + d.radius;
     out.ring_uniform = sum > 0 ? (2.0f * d.inner_radius) / sum : 0.0f;
+    out.ring_pick = fraction_threshold(out.ring_uniform);
     out.arc_start = d.arc_start;
     out.arc = d.arc;
     out.length = d.length;
-    out.sample = shape_sampler(d.shape, d.edge);
+    out.births = births_for(d.shape, d.edge);
     out.cone = d.direction == ParticleDirection::Cone;
     out.cone_start = d.angle - d.spread * 0.5f;
     out.cone_spread = d.spread;
@@ -113,7 +114,7 @@ void derive_appearance(const ParticleDesc& d, ParticleDerived& out) {
     const std::uint8_t lo[4] = {d.color_min.r, d.color_min.g, d.color_min.b, d.color_min.a};
     const std::uint8_t hi[4] = {d.color_max.r, d.color_max.g, d.color_max.b, d.color_max.a};
     for (int k = 0; k < 4; ++k) {
-        out.color_min[k] = lo[k];
+        out.color_base[k] = static_cast<float>(lo[k]);
         out.color_span[k] = static_cast<float>(hi[k]) - static_cast<float>(lo[k]);
     }
     out.size_min = d.size.min;
@@ -137,6 +138,15 @@ void derive_appearance(const ParticleDesc& d, ParticleDerived& out) {
 }
 
 } // namespace
+
+std::uint32_t fraction_threshold(float fraction) {
+    const float x = fraction * 16777216.0f; // exact: a power of two
+    if (!(x > 0.0f)) return 0;
+    if (x >= 16777216.0f) return 16777216u;
+    auto t = static_cast<std::uint32_t>(x); // floor
+    if (static_cast<float>(t) < x) ++t;     // ceil: m < x ⇔ m < ⌈x⌉ for a whole m
+    return t;
+}
 
 int used_color_keys(const ParticleDesc& d) {
     int n = 0;

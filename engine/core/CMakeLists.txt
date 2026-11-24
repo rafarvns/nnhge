@@ -389,6 +389,7 @@ set(_nnh_particles_sources
     src/particles/emitter_scene.cpp
     src/particles/emitter_transform.cpp
     src/particles/emitter_update.cpp
+    src/particles/particle_births.cpp
     src/particles/particle_derived.cpp
     src/particles/particle_desc_check.cpp
     src/particles/particle_expand.cpp

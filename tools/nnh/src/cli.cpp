@@ -41,13 +41,15 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
                 return false;
             }
             out.console = args[++i];
-        } else if (a == "--script" || a == "--no-build") {
+        } else if (a == "--script" || a == "--no-build" || a == "--keep-open") {
             if (out.command != Command::Run) {
                 error = a + " is for nnh run";
                 return false;
             }
             if (a == "--no-build") {
                 out.no_build = true;
+            } else if (a == "--keep-open") {
+                out.keep_open = true;
             } else if (i + 1 >= args.size()) {
                 error = "--script needs a script file (.nnhs)";
                 return false;
@@ -79,19 +81,22 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
     return true;
 }
 
-bool closes_game_at_end(const Options& options) { return options.pc && !options.script.empty(); }
+bool closes_game_at_end(const Options& options) { return !options.script.empty() && !options.keep_open; }
 
 const char* help_text() {
     return "nnh — the NNHGE tool (specs 010, 011, 013)\n"
            "\n"
            "  nnh build <game> [--release] [--pc]   build a game for the 3DS (Development) or the PC\n"
-           "  nnh run <game> [--release] [--console <ip>] [--pc] [--script <file.nnhs>] [--no-build]\n"
+           "  nnh run <game> [--release] [--console <ip>] [--pc] [--script <file.nnhs>] [--keep-open]\n"
+           "                [--no-build]\n"
            "                                        build, send to the Homebrew Launcher (press Y on the\n"
            "                                        console) and show the game's log; --pc runs the simulator.\n"
            "                                        While it runs, type script commands to drive the game\n"
            "                                        (type help to list them; end gives the controls back).\n"
            "                                        --script runs a test script (Debug/Development builds\n"
-           "                                        only): exit 0 pass, 1 fail, 2 could not run. --no-build\n"
+           "                                        only): exit 0 pass, 1 fail, 2 could not run. At its end\n"
+           "                                        the game closes (the console goes back to the Homebrew\n"
+           "                                        Launcher); --keep-open leaves it running. --no-build\n"
            "                                        runs what is already built\n"
            "  nnh install <game> [--console <ip>]   build the .cia and install it with FBI (Remote Install ->\n"
            "                                        Receive URLs over the network)\n"

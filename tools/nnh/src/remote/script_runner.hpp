@@ -38,7 +38,7 @@ inline constexpr std::uint32_t kTypedDelay = 6;
 
 struct RunnerOptions {
     bool interactive = false;
-    bool quit_at_end = false; ///< the Bye at the end asks the game to quit (simulator runs, --pc)
+    bool quit_at_end = false; ///< the Bye at the end asks the game to quit (scripts, unless --keep-open)
 };
 
 enum class Verdict : std::uint8_t { Running, Pass, Fail, Error };

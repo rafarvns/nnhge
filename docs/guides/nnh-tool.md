@@ -65,12 +65,13 @@ and in the simulator, and the game needs no change. A Release build has no code 
 introduction, read [Testing on the console](testing-on-the-console.md); this section is the reference.
 
 ```text
-nnh run <game> [--console <ip>] [--pc] [--script <file.nnhs>] [--no-build]
+nnh run <game> [--console <ip>] [--pc] [--script <file.nnhs>] [--keep-open] [--no-build]
 ```
 
 | Option | Effect |
 |--------|--------|
-| `--script <file.nnhs>` | Run a test script and end with PASS or FAIL. The script is checked **before anything is built**: every error is printed as `file:line: what` and `nnh` exits with 2. Refused with `--release` |
+| `--script <file.nnhs>` | Run a test script and end with PASS or FAIL. The script is checked **before anything is built**: every error is printed as `file:line: what` and `nnh` exits with 2. Refused with `--release`. At its end, pass or fail, the game closes: the console goes back to the Homebrew Launcher |
+| `--keep-open` | With `--script`: leave the game running after the script (controls given back), e.g. to look at a failure |
 | `--pc` | Use the simulator. `nnh` listens on `127.0.0.1` and starts the simulator with `NNH_REMOTE=127.0.0.1:<port>`, so a Debug/Development simulator connects back: its log goes through `nnh` (shown and saved like the console's) and scripts drive it the same way. At the end of a script, `nnh` closes the simulator |
 | `--no-build` | Run what is already built (for agents and ctest). If nothing is built, `nnh` stops (exit 2 with a script, 1 without) |
 | `NNH_PRESET=<preset>` (environment) | Build and run from another preset of the same system, e.g. `pc-debug` instead of `pc-dev`, `3ds-debug` instead of `3ds-dev`. Letters, digits and `-` only; anything else is ignored |
@@ -80,7 +81,8 @@ loopback with `--pc`), so only the PC that started it can drive it. `nnh` says `
 doesn't answer within 10 s is a Release build or one built before this feature (the wait starts again with every
 line the game logs, so a game that loads for a while before its first frame is waited for). When `nnh` stops (end of
 the script, `end`, Ctrl+C) the game gets every control back: remote buttons are released, sticks centred,
-the touch lifted. On the console the game keeps running; real buttons keep working the whole time (remote
+the touch lifted. A script's end then closes the game (unless `--keep-open`); after `end` or Ctrl+C the game keeps
+running. Real buttons keep working the whole time (remote
 and real input are merged).
 
 ### Script format

@@ -358,7 +358,9 @@ Settled in stage 4 (2026-11-21, the simulator end to end):
   use an ASCII arrow: `nnh: line 15 screenshot stick-right -> <path>`. After a verdict the log is still shown until
   the game closes, at most 1 s on the console and 10 s with `--pc` (where `Bye{quit}` closes the simulator).
 - **Only a script with `--pc` sends `Bye{quit}`** (`closes_game_at_end()` in `cli.cpp`): a typed `end` in the
-  simulator only detaches, as on the console.
+  simulator only detaches, as on the console. **Changed 2026-11-23 (maintainer's request):** a script's end, pass or
+  fail, sends `Bye{quit}` on the console too, so the game closes back to the Homebrew Launcher, ready for the next
+  run; `nnh run --keep-open` keeps the old behaviour (the game keeps running). A typed `end` still only detaches.
 - **`NNH_PRESET=<preset>`** (beyond the plan): `nnh` builds and runs from another preset of the same system (`pc-…`
   or `3ds-…`; letters, digits and `-` only, anything else is ignored). The ctest `nnh_script_pc_smoke` needs it to
   run the build of its own preset (`pc-debug`) instead of `pc-dev`; it is registered in Debug/Development presets

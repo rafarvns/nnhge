@@ -17,13 +17,14 @@ struct Options {
     std::string console;  ///< --console <ip>
     std::string script;   ///< run --script <file.nnhs>: a test script (spec 013); empty = none
     bool no_build = false; ///< run --no-build: run what is already built
+    bool keep_open = false; ///< run --keep-open: a script's end leaves the game running
 };
 
 /// Parses argv[1..]. @return false with `error` set for an unknown command/option or a missing value.
 bool parse_command_line(const std::vector<std::string>& args, Options& out, std::string& error);
 
-/// nnh run (spec 013): whether the Bye at the end of a session closes the game — only a script's, and only in
-/// the simulator (--pc). On the console the game keeps running; a typed `end` only detaches.
+/// nnh run (spec 013): whether the Bye at the end of a session closes the game — a script's, pass or fail, on the
+/// console (back to the Homebrew Launcher) and in the simulator, unless --keep-open. A typed `end` only detaches.
 bool closes_game_at_end(const Options& options);
 
 /// The text of `nnh help`.

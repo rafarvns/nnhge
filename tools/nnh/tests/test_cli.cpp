@@ -50,12 +50,17 @@ NNH_TEST(cli_parses_scripts_and_no_build_for_run) {
     CHECK(help.find("--script <file.nnhs>") != std::string::npos && help.find("--no-build") != std::string::npos);
 }
 
-NNH_TEST(only_a_script_in_the_simulator_closes_the_game_at_its_end) {
+NNH_TEST(a_script_closes_the_game_at_its_end_unless_kept_open) {
     Options o;
     std::string e;
     CHECK(parse({"run", "input", "--pc", "--script", "a.nnhs"}, o, e) && closes_game_at_end(o));
+    CHECK(parse({"run", "input", "--script", "a.nnhs"}, o, e) && closes_game_at_end(o)); // back to the launcher
     CHECK(parse({"run", "input", "--pc"}, o, e) && !closes_game_at_end(o)); // typed `end` only detaches
-    CHECK(parse({"run", "input", "--script", "a.nnhs"}, o, e) && !closes_game_at_end(o)); // the console keeps it
+    CHECK(parse({"run", "input"}, o, e) && !closes_game_at_end(o));
+    CHECK(parse({"run", "input", "--script", "a.nnhs", "--keep-open"}, o, e) && o.keep_open && !closes_game_at_end(o));
+    CHECK(parse({"run", "input", "--keep-open", "--pc", "--script", "a.nnhs"}, o, e) && !closes_game_at_end(o));
+    CHECK(!parse({"build", "input", "--keep-open"}, o, e) && e.find("--keep-open") != std::string::npos);
+    CHECK(std::string(help_text()).find("--keep-open") != std::string::npos);
 }
 
 NNH_TEST(cli_refuses_scripts_where_they_cannot_run) {

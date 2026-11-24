@@ -74,7 +74,7 @@ nnh: line 12 screenshot stick-right -> E:/nnhge/build/logs/input-20261121-212121
 nnh: PASS (19 lines, frames 1-111)
 ```
 
-At the end `nnh` closes the simulator. Exit code: **0** PASS, **1** FAIL, **2** could not run (a script
+At the end `nnh` closes the simulator (`--keep-open` leaves it running). Exit code: **0** PASS, **1** FAIL, **2** could not run (a script
 error, a failed build, no answer from the game, ...). Write and fix scripts here first: it is fast and the
 results are the same as on the console.
 
@@ -88,8 +88,9 @@ results are the same as on the console.
    ```
 
 `nnh` builds the `.3dsx` (Development), sends it, waits for the game to connect and runs the script. Don't
-touch the console: real input is merged with the script's. When the script ends, the game gets its
-controls back and keeps running; close it as usual.
+touch the console: real input is merged with the script's. When the script ends (PASS or FAIL), the game
+closes and the console is back in the Homebrew Launcher, ready for the next run (press **Y** again). Add
+`--keep-open` to leave the game running with its controls given back, e.g. to look at a failure on the screens.
 
 If the game doesn't answer (`nnh: the game didn't answer: a Release build, or one older than nnh`), it is a
 Release build or was built before this feature. If nothing connects at all, see the firewall note in the

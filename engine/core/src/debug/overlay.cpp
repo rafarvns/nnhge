@@ -89,6 +89,13 @@ void draw_memory(int& y, int line) {
                                   g.dropped_tiles > 0 ? colors::red : colors::white);
         y += line;
     }
+    if (g.max_particles > 0) { // games without particles don't see the line
+        std::snprintf(text, sizeof text, "particles %d/%d  dropped %d", g.particles_last_frame, g.max_particles,
+                      g.dropped_particles);
+        detail::debug_record_text(Screen::Bottom, 4, y, text,
+                                  g.dropped_particles > 0 ? colors::red : colors::white);
+        y += line;
+    }
 }
 
 void draw_scopes(int& y, int line) {

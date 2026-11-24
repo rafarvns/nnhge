@@ -224,4 +224,5 @@ its step and the asset index (and repacks the `.3dsx`): no C++ compile or link. 
 [examples/data](../../examples/data/main.cpp) (a bestiary and shop with a self-check) ·
 [testing on the console](../guides/testing-on-the-console.md) (its check script) ·
 [prefabs.md](prefabs.md#values-from-data-assets) (one prefab per data asset: a designer adds an enemy by adding a
-file)
+file) · [particles.md](particles.md#presets-in-text-files) (effect presets: the game's own preset type in its schema,
+turned into a `ParticleDesc`; engine types with constructors such as `FrameTime` aren't data types)

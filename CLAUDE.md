@@ -154,6 +154,14 @@ Sprite animation (spec 016, implemented; demo `examples/animation`): `<nnh/anima
 sprite (`update()` on the frame clock, notices by callback or returned view, `draw_options()`); `<name>.ase.json`
 Aseprite exports → `nnh-assetc sprite` → `load_sprite_library("<name>")` (D31; fixtures in `tests/data/aseprite/`)
 ([api/animation.md](docs/api/animation.md)).
+Particles (spec 024, implemented, console check pending; D39; demo `examples/particles`): `<nnh/particles.hpp>` —
+`ParticleEmitter::create(desc, capacity)` (one block, 48 B per particle), one plain `ParticleDesc` (rate, bursts,
+one-shots, shapes, cone/outward directions, gravity, damping, spin, colour/size keys over life, sprite frames, world or
+local space), `emit`/`emit_at`, `update()` once per frame or `bind(scene)` (D30), `draw(screen[, texture])` = one
+draw-list command expanded at submit under `AppConfig::gfx.max_particles` (0 by default); seeded counter-based
+randomness, the same bits on PC and 3DS (self-check golden `C5EF1A84`); presets are a game-declared data type turned
+into a `ParticleDesc` ([api/particles.md](docs/api/particles.md)). The platformer's dust, puffs and muzzle flashes
+(`level_effects.*`) leave its replay lines unchanged.
 Input actions (spec 017, implemented; demo `examples/actions`): `<nnh/actions.hpp>` —
 `ActionSet` of button/axis/vector actions with up to 4 bindings each (buttons, stick directions, sticks, composites,
 touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
@@ -233,6 +241,8 @@ PLATFORMER_DEMO=bench NNH_EXIT_AFTER_FRAMES=90 NNH_SCREENSHOT=build/bench.png bu
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs   # tile gate on the console (Development, HBL → Y): bench: PASS/FAIL
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs  # levels + replay on the console: checksums = PC's, 60 Hz PASS/FAIL
 build/pc-debug/tools/nnh/nnh run data [--pc] --script examples/data/tests/check.nnhs        # data assets: self-check checksum = PC's
+PARTICLES_SHOT=explosion NNH_EXIT_AFTER_FRAMES=40 NNH_SCREENSHOT=build/fx.png build/pc-debug/examples/particles/particles.exe   # gallery|trail|explosion|touch|local|world|full
+build/pc-debug/tools/nnh/nnh run particles [--pc] --script examples/particles/tests/check.nnhs  # self-check C5EF1A84, touch bursts, bench
 QUERIES_DEMO=all NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/queries.png build/pc-debug/examples/queries/queries.exe   # first|all|cast|water|touch|check|bench
 build/pc-debug/tools/nnh/nnh run queries [--pc] --script examples/queries/tests/check.nnhs  # rays, touches, self-check 4ACAA177, bench
 build/pc-debug/tools/nnh/nnh run transitions [--pc] --script examples/transitions/tests/check.nnhs  # self-check BFE1D810, showcase, bench

@@ -1,0 +1,89 @@
+# Spec 024 AC-4/AC-6/AC-7, automatic (spec 013): the self-check (its checksum lines must be the PC's bit for bit), then
+# the showcase: a touch burst and its end, another effect, the explosion, world/local space, the rain's layer, the smoke
+# stopped, and the bench with its verdict.
+# PC:      nnh run particles --pc --script examples/particles/tests/check.nnhs
+# Console: nnh run particles --script examples/particles/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# Timeouts are in frames. The expected lines are the PC's (pc-debug). The checksum lines change only if self_check.cpp or the particles module
+# change: then run `PARTICLES_DEMO=check NNH_EXIT_AFTER_FRAMES=420 build/pc-debug/examples/particles/particles.exe`,
+# copy its lines here and the values into kParticlesCheckGolden/kParticlesCheckpoints.
+fail-on "] E "
+fail-on "particles: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "particles bench: FAIL"
+
+expect "particles: showcase" 20
+wait 30
+screenshot gallery
+
+# The self-check (SELECT): 3600 script frames, a checksum every 600, the verdict, the drawn frame, then the showcase.
+tap SELECT
+expect "particles: check started" 20
+expect "particles: 600 sum D39517FF" 90
+expect "particles: 1200 sum 640E6215" 90
+expect "particles: 1800 sum 35C3F348" 90
+expect "particles: 2400 sum 2E105955" 90
+expect "particles: 3000 sum 6BA1B564" 90
+expect "particles: 3600 sum C5EF1A84" 90
+expect "particles: PASS C5EF1A84" 20
+expect "particles: stats drawn 586 of 4096 dropped 0" 10
+expect "particles: showcase" 60
+wait 10
+
+# A touch bursts the selected effect (sparks) at the touched point; it finishes by itself.
+touch 120 64
+expect "burst: sparks 16 at 120,64 live 16" 10
+wait 10
+untouch
+screenshot touch
+expect "done: sparks live 0 finished" 60
+wait 10
+
+# R: the next effect, burst where touched.
+tap R
+expect "effect: smoke" 10
+wait 10
+touch 200 120
+expect "burst: smoke 10 at 200,120 live 10" 10
+wait 10
+untouch
+wait 10
+
+# A: the explosion (two bursts outward from a ring).
+tap A
+expect "explosion: 75 live 75" 10
+wait 20
+screenshot explosion
+
+# X twice: the torch and the ship's trail in local space, then in world space again.
+tap X
+expect "space: local" 10
+wait 30
+screenshot local
+tap X
+expect "space: world" 10
+wait 10
+
+# B: the rain in front of the tile band; D-Pad Down: the smoke stops (its puffs drift away).
+tap B
+expect "layer: front" 10
+wait 10
+screenshot layer
+tap DOWN
+expect "smoke: stopped" 10
+wait 10
+
+# The bench (Y): AC-7's workloads, about 50 s; a Debug build logs "not judged (Debug)".
+tap Y
+expect "particles bench: started" 10
+expect "particles bench: base gfx submit avg" 340
+expect "particles bench: update1024 avg" 340
+expect "particles bench: update16x64 avg" 340
+expect "particles bench: emit512 avg" 340
+expect "particles bench: draw512 avg" 340
+expect "particles bench: draw particle" 340
+expect "particles bench: offscreen submit" 340
+expect "particles bench: frame worst" 640
+expect "particles bench: PASS" 10
+wait 10
+screenshot bench

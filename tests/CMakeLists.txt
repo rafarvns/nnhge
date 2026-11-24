@@ -487,6 +487,21 @@ if(TARGET entities AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQ
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;ENTITIES_DEMO=check;NNH_EXIT_AFTER_FRAMES=70"
         PASS_REGULAR_EXPRESSION "entities: PASS C8FB9A41" FAIL_REGULAR_EXPRESSION "entities: FAIL" TIMEOUT 120)
 endif()
+# The particles example's self-check in the simulator (spec 024 T7.3, AC-6) and its console script played with --pc.
+if(TARGET particles AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME particles_self_check_pc COMMAND particles)
+    set_tests_properties(particles_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;PARTICLES_DEMO=check;NNH_EXIT_AFTER_FRAMES=380"
+        PASS_REGULAR_EXPRESSION "particles: PASS C5EF1A84" FAIL_REGULAR_EXPRESSION "particles: FAIL|\\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME particles_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run particles --pc --no-build --script examples/particles/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(particles_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port)
+endif()
 # The prefabs example's self-check in the simulator (spec 021 T7.4, AC-6): the verdict the console script waits for; and
 # the console script itself played in the simulator (nnh run --pc), as the maintainer plays it on the 3DS.
 if(TARGET prefabs AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -598,6 +613,51 @@ endif()
 target_sources(nnh_tests PRIVATE queries_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/queries/self_check.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
+# Particles (spec 024): unit tests, the shared helpers' tests.
+target_sources(nnh_tests PRIVATE
+    camera/test_mix32.cpp
+    gfx/test_sprite_place.cpp
+    particles/test_appearance.cpp
+    particles/test_bursts.cpp
+    particles/test_clock_edges.cpp
+    particles/test_create.cpp
+    particles/test_desc_check.cpp
+    particles/test_directions.cpp
+    particles/test_draw.cpp
+    particles/test_expand.cpp
+    particles/test_frames.cpp
+    particles/test_lifecycle.cpp
+    particles/test_motion.cpp
+    particles/test_order_full.cpp
+    particles/test_particle_budget.cpp
+    particles/test_particle_cost.cpp
+    particles/test_particle_misuse.cpp
+    particles/test_prewarm.cpp
+    particles/test_queries.cpp
+    particles/test_random.cpp
+    particles/test_rate.cpp
+    particles/test_scene_binding.cpp
+    particles/test_set_desc.cpp
+    particles/test_shapes.cpp
+    particles/test_space.cpp
+    particles/test_subframe.cpp
+    fuzz/test_fuzz_particle_ops.cpp
+    particles_example/test_self_check.cpp
+    platformer/test_level_effects.cpp
+    ${PROJECT_SOURCE_DIR}/examples/particles/self_check.cpp
+    ${_platformer}/level_effects.cpp
+)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/particles/self_check.cpp PROPERTIES
+                                COMPILE_OPTIONS -ffp-contract=off)
+endif()
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_particle_ops.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_particle_ops fuzz/libfuzzer_particle_ops.cpp)
+    target_link_libraries(fuzz_particle_ops PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_particle_ops PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_particle_ops PRIVATE -fsanitize=fuzzer,address)
+endif()
 # The prefabs example's self-check (spec 021 T5.4, AC-2): prefab spawns against hand-written ones, golden checksum.
 set(_prefabs_example ${PROJECT_SOURCE_DIR}/examples/prefabs)
 # (Its sources are compiled into nnh_fuzz_targets, which nnh_tests links: the fuzz target drives the same operations.)

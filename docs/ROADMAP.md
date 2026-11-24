@@ -281,8 +281,15 @@ spec; the order below is a proposal.
   zooms (B; `tests/zoom_gate.nnhs`)
 - [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels and layout boxes built
   in code, focus moved with the D-Pad and touch on the bottom screen; menus without drawing rectangles by hand
-- [ ] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System): emitters configured by a C++
-  struct (rate, life, speed, color over time), pooled, within the draw budget
+- [x] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System) — [spec 024](../specs/024-particles/spec.md),
+  **implemented 2026-11-24**, Old 3DS check pending (T10.2): `<nnh/particles.hpp>` — game-owned emitters in one block
+  (48 B per particle) configured by one plain `ParticleDesc`: rate, bursts, one-shots, `emit`/`emit_at`; point, box,
+  circle and line shapes, cone or outward directions; gravity, damping, spin; colour and size keys over life; sprite
+  frames; world or local space through spec 022's transforms with sub-frame spreading; a seeded counter-based
+  generator, the same bits on PC and 3DS (golden `C5EF1A84`); scene binding (D30); one particle batch per draw in the
+  draw list, expanded at submit under `AppConfig::gfx.max_particles` (D39) ([api/particles.md](api/particles.md)).
+  `examples/particles`: gallery, touch bursts, a text-file preset, self-check and bench; the platformer gets landing
+  dust, bullet puffs and muzzle flashes with its replay lines unchanged
 - [ ] **Localization** (Godot `tr()`, Unity Localization): text by key per language, registered in code or read
   from a table in the assets, the system language picked by default; the built-in font covers Latin-1
 - [ ] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`

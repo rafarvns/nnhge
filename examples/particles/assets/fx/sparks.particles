@@ -1,0 +1,17 @@
+# The bottom screen's touch bursts (spec 024 example): a circle of yellow sparks falling, 0.3–0.6 s.
+rate = 0
+shape = 2          # a circle
+radius = 4
+spread = 6.283
+speed_min = 50
+speed_max = 120
+gravity = [0, 180]
+life_min = 18
+life_max = 36
+start = "#FFF0A0"
+end = "#FF6000"
+size_min = 1
+size_max = 1.5
+size_end = 0.5
+frame = 0          # spark
+seed = 606

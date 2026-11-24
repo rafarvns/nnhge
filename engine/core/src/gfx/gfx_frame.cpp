@@ -40,6 +40,7 @@ void free_all() {
     mem::free(g_state.debug_items);
     mem::free(g_tile_records);
     mem::free(g_tile_scratch);
+    if (detail::g_gfx_particle_ops != nullptr) detail::g_gfx_particle_ops->shutdown();
     g_commands = nullptr;
     g_order = nullptr;
     g_slots = nullptr;
@@ -82,15 +83,19 @@ int submit_tiles(Screen screen, int index, Camera2D camera) {
 void submit_screen(Screen screen) {
     detail::GfxState& g = g_state;
     const Camera2D camera = g_cameras[screen == Screen::Top ? 0 : 1];
-    const auto result =
-        g.draws.build(screen, camera, g.textures, g.pass, g.max_draws, g.splits, detail::kMaxTileBatches);
+    const auto result = g.draws.build(screen, camera, g.textures, g.pass, g.max_draws, g.splits,
+                                      detail::kMaxTileBatches + detail::kMaxParticleBatches);
     int stale_tiles = 0;
     int from = 0;
     for (int i = 0; i < result.splits; ++i) {
         const detail::TileSplit split = g.splits[i];
         if (split.at > from) platform::draw_2d(screen, g.pass + from, split.at - from);
         from = split.at;
-        stale_tiles += submit_tiles(screen, split.batch, camera);
+        if (split.batch < detail::kParticleBatchBase) {
+            stale_tiles += submit_tiles(screen, split.batch, camera);
+        } else if (detail::g_gfx_particle_ops != nullptr) { // asserts itself on a stale texture
+            detail::g_gfx_particle_ops->submit(screen, split.batch - detail::kParticleBatchBase, camera);
+        }
     }
     if (result.items > from) platform::draw_2d(screen, g.pass + from, result.items - from);
     NNH_ASSERT(result.stale == 0, "%d sprites drawn with a texture destroyed earlier", result.stale);
@@ -111,6 +116,8 @@ bool tiles_init(int max_tiles) {
 
 } // namespace
 
+constinit const detail::GfxParticleOps* detail::g_gfx_particle_ops = nullptr;
+
 detail::GfxState& detail::gfx_state() { return g_state; }
 Camera2D* detail::gfx_cameras() { return g_cameras; }
 
@@ -127,7 +134,8 @@ bool detail::gfx_init(const GfxConfig& config) {
     g_state.pending = allocate<PendingDestroy>(max_textures);
     g_state.debug_items = allocate<platform::DrawItem2D>(kDebugPassCapacity);
     if (g_commands == nullptr || g_order == nullptr || g_state.pass == nullptr || g_slots == nullptr ||
-        g_state.pending == nullptr || g_state.debug_items == nullptr || !tiles_init(config.max_tiles)) {
+        g_state.pending == nullptr || g_state.debug_items == nullptr || !tiles_init(config.max_tiles) ||
+        (detail::g_gfx_particle_ops != nullptr && !detail::g_gfx_particle_ops->init(config.max_particles))) {
         NNH_LOG_ERROR(gfx, "not enough memory for %d draws, %d textures and %d tiles (AppConfig::gfx)", max_draws,
                       max_textures - 1, config.max_tiles);
         free_all();
@@ -170,6 +178,7 @@ void detail::gfx_submit() {
     // Cleared before asserting: a crash here leaves the frame open, and shutdown() submits it again.
     g_state.draws.clear();
     g_state.tiles.clear();
+    if (detail::g_gfx_particle_ops != nullptr) detail::g_gfx_particle_ops->end_frame();
     if (dropped > 0) {
         g_state.dropped_total += dropped;
         NNH_LOG_WARN(gfx, "%d draws dropped this frame (AppConfig::gfx.max_draws = %d)", dropped, g_state.max_draws);

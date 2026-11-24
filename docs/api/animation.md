@@ -70,6 +70,9 @@ owns the animators (a scene, the game), destroy it before `nnh::shutdown()`.
 - Pivots are in the **untrimmed** frame's pixels, kept to 1/16 pixel (bottom-centre of an odd width is exact). A
   negative pivot means the library's default: `TopLeft` (as `gfx::draw`), `Center` or `BottomCenter`.
 - Frames alone are a static atlas: `frame(i)` and `draw_options(i, flip_x, flip_y)` need no clip or animator.
+- Particle frames: copy a library's frame regions (and pivots) into `ParticleDesc::frames[]` (up to 16) to play them over
+  a particle's life or pick one at random; the particles module doesn't include this header
+  ([particles.md](particles.md#motion-colour-size-and-frames-over-life)).
 
 ### Clips and their sequences (FR-3, FR-4)
 

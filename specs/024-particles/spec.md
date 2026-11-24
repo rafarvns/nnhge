@@ -1,7 +1,8 @@
 # Spec 024: Particles
 
-Status: approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
-question as recommended; to review in the morning). Implemented after spec 022 (it uses 022's transform value and sine)
+Status: implemented 2026-11-24 (Old 3DS T10.2 and Linux T9.1 pending; FR-21/AC-3 by the fallback the spec allows,
+see plan "Stage 5 results"). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take"
+item and open question as recommended; to review in the morning). Implemented after spec 022 (it uses 022's transform value and sine)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 004](../004-2d-graphics/spec.md) (textures, `DrawOptions`, layers, the recorded draw list, `max_draws`)
 and its tile batches ([spec 012](../012-tilemaps-and-collision/spec.md), decision D26; zoom D33,

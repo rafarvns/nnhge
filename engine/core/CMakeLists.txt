@@ -356,6 +356,30 @@ target_sources(nnh_core PRIVATE ${_nnh_hierarchy_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_hierarchy_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Particles (spec 024, D39): emitters, their deterministic simulation and the draw expansion. Every float operation
+# lives in these files, built without fused multiply-add, so PC and 3DS give the same particles bit for bit. Optional:
+# a game that doesn't use emitters links none of it; gfx/particle_batches.cpp (the particle batches gfx reaches through
+# an ops pointer) is linked only by games that draw or destroy emitters.
+set(_nnh_particles_sources
+    src/gfx/particle_batches.cpp
+    src/particles/emitter_clock.cpp
+    src/particles/emitter_create.cpp
+    src/particles/emitter_draw.cpp
+    src/particles/emitter_emit.cpp
+    src/particles/emitter_queries.cpp
+    src/particles/emitter_rate.cpp
+    src/particles/emitter_scene.cpp
+    src/particles/emitter_transform.cpp
+    src/particles/emitter_update.cpp
+    src/particles/particle_derived.cpp
+    src/particles/particle_desc_check.cpp
+    src/particles/particle_expand.cpp
+    src/particles/particle_shapes.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_particles_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_particles_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

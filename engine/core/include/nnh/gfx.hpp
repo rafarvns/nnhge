@@ -177,6 +177,9 @@ struct Stats {
     int tiles_last_frame = 0;      ///< tile quads drawn by the last finished frame (gfx::draw_tilemap)
     int max_tiles = 0;             ///< AppConfig::gfx.max_tiles
     int dropped_tiles = 0;         ///< tile quads dropped since init() because the frame was over max_tiles
+    int particles_last_frame = 0;  ///< particle quads drawn by the last finished frame (ParticleEmitter::draw)
+    int max_particles = 0;         ///< AppConfig::gfx.max_particles
+    int dropped_particles = 0;     ///< particle quads dropped since init() because the frame was over max_particles
 };
 Stats stats();
 

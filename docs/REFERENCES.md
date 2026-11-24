@@ -198,3 +198,13 @@ order; Unity's `Transform`, `SetParent(worldPositionStays)` and `lossyScale`; Be
 propagation; flecs' `ChildOf` and cascading deletes; Michele Caini's "ECS back and forth" part 4 (EnTT hierarchies);
 Bitsquid's transform component; Robert Nystrom, *Game Programming Patterns*, "Dirty Flag" (links in
 [spec 022](../specs/022-scene-tree-and-transforms/spec.md#prior-art)).
+
+## Particles (spec 024)
+
+Written from the published designs, no code copied: Godot's `CPUParticles2D`/`GPUParticles2D` (amount, lifetime,
+one-shot, preprocess, local coordinates, fract delta, draw order, emission shapes, colour ramp, scale curve,
+sprite-sheet animation); Unity's Particle System modules (main: max particles, simulation space, prewarm, emitter
+velocity; emission: rate over time and bursts with cycles and intervals; shape; colour and size over lifetime; texture
+sheet animation); LÖVE's `ParticleSystem` (a fixed buffer, `emit`, emission areas, up to 8 colours and sizes); Phaser 3's
+`ParticleEmitter` (flow and explode modes, `explode(count, x, y)`); Robert Nystrom, *Game Programming Patterns*,
+"Object Pool" and "Data Locality" (links in [spec 024](../specs/024-particles/spec.md#prior-art)).

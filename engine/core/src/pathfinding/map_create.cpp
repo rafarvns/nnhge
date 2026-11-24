@@ -52,6 +52,13 @@ void free_block(detail::PathMapBlock* b) {
     mem::free(b);
 }
 
+/// A new map's serial: never 0 (a field that never finished a build answers for serial 0).
+std::uint32_t next_serial() {
+    static std::uint32_t last = 0;
+    if (++last == 0) ++last;
+    return last;
+}
+
 } // namespace
 
 namespace detail {
@@ -90,6 +97,7 @@ Result<PathMap> PathMap::create(const PathMapDesc& desc) {
     b->agent = desc.agent_size;
     b->diagonals = desc.diagonals;
     b->one_way_walkable = desc.one_way_walkable;
+    b->serial = next_serial();
     b->cells = raw + sizeof(detail::PathMapBlock);
     const int padded = b->stride * (desc.height + 2);
     for (int i = 0; i < padded; ++i) b->cells[i] = 0;

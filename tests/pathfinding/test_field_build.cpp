@@ -40,11 +40,12 @@ NNH_TEST(path_field_create_refuses_bad_sizes_and_takes_one_block) {
     {
         DistanceField d = path_test::take(DistanceField::create({.width = 10, .height = 6, .tag = &NNH_MEM_TAG_REF(fields)}));
         const std::size_t bytes = nnh::mem::tag_stats(NNH_MEM_TAG_REF(fields)).bytes;
-        CHECK(bytes >= 8u * 12 * 8 + 8u * 60 && bytes <= 8u * 12 * 8 + 8u * 60 + 256); // 2 x 4 B per padded cell, heap
+        // 2 x (4 B distance + 1 B step) per padded cell, the heap (8 B per cell)
+        CHECK(bytes >= 10u * 12 * 8 + 8u * 60 && bytes <= 10u * 12 * 8 + 8u * 60 + 256);
         DistanceField s = path_test::take(
             DistanceField::create({.width = 10, .height = 6, .double_buffered = false, .tag = &NNH_MEM_TAG_REF(fields)}));
         const std::size_t both = nnh::mem::tag_stats(NNH_MEM_TAG_REF(fields)).bytes;
-        CHECK(both - bytes >= 4u * 12 * 8 + 8u * 60 && both - bytes <= 4u * 12 * 8 + 8u * 60 + 256);
+        CHECK(both - bytes >= 5u * 12 * 8 + 8u * 60 && both - bytes <= 5u * 12 * 8 + 8u * 60 + 256);
         CHECK(d.valid() && d.width() == 10 && d.height() == 6 && !d.ready());
     }
     CHECK(nnh::mem::tag_stats(NNH_MEM_TAG_REF(fields)).count == 0);

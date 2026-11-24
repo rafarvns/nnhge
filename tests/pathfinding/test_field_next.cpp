@@ -87,6 +87,53 @@ NNH_TEST(path_field_next_is_none_at_unreachable_cells_and_obeys_the_corner_rule)
     CHECK(f.next(always, {1, 1}, n) && n == goal);
 }
 
+// The steps a build stores for next() (T10.3) answer only for the map and version it was built over: after an
+// edit, or with another map, next() reads the current cells and the answering distances as before.
+NNH_TEST(path_field_next_after_a_map_edit_reads_the_current_cells) {
+    const char* rows[] = {".....", ".....", "....."};
+    PathMap map = path_test::ascii_map(rows, 3);
+    DistanceField f = field(5, 3);
+    const CellPos goal{4, 1};
+    f.build(map, &goal, 1);
+    CellPos n{};
+    CHECK(f.next(map, {0, 1}, n) && n == (CellPos{1, 1})); // E: 10 + 30; NE, SE: 14 + 34
+    map.set_cell(1, 1, 9); // E now costs 90 + 30: NE comes first of the two at 48
+    CHECK(f.stale() == false && f.next(map, {0, 1}, n) && n == (CellPos{1, 0}));
+    map.set_cell(1, 0, nnh::kPathBlocked); // NE blocked: SE (its sides (0, 2) and (1, 1) walkable)
+    CHECK(f.next(map, {0, 1}, n) && n == (CellPos{1, 2}));
+}
+
+NNH_TEST(path_field_next_with_another_map_of_the_same_size_and_version_reads_that_map) {
+    const char* rows[] = {".....", ".....", "....."};
+    PathMap a = path_test::ascii_map(rows, 3);
+    PathMap b = path_test::ascii_map(rows, 3);
+    a.set_cell(1, 1, 1);
+    b.set_cell(1, 1, 9);
+    CHECK(a.version() == b.version());
+    DistanceField f = field(5, 3);
+    const CellPos goal{4, 1};
+    f.build(a, &goal, 1);
+    CellPos n{};
+    CHECK(f.next(a, {0, 1}, n) && n == (CellPos{1, 1}));
+    CHECK(f.next(b, {0, 1}, n) && n == (CellPos{1, 0}));
+}
+
+NNH_TEST(path_field_next_during_a_double_buffered_rebuild_follows_the_finished_build) {
+    const char* rows[] = {".....", ".....", "....."};
+    const PathMap map = path_test::ascii_map(rows, 3);
+    DistanceField f = field(5, 3);
+    const CellPos east{4, 1};
+    const CellPos west{0, 1};
+    f.build(map, &east, 1);
+    f.begin(map, &west, 1);
+    f.step(2);
+    CellPos n{};
+    CHECK(f.building() && f.next(map, {2, 1}, n) && n == (CellPos{3, 1}));
+    f.step(1000);
+    CHECK(!f.building() && f.next(map, {2, 1}, n) && n == (CellPos{1, 1}));
+    CHECK(!f.next(map, west, n));
+}
+
 NNH_TEST(path_field_next_point_goes_through_cell_at_and_cell_center) {
     const char* rows[] = {"....", "...."};
     const PathMap map = path_test::ascii_map(rows, 2);

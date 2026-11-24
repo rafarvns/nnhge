@@ -1,6 +1,7 @@
 # Spec 025: Pathfinding on grids
 
-Status: implemented 2026-11-24 (Linux T9.1 passed; Old 3DS T10.2 pending). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
+Status: implemented 2026-11-24 (Linux T9.1 passed; Old 3DS T10.2 run 1: logic PASS, bench missed → T10.3 optimised
+on the PC, console rerun and AC-7 budgets pending). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
 question as recommended; to review in the morning)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 012](../012-tilemaps-and-collision/spec.md) (`<nnh/collision.hpp>`: `Grid`, `Cell`, solid and one-way
@@ -166,7 +167,8 @@ cells when a door opens, and gets **the same paths, bit for bit, on PC and 3DS**
 - **FR-18 Field queries.** `distance(x, y)`; `next(x, y)`: the neighbour an agent at (x, y) should step into — the one
   minimising `step × weight(neighbour) + distance(neighbour)` under the map's diagonal rule, ties in FR-10's neighbour
   order, none at a goal or an unreachable cell; and a world-point helper. These are reads only (no per-cell direction
-  vectors are stored), cheap enough for hundreds of agents per frame (AC-7). A field equals, cell for cell, the cost
+  vectors are stored; since T10.3 the build keeps each cell's `next` answer in one byte, an internal cache that changes
+  no result), cheap enough for hundreds of agents per frame (AC-7). A field equals, cell for cell, the cost
   of FR-8's search from that cell to the nearest goal (tested).
 
 ### Following a path

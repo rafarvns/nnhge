@@ -28,6 +28,16 @@ std::string frames(std::uint32_t from, std::uint32_t to) {
     return "frames " + std::to_string(from) + "-" + std::to_string(to);
 }
 
+/// The console's warning that one of its own controls was busy when the script attached (remote_session.cpp,
+/// spec 013 amendment 2026-11-24): "W remote <what>: ignored while the script runs" → <what>; else "".
+std::string control_not_at_rest(const std::string& line, const LineInfo& info) {
+    static const std::string kChannel = " remote ", kSuffix = ": ignored while the script runs";
+    if (!info.has_frame || info.level != 'W') return "";
+    const std::size_t from = line.find(kChannel), to = line.rfind(kSuffix);
+    if (from == std::string::npos || to == std::string::npos || to < from + kChannel.size()) return "";
+    return line.substr(from + kChannel.size(), to - from - kChannel.size());
+}
+
 } // namespace
 
 ScriptRunner::ScriptRunner(Script script, RunnerOptions options)
@@ -67,8 +77,13 @@ void ScriptRunner::on_line(const std::string& line) {
     const LineInfo info = line_info(line);
     const std::uint32_t frame = info.has_frame ? info.frame : last_tick_;
     if (frame > last_frame_) last_frame_ = frame;
-    if (options_.interactive) typed_line(line, frame);
-    else script_line(line, frame, info.level);
+    if (options_.interactive) {
+        typed_line(line, frame);
+        return;
+    }
+    const std::string busy = control_not_at_rest(line, info);
+    if (!busy.empty()) notes_.push_back("the console's own controls are ignored while the script runs: " + busy);
+    script_line(line, frame, info.level);
 }
 
 void ScriptRunner::on_record(Record record) {
@@ -150,6 +165,7 @@ void ScriptRunner::send_hello() {
     wire::Message hello;
     hello.type = wire::MessageType::Hello;
     hello.version = wire::kVersion;
+    hello.exclusive = !options_.interactive; // a script owns the controls; a person typing shares them
     MessageBytes bytes;
     wire::encode_message(hello, bytes.data());
     messages_.push_back(bytes);

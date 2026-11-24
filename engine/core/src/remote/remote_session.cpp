@@ -27,6 +27,8 @@ struct Session {
     bool polling = true;    // the connection may exist; false after remote_receive() said -1
     bool attached = false;  // between Hello and Bye/off/disconnect: records may be sent
     bool quit = false;      // a Bye asked to quit
+    bool exclusive = false; // a script owns the controls: the console's own input is ignored (Hello flag)
+    bool check_rest = false; // a script just attached: warn about the console's controls not at rest
     bool off_logged = false;
     std::uint32_t next_tick = 0;
     bool warned = false;
@@ -57,6 +59,8 @@ const char* reason_name(Reject reason) {
 /// Lets every remote control go and forgets what was waiting (Bye, off, disconnect).
 void detach() {
     g_session.attached = false;
+    g_session.exclusive = false;
+    g_session.check_rest = false;
     g_schedule.clear();
     g_input.release_all();
     screenshots_clear();
@@ -78,9 +82,14 @@ void warn_rejected(std::uint16_t seq, Reject reason, std::uint32_t frame) {
     g_session.unreported = 0;
 }
 
-void attach(std::uint32_t frame) {
-    if (!g_session.attached) NNH_LOG_INFO(remote, "PC attached: remote control on");
+void attach(std::uint32_t frame, bool exclusive) {
+    if (!g_session.attached) {
+        NNH_LOG_INFO(remote, "PC attached: remote control on%s",
+                     exclusive ? " (script: only its input counts)" : "");
+    }
     g_session.attached = true;
+    g_session.exclusive = exclusive;
+    g_session.check_rest = exclusive;
     std::uint8_t record[kMaxFixedRecord];
     send_record(record, encode_hello_record(frame, platform::capabilities(), build::flavor_name(), record));
     send_record(record, encode_tick_record(frame, record));
@@ -101,7 +110,7 @@ void reject(const ReadItem& item, std::uint32_t frame) {
 
 void accept(const Message& message, std::uint32_t frame) {
     if (message.type == MessageType::Hello) {
-        attach(frame);
+        attach(frame, message.exclusive);
     } else if (!g_schedule.push(message, frame)) {
         std::uint8_t record[kMaxFixedRecord];
         send_record(record, encode_dropped_record(message.seq, record));
@@ -143,6 +152,23 @@ void apply_due(std::uint32_t frame) {
     }
 }
 
+/// The console's own controls a script hides, said once when it attaches (a resting Circle Pad past the dead
+/// zone, like some Old 3DS pads, would otherwise have moved things: spec 013 amendment 2026-11-24).
+void warn_not_at_rest(const platform::InputSample& physical) {
+    const RestReport r = rest_report(physical);
+    constexpr const char* kIgnored = "ignored while the script runs";
+    if (r.circle_moved) {
+        NNH_LOG_WARN(remote, "Circle Pad not at rest (%.3f, %.3f): %s", static_cast<double>(physical.circle_x),
+                     static_cast<double>(physical.circle_y), kIgnored);
+    }
+    if (r.cstick_moved) {
+        NNH_LOG_WARN(remote, "C-Stick not at rest (%.3f, %.3f): %s", static_cast<double>(physical.cstick_x),
+                     static_cast<double>(physical.cstick_y), kIgnored);
+    }
+    if (r.buttons != 0) NNH_LOG_WARN(remote, "buttons held (0x%04X): %s", static_cast<unsigned>(r.buttons), kIgnored);
+    if (r.touching) NNH_LOG_WARN(remote, "screen touched (%d, %d): %s", physical.touch_x, physical.touch_y, kIgnored);
+}
+
 void disconnected() {
     g_session.polling = false;
     if (g_session.attached) NNH_LOG_INFO(remote, "PC disconnected: remote controls released");
@@ -171,7 +197,12 @@ bool remote_frame_start(std::uint64_t frame_number, platform::InputSample& sampl
             }
         }
     }
-    g_input.merge_into(sample);
+    if (g_session.check_rest) {
+        g_session.check_rest = false;
+        warn_not_at_rest(sample);
+    }
+    if (g_session.exclusive) g_input.replace_into(sample);
+    else g_input.merge_into(sample);
     return !g_session.quit;
 }
 

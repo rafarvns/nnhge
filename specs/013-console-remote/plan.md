@@ -79,6 +79,21 @@ repeatable by nature; they apply "now" (last known frame + 6).
 pushed further (the gamepad rule of `input_pc.cpp`), a remote touch wins while it is down. Dead zone, D-Pad mirror,
 button edges and events then work unchanged. One merge, tested once on the fake platform, the same on every system.
 
+*Amendment 2026-11-24 (spec FR-1, maintainer-approved): a script's input is exclusive.* The merge is kept for
+interactive control only. A script's `Hello` sets flag bit 0 (`kHelloExclusive`); while that session is attached,
+`remote_frame_start` replaces the sample with the remote controls alone (`RemoteInput::replace_into`: an idle sample
+merged with them), so the console's own buttons, sticks and touch never reach the game, the engine's controls
+(`input_engine_*`, the overlay's SELECT+L) included. A `Bye`, a disconnect, the remote going off or a later `Hello`
+without the flag end it. On the attach frame the console checks its own reading once (`rest_report`: a stick past
+`kStickDeadZone`, buttons held, a touch) and logs one `W remote <control> not at rest (...): ignored while the script
+runs` line per busy control; the runner repeats those lines as `nnh:` notes. Leaving stays possible: HOME on the 3DS and
+closing the simulator's window go through `platform::poll_events()`, before input, and stopping `nnh` closes the
+connection. Spec 023's input block and its "held controls wait for release" act on the sample after this step, so they
+see the script's controls only. Backwards compatible on the wire: a PC without the flag gets today's merge; a console
+built before the amendment refuses a flagged `Hello` (it never answers, and `nnh` says the game is older than it: rebuild).
+Tests: `test_remote_exclusive.cpp`, `test_remote_input.cpp`, `test_remote_wire.cpp`, the runner's tests, and the ctest
+`hierarchy_check_script_resting_pad_pc`.
+
 **Screenshots: read back after the frame, convert on the PC.** At the end of a frame a screenshot was asked for
 (right after `platform::end_frame()`), core asks the platform for each screen's pixels and sends them as they are,
 tagged with their layout; `nnh` converts to RGB rows and writes the PNG. On the 3DS the source is the citro2d render
@@ -117,7 +132,7 @@ All integers little-endian. Version 1.
 
 | Type | Arguments | Effect on the console |
 |------|-----------|-----------------------|
-| 1 `Hello` | u16 version, u16 flags (0) | attach: reply `Hello`, start ticks. Required first; anything before it is rejected |
+| 1 `Hello` | u16 version, u16 flags (bit 0 `kHelloExclusive`: a script owns the controls, amendment 2026-11-24; other bits 0) | attach: reply `Hello`, start ticks; with bit 0 the console's own input is ignored until detached. Required first; anything before it is rejected |
 | 2 `Buttons` | u32 press mask, u32 release mask (only the 14 `nnh::Button` bits, masks disjoint) | remote buttons held += press, −= release |
 | 3 `Stick` | u8 which (0 Circle Pad, 1 C-Stick), u8 0, i16 x, i16 y in thousandths [−1000, 1000] (y up) | remote stick position |
 | 4 `Touch` | u8 down (0/1), u8 0, u16 x ≤ 319, u16 y ≤ 239 | remote touch down/move or up |

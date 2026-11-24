@@ -117,16 +117,44 @@ NNH_TEST(remote_wire_rejects_unknown_types) {
     CHECK(decode(m) == Reject::Type);
 }
 
-NNH_TEST(remote_wire_rejects_a_hello_of_another_version_or_with_flags) {
+NNH_TEST(remote_wire_rejects_a_hello_of_another_version_or_with_unknown_flags) {
     Bytes m = hello();
     m.b[8] = 2;
     CHECK(decode(m) == Reject::Range);
     m = hello();
-    m.b[10] = 1;
+    m.b[10] = 2;
+    CHECK(decode(m) == Reject::Range);
+    m = hello();
+    m.b[10] = 3; // the known flag with an unknown one
     CHECK(decode(m) == Reject::Range);
     m = hello();
     m.b[11] = 0x80;
     CHECK(decode(m) == Reject::Range);
+}
+
+NNH_TEST(remote_wire_a_hello_without_flags_is_not_exclusive) {
+    Message out;
+    out.exclusive = true;
+    CHECK(decode_message(hello().b, out) == Reject::None);
+    CHECK(!out.exclusive);
+}
+
+NNH_TEST(remote_wire_the_exclusive_flag_is_bit_0_of_the_hello_flags) {
+    Bytes m = hello();
+    m.b[10] = 1;
+    Message out;
+    CHECK(decode_message(m.b, out) == Reject::None);
+    CHECK(out.type == MessageType::Hello && out.exclusive);
+    CHECK(round_trips(m));
+    Message built;
+    built.type = MessageType::Hello;
+    built.seq = 0x0201;
+    built.frame = 0x0A0B;
+    built.version = kVersion;
+    built.exclusive = true;
+    std::uint8_t bytes[kMessageSize];
+    encode_message(built, bytes);
+    CHECK(std::memcmp(bytes, m.b, kMessageSize) == 0);
 }
 
 NNH_TEST(remote_wire_rejects_buttons_outside_the_mask) {

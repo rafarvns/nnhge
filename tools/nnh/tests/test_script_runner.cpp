@@ -51,6 +51,32 @@ NNH_TEST(runner_sends_hello_first_and_nothing_before_its_answer) {
     CHECK(r.take_messages().empty());
 }
 
+NNH_TEST(runner_hello_asks_for_the_controls_alone) {
+    ScriptRunner r = runner_for("tap A\n");
+    r.start();
+    const auto sent = r.take_messages();
+    wire::Message m;
+    CHECK(sent.size() == 1 && wire::decode_message(sent[0].data(), m) == wire::Reject::None);
+    CHECK(m.type == wire::MessageType::Hello && m.exclusive);
+}
+
+NNH_TEST(runner_points_out_console_controls_not_at_rest) {
+    ScriptRunner r = runner_for("wait 10\n");
+    FakeConsole c(r);
+    r.start();
+    c.run(2);
+    c.to_pc_line("[f1        0.000s] W remote Circle Pad not at rest (0.064, 0.090): ignored while the script runs");
+    CHECK(c.noted("the console's own controls are ignored while the script runs: Circle Pad not at rest (0.064, "
+                  "0.090)"));
+    c.to_pc_line("[f2        0.000s] W game   pad: ignored while the script runs"); // not the remote's warning
+    c.to_pc_line("[f2        0.000s] I remote pad: ignored while the script runs"); // not a warning
+    c.run_until_finished();
+    CHECK(r.verdict() == Verdict::Pass);
+    int count = 0;
+    for (const std::string& n : c.notes) count += n.find("own controls") != std::string::npos ? 1 : 0;
+    CHECK(count == 1);
+}
+
 NNH_TEST(runner_stamps_inputs_with_script_frames_from_frame_1) {
     ScriptRunner r = runner_for("wait 30\ntap A\nhold B 5\n");
     FakeConsole c(r);

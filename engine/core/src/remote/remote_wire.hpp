@@ -23,6 +23,11 @@ inline constexpr std::uint16_t kTouchMaxX = 319;
 inline constexpr std::uint16_t kTouchMaxY = 239;
 inline constexpr std::uint8_t kScreenTop = 1u << 0;
 inline constexpr std::uint8_t kScreenBottom = 1u << 1;
+/// Hello flag: the PC runs a script and owns the controls; until the Bye (or the connection ends) the game reads
+/// only the PC's input, never the console's own (spec 013 amendment 2026-11-24). Interactive control leaves it 0.
+inline constexpr std::uint16_t kHelloExclusive = 1u << 0;
+/// Every Hello flag this version knows; any other bit is Reject::Range.
+inline constexpr std::uint16_t kHelloFlags = kHelloExclusive;
 
 enum class MessageType : std::uint8_t { Hello = 1, Buttons = 2, Stick = 3, Touch = 4, Screenshot = 5, Bye = 6 };
 
@@ -43,6 +48,7 @@ struct Message {
     std::uint16_t seq = 0;   ///< set by the PC, echoed in Late/Rejected/Dropped
     std::uint32_t frame = 0; ///< apply at the start of this frame; 0 = the next frame
     std::uint16_t version = 0;                     ///< Hello
+    bool exclusive = false;                        ///< Hello: flag kHelloExclusive (a script owns the controls)
     std::uint32_t press = 0;                       ///< Buttons: bits to hold (kButtonMask only)
     std::uint32_t release = 0;                     ///< Buttons: bits to let go (disjoint from press)
     std::uint8_t stick = 0;                        ///< Stick: 0 Circle Pad, 1 C-Stick
@@ -62,7 +68,7 @@ constexpr std::uint32_t resolve_frame(std::uint32_t frame, std::uint32_t now) { 
 void encode_message(const Message& message, std::uint8_t out[kMessageSize]);
 
 /// Decodes and validates 16 bytes: magic, type, every argument's range, unused bytes 0, Buttons masks within
-/// kButtonMask and disjoint, Hello version == kVersion with flags 0. @return Reject::None and fills `out`, or
+/// kButtonMask and disjoint, Hello version == kVersion with no flag outside kHelloFlags. @return Reject::None and fills `out`, or
 /// the reason (then `out` is unspecified). A decoded message encodes back to the same 16 bytes.
 Reject decode_message(const std::uint8_t in[kMessageSize], Message& out);
 

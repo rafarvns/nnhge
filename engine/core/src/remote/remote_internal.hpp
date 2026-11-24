@@ -13,9 +13,10 @@ namespace nnh::detail {
 
 /// Start of frame `frame` (= frame_count() during it), between platform::read_input() and input_update():
 /// reads what the PC sent (non-blocking, at most what the queue has room for, at least one message), answers
-/// Hello, applies the messages due, merges the remote controls into `sample`, sends a tick when due. After the
-/// connection is gone it only merges (released) controls. Never allocates. @return false once the PC asked to
-/// quit (Bye with quit).
+/// Hello, applies the messages due, merges the remote controls into `sample` — or, while a script is attached
+/// (Hello flag kHelloExclusive), replaces `sample` with them, after warning once about console controls not at
+/// rest — and sends a tick when due. After the connection is gone it only merges (released) controls. Never
+/// allocates. @return false once the PC asked to quit (Bye with quit).
 bool remote_frame_start(std::uint64_t frame, platform::InputSample& sample);
 
 /// Right after platform::end_frame() of `frame`: sends the screenshots due for it (the only remote work that

@@ -35,9 +35,12 @@ bool stick_axis_ok(std::int16_t v) { return v >= -kStickMax && v <= kStickMax; }
 bool decode_arguments(const std::uint8_t* in, Message& out) {
     const std::uint8_t* a = in + 8;
     switch (out.type) {
-    case MessageType::Hello:
+    case MessageType::Hello: {
+        const std::uint16_t flags = get16(a + 2);
         out.version = get16(a);
-        return out.version == kVersion && get16(a + 2) == 0 && zero_from(in, 12);
+        out.exclusive = (flags & kHelloExclusive) != 0;
+        return out.version == kVersion && (flags & ~kHelloFlags) == 0 && zero_from(in, 12);
+    }
     case MessageType::Buttons:
         out.press = get32(a);
         out.release = get32(a + 4);
@@ -89,7 +92,10 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
     put32(out + 4, m.frame);
     std::uint8_t* a = out + 8;
     switch (m.type) {
-    case MessageType::Hello: put16(a, m.version); break;
+    case MessageType::Hello:
+        put16(a, m.version);
+        put16(a + 2, m.exclusive ? kHelloExclusive : 0);
+        break;
     case MessageType::Buttons:
         put32(a, m.press);
         put32(a + 4, m.release);

@@ -82,8 +82,12 @@ doesn't answer within 10 s is a Release build or one built before this feature (
 line the game logs, so a game that loads for a while before its first frame is waited for). When `nnh` stops (end of
 the script, `end`, Ctrl+C) the game gets every control back: remote buttons are released, sticks centred,
 the touch lifted. A script's end then closes the game (unless `--keep-open`); after `end` or Ctrl+C the game keeps
-running. Real buttons keep working the whole time (remote
-and real input are merged).
+running. With typed commands real buttons keep working the whole time (remote and real input are merged); a
+**script** owns the controls instead: from `Hello` to its end the game reads only the script's input and the
+console's (or simulator's) own controls are ignored, so a resting Circle Pad past the dead zone can't change a
+result. A control that isn't at rest when the script attaches is reported once, by the console (`W remote Circle Pad
+not at rest (0.064, 0.090): ignored while the script runs`) and as an `nnh:` note. HOME on the 3DS, closing the
+simulator's window and Ctrl+C always work (spec 013, amendment 2026-11-24).
 
 ### Script format
 
@@ -141,7 +145,7 @@ Scripts count **frames**, not milliseconds, so a run is repeatable.
   clock; only the commands with a "Clock" entry above move it.
 - Everything on the same clock applies **at the start of that frame, before the game reads its input**, so
   the game sees remote input exactly like real input: `pressed()`, `ButtonPressed`, `TouchStarted`, ... on
-  that frame.
+  that frame. It is the only input the game sees: nothing pressed on the console reaches it during a script.
 - `tap A` presses on frame *t* and releases on *t*+1; the next command is on *t*+2, so two taps in a row
   are two presses.
 - `hold A N` presses on *t* and releases on *t*+N; the next command is on *t*+N too.

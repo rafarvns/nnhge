@@ -1,6 +1,6 @@
 # Tasks 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, Linux T9.1 passed, console T10.2 run 1 done (logic PASS; pass_move and spawn over target), T10.3 optimisation on the PC, console rerun pending (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set; console showcase `dropped:` line open (a regression from the 026a merge) (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -306,9 +306,12 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths). Covers AC-4, AC-6, AC-7.
   **Run 1 (2026-11-24)**: `hierarchy: PASS 23DB5C36` and the showcase lines equal the PC's; bench pass_turn 1.401 ms
   PASS, **pass_move 1.054 FAIL**, world_now 1.187 PASS, **spawn 3.162 FAIL** (hand 2.539, ratio 1.25 OK), reparent
-  0.910 PASS; prefabs bench PASS but spawn 1.626 → 1.804 ms since spec 021 (plan.md "Console run 1"). Runs 1 (again,
-  after T10.3) and 2–5 pending.
-- [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
+  0.910 PASS; prefabs bench PASS but spawn 1.626 → 1.804 ms since spec 021 (plan.md "Console run 1").
+  **Run 2 (2026-11-24, after T10.3)**, plan.md "Console run 2 and budgets set": bench pass_turn 1.168, pass_move 0.813,
+  world_now 1.112, spawn 2.89 (hand 2.915), reparent 0.923; prefabs `PASS 7BB7901E`, bench PASS; entities `PASS
+  C8FB9A41`, bench PASS; platformer level `E445E8B2` 60 Hz PASS. **Open**: the showcase's `dropped:` line on the
+  console (a regression from the spec 026a merge, bisected); gate.nnhs pending.
+- [x] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risk 1's list without changing a result (every golden holds; tests first for any behaviour-preserving
   rewrite), then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin, written
   in the spec's AC-7, `bench_scene.cpp` and `docs/api/hierarchy.md` with the numbers. Files: plan.md ("Optimisation
@@ -317,8 +320,9 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   a demand miss) and integer finiteness test; the tree spawn without the reservation `memset`, the out-of-line
   `Node(local)`/assignment, repeated kind lookups and the hookless post-order; PLDs in the group reservation; the node
   hook's early returns; the prefab dispatch on the tree pointer. Every golden and disassembly guard holds. Expected on
-  the Old 3DS: pass_move 0.87–0.96 ms, spawn 2.7–2.95 ms (still over 2.2), prefabs spawn 1.76–1.80. **Pending**: T10.2
-  run 1 on the console, then the budgets from that measurement (the maintainer's).
+  the Old 3DS: pass_move 0.87–0.96 ms, spawn 2.7–2.95 ms (still over 2.2), prefabs spawn 1.76–1.80. **Measured and
+  budgets set (2026-11-24)**: pass_move 0.813 PASS; spawn 2.89 with the hand calls at 2.915, so the budget is the
+  measurement's + 25 %: < 3.6 ms; all five budgets in `bench_scene.cpp`, AC-7 and `docs/api/hierarchy.md`.
 
 ## Stage 11: docs, roadmap, status
 

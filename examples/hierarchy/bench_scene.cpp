@@ -16,13 +16,14 @@ struct Phase {
     int (HierarchyBench::*run)();
 };
 
-// AC-7's targets (spec 022): set before any console measurement; T10.2 measures them (plan 022 "Stage 10").
+// AC-7's budgets (spec 022): the Old 3DS measurement after the optimisation round (plan 022 "Console run 2 and budgets
+// set") plus ~25%; pass_move keeps its 1 ms target. spawn: the hand-written calls take 2.9 ms themselves.
 constexpr Phase kPhaseList[BenchScene::kPhases] = {
-    {"pass_turn", 1.5, &HierarchyBench::run_pass},
+    {"pass_turn", 1.45, &HierarchyBench::run_pass},
     {"pass_move", 1.0, &HierarchyBench::run_pass},
-    {"world_now", 1.5, &HierarchyBench::run_world_now},
-    {"spawn", 2.2, &HierarchyBench::run_spawn},
-    {"reparent", 1.0, &HierarchyBench::run_reparent},
+    {"world_now", 1.4, &HierarchyBench::run_world_now},
+    {"spawn", 3.6, &HierarchyBench::run_spawn},
+    {"reparent", 1.15, &HierarchyBench::run_reparent},
 };
 constexpr int kSpawnPhase = 3;
 constexpr double kMaxRatio = 1.3; ///< prefab hierarchies vs the hand-written calls, measured in the same run

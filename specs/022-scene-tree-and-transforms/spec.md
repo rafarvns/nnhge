@@ -298,6 +298,10 @@ value usable without any world. No allocation while playing; a game that uses no
     by hand with spec 020's calls and `attach`, measured in the same run (spec 021's budget for 256 single spawns is
     2 ms);
   - **256 keep-world reparents** between rotated and scaled parents plus **256 keep-local** ones: **under 1.0 ms**.
+  - **Budgets set (2026-11-24)** from the Old 3DS run after the optimisation round, plus ≈ 25 % (plan "Console run 2
+    and budgets set"): pass_turn **< 1.45 ms** (measured 1.168), pass_move **< 1.0 ms** (0.813, target kept), world_now
+    **< 1.4 ms** (1.112), spawn **< 3.6 ms** and ≤ 1.3× (2.89; the hand-written calls take 2.915 themselves: the
+    2.2 ms estimate was out of reach), reparent **< 1.15 ms** (0.923).
   If a target is missed, the implementation is optimised first; if it is still missed, the budget is set from the first
   console measurement with margin and written in the spec and the docs with the measured numbers (the maintainer's
   policy for benches, as in specs 019 to 021). Spec 012's tile gate, spec 020's and 021's benches and the platformer's

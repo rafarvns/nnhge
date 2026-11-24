@@ -169,21 +169,17 @@ Release) draws a line from each node to its parent and its local axes (8 px).
 | attach | linear in the moved subtree (its height and depths); keep-world: no sine, three divisions |
 | cascades | one queued destroy per descendant |
 
-Old 3DS targets (AC-7): the pass over 1024 nodes (256 hierarchies of 4) < 1.5 ms with every root turned, < 1.0 ms when
-only positions changed; 256 `world_now` of depth-3 nodes < 1.5 ms; 64 prefab hierarchies of 4 spawned and destroyed
-< 2.2 ms and ≤ 1.3× the hand-written calls; 512 reparents < 1.0 ms.
+Measured on an Old 3DS XL (Development build, after spec 022's optimisation round; the budgets are these plus ≈ 25 %):
 
-Measured on an Old 3DS XL (Development build, provisional: the budgets are set after the next console run):
+| Workload | Old 3DS | Budget |
+|----------|---------|--------|
+| pass, 1024 nodes, every root turned | 1.17 ms | < 1.45 ms |
+| pass, 1024 nodes, positions only | 0.81 ms | < 1.0 ms |
+| 256 `world_now`, depth 3 | 1.11 ms | < 1.4 ms |
+| 64 prefab hierarchies of 4 spawned + destroyed | 2.89 ms (the same by hand: 2.92) | < 3.6 ms, ≤ 1.3× by hand |
+| 512 reparents | 0.92 ms | < 1.15 ms |
 
-| Workload | Console run 1 | After the optimisation round (expected, console rerun pending) |
-|----------|---------------|------------------------------------------------------------------|
-| pass, 1024 nodes, every root turned | 1.40 ms | 1.22–1.32 ms |
-| pass, 1024 nodes, positions only | 1.05 ms | 0.87–0.96 ms |
-| 256 `world_now`, depth 3 | 1.19 ms | 1.15–1.19 ms |
-| 64 prefab hierarchies of 4 spawned + destroyed | 3.16 ms (the same by hand: 2.54) | 2.7–2.95 ms (by hand 2.45–2.50) |
-| 512 reparents | 0.91 ms | 0.90–0.92 ms |
-
-So a frame's pass costs about 1 µs per node, and a prefab hierarchy costs 1.1–1.25× the hand-written spawn, add,
+So a frame's pass costs about 1 µs per node, and a prefab hierarchy costs the same as the hand-written spawn, add,
 add_tag and attach calls (both mostly the world's memory traffic once its arrays outgrow the 16 KB cache). Run
 `nnh run hierarchy --script examples/hierarchy/tests/check.nnhs` to measure on your console (spec 022's stage 10).
 

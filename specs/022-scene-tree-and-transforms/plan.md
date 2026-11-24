@@ -1,6 +1,6 @@
 # Plan 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, Linux T9.1 passed, console T10.2 run 1 done (logic PASS; pass_move and spawn over target), T10.3 optimisation on the PC, console rerun pending (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set; console showcase `dropped:` line open (a regression from the 026a merge, see "Console run 2 and budgets set") (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D37 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds and remove hooks, handles, the destroy queue, quarantine, iteration guards, scene binding;
 D35), spec 021 (prefab libraries, the all-or-nothing reservation, placement, hooks, map objects; D36), spec 015 (the
@@ -1177,3 +1177,31 @@ The spawn target can't be reached by bit-identical local work: a third of the ph
 (the same for the hand calls, and byte-identical code by its guard), and the rest is dominated by the world's arrays
 streaming through the 16 KB L1. Next: T10.2 run 1 again on the console, then the budgets from that measurement with
 ≈ 25 % margin (the maintainer's call).
+
+### Console run 2 and budgets set (T10.2/T10.3, 2026-11-24, Old 3DS XL, Development build)
+
+The optimisation round measured on the console (two runs, the same numbers within 1 %):
+
+| Workload | Run 1 | Run 2 | Budget (≈ +25 %) |
+|----------|-------|-------|------------------|
+| pass_turn | 1.401 | 1.168 ms | < 1.45 |
+| pass_move | 1.054 | 0.813 ms | < 1.0 (target kept) |
+| world_now | 1.187 | 1.112 ms | < 1.4 |
+| spawn | 3.162, hand 2.539 | 2.89 ms, hand 2.915, ratio 0.99 | < 3.6, ≤ 1.3× |
+| reparent | 0.910 | 0.923 ms | < 1.15 |
+
+The prefab tree spawn now costs what the hand-written calls cost; the hand calls alone take 2.9 ms (the world's memory
+traffic and spec 020's destroy), so AC-7's 2.2 ms estimate was out of reach and the budget is the measurement's.
+Prefabs bench (spec 021) on the same code: spawn 1.631 ms (ratio 1.07), overrides 1.873, map 4.227, find 0.500 — PASS
+(map slower than run 1's 3.756, within its 4.5 budget). Entities (run 5): `entities: PASS C8FB9A41`, bench PASS (each
+0.494, spawn 1.382, find 0.144, get 4.377, pool 0.442). Platformer level (run 2): replay `E445E8B2`, 60 Hz PASS (worst
+18.6 ms, 0 missed).
+
+**Open: the showcase's drop.** On the console, `dropped: crate at 200.425,217.405` instead of `200,218` (the PC gives
+200,218); the bench numbers above come from a build with two extra log lines in `yard.cpp`, with which the drop is
+right. Bisected on the console: 499f433, 86db872 (spec 024 merge) and 1659d01 (spec 027 merge) give 200,218; c2181f6
+(spec 026a merge) and later give 200.425,217.405 — so not this round's change. The `carried` screenshot differs too
+(the ship's gun drawn at another angle) with no D-pad input: a value of the yard changes without input, depending on
+code layout (an uninitialised read or a stray write suspected). The self-check (`23DB5C36`) is unaffected. Under
+investigation; T10.2 run 1's script line 49 fails until it is fixed.
+

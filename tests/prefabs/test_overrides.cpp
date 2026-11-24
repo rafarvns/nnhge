@@ -73,6 +73,22 @@ NNH_TEST(an_override_is_constructed_once_from_the_override) {
     CHECK(Counted::alive() == 0);
 }
 
+NNH_TEST(an_added_kind_replaces_its_slots_value_and_balances) {
+    // An override-only kind is made like add<T>(e, value): the slot's T{} destroyed, then the copy.
+    Counted::reset();
+    {
+        PrefabLibrary lib = make_library();
+        const Prefab p = must_add(lib, "p", {}, Coin{1});
+        World w = make_world();
+        Counted extra;
+        extra.id = 9;
+        const int destroyed = Counted::destroyed;
+        const Entity e = lib.spawn_with(w, p, extra);
+        CHECK(w.get<Counted>(e)->id == 9 && Counted::destroyed == destroyed + 1);
+    }
+    CHECK(Counted::alive() == 0);
+}
+
 NNH_TEST(the_array_form_takes_overrides_and_a_position) {
     Fixture f;
     PrefabLibrary lib = make_library();

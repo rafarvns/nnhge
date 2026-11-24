@@ -117,6 +117,29 @@ NNH_TEST(add_refuses_full_capacities_and_changes_nothing) {
     CHECK(block_hash(lib) == before && lib.count() == 2);
 }
 
+NNH_TEST(add_refuses_one_entry_or_a_few_bytes_past_a_capacity) {
+    // Mutation testing (plan 021 T8.1): the limits are exact.
+    PrefabLibrary entries = make_library({.max_prefabs = 4, .max_entries = 2, .value_bytes = 1024});
+    must_add(entries, "two", {}, Coin{}, Bob{});
+    CHECK(add_error(entries.add("one_more", {}, Coin{})) == ErrorCode::LimitReached);
+    PrefabLibrary bytes = make_library({.max_prefabs = 4, .max_entries = 8, .value_bytes = 8});
+    must_add(bytes, "a", {}, Coin{});
+    must_add(bytes, "b", {}, Bob{});
+    CHECK(add_error(bytes.add("c", {}, K<0>{})) == ErrorCode::LimitReached); // 12 bytes > 8
+}
+
+NNH_TEST(add_refuses_a_value_with_a_bad_alignment) {
+    PrefabLibrary lib = make_library();
+    const Coin coin{1};
+    ComponentValue v = nnh::component_value(coin);
+    v.align = 3;
+    CHECK(add_error(lib.add("three", {}, &v, 1)) == ErrorCode::InvalidArgument);
+    v.align = 32;
+    CHECK(add_error(lib.add("wide", {}, &v, 1)) == ErrorCode::InvalidArgument);
+    v.align = 4;
+    CHECK(lib.add("ok", {}, &v, 1).ok());
+}
+
 NNH_TEST(add_aligns_each_value_to_its_type) {
     struct alignas(16) Aligned {
         float v[4] = {1, 2, 3, 4};

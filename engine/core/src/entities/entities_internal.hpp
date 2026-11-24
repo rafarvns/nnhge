@@ -27,9 +27,9 @@ enum class ReserveRefusal : std::uint8_t { None, TagsDropped, Clearing, WorldFul
 /// iteration, owners, the record's slot fields and kinds mask); `tags` (distinct, not kNoTag; at most the world's tags
 /// per entity, extra ones dropped: `why` TagsDropped) written into the new record in order. Returns the entity and
 /// `components[i]` = the address of kind kinds[i]'s slot (holding its T{}), or null with `why` (and `*full_kind` for
-/// KindFull, when given) after
-/// counting the refusal as spawn()/add() would (the world's spawn misses, or that kind's misses; nothing while
-/// clearing or for an empty world). Logs and asserts nothing. Allowed where spawn() is (iterations, remove hooks).
+/// KindFull, when given) after counting the refusal as spawn()/add() would (the world's spawn misses, or that kind's
+/// misses; nothing while clearing or for an empty world). Logs and asserts nothing. Allowed where spawn() is
+/// (iterations, remove hooks).
 Entity world_reserve(World& world, const int* kinds, int count, void** components, const Tag* tags, int tag_count,
                      ReserveRefusal& why, int* full_kind);
 

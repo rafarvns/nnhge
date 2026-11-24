@@ -130,7 +130,7 @@ NNH_TEST(an_unknown_explicit_prefab_is_a_logged_level_error_that_asserts) {
         const char* line = nnh::platform_fake::state().last_console_line;
         if (nnh::build::kAssertsEnabled) { // stopped at the first level error
             CHECK(std::strstr(line, "object 12 \"coin\" (layer things): no prefab \"coinn\"") != nullptr);
-            CHECK(w.count() == 4);
+            CHECK(w.count() == 4 && p.lib.stats().map_unknown == 1 && p.lib.stats().map_skipped == 3);
         } else { // Release: both logged, the rest spawned
             CHECK(std::strstr(line, "object 13 \"w3\" (layer things): property \"prefab\" is not a string") != nullptr);
             CHECK(same(g_s, {.spawned = 5, .misses = 0, .skipped = 3, .unknown = 2, .first_unknown = 7}));

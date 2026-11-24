@@ -8,6 +8,7 @@
 #include "prefab_fixture.hpp"
 
 #include <cstring>
+#include <memory>
 
 using nnh::Entity;
 using nnh::Prefab;
@@ -49,7 +50,7 @@ NNH_TEST(prefab_misuse_list_asserts_or_is_harmless) {
     g_p = mine;
     CHECK(asserts_or_is_ignored(spawn_from_an_empty_library) && !g_e);
     CHECK(asserts_or_is_ignored(spawn_into_an_empty_world) && !g_e);
-    CHECK(w.count() == 0 && lib.stats().spawns == 0);
+    CHECK(w.count() == 0 && lib.stats().spawns == 0 && lib.stats().misses == 0); // misuse is not a miss
     // Three tags into a world of two per entity: Release keeps the first two.
     g_p = must_add(lib, "tagged", {.tags = {kEnemy, kFx, kFlying}}, Coin{2});
     CHECK(asserts_or_is_ignored(spawn_more_tags_than_the_world_holds));
@@ -118,6 +119,47 @@ void destroy_the_library_from_its_own_hook() {
 }
 
 } // namespace
+
+namespace {
+
+std::unique_ptr<PrefabLibrary> g_owned;
+PrefabLibrary* g_raw = nullptr;
+
+void delete_the_library_from_its_own_hook() {
+    g_owned.reset(new PrefabLibrary(make_library()));
+    g_raw = g_owned.get();
+    const Prefab p = must_add(*g_owned, "p", {.on_spawn = [](World&, Entity, const nnh::SpawnInfo&) {
+                                                g_owned.reset(); // the destructor itself, inside the hook
+                                            }},
+                              Coin{1});
+    g_e = g_owned->spawn(*g_w, p);
+}
+
+} // namespace
+
+NNH_TEST(deleting_a_library_from_its_own_hook_asserts_or_is_freed_by_the_spawn) {
+    // Mutation testing (plan 021 T8.1): the destructor's own check, not only move-assignment's.
+    const nnh::MemStats before = nnh::mem::tag_stats(nnh::detail::prefabs_memory_tag());
+    World w = make_world();
+    g_w = &w;
+    const bool crashed = crashes(delete_the_library_from_its_own_hook);
+    CHECK(crashed == nnh::build::kAssertsEnabled);
+    if (crashed) {
+        // Debug: stopped inside the destructor before it changed anything (unique_ptr had already let go of the
+        // object): take the block out of the half-destroyed object, free it, and free the object's storage.
+        nnh::detail::PrefabBlock* b = nnh::PrefabAccess::block(*g_raw);
+        CHECK(b != nullptr);
+        if (b != nullptr) b->spawn_depth = 0;
+        { PrefabLibrary rescued(static_cast<PrefabLibrary&&>(*g_raw)); }
+        ::operator delete(static_cast<void*>(g_raw));
+        world_test::recover(w);
+    } else {
+        CHECK(w.alive(g_e) && !g_owned);
+    }
+    CHECK(nnh::mem::tag_stats(nnh::detail::prefabs_memory_tag()).count == before.count);
+    g_raw = nullptr;
+    g_w = nullptr;
+}
 
 NNH_TEST(destroying_a_library_from_its_own_hook_asserts_or_is_freed_by_the_outermost_spawn) {
     const nnh::MemStats before = nnh::mem::tag_stats(nnh::detail::prefabs_memory_tag());

@@ -321,6 +321,8 @@ NNH_TEST(world_kinds_of_maps_a_strided_list_of_ids) {
     CHECK(nnh::detail::world_kinds_of(big, ids, sizeof ids[0], 2, out) == -1 && out[0] == 30 && out[1] == 2);
     CHECK(nnh::detail::world_kinds_of(big, ids, sizeof ids[0], 3, out) == 2); // a null id is no kind
     CHECK(nnh::detail::world_kinds_of(World{}, ids, sizeof ids[0], 1, out) == 0);
+    const nnh::detail::TypeId null_id[1] = {nullptr}; // mutation testing (plan 021 T8.1): 3 kinds, ids[3] is null too
+    CHECK(nnh::detail::world_kinds_of(w, null_id, sizeof null_id[0], 1, out) == 0);
     CHECK(nnh::detail::world_kinds_of(World{}, ids, sizeof ids[0], 0, out) == -1);
 }
 

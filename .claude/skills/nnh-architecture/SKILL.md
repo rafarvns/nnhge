@@ -52,7 +52,8 @@ applied at end of frame. Subscriptions and resources are scene members (RAII). O
 ## Approved patterns
 
 Game Loop, Observer/Event Bus, Event Queue, State, Facade (public headers), link-time Bridge
-(platform.hpp + one backend per target, no virtual), RAII handles, Object Pool, Command (input, later).
+(platform.hpp + one backend per target, no virtual), RAII handles, Object Pool, Prototype (prefabs: `<nnh/prefabs.hpp>`),
+Command (input, later).
 
 Anti-patterns: singletons/hidden globals in game code, god objects, deep inheritance, `virtual` per object,
 platform `#ifdef` in game code or public headers, generic events, giant files.

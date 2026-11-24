@@ -108,6 +108,17 @@ destroys from hooks queued), `add/get/has/remove<T>`, `each<A, B...>` (first kin
 inside), `storage<T>()` views (box views read bodies in place, `owner(slot)`), tags `nnh::tag("enemy")` with
 `find`/`first`/`each_tagged`; both bind to a scene through D30 (flush before update, clear after `on_exit`)
 ([api/entities.md](docs/api/entities.md)). The platformer's coins, turrets and sparkles are entities, its bullets a pool.
+Prefabs (spec 021, implemented, console check pending; D36; demo `examples/prefabs`): `<nnh/prefabs.hpp>` —
+`PrefabLibrary::create(desc)` (one block), `add(name, {.base, .tags, .place = nnh::place(&Body::box), .on_spawn},
+values...)` (FNV-1a names, a colliding name refused; variants flattened at registration, unreplaced values shared),
+`find(name)` → `Prefab` handle, `spawn(world, p[, at])` / `spawn_with(world, p[, at], overrides...)` — bit for bit what
+`spawn`/`add<T>(e, value)`/`add_tag` make, all or nothing through one entities-internal reservation
+(`src/entities/entities_internal.hpp`), `WhenFull::Assert|Miss` — hooks with `SpawnInfo`, `spawn_map_objects(world,
+map)` (a Tiled object's `prefab` property, else its type; unknown explicit names a loud level error; only
+`prefab_map.cpp` includes the tilemap header), values from data assets by pattern ([api/prefabs.md](docs/api/prefabs.md),
+guide [levels.md](docs/guides/levels.md#placing-prefabs-in-tiled)). The platformer's coins, turrets and sparkles are
+prefabs (replay lines unchanged); the example's self-check (golden `7BB7901E`) compares prefab spawns with hand-written
+ones over 50 000 operations.
 Tweens and timers (spec 015, implemented; demo `examples/tweens`): `<nnh/tween.hpp>` — 19
 libm-free easings (same bits everywhere), `nnh::Timer`, `TweenSet` (float/Vec2/Color by pointer or setter, loops,
 yoyo, sequences, `after`/`every`, callbacks or your own finish events) on the frame clock (`Frames`/`FrameTime` in
@@ -194,6 +205,7 @@ build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/l
 build/pc-debug/tools/nnh/nnh run data [--pc] --script examples/data/tests/check.nnhs        # data assets: self-check checksum = PC's
 QUERIES_DEMO=all NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/queries.png build/pc-debug/examples/queries/queries.exe   # first|all|cast|water|touch|check|bench
 build/pc-debug/tools/nnh/nnh run queries [--pc] --script examples/queries/tests/check.nnhs  # rays, touches, self-check 4ACAA177, bench
+build/pc-debug/tools/nnh/nnh run prefabs [--pc] --script examples/prefabs/tests/check.nnhs  # room, touch spawns, self-check 7BB7901E, bench
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

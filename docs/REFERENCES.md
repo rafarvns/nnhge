@@ -120,6 +120,23 @@ Projects to study (learn from them; check licenses before reusing any code). Res
   (Bitsquid), "Building a data-oriented entity system"** (index + generation handles over fixed arrays):
   https://www.dataorienteddesign.com/dodbook/ ·
   http://bitsquid.blogspot.com/2014/08/building-data-oriented-entity-system.html
+- **Unity prefabs** — a stored GameObject instantiated many times, instance overrides, prefab variants (spec 021 keeps
+  per-copy overrides and variants, without the editor's live link): https://docs.unity3d.com/Manual/Prefabs.html ·
+  https://docs.unity3d.com/Manual/PrefabInstanceOverrides.html · https://docs.unity3d.com/Manual/PrefabVariants.html
+- **Godot packed scenes** — `PackedScene.instantiate()`, inherited scenes as variants (children wait for a scene tree
+  spec): https://docs.godotengine.org/en/stable/classes/class_packedscene.html ·
+  https://docs.godotengine.org/en/stable/getting_started/step_by_step/instancing.html
+- **flecs prefabs** — prefab entities instantiated with `IsA`, components copied by default (`OnInstantiate,
+  Override`; spec 021 takes only the copy) and prefab variants:
+  https://github.com/SanderMertens/flecs/blob/master/docs/PrefabsManual.md ·
+  https://github.com/SanderMertens/flecs/blob/master/docs/Relationships.md
+- **Bevy bundles** — a typed group of components inserted together (the code-declared, value-based shape of a
+  prefab): https://bevy-cheatbook.github.io/programming/bundle.html
+- **Tiled custom properties and classes** — object classes and properties, the designer's side of naming prefabs
+  (templates are not supported): https://doc.mapeditor.org/en/stable/manual/custom-properties/ ·
+  https://doc.mapeditor.org/en/stable/manual/using-templates/
+- **Robert Nystrom, *Game Programming Patterns*, Prototype** — spawning by copying a prototype, data-driven prototypes
+  with a base (spec 021's variants and data-asset values): https://gameprogrammingpatterns.com/prototype.html
 
 ## Real-world 3DS engine write-ups
 - Silent Hill 2 → 3DS (C engine on libctru + citro3d, offline asset packer, linear-memory budgeting):

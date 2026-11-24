@@ -215,8 +215,16 @@ spec; the order below is a proposal.
   ([api/collision.md](api/collision.md#layers-and-masks), [api/tilemap.md](api/tilemap.md#collision-layers)). The
   platformer's coins are taken by a layered `boxes_overlapping` query and its player walks a filtered grid (replay
   lines unchanged by the swap)
-- [ ] **Prefabs** (Unity prefabs, Godot packed scenes): entity templates registered in code by name (a function or a
-  set of components and values), spawned many times and overridden per copy; a Tiled object can name one
+- [x] **Prefabs** (Unity prefabs, Godot packed scenes): entity templates registered in code by name (a function or a
+  set of components and values), spawned many times and overridden per copy; a Tiled object can name one —
+  [spec 021](../specs/021-prefabs/spec.md), **implemented 2026-11-23**, Old 3DS check pending: a `PrefabLibrary` the
+  game owns (one block), prefabs as component values + tags + a placement member + a spawn hook, variants flattened at
+  registration, `spawn`/`spawn_with` bit for bit what hand-written `spawn`/`add`/`add_tag` make (all or nothing
+  through one entities-internal reservation, D36), per-copy overrides and positions, Tiled objects naming prefabs by
+  type or a `prefab` property (unknown explicit names a loud level error), one prefab per data asset by pattern
+  ([api/prefabs.md](api/prefabs.md), [levels guide](guides/levels.md#placing-prefabs-in-tiled), demo
+  [`examples/prefabs`](../examples/prefabs/main.cpp)). The platformer's coins, turrets and sparkles are prefabs (replay
+  lines unchanged)
 - [ ] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
   that follow the parent (a gun on a ship, a hat on a head)
 - [x] **Sprite animation** (Godot AnimatedSprite2D, Unity Animator): named clips declared in code (frames of a

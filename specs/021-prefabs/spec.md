@@ -1,6 +1,7 @@
 # Spec 021: Prefabs
 
-Status: approved (2026-11-23 by the maintainer, every "Decisions to take" item as recommended)
+Status: implemented 2026-11-23, console check (plan 021 T10.2) pending · approved 2026-11-23 by the maintainer, every
+"Decisions to take" item as recommended
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 020](../020-entities/spec.md) (worlds, component kinds and their `ComponentDesc`, tags, handles,
 quarantine; decision D35) and [spec 002](../002-core-foundation/spec.md) (asserts, logs, `Result`, tagged memory,

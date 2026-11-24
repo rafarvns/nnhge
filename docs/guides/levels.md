@@ -126,6 +126,28 @@ number ([tilemap.md](../api/tilemap.md#animated-tiles)). Collision and propertie
   `color` and `file` become strings (as written), `object` becomes an int (the object's id). `class` properties
   are refused; names are 1–255 bytes and unique per owner; strings are at most 255 bytes.
 
+### Placing prefabs in Tiled
+
+With [prefabs](../api/prefabs.md) (spec 021), a level's objects name the things the game spawns, so a designer places
+a new kind of thing without asking for code. `prefabs.spawn_map_objects(world, level)` walks the objects in map order:
+
+- **The type names the prefab.** Give an object the type (class) `coin` and the game's `coin` prefab is spawned at it.
+- **Or the `prefab` property does.** A string property `prefab` = `flying_walker` names the prefab whatever the type
+  says (the type stays free for your own use). Use it to say "this must be a prefab".
+- **Where it goes.** A point object gives a position; a rectangle object gives its bounds: the prefab's placement member
+  gets them (a `Rect` member takes the rectangle's size too, unless the prefab keeps its own).
+- **Properties reach the prefab's hook.** The hook gets the object (`info.object->properties.get_int("value", 1)`):
+  a gold coin is a `coin` with an int property `value` of 5.
+- **Skipped.** An object whose type names no prefab — a door, a spawn point, an object with no type — is skipped:
+  the game reads those itself (`level.find_object("spawn")`). The summary counts them.
+- **Errors.** A `prefab` property naming no prefab is a level error, logged with the object's id, name and layer —
+  `object 12 "coin" (layer things): no prefab "coinn"` — and asserting in Debug/Development builds, so a misspelt name
+  is found on the PC before the console. A `prefab` property that is not a string is the same error. The build can't
+  check these names (prefabs are registered in code at run time): `prefabs.check_map_objects(level)` answers the same
+  report without spawning, for a test or a loading screen.
+
+A level restart is `world.clear()` plus `spawn_map_objects` again: the same objects get the slots of the first load.
+
 ## 8. Using the level in the game
 
 ```cpp

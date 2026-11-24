@@ -1,6 +1,7 @@
 # Tasks 021: Prefabs
 
-Status: approved (2026-11-23 by the maintainer, with the plan's six decisions as recommended)
+Status: implemented 2026-11-23 (stages 0–8 and 11); stage 9 (Linux) and stage 10 (console) left to the lead and the
+maintainer · approved 2026-11-23, with the plan's six decisions as recommended
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -216,18 +217,18 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 8: mutation testing, opt-in checks
 
-- [ ] **T8.1** Mutation pass as in plans 019–020: hand mutants of `src/prefabs/*`, `src/entities/world_reserve.cpp` and
+- [x] **T8.1** Mutation pass as in plans 019–020: hand mutants of `src/prefabs/*`, `src/entities/world_reserve.cpp` and
   the shared helpers, `prefabs.hpp`'s templates, the platformer's `level_prefabs`, one at a time with the whole
   `nnh_tests` (pc-release for Release-path mutants); survivors become tests or are argued equivalent. Files: plan.md
   ("Mutation testing"). Covers VI.
-- [ ] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `prefabs`
+- [x] **T8.2** [P] Release strings: `scripts/check_release_strings.sh` on the 3ds-release and pc-release `prefabs`
   executables passes (add the module's Development-only log texts to its list if it has any). Files:
   `scripts/check_release_strings.sh` (if needed). Covers FR-3.
-- [ ] **T8.3** [P] Code-only games link no tilemap code: a probe (`build/ref-021/probe_code_only.cpp`, not committed:
+- [x] **T8.3** [P] Code-only games link no tilemap code: a probe (`build/ref-021/probe_code_only.cpp`, not committed:
   registers and spawns prefabs from code only) linked against the 3ds-release libraries; `nm -C` shows no
   `nnh::Tilemap`, `nnh::Properties`, `load_tilemap` or `prefab_map` symbol; `linkcheck.sh` (T5.3) still holds. Files:
   plan.md ("Stage 8 results"). Covers FR-16, AC-8.
-- [ ] **T8.4** Opt-in and regression: `hello` sizes and `nm` equal T0.1 on PC and 3DS; `compare.sh` (hello, sprites,
+- [x] **T8.4** Opt-in and regression: `hello` sizes and `nm` equal T0.1 on PC and 3DS; `compare.sh` (hello, sprites,
   scenes, camera, queries, entities, the platformer's bench, level 1 and the replay identical); every example's script
   passes with `--pc` (`gate.nnhs`, `level.nnhs`, `entities/check.nnhs` included); `.text` of the platformer and
   `prefabs` recorded; build times of an `examples/prefabs/room.cpp` edit (simulator, `.3dsx`) against T0.1's
@@ -243,7 +244,7 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
+- [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and the Development
   builds of `prefabs`, `platformer` and `entities` without a warning; T7.6's table still true; `hello.elf` sizes as in
   T0.1. Files: plan.md ("Stage 10: console run (prepared)": commands and every expected line). Covers AC-8, II.
 - [ ] **T10.2** Old 3DS, nobody touching it after Y. Four runs, each: Homebrew Launcher, press **Y**, then on the PC:
@@ -263,22 +264,22 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** (the Old 3DS costs are added after T10.2) `docs/api/prefabs.md`: libraries and capacities (memory
+- [x] **T11.1** (the Old 3DS costs are added after T10.2) `docs/api/prefabs.md`: libraries and capacities (memory
   formula), registering, names and hashes (collisions refused, `find` by handle, no names in Release), variants
   (flattening, shared values, hook order), spawning and its equivalence with hand-written calls, overrides and
   placement, hooks and `SpawnInfo`, all-or-nothing and `WhenFull`, map objects and the level error, the data-asset
   pattern (one prefab per asset in a loop), determinism, costs measured in T10.2, misuse, pitfalls (padding, a hook
   destroying the world, `MapObject` valid during the hook); header comments (allocates? per-frame safe? misuse?).
   Covers VIII, AC-9.
-- [ ] **T11.2** Other pages: `docs/api/entities.md` (link from "Worlds": spawning by prefab), `docs/api/data.md` (the
+- [x] **T11.2** Other pages: `docs/api/entities.md` (link from "Worlds": spawning by prefab), `docs/api/data.md` (the
   pattern), `docs/guides/levels.md` ("Placing prefabs in Tiled": types, the `prefab` property, what is skipped, the
   error message), `docs/api/tilemap.md` (objects: a link to prefabs), `docs/architecture/patterns.md` (Prototype row:
   implemented), `docs/REFERENCES.md` (Unity, Godot, flecs, Bevy, Tiled, *Game Programming Patterns*' Prototype),
   `CLAUDE.md` (layout paragraph: prefabs, `examples/prefabs`); the `nnh-architecture` skill's pattern list (Prototype);
   `python -I scripts/docs_tool.py check` → 0 broken links. Covers AC-9.
-- [ ] **T11.3** `docs/architecture/decisions.md`: D36 change-log note "implemented" with any stage refinements. Covers
+- [x] **T11.3** `docs/architecture/decisions.md`: D36 change-log note "implemented" with any stage refinements. Covers
   AC-9.
-- [ ] **T11.4** Final measurements (header cost of `prefabs.hpp` against T0.1's `entities.hpp`, build times, `hello`
+- [x] **T11.4** Final measurements (header cost of `prefabs.hpp` against T0.1's `entities.hpp`, build times, `hello`
   sizes, `.text` growth) in plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.5** `docs/ROADMAP.md`: the "Prefabs" checkbox, with the implemented summary.
-- [ ] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.5** `docs/ROADMAP.md`: the "Prefabs" checkbox, with the implemented summary.
+- [x] **T11.6** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").

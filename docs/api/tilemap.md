@@ -363,7 +363,9 @@ const nnh::MapObject spawn = map.object(map.find_object("spawn"));
 Objects keep their creation order (the index `add_object` returns is stable) and their object layer. `id` is Tiled's
 object id or the one given in `ObjectDesc::id`; 0 means "highest so far + 1". A `Point` has `w = h = 0`.
 `object(i)` returns an object with id 0 for an invalid index. Errors of `add_object`: `InvalidArgument` (unknown
-layer, negative size or id, long names), `LimitReached` (`max_objects`, `string_bytes`).
+layer, negative size or id, long names), `LimitReached` (`max_objects`, `string_bytes`). Objects can name
+[prefabs](prefabs.md#map-objects) by type or by a `prefab` property: `prefabs.spawn_map_objects(world, map)` spawns
+them in map order ([levels guide](../guides/levels.md#placing-prefabs-in-tiled)).
 
 ## Properties
 

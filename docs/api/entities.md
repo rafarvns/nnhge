@@ -58,6 +58,9 @@ public:
 capacity outside 1..max_entities), `OutOfMemory`. Every component slot is constructed with `T{}` at creation. A world
 is movable while unbound, not copyable; its destructor destroys every entity (remove hooks run, ascending slots) and
 frees the block. A default-constructed or moved-from world is empty: commands assert, queries answer "nothing".
+To make many entities of one kind — the same components, values and tags — declare it once as a
+[prefab](prefabs.md) and spawn it by handle (or from a Tiled object): the result is bit for bit what the calls below
+make.
 
 Memory: a header and kind tables (≈ 200 + 90·kinds bytes on the 3DS), per entity `8 + 4·tags + 2·(kinds + 1)`
 bytes rounded to 4 plus 2.5 bytes, per component slot `sizeof(T) + 2.5` bytes, plus one scratch `T` per kind.

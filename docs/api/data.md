@@ -222,4 +222,6 @@ its step and the asset index (and repacks the `.3dsx`): no C++ compile or link. 
 
 [assets.md](assets.md) (the assets folder, reading other files with `assets::load`) ·
 [examples/data](../../examples/data/main.cpp) (a bestiary and shop with a self-check) ·
-[testing on the console](../guides/testing-on-the-console.md) (its check script)
+[testing on the console](../guides/testing-on-the-console.md) (its check script) ·
+[prefabs.md](prefabs.md#values-from-data-assets) (one prefab per data asset: a designer adds an enemy by adding a
+file)

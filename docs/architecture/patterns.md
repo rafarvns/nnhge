@@ -15,7 +15,7 @@ here once accepted.
 | **Bridge (link-time)** | `engine/core/contract/nnh/platform/*.hpp` + one backend per target | Core depends on an interface; the backend is chosen by the build, so there is no `virtual` cost. |
 | **RAII handles** | `Subscription`, textures, sounds | Resources and subscriptions are released automatically; no manual cleanup lists. |
 | **Object Pool** | bullets, particles, entities: `<nnh/pool.hpp>` ([api/pool.md](../api/pool.md)) and `<nnh/entities.hpp>` ([api/entities.md](../api/entities.md)), spec 020, D35 | No heap allocation per frame; predictable memory on 3DS. |
-| **Prototype** | prefabs: `<nnh/prefabs.hpp>`, spec 021, D36 (design: [plan 021](../../specs/021-prefabs/plan.md)) | A kind of thing is declared once, by name, as component values (variants flattened from a base) and spawned by copying them: no spawn function per kind, levels name what to spawn. |
+| **Prototype** | prefabs: `<nnh/prefabs.hpp>` ([api/prefabs.md](../api/prefabs.md)), spec 021, D36 | A kind of thing is declared once, by name, as component values (variants flattened from a base) and spawned by copying them: no spawn function per kind, levels name what to spawn. |
 | **Command** | input actions (later) | Map buttons to actions, enable remapping and replays. |
 
 ### Example: Bridge without virtual

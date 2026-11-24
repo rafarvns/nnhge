@@ -1,6 +1,7 @@
 # Plan 021: Prefabs
 
-Status: approved (2026-11-23 by the maintainer, with the plan's six decisions as recommended)
+Status: implemented 2026-11-23, console check (T10.2) pending · approved 2026-11-23 by the maintainer, with the plan's
+six decisions as recommended
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D36 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds, `ComponentDesc`, tags, handles, quarantine, `SmallFunction` hooks; D35), spec 002
 (asserts, logs, `Result`, tagged memory, profiler), spec 012 (`Tilemap`, `MapObject`, `Properties`; the converter and
@@ -870,3 +871,135 @@ hand-written ≈ 65 (`spawn`) + 3 × (92 + ≈ 20 inline) + 2 × 35 (`add_tag`) 
 | 1000 `find` by run-time name | ≈ 0.40–0.48 ms (≈ 9 × 7 cycles of hash chain + ≈ 40 of probe and loop) | < 0.5 ms | **at risk** (risk 1: unroll the hash, `{index, hash >> 16}` table pairs) |
 
 No result changed: the self-check's `7BB7901E`, spec 020's `C8FB9A41` and the platformer's `B2418A28` hold.
+
+## Stage 10: console run (prepared)
+
+T10.1 on the PC (results in "Stage 10 checks" below): `scripts/dkp.sh cmake --build --preset 3ds-release` and the
+Development builds of the three games, `scripts/dkp.sh cmake --build --preset 3ds-dev --target prefabs_3dsx
+platformer_3dsx entities_3dsx`, without a warning; the T7.6 table still describes the objects; 3ds-release `hello.elf`
+201 012 / 28 352 / 106 680 as in stage 0.
+
+T10.2, on an Old 3DS, nobody touching it after Y. Four runs, each: open the Homebrew Launcher, press **Y**, then on the
+PC (`nnh` builds the Development `.3dsx`, sends it and plays the script; logs and screenshots in `build/logs/`):
+
+1. `build/pc-debug/tools/nnh/nnh run prefabs --script examples/prefabs/tests/check.nnhs` (about 40 s). Expected, as on
+   the PC (pc-debug): `prefabs: self-check started`, `prefabs: 10000 sum 3EBCC2FD`, `20000 … 821C8B95`,
+   `30000 … CC194CA2`, `40000 … C8360424`, `50000 … 7BB7901E`, **`prefabs: PASS 7BB7901E`**;
+   `map: spawned 14 skipped 1 unknown 0 misses 0`;
+   `selected: flying_walker kinds Body,Walker,Bob tags enemy,flying`;
+   `spawned: flying_walker slot 14 gen 1 at 120,64 tags enemy,flying`; `selected: coin kinds Body,Coin tags coin`;
+   `selected: enemies/beetle kinds Body,Walker,Stats tags enemy,roster`;
+   `spawned: enemies/beetle slot 15 gen 1 at 160,100 tags enemy,roster`; `spawned: coin slot 16 gen 1 at 196,116 tags
+   coin`; `selected: walker kinds Body,Walker tags enemy`; `spawned: walker slot 17 gen 1 at 70,40 tags enemy` … slots
+   18–22 at x 100, 130, 160, 190, 220; `missed: walker (misses 1)`; `map: spawned 14 skipped 1 unknown 0 misses 0`
+   (X); `prefabs bench: started`, then `prefabs bench: spawn avg X ms worst Y ms hand H ms ratio R (target < 2.0 ms,
+   <= 1.25) PASS|FAIL`, `prefabs bench: overrides avg … (target < 2.2 ms)`, `prefabs bench: map avg … (target < 4.0
+   ms)`, `prefabs bench: find avg … (target < 0.5 ms)`, and the verdict `prefabs bench: PASS` or
+   `prefabs bench: FAIL (<names>)`; `nnh: PASS (114 lines, …)`. **Expected from the ARM pre-check**: every logic line
+   and the self-check equal the PC's; spawn ≈ 1.3–1.4 ms with a ratio ≈ 0.9, overrides ≈ 1.45–1.6 ms, map ≈ 2.0–2.6
+   ms PASS; `find` ≈ 0.40–0.48 ms, at risk. A FAIL fails the run (`fail-on "prefabs bench: FAIL"`) after every number is
+   logged: record them here; T10.3 then applies the plan's risk 1–3 mitigations, or the maintainer sets the budget from
+   the measurement with margin (AC-7). Read the screenshots `room`, `self-check`, `variant`, `override`, `miss`, `bench`
+   (top and bottom): the same pictures as a `--pc` run's.
+2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (about 40 s). Expected,
+   unchanged since spec 020: `replay: 60 level1 x 121 y 242 coins 1 sum 720BE2BE`, `120 … 0330ACD0`, `180 … BA334AA2`,
+   `240 … 74731BB8`, `300 … 421D79BE`, `360 … 4955DE42`, `420 … CC4B644A`, `480 … 4E9131BA`, `540 … F2718034`,
+   `600 … A8292126`, `660 bonus … D76BB2E3`, `720 … 2AFED843`, `780 … FE036A4F`, `840 … FC1690D6`,
+   `replay: done 900 frames sum B2418A28: 60 Hz PASS`; `nnh: PASS (79 lines, …)`. The level's coins, turrets and
+   sparkles are prefabs now: a different sum here would be the swap's (run 1's self-check covers the module).
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (about 2.5 min).
+   Expected: `bench: PASS 4 layers + 300 sprites, …` (spec 012's gate); `nnh: PASS`.
+4. `build/pc-debug/tools/nnh/nnh run entities --script examples/entities/tests/check.nnhs` (about 45 s). Expected, as
+   in spec 020's third console run: every logic line, `entities: 10000 sum 723FB297` … `100000 sum C8FB9A41`,
+   **`entities: PASS C8FB9A41`**, and `entities bench: PASS` with numbers near spec 020's (each ≈ 0.475, spawn ≈ 1.29,
+   find ≈ 0.144, get ≈ 4.78, storage get ≈ 4.20, pool ≈ 0.441 ms): `spawn()` and `world_add()` now share inline helpers
+   with the reservation, but their 3DS code is the same (T1.4).
+
+## Stage 8 refinements and results
+
+- **T8.2 Release strings**: `scripts/check_release_strings.sh` passes on `build/3ds-release/examples/prefabs/prefabs.elf`
+  and `build/pc-release/examples/prefabs/prefabs.exe`. The module logs only errors (kept in Release by design) and
+  stores no prefab names in Release; nothing to add to the script's list.
+- **T8.3 Code-only games link no tilemap code**: a probe (`build/ref-021/probe/`, not committed: a world, a library,
+  `add`, `spawn(at)`, `spawn_with`, `find`) built as a 3ds-release game: its `nm -C` has no `nnh::Tilemap`,
+  `nnh::Properties`, `load_tilemap`, `prefab_map` or `map_objects` symbol (the only "tilemap" match is the log channel
+  `nnh_log_channel_tilemap`, which `hello.elf` has too). `linkcheck.sh` holds.
+- **T8.4 Opt-in and regression**: `hello` sizes and `nm` lists equal stage 0's on PC and 3DS; `compare.sh` every
+  reference identical; every example's console script passes with `--pc` (actions, animation, camera, data, entities,
+  foundation ×2, input, platformer `gate`, `level`, `zoom_gate`, prefabs, queries, tweens). `.text` (3ds-release):
+  `platformer.elf` 350 048 → 360 904 (+10.9 KB: the prefab module's registration, spawn and map code), `prefabs.elf`
+  343 236 (3ds-dev 364 400), `entities.elf` 271 024 (unchanged).
+- **Build times** (3 runs, same session): an `examples/prefabs/room.cpp` edit → simulator 2.13–2.30 s, `.3dsx`
+  5.04–5.13 s; `examples/prefabs/roster.cpp` 2.05–2.28 s / 4.73–4.92 s; the reference `examples/entities/arena.cpp`
+  2.05–2.09 s / 4.88–4.99 s (stage 0: 1.97–2.49 s / 4.78–4.91 s). The edit is link-dominated; `room.cpp` costs ≈ 0.1–
+  0.2 s more because `room.hpp` brings `<nnh/tilemap.hpp>` (gfx, collision) and `<nnh/tween.hpp>`, not because of the
+  prefab header (`<nnh/prefabs.hpp>` 8919 preprocessed lines, 0.49–0.51 s against `<nnh/entities.hpp>`'s 8555 lines,
+  0.44–0.48 s: within the plan's 0.05 s). **Refinement:** the registrations and their hooks moved from `room.cpp` to
+  `room_prefabs.cpp` (load-time code with the tween lambdas apart from the per-frame code), which took ≈ 0.1 s off the
+  `room.cpp` edit. The `.3dsx` edit sits at constitution III's 5 s line on this machine, as `examples/entities` does.
+
+## Mutation testing
+
+109 hand mutants (`build/ref-021/mutants.py`, applied one at a time by `build/ref-021/mutate.py`: rebuild `nnh_tests`,
+run all of it, restore the file) of the spawn (31: checks, kinds, overrides and their mask, both copy loops, extra kinds,
+placement, the hook chain and its order, counters, the doomed library), the reservation and the kind lookups (12), the
+shared bookkeeping helpers (3), flattening (13), registration (13), `find` and the hash (5), queries (4), `record_of`,
+the type cache, the layout and creation (10), map objects (10), the header's templates (4) and the platformer's
+prefabs (4): **99/109 killed** on the first run (pc-debug).
+
+- **Pre-empted before the run** (two tests written from reading the code, not from a survivor):
+  `an_added_kind_replaces_its_slots_value_and_balances` (an override-only kind's slot `T{}` destroyed before the copy)
+  and "misuse is not a miss" in `prefab_misuse_list_asserts_or_is_harmless`.
+- **Test gaps, closed** (6): the null-id guard of `world_kinds_of` (a world of fewer than four kinds has null spare
+  ids), the entry and value-byte capacities off by one entry or four bytes (the old test hit the byte limit first), an
+  alignment check with a valid copy function (the old test's value also lacked one), the destructor's own doomed check
+  (the test destroyed the library by move-assignment, which checks first), and the map's unknown counter before the
+  assert. New tests: `world_kinds_of_maps_a_strided_list_of_ids` (extended),
+  `add_refuses_one_entry_or_a_few_bytes_past_a_capacity`, `add_refuses_a_value_with_a_bad_alignment`,
+  `deleting_a_library_from_its_own_hook_asserts_or_is_freed_by_the_spawn`, and a counter check in
+  `an_unknown_explicit_prefab_is_a_logged_level_error_that_asserts`. All six killed in round 2.
+- **Release-path** (2): the doomed block never freed (`sp1`), and a non-string `prefab` treated as an empty name
+  (`ma8`): only observable where asserts are compiled out; both killed in pc-release (`mutants_rel.py`).
+- **Equivalent** (2): `check_values` without its "more than 32 values" check (flattening refuses the 33rd entry before
+  any array is indexed); a map object with an empty type looked up instead of skipped (no name hashes to FNV-1a's empty
+  value in practice: only a cache lookup more).
+
+Final: **107/109 killed**, 2 equivalent; every source restored (`git status` clean for `engine/` and `examples/`
+after each round).
+
+## Stage 9: Linux checks (left to the lead)
+
+Not run in this session (VM 120 is the lead's). On `nnhge-build`, with GCC 13, GCC 14 and clang 18 (ASan/UBSan):
+`nnh_tests` and ctest pass, and these tests hold their values unchanged (they are assertions):
+`the_prefabs_self_check_reaches_the_golden_checksum` (`0x7BB7901E`; checkpoints `3EBCC2FD`, `821C8B95`, `CC194CA2`,
+`C8360424`) and `prefab_spawns_equal_the_hand_written_calls_over_the_whole_script`, the twin-world tests
+(`test_spawn`, `test_overrides`, `test_spawn_hooks`, `test_world_reserve`'s twenty seeded sequences), spec 020's
+`the_entities_self_check_reaches_the_golden_checksum` (`0xC8FB9A41`) and ctest `platformer_replay_matches_script`
+(`B2418A28`), `prefabs_self_check_pc` and `prefabs_check_script_pc` (`PASS 7BB7901E`). ASan/UBSan matter most for the
+`Counted` balance tests (`test_add`, `test_variants`' shared values, `test_overrides`' added kind), the library
+destroyed from its own nested hook (`test_prefab_misuse`, Release path under the Release-flavoured build), hooks that
+destroy their own copy (`test_spawn_hooks`), and `test_data_values` (a 4 KB value block of `Enemy` structs). libFuzzer:
+`fuzz_prefab_ops` (`-DNNH_BUILD_FUZZERS=ON`, clang), 10 minutes; any byte string is valid (every 4 bytes are one
+self-check operation, the prefab side and the hand side compared after each).
+
+## Stage 10 checks (T10.1, on the PC)
+
+`scripts/dkp.sh cmake --build --preset 3ds-release` and `--preset 3ds-dev` (all targets: `prefabs`, `platformer` and
+`entities` included) build without a warning. 3ds-release `hello.elf` 201 012 / 28 352 / 106 680 and 3ds-dev
+`hello.elf` 217 728 / 32 872 / 109 288, as in stage 0. The final 3ds-dev objects (`prefab_spawn.o`, `library_find.o`,
+`world_reserve.o`, `world_spawn.o`, `world_components.o`) disassemble identically to T7.6's: its table still holds.
+The console run itself (T10.2) is the maintainer's: commands and expected lines in "Stage 10: console run (prepared)".
+
+## Stage 11 results
+
+- Docs: `docs/api/prefabs.md` (new); `docs/api/entities.md` (Worlds → prefabs), `docs/api/data.md` (see also: one
+  prefab per data asset), `docs/api/tilemap.md` (objects name prefabs), `docs/guides/levels.md` ("Placing prefabs in
+  Tiled"), `docs/architecture/patterns.md` (Prototype row → the API page), `docs/architecture/decisions.md` (D36
+  implemented, with the refinements), `docs/REFERENCES.md` (Unity, Godot, flecs, Bevy, Tiled, Prototype), `CLAUDE.md`
+  (module paragraph, the prefabs script command), `docs/ROADMAP.md` (Prefabs: implemented, console check pending),
+  `specs/README.md`, the `nnh-architecture` skill's pattern list; spec, plan and tasks marked implemented (console
+  check pending). `docs_tool.py check`: 156 files, 0 broken links. The Old 3DS numbers go into `docs/api/prefabs.md`
+  ("Costs") after T10.2.
+- Final: `nnh_tests` 2312 (pc-debug); ctest pc-debug 268/268, pc-release 258/258; 3ds-release and 3ds-dev without a
+  warning; goldens `C8FB9A41` (entities), `B2418A28` (platformer replay), `7BB7901E` (prefabs); `compare.sh` every
+  reference identical; every example script `--pc` PASS.

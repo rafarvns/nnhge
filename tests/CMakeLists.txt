@@ -187,6 +187,7 @@ add_executable(nnh_tests
     gfx/test_draw_calls.cpp
     gfx/test_draw_list.cpp
     gfx/test_draw_list_zoom.cpp
+    gfx/test_draw_transform.cpp
     gfx/test_texture_rules.cpp
     gfx/test_texture_table.cpp
     gfx/test_tile_batches.cpp
@@ -195,6 +196,19 @@ add_executable(nnh_tests
     gfx/test_tile_chunks.cpp
     gfx/test_images.cpp
     gfx/test_zoom1_regression.cpp
+    hierarchy/test_attach.cpp
+    hierarchy/test_camera_follow.cpp
+    hierarchy/test_cascade.cpp
+    hierarchy/test_debug_draw.cpp
+    hierarchy/test_each_descendant.cpp
+    hierarchy/test_hierarchy_misuse.cpp
+    hierarchy/test_keep_world.cpp
+    hierarchy/test_node.cpp
+    hierarchy/test_propagate.cpp
+    hierarchy/test_queries.cpp
+    hierarchy/test_remove_node.cpp
+    hierarchy/test_scene_binding.cpp
+    hierarchy/test_world_now.cpp
     input/test_dpad_mirror.cpp
     input/test_input_queries.cpp
     input/test_input_state.cpp

@@ -121,7 +121,8 @@ struct TextOptions {
     bool ignore_camera = false;              ///< position in screen pixels (HUD)
 };
 
-class Texture; // <nnh/texture.hpp>
+class Texture;           // <nnh/texture.hpp>
+struct WorldTransform2D; // <nnh/transform.hpp>
 
 namespace gfx {
 
@@ -129,6 +130,13 @@ namespace gfx {
 /// minus the screen's camera). Records the draw: it appears when the frame ends, ordered by layer, then
 /// call. Only inside a frame; an empty texture draws nothing. No allocation.
 void draw(Screen screen, const Texture& texture, Vec2 position, const DrawOptions& options = {});
+
+/// `given` with a world transform merged in (spec 022 FR-13): rotation = the world's + the given one (subtracted under a
+/// mirrored world, as a child's), scale = the world's × the given one; region, pivot, flips, tint, opacity, layer and
+/// ignore_camera kept. A mirror is a negative scale: centre the pivot so a mirrored sprite stays in place. Pure.
+DrawOptions transformed(const WorldTransform2D& world, const DrawOptions& given = {});
+/// draw(screen, texture, world.position(), transformed(world, options)): a node's sprite where the hierarchy put it.
+void draw(Screen screen, const Texture& texture, const WorldTransform2D& world, const DrawOptions& options = {});
 
 /// Filled rectangle.
 void fill_rect(Screen screen, Rect rect, Color color, const ShapeOptions& options = {});

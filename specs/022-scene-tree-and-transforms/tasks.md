@@ -92,64 +92,64 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
 
 ## Stage 3: nodes and links (pure)
 
-- [ ] **T3.1** `Node` (layout in the plan's order, `static_assert(sizeof(Node) == 80)`, defaults, `Node(local)`, copy
+- [x] **T3.1** `Node` (layout in the plan's order, `static_assert(sizeof(Node) == 80)`, defaults, `Node(local)`, copy
   without links, assignment keeping links), `node_component(capacity)` and with a game hook (game's first, then
   `detail::node_removed`; a stub until T4.4), `Hierarchy(World&)` (asserts without the kind). Test:
   `tests/hierarchy/test_node.cpp`, `hierarchy_fixture.hpp` (kinds, a world maker, a block hash). Files:
   `include/nnh/hierarchy.hpp`, `detail/hierarchy_walk.hpp`, `src/hierarchy/hierarchy_internal.hpp`, `node.cpp`, CMake
   `_nnh_hierarchy_sources`. Covers FR-5.
-- [ ] **T3.2** Links: append (the first child's previous = the last child), unlink, subtree height and depth rewrite
+- [x] **T3.2** Links: append (the first child's previous = the last child), unlink, subtree height and depth rewrite
   (stackless walks). Test: `tests/hierarchy/test_attach.cpp` (part 1: link invariants after seeded sequences checked by a
   brute-force rebuild). Files: `src/hierarchy/node_links.cpp`. Covers FR-6.
-- [ ] **T3.3** `can_attach`, `attach`, `detach`, `detach_children` in both modes; refusals in the plan's order (stale,
+- [x] **T3.3** `can_attach`, `attach`, `detach`, `detach_children` in both modes; refusals in the plan's order (stale,
   dying, no node, cycle, self, depth 16, not invertible) — false, assert, stats refusal, block byte-identical; attach to
   the current parent; keep-world leaves the stored world unchanged, keep-local computes it; descendants keep locals.
   Test: `test_attach.cpp` (part 2), `tests/hierarchy/test_keep_world.cpp`. Files: `src/hierarchy/attach.cpp`. Covers
   FR-6, FR-10.
-- [ ] **T3.4** [P] Queries: `parent`, `depth`, `root`, `child_count`, `first_child`, `next_sibling`, `children()`
+- [x] **T3.4** [P] Queries: `parent`, `depth`, `root`, `child_count`, `first_child`, `next_sibling`, `children()`
   range (next read before yielding), `is_ancestor`, `local`, `node`, `world_transform`, `stats` (refusals so far).
   Test: `tests/hierarchy/test_queries.cpp`. Files: `src/hierarchy/hierarchy_queries.cpp`, `detail/hierarchy_walk.hpp`.
   Covers FR-7, FR-22.
-- [ ] **T3.5** Stage end: the stage-end guards; include check (`<nnh/hierarchy.hpp>` pulls no gfx, collision, camera,
+- [x] **T3.5** Stage end: the stage-end guards; include check (`<nnh/hierarchy.hpp>` pulls no gfx, collision, camera,
   tween, animation, tilemap or prefab header; preprocessed lines and `-fsyntax-only` time against T0.1's entities
   header). Files: plan.md ("Stage 3 results"). Covers FR-24, III.
 
 ## Stage 4: the pass, fresh values, walks, cascades, drawing (pure)
 
-- [ ] **T4.1** `propagate()`: roots in ascending slots, stackless depth-first walk, finiteness test (Release: identity +
+- [x] **T4.1** `propagate()`: roots in ascending slots, stackless depth-first walk, finiteness test (Release: identity +
   `bad_locals`), the sine cache, both composition rules, prefetch, stats at the end; refused inside iterations and
   hooks. Test: `tests/hierarchy/test_propagate.cpp` (visiting order by a call log in test builds, each node once, roots
   bit-equal to locals, nodes created/attached between passes, a sine counter shows rotation-unchanged nodes skip it,
   refusals). Files: `src/hierarchy/propagate.cpp`. Covers FR-8, FR-21.
-- [ ] **T4.2** `world_now`: climb (≤ 16 slots on the stack), same inline code, cache when its bits match. Test:
+- [x] **T4.2** `world_now`: climb (≤ 16 slots on the stack), same inline code, cache when its bits match. Test:
   `tests/hierarchy/test_world_now.cpp` (equals the pass's stored bits for every node of 50 seeded hierarchies before and
   after moves; identity without a node; the muzzle pattern). Files: `src/hierarchy/world_now.cpp`. Covers FR-9.
-- [ ] **T4.3** `each_descendant`: path, remembered next siblings, iteration guard (fresh nodes skipped), the cursor
+- [x] **T4.3** `each_descendant`: path, remembered next siblings, iteration guard (fresh nodes skipped), the cursor
   fix-ups on unlink (module state's walk list), nested walks. Test: `tests/hierarchy/test_each_descendant.cpp`
   (pre-order; destroying the current node, an ancestor, the next sibling, an unvisited subtree; detaching and attaching
   into and out of the unvisited part; spawning; nested walks). Files: `src/hierarchy/descendant_walk.cpp`,
   `node_links.cpp`. Covers FR-7.
-- [ ] **T4.4** The engine's remove hook: cascade when dying (children's links cleared, queued destroys: breadth-first in
+- [x] **T4.4** The engine's remove hook: cascade when dying (children's links cleared, queued destroys: breadth-first in
   child order), removal when not (children become roots keeping their stored worlds, depths rewritten). Test:
   `tests/hierarchy/test_cascade.cpp` (hook order log, node data and last world intact in each hook, parent stale and
   `parent(child)` null, a hook destroying or attaching during a cascade, `detach_children` first, `clear()` with
   hierarchies and the first load's slots after it, a game hook first), `tests/hierarchy/test_remove_node.cpp`. Files:
   `src/hierarchy/node_removed.cpp`. Covers FR-11.
-- [ ] **T4.5** [P] Scene binding and quarantine. Test: `tests/hierarchy/test_scene_binding.cpp` (a bound world with
+- [x] **T4.5** [P] Scene binding and quarantine. Test: `tests/hierarchy/test_scene_binding.cpp` (a bound world with
   nodes flushed before update and cleared after exit; node slots quarantined until the flush; no new D30 notification).
   Covers FR-12.
-- [ ] **T4.6** [P] Drawing: `gfx::transformed` and the `draw` overload (`src/gfx/draw_transform.cpp`, `-ffp-contract=off`;
+- [x] **T4.6** [P] Drawing: `gfx::transformed` and the `draw` overload (`src/gfx/draw_transform.cpp`, `-ffp-contract=off`;
   `gfx.hpp` forward-declares `WorldTransform2D`). Test: `tests/gfx/test_draw_transform.cpp` (the fake's recorded items:
   position, rotation, scale, flips, for given options and an animator's `draw_options()`; a mirrored world subtracts the
   given rotation; zoom applies). Covers FR-13.
-- [ ] **T4.7** [P] Debug draw (Debug/Development; Release compiles to nothing) and the camera pattern. Test:
+- [x] **T4.7** [P] Debug draw (Debug/Development; Release compiles to nothing) and the camera pattern. Test:
   `tests/hierarchy/test_debug_draw.cpp` (recorded lines: one per non-root to its parent, two axes per node),
   `tests/hierarchy/test_camera_follow.cpp` (a `CameraRig` on a child's world after the pass equals one on the
   hand-computed point). Files: `src/hierarchy/hierarchy_debug_draw.cpp`. Covers FR-15, FR-22.
-- [ ] **T4.8** Misuse and cost: every FR-23 case asserts and is harmless on the Release path (pc-release); the
+- [x] **T4.8** Misuse and cost: every FR-23 case asserts and is harmless on the Release path (pc-release); the
   allocation counter unchanged over 100 000 operations after creation; no log line in the normal path; `events::stats()`
   unchanged. Test: `tests/hierarchy/test_hierarchy_misuse.cpp`. Covers FR-20, FR-21, FR-23.
-- [ ] **T4.9** Stage end: the stage-end guards; `compare.sh` (every reference identical). Files: plan.md ("Stage 4
+- [x] **T4.9** Stage end: the stage-end guards; `compare.sh` (every reference identical). Files: plan.md ("Stage 4
   results"). Covers AC-8.
 
 ## Stage 5: prefabs with children, the golden script

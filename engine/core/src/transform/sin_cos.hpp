@@ -18,6 +18,13 @@ inline constexpr std::uint32_t kSignBit = 0x80000000u;
 inline std::uint32_t float_bits(float f) { return std::bit_cast<std::uint32_t>(f); }
 inline bool finite_bits(std::uint32_t b) { return (b & kExponentBits) != kExponentBits; }
 
+/// Every float of `t` finite (an integer test on the bits: no float compare).
+NNH_DET_INLINE bool is_finite_bits(const Transform2D& t) {
+    return finite_bits(float_bits(t.position.x)) && finite_bits(float_bits(t.position.y)) &&
+           finite_bits(float_bits(t.rotation)) && finite_bits(float_bits(t.scale.x)) &&
+           finite_bits(float_bits(t.scale.y));
+}
+
 /// The quadrant (n & 3) of a whole q with |q| ≥ 2²³, from its mantissa bits: no float→int conversion can overflow.
 NNH_DET_INLINE std::uint32_t huge_quadrant(std::uint32_t qbits) {
     const int shift = static_cast<int>((qbits >> 23) & 0xFFu) - 127 - 23; // q = mantissa · 2^shift, shift ≥ 0

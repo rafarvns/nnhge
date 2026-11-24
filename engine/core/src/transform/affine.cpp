@@ -45,12 +45,6 @@ bool to_local(const Affine2D& map, Vec2 world_point, Vec2& out) {
     return true;
 }
 
-bool is_finite(const Transform2D& t) {
-    using detail::finite_bits;
-    using detail::float_bits;
-    return finite_bits(float_bits(t.position.x)) && finite_bits(float_bits(t.position.y)) &&
-           finite_bits(float_bits(t.rotation)) && finite_bits(float_bits(t.scale.x)) &&
-           finite_bits(float_bits(t.scale.y));
-}
+bool is_finite(const Transform2D& t) { return detail::is_finite_bits(t); }
 
 } // namespace nnh

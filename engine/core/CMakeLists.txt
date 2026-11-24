@@ -289,6 +289,25 @@ target_sources(nnh_core PRIVATE ${_nnh_transform_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_transform_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Hierarchies (spec 022, D37): the engine's node component kind, links, the pass, world_now, walks, cascades. Every
+# float operation shares the transforms' inline code, so the same rule: no fused multiply-add. gfx/draw_transform.cpp
+# (a node's sprite) is in its own object: games that never draw a transform link none of it.
+set(_nnh_hierarchy_sources
+    src/gfx/draw_transform.cpp
+    src/hierarchy/attach.cpp
+    src/hierarchy/descendant_walk.cpp
+    src/hierarchy/hierarchy_debug_draw.cpp
+    src/hierarchy/hierarchy_queries.cpp
+    src/hierarchy/node.cpp
+    src/hierarchy/node_links.cpp
+    src/hierarchy/node_removed.cpp
+    src/hierarchy/propagate.cpp
+    src/hierarchy/world_now.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_hierarchy_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_hierarchy_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

@@ -881,3 +881,33 @@ Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at co
   `__aeabi_*` or `memset`.
 - Guards: pc-debug ctest 268/268, pc-release 258/258, `nnh_tests` 2360 (pc-release 2320), 3ds builds without a warning,
   `hello` sizes and `nm` unchanged; entities, prefabs, tweens self-checks and the replay ctest pass.
+
+### Stage 3 and 4 results (committed together: the hierarchy's links and its pass are one module)
+
+- **Refinements**: `ChildRange` lives in `<nnh/hierarchy.hpp>` after `Node` (its iterator needs the complete type; the
+  step to the next sibling is out of line); `hierarchy_walk.hpp` holds the link sentinel, `node_removed` and
+  `DescendantWalk` (its iteration guard is a member). `Hierarchy` keeps the world pointer, a `Storage<Node>` and the
+  node kind index. Internal code works through `detail::Tree` (world, block, kind, node array) and `NodeAccess`.
+  `node_compute.hpp` holds the one inline node computation shared by the pass and `world_now` (finiteness by bits, the
+  cache compared on the rotation's bits — `world_now` reads it but never writes it). `is_finite_bits` is inline in
+  `transform/sin_cos.hpp`. `gfx::transformed`/`gfx::draw(…, WorldTransform2D, …)` are in `src/gfx/draw_transform.cpp`,
+  listed with the hierarchy's `-ffp-contract=off` sources.
+- **Walk rule (T4.3)**: besides the plan's "a remembered next sibling that is unlinked moves on to its next", an append
+  under a node of the walk's path whose level has no next sibling left becomes that level's next (so a node moved after
+  the current one is visited, as the plan says); every step re-checks the path from the top (a node destroyed or moved
+  out is not descended into); fresh nodes (the node kind's fresh bits) are skipped with their subtrees.
+- **Cascade (T4.4)**: the engine hook unlinks every child (`unlink`, which tells the walks) before destroying it
+  (queued) or making it a root; tests prove breadth-first hooks with the last worlds intact and `parent(child)` null.
+- **Pass tests (T4.1)**: no call log or sine counter was added to engine code: the order is proven by a child placed
+  in a lower slot than its parent (a slot-order pass would read a stale world), each-node-once by the computed count,
+  and the cache by a planted cached sine (read while the rotation's bits are unchanged, refreshed when they change).
+- **Misuse (T4.8)**: `events::Stats` has no publish counter; the no-event test compares its fields, and the module
+  includes no event header.
+- **T3.5**: `<nnh/hierarchy.hpp>` pulls 60 headers, none of gfx, collision, camera, tween, animation, tilemap or
+  prefabs; 8 980 preprocessed lines (+425 over `entities.hpp`), `-fsyntax-only` 0.47–0.50 s against `entities.hpp`'s
+  0.48–0.52 s on the same run (within the 0.05 s budget). The header is 237 lines (comments included).
+- **3ds-dev**: `propagate` 585 instructions in all, `world_now` 490 (4 `vmrs` each: `sin_quarter`'s clamp, inlined twice
+  per rule; decided at T7.6); `examples/entities` `bench.o`, `World::spawn`, `world_add`, `world_destroy` and
+  `prefab_spawn` byte-identical.
+- **Guards**: pc-debug ctest 268/268, pc-release 258/258, `nnh_tests` 2414, 3ds-release and 3ds-dev without a warning,
+  `hello` sizes and `nm` unchanged, every reference screenshot identical (T4.9).

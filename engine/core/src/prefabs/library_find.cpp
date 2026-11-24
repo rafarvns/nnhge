@@ -7,12 +7,33 @@
 namespace nnh {
 namespace detail {
 
+namespace {
+
+/// FNV-1a's prime in a register the compiler can't see into (plan 021, optimisation round). As a constant, GCC turns
+/// `× 0x01000193` into five dependent shift-adds, and on the ARM11 each waits a cycle for its shifted operand: ≈ 11
+/// cycles per byte on the hash's dependency chain. One `mul` is ≈ 4, and the next byte's load and test fit under it.
+inline std::uint32_t fnv_prime() {
+    std::uint32_t prime = 0x01000193u;
+#if defined(__GNUC__) || defined(__clang__)
+    asm("" : "+r"(prime));
+#endif
+    return prime;
+}
+
+} // namespace
+
 std::uint32_t hash_string(const char* text) {
+    const std::uint32_t prime = fnv_prime();
     std::uint32_t hash = 0x811C9DC5u;
-    for (const auto* p = reinterpret_cast<const unsigned char*>(text); *p != 0; ++p) {
-        hash ^= *p;
-        hash *= 0x01000193u;
-    }
+    for (const auto* p = reinterpret_cast<const unsigned char*>(text); *p != 0; ++p) hash = (hash ^ *p) * prime;
+    return hash;
+}
+
+std::uint32_t hash_bytes(const char* text, std::size_t size) {
+    const std::uint32_t prime = fnv_prime();
+    std::uint32_t hash = 0x811C9DC5u;
+    const auto* p = reinterpret_cast<const unsigned char*>(text);
+    for (std::size_t i = 0; i < size; ++i) hash = (hash ^ p[i]) * prime;
     return hash;
 }
 
@@ -57,7 +78,7 @@ Prefab PrefabLibrary::find(const char* name) const {
 
 Prefab PrefabLibrary::find(const char* text, std::size_t size) const {
     if (text == nullptr) return {};
-    return detail::find_hash(block_, detail::fnv1a32(text, size));
+    return detail::find_hash(block_, detail::hash_bytes(text, size));
 }
 
 } // namespace nnh

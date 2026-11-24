@@ -1,6 +1,7 @@
 // Map objects name prefabs (spec 021 T5.2, FR-9, FR-6, AC-3): the `prefab` string property first, else the type; map
 // order; skipped types; unknown explicit names logged with the object's id, name and layer and asserting; the layer
-// filter; the check call; a restart after clear() gives the first load's slots; the type cache.
+// filter; the check call; a restart after clear() gives the first load's slots; the name memo (test_map_names.cpp: the
+// walk's memos against find() object by object).
 
 #include "map_fixture.hpp"
 #include "nnh/app.hpp"
@@ -165,9 +166,9 @@ NNH_TEST(map_misses_are_counted_when_a_kind_is_full) {
     CHECK(p.lib.stats().misses == 1);
 }
 
-NNH_TEST(the_type_cache_answers_equal_text_at_different_pointers) {
+NNH_TEST(the_name_memo_answers_equal_text_at_different_pointers) {
     MapPrefabs p;
-    nnh::detail::TypeCache cache;
+    nnh::detail::NameMemo cache;
     const char a[] = "walker";
     const char b[] = "walker";
     const char c[] = "coin";

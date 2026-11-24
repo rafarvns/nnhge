@@ -6,6 +6,23 @@
 #include "entities/world_internal.hpp"
 
 namespace nnh::detail {
+namespace {
+
+/// Prefab spawns (a level, a burst) usually take ascending entity slots, and a new record is read before it is
+/// written: ask for the record two slots ahead (plan 021 optimisation round; the ARM11 has no hardware prefetcher).
+/// Integer arithmetic: the address may be past the block, which PLD, a hint, never faults on.
+inline void prefetch_ahead(const std::uint32_t* record, int record_words) {
+#if defined(__GNUC__) || defined(__clang__)
+    const std::uintptr_t at = reinterpret_cast<std::uintptr_t>(record) +
+                              static_cast<std::uintptr_t>(record_words) * 2u * sizeof(std::uint32_t);
+    __builtin_prefetch(reinterpret_cast<const void*>(at));
+#else
+    (void)record;
+    (void)record_words;
+#endif
+}
+
+} // namespace
 
 int world_kind_of(const World& world, TypeId id) {
     const WorldHot* w = WorldAccess::hot(world);
@@ -78,6 +95,7 @@ Entity world_reserve(World& world, const int* kinds, int count, void** component
     }
     const Entity e = take_entity(*w, entity);
     std::uint32_t* r = record_at(*w, static_cast<std::uint32_t>(entity));
+    prefetch_ahead(r, w->record_words);
     for (int i = 0; i < count; ++i) {
         attach_component(*w, kinds[i], entity, r, slots[i]);
         components[i] = component_at(*w, kinds[i], slots[i]);

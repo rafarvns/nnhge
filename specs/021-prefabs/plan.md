@@ -990,6 +990,115 @@ self-check operation, the prefab side and the hand side compared after each).
 `world_reserve.o`, `world_spawn.o`, `world_components.o`) disassemble identically to T7.6's: its table still holds.
 The console run itself (T10.2) is the maintainer's: commands and expected lines in "Stage 10: console run (prepared)".
 
+## Console run 1 (T10.2 run 1, Old 3DS XL, 2026-11-23)
+
+Development build, `examples/prefabs/tests/check.nnhs` (log `build/logs/prefabs-20261123-221302.txt`). Every logic line
+equals the PC's: `prefabs: PASS 7BB7901E`, the map, `selected:`, `spawned:` and `missed:` lines. Bench:
+
+| Workload | Old 3DS avg (worst) | T7.6 estimate | Target (provisional, AC-7) | Verdict |
+|----------|---------------------|---------------|----------------------------|---------|
+| spawn (256 + destroys) | 1.621 ms (1.839); hand 1.498, ratio 1.08 | 1.3–1.4 ms, ratio ≈ 0.9 | < 2.0 ms, ≤ 1.25 | PASS |
+| overrides | 1.918 ms (2.828) | 1.45–1.6 ms | < 2.2 ms | PASS |
+| map (512 objects) | 5.572 ms (7.815) | 2.0–2.6 ms | < 4.0 ms | **FAIL** |
+| find (1000, 9-character names) | 0.669 ms (0.749) | 0.40–0.48 ms | < 0.5 ms | **FAIL** |
+
+Policy (the maintainer's): optimise first (T10.3, below), then set the budgets from the next console measurement with
+≈ 25 % margin. The targets stay as written until then.
+
+## Optimisation round (T10.3)
+
+**Why `map` was ≈ 2× the estimate.** T7.6's ≈ 540 instructions per object were an undercount, then the usual model
+error on top:
+
+- The bench's objects **alternate** `coin` and `walker`. The one-entry type cache (`TypeCache`, keyed by the last
+  type's pointer) therefore missed on every object: a full `find()` per object (≈ 71 instructions for 4–6 characters),
+  not "≈ 5 for a hit".
+- `Tilemap::object(i)` is 67 instructions, not ≈ 50: the 40-byte `MapObject` is built on its own stack, then copied
+  to the caller (two 48-byte `ldm`/`stm` runs and the float `vldr`/`vstr`), plus the call.
+- `properties.type("prefab")` is three calls (`type` → `find` → `find_property`) and a `strcmp` per property (≈ 53).
+- The hook chain (`run_hooks`, `SmallFunction`'s trampoline) and the hook body (`get<Coin>`, `get_int`'s three calls
+  and a `strcmp` on the hit) were ≈ 120, not ≈ 75.
+- The FNV-1a hash costs ≈ 11 cycles per byte, not ≈ 5: GCC expands `× 0x01000193` into five dependent shift-adds, and
+  on the ARM11 a shifted operand is needed a cycle early, so each add waits a cycle (find: 9 × 8 instructions on a
+  ≈ 100-cycle dependency chain; measured 179 cycles per find, the model now gives ≈ 170–185).
+- No prefetch on the map's object array (36 B per object) and property array, walked in order.
+
+So ≈ 830 instructions per object, × ≈ 2.2 cycles (the spawn line's calibration, misses included) ≈ 1 830 cycles, plus
+the map arrays' misses (≈ 1.5 lines per object) ≈ 2 000–2 200 cycles: 3.8–4.2 ms predicted against 5.57 measured. The
+rest (≈ 1.3×) is the model error the spawn line shows too (1.62 ms against 1.3–1.4): out-of-line calls, two indirect
+calls per entry, return-stack overflow on the hook path (map → spawn → hook → `get_int` → `strcmp` is 6 deep), and
+branches that alternate with the object type.
+
+**Changes** (no result changes; every golden holds):
+
+- **`spawn_map_objects` reads the map in place** (`prefab_map.cpp` includes `tilemap/tilemap_internal.hpp`, the
+  tilemap's internal header; still the only prefab source that sees the tilemap): object and property entries straight
+  from the block, the `MapObject` built (by the new `detail::map_object_at`, which `Tilemap::object()` now uses too)
+  only for an object that spawns or is a level error, `pld` four objects ahead (two lines) and eight property entries
+  ahead.
+- **Which property names are `prefab`** is memoised per call by string offset (16 direct-mapped entries; a map's pool
+  only grows, so an offset's text never changes): no `strcmp` per property after the first sight of a name.
+- **`NameMemo`** replaces `TypeCache`: 16 entries direct-mapped by the string's pointer, for types and explicit names,
+  forgotten when the library grows (a hook may register a prefab mid-walk; the one-entry cache could not go stale in
+  practice, a larger memo could). Equal text at two pointers is only a second lookup.
+- **The run-time hash uses `mul`**: the prime goes through an empty `asm` so GCC can't see it (`fnv_prime()` in
+  `library_find.cpp`); 5 instructions per byte (`eor`, `mul`, the next byte's `ldrb`/`cmp`/`bne` under the multiply)
+  instead of 8, and ≈ 4–5 cycles of chain instead of ≈ 11. `find(text, size)` uses the same loop (`hash_bytes`).
+- **Tilemap property lookups** (`find_property`) are inline in `map_property_table.hpp` and compare the first byte
+  before calling `strcmp` on the rest: a getter is one call less and most non-matching names cost no `strcmp`. Every
+  game's `get_int`/`get_string` benefits; behaviour identical.
+- **`world_reserve`** asks for the record two slots ahead (`pld`, integer address arithmetic: past the block is fine
+  for a hint). One instruction; spawns from a level or a burst take ascending slots, and a new record is read before it
+  is written.
+- Plan risk 1's `{index, hash >> 16}` table pairs were **not** applied: every find of the bench (and of a game, which
+  looks up registered names) is a hit, and a hit must still confirm the full hash in the hash array, so the pair saves
+  nothing there; the hash chain dominated. An unrolled or word-wise hash was not applied either: with `mul`, the
+  eor → mul chain (≈ 4–5 cycles per byte) is the bound, not the instruction count.
+
+**Tests first** (`tests/prefabs/test_map_names.cpp`, new; `test_names.cpp`): a walk over 120 objects of 24 types (half
+registered), rotating property orders and explicit names answers object by object what `type("prefab")`,
+`get_string("prefab")` and `find()` answer (summary, spawn order and prefab per spawn); a non-string or unknown `prefab`
+among other properties is unknown; a prefab a hook registers mid-walk names the later objects of its type and the
+later explicit names; the run-time hashes equal the reference FNV-1a for every length 0..79, start alignments 0..3 and
+bytes 1..255 (`the_run_time_hashes_match_fnv1a_for_every_length_alignment_and_byte`; it failed to compile first: no
+`hash_bytes` yet). They pass on the old code too (they pin the behaviour the memos must keep); hand mutants of the new code
+(the memo not forgotten when the library grows, `strncmp(…, 4)` for `prefab`) are killed. `the_type_cache_…` became
+`the_name_memo_answers_equal_text_at_different_pointers`.
+
+**ARM evidence** (3ds-dev objects, `build/ref-021/opt/before` → `after3`, common paths counted from the listings):
+
+| Hot path | Before | After |
+|----------|--------|-------|
+| `find(const char*)`, 9-character name | 103 instructions (8 per byte) | 76 (5 per byte) |
+| hash chain per byte (cycles) | ≈ 11 (eor + 5 shifted adds) | ≈ 4–5 (eor + `mul`) |
+| bench loop per find | 9 | 9 |
+| map walk per spawned object, outside the spawn | ≈ 260 (`object()` 67, `type("prefab")` ≈ 53, `find` of the alternating type ≈ 71, loop and source ≈ 70) | ≈ 140 (name memo ≈ 16, type memo ≈ 20, `MapObject` + source ≈ 55, 3 `pld`) |
+| hook's `get_int("value")` | ≈ 77 (3 calls, `strcmp`) | ≈ 70 (2 calls, first byte inline, `strcmp` of the rest) |
+| `prefab_spawn` | — | identical |
+| `world_reserve` | — | + 1 (`pld`) |
+| map, per object in all | ≈ 830 | ≈ 700 |
+
+`world_spawn.o`, `world_components.o` (spec 020's `spawn()` 109, `world_add` 143), `prefab_spawn.o` and both
+examples' `bench.o` disassemble identically to before.
+
+**Expected at the next console run** (honest ranges; the last map estimate was 2× low for the reasons above, so these
+are scaled from the measurement rather than built up from counts): `find` ≈ 0.41–0.47 ms (from 0.669: 9 × ≈ 6 fewer
+cycles per byte, ≈ 120 cycles per find); `map` ≈ 4.0–4.6 ms (from 5.57: ≈ 15 % fewer instructions, the alternating
+find, the hash chain and the map arrays' misses gone) — likely still at or just over the provisional 4 ms; `spawn`
+and `overrides` ≈ unchanged (the record `pld` may take a few hundredths off). The next candidates if `map` must go
+lower: plan risk 3's per-prefab kind cache (≈ 35 instructions per spawn), `SpawnInfo` built once in the source
+instead of copied per hook (≈ 15), then the spawn path itself, which is now ≈ 55 % of a map object.
+
+**PC** (pc-dev, x86, noisy; not representative — x86 has hardware prefetchers and a fast multiplier): before spawn
+0.045–0.048 ms (ratio 1.08–1.11), overrides 0.048–0.058, map 0.088–0.111, find 0.024–0.027; after spawn 0.048–0.055
+(ratio 1.06–1.24, run-to-run noise), overrides 0.061–0.064, map 0.096–0.106, find 0.025–0.032. Before the round the
+map walk alone (`check_map_objects` over the bench's map) took 0.022 ms of the 0.1: on x86 the spawns dominate.
+
+**Checks**: `nnh_tests` 2316 (pc-debug); ctest pc-debug 268/268 and pc-release 258/258; 3ds-release and 3ds-dev
+without a warning; `compare.sh` every reference identical; `--pc` scripts: `prefabs/check.nnhs` PASS
+(`prefabs: PASS 7BB7901E`), `entities/check.nnhs` PASS (`C8FB9A41`), `platformer/level.nnhs` PASS
+(`sum B2418A28: 60 Hz PASS`); `docs_tool.py check` 0 broken links.
+
 ## Stage 11 results
 
 - Docs: `docs/api/prefabs.md` (new); `docs/api/entities.md` (Worlds → prefabs), `docs/api/data.md` (see also: one

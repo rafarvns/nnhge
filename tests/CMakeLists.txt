@@ -214,6 +214,7 @@ add_executable(nnh_tests
     prefabs/test_data_values.cpp
     prefabs/test_library_create.cpp
     prefabs/test_library_layout.cpp
+    prefabs/test_map_names.cpp
     prefabs/test_map_objects.cpp
     prefabs/test_names.cpp
     prefabs/test_overrides.cpp

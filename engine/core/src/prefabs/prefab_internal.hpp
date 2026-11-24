@@ -3,6 +3,7 @@
 // {PrefabBlock header, hashes[max_prefabs], table[table_size] (u16), records[max_prefabs], names (Debug/Development),
 // entries[max_entries], values[value_bytes]}, laid out by library_layout().
 
+#include <cstddef>
 #include <cstdint>
 
 #include "nnh/log.hpp"
@@ -94,8 +95,10 @@ void prefab_misuse(const char* what);
 
 /// The table slot holding `hash`, or the empty slot where it would go.
 std::uint32_t table_probe(const PrefabBlock& b, std::uint32_t hash);
-/// FNV-1a 32 of a NUL-terminated string in one pass.
+/// FNV-1a 32 of a NUL-terminated string in one pass, and of `size` bytes (the run-time forms of detail::fnv1a32: one
+/// `mul` per byte, see library_find.cpp).
 std::uint32_t hash_string(const char* text);
+std::uint32_t hash_bytes(const char* text, std::size_t size);
 
 /// Frees the block after destroying the values its entries own.
 void library_teardown(PrefabBlock* b);
@@ -114,17 +117,29 @@ struct SpawnSource {
 Entity prefab_spawn(PrefabBlock* b, World& world, Prefab prefab, const SpawnSource* source,
                     const ComponentValue* overrides, int count);
 
-/// A map call's type → prefab memo (FR-9), keyed by the type string's pointer: a map stores equal strings once, so
-/// one lookup per distinct type; equal text at another pointer is only a second lookup, never a wrong answer.
-struct TypeCache {
-    const char* text = nullptr;
-    Prefab prefab{};
-    Prefab find(const PrefabLibrary& library, const char* type) {
-        if (type != text) {
-            text = type;
-            prefab = library.find(type);
+/// A map call's name → prefab memo (FR-9) for types and `prefab` values, direct-mapped by the string's pointer: a map
+/// stores equal strings once, so one lookup per distinct name (types that alternate included); equal text at another
+/// pointer is only a second lookup, never a wrong answer. Forgotten when the library grows (a hook may register), so
+/// it answers what find() would answer at that moment.
+struct NameMemo {
+    static constexpr int kSlots = 16;
+    const char* text[kSlots] = {};
+    Prefab prefab[kSlots] = {};
+    int prefabs = -1; ///< the library's count when the entries were found
+    Prefab find(const PrefabLibrary& library, const char* name) {
+        const PrefabBlock* b = PrefabAccess::block(library);
+        const int now = b != nullptr ? b->prefabs : 0;
+        if (now != prefabs) {
+            for (const char*& t : text) t = nullptr;
+            prefabs = now;
         }
-        return prefab;
+        const auto bits = reinterpret_cast<std::uintptr_t>(name);
+        const auto slot = static_cast<int>((bits ^ (bits >> 4)) & (kSlots - 1));
+        if (text[slot] != name || name == nullptr) {
+            text[slot] = name;
+            prefab[slot] = library.find(name);
+        }
+        return prefab[slot];
     }
 };
 

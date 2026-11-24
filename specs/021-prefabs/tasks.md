@@ -257,10 +257,17 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
   4. `build/pc-debug/tools/nnh/nnh run entities --script examples/entities/tests/check.nnhs` → `entities: PASS
      C8FB9A41` and `entities bench: PASS` (spec 020's budgets after the reservation refactor).
   Files: plan.md ("Stage 10 results": verdicts, bench numbers, log paths). Covers AC-4, AC-6, AC-7.
+  **Run 1 done** (2026-11-23, plan.md "Console run 1"): logic all PASS (`7BB7901E`); bench spawn and overrides PASS,
+  `map` 5.572 ms and `find` 0.669 ms FAIL → T10.3. Runs 2–4 not reported yet.
 - [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risks 1–3 without changing a result (every golden holds), then T10.2 run 1 again; if still missed, the
   maintainer sets the budget from the measurement with margin, written in the spec's AC-7 and `docs/api/prefabs.md`
   with the numbers. Files: plan.md ("Console bench refinement"). Covers AC-7.
+  **Optimisation round done on the PC** (plan.md "Optimisation round"): the map walk reads the map in place with
+  memoised property names and prefab names and prefetches; the run-time hash uses `mul`; tilemap property lookups
+  inline; the reservation prefetches the next record. Tests first: `test_map_names.cpp` (3 tests),
+  `the_run_time_hashes_match_fnv1a_for_every_length_alignment_and_byte`. Pending: T10.2 run 1 again on the console,
+  then the maintainer's budgets.
 
 ## Stage 11: docs, roadmap, status
 

@@ -196,10 +196,18 @@ and tags on every host compiler and on the 3DS (the self-check's golden `7BB7901
 
 Per spawn: one handle check, one call resolving the entries' kinds, one reservation in the world, one copy call per
 component (as `add<T>(e, value)`), the placement's float stores, the hook chain when there is one. No allocation, no
-virtual call. `find`: one pass of FNV-1a over the name and a probe in a table of 2-byte indices. Old 3DS numbers
-(`examples/prefabs`' bench): *pending the console run* (spec 021 T10.2) — targets 256 spawns of a 3-component prefab
-with 2 tags plus their destroys < 2 ms and ≤ 1.25 × the hand-written calls, with an override and a position < 2.2 ms,
-512 map objects < 4 ms, 1000 finds < 0.5 ms.
+virtual call. `find`: one pass of FNV-1a over the name (one multiply per byte) and a probe in a table of 2-byte
+indices. `spawn_map_objects` reads the map's entries in place: per object a memoised check of its property names and
+of its type or `prefab` name (one `find` per distinct name per call), then the spawn; the `MapObject` is built only for
+objects that spawn.
+
+Old 3DS numbers (`examples/prefabs`' bench, Development build), **provisional**: the budgets are set from the next
+console measurement (spec 021 AC-7). The first console run gave 256 spawns of a 3-component prefab with 2 tags plus
+their destroys 1.62 ms (1.08 × the hand-written calls; target < 2 ms, ≤ 1.25 ×), the same with an override and a
+position 1.92 ms (< 2.2 ms), 512 map objects 5.57 ms and 1000 finds of 9-character names 0.67 ms — the last two over
+their targets (< 4 ms, < 0.5 ms) before the optimisation round of [plan 021](../../specs/021-prefabs/plan.md#optimisation-round-t103),
+which expects ≈ 4.0–4.6 ms and ≈ 0.41–0.47 ms. Look names up at load and spawn by handle; a level of a few hundred
+objects costs a few milliseconds once.
 
 ## Misuse
 

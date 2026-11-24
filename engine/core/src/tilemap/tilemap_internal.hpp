@@ -60,6 +60,20 @@ void load_collision_layers(Tilemap& map, const char* name);
 /// Frees the tileset textures load_tilemap loaded into the block (Tilemap::reset calls it).
 void release_map_textures(std::uint8_t* block);
 
+/// Writes object `index`'s view into `out` (the index must be valid). Tilemap::object() and the prefab module's map
+/// walk (spec 021, plan "Optimisation round": no 40-byte struct returned through the stack per object).
+inline void map_object_at(const MapView& v, int index, MapObject& out) {
+    const mapfmt::ObjectEntry& o = v.objects()[index];
+    out.id = static_cast<int>(o.id);
+    out.name = v.string(o.name);
+    out.type = v.string(o.type);
+    out.shape = o.shape == static_cast<std::uint8_t>(mapfmt::ObjectShape::Point) ? nnh::ObjectShape::Point
+                                                                                 : nnh::ObjectShape::Rect;
+    out.bounds = {o.x, o.y, o.w, o.h};
+    out.object_layer = o.object_layer;
+    out.properties = TilemapAccess::properties(v.base, o.properties_first, o.properties_count);
+}
+
 /// For the Result-returning edits: an error if the map is empty.
 inline bool map_empty(const Tilemap& map) { return TilemapAccess::block(map) == nullptr; }
 

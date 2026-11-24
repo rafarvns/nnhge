@@ -48,14 +48,6 @@ int add_tile_props(const MapView& v, int tile_id) {
     return at;
 }
 
-int find_property(const MapView& v, int first, int count, const char* name) {
-    const PropertyEntry* props = v.properties();
-    for (int i = first; i < first + count; ++i) {
-        if (std::strcmp(v.string(props[i].name), name) == 0) return i;
-    }
-    return -1;
-}
-
 int insert_property(const MapView& v, PropertyRange range) {
     Header& h = v.header();
     const int n = h.properties;

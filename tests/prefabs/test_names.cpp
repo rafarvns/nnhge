@@ -48,6 +48,23 @@ NNH_TEST(prefab_names_hash_the_same_at_compile_time_and_at_run_time) {
     }
 }
 
+NNH_TEST(the_run_time_hashes_match_fnv1a_for_every_length_alignment_and_byte) {
+    // Plan 021 optimisation round: the run-time loops multiply by a prime the compiler can't see; every length, start
+    // alignment and byte value (high bytes are unsigned) must give the reference FNV-1a 32.
+    unsigned char bytes[80];
+    for (int i = 0; i < 80; ++i) bytes[i] = static_cast<unsigned char>(1 + (i * 37) % 255); // 1..255, no NUL
+    alignas(8) char text[88];
+    for (int start = 0; start < 4; ++start) {
+        for (int length = 0; length < 80; ++length) {
+            const auto size = static_cast<std::size_t>(length);
+            std::memcpy(text + start, bytes, size);
+            text[start + length] = '\0';
+            const std::uint32_t want = nnh::detail::fnv1a32(reinterpret_cast<const char*>(bytes), size);
+            CHECK(hash_string(text + start) == want && nnh::detail::hash_bytes(text + start, size) == want);
+        }
+    }
+}
+
 NNH_TEST(find_by_literal_string_and_buffer_gives_the_same_prefab) {
     PrefabLibrary lib = make_library();
     const Prefab coin = must_add(lib, "coin", {}, Coin{1});

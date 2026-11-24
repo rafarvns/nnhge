@@ -23,18 +23,9 @@ const char* Tilemap::object_layer_name(int index) const {
 int Tilemap::object_count() const { return block_ ? detail::map_view(*this).header().objects : 0; }
 
 MapObject Tilemap::object(int index) const {
-    if (index < 0 || index >= object_count()) return {};
-    const detail::MapView v = detail::map_view(*this);
-    const ObjectEntry& o = v.objects()[index];
     MapObject out;
-    out.id = static_cast<int>(o.id);
-    out.name = v.string(o.name);
-    out.type = v.string(o.type);
-    out.shape = o.shape == static_cast<std::uint8_t>(detail::mapfmt::ObjectShape::Point) ? nnh::ObjectShape::Point
-                                                                                         : nnh::ObjectShape::Rect;
-    out.bounds = {o.x, o.y, o.w, o.h};
-    out.object_layer = o.object_layer;
-    out.properties = TilemapAccess::properties(block_, o.properties_first, o.properties_count);
+    if (index < 0 || index >= object_count()) return out;
+    detail::map_object_at(detail::map_view(*this), index, out);
     return out;
 }
 

@@ -335,6 +335,7 @@ set(_nnh_saves_sources
     src/saves/save_header.cpp
     src/saves/save_migrate.cpp
     src/saves/save_report.cpp
+    src/saves/save_rows.cpp
     src/saves/save_validate.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_saves_sources})

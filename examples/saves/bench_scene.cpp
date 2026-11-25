@@ -24,8 +24,8 @@ struct Phase {
     bool (SavesBench::*prepare)();
 };
 
-// AC-8's targets (spec 027), not yet measured on an Old 3DS: the plan's estimates expect PASS, the store
-// median tight.
+// AC-8's targets (spec 027). Old 3DS run 1 (2026-11-25) missed encode and decode; after the T10.3 optimisation
+// round the plan's estimates expect PASS (plan 027, "Optimisation round (T10.3)"); budgets are set after the rerun.
 constexpr Phase kPhaseList[BenchScene::kPhases] = {
     {"encode", false, 0.5, 0, &SavesBench::encode, nullptr},
     {"decode", false, 1.0, 0, &SavesBench::decode, nullptr},

@@ -1,6 +1,7 @@
 # Tasks 027: Save data with versions
 
-Status: implemented 2026-11-24 through stage 8 and the docs; stage 9 (Linux) by the lead, stage 10 (console) pending
+Status: implemented 2026-11-24 through stage 8 and the docs; stage 9 (Linux) by the lead; stage 10: console run 1 done
+2026-11-25 (encode and decode over target), T10.3 optimisation round done on the PC, console rerun pending
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -255,6 +256,10 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
   (goldens hold; tests first for any rewrite); then T10.2 run 1 again; if still missed, the budget is set from the
   measurement with ≈ 25 % margin and written in the spec's AC-8, `bench_scene.cpp` and `docs/api/saves.md` with the
   numbers and the card. Files: plan.md ("Optimisation round", "Console run 2 and budgets set"). Covers AC-8.
+  **Progress (2026-11-25):** console run 1 missed encode (0.517 ms) and decode (1.437 ms); the optimisation round is
+  done on the PC (plan.md "Optimisation round (T10.3)": rows by a per-column plan, quick validator rows, flat encoder
+  rows, word-at-a-time copies; instructions −65 % / −77 % / −73 %, every golden unchanged; expected encode ≈ 0.19 ms,
+  decode ≈ 0.36 ms); **console rerun pending**, then the budgets.
 - [ ] **T10.4** (optional, the maintainer's choice; decision 21) Copy `slot1.sav` from the SD card into the simulator's
   data folder and load it (the same summary); a battery pull during stores, recorded in the spec if done. Covers AC-6.
 

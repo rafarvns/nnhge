@@ -297,8 +297,9 @@ spec; the order below is a proposal.
   from a table in the assets, the system language picked by default; the built-in font covers Latin-1
 - [x] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves — [spec 027](../specs/027-save-versions/spec.md),
-  **implemented 2026-11-24**, Old 3DS runs 1 and 2 done (self-check `C5EF1A84` PASS; after the T10.3 round the budgets
-  were set from run 2 on 2026-11-25: update 1024 0.8 ms, emit 512 2.35 ms, off-screen 0.06 ms, draw ratio ≤ 0.75): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
+  **implemented 2026-11-24**, Old 3DS run 1 on 2026-11-25 (every logic line equal to the PC's; encode 0.517 ms and
+  decode 1.437 ms over their targets; the T10.3 optimisation round is done on the PC, 65–77 % fewer instructions,
+  console rerun pending): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
   with `NNH_SAVE_FIELD(member, id)`, retired ids, `NNH_SAVE_VERSION` and compile-time-complete `NNH_SAVE_STEP` chains
   (D45, D46); a self-describing little-endian format (tagged fields, packed sequences, one template per list of
   structs: 5 % framing) inside spec 002's `NNHS` container, the same bytes on PC and 3DS (golden v1–v3 files); the

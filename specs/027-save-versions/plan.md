@@ -1,6 +1,7 @@
 # Plan 027: Save data with versions
 
-Status: implemented 2026-11-24, console check (T10.2) pending (approved 2026-11-24 overnight)
+Status: implemented 2026-11-24; console run 1 done 2026-11-25 (encode and decode over target), T10.3 optimisation
+round done on the PC, console rerun pending (approved 2026-11-24 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D45, D46 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`nnh::save`'s `NNHS` container, its write procedure and `read_one`, `nnh::fs` paths, `Result`, logs,
 asserts, profiler, `detail::crc32`), spec 014 (`data::String`, `data::List`, `data::Ref`, the media references, the
@@ -1077,4 +1078,104 @@ VM 120) and stage 10 (console) are the lead's and the maintainer's; T11.7 (merge
   module) or the load API. `docs/api/saves.md` states the measured stack use.
 - **Code size:** the module's ≈ 22.6 KB of 3ds-release `.text` (codec ≈ 14.6 KB, against the 7–10 KB estimate) is
   accepted: the module is opt-in (`hello` is byte-identical), so only games that use structured saves pay it.
+
+## Optimisation round (T10.3)
+
+**Console run 1** (Old 3DS XL, Development, 2026-11-25, as reported by the maintainer): every logic line equal to the
+PC's (v1/v2/v3 sums, `encode crc 11363B5C bytes 3768`, backup, summaries, `saves: PASS`); bench (average of 100):
+encode **0.517 ms** (target < 0.5, FAIL), decode **1.437 ms** (< 1, FAIL), decode v1 0.676 ms (< 1.2, PASS); store,
+load, backup and summaries PASS. Both misses are about twice the stage 7 pre-check. Budgets and targets are unchanged
+here (the maintainer sets them after the rerun).
+
+**Method.** The pre-check estimated executed instructions from function sizes. This round counted them: an ARMv6
+interpreter (`build/opt/armsim.py`, an analysis script outside the repository) loads the 3ds-dev `saves.elf`, runs
+`SavesBench::start()` and then `encode()`, `decode()`, `decode_v1()` exactly as the bench calls them, and records per
+function the executed instructions, loads, stores, registers moved by `ldm`/`stm`, taken branches and L1 misses
+(16 KB, 4 ways, 32-byte lines, LRU; data and instructions; a cold run, then warm runs). Its encode gives
+`crc 11363B5C bytes 3768`, and its decode returns the reference values. What the timed region holds was checked in
+`bench_scene.cpp`: 10 runs per frame (the first one cold), the log level changes and the profiler scope outside the
+loop; each run includes the `Result<Report>` (two 350-byte clears), the validation, `T{}` (four `memset`s, 7.8 KB) and
+the 64 item resets of `open_list` — all small next to what follows.
+
+| Before (per run) | instructions | stage 7 estimate (instructions / cycles) | `ldm`/`stm` registers | misses (cold / 10 + warm) | run 1 cycles | cycles per instruction |
+|------------------|-------------:|-----------------------------------------:|----------------------:|--------------------------:|-------------:|-----------------------:|
+| encode | 94 815 | ≈ 40 k / 83 k | 13 096 | ≈ 46 | 138.6 k | 1.40 |
+| decode | 241 010 | ≈ 101 k / 175 k | 48 232 | ≈ 88 | 385.1 k | 1.56 |
+| decode v1 | 118 184 | — / 100 k | 22 167 | ≈ 101 | 181.2 k | 1.44 |
+
+(cycles per instruction after taking off the misses at 110 cycles each.) The misses were right (5–10 % of the time);
+**the instruction counts were 2.4× too low**, and calls cost more than 1.3 cycles per instruction (9-register pushes
+and pops per value). The drivers, from the per-function counts:
+
+1. **Per-value machinery in rows** (decode): each item value went `apply_row` (the template's varint again) →
+   `skip_value` → `apply_by_id` (the field merge and the retired list) → a path push and pop → `apply_field` (enum
+   lookup, shape test) → `apply_one` → `convert_scalar` → two variable-size `memcpy` calls (`read_int` and the store):
+   about 330 instructions per value. `apply_by_id` 48.9 k, `apply_field` 39.5 k, `convert_scalar` 34.6 k, `apply_row`
+   24.0 k, `memcpy` 21.9 k (975 calls).
+2. **Validator rows**: `Walk::value` → `Walk::one` with a path push and pop per value and the template re-read:
+   `Walk::sequence` 34.6 k + `Walk::one` 18.3 k, about 70 per value (the estimate assumed about 25).
+3. **Encoder values**: `put_value` → `put_one` → `Out::bytes` → a `memcpy` call per 1–8-byte value (586 calls) and a
+   path push and pop per value: `put_sequence` 39.7 k, `put_one` 25.1 k, `memcpy` 16.1 k.
+4. **newlib's `memcpy` copies byte by byte** when source and destination are differently aligned: the 1 KB bestiary
+   (a packed `u16[512]` at an odd file offset) cost about 6 k each way.
+5. **A length prefix moved 1.5 KB**: one byte was reserved before the inventory's rows, whose length needs two, so
+   `close_length` moved them with `memmove` (6.2 k).
+
+What changed (no output byte, value, count, path, step or message changed):
+
+- `save_rows.{hpp,cpp}` (new): a struct sequence's template is matched with the item struct once — a plan of up to 16
+  columns (6 bytes each): copy 1/2/4/8 bytes, bool check, `f32` check, string, convert (`apply_field`), unknown,
+  retired — and each row is applied by its columns' actions. The row's path step, the notes in their order and
+  `visited` are `apply_row`'s; longer templates use `apply_row`.
+- `save_validate.cpp`: templates of up to 16 one-value fixed or string columns are walked as runs (consecutive fixed
+  bytes, strings) without path steps; at a fault the row is walked again by the old code, which names it (same
+  message, same steps). An empty string skips `utf8_valid` and `memchr`.
+- `save_encode.cpp`: a row of one-value fixed and string columns is written without per-value room checks or path
+  steps when the struct's `max_row` fits (the bad-text path is built from the row and id); fixed values are written
+  by fixed-size copies; a length prefix reserves the varint size of the content's smallest length (rows: count × the
+  smallest row; strings: the count), so the content moves only when that guess was short (the 20 quests, 143 bytes).
+- `save_bulk.hpp` (new): `copy_bytes`, `copy_value`, `load_value`/`store_value`, `put_bools` (any non-zero byte → 1,
+  four at a time) and `copy_bools` (words of 0/1 copied, stops at the first other byte): inline word loops with
+  unaligned loads and stores (the ARM11 and x86 allow them) in place of `memcpy` calls; used by the packed copies and
+  bool arrays both ways and by `convert_scalar`'s integers.
+
+| After (per run) | instructions | change | `ldm`/`stm` registers | misses (cold / 10 + warm, LRU) |
+|-----------------|-------------:|-------:|----------------------:|-------------------------------:|
+| encode | 32 705 | −65 % | 1 292 | ≈ 48 |
+| decode | 54 328 | −77 % | 4 308 | ≈ 135 (≈ 92 if the instruction cache replaces well) |
+| decode v1 | 32 429 | −73 % | 2 971 | ≈ 210 (≈ 120) |
+
+Largest functions after: decode `apply_rows` 16.8 k, `memset` 10.0 k (`T{}` and the item resets: the game's
+constructors), `Walk::sequence` 6.9 k, `apply_field` 6.3 k (the 1 024 flags and the bestiary inline), `convert_scalar`
+2.6 k; encode `put_sequence` 28.1 k (rows, flags, bestiary, strings inline), `utf8_valid` 1.5 k.
+
+**Expected Old 3DS numbers** (cycles = instructions × 1.3–1.6 + misses × 110, 268 MHz; the same model brackets run 1:
+0.48–0.59, 1.20–1.47 and 0.62–0.75 ms against 0.517, 1.437 and 0.676): **encode ≈ 0.19 ms (0.18–0.22)**, **decode ≈
+0.36 ms (0.30–0.38)**, decode v1 ≈ 0.24 ms (0.21–0.28); the card workloads are unchanged (the codec is under 1 % of
+them). Risks: the decoder's code is now 10.6 KB over 331 cache lines with 15 sets holding more than four (v1: 12 KB,
+29 sets), so the warm instruction misses (65–150 per run with LRU, 7–17 k cycles) depend on the 3DS's replacement
+policy — included in the upper ends; whether the data cache allocates on writes changes little (the reference data
+fits in 16 KB).
+
+**Costs.** Code: the module's 3ds-release `.text` + `.rodata` grows from 22.8 KB to 28.2 KB (`save_rows` 2.5 KB, encode
++1.8 KB, validate +0.5 KB, apply +0.4 KB, convert +0.1 KB). Stack: +112 bytes per level of struct rows while decoding
+(`apply_rows` 216 bytes for `apply_row` 64 + `apply_by_id` 40), +32 per sequence level while validating, +48 while
+encoding: a file load of the reference save peaks at about 1.6 KB (was 1.5 KB); 8 levels of struct rows about 3.7 KB
+(was 2.9 KB).
+
+**Tests.** First: `tests/saves/test_bulk.cpp` (6, seen failing to compile, then green) and `tests/saves/test_rows.cpp`
+(14 characterisation tests of row behaviour, green on the old code: per-column values, report counts and paths per
+row, values visited, a 17-column template, the validator's row messages and steps, a bad string in a row, bools of any
+byte, struct values and bools in rows, every short buffer, canonical lengths around 128 and 16 384 bytes). Then
+`nnh_tests save` 197/197 (pc-debug) and 190/190 (pc-release), `ctest -R saves` 60/60 (the self-check and check
+script lines, the golden copies, the declaration cases), the mini-fuzz unchanged (1 340 of 15 000 mutants accepted),
+3ds-dev `saves_3dsx` and 3ds-release builds without a warning. Hand mutants (`build/opt/mutate.py`): 25 of 25 killed —
+the word helpers (second word, bool shift and mask, value widths, the high word), the plan (copy width, bool limit,
+unchecked `f32`, cut string counted as dropped, unknown path, retired and unknown swapped, `visited`, the row index,
+the string capacity), the bool-array drop index, the quick validator (runs merging strings, an unchecked run, steps,
+the empty-string shortcut), the encoder (the reserved length size, flat rows without room, a struct column taken as
+flat, an unnormalised row bool, the string-list reservation).
+
+**Next:** T10.2 run 1 again on the Old 3DS (`build/pc-debug/tools/nnh/nnh run saves --script
+examples/saves/tests/check.nnhs`): the same logic lines and the bench; then the budgets with ≈ 25 % margin.
 

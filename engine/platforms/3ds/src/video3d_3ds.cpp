@@ -75,12 +75,28 @@ bool video3d_init(const Video3DConfig&) {
     C3D_RenderTargetDelete(ctx.targets[0]);
     C3D_RenderTargetSetOutput(target, GFX_TOP, GFX_LEFT, transfer_flags());
     ctx.targets[0] = target;
+    ctx.left_target = target;
+    // The right eye (spec 026b): the same kind of target on the right output. citro3d copies it to the screen only in
+    // frames that drew on it (stereo frames, eyes_3ds.cpp); the others show the left picture to both eyes.
+    ctx.right_target = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
+    if (ctx.right_target == nullptr) {
+        ctr::set_error("no VRAM for the right eye's 3D target");
+        return false;
+    }
+    C3D_RenderTargetSetOutput(ctx.right_target, GFX_TOP, GFX_RIGHT, transfer_flags());
     ctx.current_target = nullptr;
     ctr::restore_2d_state();
     return true;
 }
 
 void video3d_shutdown() {
+    ctr::Context& ctx = ctr::context();
+    if (ctx.right_target != nullptr) {
+        if (ctx.left_target != nullptr) ctx.targets[0] = ctx.left_target;
+        C3D_RenderTargetDelete(ctx.right_target);
+        ctx.right_target = ctx.right_eye = nullptr;
+        gfxSet3D(false);
+    }
     if (g_shader == nullptr) return;
     shaderProgramFree(&g_shader->program);
     if (g_shader->dvlb != nullptr) DVLB_Free(g_shader->dvlb);

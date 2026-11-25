@@ -8,10 +8,16 @@
 
 namespace models {
 
+/// Which script: the math one (026a, golden kSelfCheckGolden) or the stereo one (026b, kStereoGolden: per-eye
+/// to_screen at seeded slider values, strengths and focal distances, and the culling union through in_view).
+enum class Script { Math, Stereo };
+
 class SelfCheck {
 public:
     static constexpr int kOps = 50000;
     static constexpr int kCheckpointEvery = 10000;
+
+    explicit SelfCheck(Script script = Script::Math) : script_(script) {}
 
     /// Runs up to `count` more operations (a frame's share). @return true once all kOps have run.
     bool run(int count);
@@ -22,11 +28,13 @@ public:
 
 private:
     void one();
+    void one_stereo(); // self_check_stereo.cpp
     void mix(std::uint32_t word);
     void mix(float f);
     std::uint32_t hash(std::uint32_t salt) const;
     float value(std::uint32_t salt, float range) const;
 
+    Script script_;
     int step_ = 0;
     std::uint32_t sum_ = 2166136261u;
     std::uint32_t checkpoints_[5] = {};
@@ -34,5 +42,7 @@ private:
 
 /// The golden checksum of the whole script (recorded from the simulator; the console must print the same).
 inline constexpr std::uint32_t kSelfCheckGolden = 0xA3BF4EDFu; // math, to_screen, screen_ray (stage 4)
+/// The stereo script's golden (026b, T12.3): its own seed, so the math golden above never moves.
+inline constexpr std::uint32_t kStereoGolden = 0xB3550D40u; // per-eye to_screen, in_view (026b, T12.3)
 
 } // namespace models

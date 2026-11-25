@@ -107,9 +107,19 @@ NNH_TEST(screen_image_refuses_wrong_sizes) {
     CHECK(!screen_to_rgb(swapped, rgba_rows(0, 400, 240), image).empty());
 }
 
+NNH_TEST(screen_image_reads_the_right_eye_as_a_top_screen) {
+    RgbImage image;
+    wire::ScreenHeader h = header(2, 2); // screen 2: the top screen's right eye (spec 026)
+    h.width = 400;
+    CHECK(screen_to_rgb(h, bgr_columns(0, 400, 240), image).empty());
+    CHECK(image.width == 400 && is_pattern(image, 0));
+    h.width = 320;
+    CHECK(screen_to_rgb(h, bgr_columns(0, 320, 240), image) == "the top (right eye) screen is 400x240, not 320x240");
+}
+
 NNH_TEST(screen_image_refuses_unknown_screens_and_layouts) {
     RgbImage image;
-    CHECK(screen_to_rgb(header(2, 1), {}, image) == "unknown screen 2");
+    CHECK(screen_to_rgb(header(3, 1), {}, image) == "unknown screen 3");
     CHECK(screen_to_rgb(header(0, 3), rgba_rows(0, 400, 240), image) == "unknown pixel layout 3");
     CHECK(screen_to_rgb(header(0, 0), rgba_rows(0, 400, 240), image) == "unknown pixel layout 0");
 }

@@ -28,6 +28,12 @@ public:
     int expect(int i, ProbeExpect* out) const;
     static const char* name(int i);
 
+    /// The stereo scene (probe_stereo.cpp, spec 026 AC-7): a red wall on the focal plane, a narrow green card nearer;
+    /// the eyes are a fixed 0.25 units apart whatever the slider (> 0), so the card shifts ±7.8 px between them.
+    void draw_stereo(float slider) const;
+    /// Its probes in `eye` (0 left, 1 right); @return the count.
+    static int expect_stereo(int eye, ProbeExpect* out);
+
 private:
     nnh::Mesh quad_tex_, quad_, sphere_, cube_;
     const World* world_ = nullptr;

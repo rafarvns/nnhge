@@ -32,9 +32,36 @@ bool sphere_visible(const Frustum& f, Vec3 p, float r) {
         const float ax = p.x < 0 ? -p.x : p.x, ay = p.y < 0 ? -p.y : p.y;
         return ax - r <= f.tx && ay - r <= f.ty;
     }
+    const float ay = p.y < 0 ? -p.y : p.y;
+    if (f.sx != 0.0f) { // an eye's off-axis frustum: x − ahead·sx within ±ahead·tx, each side plane with its slope
+        const float dx = p.x - ahead * f.sx;
+        return dx - ahead * f.tx <= r * f.kr && -dx - ahead * f.tx <= r * f.kl && ay - ahead * f.ty <= r * f.ky;
+    }
     // Side planes through the eye: a point is inside when |x| ≤ ahead · tx (and the same for y).
-    const float ax = p.x < 0 ? -p.x : p.x, ay = p.y < 0 ? -p.y : p.y;
+    const float ax = p.x < 0 ? -p.x : p.x;
     return ax - ahead * f.tx <= r * f.kx && ay - ahead * f.ty <= r * f.ky;
+}
+
+EyeCull make_eye_cull(const Camera3D& c, const Eyes& eyes) {
+    EyeCull cull;
+    cull.count = eyes.count;
+    cull.frustum[0] = cull.frustum[1] = make_frustum(c);
+    if (eyes.count < 2) return cull;
+    for (int i = 0; i < 2; ++i) {
+        Frustum& f = cull.frustum[i];
+        cull.offset[i] = eyes.eye[i].offset;
+        f.sx = -eyes.eye[i].offset / c.stereo.focal_distance; // the projection's shift: P[0][2] / P[0][0]
+        const float right = f.tx + f.sx, left = f.tx - f.sx;
+        f.kr = __builtin_sqrtf(1.0f + right * right);
+        f.kl = __builtin_sqrtf(1.0f + left * left);
+    }
+    return cull;
+}
+
+bool sphere_in_eyes(const EyeCull& cull, Vec3 p, float r) {
+    if (cull.count < 2) return sphere_visible(cull.frustum[0], p, r);
+    return sphere_visible(cull.frustum[0], {p.x - cull.offset[0], p.y, p.z}, r) ||
+           sphere_visible(cull.frustum[1], {p.x - cull.offset[1], p.y, p.z}, r);
 }
 
 } // namespace nnh::detail

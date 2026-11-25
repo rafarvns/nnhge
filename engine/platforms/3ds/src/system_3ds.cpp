@@ -9,13 +9,17 @@ namespace {
 
 constexpr std::uint32_t bit(Capability c) { return 1u << static_cast<unsigned>(c); }
 
-/// Console model via the CFG service; CFG_MODEL_3DS if it can't be read.
+/// Console model via the CFG service, read once (system::stereo_slider() asks for the capabilities every frame with 3D
+/// on, spec 026); CFG_MODEL_3DS if it can't be read.
 u8 console_model() {
+    static int cached = -1;
+    if (cached >= 0) return static_cast<u8>(cached);
     u8 model = CFG_MODEL_3DS;
     if (R_SUCCEEDED(cfguInit())) {
         CFGU_GetSystemModel(&model);
         cfguExit();
     }
+    cached = model;
     return model;
 }
 

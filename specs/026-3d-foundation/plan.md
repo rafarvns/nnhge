@@ -1,6 +1,6 @@
 # Plan 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run 1: smoke and math PASS, pixel check blocked by a 3DS read-back bug, bench over target; Linux VM T9.3 pending)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1–3: math, pixels and bench pass after two backend fixes; budgets set; Linux VM T9.3 passed); **part 026b (stereo) implemented on the PC 2026-11-25, console run pending** ("Stage 11/12 results" at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md)
 Decisions: [D41, D42, D43, D44](../../docs/architecture/decisions.md) (written with this plan; design until implemented)
 
@@ -1029,3 +1029,78 @@ On `nnhge-build` (VM 120, Ubuntu, 4 vCPU), 2026-11-25, `main` at the D47 and pro
   composed by SDL's renderer, whose blend rounding differs between builds); the engine's own 3D raster pixels are
   identical.
 - No `publish` in the 3D modules (FR-30): unchanged since T9.1.
+
+## Stage 11/12 results and refinements (026b on the PC, 2026-11-25)
+
+Implemented in the worktree branch `spec-026b` from `main` (after D47 and the probe fixes). The console run (T13.5),
+the comfort check (T13.6) and the Linux VM (T13.3) are the maintainer's.
+
+- **T11.1 slider**: contract `platform::stereo_slider()` (3DS `slider_3ds.cpp`: `osGet3DSliderState()`; PC: the
+  simulator's slider; fake: `set_stereo_slider`); `system::stereo_slider()` in its own object
+  (`src/system/stereo_slider.cpp`: a 2D game links none of it) applies `Capability::Stereo3D`, the remote override and
+  the 0..1 clamp (NaN → 0). The PC now reports `Stereo3D`. `system_3ds.cpp` reads the console model once (core asks for
+  the capabilities every frame with 3D on; `cfguInit` per call was too slow for that).
+- **T11.2 simulator**: F6/F7 (±0.1, Shift ±0.01), F8 (left → right → anaglyph), the title notice, `NNH_SIM_SLIDER`,
+  `NNH_SIM_EYE`, `window.ini` keys `slider=0.50` and `eye=left|right|anaglyph` (pure parsing in `sim_settings.cpp`,
+  tested in `tests/simulator/test_sim_settings.cpp`). The two variables count as a scripted run (no `window.ini`), like
+  `NNH_SIM_LAYOUT`; a run with `NNH_REMOTE` shows the left eye. **Refinement**: the anaglyph is SDL's blend (colour
+  mod + `SDL_BLENDMODE_ADD`): a preview, not a golden.
+- **T11.3 remote `Slider` (type 7)**: on the wire a release flag (byte 8) and thousandths 0..1000 (bytes 10–11); the
+  decoded `Message` keeps its 32 bytes (the schedule's 2 KB static assert) by storing a release as the value 0xFFFF.
+  **Refinement (spec 013 amendment)**: a script owns the slider like the buttons — 0 from its exclusive Hello until its
+  first `slider`, back to 0 on `slider off`, the console's own slider ignored; interactive control overrides it only
+  while a value is set; a Bye, a disconnect or the remote going off gives the console's slider back. The handling is
+  `apply_slider` in `remote_session.cpp` (6 lines): no `remote_slider.cpp`.
+- **T11.4 tools/nnh**: `slider V|off` (0..1, at most 3 decimals) and `screenshot NAME [eyes]` (a command may now take
+  optional arguments); screen 2 → `frame-…-NAME-top-right.png`; the runner counts three screens for `eyes`; the fake
+  console answers screen 2. Contract `remote_capture_right` (pc: `ctx.right_eye` or the top target; 3ds: the right
+  target after a stereo frame with the same marker wait, else the top one; fake: a pattern with blue 0xC0 after a
+  stereo frame); the right eye of a mono frame is the top screen.
+- **T12.1 eyes** (`gfx3d/eye_setup.cpp`): one eye = the mono matrices bit for bit; two eyes at ∓slider × strength / 2
+  along the camera's right (the view's x translation minus the offset) with `P[0][2] = −P[0][0] × offset / focal`.
+  Focal-plane points land within 1e-3 px of each other; ≈ 10.4 px apart at infinity at slider 1 with the defaults.
+  `camera_valid` refuses a negative or non-finite strength and a focal distance ≤ 0.
+- **T12.2 passes**: culling once with each eye's off-axis frustum (`EyeCull`: `sx = −offset/focal`, each side plane
+  with its own slope; mono keeps the symmetric test bit for bit), kept when either eye sees the sphere; the order once
+  by the centre camera; per eye `select_eye(eye)` → 2D below → the eye's pass (its view, projection and lights in its
+  view space) → 2D above; `select_eye(0)` after; `set_stereo(eyes == 2)` every frame with 3D on (also `false` in frames
+  without 3D draws, so the 3DS turns its 3D off). The debug pass draws the top items in both eyes through two new hook
+  entries (`eyes_this_frame`, `select_eye`). **Refinement found while implementing**: tile layers and particles spend
+  per-frame budgets when expanded, so the second eye would have doubled them (dropping the right eye's tiles near
+  `max_tiles`): `TileBatches::spent/rewind` and `GfxParticleOps::budget_mark/budget_rewind` rewind them before the
+  second eye. Stats: `triangles[eye]`, `eyes`.
+- **T12.3 golden**: a second script in the example's self-check with its own seed (the math golden `A3BF4EDF` never
+  moves): per-eye `to_screen` and the culling union on seeded cameras, strengths, focal distances and sliders
+  (orthographic and stereo-off cases included). Golden **`B3550D40`** (checkpoints `D6FA62DB`, `DBD4A6D4`, `75E511BE`,
+  `5A986EFB`). **API addition** (the console must reach it through public, pure calls):
+  `gfx3d::to_screen(camera, point, eye, slider)` and `gfx3d::in_view(camera, sphere, slider)`.
+- **T12.4 PC** (`eyes_pc.cpp`): the right eye's target made at the first stereo frame; `select_eye` swaps
+  `ctx.screens[0]` (the 3D pass's read-back and every 2D draw follow it); the window's top screen through
+  `ctx.compose_top` (left, right or anaglyph). Screenshots read: at slider 1 the eyes differ horizontally only (the HUD
+  identical), the anaglyph shows red/cyan fringes; at slider 0 the picture is the mono one.
+- **T12.5 3DS** (`eyes_3ds.cpp`, `video3d_3ds.cpp`): the right RGBA8 + D24S8 target on `GFX_TOP, GFX_RIGHT` made at
+  `video3d_init` (768 000 B of VRAM), `targets[0]` swapped, `C2D_TargetClear` at the first right selection,
+  `gfxSet3D` on change; built (3ds-dev, 3ds-release) without a warning; not run yet.
+- **T13.1 example**: the showcase logs `slider: <v>` when the slider moves and `eyes: <n>` when the eye count changes
+  and shows both on the bottom screen; the check runs, after 026a's steps in their order and timing (math, mono
+  probes), the stereo script (`3d-stereo: …`, `3d-stereo: PASS B3550D40`) and a stereo probe scene (a red wall on the
+  focal plane, a green card 2 units ahead, the eyes 0.25 apart whatever the slider) read in each eye →
+  `3d pixels stereo: PASS`, or `3d pixels stereo: skipped (slider at 0)`. The mono probe scenes are orthographic, so
+  they stay mono with the slider up. The bench adds `throughput 6000 stereo` and `draws 256 stereo` after
+  `3d bench: stereo waiting for the slider` (up to 300 frames, else skipped), logged `(not judged)`; the mono cases
+  turn stereo off on their camera. **Refinement**: stereo.nnhs expects the stereo lines after `3d pixels: PASS`, not
+  before (026a's check keeps its timing and screenshot).
+- **Goldens** (`examples/models/tests/golden.txt`): the showcase's hash changes (the bottom screen's slider text; its
+  top screen is byte-identical to 026a's), slider-1 left/right hashes added, `check` and `smoke` unchanged (the listed
+  `check` hash was stale on `main`: `a2df321a…` there too). Every other example's screenshot equals `main`'s
+  (`scripts/example_shots.sh`; `actions` and `saves` read saved data from their folder, `foundation` shows timings).
+- **T13.4 AC-9** (3ds-release / pc-release `hello`, against `main` built the same day): 3DS `.text` 201 924 → 202 204
+  (**+280 B**: +96 the debug pass's eye check, +84 the console model read once, the rest the stereo calls of the
+  always-linked passes), `.bss` +16, `.3dsx` +296 B; PC `.text` 132 648 → 134 880 (**+2 232 B**: the slider and eye
+  keys, the notice, the variables and the `window.ini` keys in the always-linked window code), `.exe` +3 158 B. Both
+  over P14's budgets (128 B / 1 KB): flagged for the maintainer.
+- Tests added: `tests/system/test_stereo_slider.cpp` (6), `tests/remote/test_remote_slider.cpp` (6),
+  `tests/gfx3d/test_eyes.cpp` (7), `tests/gfx3d/test_screen_pass_stereo.cpp` (11), the right eye's probes
+  (`test_probe.cpp`), the right eye's screenshot (`test_remote_screenshot.cpp`), wire ranges (`test_remote_wire.cpp`),
+  4 simulator settings tests, the stereo golden (`test_self_check.cpp`); tools: parser (2), runner (3), screen image
+  (1). ctest: `models_stereo_check_pc`, `models_stereo_script_pc`.

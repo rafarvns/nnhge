@@ -15,6 +15,10 @@ float depth = nnh::n3ds::slider_3d();    // 0.0 (off) .. 1.0; always 0 on 2DS mo
 bool fast_cpu = nnh::n3ds::is_new_3ds(); // New 3DS, New 3DS XL, New 2DS XL
 ```
 
+For the 3D slider prefer the portable `nnh::system::stereo_slider()` ([system.md](system.md#the-3d-slider)): the same
+value on a 3DS, the simulator's slider on the PC, and a test script's `slider` command while one runs (`slider_3d()`
+always reads the hardware).
+
 ## Network — `<nnh/3ds/network.hpp>` (spec 011)
 
 ```cpp

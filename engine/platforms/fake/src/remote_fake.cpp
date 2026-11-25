@@ -99,6 +99,20 @@ bool platform::remote_capture(Screen screen, ScreenPixels& out) {
     return true;
 }
 
+void platform_fake::remote_capture_right_pixel(int x, int y, std::uint8_t rgba[4]) {
+    remote_capture_pixel(Screen::Top, x, y, rgba);
+    rgba[2] = 0xC0;
+}
+
+bool platform::remote_capture_right(ScreenPixels& out) {
+    if (!platform_fake::pass3d_log().last_frame_stereo) return remote_capture(Screen::Top, out); // one picture for both eyes
+    if (!remote_capture(Screen::Top, out)) return false;
+    for (int y = 0; y < 240; ++y) {
+        for (int x = 0; x < 400; ++x) platform_fake::remote_capture_right_pixel(x, y, g_capture + (y * 400 + x) * 4);
+    }
+    return true;
+}
+
 void platform::remote_capture_release() {
     platform_fake::State& s = platform_fake::detail::mutable_state();
     if (s.remote_capture_held) ++s.remote_capture_releases;

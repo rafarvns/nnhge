@@ -38,13 +38,16 @@ bool pixels_ok(const platform::ScreenPixels& px) {
     return px.data != nullptr && expected != 0 && px.size == expected && px.size <= kMaxRecordPayload - kScreenFixed;
 }
 
-void send_screen(std::uint16_t id, Screen screen, std::uint32_t frame) {
-    const auto index = static_cast<std::uint8_t>(screen == Screen::Top ? 0 : 1);
+/// Screen record index 0 top, 1 bottom, 2 the top screen's right eye (spec 026).
+void send_screen(std::uint16_t id, std::uint8_t index, std::uint32_t frame) {
+    static constexpr const char* kNames[3] = {"top", "bottom", "top (right eye)"};
     std::uint8_t record[kMaxFixedRecord];
     platform::ScreenPixels px;
-    if (!platform::remote_capture(screen, px) || !pixels_ok(px)) {
-        NNH_LOG_WARN(remote, "screenshot %u: the %s screen could not be read back (%s)", id,
-                     index == 0 ? "top" : "bottom", platform::last_error());
+    const bool read = index == 2 ? platform::remote_capture_right(px)
+                                 : platform::remote_capture(index == 0 ? Screen::Top : Screen::Bottom, px);
+    if (!read || !pixels_ok(px)) {
+        NNH_LOG_WARN(remote, "screenshot %u: the %s screen could not be read back (%s)", id, kNames[index],
+                     platform::last_error());
         send_record(record, encode_screen_failed_record(id, index, frame, record));
         return;
     }
@@ -75,8 +78,9 @@ void screenshots_send(std::uint32_t frame) {
             g_pending[kept++] = p;
             continue;
         }
-        if ((p.screens & kScreenTop) != 0) send_screen(p.id, Screen::Top, frame);
-        if ((p.screens & kScreenBottom) != 0) send_screen(p.id, Screen::Bottom, frame);
+        if ((p.screens & kScreenTop) != 0) send_screen(p.id, 0, frame);
+        if ((p.screens & kScreenTopRight) != 0) send_screen(p.id, 2, frame);
+        if ((p.screens & kScreenBottom) != 0) send_screen(p.id, 1, frame);
     }
     g_pending_count = kept;
     // Unused where NNH_LOG_INFO compiles out (Release never calls this file, but it is still compiled).

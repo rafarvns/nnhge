@@ -5,6 +5,7 @@
 
 #include "debug/debug_list.hpp"
 #include "debug/dev_tools.hpp"
+#include "gfx/gfx3d_hook.hpp"
 #include "gfx/gfx_state.hpp"
 #include "nnh/platform/video.hpp"
 #include "text/font_atlas.hpp"
@@ -62,7 +63,14 @@ void debug_pass_submit(const DebugList& list) {
                             item.color = e.color;
                         });
         }
-        if (count > 0) platform::draw_2d(screen, g.debug_items, count);
+        if (count == 0) continue;
+        platform::draw_2d(screen, g.debug_items, count);
+        // A stereo frame (spec 026 FR-15): the top screen's debug items in the right eye too, at screen depth.
+        if (screen == Screen::Top && g_gfx_3d_ops != nullptr && g_gfx_3d_ops->eyes_this_frame() == 2) {
+            g_gfx_3d_ops->select_eye(1);
+            platform::draw_2d(screen, g.debug_items, count);
+            g_gfx_3d_ops->select_eye(0);
+        }
     }
 }
 

@@ -35,5 +35,11 @@ bool has(Capability capability);
 SystemInfo info();
 const char* capability_name(Capability capability);
 
+/// The 3D slider (spec 026 FR-16): 0 (down, or no Capability::Stereo3D) … 1 (up), read now. 3DS: the hardware slider;
+/// the PC simulator: its own slider (F6/F7, NNH_SIM_SLIDER). While a test script runs (`nnh run --script`, Debug and
+/// Development builds) the script's `slider` command sets it instead, 0 until it does. Cheap; never allocates.
+/// 3D drawing reads it for stereo (docs/api/gfx3d.md#stereo); a 2D game may read it for its own effects.
+float stereo_slider();
+
 } // namespace system
 } // namespace nnh

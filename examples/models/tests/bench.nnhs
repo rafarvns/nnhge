@@ -1,9 +1,11 @@
-# Spec 026 AC-8 (mono, 026a), on the console: the bench (Y) runs four workloads of 600 frames — throughput (a textured,
-# lit 12 032-triangle sphere), draws (256 cubes, 1 directional + 2 point lights), cpu (512 draws, half behind the
-# camera, 128 blended), fill (three full-screen blended planes over a model) — one line each:
+# Spec 026 AC-8, on the console: the bench (Y) runs four mono workloads of 600 frames — throughput (a textured, lit
+# 12 032-triangle sphere), draws (256 cubes, 1 directional + 2 point lights), cpu (512 draws, half behind the camera, 128
+# blended), fill (three full-screen blended planes over a model) — then, with the slider up (this script's `slider 1`),
+# two stereo ones (026b): throughput 6000 stereo (a 6 016-triangle sphere) and draws 256 stereo. One line each:
 #   3d bench: <case> avg <ms> worst <ms> missed <n>/600 rec <ms> sub <ms> prep <ms> cpu <ms>
 # (per frame: rec = recording, sub = the "gfx submit" scope, prep = culling and ordering, cpu = AC-8's CPU share;
-# sub and prep exist in Development builds) then the verdict against AC-8's targets. Record the numbers in plan 026 ("Stage 10 results") whatever the verdict.
+# sub and prep exist in Development builds) then the verdict against AC-8's mono budgets (the stereo lines end
+# "(not judged)": their budgets come from this run). Record the numbers in plan 026 whatever the verdict.
 # Console: nnh run models --script examples/models/tests/bench.nnhs   (Homebrew Launcher open, press Y)
 # (In the simulator the numbers mean nothing: it doesn't model the PICA200's speed.)
 fail-on "] E "
@@ -16,7 +18,13 @@ expect "3d bench: throughput 12000 avg" 700
 expect "3d bench: draws 256 avg" 700
 expect "3d bench: cpu 512 avg" 700
 expect "3d bench: fill avg" 700
+expect "3d bench: stereo waiting for the slider" 30
+wait 10
+slider 1
+expect "3d bench: throughput 6000 stereo avg" 700
+expect "3d bench: draws 256 stereo avg" 700
 expect "3d bench: PASS" 30
 wait 10
-screenshot bench
+screenshot bench eyes
+slider off
 end

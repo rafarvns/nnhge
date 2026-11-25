@@ -21,6 +21,7 @@ constexpr int kCaptureAfterFrames = 3;
 struct Probes {
     Probe points[kMaxProbes];
     int requested = 0; ///< pending
+    Eye eye = Eye::Left; ///< the right one through remote_capture_right (spec 026b)
     int wait = 0;      ///< frame ends left before the read
     Color results[kMaxProbes];
     int answered = 0;
@@ -45,7 +46,9 @@ void gfx3d_probes_after_frame() {
         platform::ScreenPixels px;
         const int n = g_probes.requested;
         g_probes.requested = 0;
-        if (!platform::remote_capture(Screen::Top, px)) {
+        const bool captured = g_probes.eye == Eye::Right ? platform::remote_capture_right(px)
+                                                         : platform::remote_capture(Screen::Top, px);
+        if (!captured) {
             NNH_LOG_WARN(gfx, "3d probes: the screen read-back failed: %s", platform::last_error());
             return;
         }
@@ -61,9 +64,9 @@ bool gfx3d::request_probes(Screen screen, Eye eye, const Probe* points, int coun
         (void)screen, (void)eye, (void)points, (void)count;
         return false;
     } else {
-        if (screen != Screen::Top || eye != Eye::Left || points == nullptr || count < 1 || count > detail::kMaxProbes)
-            return false;
+        if (screen != Screen::Top || points == nullptr || count < 1 || count > detail::kMaxProbes) return false;
         for (int i = 0; i < count; ++i) detail::g_probes.points[i] = points[i];
+        detail::g_probes.eye = eye;
         detail::g_probes.requested = count;
         detail::g_probes.wait = detail::kCaptureAfterFrames;
         detail::g_probes.answered = 0;

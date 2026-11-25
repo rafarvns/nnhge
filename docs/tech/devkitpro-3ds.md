@@ -159,6 +159,17 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
 - **Texture orientation**: the engine's v is 0 at an image's top (glTF); citro3d samples v = 1 there, so
   `pass3d_3ds.cpp` sends the shader's uv decode as `(scale.u, −scale.v, offset.u, 1 − offset.v)` (v' = 1 − v), as the
   2D subtextures do with `1 − y/H`. Confirmed by the probe check on the Old 3DS (spec 026, console run 3).
+- **Stereo** (026b, built; console run pending): `video3d_init` also makes the right eye's target (RGBA8 + D24S8,
+  768 000 B of VRAM: 1.5 MB with the left one) on `GFX_TOP, GFX_RIGHT` with the same transfer flags. `eyes_3ds.cpp`:
+  `set_stereo(on)` calls `gfxSet3D` only when the frame's eye count changes; `select_eye` swaps `ctx.targets[0]` between
+  the two targets, so citro2d and the 3D pass draw on the selected eye, and clears the right one with `C2D_TargetClear`
+  (colour, depth 0) at its first selection in a frame — it flushes and splits the frame first, so the clear is ordered
+  after what came before. citro3d copies a target to its framebuffer only in frames that drew on it, so a mono frame
+  leaves the right target alone. The slider is `osGet3DSliderState()` (`slider_3ds.cpp`, shared memory: no service
+  call); the console model is read once (`system_3ds.cpp`), since core asks for the capabilities every frame with 3D
+  on. `remote_capture_right` reads the right target after a stereo frame (else the top one) with the same marker wait.
+  To check on the console: the projection fix-up with an off-axis shift (`P[0][2] ≠ 0`), the right eye's clear and
+  depth, `gfxSet3D` with the slider moving, the cost of two eyes (T13.5).
 
 ## Input (HID)
 

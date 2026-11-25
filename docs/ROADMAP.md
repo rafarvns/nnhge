@@ -151,7 +151,7 @@ transition or input-block symbol in either. `<nnh/transition.hpp>` 8,476 preproc
 - [x] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md): `<nnh/texture.hpp>` (`IMAGES` in `nnh_add_game`), `gfx::draw`/shapes/layers/`Camera2D`, draw list ready for 3D passes and stereo, `examples/sprites` — verified on PC and an Old 3DS XL (2026-11-18)
 - [x] Text with the built-in NNHGE font ([spec 005](../specs/005-text-and-builtin-font/spec.md)): `gfx::draw_text`/`measure_text`, UTF-8 + Latin-1, scale, alignment, shadow; debug text and overlay on the same font — pixel-identical on PC and an Old 3DS XL (2026-11-18), `examples/text`
 - [ ] Game fonts (the game's own bitmap fonts, like `IMAGES`) — follow-up spec
-- [x] Simulator window ([spec 006](../specs/006-simulator-window/spec.md)): five layouts (F2), scale 1–6× (F3/F4), fit (F5), fullscreen (F9, Alt+Enter), remembered per game; each screen rendered at native resolution and composed — checked by the maintainer (2026-11-18). 3D slider control moves to M8 with stereo rendering
+- [x] Simulator window ([spec 006](../specs/006-simulator-window/spec.md)): five layouts (F2), scale 1–6× (F3/F4), fit (F5), fullscreen (F9, Alt+Enter), remembered per game; each screen rendered at native resolution and composed — checked by the maintainer (2026-11-18). The 3D slider (F6/F7) and eye view (F8) came with spec 026b
 
 ## M3 — Assets
 - [x] Assets folder and romfs ([spec 007](../specs/007-assets-and-romfs/spec.md)): `nnh_add_game(... ASSETS <folder>)` checks and converts each file in the build (one step per file, rerun only when it changes), writes a sorted case-sensitive index and packs the folder into the romfs on 3DS / next to the program on PC; `<nnh/assets.hpp>` (`exists`/`size`/`read`/`load` by path); `load_texture("art/hero")` from assets, `IMAGES` kept for embedded images; `examples/sprites` loads its textures and a level file — verified on PC, Linux and an Old 3DS XL (2026-11-18). Cost: `hello.3dsx` +10.5 KB (romfs support)
@@ -344,8 +344,10 @@ spec; the order below is a proposal.
   small draw, so a per-draw optimisation round followed: T10.5), console run 2 done 2026-11-25 (256 small draws 28.3 ms:
   CPU ≈ 12 ms then GPU ≈ 16 ms, one after the other; overlapping them was tried and dropped, D47 frees released
   textures and meshes only after the GPU wait), budgets set (256 draws < 35.5 ms a frame), console pixel check PASS after two backend fixes (read-back
-  timing, 3D textures' v), Linux checks (T9.3) passed 2026-11-25; part 026b
-  (stereo: the slider, per-eye drawing) planned. `<nnh/math3d.hpp>` (same bits on PC and 3DS, golden `A3BF4EDF`),
+  timing, 3D textures' v), Linux checks (T9.3) passed 2026-11-25; **part 026b (stereo) implemented on the PC
+  2026-11-25, console run pending**: `system::stereo_slider()`, the top screen drawn once per eye (off-axis, focal plane
+  at screen depth, culling union, 2D and debug pass in both eyes), simulator F6/F7/F8 (left, right, anaglyph), the
+  `.nnhs` `slider` command and `screenshot NAME eyes`, stereo golden `B3550D40`. `<nnh/math3d.hpp>` (same bits on PC and 3DS, golden `A3BF4EDF`),
   `<nnh/mesh.hpp>` (code-built meshes, primitives, glTF 2.0 → `.nnhmesh` by `nnh-assetc mesh`), `<nnh/gfx3d.hpp>`
   (camera, ambient + 4 lights, draws between the 2D layers, culling, order, `to_screen`/`screen_ray`, probe pixels);
   the simulator's CPU rasteriser (D41) and the citro3d backend; `examples/models` (showcase, check, bench, smoke).

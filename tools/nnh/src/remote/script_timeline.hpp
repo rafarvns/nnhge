@@ -39,8 +39,8 @@ public:
     ///   press/release B → Buttons; release all → Buttons(release every button), both sticks centred, touch up;
     ///   hold B N → press now, release at +N (clock +N); tap B → press now, release at +1 (clock +2);
     ///   drag X Y N → touch moves at +1 … +N, the last step at X Y (clock +N+1, so X Y is held for a frame
-    ///   before what follows); screenshot → both screens at the end of this frame (clock +1, so what follows
-    ///   isn't in the picture).
+    ///   before what follows); screenshot → both screens (and the top's right eye with `eyes`) at the end of this
+    ///   frame (clock +1, so what follows isn't in the picture); slider V|off → Slider now.
     void add(const Step& step);
 
     /// Segments closed by an Expect or End, in order.

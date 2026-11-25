@@ -23,13 +23,24 @@ inline constexpr std::uint16_t kTouchMaxX = 319;
 inline constexpr std::uint16_t kTouchMaxY = 239;
 inline constexpr std::uint8_t kScreenTop = 1u << 0;
 inline constexpr std::uint8_t kScreenBottom = 1u << 1;
+/// Screenshot: the top screen's right eye too (spec 026, plan P20): a Screen record with screen 2; a frame drawn with
+/// one eye answers with the top screen as it is (both eyes see it).
+inline constexpr std::uint8_t kScreenTopRight = 1u << 2;
+inline constexpr std::uint8_t kScreenMask = kScreenTop | kScreenBottom | kScreenTopRight;
+/// The 3D slider (spec 026 FR-16) in thousandths. On the wire a Slider message is a release flag (byte 8) and the value
+/// (bytes 10–11); decoded, a release is Message::slider == kSliderRelease (the message stays 32 bytes).
+inline constexpr std::uint16_t kSliderMax = 1000;
+inline constexpr std::uint16_t kSliderRelease = 0xFFFF;
 /// Hello flag: the PC runs a script and owns the controls; until the Bye (or the connection ends) the game reads
 /// only the PC's input, never the console's own (spec 013 amendment 2026-11-24). Interactive control leaves it 0.
 inline constexpr std::uint16_t kHelloExclusive = 1u << 0;
 /// Every Hello flag this version knows; any other bit is Reject::Range.
 inline constexpr std::uint16_t kHelloFlags = kHelloExclusive;
 
-enum class MessageType : std::uint8_t { Hello = 1, Buttons = 2, Stick = 3, Touch = 4, Screenshot = 5, Bye = 6 };
+/// Slider (spec 026, additive in version 1): an older game rejects it as Reject::Type.
+enum class MessageType : std::uint8_t {
+    Hello = 1, Buttons = 2, Stick = 3, Touch = 4, Screenshot = 5, Bye = 6, Slider = 7,
+};
 
 /// Why a message was refused (the `reason` of a `Rejected` record). A non-zero reserved byte is `Range`.
 enum class Reject : std::uint8_t {
@@ -56,8 +67,9 @@ struct Message {
     std::int16_t x = 0;                            ///< Stick: −1000…1000; Touch: 0…319
     std::int16_t y = 0;                            ///< Stick: −1000…1000 (up); Touch: 0…239
     std::uint16_t id = 0;                          ///< Screenshot
-    std::uint8_t screens = 0;                      ///< Screenshot: kScreenTop | kScreenBottom, ≠ 0
+    std::uint8_t screens = 0;                      ///< Screenshot: bits of kScreenMask, ≠ 0
     bool quit = false;                             ///< Bye
+    std::uint16_t slider = 0;                      ///< Slider: 0…kSliderMax thousandths, or kSliderRelease
 };
 
 /// The frame a message applies to: its own, or for frame 0 ("the next frame") `now`, the frame whose start is
@@ -122,7 +134,7 @@ inline constexpr std::size_t kMaxFixedRecord = kRecordHeaderSize + kHelloPayload
 /// The fixed part of a Screen record; `width × height × bpp` pixel bytes follow it.
 struct ScreenHeader {
     std::uint16_t id = 0;
-    std::uint8_t screen = 0; ///< 0 top, 1 bottom
+    std::uint8_t screen = 0; ///< 0 top, 1 bottom, 2 the top screen's right eye (spec 026)
     std::uint8_t layout = 0; ///< platform::PixelLayout: 1 RGBA8 rows, 2 BGR8 columns bottom-up
     std::uint32_t frame = 0;
     std::uint16_t width = 0;

@@ -106,6 +106,26 @@ NNH_TEST(parser_unescapes_quotes_and_backslashes_and_keeps_pattern_escapes) {
     CHECK(one("fail-on \"x\"# a comment right after the quote").text == "x");
 }
 
+NNH_TEST(parser_reads_the_3d_slider) {
+    const Step s = one("slider 0.5");
+    CHECK(s.command == Command::Slider && s.x == 500);
+    CHECK(one("slider 1").x == 1000 && one("slider 0").x == 0 && one("slider 0.125").x == 125);
+    CHECK(one("slider off").command == Command::SliderOff && one("SLIDER Off").command == Command::SliderOff);
+    for (const char* bad : {"slider -0.1", "slider 1.5", "slider x", "slider 0.0001", "slider -0"}) {
+        CHECK(has(error_of(bad), "t.nnhs:1: slider is 0 to 1 (at most 3 decimals) or off"));
+    }
+    CHECK(has(error_of("slider"), "wrong number of arguments; usage: slider V|off"));
+    CHECK(has(error_of("slider 1 2"), "wrong number of arguments; usage: slider V|off"));
+}
+
+NNH_TEST(parser_reads_screenshots_of_both_eyes) {
+    const Step s = one("screenshot stereo eyes");
+    CHECK(s.command == Command::Screenshot && s.text == "stereo" && s.eyes);
+    CHECK(!one("screenshot plain").eyes && one("screenshot x EYES").eyes);
+    CHECK(error_of("screenshot a both") == "t.nnhs:1: the only option of screenshot is 'eyes' (both eyes of the top screen)");
+    CHECK(has(error_of("screenshot a eyes x"), "wrong number of arguments; usage: screenshot NAME [eyes]"));
+}
+
 NNH_TEST(parser_skips_comments_and_blank_lines) {
     const ParsedScript p = parse("# title\n\n   \nwait 5   # five\n\t# tabbed\r\ntap A\r\n");
     CHECK(p.errors.empty() && p.script.steps.size() == 3 && p.script.lines == 6);

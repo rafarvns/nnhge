@@ -80,4 +80,9 @@ void ShowcaseScene::draw_bottom() {
     char text[64];
     std::snprintf(text, sizeof text, "%s  X: projection\nSELECT check  Y bench", ortho_ ? "ortho" : "persp");
     nnh::gfx::draw_text(Screen::Bottom, {115, 184}, text, {});
+    const float slider = nnh::system::stereo_slider(); // the 3D slider (spec 026 FR-16)
+    const int h = static_cast<int>(slider * 100.0f + 0.5f);
+    std::snprintf(text, sizeof text, "slider %d.%02d\n%d eye%s", h / 100, h % 100, nnh::gfx3d::stats().eyes,
+                  nnh::gfx3d::stats().eyes == 2 ? "s" : "");
+    nnh::gfx::draw_text(Screen::Bottom, {220, 110}, text, {});
 }

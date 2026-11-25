@@ -24,4 +24,9 @@ void platform_fake::set_capabilities(std::initializer_list<Capability> capabilit
 
 void platform_fake::request_overlay_toggle() { detail::controls().dev_requests |= platform::kDevToggleOverlay; }
 
+// Reported as set, even without Stereo3D (core applies the capability and the clamp).
+float platform::stereo_slider() { return platform_fake::detail::controls().stereo_slider; }
+
+void platform_fake::set_stereo_slider(float value) { detail::controls().stereo_slider = value; }
+
 } // namespace nnh

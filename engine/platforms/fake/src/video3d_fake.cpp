@@ -24,16 +24,21 @@ struct FakeMesh {
     raster3d::MeshView view{};
 };
 
-// Pixels (enable_pixels_3d): the top screen's picture, its depth, the textures' RGBA copies, the lighting tables.
+// Pixels (enable_pixels_3d): the top screen's picture per eye, its depth, the textures' RGBA copies, the tables.
 bool g_pixels = false;
-std::vector<std::uint8_t> g_rgba(400 * 240 * 4);
-std::vector<float> g_depth(400 * 240);
-std::vector<std::uint8_t> g_last_rgba(400 * 240 * 4); // the picture of the frame that ended last
+std::vector<std::uint8_t> g_rgba[2] = {std::vector<std::uint8_t>(400 * 240 * 4), std::vector<std::uint8_t>(400 * 240 * 4)};
+std::vector<float> g_depth[2] = {std::vector<float>(400 * 240), std::vector<float>(400 * 240)};
+std::vector<std::uint8_t> g_last_rgba[2] = {std::vector<std::uint8_t>(400 * 240 * 4),
+                                            std::vector<std::uint8_t>(400 * 240 * 4)}; // the frame that ended last
 std::map<platform::TextureHandle, std::pair<int, std::vector<std::uint8_t>>> g_textures; // handle → (width, rgba)
 raster3d::LightTables g_tables;
 platform::Pass3D g_pass;
+bool g_shown_stereo = false; // what the "screen" shows (3DS: gfxSet3D), kept across frames
 
-raster3d::Target target() { return {g_rgba.data(), g_depth.data(), 400, 240}; }
+raster3d::Target target() {
+    const int e = g_3d.eye == 1 ? 1 : 0;
+    return {g_rgba[e].data(), g_depth[e].data(), 400, 240};
+}
 
 void log_char(char c) {
     platform_fake::State& s = platform_fake::detail::mutable_state();
@@ -49,6 +54,7 @@ platform_fake::Fake3DCall* next_call(char kind) {
     if (i >= platform_fake::kMaxRecorded3D) return nullptr;
     g_3d.calls[i] = {};
     g_3d.calls[i].kind = kind;
+    g_3d.calls[i].eye = g_3d.eye;
     return &g_3d.calls[i];
 }
 
@@ -70,10 +76,14 @@ void detail::video3d_reset() {
     g_3d = {};
     g_init_fails = g_mesh_fails = false;
     g_pixels = false;
+    g_shown_stereo = false;
     g_textures.clear();
 }
 void detail::video3d_frame_begun() {
     g_3d.call_count = 0;
+    g_3d.stereo = false;
+    g_3d.eye = 0;
+    g_3d.right_clears = 0;
     if (g_pixels) raster3d::clear(target(), detail::mutable_state().top_clear);
 }
 
@@ -101,15 +111,19 @@ void enable_pixels_3d(bool on) {
     raster3d::clear(target(), detail::mutable_state().top_clear);
 }
 
-Color pixel_3d(int x, int y) {
+Color pixel_3d(int x, int y) { return pixel_3d(0, x, y); }
+
+Color pixel_3d(std::uint8_t eye, int x, int y) {
     if (x < 0 || y < 0 || x >= 400 || y >= 240) return {};
-    const std::uint8_t* p = g_last_rgba.data() + (static_cast<std::size_t>(y) * 400 + x) * 4;
+    const std::uint8_t* p = g_last_rgba[eye == 1 ? 1 : 0].data() + (static_cast<std::size_t>(y) * 400 + x) * 4;
     return {p[0], p[1], p[2], p[3]};
 }
 void detail::video3d_frame_ended() {
     g_3d.last_frame_call_count = g_3d.call_count;
     std::memcpy(g_3d.last_frame_calls, g_3d.calls, sizeof g_3d.calls);
-    if (g_pixels) g_last_rgba = g_rgba;
+    g_3d.last_frame_stereo = g_3d.stereo;
+    g_3d.last_frame_right_clears = g_3d.right_clears;
+    if (g_pixels) g_last_rgba[0] = g_rgba[0], g_last_rgba[1] = g_rgba[1];
 }
 
 } // namespace platform_fake
@@ -196,6 +210,24 @@ void draw_3d(const Draw3D& draw) {
 void end_3d() {
     log_char(']');
     next_call('e');
+}
+
+void set_stereo(bool on) {
+    ++g_3d.set_stereo_calls;
+    g_3d.stereo = on;
+    if (on != g_shown_stereo) ++g_3d.stereo_changes;
+    g_shown_stereo = on;
+}
+
+void select_eye(std::uint8_t eye, Color top_clear) {
+    g_3d.eye = eye == 1 ? 1 : 0;
+    log_char(g_3d.eye == 1 ? 'R' : 'L');
+    next_call('s');
+    if (g_3d.eye == 1 && g_3d.right_clears == 0) {
+        ++g_3d.right_clears;
+        g_3d.right_clear = top_clear;
+        if (g_pixels) raster3d::clear(target(), top_clear);
+    }
 }
 
 } // namespace platform

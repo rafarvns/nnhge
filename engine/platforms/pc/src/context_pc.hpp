@@ -8,6 +8,7 @@
 #include "nnh/gfx.hpp"
 #include "nnh/platform/input.hpp"
 #include "sim_layout.hpp"
+#include "sim_settings.hpp"
 
 namespace nnh::platform::pc {
 
@@ -24,6 +25,13 @@ struct Context {
     char title[128] = {};                   // the game's window title, without a notice
     std::uint64_t notice_until_ms = 0;      // the title shows the view until then (0 = no notice)
     bool persist_view = false;              // load/save window.ini (not for scripted runs)
+    // The 3D slider and the eye shown (spec 026 FR-16/FR-22): F6/F7, F8, NNH_SIM_SLIDER, NNH_SIM_EYE, window.ini.
+    float slider = 0;                       // 0..1, in steps of 0.01
+    SimEye eye_view = SimEye::Left;         // what the top screen shows when a frame drew both eyes
+    // Set by eyes_pc.cpp (linked only with 3D): draws the top screen's view into `dest` (the frame's eye or the
+    // anaglyph); null = the top target as it is.
+    void (*compose_top)(const SDL_FRect& dest) = nullptr;
+    SDL_Texture* right_eye = nullptr;       // the last frame's right eye, or null when it drew one (remote capture)
     char settings_path[512] = {};
     bool has_window_rect = false;           // last windowed position/size (window units)
     int window_x = 0;

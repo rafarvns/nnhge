@@ -4,6 +4,7 @@
 #include <nnh/debug.hpp>
 #include <nnh/gfx.hpp>
 #include <nnh/input.hpp>
+#include <nnh/system.hpp>
 #include <nnh/time.hpp>
 #include <nnh/transform.hpp>
 
@@ -28,6 +29,23 @@ const char* on_off(bool b) { return b ? "on" : "off"; }
 void ShowcaseScene::on_enter() {
     NNH_LOG_INFO(example, "models: showcase");
     nnh::gfx3d::set_world_layer(nnh::Screen::Top, 8);
+    slider_ = -1;
+    eyes_ = -1;
+}
+
+// The slider when it moves, and the eyes drawn when their number changes (a frame later: stats are the last frame's),
+// so a script can check stereo (spec 026 FR-14/FR-16).
+void ShowcaseScene::log_stereo() {
+    const float s = nnh::system::stereo_slider();
+    if (s != slider_) {
+        slider_ = s;
+        NNH_LOG_INFO(example, "slider: %.2f", static_cast<double>(s));
+    }
+    const int eyes = nnh::gfx3d::stats().eyes;
+    if (eyes > 0 && eyes != eyes_) {
+        eyes_ = eyes;
+        NNH_LOG_INFO(example, "eyes: %d", eyes);
+    }
 }
 
 nnh::Camera3D ShowcaseScene::camera() const {
@@ -90,6 +108,7 @@ void ShowcaseScene::update() {
     if (moved_ && !moved) log_tag(); // the stick came back to rest: where the tag is now
     moved_ = moved;
     touch_buttons();
+    log_stereo();
     if (flash_ > 0) --flash_;
 }
 

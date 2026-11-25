@@ -30,3 +30,29 @@ NNH_TEST(gfx3d_probes_are_read_back_after_the_frame) {
     CHECK(!nnh::gfx3d::request_probes(Screen::Top, nnh::Eye::Left, at, 33));
     nnh::shutdown();
 }
+
+NNH_TEST(gfx3d_probes_of_the_right_eye_read_its_picture) {
+    if constexpr (!nnh::build::kDevToolsEnabled) return;
+    nnh::shutdown();
+    fake::reset();
+    fake::set_capabilities({nnh::Capability::SecondScreen, nnh::Capability::Stereo3D});
+    fake::set_stereo_slider(1.0f);
+    nnh::AppConfig config;
+    config.gfx.max_draws_3d = 8;
+    CHECK(nnh::init(config));
+    nnh::Mesh c = cube();
+    next_frame();
+    const nnh::Probe points[1] = {{300, 200}};
+    CHECK(nnh::gfx3d::request_probes(Screen::Top, nnh::Eye::Right, points, 1));
+    for (int i = 0; i < 4; ++i) {
+        nnh::gfx3d::draw(Screen::Top, c, at({}));
+        next_frame();
+    }
+    nnh::Color got[1];
+    CHECK(nnh::gfx3d::probe_results(got, 1) == 1);
+    std::uint8_t want[4];
+    fake::remote_capture_right_pixel(300, 200, want);
+    CHECK(got[0].r == want[0] && got[0].g == want[1] && got[0].b == want[2] && want[2] == 0xC0);
+    c.reset();
+    nnh::shutdown();
+}

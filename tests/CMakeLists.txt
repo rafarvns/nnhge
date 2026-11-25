@@ -256,11 +256,13 @@ add_executable(nnh_tests
     remote/test_remote_records.cpp
     remote/test_remote_schedule.cpp
     remote/test_remote_wire.cpp
+    remote/test_remote_slider.cpp
     result/test_result.cpp
     scene/test_run.cpp
     scene/test_scene_attachments.cpp
     scene/test_scene_stack.cpp
     system/test_system.cpp
+    system/test_stereo_slider.cpp
     text/test_builtin_font.cpp
     tilemap/test_code_vs_file.cpp
     tilemap/test_collision_grid_regression.cpp
@@ -1281,10 +1283,12 @@ target_compile_definitions(nnh_tests PRIVATE NNH_TEST_SPRITES_DIR="${_ase_out}")
 
 # 3D foundation (spec 026): math, meshes, the 3D pass, the CPU rasteriser, the example's self-check.
 target_sources(nnh_tests PRIVATE
+    gfx3d/test_eyes.cpp
     gfx3d/test_pixels_fake.cpp
     gfx3d/test_probe.cpp
     gfx3d/test_record.cpp
     gfx3d/test_screen_pass.cpp
+    gfx3d/test_screen_pass_stereo.cpp
     gfx3d/test_screen_project.cpp
     math3d/test_conventions.cpp
     math3d/test_mat4.cpp
@@ -1302,9 +1306,11 @@ target_sources(nnh_tests PRIVATE
     models_example/test_self_check.cpp
     raster3d/test_raster.cpp
     ${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp
+    ${PROJECT_SOURCE_DIR}/examples/models/self_check_stereo.cpp
 )
 target_link_libraries(nnh_tests PRIVATE nnh::raster3d)
-set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp PROPERTIES
+set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/models/self_check.cpp
+                            ${PROJECT_SOURCE_DIR}/examples/models/self_check_stereo.cpp PROPERTIES
                             COMPILE_OPTIONS -ffp-contract=off)
 
 # libFuzzer executables (clang only): cmake --preset pc-debug -DNNH_BUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
@@ -1349,6 +1355,20 @@ if(TARGET models AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
              COMMAND $<TARGET_FILE:nnh> run models --pc --no-build --script examples/models/tests/check.nnhs
              WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
     set_tests_properties(models_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+    # 026b: the stereo check mode with the simulator's slider up, and the stereo console script (slider command, both
+    # eyes' screenshots, the stereo golden and probes).
+    add_test(NAME models_stereo_check_pc COMMAND models)
+    set_tests_properties(models_stereo_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;MODELS_DEMO=check;NNH_SIM_SLIDER=1;NNH_EXIT_AFTER_FRAMES=150"
+        PASS_REGULAR_EXPRESSION "3d pixels stereo: PASS" FAIL_REGULAR_EXPRESSION "3d: FAIL|3d-stereo: FAIL|3d pixels: FAIL|\] E "
+        TIMEOUT 120)
+    add_test(NAME models_stereo_script_pc
+             COMMAND $<TARGET_FILE:nnh> run models --pc --no-build --script examples/models/tests/stereo.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(models_stereo_script_pc PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)

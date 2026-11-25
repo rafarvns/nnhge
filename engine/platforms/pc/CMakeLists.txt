@@ -12,6 +12,7 @@ add_library(nnh_platform_pc STATIC
     src/devtools_pc.cpp
     src/draw2d_pc.cpp
     src/draw_tiles_pc.cpp
+    src/eyes_pc.cpp
     src/gamepad_pc.cpp
     src/input_override_pc.cpp
     src/input_pc.cpp

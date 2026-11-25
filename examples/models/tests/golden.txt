@@ -1,7 +1,13 @@
 # Golden screenshot hashes of the models example (spec 026 AC-5, FR-23): SHA-256 of the PNG written with
 # NNH_EXIT_AFTER_FRAMES=<frames> NNH_SCREENSHOT=…, headless (SDL_VIDEO_DRIVER=offscreen, SDL_RENDER_DRIVER=software,
 # NNH_SIM_RENDERER=sdl). The same on pc-debug and pc-release (Windows, WinLibs GCC); the Linux VM checks them in stage 9.
-# demo      frames  sha256
-showcase    30      d1e735a94a82c13789ca03a199885521337153b4329150792e72b7c5335bfb54
-check       60      aca7e42e0623563cd9b06ba0c5eb27c8c8a7c677a75c80221574727791e5a8d7
-smoke       60      982c37ddbb0bf6a2d27c84eaf10ccf7a2e0bae09158ab5423cdfeaa94e1af108
+# 026b: the showcase's bottom screen shows the 3D slider (its top screen is byte-identical to 026a's); `check` was
+# already a2df321a… on main before 026b (the line below had not followed a late change of the check's bottom text).
+# Stereo views (NNH_SIM_SLIDER=1, NNH_SIM_EYE=left|right): the eye's picture, copied 1:1. The anaglyph (NNH_SIM_EYE=
+# anaglyph) is blended by SDL's renderer: read, not golden.
+# demo      frames  env                         sha256
+showcase    30      -                           32335a0bbd07a80db6fafb2f7b6a590f4129d1bb6b30f5c3949a91545a527552
+check       60      -                           a2df321a0835b27eb29c84db384771c6a0f5e8c6c96c4c7b9fc2a4448340aa21
+smoke       60      -                           982c37ddbb0bf6a2d27c84eaf10ccf7a2e0bae09158ab5423cdfeaa94e1af108
+showcase    30      slider=1 eye=left           f0e2244b2a293ee439d7f93be674d69a5e7df0e823201364713d2a4e0735ee7a
+showcase    30      slider=1 eye=right          5a09200e7fe0ece23268be423a81a438c5a97de8ec73578738a6088b47b1d26c

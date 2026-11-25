@@ -8,6 +8,7 @@ add_library(nnh_platform_3ds STATIC
     src/crash_3ds.cpp
     src/draw2d_3ds.cpp
     src/draw_tiles_3ds.cpp
+    src/eyes_3ds.cpp
     src/hbldr_args.cpp
     src/input_3ds.cpp
     src/lights3d_3ds.cpp
@@ -18,6 +19,7 @@ add_library(nnh_platform_3ds STATIC
     src/pass3d_3ds.cpp
     src/remote_3ds.cpp
     src/remote_capture_3ds.cpp
+    src/slider_3ds.cpp
     src/system_3ds.cpp
     src/texture_3ds.cpp
     src/tilt3d_3ds.cpp

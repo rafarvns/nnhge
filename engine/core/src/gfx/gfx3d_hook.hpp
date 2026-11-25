@@ -22,6 +22,10 @@ struct Gfx3DOps {
     void (*gpu_idle)() = nullptr;
     /// Writes the debug overlay's 3D line (FR-28) into `out`. @return false when there is nothing to show.
     bool (*overlay_line)(char* out, int size) = nullptr;
+    /// Stereo (spec 026 FR-15): the pictures this frame's top screen drew (2 in a stereo frame, else 0 or 1), and the
+    /// eye the following top-screen draws go to (the debug pass draws in both, then goes back to the left).
+    int (*eyes_this_frame)() = nullptr;
+    void (*select_eye)(int eye) = nullptr;
 };
 
 /// Null unless the game links the 3D module (gfx3d_hook.cpp).

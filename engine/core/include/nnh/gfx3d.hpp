@@ -31,7 +31,11 @@ namespace nnh {
 enum class Eye : std::uint8_t { Left, Right };
 enum class Projection : std::uint8_t { Perspective, Orthographic };
 
-/// Stereo settings of a camera (used from spec 026's stereo part; orthographic cameras are always mono).
+/// Stereo settings of a camera (FR-14). With the 3D slider (system::stereo_slider()) above 0 on a system with
+/// Capability::Stereo3D, a perspective camera draws the top screen once per eye: each eye moved by ∓slider × strength / 2
+/// along the camera's right, with an off-axis projection that keeps points `focal_distance` ahead at screen depth.
+/// Orthographic cameras are always mono. Invalid values (strength < 0, focal_distance ≤ 0, not finite) make
+/// set_camera() assert and keep the previous camera. See docs/api/gfx3d.md#stereo.
 struct StereoSettings {
     bool enabled = true;
     float strength = 0;        ///< eye separation at slider 1, world units; 0 = focal_distance / 20
@@ -131,6 +135,13 @@ Ray3 screen_ray(Screen screen, Vec2 pixel);
 /// The same for any camera on the top screen (400×240): usable without init (tools, tests, self-checks).
 ScreenPoint to_screen(const Camera3D& camera, Vec3 world_point);
 Ray3 screen_ray(const Camera3D& camera, Vec2 pixel);
+/// Where `world_point` lands in one eye's picture with the slider at `slider` (0..1; stereo, docs/api/gfx3d.md#stereo).
+/// When the frame would draw one picture (slider 0, orthographic, stereo off) both eyes give to_screen(camera, point).
+/// Pure: the same bits everywhere.
+ScreenPoint to_screen(const Camera3D& camera, Vec3 world_point, Eye eye, float slider);
+/// The engine's culling test (FR-20): true when a world-space sphere is inside the view — in either eye when the
+/// slider (0..1) makes the frame stereo. Draws whose bounds fail it are skipped. Pure: the same bits everywhere.
+bool in_view(const Camera3D& camera, const Sphere& world_sphere, float slider);
 
 /// Last frame's numbers (FR-28).
 Stats3D stats();

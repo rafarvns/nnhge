@@ -88,6 +88,16 @@ inline wire::Message bye(std::uint16_t seq, std::uint32_t frame, bool quit = fal
     return m;
 }
 
+/// The 3D slider (spec 026 FR-16): `thousandths` 0..1000, or released.
+inline wire::Message slider(std::uint16_t seq, std::uint32_t frame, std::uint16_t thousandths, bool release = false) {
+    wire::Message m;
+    m.type = wire::MessageType::Slider;
+    m.seq = seq;
+    m.frame = frame;
+    m.slider = release ? wire::kSliderRelease : thousandths;
+    return m;
+}
+
 /// 16 bytes with a bad magic and the given seq (Rejected{seq, Magic}).
 inline void send_garbage(std::uint16_t seq) {
     std::uint8_t bytes[wire::kMessageSize] = {0x00, 2, static_cast<std::uint8_t>(seq),

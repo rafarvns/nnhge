@@ -194,6 +194,10 @@ void set_capabilities(std::initializer_list<Capability> capabilities);
 /// Makes the next poll_dev_requests() ask to toggle the debug overlay (like F1 on PC).
 void request_overlay_toggle();
 
+/// The value platform::stereo_slider() reports from now on (default 0; spec 026 FR-16). Core reads it only with
+/// Capability::Stereo3D (set_capabilities) and clamps it to 0..1.
+void set_stereo_slider(float value);
+
 // ---- Console remote (spec 013): an in-memory PC ----------------------------------------------------------
 
 /// A PC is connected: remote_receive() returns the bytes given to remote_push() (0 when none is pending) and
@@ -217,6 +221,9 @@ void set_remote_capture_fails(bool fails);
 /// The synthetic picture remote_capture() returns (RGBA8 rows, screen-sized): pixel (x, y) is
 /// {x & 0xFF, y, 0x40 on the top screen / 0x80 on the bottom one, 0xFF}.
 void remote_capture_pixel(Screen screen, int x, int y, std::uint8_t rgba[4]);
+/// remote_capture_right() after a frame that drew two eyes (set_stereo(true), spec 026): {x & 0xFF, y, 0xC0, 0xFF};
+/// after any other frame it is the top screen's picture.
+void remote_capture_right_pixel(int x, int y, std::uint8_t rgba[4]);
 
 /// The last crash screen requested through crash_show().
 struct Crash {
@@ -234,14 +241,16 @@ const Crash& last_crash();
 void simulate_cpu_fault(const platform::CpuFault& fault);
 
 // ---- 3D (spec 026, nnh/platform/video3d.hpp) ---------------------------------------------------------------------
-// begin_3d() and end_3d() also log '[' and ']' in State::calls, between the screen's 'T'/'B' draw_2d calls.
+// begin_3d() and end_3d() also log '[' and ']' in State::calls, between the screen's 'T'/'B' draw_2d calls;
+// select_eye() (stereo, spec 026b) logs 'L' or 'R' there.
 
 inline constexpr int kMaxRecorded3D = 64;
 
-/// One begin_3d / draw_3d / end_3d call of the current or last frame.
+/// One begin_3d / draw_3d / end_3d / select_eye call of the current or last frame.
 struct Fake3DCall {
-    char kind = 0; ///< 'b' begin_3d, 'd' draw_3d, 'e' end_3d
+    char kind = 0; ///< 'b' begin_3d, 'd' draw_3d, 'e' end_3d, 's' select_eye
     Screen screen = Screen::Top;
+    std::uint8_t eye = 0;     ///< kind 's': 0 left, 1 right; kind 'b'/'d'/'e': the eye selected then
     platform::Pass3D pass{};  ///< kind 'b'
     platform::Draw3D draw{};  ///< kind 'd'
 };
@@ -259,6 +268,15 @@ struct Fake3D {
     Fake3DCall calls[kMaxRecorded3D];
     int last_frame_call_count = 0; ///< the same for the frame that ended last
     Fake3DCall last_frame_calls[kMaxRecorded3D];
+    // Stereo (spec 026b)
+    bool stereo = false;            ///< set_stereo() of the current frame (false at begin_frame)
+    bool last_frame_stereo = false; ///< the same for the frame that ended last
+    int set_stereo_calls = 0;       ///< since reset()
+    int stereo_changes = 0;         ///< set_stereo() calls that changed the value shown (3DS: gfxSet3D)
+    std::uint8_t eye = 0;           ///< the eye selected now
+    Color right_clear{};            ///< the colour the right eye was cleared to this frame
+    int right_clears = 0;           ///< right-eye clears this frame (at most 1: at its first selection)
+    int last_frame_right_clears = 0; ///< the same for the frame that ended last
 };
 
 const Fake3D& pass3d_log();
@@ -272,8 +290,11 @@ void set_mesh_create_fails(bool fails);
 /// Textures: RGBA copies of texture_create_rgba's pixels; "FAKE" images are a gradient (r = x·255/(w−1),
 /// g = y·255/(h−1), b = 0, a = 255).
 void enable_pixels_3d(bool on);
-/// A pixel of the picture of the frame that ended last.
+/// A pixel of the picture of the frame that ended last (the left eye's, which is the only one in mono frames).
 Color pixel_3d(int x, int y);
+/// A pixel of one eye's picture (0 left, 1 right) of the frame that ended last; the right eye's is cleared to the top
+/// clear colour at its first selection (only stereo frames draw it).
+Color pixel_3d(std::uint8_t eye, int x, int y);
 
 /// The bytes a mesh was created with (vertices then indices), or nullptr for an unknown handle.
 const std::uint8_t* mesh_data(platform::MeshHandle handle, std::size_t& size);

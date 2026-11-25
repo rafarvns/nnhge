@@ -43,6 +43,28 @@ neither read nor write that file: they use the stacked layout at `AppConfig::pc_
 so reference images don't depend on anyone's preferences. To capture another layout, set
 `NNH_SIM_LAYOUT` / `NNH_SIM_SCALE` (below).
 
+## The 3D slider and the eyes
+
+The simulator has `Capability::Stereo3D` and a 3D slider of its own (spec 026 FR-16/FR-22; what it does to 3D:
+[gfx3d.md](gfx3d.md#stereo)). Keys work in every build:
+
+| Key | Action |
+|-----|--------|
+| `F6` / `F7` | slider down / up by 0.1 (with Shift: 0.01), 0 to 1 |
+| `F8` | what the top screen shows when a frame draws two eyes: left eye → right eye → red/cyan anaglyph |
+
+The title shows "3D slider 0.50, right eye" for two seconds. The game reads the slider with
+`nnh::system::stereo_slider()`. Frames drawn with one picture (slider 0, no 3D draws, orthographic cameras) look
+the same in every view. The anaglyph (left eye × red + right eye × cyan, added by the renderer) is a preview for red/cyan
+glasses; the console has the real thing. Slider and view are remembered with the window settings (`slider=0.50`,
+`eye=left|right|anaglyph` in `window.ini`); screenshots and scripted runs start at slider 0, left eye, unless
+`NNH_SIM_SLIDER` / `NNH_SIM_EYE` say otherwise; a run driven by `nnh run --pc` shows the left eye, and while a script
+runs the slider is the script's (`slider V`), not the simulator's.
+
+```sh
+NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=right.png build/pc-debug/examples/models/models.exe
+```
+
 ## Developer keys (Debug and Development builds)
 
 | Key | Action |
@@ -61,6 +83,8 @@ so reference images don't depend on anyone's preferences. To capture another lay
 | `NNH_SCREENSHOT=<file.png>` | With `NNH_EXIT_AFTER_FRAMES`, saves the last frame as PNG. |
 | `NNH_SIM_LAYOUT=<layout>` | Layout for this run: `stacked`, `side`, `large`, `top`, `bottom`. Disables the remembered settings. |
 | `NNH_SIM_SCALE=<n>` | Scale for this run: `1`–`6`, or `fit`. Disables the remembered settings. |
+| `NNH_SIM_SLIDER=<v>` | The 3D slider for this run: `0` to `1`, at most two decimals (spec 026). Disables the remembered settings. |
+| `NNH_SIM_EYE=<view>` | The top screen's view of stereo frames: `left`, `right`, `anaglyph`. Disables the remembered settings. |
 | `NNH_SIM_RENDERER=sdl` | Use SDL's default renderer instead of the GPU-device one (see [sdl3.md](../tech/sdl3.md#renderer-2d-now-3d-later)). |
 | `NNH_SIM_INPUT=<script>` | Debug/Development: replaces keyboard, mouse and gamepad on every frame with fixed input, e.g. `circle=0.7,0.5;cstick=-1,0;touch=160,120;buttons=A+R+Start`. Every part is optional; sticks in [-1, 1] (y up, before the dead zone), touch in bottom-screen pixels, buttons by `nnh::Button` name joined with `+`. |
 | `NNH_REMOTE=127.0.0.1:<port>` | Debug/Development, set by `nnh run --pc` (spec 013): the simulator connects back to that `nnh` (1 s timeout; loopback addresses only, anything else is ignored), sends its log there instead of the terminal, and takes remote input and screenshot requests like a console ([nnh tool](../guides/nnh-tool.md#driving-the-game-from-the-pc)). Without a connection it runs as before. |

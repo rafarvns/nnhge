@@ -218,6 +218,29 @@ build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-bottom.png    320×240
 They show exactly what the screens show, at the console's own size, on the PC and on the console. Agents
 can read the PNG files to check a result without a person.
 
+`screenshot NAME eyes` adds the top screen's **right eye** (spec 026, stereo 3D):
+`frame-<n>-<NAME>-top-right.png` (400×240) beside the top (left eye) and the bottom. After a frame drawn with one
+picture for both eyes (slider at 0, no 3D draws) the right eye is the top screen again.
+
+## The 3D slider
+
+`slider V` (0 to 1, at most 3 decimals) sets the 3D slider the game reads (`nnh::system::stereo_slider()`) from that
+frame on, on the console and in the simulator; `slider off` puts it back. While a script runs the slider is the
+script's, like the buttons and sticks: **0 from its start** until its first `slider` command, 0 again after `slider
+off`, and the console's own slider is ignored, so stereo checks need nobody's hand on the console. Typed by hand
+(`nnh run` without `--script`), `slider V` overrides the console's slider until `slider off`. When the script ends the
+console's own slider counts again. The models example's `tests/stereo.nnhs` uses both:
+
+```text
+slider 1
+expect "eyes: 2" 10        # the game logs how many pictures it drew
+wait 10
+screenshot stereo eyes     # stereo-top.png, stereo-top-right.png, stereo-bottom.png
+slider off
+```
+
+A game built before the slider existed rejects the command (`the console rejected the message (unknown type)`).
+
 On the console, a screenshot pair takes about **0.6–0.8 s** over Wi-Fi (Old 3DS XL): the game stops for
 that time, and its log says `remote: frame <n> sent a screenshot in <ms> ms; its time is not
 representative`. Take screenshots outside anything you measure; in the simulator they cost a few
@@ -226,7 +249,7 @@ milliseconds.
 ## Trying commands by hand
 
 Without `--script`, type commands in `nnh`'s terminal while the game runs: `tap A`, `touch 160 120`,
-`screenshot here`, `expect "pressed" 30`, `help` for the list, `end` to give the game its controls back.
+`screenshot here`, `slider 0.5`, `expect "pressed" 30`, `help` for the list, `end` to give the game its controls back.
 Handy for reproducing a bug step by step; for anything you want to repeat, write a script. Typed commands share the
 controls: what you press on the console still counts, merged with them.
 

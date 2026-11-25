@@ -77,6 +77,8 @@ public:
     int max_particles() const { return max_; }
     int drawn() const { return drawn_; }     ///< particles drawn this frame
     int dropped() const { return dropped_; } ///< particles over the budget this frame
+    /// Going back to an earlier point of the frame's budget (a stereo frame's second eye, spec 026 FR-15).
+    void rewind(int drawn, int dropped) { drawn_ = drawn, dropped_ = dropped; }
 
 private:
     ParticleBatchRecord* records_ = nullptr;
@@ -96,6 +98,10 @@ struct GfxParticleOps {
     void (*submit)(Screen screen, int index, Camera2D camera); ///< a texture gone: asserts, skipped
     void (*end_frame)();                                    ///< counts, warns about drops, clears the table
     void (*stats)(gfx::Stats& out);                         ///< the particle fields
+    /// Stereo (spec 026 FR-15): remember the budget spent before the top screen's first eye, and go back to it before
+    /// the second, so both eyes draw the same particles and the budget is spent once.
+    void (*budget_mark)();
+    void (*budget_rewind)();
 };
 extern const GfxParticleOps* g_gfx_particle_ops;
 

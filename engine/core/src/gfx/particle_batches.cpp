@@ -161,7 +161,17 @@ void ops_stats(gfx::Stats& out) {
     out.dropped_particles = g_particles.dropped_total;
 }
 
-constexpr GfxParticleOps kOps{&ops_init, &free_storage, &ops_submit, &ops_end_frame, &ops_stats};
+int g_mark_drawn = 0, g_mark_dropped = 0; // budget_mark()
+
+void ops_budget_mark() {
+    g_mark_drawn = g_particles.batches.drawn();
+    g_mark_dropped = g_particles.batches.dropped();
+}
+
+void ops_budget_rewind() { g_particles.batches.rewind(g_mark_drawn, g_mark_dropped); }
+
+constexpr GfxParticleOps kOps{&ops_init,  &free_storage,    &ops_submit,       &ops_end_frame,
+                              &ops_stats, &ops_budget_mark, &ops_budget_rewind};
 
 /// Sets gfx's hook before main() (static initialisation of this object; D29's static nodes are the precedent).
 struct Registrar {

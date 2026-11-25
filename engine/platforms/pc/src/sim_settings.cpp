@@ -89,8 +89,14 @@ void apply(const char* key, const char* value, SimSettings& s) {
         parse_bool(value, s.fullscreen);
     } else if (std::strcmp(key, "window") == 0) {
         parse_window(value, s);
+    } else if (std::strcmp(key, "slider") == 0) {
+        parse_slider(value, s.slider);
+    } else if (std::strcmp(key, "eye") == 0) {
+        parse_eye(value, s.eye);
     }
 }
+
+constexpr const char* kEyeIds[3] = {"left", "right", "anaglyph"};
 
 } // namespace
 
@@ -116,8 +122,10 @@ bool parse_settings(const char* text, std::size_t size, SimSettings& out) {
 }
 
 int format_settings(const SimSettings& s, char* out, std::size_t size) {
-    int n = std::snprintf(out, size, "layout=%s\nscale=%d\nfit=%d\nfullscreen=%d\n", layout_id(s.layout), s.scale,
-                          s.fit ? 1 : 0, s.fullscreen ? 1 : 0);
+    const int slider = s.slider < 0 ? 0 : (s.slider > 100 ? 100 : s.slider);
+    int n = std::snprintf(out, size, "layout=%s\nscale=%d\nfit=%d\nfullscreen=%d\nslider=%d.%02d\neye=%s\n",
+                          layout_id(s.layout), s.scale, s.fit ? 1 : 0, s.fullscreen ? 1 : 0, slider / 100, slider % 100,
+                          eye_id(s.eye));
     if (n < 0 || static_cast<std::size_t>(n) >= size) return -1;
     if (s.has_window) {
         const int m = std::snprintf(out + n, size - static_cast<std::size_t>(n), "window=%d,%d,%d,%d\n", s.x, s.y,
@@ -126,6 +134,44 @@ int format_settings(const SimSettings& s, char* out, std::size_t size) {
         n += m;
     }
     return n;
+}
+
+bool parse_slider(const char* text, int& hundredths) {
+    if (text == nullptr || (text[0] != '0' && text[0] != '1')) return false;
+    int value = (text[0] - '0') * 100;
+    if (text[1] != '\0') {
+        if (text[1] != '.' || text[2] < '0' || text[2] > '9') return false;
+        value += (text[2] - '0') * 10;
+        if (text[3] != '\0') {
+            if (text[3] < '0' || text[3] > '9' || text[4] != '\0') return false;
+            value += text[3] - '0';
+        }
+    }
+    if (value > 100) return false;
+    hundredths = value;
+    return true;
+}
+
+int step_slider(int hundredths, int delta) {
+    const int v = hundredths + delta;
+    return v < 0 ? 0 : (v > 100 ? 100 : v);
+}
+
+SimEye next_eye(SimEye eye) {
+    return eye == SimEye::Left ? SimEye::Right : (eye == SimEye::Right ? SimEye::Anaglyph : SimEye::Left);
+}
+
+const char* eye_id(SimEye eye) { return kEyeIds[static_cast<int>(eye) < 3 ? static_cast<int>(eye) : 0]; }
+
+bool parse_eye(const char* id, SimEye& out) {
+    if (id == nullptr) return false;
+    for (int i = 0; i < 3; ++i) {
+        if (std::strcmp(id, kEyeIds[i]) == 0) {
+            out = static_cast<SimEye>(i);
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace nnh::platform::pc

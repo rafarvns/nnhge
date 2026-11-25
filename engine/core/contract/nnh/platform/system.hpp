@@ -22,4 +22,9 @@ enum DevRequest : std::uint32_t {
 };
 std::uint32_t poll_dev_requests();
 
+/// The stereoscopic 3D slider as the system reads it now (spec 026 FR-16): 0 (down) … 1 (up). 3DS: the hardware
+/// slider; PC: the simulator's slider (F6/F7, NNH_SIM_SLIDER); systems without Capability::Stereo3D return 0. Cheap
+/// (core reads it once per frame with 3D on); never allocates.
+float stereo_slider();
+
 } // namespace nnh::platform

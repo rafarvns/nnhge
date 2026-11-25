@@ -49,6 +49,11 @@ struct ScreenPixels {
 /// or remote_capture_release(). @return false (and last_error()) if it can't.
 bool remote_capture(Screen screen, ScreenPixels& out);
 
+/// The top screen's right eye (spec 026, plan P20), read back like remote_capture(Top, …): what the frame that just
+/// ended drew for the right eye, or — when it drew one picture for both eyes (slider at 0, no 3D draws, 2D games) — the
+/// top screen as remote_capture gives it. Same buffer, layout and lifetime as remote_capture.
+bool remote_capture_right(ScreenPixels& out);
+
 /// Frees the read-back buffer, if any (end of a remote session, shutdown). Safe to call at any time.
 void remote_capture_release();
 

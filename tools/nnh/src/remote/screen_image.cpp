@@ -6,9 +6,10 @@ namespace nnh::tool::remote {
 
 std::string screen_to_rgb(const nnh::detail::remote::ScreenHeader& h, const std::vector<std::uint8_t>& pixels,
                           RgbImage& out) {
-    if (h.screen > 1) return "unknown screen " + std::to_string(h.screen);
-    const char* name = h.screen == 0 ? "top" : "bottom";
-    const int w = h.screen == 0 ? 400 : 320;
+    if (h.screen > 2) return "unknown screen " + std::to_string(h.screen);
+    static constexpr const char* kNames[3] = {"top", "bottom", "top (right eye)"}; // 2: spec 026
+    const char* name = kNames[h.screen];
+    const int w = h.screen == 1 ? 320 : 400;
     const int ht = 240;
     if (h.width != w || h.height != ht) {
         return std::string("the ") + name + " screen is " + std::to_string(w) + "x" + std::to_string(ht) +

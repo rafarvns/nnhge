@@ -9,4 +9,7 @@ namespace nnh::platform::pc {
 /// A texture's RGBA pixels for the rasteriser (read back once, freed with the texture). Empty when unknown.
 raster3d::TextureView texels3d(TextureHandle handle);
 
+/// eyes_pc.cpp: frees the right eye's target and puts the top screen's own back (video3d_shutdown).
+void eyes_shutdown();
+
 } // namespace nnh::platform::pc

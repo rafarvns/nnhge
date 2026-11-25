@@ -12,6 +12,7 @@
 #include "remote/remote_reader.hpp"
 #include "remote/remote_schedule.hpp"
 #include "remote/remote_wire.hpp"
+#include "system/system_internal.hpp"
 
 namespace nnh::detail {
 namespace {
@@ -63,7 +64,15 @@ void detach() {
     g_session.check_rest = false;
     g_schedule.clear();
     g_input.release_all();
+    stereo_slider_override(-1.0f); // the console's own slider again
     screenshots_clear();
+}
+
+/// The 3D slider (spec 026 FR-16): a value replaces the console's slider; `slider off` gives it back — to the script's
+/// default 0 while a script owns the controls (spec 013 amendment), to the console's own otherwise.
+void apply_slider(const Message& m) {
+    if (m.slider != kSliderRelease) stereo_slider_override(static_cast<float>(m.slider) / static_cast<float>(kSliderMax));
+    else stereo_slider_override(g_session.exclusive ? 0.0f : -1.0f);
 }
 
 void warn_rejected(std::uint16_t seq, Reject reason, std::uint32_t frame) {
@@ -90,6 +99,7 @@ void attach(std::uint32_t frame, bool exclusive) {
     g_session.attached = true;
     g_session.exclusive = exclusive;
     g_session.check_rest = exclusive;
+    stereo_slider_override(exclusive ? 0.0f : -1.0f); // a script owns the slider too: 0 until it sets one
     std::uint8_t record[kMaxFixedRecord];
     send_record(record, encode_hello_record(frame, platform::capabilities(), build::flavor_name(), record));
     send_record(record, encode_tick_record(frame, record));
@@ -142,6 +152,7 @@ void apply_due(std::uint32_t frame) {
         }
         switch (message.type) {
         case MessageType::Screenshot: screenshots_request(message.id, message.screens, frame); break;
+        case MessageType::Slider: apply_slider(message); break;
         case MessageType::Bye:
             NNH_LOG_INFO(remote, "PC detached: remote control off");
             g_session.quit = g_session.quit || message.quit;
@@ -211,6 +222,7 @@ void remote_frame_ended(std::uint64_t frame) {
 }
 
 void remote_reset() {
+    stereo_slider_override(-1.0f);
     g_session = Session{};
     g_reader.reset();
     g_schedule.clear();

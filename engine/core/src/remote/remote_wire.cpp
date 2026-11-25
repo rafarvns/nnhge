@@ -60,10 +60,15 @@ bool decode_arguments(const std::uint8_t* in, Message& out) {
     case MessageType::Screenshot:
         out.id = get16(a);
         out.screens = a[2];
-        return out.screens != 0 && (out.screens & ~(kScreenTop | kScreenBottom)) == 0 && zero_from(in, 11);
+        return out.screens != 0 && (out.screens & ~kScreenMask) == 0 && zero_from(in, 11);
     case MessageType::Bye:
         out.quit = a[0] == 1;
         return a[0] <= 1 && zero_from(in, 9);
+    case MessageType::Slider: {
+        const std::uint16_t value = get16(a + 2);
+        out.slider = a[0] == 1 ? kSliderRelease : value;
+        return a[0] <= 1 && a[1] == 0 && value <= kSliderMax && (a[0] == 0 || value == 0) && zero_from(in, 12);
+    }
     }
     return false;
 }
@@ -111,12 +116,16 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
         a[2] = m.screens;
         break;
     case MessageType::Bye: a[0] = m.quit ? 1 : 0; break;
+    case MessageType::Slider:
+        a[0] = m.slider == kSliderRelease ? 1 : 0;
+        put16(a + 2, m.slider == kSliderRelease ? 0 : m.slider);
+        break;
     }
 }
 
 Reject decode_message(const std::uint8_t in[kMessageSize], Message& out) {
     if (in[0] != kMessageMagic) return Reject::Magic;
-    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Bye)) {
+    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Slider)) {
         return Reject::Type;
     }
     out = Message{};

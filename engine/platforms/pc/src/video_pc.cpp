@@ -61,6 +61,10 @@ void end_frame() {
     wait_for_next_frame();
 }
 
+// SDL's renderer may still hold a frame's commands, but destroying a texture or a mesh through SDL is always
+// safe: nothing to wait for.
+void finish_frames() {}
+
 
 } // namespace nnh::platform
 

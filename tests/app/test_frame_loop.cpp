@@ -103,3 +103,13 @@ NNH_TEST(debug_print_is_drawn_inside_a_frame_and_ignored_outside) {
     CHECK(fake::state().last_frame_item_count == 6); // one glyph per letter of "inside"
     nnh::shutdown();
 }
+
+NNH_TEST(shutdown_waits_for_the_gpu_before_the_platform_goes_away) {
+    fresh_engine();
+    CHECK(nnh::frame());
+    CHECK(nnh::frame());
+    nnh::shutdown();
+    CHECK(fake::state().finish_frames_calls == 1);
+    CHECK(!fake::state().gpu_busy);
+    CHECK(fake::state().destroyed_while_gpu_busy == 0); // the font texture among them
+}

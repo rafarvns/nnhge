@@ -65,10 +65,13 @@ MeshRecord* mesh_get(int slot, std::uint32_t generation);
 inline MeshRecord* mesh_get(const Mesh& m) { return mesh_get(MeshAccess::slot(m), MeshAccess::generation(m)); }
 /// Adds a record (owned from now on). @return the slot (−1 when the table is full) and its generation.
 int mesh_add(MeshRecord* record, std::uint32_t& generation);
-/// Releases a mesh: freed now, or after the frame when a frame is open (draws recorded this frame may use it).
+/// Releases a mesh: freed now, or, while a frame is open or the GPU may draw a submitted one, once the GPU is done
+/// with every frame that may use it (D47).
 void mesh_release(int slot, std::uint32_t generation);
-/// Frees the meshes released during the frame (gfx3d's after_frame).
-void mesh_flush_released();
+/// After a frame was submitted (gfx3d's after_frame): the meshes released until now wait for the next GPU wait.
+void mesh_retire_released();
+/// After the platform waited for the GPU (gfx3d's gpu_idle): frees the retired meshes.
+void mesh_free_retired();
 /// Live meshes and their bytes (heap blocks + linear), for stats.
 int mesh_count();
 std::size_t mesh_bytes();

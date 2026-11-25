@@ -93,9 +93,26 @@ NNH_TEST(a_mesh_released_inside_a_frame_is_freed_after_it) {
     CHECK(nnh::frame());
     m.reset();
     CHECK(fake::pass3d_log().live_meshes == 1); // a draw recorded this frame may still use it
-    CHECK(nnh::frame());
+    CHECK(nnh::frame()); // D47: freed after this frame's begin_frame(), which waited for the GPU
     CHECK(fake::pass3d_log().live_meshes == 0);
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
     nnh::shutdown();
+}
+
+NNH_TEST(meshes_are_never_freed_while_the_gpu_may_draw_them) {
+    restart(16);
+    nnh::Mesh m = quad();
+    CHECK(nnh::frame());
+    CHECK(nnh::frame()); // a frame in flight
+    for (int i = 0; i < 3; ++i) {
+        m.reset();
+        m = quad();
+        CHECK(nnh::frame());
+    }
+    nnh::Mesh last = quad();
+    nnh::shutdown(); // waits for the GPU, then frees what is left
+    CHECK(fake::pass3d_log().live_meshes == 0);
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
 }
 
 NNH_TEST(create_mesh_keeps_the_games_materials) {

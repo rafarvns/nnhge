@@ -102,12 +102,19 @@ struct TileBatch2D {
 void draw_tiles(Screen screen, const TileBatch2D& batch);
 
 /// Starts a frame with both screens cleared to the given colors. Called once per nnh::frame(), after
-/// poll_events() returned true. Drawing functions are valid until end_frame(). Must not allocate.
+/// poll_events() returned true. It waits until the GPU finished the frame of the previous end_frame() (decision D47:
+/// when it returns, nothing submitted before uses a texture or mesh anymore). Drawing functions are valid until
+/// end_frame(). Must not allocate.
 void begin_frame(Color top_clear, Color bottom_clear);
 
 /// Submits the frame and waits until the next 60 Hz frame slot (vsync). Called exactly once after each
-/// begin_frame(). Must not allocate.
+/// begin_frame(). The GPU may still draw the frame when it returns (the 3DS starts it and returns; it waits in the
+/// next begin_frame()). Must not allocate.
 void end_frame();
+
+/// Waits until the GPU finished every frame submitted so far, outside a frame (core calls it at shutdown, before it
+/// frees textures and meshes). Draws nothing and shows nothing. Must not allocate.
+void finish_frames();
 
 // Text (game and debug) is drawn by core with the built-in font through texture_create_rgba() and
 // draw_2d() (spec 005): a platform implements no text or font functions.

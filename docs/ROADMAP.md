@@ -341,8 +341,9 @@ spec; the order below is a proposal.
 - [ ] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)
   (3D foundation): **part 026a (mono) built 2026-11-24**, console run 1 done (math bit-identical; ≈ 100 µs of frame per
   small draw, so a per-draw optimisation round followed: T10.5), console run 2 done 2026-11-25 (256 small draws 28.3 ms:
-  CPU ≈ 12 ms then GPU ≈ 16 ms, one after the other); budgets after the maintainer's decision on overlapping CPU and
-  GPU, probe read-back and Linux VM (T9.3) pending; part 026b
+  CPU ≈ 12 ms then GPU ≈ 16 ms, one after the other; overlapping them was tried and dropped, D47 frees released
+  textures and meshes only after the GPU wait), budgets set (256 draws < 35.5 ms a frame), probe read-back and Linux VM
+  (T9.3) pending; part 026b
   (stereo: the slider, per-eye drawing) planned. `<nnh/math3d.hpp>` (same bits on PC and 3DS, golden `A3BF4EDF`),
   `<nnh/mesh.hpp>` (code-built meshes, primitives, glTF 2.0 → `.nnhmesh` by `nnh-assetc mesh`), `<nnh/gfx3d.hpp>`
   (camera, ambient + 4 lights, draws between the 2D layers, culling, order, `to_screen`/`screen_ray`, probe pixels);

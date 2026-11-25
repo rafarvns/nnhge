@@ -1,4 +1,5 @@
-// The mesh table (mesh_internal.hpp): 256 slots with generations, released meshes kept until the frame ends.
+// The mesh table (mesh_internal.hpp): 256 slots with generations; a released mesh is kept until the GPU is done with
+// every frame that may draw it (D47).
 
 #include "core/engine_state.hpp"
 #include "memory/memory_internal.hpp"
@@ -11,10 +12,14 @@ NNH_MEM_TAG(meshes);
 namespace detail {
 namespace {
 
+constexpr std::uint8_t kLive = 0;
+constexpr std::uint8_t kReleased = 1;
+constexpr std::uint8_t kRetired = 2;
+
 struct Slot {
     MeshRecord* record = nullptr;
     std::uint32_t generation = 0;
-    bool released = false; ///< freed at the end of the frame
+    std::uint8_t stage = 0; ///< kLive, kReleased (kept: in use), kRetired (submitted since: freed at the next wait)
 };
 
 Slot* g_slots = nullptr;
@@ -55,7 +60,7 @@ int mesh_add(MeshRecord* record, std::uint32_t& generation) {
     if (g_slots == nullptr) return -1;
     for (int i = 0; i < kMeshSlots; ++i) {
         if (g_slots[i].record != nullptr) continue;
-        g_slots[i] = Slot{record, g_next_generation++, false};
+        g_slots[i] = Slot{record, g_next_generation++, kLive};
         generation = g_slots[i].generation;
         return i;
     }
@@ -65,19 +70,26 @@ int mesh_add(MeshRecord* record, std::uint32_t& generation) {
 void mesh_release(int slot, std::uint32_t generation) {
     if (mesh_get(slot, generation) == nullptr) return;
     Slot& s = g_slots[slot];
-    if (s.released) return;
-    if (frame_open()) {
-        s.released = true; // draws recorded this frame still find it; freed in mesh_flush_released()
+    if (s.stage != kLive) return;
+    if (gpu_may_use_resources()) {
+        s.stage = kReleased; // draws recorded this frame, or a frame the GPU still draws, still find it
         return;
     }
     mesh_record_destroy(s.record);
     s = Slot{};
 }
 
-void mesh_flush_released() {
+void mesh_retire_released() {
     if (g_slots == nullptr) return;
     for (int i = 0; i < kMeshSlots; ++i) {
-        if (!g_slots[i].released) continue;
+        if (g_slots[i].stage == kReleased) g_slots[i].stage = kRetired;
+    }
+}
+
+void mesh_free_retired() {
+    if (g_slots == nullptr) return;
+    for (int i = 0; i < kMeshSlots; ++i) {
+        if (g_slots[i].stage != kRetired) continue;
         mesh_record_destroy(g_slots[i].record);
         g_slots[i] = Slot{};
     }

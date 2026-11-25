@@ -14,6 +14,7 @@ struct Context {
     C3D_RenderTarget* current_target = nullptr;        // scene currently begun this frame
     bool c_stick_ready = false;                        // irrst started (New 3DS)
     bool frame_open = false;     // between begin_frame and end_frame (the read-back refuses then)
+    bool c3d_waited = false;     // finish_frames() already entered citro3d's next frame (it waited for the GPU)
     bool remote_closed = false;  // a remote read or send found the log socket gone (remote_3ds.cpp)
     bool remote_no_delay = false; // TCP_NODELAY set on the log socket at the first remote send
 };

@@ -11,7 +11,7 @@ namespace {
 void after_frame() {
     gfx3d_probes_after_frame();
     gfx3d_frame_done();
-    mesh_flush_released();
+    mesh_retire_released();
 }
 
 constexpr Gfx3DOps kOps{
@@ -19,6 +19,7 @@ constexpr Gfx3DOps kOps{
     .shutdown = &gfx3d_shutdown,
     .submit_screen = &gfx3d_submit_screen,
     .after_frame = &after_frame,
+    .gpu_idle = &mesh_free_retired,
     .overlay_line = &gfx3d_overlay_line,
 };
 

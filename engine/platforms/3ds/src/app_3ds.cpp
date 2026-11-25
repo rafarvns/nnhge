@@ -141,6 +141,7 @@ void shutdown() {
     ctr::network_release_all(); // sockets the game left open
     ctr::return_if_asked();     // started by NNH Link: it starts again when we exit
     ctr::input_stop();
+    if (g_context.c3d_waited) C3D_FrameEnd(0); // finish_frames() left citro3d inside an empty frame: close it
     g_context = {};
     C2D_Fini();
     C3D_Fini();

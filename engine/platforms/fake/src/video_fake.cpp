@@ -29,6 +29,7 @@ void begin_frame(Color top_clear, Color bottom_clear) {
     platform_fake::State& s = mutable_state();
     ++s.frames_begun;
     s.frame_open = true;
+    s.gpu_busy = false; // a console waits here for the previous frame's GPU work
     s.top_clear = top_clear;
     s.bottom_clear = bottom_clear;
     s.item_count = 0;
@@ -42,6 +43,7 @@ void end_frame() {
     platform_fake::State& s = mutable_state();
     ++s.frames_ended;
     s.frame_open = false;
+    s.gpu_busy = true; // a console's GPU draws the frame from now on
     s.last_frame_item_count = s.item_count;
     std::memcpy(s.last_frame_items, s.items, sizeof s.items);
     std::memcpy(s.last_frame_calls, s.calls, sizeof s.calls);
@@ -78,8 +80,15 @@ bool texture_create_rgba(const void* pixels, int width, int height, TextureInfo&
     return true;
 }
 
+void finish_frames() {
+    platform_fake::State& s = mutable_state();
+    ++s.finish_frames_calls;
+    s.gpu_busy = false;
+}
+
 void texture_destroy(TextureHandle handle) {
     if (handle != 0) --mutable_state().live_textures;
+    if (handle != 0 && mutable_state().gpu_busy) ++mutable_state().destroyed_while_gpu_busy;
     platform_fake::detail::texture_forgotten(handle);
 }
 

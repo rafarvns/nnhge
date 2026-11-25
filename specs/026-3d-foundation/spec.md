@@ -307,6 +307,10 @@ console's. A game that draws no 3D pays nothing.
     **under 1.0 ms**;
   - **fill**: three full-screen blended planes over an opaque scene: 60 Hz mono;
   - **2D unchanged**: spec 012's tile gate (4 layers + 300 sprites at 60 Hz) still passes in a 2D-only build.
+  **Budgets set 2026-11-25** (mono, from console run 2 + ≈ 25 %, after the T10.5 optimisation round and the CPU/GPU
+  overlap trial of D47; plan "CPU/GPU overlap tried (D47) and budgets set"): throughput and fill **60 Hz** (met);
+  draws: frame average **under 35.5 ms** (measured 28.34; 60 Hz is out of reach on an Old 3DS: ≈ 65 µs of GPU per small
+  draw) and CPU share **under 14.8 ms** (11.82); CPU alone **under 8.8 ms** (7.04). Stereo budgets come with 026b.
   If a target is missed, the implementation is optimised first; if it is still missed, the budget is set from the first
   console measurement with margin and written in the spec and the docs with the measured numbers (the maintainer's
   policy for benches, as in specs 019 to 022). The simulator's cost is measured too (pc-dev: the showcase's 3D pass under

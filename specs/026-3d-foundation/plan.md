@@ -943,3 +943,45 @@ a `draws 256` frame would cost ≈ max(CPU ≈ 12.3, GPU ≈ 16) ≈ 16 ms: abou
 (≈ 63 µs for a 12-triangle cube: setup and the post-vertex-cache clear, not pixels) only falls with fewer draws
 (batching or instancing). Budgets for AC-8 wait for the maintainer's decision on the overlap (T10.2): set now from this
 run + ≈ 25 % (`draws 256` cpu < 14.8 ms, avg ≈ 35 ms; `cpu 512` cpu < 8.8 ms), or after the overlap's own console run.
+
+## CPU/GPU overlap tried (D47) and budgets set (2026-11-25)
+
+The maintainer chose to try the overlap left open by the optimisation round. **The trial**: core called
+`platform::begin_frame` (its `C3D_FrameBegin(SYNCDRAW)` wait) at the end of the frame, just before the passes, so the
+game's update and recording of frame N + 1 ran while the GPU drew frame N. PC suite green; 3ds-dev without a warning.
+Console (Old 3DS XL, Development, `build/logs/models-20261125-101709.txt` in the trial's worktree):
+
+| Case | Run 2 (serial) | Overlapped | `rec` serial → overlapped | `sub` |
+|------|----------------|------------|---------------------------|-------|
+| `throughput 12000` | 16.71 | 16.71 | 0.026 → 0.036 | 0.526 → 0.541 |
+| `draws 256` | 28.34 | **27.20** | 3.025 → **4.610** | 8.792 → 9.041 |
+| `cpu 512` | 30.22 | **33.37** | 6.074 → **8.727** | 9.196 → 9.532 |
+| `fill` | 16.71 | 16.71 | 0.052 → 0.055 | 0.624 → 0.637 |
+
+- **The CPU slowed down by 45–50 % while the GPU ran**: the same recording code took 4.6 ms instead of 3.0 (and 8.7
+  instead of 6.1), most likely because the GPU's reads of the vertex data and the command list in FCRAM compete with the
+  ARM11's misses (no L2 on the Old 3DS: every miss goes to that memory).
+- **The GPU is the floor**: from both runs, a `draws 256` frame holds ≈ 16–18 ms of GPU work (≈ 65 µs per 12-triangle
+  draw: per-draw setup, not pixels). Overlap can hide at most the recording (3 ms), and the contention ate most of it.
+- **Submission can't overlap the GPU**: citro3d starts the GPU on a frame only in `C3D_FrameEnd` (`gxCmdQueueRun`);
+  `C3D_FrameSplit` queues without starting it, and the queue isn't reachable through its public API.
+
+**Decision**: the frame order is unchanged (the overlap costs a CPU-bound game 10 % for a 4 % gain on a GPU-bound one).
+What the trial found is kept as **D47**: `C3D_FrameEnd` returns with the GPU still drawing, yet core freed the textures
+and meshes released during a frame right after `end_frame()` — memory the GPU could still read. Releases made while a
+frame is open or the GPU may draw a submitted one now wait for the next `begin_frame()` (two stages: retired when a
+frame is submitted, freed after the next wait); shutdown calls the new `platform::finish_frames()` first (3DS: an
+early `C3D_FrameBegin(0)`, continued by the next `begin_frame()` or closed at shutdown). The fake platform counts
+destructions while its GPU is "busy" (from `end_frame` to the next `begin_frame`/`finish_frames`): 0 in every test;
+the old code failed the new tests. A texture or mesh released inside a frame is still freed during the next
+`nnh::frame()`, as before; one released between frames (a scene's `on_exit`) one frame later.
+
+**Budgets** (the maintainer's policy, console run 2 + ≈ 25 %): `throughput` and `fill` 60 Hz (met); `draws 256` frame
+average < 35.5 ms and CPU share < 14.8 ms; `cpu 512` CPU share < 8.8 ms. In AC-8, `examples/models/bench_scene.cpp` and
+`docs/api/gfx3d.md`. The real lever left is fewer draws: batching or instancing (a later spec), and bypassing citro3d
+per draw (its two 96-register scans, ≈ 1/3 of the CPU per draw).
+
+**Console check of the final code** (D47's releases, budgets, the serial order; 2026-11-25, `bench.nnhs` → `nnh: PASS`):
+`throughput` 16.71 ms, 0 missed; `draws 256` 28.01 ms avg (rec 2.972, sub 8.646, cpu 11.618); `cpu 512` cpu 7.055 ms;
+`fill` 16.71 ms, 0 missed; `3d bench: PASS`. The same as run 2: D47 costs nothing. The verdict line is now logged
+one frame after the last case (a script expects one line per frame).

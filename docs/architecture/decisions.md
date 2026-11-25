@@ -296,3 +296,8 @@ never through `#ifdef` in game code.
   UI input value, drawing through public gfx calls), from plan 028, for the maintainer's review. Three plan questions
   are open there (layout of changes made after `update()` completed at `draw()`, a null handle on a full UI, a
   three-cell ellipsis); the patterns page gains a "Retained widget tree" row (design).
+- 2026-11-25: D48 approved with the plan's answers (layout completed at the start of `draw()`, a null handle and an
+  assert on a full UI, `...`) and **implemented** (spec 028, on the PC; the Linux checks and the Old 3DS run are next):
+  stage refinements in [plan 028](../../specs/028-ui-widgets/plan.md#implementation-refinements) — a list's row pool
+  maps item *i* to row *i mod (rows × columns)* (no ring head), a progress bar without text needs no text line, the
+  self-check folds its draw hash every 10 script frames, the style structs' data declarations are a compile-only ctest.

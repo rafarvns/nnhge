@@ -1,6 +1,6 @@
 # Spec 028: UI widgets
 
-Status: approved 2026-11-25 (the maintainer, every open question as recommended)
+Status: implemented on the PC 2026-11-25 (console T10.2 and Linux T9.1 pending); approved 2026-11-25 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-25
 Depends on: [spec 004](../004-2d-graphics/spec.md) (textures and regions, `gfx::draw`, `fill_rect`/`draw_rect`, layers,
 `ignore_camera`, `max_draws`), [spec 005](../005-text-and-builtin-font/spec.md) (`gfx::draw_text`/`measure_text`, the

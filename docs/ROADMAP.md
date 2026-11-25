@@ -281,8 +281,19 @@ spec; the order below is a proposal.
   `examples/camera`: playground, self-check (`tests/check.nnhs`), bench (PC: 0.0013 ms per pair of rigs); the
   platformer follows its player with the rig (dead zone, smoothing on y, look-ahead, landing shake) and its bench
   zooms (B; `tests/zoom_gate.nnhs`)
-- [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels and layout boxes built
-  in code, focus moved with the D-Pad and touch on the bottom screen; menus without drawing rectangles by hand
+- [x] **UI widgets** (Godot Control nodes, Unity UI) — [spec 028](../specs/028-ui-widgets/spec.md), **implemented on the
+  PC 2026-11-25, console run pending** (Linux checks and the Old 3DS run T10.2 next): `<nnh/ui.hpp>` — a retained widget
+  tree built in code in one block the game owns (88 B per widget on the 3DS): labels (wrap, `...`, typewriter reveal),
+  images, progress bars, solid or 9-slice panels, buttons, toggles, sliders, choices, virtualised lists and grids
+  (a row pool filled by the game only for rows coming into view; 65 535 items), VBox/HBox/grid box/stack/scroll box with
+  stretch ratios and nine-point anchors on both screens, integer layout only when dirty; focus by D-Pad and Circle Pad
+  with repeat, wrap on a fresh press, neighbours, a geometric fallback, disabled-skipped or inert entries, default and
+  remembered focus, modals and a prompt helper; touch on the bottom screen; results by query, callbacks or opt-in bus
+  events; text sources (copy, borrowed, keys through a resolver: the localization seam); themes and per-state styles;
+  drawn through public gfx calls on layer 14; scene binding (D30); an optional `ActionSet` adapter
+  ([api/ui.md](api/ui.md), guide [menus](guides/menus.md)). `examples/ui`: title, options slid in by a tween, a 300-item
+  inventory, a gallery, a dialog, the quit prompt, a HUD, two themes, the self-check (`ui: PASS 30400DA6`) and the bench
+  (PC: idle 0.002 ms, relayout 0.048 ms, draw ratio 0.91); `tests/check.nnhs` passes with `--pc`; `hello` unchanged
 - [x] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System) — [spec 024](../specs/024-particles/spec.md),
   **implemented 2026-11-24**, Old 3DS runs 1 and 2 done (self-check `C5EF1A84` PASS; after the T10.3 round the budgets
   were set from run 2 on 2026-11-25: update 1024 0.8 ms, emit 512 2.35 ms, off-screen 0.06 ms, draw ratio ≤ 0.75): `<nnh/particles.hpp>` — game-owned emitters in one block

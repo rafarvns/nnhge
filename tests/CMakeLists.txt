@@ -740,6 +740,18 @@ if(NOT MSVC)
         set_tests_properties(saves_declaration_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
     endforeach()
 endif()
+# UI widgets (spec 028): every test of the spec in one block.
+target_sources(nnh_tests PRIVATE
+    ui/test_anchor.cpp
+    ui/test_box_math.cpp
+    ui/test_create.cpp
+    ui/test_geometric.cpp
+    ui/test_keys.cpp
+    ui/test_nine_slice.cpp
+    ui/test_number.cpp
+    ui/test_repeat.cpp
+    ui/test_tree.cpp
+    ui/test_wrap.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.

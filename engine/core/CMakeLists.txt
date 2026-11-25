@@ -462,6 +462,62 @@ target_sources(nnh_core PRIVATE ${_nnh_gfx3d_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_gfx3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
+# UI widgets (spec 028, D48): a retained widget tree in one block, integer layout, focus, input through a UI input
+# value, drawing through public gfx calls. Optional: a game that doesn't include <nnh/ui.hpp> links none of it; the
+# prompt (ui_prompt.cpp), the actions adapter (ui_actions.cpp) and the bus events (ui_events.cpp) are linked only by
+# games that call them. No fused multiply-add: the cursor's one eased value and the float → integer conversions round
+# the same everywhere.
+set(_nnh_ui_sources
+    src/ui/ui_actions.cpp
+    src/ui/ui_anchor.cpp
+    src/ui/ui_box_math.cpp
+    src/ui/ui_create.cpp
+    src/ui/ui_cursor.cpp
+    src/ui/ui_debug.cpp
+    src/ui/ui_desc_check.cpp
+    src/ui/ui_draw.cpp
+    src/ui/ui_draw_list.cpp
+    src/ui/ui_draw_out.cpp
+    src/ui/ui_draw_widgets.cpp
+    src/ui/ui_events.cpp
+    src/ui/ui_focus.cpp
+    src/ui/ui_geometric.cpp
+    src/ui/ui_input_raw.cpp
+    src/ui/ui_layout.cpp
+    src/ui/ui_layout_arrange.cpp
+    src/ui/ui_layout_measure.cpp
+    src/ui/ui_list.cpp
+    src/ui/ui_modal.cpp
+    src/ui/ui_navigate.cpp
+    src/ui/ui_nine_slice.cpp
+    src/ui/ui_number.cpp
+    src/ui/ui_parts.cpp
+    src/ui/ui_prompt.cpp
+    src/ui/ui_queries.cpp
+    src/ui/ui_release.cpp
+    src/ui/ui_repeat.cpp
+    src/ui/ui_results.cpp
+    src/ui/ui_reveal.cpp
+    src/ui/ui_scene.cpp
+    src/ui/ui_scroll_box.cpp
+    src/ui/ui_setters.cpp
+    src/ui/ui_style.cpp
+    src/ui/ui_text_seam.cpp
+    src/ui/ui_text_source.cpp
+    src/ui/ui_touch.cpp
+    src/ui/ui_tree.cpp
+    src/ui/ui_update.cpp
+    src/ui/ui_values.cpp
+    src/ui/ui_widget_new.cpp
+    src/ui/ui_widgets_boxes.cpp
+    src/ui/ui_widgets_display.cpp
+    src/ui/ui_widgets_input.cpp
+    src/ui/ui_wrap.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_ui_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_ui_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

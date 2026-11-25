@@ -166,6 +166,7 @@ bool mesh_create(const MeshUpload& upload, MeshInfo& out) {
 void mesh_destroy(MeshHandle handle) {
     auto* m = reinterpret_cast<FakeMesh*>(handle);
     if (m == nullptr) return;
+    if (platform_fake::detail::mutable_state().gpu_busy) ++platform_fake::detail::mutable_state().destroyed_while_gpu_busy;
     --g_3d.live_meshes;
     g_3d.live_mesh_bytes -= m->size;
     delete[] m->bytes;

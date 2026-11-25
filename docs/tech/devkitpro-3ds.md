@@ -29,7 +29,7 @@ while (aptMainLoop()) {                 // false when the user closes the app fr
     C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
     C2D_TargetClear(top, color); C2D_SceneBegin(top);
     /* draw */
-    C3D_FrameEnd(0);                    // submits and waits for vsync (60 Hz)
+    C3D_FrameEnd(0);                    // submits; the GPU draws on, the next FrameBegin waits (vsync, 60 Hz)
 }
 C2D_Fini(); C3D_Fini(); gfxExit();      // reverse order
 ```
@@ -136,7 +136,11 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
 - **Frame timing**: `C3D_FrameBegin(C3D_FRAME_SYNCDRAW)` (at the start of `nnh::frame()`) waits for the previous
   frame's GPU work and the GPU starts on a frame's commands only in `C3D_FrameEnd`, so a frame's CPU and GPU times add
   up; citro3d's `C3D_UpdateUniforms` scans all 96 float registers of the vertex and the geometry shader at every draw.
-  Measured on the Old 3DS XL (console run 1): ≈ 100 µs of frame time per small 3D draw.
+  Measured on the Old 3DS XL (console run 2): ≈ 110 µs of frame time per small 3D draw, ≈ 63 µs of it the GPU's.
+  Overlapping them (the wait moved to the end of the frame) was measured and dropped: the ARM11 ran 45–50 % slower
+  while the GPU worked (plan 026). Because `C3D_FrameEnd` returns with the GPU still drawing, core frees released
+  textures and meshes only after the next `C3D_FrameBegin` (D47); `platform::finish_frames()` enters citro3d's next
+  frame early (`C3D_FrameBegin(0)`, no public wait otherwise) and `shutdown()` closes it with `C3D_FrameEnd(0)`.
 - **Shader** `engine/platforms/3ds/shaders/mesh3d.v.pica`, built by `picasso` through `ctr_add_shader_library` and
   embedded by `dkp_add_embedded_binary_library` (`nnh_mesh3d_shader_shbin.h`): raw int16 positions × model-view,
   int8 normals × normal matrix → the normal quaternion (citro3d's `fragment_light` method), the view vector, uv × scale

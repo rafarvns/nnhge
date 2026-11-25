@@ -72,6 +72,11 @@ struct State {
     int frames_ended = 0;
     bool initialized = false;
     bool frame_open = false;
+    /// A frame ended and the GPU may still draw it: set by end_frame(), cleared by begin_frame() and finish_frames(),
+    /// which wait for the GPU on a console (decision D47).
+    bool gpu_busy = false;
+    int finish_frames_calls = 0;
+    int destroyed_while_gpu_busy = 0; ///< textures and meshes destroyed while gpu_busy (must stay 0, D47)
     Color top_clear{};
     Color bottom_clear{};
     int console_lines = 0;                          ///< log lines written with log_console()

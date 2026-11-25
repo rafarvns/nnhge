@@ -169,9 +169,21 @@ bool detail::gfx_init(const GfxConfig& config) {
     return true;
 }
 
+namespace {
+
+/// Frees the `n` oldest pending textures and moves the rest to the front (D47: the GPU is done with them).
+void free_pending(int n) {
+    for (int i = 0; i < n; ++i) detail::destroy_texture_now(g_state.pending[i].slot, g_state.pending[i].generation);
+    for (int i = n; i < g_state.pending_count; ++i) g_state.pending[i - n] = g_state.pending[i];
+    g_state.pending_count -= n;
+}
+
+} // namespace
+
 void detail::gfx_shutdown() {
     if (!g_state.ready) return;
-    gfx_after_frame();
+    free_pending(g_state.pending_count); // core waited for the GPU (platform::finish_frames) before this
+    g_state.retired_count = 0;
     if (g_3d_on) g_gfx_3d_ops->shutdown(); // meshes (and the textures they own) first
     g_3d_on = false;
     font_texture_release(); // counted under its own tag
@@ -210,11 +222,14 @@ void detail::gfx_submit() {
     }
 }
 
-void detail::gfx_after_frame() {
-    for (int i = 0; i < g_state.pending_count; ++i) {
-        destroy_texture_now(g_state.pending[i].slot, g_state.pending[i].generation);
-    }
-    g_state.pending_count = 0;
+void detail::gfx_gpu_idle() {
+    free_pending(g_state.retired_count);
+    g_state.retired_count = 0;
+    if (g_3d_on) g_gfx_3d_ops->gpu_idle();
+}
+
+void detail::gfx_frame_submitted() {
+    g_state.retired_count = g_state.pending_count;
     if (g_3d_on) g_gfx_3d_ops->after_frame();
 }
 

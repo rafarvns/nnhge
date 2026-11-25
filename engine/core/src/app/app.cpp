@@ -35,19 +35,22 @@ namespace {
 
 bool g_initialized = false;
 bool g_frame_open = false;
+bool g_gpu_busy = false; // a frame was submitted and the platform hasn't waited for the GPU since (D47)
 std::uint64_t g_frame_count = 0;
 char g_data_folder[48];
 
-/// Ends the open frame: 2D passes per screen, then the debug pass (text, overlay) on top, then present.
+/// Ends the open frame: 2D passes per screen, then the debug pass (text, overlay) on top, then the platform starts
+/// the GPU on it (D47: it may draw until the next begin_frame(), so what was released waits for that wait).
 void close_frame() {
     if (g_frame_open) {
         detail::gfx_submit();
         detail::overlay_draw();     // recorded after the game's debug text, so it covers it
         detail::debug_text_flush(); // the debug pass
         platform::end_frame();
+        g_gpu_busy = true;
         if constexpr (build::kDevToolsEnabled) detail::remote_frame_ended(g_frame_count); // screenshots
         g_frame_open = false;
-        detail::gfx_after_frame(); // textures released during the frame are no longer in use
+        detail::gfx_frame_submitted(); // what was released until now waits for the next wait
     }
 }
 
@@ -56,6 +59,7 @@ void close_frame() {
 void (*detail::g_run_input_hooks)() = nullptr; // D32: one pointer, set while a module has after-input hooks
 
 bool detail::frame_open() { return g_frame_open; }
+bool detail::gpu_may_use_resources() { return g_frame_open || g_gpu_busy; }
 bool detail::engine_initialized() { return g_initialized; }
 
 bool init(const AppConfig& config) {
@@ -120,6 +124,8 @@ bool frame() {
     detail::overlay_update(time::delta(), detail::input_engine_held_mask(), detail::input_engine_pressed_mask(),
                            platform::poll_dev_requests());
     platform::begin_frame(detail::clear_color(Screen::Top), detail::clear_color(Screen::Bottom));
+    g_gpu_busy = false;
+    detail::gfx_gpu_idle(); // the GPU finished the previous frame: free what was retired when it was submitted
     g_frame_open = true;
     ++g_frame_count;
     detail::input_publish_events();
@@ -132,6 +138,8 @@ bool frame() {
 void shutdown() {
     if (!g_initialized) return;
     close_frame();
+    if (g_gpu_busy) platform::finish_frames(); // nothing below may free what the GPU still draws
+    g_gpu_busy = false;
     NNH_LOG_INFO(app, "shutdown after %llu frames", static_cast<unsigned long long>(g_frame_count));
     detail::scenes_shutdown(); // on_exit() may still unsubscribe: before the bus goes away
     detail::events_shutdown();

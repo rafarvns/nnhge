@@ -53,8 +53,9 @@ struct GfxState {
     DrawList draws;
     platform::DrawItem2D* pass = nullptr; // max_draws items, reused for every pass
     platform::DrawItem2D* debug_items = nullptr; // kDebugPassCapacity items for the debug pass
-    PendingDestroy* pending = nullptr;    // textures released during the frame (max_textures)
+    PendingDestroy* pending = nullptr;    // textures released and not yet freed (max_textures), oldest first
     int pending_count = 0;
+    int retired_count = 0;                // pending[0, retired_count): freed by the next gfx_gpu_idle() (D47)
     int max_draws = 0;
     int draws_last_frame = 0;
     int dropped_total = 0;

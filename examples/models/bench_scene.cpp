@@ -35,13 +35,15 @@ void BenchScene::on_enter() {
     frames_per_case_ = frames != nullptr && std::atoi(frames) > 0 ? std::atoi(frames) : 600;
     case_ = frame_ = missed_ = 0;
     sum_ns_ = worst_ns_ = rec_ns_ = sub_ns_ = prep_ns_ = 0;
-    failed_ = done_ = false;
+    failed_ = done_ = verdict_logged_ = false;
     const nnh::Material3D tex{.base_color = {255, 255, 255, 255}, .texture = nnh::texture_id(world_.checker)};
     if (auto r = nnh::make_sphere(1.1f, 48, 128, tex)) dense_ = std::move(r.value());
     if (auto r = nnh::make_plane(1, 1, 1)) plane_ = std::move(r.value());
     NNH_LOG_INFO(example, "3d bench: started (%d frames per case)", frames_per_case_);
 }
 
+// AC-8's budgets (set 2026-11-25 from console run 2 + ~25 %, plan 026 "CPU/GPU overlap tried (D47) and budgets set"):
+// throughput and fill at 60 Hz; draws: frame avg < 35.5 ms and CPU share < 14.8 ms; cpu: CPU share < 8.8 ms.
 // AC-8's CPU shares: draws = recording + the whole submission (culling, ordering, the platform's state and draw calls;
 // "gfx submit" holds the HUD's 2D too, so it errs high); cpu = recording + culling and ordering ("gfx3d prepare").
 void BenchScene::finish_case() {
@@ -49,25 +51,27 @@ void BenchScene::finish_case() {
     const std::int64_t avg = sum_ns_ / n, rec = rec_ns_ / n, sub = sub_ns_ / timed, prep = prep_ns_ / timed;
     const std::int64_t cpu = case_ == 2 ? rec + prep : rec + sub;
     bool ok = missed_ == 0;
-    if (case_ == 1) ok = ok && cpu < 4'000'000;
-    if (case_ == 2) ok = cpu < 1'000'000; // CPU alone: no frame-rate target
+    if (case_ == 1) ok = avg < 35'500'000 && cpu < 14'800'000; // 256 small draws don't fit 60 Hz on an Old 3DS
+    if (case_ == 2) ok = cpu < 8'800'000;                       // CPU alone: no frame-rate target
     failed_ = failed_ || !ok;
     NNH_LOG_INFO(example, "3d bench: %s avg %.2f worst %.2f missed %d/%d rec %.3f sub %.3f prep %.3f cpu %.3f%s",
                  kCases[case_], ms(avg), ms(worst_ns_), missed_, frames_per_case_, ms(rec), ms(sub), ms(prep), ms(cpu),
                  ok ? "" : " (over target)");
     sum_ns_ = worst_ns_ = rec_ns_ = sub_ns_ = prep_ns_ = 0;
     missed_ = frame_ = 0;
-    if (++case_ == 4) {
-        done_ = true;
-        NNH_LOG_INFO(example, "3d bench: %s", failed_ ? "FAIL (see the cases over target)" : "PASS");
-    }
+    if (++case_ == 4) done_ = true; // the verdict follows next frame: a script expects one line per frame
 }
 
 void BenchScene::update() {
     if (nnh::input::pressed(nnh::Button::Start)) return nnh::scenes::pop();
     if (nnh::input::pressed(nnh::Button::Select) && demos_.showcase != nullptr)
         return nnh::scenes::replace(*demos_.showcase);
-    if (done_) return;
+    if (done_) {
+        if (!verdict_logged_)
+            NNH_LOG_INFO(example, "3d bench: %s", failed_ ? "FAIL (see the cases over target)" : "PASS");
+        verdict_logged_ = true;
+        return;
+    }
     if (frame_ > 1) { // the first two frames of a case settle
         const std::int64_t d = nnh::time::delta().ns;
         sum_ns_ += d;

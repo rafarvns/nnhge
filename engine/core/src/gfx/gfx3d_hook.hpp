@@ -16,8 +16,10 @@ struct Gfx3DOps {
     /// Submits `screen`'s 2D pass with the 3D pass inside it. @return false when the screen has no 3D this frame
     /// (core then submits the 2D list exactly as without 3D).
     bool (*submit_screen)(Screen screen) = nullptr;
-    /// After the frame was presented: frees meshes released during it, clears the frame's records.
+    /// After the frame was submitted: retires the meshes released until now, clears the frame's records.
     void (*after_frame)() = nullptr;
+    /// After the platform waited for the GPU (D47): frees the retired meshes.
+    void (*gpu_idle)() = nullptr;
     /// Writes the debug overlay's 3D line (FR-28) into `out`. @return false when there is nothing to show.
     bool (*overlay_line)(char* out, int size) = nullptr;
 };

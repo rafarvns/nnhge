@@ -75,8 +75,9 @@ bool Texture::valid() const {
 void Texture::reset() {
     if (valid()) {
         detail::GfxState& g = detail::gfx_state();
-        if (detail::frame_open()) {
-            // Draws recorded this frame may still use it: free it after the frame (gfx_after_frame).
+        if (detail::gpu_may_use_resources()) {
+            // Draws recorded this frame, or a frame the GPU still draws, may use it: freed once the GPU is done with
+            // every frame submitted until now (gfx_frame_submitted, then gfx_gpu_idle; D47).
             g.pending[g.pending_count++] = detail::PendingDestroy{slot_, generation_};
         } else {
             detail::destroy_texture_now(slot_, generation_);

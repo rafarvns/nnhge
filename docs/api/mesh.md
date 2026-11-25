@@ -32,8 +32,9 @@ All of them allocate (load time only) and fail with a `Result` error: `InvalidAr
 `create_mesh` uses the same builder as `nnh-assetc mesh`: the same arrays give **the same bytes** either way.
 
 `Mesh` is a move-only RAII handle: `valid()`, `submesh_count()`, `vertex_count()`, `triangle_count()`, `bounds()`,
-`bounding_sphere()`, `material(submesh)`, `reset()`. Destroying one inside a frame frees it at the end of the frame
-(draws recorded with it still draw that frame, as with 2D textures); after `nnh::shutdown()` handles are stale.
+`bounding_sphere()`, `material(submesh)`, `reset()`. Destroying one inside a frame frees it once the GPU has drawn
+that frame (during the next `nnh::frame()`; draws recorded with it still draw, as with 2D textures; D47); after
+`nnh::shutdown()` handles are stale.
 
 ## Vertex format and memory
 

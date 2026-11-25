@@ -132,7 +132,9 @@ No contract change; the 3DS sizes citro2d for `max_particles` more objects. A de
 - **Testability**: the list is plain data, checked by unit tests on the fake platform.
 
 The list has a fixed capacity set at `init()` (no allocation per frame). It stores texture **handles**,
-not pointers; a texture destroyed before the end of the frame is skipped (and asserts in Debug).
+not pointers; a texture destroyed before the end of the frame is skipped (and asserts in Debug). A texture or mesh
+released while a frame is open, or while the GPU may still draw the last submitted frame, is freed only after the next
+`platform::begin_frame()` has waited for the GPU (D47); `nnh::shutdown()` calls `platform::finish_frames()` first.
 
 ## One texture type for 2D and 3D
 

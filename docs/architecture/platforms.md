@@ -3,7 +3,7 @@
 > Status: **implemented** (spec 002 stages 1–8): layout, CMake targets, contract areas (app, video,
 > input, time, log, crash, memory, fs, system; later assets (spec 007) and audio (spec 008, decision
 > D21: voices, samples and streams; the mixing rules stay in core; assets also open as streams) and remote (spec 013,
-> D28: Debug/Development only); video gained `draw_tiles` (spec 012, D26)), the fake platform, conformance tests, capabilities
+> D28: Debug/Development only); video gained `draw_tiles` (spec 012, D26) and `finish_frames` (D47)), the fake platform, conformance tests, capabilities
 > ([docs/api/system.md](../api/system.md)) and the first extension header (`<nnh/3ds/console.hpp>`; spec 011 adds `network.hpp` and `launch.hpp`:
 > [api/3ds-extensions.md](../api/3ds-extensions.md)).
 

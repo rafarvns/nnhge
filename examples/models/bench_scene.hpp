@@ -32,6 +32,7 @@ private:
     std::int64_t sum_ns_ = 0, worst_ns_ = 0, rec_ns_ = 0, sub_ns_ = 0, prep_ns_ = 0;
     int missed_ = 0;
     bool failed_ = false;
+    bool verdict_logged_ = false;
     bool done_ = false;
     char line_[128] = {};
 };

@@ -6,6 +6,7 @@
 #include "gfx_fixture.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/audio.hpp"
+#include "nnh/scene.hpp"
 
 namespace fake = nnh::platform_fake;
 using gfx_test::load;
@@ -86,7 +87,8 @@ NNH_TEST(texture_memory_is_counted_in_linear_memory_until_released) {
     nnh::shutdown();
 }
 
-NNH_TEST(a_texture_destroyed_during_a_frame_is_released_after_the_frame) {
+NNH_TEST(a_texture_destroyed_during_a_frame_is_released_once_the_gpu_drew_that_frame) {
+    // D47: freed in the next frame's begin_frame(), which waits for the GPU, never right after end_frame().
     restart();
     nnh::Texture hero = load("hero");
     CHECK(nnh::frame());
@@ -98,6 +100,62 @@ NNH_TEST(a_texture_destroyed_during_a_frame_is_released_after_the_frame) {
     CHECK(fake::state().last_frame_item_count == 1); // drawn before it was destroyed: still shown
     CHECK(game_textures() == 0);
     CHECK(linear_bytes() == 0);
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
+    nnh::shutdown();
+}
+
+NNH_TEST(a_texture_released_between_frames_waits_for_the_gpu_too) {
+    restart();
+    nnh::Texture hero = load("hero");
+    CHECK(nnh::frame());
+    nnh::gfx::draw(nnh::Screen::Top, hero, {0, 0});
+    CHECK(nnh::frame()); // the draw is submitted; the GPU may still draw it
+    nnh::shutdown();     // ends the frame, waits, then frees what is left
+    CHECK(fake::state().live_textures == 0);
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
+    restart();
+    hero = load("hero");
+    CHECK(nnh::frame());
+    nnh::gfx::draw(nnh::Screen::Top, hero, {0, 0});
+    CHECK(nnh::frame());
+    CHECK(nnh::frame()); // frames in flight from now on
+    for (int i = 0; i < 3; ++i) {
+        hero.reset();
+        hero = load("tile");
+        nnh::gfx::draw(nnh::Screen::Top, hero, {0, 0});
+        CHECK(nnh::frame());
+    }
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
+    CHECK(game_textures() <= 3); // the live one and at most two waiting for the GPU
+    nnh::shutdown();
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
+}
+
+namespace {
+struct HoldsHero : nnh::Scene {
+    nnh::Texture hero;
+    void on_exit() override { hero.reset(); } // runs between frames, while the GPU draws the last one
+};
+struct Empty : nnh::Scene {};
+} // namespace
+
+NNH_TEST(a_texture_a_scene_releases_when_it_exits_waits_for_the_gpu) {
+    restart();
+    HoldsHero holder;
+    Empty next;
+    holder.hero = load("hero");
+    nnh::scenes::push(holder);
+    CHECK(nnh::frame());
+    nnh::gfx::draw(nnh::Screen::Top, holder.hero, {0, 0});
+    nnh::scenes::replace(next);
+    CHECK(nnh::frame()); // submits the draw, then the exit releases the texture: no frame open, the GPU busy
+    CHECK(!holder.hero.valid());
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
+    CHECK(game_textures() == 1);
+    CHECK(nnh::frame());
+    CHECK(nnh::frame());
+    CHECK(game_textures() == 0);
+    CHECK(fake::state().destroyed_while_gpu_busy == 0);
     nnh::shutdown();
 }
 

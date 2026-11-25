@@ -1,6 +1,6 @@
 # Tasks 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the budgets (T10.2, after the CPU/GPU overlap decision) and Linux VM T9.3 pending)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back, its tolerances and Linux VM T9.3 pending)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -188,6 +188,8 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 - [ ] **T10.1** Console run (fully prepared below), mono — covers AC-7, AC-8, FR-24
 - [ ] **T10.2** Record results in spec/plan/docs (tolerances confirmed or set; bench numbers; targets per policy) — covers
   AC-8, FR-24
+  *Bench budgets set 2026-11-25 (spec AC-8, plan "CPU/GPU overlap tried (D47) and budgets set"); the probe
+  tolerances wait for the 3DS read-back fix.*
 - [x] **T10.3** `docs/api/math3d.md`, `docs/api/mesh.md`, `docs/api/gfx3d.md` (+ header comments), guide
   `docs/guides/models.md` (Blender glTF export: +Y up, apply transforms, PNG beside, `.bin` naming, what is ignored);
   links from `math.md`, `gfx.md`, `texture.md`, `assets.md` — covers AC-10
@@ -203,6 +205,11 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 - [x] **T10.6** Console rerun of `bench.nnhs` after T10.5; numbers into plan 026, then T10.2's budgets — covers AC-8
   *Done 2026-11-25 (plan "Console run 2 (T10.6)"): `draws 256` 28.34 ms (CPU 11.8: 34 µs per draw submitted; GPU ≈ 63 µs
   per draw), `cpu 512` 30.22 ms; budgets wait for the maintainer's decision on overlapping CPU and GPU.*
+
+- [x] **T10.7** CPU/GPU overlap trial (the maintainer's decision, 2026-11-25): `platform::begin_frame` moved just before
+  the passes, console bench, then reverted (no gain: CPU slowed by the concurrent GPU); kept D47's release after the GPU
+  wait and `platform::finish_frames()` — tests: `test_textures.cpp` (3), `test_create_mesh.cpp` (2),
+  `test_frame_loop.cpp` (`shutdown_waits_for_the_gpu_before_the_platform_goes_away`) — covers AC-8; then the budgets
 
 ## Stage 11 — slider everywhere (026b)
 

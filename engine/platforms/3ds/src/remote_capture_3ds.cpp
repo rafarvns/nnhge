@@ -25,6 +25,9 @@ constexpr u32 kBytesPerPixel = 3;  // BGR8
 constexpr u32 kBufferBytes = kColumnPixels * 400 * kBytesPerPixel;
 
 std::uint8_t* g_buffer = nullptr; // linear memory, kBufferBytes
+constexpr std::uint8_t kMarker = 0xAB;   // the last pixel before the copy: changed once the copy has landed
+constexpr int kMaxWaits = 100;           // × kWaitNs: 100 ms
+constexpr s64 kWaitNs = 1'000'000;
 
 /// Why `target` can't be read back as linear BGR8 of the screen's size, or nullptr if it can.
 const char* unreadable(const C3D_RenderTarget* target, gfxScreen_t screen, u32 columns) {
@@ -62,12 +65,23 @@ bool remote_capture(Screen screen, ScreenPixels& out) {
         ctr::set_error("no linear memory for the screen read-back (288000 bytes)");
         return false;
     }
-    // Waits for the GPU's queue (the frame just ended: its drawing and its own transfers), then for this copy.
+    // C3D_SyncDisplayTransfer can return before its copy lands: its PPF wait may wake on the frame's own display
+    // transfer (console check of spec 026: a probe read the previous capture's bytes, then a sentinel). So the buffer's
+    // last pixel (written last) is set to a marker first, and after the call the CPU waits until it changes, dropping its
+    // cached lines each time (100 ms at most: a screen whose last pixel really is the marker reads right after it).
+    const u32 size = kColumnPixels * columns * kBytesPerPixel;
+    const u32 address = reinterpret_cast<u32>(g_buffer);
+    std::uint8_t* last = g_buffer + size - kBytesPerPixel;
+    last[0] = last[1] = last[2] = kMarker;
+    svcFlushProcessDataCache(CUR_PROCESS_HANDLE, address, size);
     const u32 dim = GX_BUFFER_DIM(kColumnPixels, columns);
     C3D_SyncDisplayTransfer(static_cast<u32*>(target->frameBuf.colorBuf), dim, reinterpret_cast<u32*>(g_buffer),
                             dim, target->transferFlags);
-    const u32 size = kColumnPixels * columns * kBytesPerPixel;
-    GSPGPU_InvalidateDataCache(g_buffer, size); // the GPU wrote memory the CPU may hold in its cache
+    for (int wait = 0;; ++wait) {
+        svcInvalidateProcessDataCache(CUR_PROCESS_HANDLE, address, size); // the GPU wrote memory the CPU may cache
+        if (last[0] != kMarker || last[1] != kMarker || last[2] != kMarker || wait == kMaxWaits) break;
+        svcSleepThread(kWaitNs);
+    }
     out.data = g_buffer;
     out.size = size;
     out.width = static_cast<std::uint16_t>(columns);

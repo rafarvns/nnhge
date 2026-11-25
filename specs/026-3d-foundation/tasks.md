@@ -1,6 +1,6 @@
 # Tasks 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026b implemented on the PC 2026-11-25, console run pending** (T13.3, T13.5, T13.6 are the maintainer's; plan "Stage 11/12 results"); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back and 3D texture orientation fixed, pixel check PASS on the console (run 3); Linux VM T9.3 passed)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026b implemented 2026-11-25** (console run PASS after an exit-freeze fix, comfort judged, stereo budgets set, Linux VM passed; plan "Stage 11/12 results" and "Stage 13 results"); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back and 3D texture orientation fixed, pixel check PASS on the console (run 3); Linux VM T9.3 passed)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -247,20 +247,24 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 - [x] **T13.1** Showcase: slider value on the bottom screen; stereo probe scene (both eyes) in check mode; stereo bench
   cases — covers AC-6, AC-7, AC-8
 - [x] **T13.2** `tests/stereo.nnhs` (below), passing with `--pc` — covers AC-7
-- [ ] **T13.3** VM re-run (stereo golden, PNG hashes, ASan) — covers AC-1, AC-5
+- [x] **T13.3** VM re-run (stereo golden, PNG hashes, ASan) — covers AC-1, AC-5
+  *2026-11-25: GCC 13 `nnh_tests` 3 257, 0 failures; slider-1 left/right and smoke PNGs byte-identical to Windows;
+  clang 18 ASan + UBSan 3 257, 0 failures, no report.*
 - [x] **T13.4** AC-9 re-measured (PC keys inside P14's budget) — covers AC-9
-- [ ] **T13.5** Console run stereo (prepared below) — covers AC-7, AC-8
-- [ ] **T13.6** Stereo defaults judged on the Old 3DS XL (maintainer looks at the showcase at slider 1/2 and 1: yes/no
+  *3DS +280 B, PC +2 232 B: over the first budget; the maintainer accepted it and P14 now reads ≤ 600 B / ≤ 4 KB.*
+- [x] **T13.5** Console run stereo (prepared below) — covers AC-7, AC-8
+  *2026-11-25: `stereo.nnhs`, `check.nnhs`, `bench.nnhs` PASS after an exit-freeze fix (the right target deleted inside
+  citro3d's frame); stereo budgets set (plan "Stage 13 results").*
+- [x] **T13.6** Stereo defaults judged on the Old 3DS XL (maintainer looks at the showcase at slider 1/2 and 1: yes/no
   "comfortable"); adjust P12's ratio if no — covers FR-14
+  *Yes (2026-11-25): comfortable, depth modest at slider 1; defaults kept, `stereo.strength` raises it.*
 - [x] **T13.7** Docs: stereo sections in `gfx3d.md`, `simulator.md` (F6/F7/F8, env vars), `3ds-extensions.md` (portable
   slider beside `slider_3d()`), `system.md`, `guides/testing-on-the-console.md` (`slider`, `screenshot NAME eyes`),
   `nnh-tool.md` — covers AC-10
   *Done 2026-11-25, with `rendering.md`, `devkitpro-3ds.md`, `sdl3.md`, D43's change-log line.*
-- [ ] **T13.8** `docs/ROADMAP.md` M8 first part checked; README status — covers AC-10
-  *Status lines updated ("026b implemented on the PC, console run pending"); the box is checked after T13.5.*
-- [ ] **T13.9** spec, plan, tasks status → implemented; `specs/README.md` row; D41–D44 change log "implemented" —
+- [x] **T13.8** `docs/ROADMAP.md` M8 first part checked; README status — covers AC-10
+- [x] **T13.9** spec, plan, tasks status → implemented; `specs/README.md` row; D41–D44 change log "implemented" —
   covers all
-  *Statuses say "026b implemented on the PC, console run pending"; "implemented" after T13.5/T13.6.*
 
 ## Console runs (fully prepared)
 
@@ -376,8 +380,8 @@ Expected on the console: every line above with the PC's sums bit for bit (`3d-st
 stereo: PASS` (a FAIL names `stereo-left` or `stereo-right`, the pixel, got and want), `nnh: PASS`, exit 0. Read
 `stereo-top.png` and `stereo-top-right.png`: the same scene shifted horizontally only (on the PC the right eye's
 nearer objects sit further left), the HUD identical; `mono-top.png` and `mono-top-right.png` identical. The bench adds,
-after `3d bench: stereo waiting for the slider`, `3d bench: throughput 6000 stereo avg … (not judged)` and
-`3d bench: draws 256 stereo avg … (not judged)`, then `3d bench: PASS` (mono cases only): record every number in plan
+after `3d bench: stereo waiting for the slider`, `3d bench: throughput 6000 stereo avg …` and
+`3d bench: draws 256 stereo avg …`, then `3d bench: PASS` (judged since the run of 2026-11-25): record every number in plan
 026; the stereo budgets follow the maintainer's policy (measurement + ≈ 25 %) against AC-8's targets (6 000 triangles
 at 60 Hz, draws' CPU share under 7 ms). T13.6: the maintainer moves the slider by hand in the showcase (no script:
 `nnh run models`, or the `.3dsx` from the Homebrew Launcher), looks at slider ½ and 1 and answers "comfortable?

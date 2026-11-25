@@ -3,7 +3,7 @@
 > Status: **2D implemented** ([spec 004](../../specs/004-2d-graphics/spec.md), PC and 3DS). **3D mono implemented**
 > ([spec 026](../../specs/026-3d-foundation/spec.md) part 026a: meshes, materials, lights, the 3D pass among the 2D
 > layers; PC rasteriser and citro3d backend, checked on the Old 3DS); **stereo** (026b: the 3D slider, the top screen
-> drawn once per eye) implemented on the PC, console run pending.
+> drawn once per eye) implemented and checked on the Old 3DS.
 
 ## The frame, per screen
 

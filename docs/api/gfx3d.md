@@ -5,8 +5,8 @@ Plan: [026](../../specs/026-3d-foundation/plan.md) · Decisions: [D41, D43, D44]
 Meshes and materials: [mesh.md](mesh.md) · Math: [math3d.md](math3d.md) · Rendering: [rendering.md](../architecture/rendering.md) ·
 Example: `examples/models`
 
-> Status: 026a (mono) implemented and checked on the Old 3DS; 026b (stereo: the 3D slider, per-eye drawing)
-> implemented on the PC, console run pending ([plan 026](../../specs/026-3d-foundation/plan.md), "Stage 11/12 results").
+> Status: 026a (mono) and 026b (stereo: the 3D slider, per-eye drawing) implemented and checked on the Old 3DS
+> ([plan 026](../../specs/026-3d-foundation/plan.md), "Stage 11/12 results" and "Stage 13 results").
 
 A game sets a **3D camera** and **lights** per screen and records **draws of meshes** inside a frame, like 2D. At the
 end of the frame the engine culls them, orders them and draws them **between the 2D layers**: layers below the
@@ -77,10 +77,12 @@ land on the same pixel in both eyes, nearer ones in front of the screen, farther
   bits on PC and 3DS (the example's `3d-stereo` golden `B3550D40`).
 - Invalid stereo values (a negative strength, a focal distance ≤ 0, not finite) make `set_camera` assert and keep the
   previous camera.
-- **Comfort**: the defaults (focal 5, strength focal / 20) are provisional until the maintainer looks at the showcase on
-  the Old 3DS XL (spec 026 T13.6). Keep what the player looks at near the focal distance.
+- **Comfort**: the defaults (focal 5, strength focal / 20) were judged comfortable on an Old 3DS XL at slider ½ and 1,
+  with a modest depth at slider 1; a game that wants more depth raises `stereo.strength`. Keep what the player looks
+  at near the focal distance.
 - **Cost**: the 3DS draws the top screen's 2D and 3D twice (the per-draw GPU and submission cost doubles; recording and
-  culling are done once). Stereo budgets come from the console (plan 026, T13.5).
+  culling are done once): on an Old 3DS XL 256 small draws take 51 ms a frame in stereo against 28 ms in mono, while
+  6 000 triangles still run at 60 Hz.
 - **The simulator**: F6/F7 move its slider, F8 shows the left eye, the right eye or a red/cyan anaglyph
   ([simulator.md](simulator.md#the-3d-slider-and-the-eyes)); `nnh run --script` sets the slider with `slider V`
   ([testing-on-the-console.md](../guides/testing-on-the-console.md)).
@@ -144,7 +146,8 @@ the console's are close: probes at least 2 px from an edge within ±2 per channe
 Old 3DS targets (AC-8, measured by `examples/models` bench mode, results in [plan 026](../../specs/026-3d-foundation/plan.md)):
 12 000 textured lit triangles at 60 Hz, 256 draws with the CPU's share under 4 ms, 512 recorded and culled draws under
 1 ms, three full-screen blended planes at 60 Hz; in stereo 6 000 triangles at 60 Hz and 256 draws with the CPU's share
-under 7 ms (the bench's `stereo` cases log "not judged" until the console sets their budgets). The simulator doesn't
+under 7 ms. Measured budgets (console + ≈ 25 %): stereo throughput at 60 Hz, stereo draws a frame under 63.8 ms with
+the CPU's share under 25.8 ms (mono: 35.5 and 14.8 ms). The simulator doesn't
 model the PICA200's speed.
 
 Console run 2 (Old 3DS XL, 2026-11-25, after the optimisation round): 12 000 triangles and the fill case hold 60 Hz;

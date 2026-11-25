@@ -1,6 +1,6 @@
 # Plan 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1–3: math, pixels and bench pass after two backend fixes; budgets set; Linux VM T9.3 passed); **part 026b (stereo) implemented on the PC 2026-11-25, console run pending** ("Stage 11/12 results" at the end)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1–3: math, pixels and bench pass after two backend fixes; budgets set; Linux VM T9.3 passed); **part 026b (stereo) implemented 2026-11-25** (console run PASS after an exit-freeze fix, comfort judged, stereo budgets set, Linux VM T13.3 passed; "Stage 11/12 results" and "Stage 13 results" at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md)
 Decisions: [D41, D42, D43, D44](../../docs/architecture/decisions.md) (written with this plan; design until implemented)
 
@@ -37,7 +37,7 @@ recommended option under the overnight pre-approval; each is cheap to change bef
 | P11 | Culling at submit from a **world sphere computed at record** (16 B per draw, a hot array); in stereo a draw is kept if it is inside **either** eye's frustum; blended draws sorted **once per frame by the centre camera** | Uses the camera at the end of the frame (as 2D does) while touching the cold record only once; the same order in both eyes. |
 | P12 | Stereo defaults: focal distance **5**, strength 0 = derived = `focal / 20` (≈ 10 px of disparity at infinity with a 60° view at slider 1); default camera at (0, 0, 5) looking at the origin, 60°, near 0.1, far 100 | The open question "stereo defaults" is answered provisionally; stage 13 confirms on the Old 3DS XL (T13.6). |
 | P13 | `world_layer` default **8** as the spec says; the docs and the header warn that 2D at layers 0–7 (text's default 0) is drawn **under** the 3D world when a frame has 3D | Spec-fixed; the alternative (default 0 = 3D under every 2D layer) would hide skies; flagged for the maintainer. |
-| P14 | gfx reaches the 3D module only through **one hook pointer**, `detail::g_gfx_3d_ops` (Optional frame hook pattern, set by a registrar in a 3D object file) | FR-31: a 2D game links no 3D code; cost for `hello` = a few null checks. **AC-9 is read as "no 3D code; at most the hook's null checks"**: budget ≤ 128 B of `.text` on 3DS Release, ≤ 1 KB on PC (the simulator's slider and eye keys live in its always-linked window code, FR-16), each measured and recorded. |
+| P14 | gfx reaches the 3D module only through **one hook pointer**, `detail::g_gfx_3d_ops` (Optional frame hook pattern, set by a registrar in a 3D object file) | FR-31: a 2D game links no 3D code; cost for `hello` = a few null checks. **AC-9 is read as "no 3D code; at most the hook's null checks"**: budget ≤ 128 B of `.text` on 3DS Release, ≤ 1 KB on PC (the simulator's slider and eye keys live in its always-linked window code, FR-16), each measured and recorded. **Revised 2026-11-25** (the maintainer accepted the measured growth of 026a and 026b): ≤ 600 B of 3DS Release `.text` over T0.2's baseline (measured +552 B: 272 + 280), ≤ 4 KB of PC `.text` (measured ≈ +3.3 KB). |
 | P15 | PC composition: when the frame drew 2D below the world, the eye target is **read back** (`SDL_RenderReadPixels`) into the rasteriser's colour buffer; the finished 3D image is drawn back **opaque** (`SDL_BLENDMODE_NONE`) | Byte-identical PNGs on every renderer (FR-23) because every blend happens on the CPU. Without 2D below, the buffer starts as the clear colour (no read-back). Alternative: premultiplied composition by SDL (cheaper, but blended 3D over 2D would round per GPU). |
 | P16 | PC textures for 3D: a **texel cache keyed by (slot, generation)**, filled by reading a texture back once (render to a target, read pixels) at its first 3D use | `texture_pc.cpp` (always linked) stays unchanged; the key is unique for a texture's lifetime, so no destroy notification is needed. |
 | P17 | Rasteriser: shared static library `engine/platforms/shared/raster3d/` (PC and fake), compiled `-O2 -ffp-contract=off` in **every** flavour; 1/16-px sub-pixel fixed-point edges (int64 setup), top-left rule, guard band ±2048 px, near/far clipping, float depth, 8-bit integer blending, the PICA's lighting tables emulated | Deterministic and usable in Debug; Giesen's rules. |
@@ -1098,7 +1098,8 @@ the comfort check (T13.6) and the Linux VM (T13.3) are the maintainer's.
   (**+280 B**: +96 the debug pass's eye check, +84 the console model read once, the rest the stereo calls of the
   always-linked passes), `.bss` +16, `.3dsx` +296 B; PC `.text` 132 648 → 134 880 (**+2 232 B**: the slider and eye
   keys, the notice, the variables and the `window.ini` keys in the always-linked window code), `.exe` +3 158 B. Both
-  over P14's budgets (128 B / 1 KB): flagged for the maintainer.
+  over P14's budgets (128 B / 1 KB): flagged; the maintainer accepted it and P14's budget now reads the measurement
+  (≤ 600 B / ≤ 4 KB).
 - Tests added: `tests/system/test_stereo_slider.cpp` (6), `tests/remote/test_remote_slider.cpp` (6),
   `tests/gfx3d/test_eyes.cpp` (7), `tests/gfx3d/test_screen_pass_stereo.cpp` (11), the right eye's probes
   (`test_probe.cpp`), the right eye's screenshot (`test_remote_screenshot.cpp`), wire ranges (`test_remote_wire.cpp`),
@@ -1115,3 +1116,40 @@ the comfort check (T13.6) and the Linux VM (T13.3) are the maintainer's.
   built for the `*_script_pc` tests; `platformer_doors_script_pc` passed this time); `models` scripts with `--pc`:
   `stereo.nnhs` PASS (47 lines, frames 1–213), `check.nnhs` PASS, `smoke.nnhs` PASS, `bench.nnhs` runs every case (its
   FAIL in the simulator is the fill case's 60 Hz, as in 026a). 3ds-dev and 3ds-release build with no warning.
+
+## Stage 13 results: console (T13.5, T13.6) and budgets (026b, 2026-11-25, Old 3DS XL, Development build)
+
+- **Exit freeze, fixed.** Console run 1 of `stereo.nnhs` passed every line but the console froze on exit. Cause:
+  `video3d_shutdown` deleted the right eye's target after core had waited for the GPU (`platform::finish_frames`, D47),
+  which leaves citro3d inside an empty frame, and `C3D_RenderTargetDelete` inside a frame is a `svcBreak`. The right
+  target is now left to `C3D_Fini` (after `shutdown()` closes that frame), like the left one has always been. Run 2
+  exits to the Homebrew Launcher.
+- **`stereo.nnhs`** (log `models-20261125-155023`, again after the fix): PASS, 47 lines, frames 1–213: `slider: 1.00`,
+  `eyes: 2`, `3d: PASS A3BF4EDF`, `3d pixels: PASS`, every `3d-stereo` checkpoint equal to the PC's (`D6FA62DB`
+  `DBD4A6D4` `75E511BE` `5A986EFB`), `3d-stereo: PASS B3550D40`, `3d pixels stereo: PASS`, then `slider: 0.00`,
+  `eyes: 1`. `stereo-top.png` and `stereo-top-right.png` differ horizontally only (the HUD and the name tag identical);
+  `mono-top` equals `mono-top-right`.
+- **`check.nnhs`**: PASS (54 lines, frames 1–216), `3d: PASS A3BF4EDF`, `3d pixels: PASS`: mono unchanged.
+- **`bench.nnhs`** (log `models-20261125-155500`): `3d bench: PASS`.
+
+| Case | avg ms | worst | missed | CPU ms | Budget |
+|------|--------|-------|--------|--------|--------|
+| throughput 12000 | 16.71 | 16.98 | 0/600 | 0.568 | 60 Hz (unchanged) |
+| draws 256 | 28.32 | 36.87 | 598/600 | 11.793 | avg < 35.5, CPU < 14.8 (unchanged) |
+| cpu 512 | 29.95 | 38.68 | 598/600 | 6.712 | CPU < 8.8 (unchanged) |
+| fill | 16.71 | 17.01 | 0/600 | 0.692 | 60 Hz (unchanged) |
+| throughput 6000 stereo | 16.71 | 17.03 | 0/600 | 1.125 | **60 Hz** (AC-8: 6 000 triangles at 60 Hz) |
+| draws 256 stereo | 51.02 | 53.62 | 598/600 | 20.590 | **avg < 63.8, CPU < 25.8** (measurement + ≈ 25 %) |
+
+  Two eyes cost 1.8 times one in the draws case (the submission is done twice; recording and culling once). AC-8's
+  "draws' CPU share under 7 ms" was already out of reach in mono (budget set from the console in 026a); stereo follows
+  the same policy. The bench now judges both stereo cases.
+- **T13.6 comfort** (the maintainer, showcase, slider by hand): "works very well and looks good"; at slider 1 the depth
+  felt on the low side but fine, and games differ in how much they use. P12's defaults stay (focal 5, strength
+  focal / 20): a game that wants more depth raises `Camera3D::stereo.strength`.
+- **T13.3 Linux** (`nnhge-build`, 2026-11-25): GCC 13 `nnh_tests` 3 257, 0 failures; `models_check_pc` and
+  `models_stereo_check_pc` pass; with `SDL_VIDEO_DRIVER=offscreen NNH_SIM_RENDERER=sdl`, 30 frames, `NNH_SIM_SLIDER=1`:
+  the left eye (`8a264861…`), the right eye (`36696a42…`) and `smoke` (`24d5bf76…`) are byte-identical to Windows. clang
+  18 with ASan + UBSan (`-fno-sanitize-recover=undefined`, `detect_leaks=1`): `nnh_tests` 3 257, 0 failures, no report.
+- **AC-9**: the maintainer accepted `hello`'s growth (P14 revised to ≤ 600 B on 3DS, ≤ 4 KB on PC), the two public pure
+  functions and the showcase's new golden.

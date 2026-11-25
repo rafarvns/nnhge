@@ -339,13 +339,14 @@ spec; the order below is a proposal.
   running game; with "hot reload of game code" below, the fastest edit loop
 
 ## M8 — 3D
-- [ ] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)
+- [x] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)
   (3D foundation): **part 026a (mono) built 2026-11-24**, console run 1 done (math bit-identical; ≈ 100 µs of frame per
   small draw, so a per-draw optimisation round followed: T10.5), console run 2 done 2026-11-25 (256 small draws 28.3 ms:
   CPU ≈ 12 ms then GPU ≈ 16 ms, one after the other; overlapping them was tried and dropped, D47 frees released
   textures and meshes only after the GPU wait), budgets set (256 draws < 35.5 ms a frame), console pixel check PASS after two backend fixes (read-back
-  timing, 3D textures' v), Linux checks (T9.3) passed 2026-11-25; **part 026b (stereo) implemented on the PC
-  2026-11-25, console run pending**: `system::stereo_slider()`, the top screen drawn once per eye (off-axis, focal plane
+  timing, 3D textures' v), Linux checks (T9.3) passed 2026-11-25; **part 026b (stereo) implemented
+  2026-11-25**, Old 3DS XL run PASS (stereo golden and both eyes' pixels; judged comfortable; 256 draws 51 ms a frame in
+  stereo, budgets set) after an exit-freeze fix, Linux checks passed: `system::stereo_slider()`, the top screen drawn once per eye (off-axis, focal plane
   at screen depth, culling union, 2D and debug pass in both eyes), simulator F6/F7/F8 (left, right, anaglyph), the
   `.nnhs` `slider` command and `screenshot NAME eyes`, stereo golden `B3550D40`. `<nnh/math3d.hpp>` (same bits on PC and 3DS, golden `A3BF4EDF`),
   `<nnh/mesh.hpp>` (code-built meshes, primitives, glTF 2.0 → `.nnhmesh` by `nnh-assetc mesh`), `<nnh/gfx3d.hpp>`

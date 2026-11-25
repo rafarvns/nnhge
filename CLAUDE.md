@@ -192,7 +192,7 @@ per screen or across both (`tall`), `reveal_at` for the reopening iris; no scene
 queries `running/phase/coverage/...`; pure `effect_rects/draw_effect`. Run by a scene-stack hook (one null check);
 self-check `BFE1D810` ([api/transition.md](docs/api/transition.md)). The platformer's doors use a tall iris
 (`PLATFORMER_DEMO=doors`, `tests/doors.nnhs`).
-3D foundation (spec 026, part 026a mono implemented, console and Linux checks passed, budgets set; 026b stereo implemented on the PC, console run pending; D41–D44, D47; demo
+3D foundation (spec 026, part 026a mono implemented, console and Linux checks passed, budgets set; 026b stereo implemented, console and Linux checks passed, budgets set; D41–D44, D47; demo
 `examples/models`): `<nnh/math3d.hpp>` — `Vec3`, `Quat`, `Mat4`, `Transform3D`, `look_at`, `perspective`, `slerp`… with
 the same bits on PC and 3DS ([api/math3d.md](docs/api/math3d.md)); `<nnh/mesh.hpp>` — `create_mesh`, `make_cube/plane/
 sphere`, `load_mesh("models/ship")` from glTF 2.0 converted by `nnh-assetc mesh` into quantised `.nnhmesh` (fixtures in

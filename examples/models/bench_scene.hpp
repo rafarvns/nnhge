@@ -7,7 +7,7 @@
 // scope (culling and ordering, inside sub), cpu = AC-8's CPU share: rec + sub for draws, rec + prep for cpu; sub and
 // prep exist in Development builds only) and "3d bench: PASS" or "3d bench: FAIL ..." against AC-8's targets.
 // Then (spec 026b, AC-8 stereo) two stereo cases with the slider up — "throughput 6000 stereo" (a 6 016-triangle sphere)
-// and "draws 256 stereo" — logged the same way and "not judged" until their budgets come from the console: after the
+// and "draws 256 stereo" — logged and judged the same way (budgets from the console run of 2026-11-25): after the
 // mono cases the bench logs "3d bench: stereo waiting for the slider" and waits up to 300 frames for it to rise (a
 // script's `slider 1`), else "3d bench: stereo skipped (slider at 0)". Mono cases turn stereo off on their camera.
 // MODELS_BENCH_FRAMES shortens the cases (simulator smoke runs).

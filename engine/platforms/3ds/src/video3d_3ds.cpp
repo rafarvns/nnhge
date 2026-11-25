@@ -92,8 +92,10 @@ bool video3d_init(const Video3DConfig&) {
 void video3d_shutdown() {
     ctr::Context& ctx = ctr::context();
     if (ctx.right_target != nullptr) {
+        // Not deleted here: core waited for the GPU first (platform::finish_frames), which leaves citro3d inside an
+        // empty frame, and C3D_RenderTargetDelete inside a frame is a svcBreak (the console froze on exit). C3D_Fini, in
+        // shutdown() after that frame is closed, frees every target, as it does the left one.
         if (ctx.left_target != nullptr) ctx.targets[0] = ctx.left_target;
-        C3D_RenderTargetDelete(ctx.right_target);
         ctx.right_target = ctx.right_eye = nullptr;
         gfxSet3D(false);
     }

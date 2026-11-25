@@ -281,11 +281,13 @@ never through `#ifdef` in game code.
   shared from `engine/platforms/shared/raster3d/light_tables.cpp`, the 3DS projection fix-up taken from citro3d's own
   `Mtx_PerspTilt`. D43's hook costs `hello` +256 B of 3DS `.text` (over P14's 128 B budget: the shared 2D slice
   function), measured and recorded.
-- 2026-11-25: D43 and D28's extension **implemented for 026b on the PC** (stereo: the portable slider, per-eye cameras
-  and passes, the debug pass per eye, the remote `Slider` message and right-eye screenshots; console run pending).
+- 2026-11-25: D43 and D28's extension **implemented for 026b** (stereo: the portable slider, per-eye cameras and
+  passes, the debug pass per eye, the remote `Slider` message and right-eye screenshots; Old 3DS XL and Linux checks
+  passed after an exit-freeze fix: no render target is deleted inside citro3d's frame).
   Refinements in plan 026 "Stage 11/12 results": a script owns the slider like the other controls (0 from its Hello),
   the decoded `Slider` message keeps 32 bytes (a release is a sentinel value), the tile and particle budgets are spent
   once per stereo frame (rewound before the second eye), two pure public functions for the console's stereo golden
   (`to_screen(camera, point, eye, slider)`, `in_view(camera, sphere, slider)`), the right eye's 3DS target made at
   `video3d_init`. `hello` grows by 280 B of 3DS `.text` (+96 the debug pass's eye check, +84 the console model read
-  once) and 2 232 B of PC `.text` (the slider keys and `window.ini` keys, P14's 1 KB budget exceeded): flagged.
+  once) and 2 232 B of PC `.text` (the slider keys and `window.ini` keys): over P14's first budget, accepted by the
+  maintainer, who set it to the measurement (≤ 600 B on 3DS, ≤ 4 KB on PC, over 2D-only `hello`).

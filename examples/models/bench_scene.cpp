@@ -50,6 +50,8 @@ void BenchScene::on_enter() {
 
 // AC-8's budgets (set 2026-11-25 from console run 2 + ~25 %, plan 026 "CPU/GPU overlap tried (D47) and budgets set"):
 // throughput and fill at 60 Hz; draws: frame avg < 35.5 ms and CPU share < 14.8 ms; cpu: CPU share < 8.8 ms.
+// Stereo (spec 026b, console run 2026-11-25: throughput 6000 at 60 Hz, draws 256 avg 51.02 ms, CPU 20.59 ms, + ~25 %):
+// throughput 6000 stereo at 60 Hz; draws 256 stereo: frame avg < 63.8 ms and CPU share < 25.8 ms.
 // AC-8's CPU shares: draws = recording + the whole submission (culling, ordering, the platform's state and draw calls;
 // "gfx submit" holds the HUD's 2D too, so it errs high); cpu = recording + culling and ordering ("gfx3d prepare").
 void BenchScene::finish_case() {
@@ -59,11 +61,11 @@ void BenchScene::finish_case() {
     bool ok = missed_ == 0;
     if (case_ == 1) ok = avg < 35'500'000 && cpu < 14'800'000; // 256 small draws don't fit 60 Hz on an Old 3DS
     if (case_ == 2) ok = cpu < 8'800'000;                       // CPU alone: no frame-rate target
-    const bool judged = case_ < kMonoCases; // stereo budgets come from the console (spec 026 AC-8, 026b)
-    failed_ = failed_ || (judged && !ok);
+    if (case_ == 5) ok = avg < 63'800'000 && cpu < 25'800'000; // stereo: both eyes, about twice the mono draws case
+    failed_ = failed_ || !ok;
     NNH_LOG_INFO(example, "3d bench: %s avg %.2f worst %.2f missed %d/%d rec %.3f sub %.3f prep %.3f cpu %.3f%s",
                  kCases[case_], ms(avg), ms(worst_ns_), missed_, frames_per_case_, ms(rec), ms(sub), ms(prep), ms(cpu),
-                 !judged ? " (not judged)" : (ok ? "" : " (over target)"));
+                 ok ? "" : " (over target)");
     sum_ns_ = worst_ns_ = rec_ns_ = sub_ns_ = prep_ns_ = 0;
     missed_ = frame_ = 0;
     if (++case_ == 6) done_ = true; // the verdict follows next frame: a script expects one line per frame

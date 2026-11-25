@@ -3,7 +3,7 @@
 Status: approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
 question as recommended; decision 2, a CPU rasterizer in the simulator (D41,
 reversing part of D20), confirmed by the maintainer the same night). Part 026a (mono) implemented and checked on the Old 3DS; part 026b
-(stereo) implemented on the PC 2026-11-25, console run pending. Implemented after spec 022 (it uses 022's `sin_cos`)
+(stereo) implemented 2026-11-25 and checked on the Old 3DS XL and Linux. Implemented after spec 022 (it uses 022's `sin_cos`)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 004](../004-2d-graphics/spec.md) (recorded per-screen passes, one texture type, layers; FR-11 to
 FR-14 "Ready for 3D"), [spec 007](../007-assets-and-romfs/spec.md) (the assets folder, per-file conversion steps,
@@ -311,8 +311,9 @@ console's. A game that draws no 3D pays nothing.
   **Budgets set 2026-11-25** (mono, from console run 2 + ≈ 25 %, after the T10.5 optimisation round and the CPU/GPU
   overlap trial of D47; plan "CPU/GPU overlap tried (D47) and budgets set"): throughput and fill **60 Hz** (met);
   draws: frame average **under 35.5 ms** (measured 28.34; 60 Hz is out of reach on an Old 3DS: ≈ 65 µs of GPU per small
-  draw) and CPU share **under 14.8 ms** (11.82); CPU alone **under 8.8 ms** (7.04). Stereo budgets come from 026b's
-  console run (T13.5: the bench's `stereo` cases, logged "not judged" until then).
+  draw) and CPU share **under 14.8 ms** (11.82); CPU alone **under 8.8 ms** (7.04). Stereo (026b's console run,
+  2026-11-25): 6 000 triangles at 60 Hz (met); 256 draws a frame **under 63.8 ms** (51.02) with the CPU's share **under
+  25.8 ms** (20.59).
   If a target is missed, the implementation is optimised first; if it is still missed, the budget is set from the first
   console measurement with margin and written in the spec and the docs with the measured numbers (the maintainer's
   policy for benches, as in specs 019 to 022). The simulator's cost is measured too (pc-dev: the showcase's 3D pass under

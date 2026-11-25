@@ -4,8 +4,8 @@
 # two stereo ones (026b): throughput 6000 stereo (a 6 016-triangle sphere) and draws 256 stereo. One line each:
 #   3d bench: <case> avg <ms> worst <ms> missed <n>/600 rec <ms> sub <ms> prep <ms> cpu <ms>
 # (per frame: rec = recording, sub = the "gfx submit" scope, prep = culling and ordering, cpu = AC-8's CPU share;
-# sub and prep exist in Development builds) then the verdict against AC-8's mono budgets (the stereo lines end
-# "(not judged)": their budgets come from this run). Record the numbers in plan 026 whatever the verdict.
+# sub and prep exist in Development builds) then the verdict against AC-8's budgets, mono and stereo (set from the
+# Old 3DS XL, plan 026). Record the numbers in plan 026 whatever the verdict.
 # Console: nnh run models --script examples/models/tests/bench.nnhs   (Homebrew Launcher open, press Y)
 # (In the simulator the numbers mean nothing: it doesn't model the PICA200's speed.)
 fail-on "] E "

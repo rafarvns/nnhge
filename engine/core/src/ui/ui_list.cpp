@@ -148,7 +148,11 @@ void list_page(UiBlock& b, int s, int pages) {
     int item = target;
     while (item >= 0 && item < l.count && !row_usable(b, s, item)) item -= pages; // back toward the start
     if (item < 0 || item >= l.count) item = l.focused;
-    focus_item(b, s, item);
+    // the page stays where it was put; the margin rule only applies when the item fell outside it
+    const int old = l.focused;
+    l.focused = static_cast<std::uint16_t>(item);
+    if (item < l.first || item >= l.first + cells_of(l)) keep_visible(l, item);
+    if (old != item) add_result(b, UiResultKind::FocusChanged, s, 0, item, s);
 }
 
 void list_set_item(UiBlock& b, int s, int item) {

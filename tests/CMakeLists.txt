@@ -751,12 +751,14 @@ target_sources(nnh_tests PRIVATE
     ui/test_events.cpp
     ui/test_focus.cpp
     ui/test_geometric.cpp
+    ui/test_grid.cpp
     ui/test_input_custom.cpp
     ui/test_input_raw.cpp
     ui/test_keys.cpp
     ui/test_layout_anchors.cpp
     ui/test_layout_boxes.cpp
     ui/test_layout_dirty.cpp
+    ui/test_list.cpp
     ui/test_min_size.cpp
     ui/test_modal.cpp
     ui/test_navigate.cpp
@@ -768,7 +770,9 @@ target_sources(nnh_tests PRIVATE
     ui/test_results.cpp
     ui/test_reveal.cpp
     ui/test_scene_binding.cpp
+    ui/test_scroll_box.cpp
     ui/test_text_sources.cpp
+    ui/test_touch.cpp
     ui/test_tree.cpp
     ui/test_values.cpp
     ui/test_wrap.cpp)

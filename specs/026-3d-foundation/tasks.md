@@ -1,6 +1,6 @@
 # Tasks 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back and 3D texture orientation fixed, pixel check PASS on the console (run 3); Linux VM T9.3 pending)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back and 3D texture orientation fixed, pixel check PASS on the console (run 3); Linux VM T9.3 passed)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -176,9 +176,11 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 - [x] **T9.1** `tests/models_example/` and full suite on Windows; `nnh_tests` timing — covers AC-1
 - [x] **T9.2** Hand mutations (plan "Test strategy") each caught; note in plan — covers AC-1
-- [ ] **T9.3** VM 120 (start only if Bazzite is stopped; `free -m`): GCC 13/14 and clang 18 builds + ctest, ASan/UBSan,
+- [x] **T9.3** VM 120 (start only if Bazzite is stopped; `free -m`): GCC 13/14 and clang 18 builds + ctest, ASan/UBSan,
   goldens equal to Windows (`3d` golden, PNG hashes with `SDL_VIDEO_DRIVER=offscreen` and `NNH_SIM_RENDERER=sdl`),
   libFuzzer gltf and mesh reader 10 min each clean; shut the VM down — covers AC-1, AC-4, AC-5
+  *Done 2026-11-25 (plan "Stage 9 results: Linux (T9.3)"): all clean; `smoke` PNG byte-identical, the showcase's name
+  tag ±1 (SDL blending).*
 - [x] **T9.4** AC-9: `hello` sizes vs T0.2 (budget P14), `scripts/check_no_3d_symbols.sh` (3DS `.map`, PC `nm`), every
   example's screenshot hash unchanged, every earlier script passing on PC, 2D-only VRAM report unchanged, build times —
   covers AC-9, FR-31

@@ -1005,3 +1005,27 @@ FR-24's tolerances), `nnh: PASS`; the showcase screenshot right. Two backend bug
    the ship's texture didn't.
 
 T10.1 and T10.2's probe part are done: the tolerances stand as written.
+
+## Stage 9 results: Linux (T9.3)
+
+On `nnhge-build` (VM 120, Ubuntu, 4 vCPU), 2026-11-25, `main` at the D47 and probe fixes (specs 026a and 027 together):
+
+- **GCC 13** (pc-debug): `nnh_tests` 3 200 tests, 0 failures; ctest 331 of 341 at first — the 10 `*_script_pc` tests
+  need the `pc-dev` preset's folder (`build/pc-dev`), which `-B` builds don't make; with `pc-dev` built (GCC 13) 10 of 13
+  pass and the 3 left (`transitions_check_script_pc`, `particles_check_script_pc`, `platformer_doors_script_pc`) fail
+  only on their benches' timing verdicts (the VM draws with SDL's software renderer, no GPU: e.g. a fade 1.29 ms against
+  the console's 0.11 ms budget, a doors frame over 25 ms); every logic, self-check and golden line matched.
+- **GCC 14** (pc-debug): `nnh_tests` 3 200, 0 failures; ctest without the scripts 328 of 328. One warning, fixed:
+  `-Wformat-truncation` in `examples/models/check_scene.cpp` (a 128-byte text for up to 169 bytes; now 192).
+- **clang 18 with ASan + UBSan** (`-fno-sanitize-recover=undefined`, `ASAN_OPTIONS=detect_leaks=1`): `nnh_tests` 3 200,
+  0 failures, no sanitizer report. Only `nnh_tests` and the fuzzers were built with sanitizers: the VM's disk was full
+  (`/var/lib/containerd` holds 9.8 GB of container images; not touched).
+- **libFuzzer** (clang 18, ASan): `fuzz_saves` 600 s, 3 061 285 runs, cov 962; `fuzz_save` 300 s, 11 636 185 runs;
+  `fuzz_bindings` 300 s, 282 734 runs; `fuzz_data` 300 s, 4 145 137 runs; `fuzz_assetc_gltf` 600 s, 1 148 342 runs, cov
+  1128; `fuzz_mesh_reader` 600 s, 23 599 172 runs — no crash, leak or timeout in any.
+- **Goldens equal to Windows**: `3d: PASS A3BF4EDF` (in `nnh_tests` on every compiler). Screenshots with
+  `SDL_VIDEO_DRIVER=offscreen NNH_SIM_RENDERER=sdl`, 30 frames: `MODELS_DEMO=smoke` byte-identical to Windows' PNG
+  (SHA-256 `24d5bf76…`); `showcase` differs in 168 pixels by at most 1, all inside the name tag (alpha-blended text
+  composed by SDL's renderer, whose blend rounding differs between builds); the engine's own 3D raster pixels are
+  identical.
+- No `publish` in the 3D modules (FR-30): unchanged since T9.1.

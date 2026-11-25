@@ -93,7 +93,7 @@ void CheckScene::draw() {
             nnh::gfx3d::request_probes(nnh::Screen::Top, nnh::Eye::Left, at, n);
         }
     }
-    char text[128];
+    char text[192]; // fixed text, two numbers and status_ (96): never truncated (GCC 14 -Wformat-truncation)
     std::snprintf(text, sizeof text, "models check\n%d / %d operations\n%s\n\nSELECT showcase  START quit", math_.done(),
                   models::SelfCheck::kOps, status_);
     nnh::gfx::draw_text(nnh::Screen::Bottom, {8, 8}, text, {});

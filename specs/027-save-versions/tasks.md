@@ -1,6 +1,6 @@
 # Tasks 027: Save data with versions
 
-Status: implemented 2026-11-24 through stage 8 and the docs; stage 9 (Linux) by the lead, stage 10 (console) pending
+Status: implemented 2026-11-24 through stage 8 and the docs; stage 9 (Linux) passed 2026-11-25; console run 1 done 2026-11-25 (goldens PASS; encode and decode over target: T10.3)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -229,11 +229,13 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-2's sums,
+- [x] **T9.1** On `nnhge-build`: GCC 13, GCC 14 and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-2's sums,
   CRCs and the v3 bytes identical on all three; a 32-bit host build (`-m32`) of `nnh_tests`' saves tests if the multilib
   is installed (else recorded); ASan/UBSan clean over the validator, apply, view, dump and power cuts; libFuzzer
   `fuzz_saves` 10 minutes (coverage growing, no crash) and `fuzz_save`, `fuzz_bindings`, `fuzz_data` 5 minutes each,
   clean. Files: tasks.md (results), plan.md ("Stage 9 results"). Covers I, X, FR-18, AC-1, AC-4.
+  *Done 2026-11-25 (plan "Stage 9 results"): GCC 13/14 and clang 18 + ASan/UBSan clean, AC-2 identical, the four
+  fuzzers clean; no 32-bit build (no multilib on the VM).*
 
 ## Stage 10: console check (the only steps on the 3DS)
 
@@ -241,7 +243,7 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
   cmake --build --preset 3ds-dev --target saves_3dsx actions_3dsx data_3dsx` without a warning; T7.5's table still
   true; `hello.elf` equal to T0.1's; plan.md's "Stage 10: console run (prepared)" completed with the recorded sums, CRC,
   byte counts and showcase lines. Covers AC-7, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run saves --script examples/saves/tests/check.nnhs` → every check line equal to the
      PC's (`saves: v1 sum … migrated 2`, v2, v3, `saves: encode crc …`, slot, backup, summaries, `saves: PASS`), every
      showcase line, the bench lines and the verdict (numbers recorded); screenshots read back;

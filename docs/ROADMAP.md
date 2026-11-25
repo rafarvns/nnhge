@@ -297,8 +297,8 @@ spec; the order below is a proposal.
   from a table in the assets, the system language picked by default; the built-in font covers Latin-1
 - [x] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves — [spec 027](../specs/027-save-versions/spec.md),
-  **implemented 2026-11-24**, Old 3DS runs 1 and 2 done (self-check `C5EF1A84` PASS; after the T10.3 round the budgets
-  were set from run 2 on 2026-11-25: update 1024 0.8 ms, emit 512 2.35 ms, off-screen 0.06 ms, draw ratio ≤ 0.75): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
+  **implemented 2026-11-24**, Linux checks passed; Old 3DS run 1 (2026-11-25): every golden equal to the PC's, the card
+  workloads within target, encode 0.52 ms and decode 1.44 ms over target (optimisation round T10.3 next): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
   with `NNH_SAVE_FIELD(member, id)`, retired ids, `NNH_SAVE_VERSION` and compile-time-complete `NNH_SAVE_STEP` chains
   (D45, D46); a self-describing little-endian format (tagged fields, packed sequences, one template per list of
   structs: 5 % framing) inside spec 002's `NNHS` container, the same bytes on PC and 3DS (golden v1–v3 files); the
@@ -343,8 +343,7 @@ spec; the order below is a proposal.
   small draw, so a per-draw optimisation round followed: T10.5), console run 2 done 2026-11-25 (256 small draws 28.3 ms:
   CPU ≈ 12 ms then GPU ≈ 16 ms, one after the other; overlapping them was tried and dropped, D47 frees released
   textures and meshes only after the GPU wait), budgets set (256 draws < 35.5 ms a frame), console pixel check PASS after two backend fixes (read-back
-  timing, 3D textures' v), Linux VM
-  (T9.3) pending; part 026b
+  timing, 3D textures' v), Linux checks (T9.3) passed 2026-11-25; part 026b
   (stereo: the slider, per-eye drawing) planned. `<nnh/math3d.hpp>` (same bits on PC and 3DS, golden `A3BF4EDF`),
   `<nnh/mesh.hpp>` (code-built meshes, primitives, glTF 2.0 → `.nnhmesh` by `nnh-assetc mesh`), `<nnh/gfx3d.hpp>`
   (camera, ambient + 4 lights, draws between the 2D layers, culling, order, `to_screen`/`screen_ray`, probe pixels);

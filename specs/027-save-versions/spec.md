@@ -1,6 +1,7 @@
 # Spec 027: Save data with versions
 
-Status: implemented 2026-11-24, console check (T10.2) pending (approved 2026-11-24 overnight by pre-approval: every
+Status: implemented 2026-11-24, Linux checks passed and console run 1 done 2026-11-25 (goldens PASS; encode and decode over
+target, T10.3 round next) (approved 2026-11-24 overnight by pre-approval: every
 "Decisions to take" item and open question as recommended; to review in the morning)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 002](../002-core-foundation/spec.md) (`nnh::save`: the `NNHS` container with CRC-32, atomic write

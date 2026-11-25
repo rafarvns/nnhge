@@ -1,6 +1,7 @@
 // Cost and misuse sweep (spec 023 FR-21): the state's size, no allocation over 1000 transitions of every kind, no
 // log line in the normal path, every effect's draws within max_rects.
 
+#include "nnh/detail/target_layout.hpp"
 #include "alloc_counter.hpp"
 #include "nnh/memory.hpp"
 #include "transition/transition_internal.hpp"
@@ -45,7 +46,7 @@ void run_one(int i, Probe& a, Probe& b) {
 } // namespace
 
 NNH_TEST(the_transition_state_stays_within_its_size) {
-    CHECK(sizeof(nnh::detail::TransitionState) <= (sizeof(void*) == 4 ? 256u : 320u));
+    CHECK(sizeof(nnh::detail::TransitionState) <= (nnh::detail::kThreeDsLayout ? 256u : 320u));
     CHECK(sizeof(nnh::detail::ResolvedEffect) <= 14u);
 }
 

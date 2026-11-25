@@ -17,6 +17,7 @@
 #include "context_3ds.hpp"
 #include "nnh/3ds/network.hpp"
 #include "nnh/build.hpp"
+#include "nnh/detail/target_layout.hpp"
 #include "nnh/platform/app.hpp"
 #include "stdio_fs.hpp"
 
@@ -24,6 +25,9 @@ namespace nnh::platform {
 namespace {
 
 constexpr std::size_t kDebugTextGlyphs = 4096; // core: kDebugPassCapacity
+
+// Core's 3DS-only size checks run where this holds: if the toolchain ever changed it, they would silently stop.
+static_assert(nnh::detail::kThreeDsLayout, "the 3DS must have 32-bit pointers and an 8-byte max_align_t");
 
 ctr::Context g_context;
 const char* g_last_error = "";

@@ -285,6 +285,7 @@ maintainer allows any session to start/stop it and run builds; `apt`/system chan
 ssh homelab 'sudo qm status 101 | grep -q stopped && free -m && sudo qm start 120'   # never with Bazzite (101)
 git ls-files -z -co --exclude-standard | tar --null -T - -cf - | ssh nnhge-build 'rm -rf ~/wt/nnhge && mkdir -p ~/wt/nnhge && tar -xf - -C ~/wt/nnhge'
 ssh nnhge-build 'cd ~/wt/nnhge && cmake --preset pc-debug && cmake --build --preset pc-debug && ctest --preset pc-debug'
+# 32-bit host (SSE floats; x87 breaks the same-bits rule): docs/tech/cmake.md "build VM"
 ssh homelab 'sudo qm shutdown 120'                                                  # when done (it also idles off)
 ```
 

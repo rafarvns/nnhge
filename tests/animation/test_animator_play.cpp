@@ -1,6 +1,7 @@
 // Animator commands (T3.1, T3.2; FR-6): play (same, restart), play_from, queue (once, looping, full, idle), stop,
 // pause/resume, set_frame, flips, queries, and misuse.
 
+#include "nnh/detail/target_layout.hpp"
 #include <cstring>
 
 #include "library_fixture.hpp"
@@ -24,7 +25,7 @@ void run(SpriteAnimator& a, int n) {
 } // namespace
 
 NNH_TEST(an_animator_is_small) {
-    CHECK(sizeof(SpriteAnimator) <= (sizeof(void*) == 4 ? 64u : 96u));
+    CHECK(sizeof(SpriteAnimator) <= (nnh::detail::kThreeDsLayout ? 64u : 96u));
 }
 
 NNH_TEST(a_default_animator_answers_no_clip) {

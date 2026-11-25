@@ -289,8 +289,19 @@ builds, `ctest`, runs `hello` headless with `SDL_VIDEO_DRIVER=offscreen`) and `n
 `devkitpro/devkitarm`, uploads `.3dsx`). Job ids must start with a letter.
 
 Linux builds and libFuzzer run on the homelab build VM (`ssh nnhge-build`, VM 120, off by default; see
-CLAUDE.md "Build" for the start/sync/stop commands). Its devkitPro comes from the official
-`devkitpro/devkitarm` image because `*.devkitpro.org` answers 403 to the maintainer's IP.
+CLAUDE.md "Build" for the start/sync/stop commands). Its devkitPro was extracted from the official
+`devkitpro/devkitarm` image (to `/opt/devkitpro`; the image itself was removed to free the disk) because
+`*.devkitpro.org` answers 403 to the maintainer's IP. It also has the 32-bit multilib (2026-11-25): a 32-bit host build
+checks the engine on a second 32-bit target besides the 3DS. It must use SSE floats, since x87's extended precision
+breaks the same-bits rule:
+
+```sh
+ssh nnhge-build 'cd ~/wt/nnhge && F="-m32 -msse2 -mfpmath=sse" && cmake --preset pc-debug -B build/m32 -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_EXE_LINKER_FLAGS=-m32 && cmake --build build/m32 --target nnh_tests && build/m32/tests/nnh_tests'
+```
+
+Size budgets written for the console (`static_assert`s and tests) test `nnh::detail::kThreeDsLayout`
+(`nnh/detail/target_layout.hpp`: 32-bit pointers and an 8-byte `max_align_t`), not `sizeof(void*) == 4`: 32-bit x86
+aligns `max_align_t` to 16 and pads more.
 
 Before pushing, run the same checks locally:
 

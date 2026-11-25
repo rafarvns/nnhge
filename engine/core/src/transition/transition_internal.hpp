@@ -5,6 +5,7 @@
 
 #include <cstdint>
 
+#include "nnh/detail/target_layout.hpp"
 #include "nnh/log.hpp"
 #include "nnh/transition.hpp"
 #include "transition/effect_geometry.hpp"
@@ -78,7 +79,8 @@ struct TransitionState {
     bool refusal_logged : 1 = false;
     bool warned : 1 = false;
 };
-static_assert(sizeof(void*) != 4 || sizeof(TransitionState) <= 256, "transition state ≤ 256 bytes on the 3DS (FR-21)");
+static_assert(!detail::kThreeDsLayout || sizeof(TransitionState) <= 256,
+              "transition state ≤ 256 bytes on the 3DS (FR-21)");
 static_assert(sizeof(void*) != 8 || sizeof(TransitionState) <= 320, "transition state ≤ 320 bytes on 64-bit PCs");
 
 /// The one transition (transition_queries.cpp).

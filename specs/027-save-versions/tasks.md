@@ -236,7 +236,7 @@ engine/core/include/nnh/detail/data_* engine/core/src/data tools/assetc`.
   `fuzz_saves` 10 minutes (coverage growing, no crash) and `fuzz_save`, `fuzz_bindings`, `fuzz_data` 5 minutes each,
   clean. Files: tasks.md (results), plan.md ("Stage 9 results"). Covers I, X, FR-18, AC-1, AC-4.
   *Done 2026-11-25 (plan "Stage 9 results"): GCC 13/14 and clang 18 + ASan/UBSan clean, AC-2 identical, the four
-  fuzzers clean; no 32-bit build (no multilib on the VM).*
+  fuzzers clean; the 32-bit build followed once the multilib was installed: `nnh_tests` 3 257, 0 failures.*
 
 ## Stage 10: console check (the only steps on the 3DS)
 

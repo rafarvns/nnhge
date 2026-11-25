@@ -50,7 +50,7 @@ void reveal_step(UiBlock& b) {
 
 namespace {
 
-int label_slot(detail::UiBlock* b, UiWidget w, const char* who) {
+int label_slot(detail::UiBlock* b, UiWidget w, [[maybe_unused]] const char* who) {
     if (b == nullptr) return -1;
     const int s = detail::slot_of(*b, w);
     if (s < 0 || detail::kind_of(*b, s) != UiKind::Label) {

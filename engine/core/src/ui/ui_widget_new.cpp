@@ -63,7 +63,7 @@ int widget_new(UiBlock& b, UiWidget parent, UiKind kind, UiKey key, UiStyleId st
     return s;
 }
 
-void widget_drop(UiBlock& b, int s, const char* why) {
+void widget_drop(UiBlock& b, int s, [[maybe_unused]] const char* why) {
     tree_destroy(b, s);
     NNH_UI_MISUSE(b, why);
 }

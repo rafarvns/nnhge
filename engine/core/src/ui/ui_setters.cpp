@@ -11,7 +11,7 @@ namespace nnh {
 namespace {
 
 /// The live slot of `w`, else a misuse report and -1.
-int live(detail::UiBlock* b, UiWidget w, const char* who) {
+int live(detail::UiBlock* b, UiWidget w, [[maybe_unused]] const char* who) {
     if (b == nullptr) return -1;
     const int s = detail::slot_of(*b, w);
     if (s < 0) NNH_UI_MISUSE(*b, who);

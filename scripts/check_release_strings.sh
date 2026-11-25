@@ -22,6 +22,9 @@ forbidden="$forbidden"'|unusable on this system'
 # Debug/Development; the saves example's `play_frames` and `best_time` stand for them). Check a game that saves on its
 # .3dsx or .exe: a 3DS .elf keeps DWARF, whose type descriptions name every struct member.
 forbidden="$forbidden"'|\(not 0/1\)|\(retired\) |NNH_SAVE_DUMP|play_frames|best_time'
+# UI widgets (spec 028 FR-30, FR-32): the dump's and overflow warning's texts and the misuse messages (Release keeps one
+# generic line per UI).
+forbidden="$forbidden"'|ui dump:|overflows: its content|a stale or null|the UI is full|a key used twice|Ui::set_'
 
 if grep -aEq "$forbidden" "$binary"; then
     echo "FAIL: $binary contains debug-only strings:"

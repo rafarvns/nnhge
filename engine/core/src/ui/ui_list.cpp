@@ -173,7 +173,7 @@ void list_set_scroll(UiBlock& b, int s, int first) {
 namespace nnh {
 namespace {
 
-int list_slot(detail::UiBlock* b, UiWidget w, const char* who) {
+int list_slot(detail::UiBlock* b, UiWidget w, [[maybe_unused]] const char* who) {
     if (b == nullptr) return -1;
     const int s = detail::slot_of(*b, w);
     if (s < 0 || !detail::is_list(detail::kind_of(*b, s))) {

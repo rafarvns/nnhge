@@ -1,7 +1,7 @@
 # Plan 027: Save data with versions
 
-Status: implemented 2026-11-24; console run 1 done 2026-11-25 (encode and decode over target), T10.3 optimisation
-round done on the PC, console rerun pending (approved 2026-11-24 overnight)
+Status: implemented 2026-11-24; Linux checks passed and console runs 1 and 2 done 2026-11-25 (after the T10.3
+optimisation round every bench PASS; budgets set) (approved 2026-11-24 overnight)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D45, D46 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 002 (`nnh::save`'s `NNHS` container, its write procedure and `read_one`, `nnh::fs` paths, `Result`, logs,
 asserts, profiler, `detail::crc32`), spec 014 (`data::String`, `data::List`, `data::Ref`, the media references, the
@@ -1217,3 +1217,24 @@ flat, an unnormalised row bool, the string-list reservation).
 **Next:** T10.2 run 1 again on the Old 3DS (`build/pc-debug/tools/nnh/nnh run saves --script
 examples/saves/tests/check.nnhs`): the same logic lines and the bench; then the budgets with ≈ 25 % margin.
 
+## Console run 2 and budgets set (2026-11-25, Old 3DS XL, Development build)
+
+After the T10.3 round. Log: `build/logs/saves-20261125-125724.txt` (the `opt-027` worktree). Every logic line equal to
+run 1 and the PC's (`v1 sum 0F3BA8C8 migrated 2`, `v2 sum 1EFDB382`, `v3 sum D15774A7`, `encode crc 11363B5C bytes
+3768`, `slot sum F6C8D12F`, `backup used sum D15774A7`, `summaries L300 empty empty`, `removed slot1 exists 0`,
+`saves: PASS`); `saves bench: PASS`; `nnh: PASS`.
+
+| Workload | Run 1 | Expected | Run 2 | Old target | Budget (run 2 + ≈ 25 %) |
+|----------|-------|----------|-------|------------|--------------------------|
+| encode (avg) | 0.517 | 0.18–0.22 | **0.203** | < 0.5 | **< 0.25 ms** |
+| decode (avg) | 1.437 | 0.30–0.38 | **0.383** | < 1 | **< 0.48 ms** |
+| decode v1 (avg) | 0.676 | 0.21–0.28 | **0.234** | < 1.2 | **< 0.29 ms** |
+| store (median / max) | 128.9 / 131.3 | — | 129.8 / 131.5 | < 150, max 300 | **< 165 ms**, max 300 (the spec's limit) |
+| load (median) | 36.3 | — | 35.4 | < 50 | **< 45 ms** |
+| backup (median) | 72.5 | — | 71.7 | < 100 | **< 90 ms** |
+| summaries (median) | 109.5 | — | 107.6 | < 150 | **< 135 ms** |
+| raw write (median, no target) | 2 154.4 | — | 131.0 | — | — |
+
+The codec now costs 2.5 to 3.8 times less, every number inside (decode at the top of) the round's range. The raw write's
+2.2 s in run 1 was the card's (one slow write right after the stores; it repeats nothing of the codec). SD numbers are
+this card's: another card may be slower or faster.

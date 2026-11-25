@@ -221,13 +221,11 @@ names (the calls return `Unsupported`; messages name ids).
 Synchronous: save at a save point or in a menu, after showing a "Saving…" indicator. A store is one encode (in memory)
 plus spec 002's five file operations; a load is three file operations plus one validation and one decode. On the PC
 (pc-dev, noisy) the reference save of `examples/saves` (3.8 KB) encodes in 0.01–0.02 ms and decodes in 0.03–0.07 ms;
-a store to disk takes about 4 ms, as long as a raw `save::write` of the same bytes. On an Old 3DS, console run 1
-(2026-11-25) measured encode 0.517 ms, decode 1.437 ms and decode of a v1 file 0.676 ms; the optimisation round that
-followed (plan 027, "Optimisation round (T10.3)": struct lists by a per-column plan, word-at-a-time copies) runs 65–77 %
-fewer instructions and is expected at encode ≈ 0.19 ms, decode ≈ 0.36 ms, decode v1 ≈ 0.24 ms (the console rerun is
-pending). Old 3DS targets (AC-8): encode < 0.5 ms, decode < 1 ms, decode of a v1 file with two steps < 1.2 ms, store
-< 150 ms median (none over 300 ms), load < 50 ms, load from the backup < 100 ms, three slot summaries < 150 ms (all
-four card workloads passed in run 1). SD timings vary between cards.
+a store to disk takes about 4 ms, as long as a raw `save::write` of the same bytes. On an Old 3DS XL (console run 2,
+2026-11-25, after an optimisation round: struct lists by a per-column plan, word-at-a-time copies) the reference save
+encodes in 0.203 ms, decodes in 0.383 ms and a v1 file with two steps in 0.234 ms; a store takes 130 ms (median), a
+load 35 ms, a load from the backup 72 ms, three slot summaries 108 ms. Budgets (AC-8, measurement + ≈ 25 %): 0.25,
+0.48, 0.29, 165 (none over 300), 45, 90 and 135 ms. SD timings vary between cards: these are one card's.
 
 ## Migrating from raw saves
 

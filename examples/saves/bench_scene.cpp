@@ -24,16 +24,16 @@ struct Phase {
     bool (SavesBench::*prepare)();
 };
 
-// AC-8's targets (spec 027). Old 3DS run 1 (2026-11-25) missed encode and decode; after the T10.3 optimisation
-// round the plan's estimates expect PASS (plan 027, "Optimisation round (T10.3)"); budgets are set after the rerun.
+// AC-8's budgets (spec 027): console run 2 on the Old 3DS XL (2026-11-25, after the T10.3 optimisation round) + ≈ 25 %
+// (plan 027, "Console run 2 and budgets set"); the store's 300 ms worst case is the spec's own limit.
 constexpr Phase kPhaseList[BenchScene::kPhases] = {
-    {"encode", false, 0.5, 0, &SavesBench::encode, nullptr},
-    {"decode", false, 1.0, 0, &SavesBench::decode, nullptr},
-    {"decode v1", false, 1.2, 0, &SavesBench::decode_v1, nullptr},
-    {"store", true, 150, 300, &SavesBench::store, nullptr},
-    {"load", true, 50, 0, &SavesBench::load, nullptr},
-    {"backup", true, 100, 0, &SavesBench::load_backup, &SavesBench::prepare_backup},
-    {"summaries", true, 150, 0, &SavesBench::summaries, &SavesBench::prepare_summaries},
+    {"encode", false, 0.25, 0, &SavesBench::encode, nullptr},
+    {"decode", false, 0.48, 0, &SavesBench::decode, nullptr},
+    {"decode v1", false, 0.29, 0, &SavesBench::decode_v1, nullptr},
+    {"store", true, 165, 300, &SavesBench::store, nullptr},
+    {"load", true, 45, 0, &SavesBench::load, nullptr},
+    {"backup", true, 90, 0, &SavesBench::load_backup, &SavesBench::prepare_backup},
+    {"summaries", true, 135, 0, &SavesBench::summaries, &SavesBench::prepare_summaries},
     {"raw write", true, 0, 0, &SavesBench::raw_write, nullptr},
 };
 constexpr int kMemoryRuns = 100;

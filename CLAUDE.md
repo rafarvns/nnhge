@@ -167,7 +167,7 @@ Input actions (spec 017, implemented; demo `examples/actions`): `<nnh/actions.hp
 touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
 frame (D32 after-input hook), listen/conflicts/reset for a controls screen, `NNHB` overrides saved with `nnh::save`
 ([api/actions.md](docs/api/actions.md)).
-Save data with versions (spec 027, implemented, Linux and console run 1 done, codec optimisation pending; D45, D46; demo `examples/saves`):
+Save data with versions (spec 027, implemented, Linux and console checks passed, budgets set; D45, D46; demo `examples/saves`):
 `<nnh/saves.hpp>` — `NNH_SAVE_TYPE(Progress, "progress", NNH_SAVE_VERSION(3), NNH_SAVE_STEP(1, from_v1), ...,
 NNH_SAVE_FIELD(member, id), NNH_SAVE_RETIRED(ids...))` in the struct's namespace (tables found by ADL; ids, retired ids
 and a complete step chain checked at compile time), `NNH_SAVE_STRUCT`, `NNH_SAVE_SUMMARY`; `save::store`/`load` with a

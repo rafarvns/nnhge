@@ -1104,3 +1104,14 @@ the comfort check (T13.6) and the Linux VM (T13.3) are the maintainer's.
   (`test_probe.cpp`), the right eye's screenshot (`test_remote_screenshot.cpp`), wire ranges (`test_remote_wire.cpp`),
   4 simulator settings tests, the stereo golden (`test_self_check.cpp`); tools: parser (2), runner (3), screen image
   (1). ctest: `models_stereo_check_pc`, `models_stereo_script_pc`.
+- **Hand mutants (026b): 20 of 20 killed** (each applied, the test binary rebuilt, the module's filters run, reverted):
+  the eyes' offset signs, the view's offset sign, the off-axis shift's sign, the half separation, the default strength
+  (focal / 20), stereo for orthographic cameras, the culling union (`||` → `&&`), the eye frustum's shift sign, the
+  eye's offset in culling, the tile budget's rewind (caught by the drop assert), the left eye restored after the pass,
+  the debug pass's eye check, the slider clamp, the slider's capability check, `slider off` under a script, the
+  script's default slider at its Hello, the wire's 1000 limit, the camera's strength check, the parser's minus sign,
+  the simulator's slider range.
+- Results: `nnh_tests` 3 257 tests, 0 failures; `nnh_tool_tests` 169; `ctest --preset pc-debug` 343 of 343 (pc-dev
+  built for the `*_script_pc` tests; `platformer_doors_script_pc` passed this time); `models` scripts with `--pc`:
+  `stereo.nnhs` PASS (47 lines, frames 1–213), `check.nnhs` PASS, `smoke.nnhs` PASS, `bench.nnhs` runs every case (its
+  FAIL in the simulator is the fill case's 60 Hz, as in 026a). 3ds-dev and 3ds-release build with no warning.

@@ -137,10 +137,13 @@ void draw_3d(const Draw3D& d) {
     upload_rows(s.model_view, d.model_view, 3, 4);
     upload_rows(s.normal, d.normal, 3, 3);
     // uvDecode and colorScale follow normalMtx: sent together (or not at all) the matrices stay one uniform run.
-    const float constants[8] = {d.uv_scale[0], d.uv_scale[1], d.uv_offset[0], d.uv_offset[1],
-                                m.base[0],     m.base[1],     m.base[2],      m.base[3]};
+    // The engine's v is 0 at the image's top (glTF); citro3d samples v = 1 there (texture_3ds.cpp): v' = 1 − v, folded
+    // into the decode (q × −scale + 1 − offset). Found by spec 026's probe check on the Old 3DS (the checker's phase).
+    const float v_scale = -d.uv_scale[1], v_offset = 1.0f - d.uv_offset[1];
+    const float constants[8] = {d.uv_scale[0], v_scale,   d.uv_offset[0], v_offset,
+                                m.base[0],     m.base[1], m.base[2],      m.base[3]};
     if (g.cache.constants(constants)) {
-        C3D_FVUnifSet(GPU_VERTEX_SHADER, s.uv_decode, d.uv_scale[0], d.uv_scale[1], d.uv_offset[0], d.uv_offset[1]);
+        C3D_FVUnifSet(GPU_VERTEX_SHADER, s.uv_decode, d.uv_scale[0], v_scale, d.uv_offset[0], v_offset);
         // The shader multiplies the 0..255 colour attribute by this: base × tint (core folded the tint) / 255.
         C3D_FVUnifSet(GPU_VERTEX_SHADER, s.color_scale, m.base[0] / 255.0f, m.base[1] / 255.0f, m.base[2] / 255.0f,
                       m.base[3] / 255.0f);

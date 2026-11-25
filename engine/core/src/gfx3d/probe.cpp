@@ -15,8 +15,7 @@ namespace {
 
 constexpr int kMaxProbes = 32;
 /// Frame ends to wait before reading, so the picture has settled (the game keeps drawing the same scene until
-/// probe_results() answers). On the Old 3DS the read still returned stale pixels in spec 026's console run (the
-/// screenshots of the same frames are right): under investigation, see plan 026 "Console run 1 (026a)".
+/// probe_results() answers).
 constexpr int kCaptureAfterFrames = 3;
 
 struct Probes {

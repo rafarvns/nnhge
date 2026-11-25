@@ -985,3 +985,23 @@ per draw (its two 96-register scans, ≈ 1/3 of the CPU per draw).
 `throughput` 16.71 ms, 0 missed; `draws 256` 28.01 ms avg (rec 2.972, sub 8.646, cpu 11.618); `cpu 512` cpu 7.055 ms;
 `fill` 16.71 ms, 0 missed; `3d bench: PASS`. The same as run 2: D47 costs nothing. The verdict line is now logged
 one frame after the last case (a script expects one line per frame).
+
+## Console run 3: probe read-back and texture orientation fixed (2026-11-25)
+
+`check.nnhs` on the Old 3DS XL, Development: `3d: PASS A3BF4EDF`, **`3d pixels: PASS`** (all six probe scenes within
+FR-24's tolerances), `nnh: PASS`; the showcase screenshot right. Two backend bugs, found one after the other:
+
+1. **The read-back returned before the copy landed.** Run 1's probe read the previous screenshot's bytes. Invalidating
+   the data cache with the kernel's `svcInvalidateProcessDataCache` instead of `GSPGPU_InvalidateDataCache` changed
+   nothing; a sentinel (the buffer filled with 0xAB before the copy) came back unchanged: `C3D_SyncDisplayTransfer`
+   returned before its display transfer had written anything (its PPF wait can wake on the frame's own transfer).
+   `remote_capture_3ds.cpp` now marks the buffer's last pixel (the copy's last write), and after the call drops the
+   cached lines and waits in 1 ms sleeps until the marker changes (100 ms at most). Screenshots go through the same
+   path (they had been right by timing: the PC asks for them later in the frame).
+2. **3D textures were upside down on the 3DS.** With the read-back fixed, the `textured` probe read the other checker
+   colour: the engine's v is 0 at the image's top (glTF, the PC rasteriser), citro3d samples v = 1 there (the 2D
+   backend's subtextures already used `1 − y/H`). `pass3d_3ds.cpp` folds v' = 1 − v into the shader's uv decode
+   (`−scale`, `1 − offset`): no vertex data, shader or cache change. The showcase's checker floor hides it (symmetric),
+   the ship's texture didn't.
+
+T10.1 and T10.2's probe part are done: the tolerances stand as written.

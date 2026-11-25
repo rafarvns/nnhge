@@ -156,9 +156,9 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
   `C3D_LightEnvClampHighlights(true)`; point lights' distance attenuation through a `C3D_LightLutDA` with scale
   1/range and the shared (1 − x)² table. Combiners: `TEXTURE0 × PRIMARY` (or `PRIMARY`), then `× FRAGMENT_PRIMARY`,
   then `+ FRAGMENT_SECONDARY` (lit only).
-- **Open points for the console run**: the culling winding (`GPU_CULL_BACK_CCW` after the tilt), the `D0` signed
-  table layout, the alpha-test reference, the read-back of probe pixels through `remote_capture` (the framebuffer
-  after the display transfer).
+- **Texture orientation**: the engine's v is 0 at an image's top (glTF); citro3d samples v = 1 there, so
+  `pass3d_3ds.cpp` sends the shader's uv decode as `(scale.u, −scale.v, offset.u, 1 − offset.v)` (v' = 1 − v), as the
+  2D subtextures do with `1 − y/H`. Confirmed by the probe check on the Old 3DS (spec 026, console run 3).
 
 ## Input (HID)
 
@@ -227,7 +227,9 @@ What our backend (`input_3ds.cpp`) does:
     citro2d render target (`frameBuf.colorBuf`, `GX_BUFFER_DIM(240, 400|320)`, the target's own
     `transferFlags`, which must give linear `GX_TRANSFER_FMT_RGB8`, with `gfxGetScreenFormat()` =
     `GSP_BGR8_OES`) into one 288 000-byte `linearAlloc` buffer (from the first screenshot until the PC
-    leaves or the game shuts down), then `GSPGPU_InvalidateDataCache`. The result is the framebuffer's
+    leaves or the game shuts down). `C3D_SyncDisplayTransfer` can return before its copy lands (its PPF wait
+    may wake on the frame's own transfer): the buffer's last pixel is set to a marker first, and the CPU then
+    waits (1 ms sleeps, `svcInvalidateProcessDataCache` each time, 100 ms at most) until it changes. The result is the framebuffer's
     layout: bytes B, G, R; screen columns left to right, each bottom to top. Confirmed on hardware: upright,
     not mirrored, the same colours as the simulator's screenshot; no fallback was needed. The read-back is
     refused while a frame is open (`ctr::Context::frame_open`): it must run after `end_frame()`.

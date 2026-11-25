@@ -1,6 +1,6 @@
 # Tasks 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back, its tolerances and Linux VM T9.3 pending)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back and 3D texture orientation fixed, pixel check PASS on the console (run 3); Linux VM T9.3 pending)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -185,11 +185,12 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 10 — console run and docs (026a)
 
-- [ ] **T10.1** Console run (fully prepared below), mono — covers AC-7, AC-8, FR-24
-- [ ] **T10.2** Record results in spec/plan/docs (tolerances confirmed or set; bench numbers; targets per policy) — covers
+- [x] **T10.1** Console run (fully prepared below), mono — covers AC-7, AC-8, FR-24
+  *Done (runs 1–3; plan "Console run 3"): math, pixels, screenshots and the bench pass on the Old 3DS.*
+- [x] **T10.2** Record results in spec/plan/docs (tolerances confirmed or set; bench numbers; targets per policy) — covers
   AC-8, FR-24
   *Bench budgets set 2026-11-25 (spec AC-8, plan "CPU/GPU overlap tried (D47) and budgets set"); the probe
-  tolerances wait for the 3DS read-back fix.*
+  tolerances confirmed (plan "Console run 3").*
 - [x] **T10.3** `docs/api/math3d.md`, `docs/api/mesh.md`, `docs/api/gfx3d.md` (+ header comments), guide
   `docs/guides/models.md` (Blender glTF export: +Y up, apply transforms, PNG beside, `.bin` naming, what is ignored);
   links from `math.md`, `gfx.md`, `texture.md`, `assets.md` — covers AC-10

@@ -1,0 +1,154 @@
+# Spec 028 AC-4, automatic (spec 013): the self-check (its checksum lines must be the PC's bit for bit), then the
+# showcase played with the D-Pad, A, B, L/R and touches: the title, the options (a held slider, a touch on its track,
+# the inert Online refused, Back by B with the title's focus remembered), the inventory (held Down, pages), the
+# gallery, the dialog, the quit prompt answered by touch, the default theme, then the bench and its verdict.
+# PC:      nnh run ui --pc --script examples/ui/tests/check.nnhs
+# Console: nnh run ui --script examples/ui/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# Timeouts are in frames; every expect is followed by a wait before the next input. The expected lines are the PC's
+# (pc-debug). The checksum lines change only if self_check*.cpp or the ui module change: then run
+# `UI_DEMO=check NNH_EXIT_AFTER_FRAMES=420 build/pc-debug/examples/ui/ui.exe`, copy its lines here and the values into
+# kUiCheckpoints/kUiCheckGolden. Touch points follow the 9-slice theme's layout (buttons 18 px tall).
+fail-on "] E "
+fail-on "ui: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "ui bench: FAIL"
+
+expect "ui: showcase" 60
+wait 30
+screenshot title
+
+# The self-check (Y): 3600 script frames, a checksum every 600, the verdict, then back to the title.
+tap Y
+expect "ui: check started" 20
+expect "ui: 600 sum 89D4068F" 90
+expect "ui: 1200 sum D85440B0" 90
+expect "ui: 1800 sum 7C85E5EA" 90
+expect "ui: 2400 sum 907D59A4" 90
+expect "ui: 3000 sum 49E1D0E0" 90
+expect "ui: 3600 sum 30400DA6" 90
+expect "ui: PASS 30400DA6" 20
+expect "ui: focus title.new" 90
+wait 10
+
+# The title: Continue is disabled, so Down goes to Options.
+tap DOWN
+expect "ui: focus title.options" 10
+wait 10
+tap A
+expect "ui: activated title.options" 10
+wait 30
+
+# Options: Music held left from 7 (the press and repeats at 24, 30, 36), then a touch on its track.
+hold LEFT 40
+expect "ui: value music 3" 10
+wait 10
+screenshot options
+touch 234 25
+expect "ui: value music 8" 10
+wait 10
+untouch
+wait 10
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+expect "ui: focus online" 20
+wait 10
+tap A
+expect "ui: refused online" 10
+wait 10
+tap B
+expect "ui: activated options.back" 10
+expect "ui: focus title.options" 20
+wait 10
+
+# The inventory: held Down (the press and 16 repeats), then pages with R.
+tap DOWN
+expect "ui: focus title.inventory" 10
+wait 10
+tap A
+expect "ui: activated title.inventory" 10
+wait 20
+hold DOWN 120
+expect "ui: focus list 17" 10
+wait 10
+tap R
+expect "ui: page list 20" 10
+wait 10
+screenshot list
+tap B
+expect "ui: focus title.inventory" 20
+wait 10
+
+# The gallery: a grid of icons.
+tap DOWN
+expect "ui: focus title.gallery" 10
+wait 10
+tap A
+expect "ui: activated title.gallery" 10
+wait 20
+tap RIGHT
+expect "ui: focus grid 1" 10
+wait 10
+tap DOWN
+expect "ui: focus grid 6" 10
+wait 10
+screenshot grid
+tap B
+expect "ui: focus title.gallery" 20
+wait 10
+
+# The dialog: half revealed, A shows it all, A closes it.
+tap UP
+tap UP
+tap UP
+expect "ui: focus title.new" 20
+wait 10
+tap A
+expect "ui: activated title.new" 10
+wait 50
+screenshot dialog
+tap A
+expect "ui: dialog shown" 10
+wait 10
+tap A
+expect "ui: focus title.new" 20
+wait 10
+
+# Quit by touch, then No by touch.
+touch 160 183
+expect "ui: focus title.quit" 10
+wait 10
+untouch
+expect "ui: activated title.quit" 10
+wait 10
+screenshot modal
+touch 183 129
+wait 5
+untouch
+expect "ui: activated quit.no" 10
+wait 10
+
+# SELECT: the default theme.
+tap SELECT
+expect "ui: theme default" 10
+wait 10
+screenshot theme2
+
+# X: the bench (about a minute), its lines and the verdict.
+tap X
+expect "ui bench: started" 20
+expect "ui bench: base gfx submit" 400
+expect "ui bench: idle128" 400
+expect "ui bench: move128" 400
+expect "ui bench: geo128" 400
+expect "ui bench: relayout128" 400
+expect "ui bench: list10000" 700
+expect "ui bench: draw ui" 700
+expect "ui bench: frame worst" 700
+expect "ui bench: memory widget" 10
+expect "ui bench: PASS" 10
+end

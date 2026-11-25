@@ -38,7 +38,6 @@ bool TitleScene::create() {
 }
 
 void TitleScene::on_enter() {
-    NNH_LOG_INFO(example, "ui: showcase");
     if (shot_is("modal")) prompt_ = ui_.prompt(nnh::Screen::Bottom, {.message = t(Text::QuitAsk),
                                                                      .buttons = {t(Text::Yes), t(Text::No)},
                                                                      .keys = {Key::QuitYes, Key::QuitNo},
@@ -46,6 +45,10 @@ void TitleScene::on_enter() {
 }
 
 void TitleScene::step() {
+    if (!announced_) { // in the first frame (a script's window starts at frame 1)
+        announced_ = true;
+        NNH_LOG_INFO(example, "ui: showcase");
+    }
     if (ui_.activated(Key::TitleNew) && demo_.dialog != nullptr) nnh::scenes::push(*demo_.dialog);
     if (ui_.activated(Key::TitleOptions) && demo_.options != nullptr) nnh::scenes::push(*demo_.options);
     if (ui_.activated(Key::TitleInventory) && demo_.inventory != nullptr) nnh::scenes::push(*demo_.inventory);

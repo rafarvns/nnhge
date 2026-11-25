@@ -5,9 +5,11 @@
 namespace {
 
 const char* const kRowTexts[OptionsScreen::kRows] = {
-    "Music volume ........ 7", "Sound effects ....... 5", "Voices .............. 9", "Invert Y axis ..... off",
-    "Difficulty ...... normal", "Text speed ........ fast", "Language ....... English", "Vibration ......... on",
-    "Subtitles .......... on", "Hints .............. off", "Autosave ........... on", "Colour assist ..... off"};
+    "Music volume ............... 7", "Sound effects .............. 5", "Voices ..................... 9",
+    "Invert Y axis ............ off", "Difficulty ............ normal", "Text speed .............. fast",
+    "Language ............. English", "Vibration ................. on", "Subtitles ................. on",
+    "Hints .................... off", "Autosave .................. on", "Colour assist ............ off",
+};
 
 constexpr nnh::Region kFrame{0, 0, 24, 24};
 constexpr int kInset = 6;

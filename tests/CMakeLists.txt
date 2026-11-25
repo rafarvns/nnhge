@@ -788,7 +788,23 @@ target_sources(nnh_tests PRIVATE
     ui/test_wrap.cpp)
 # The UI example's self-check (spec 028 T7.1, AC-2): its golden checksums on every host compiler.
 target_sources(nnh_tests PRIVATE ui_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/ui/self_check.cpp
-                                 ${PROJECT_SOURCE_DIR}/examples/ui/self_check_script.cpp)
+                                 ${PROJECT_SOURCE_DIR}/examples/ui/self_check_script.cpp
+                                 ui_example/test_hand_options.cpp ${PROJECT_SOURCE_DIR}/examples/ui/hand_options.cpp)
+# The UI example in the simulator (spec 028 T7.4, T7.6): its self-check, and its console script played with --pc.
+if(TARGET ui AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME ui_self_check_pc COMMAND ui)
+    set_tests_properties(ui_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;UI_DEMO=check;NNH_EXIT_AFTER_FRAMES=420"
+        PASS_REGULAR_EXPRESSION "ui: PASS 30400DA6" FAIL_REGULAR_EXPRESSION "ui: FAIL|\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME ui_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run ui --pc --no-build --script examples/ui/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(ui_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port)
+endif()
 # Spec 028 T6.1: the style structs are data-loadable (compile only: linking them would add types to the registry).
 if(NOT MSVC)
     add_test(NAME ui_style_structs_are_data_loadable

@@ -16,4 +16,5 @@ private:
     void step() override;
     nnh::UiWidget menu_;
     nnh::UiWidget prompt_;
+    bool announced_ = false;
 };

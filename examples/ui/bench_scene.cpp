@@ -47,6 +47,7 @@ void BenchScene::on_enter() {
     worst_frame_ = 0;
     failed_[0] = '\0';
     done_ = false;
+    memory_logged_ = false;
     NNH_LOG_INFO(example, "ui bench: started (10 runs of 300 frames, the frame test 600: about 1 min)");
     if (!bench_ || !screen_) NNH_LOG_ERROR(example, "ui bench: FAIL no memory");
 }
@@ -108,11 +109,14 @@ void BenchScene::finish() {
 }
 
 void BenchScene::verdict() {
+    if (!memory_logged_) { // the memory line, then the verdict in the next frame (each line its own expect)
+        memory_logged_ = true;
+        const nnh::UiStats s = screen_->ui().stats();
+        NNH_LOG_INFO(example, "ui bench: memory widget %d B row %d B options %u B for %d widgets", bytes_per(false),
+                     bytes_per(true), static_cast<unsigned>(s.block_bytes), s.widgets);
+        return;
+    }
     done_ = true;
-    const nnh::UiStats s = screen_->ui().stats();
-    NNH_LOG_INFO(example, "ui bench: memory widget %d B row %d B options %u B for %d widgets",
-                 bytes_per(false), bytes_per(true),
-                 static_cast<unsigned>(s.block_bytes), s.widgets);
     if (failed_[0] == '\0') {
         NNH_LOG_INFO(example, "ui bench: PASS");
     } else {

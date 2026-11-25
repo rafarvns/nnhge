@@ -42,4 +42,5 @@ private:
     double worst_frame_ = 0;
     char failed_[96] = {};
     bool done_ = false;
+    bool memory_logged_ = false;
 };

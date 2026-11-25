@@ -742,21 +742,35 @@ if(NOT MSVC)
 endif()
 # UI widgets (spec 028): every test of the spec in one block.
 target_sources(nnh_tests PRIVATE
+    ui/test_actions_adapter.cpp
     ui/test_anchor.cpp
     ui/test_box_math.cpp
+    ui/test_callbacks.cpp
+    ui/test_cancel.cpp
     ui/test_create.cpp
+    ui/test_events.cpp
+    ui/test_focus.cpp
     ui/test_geometric.cpp
+    ui/test_input_custom.cpp
+    ui/test_input_raw.cpp
     ui/test_keys.cpp
     ui/test_layout_anchors.cpp
     ui/test_layout_boxes.cpp
     ui/test_layout_dirty.cpp
     ui/test_min_size.cpp
+    ui/test_modal.cpp
+    ui/test_navigate.cpp
     ui/test_nine_slice.cpp
+    ui/test_no_leak.cpp
     ui/test_number.cpp
+    ui/test_remembered_focus.cpp
     ui/test_repeat.cpp
+    ui/test_results.cpp
     ui/test_reveal.cpp
+    ui/test_scene_binding.cpp
     ui/test_text_sources.cpp
     ui/test_tree.cpp
+    ui/test_values.cpp
     ui/test_wrap.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)

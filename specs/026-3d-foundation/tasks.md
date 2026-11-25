@@ -1,6 +1,6 @@
 # Tasks 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run T10.1/T10.2 and Linux VM T9.3 pending)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console run 1 done; T10.5 optimisation round done, console rerun T10.6, T10.2 and Linux VM T9.3 pending)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -196,6 +196,11 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
   rasteriser, D41), `docs/tech/devkitpro-3ds.md` (targets, shader, LUTs, VRAM, costs), `project-structure.md`
   (`shared/raster3d`, `src/math3d`, `mesh`, `gfx3d`), D41–D44 change-log "implemented (026a)", `docs/REFERENCES.md`,
   CLAUDE.md layout — covers AC-10
+- [x] **T10.5** Optimisation round after console run 1 (per-draw cost): `pass_cache3d.hpp` (vertex buffer, fixed
+  attributes, uv/colour constants and texture sent only on change), the bench's `sub`/`prep`/`cpu` (AC-8's CPU share
+  as written), analysis and estimates in plan 026 "Optimisation round (026a, per-draw cost)" — test:
+  `tests/platform_3ds/test_pass_cache3d.cpp` — covers AC-8
+- [ ] **T10.6** Console rerun of `bench.nnhs` after T10.5; numbers into plan 026, then T10.2's budgets — covers AC-8
 
 ## Stage 11 — slider everywhere (026b)
 

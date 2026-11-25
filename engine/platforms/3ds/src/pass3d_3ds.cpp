@@ -1,13 +1,15 @@
 // Nintendo 3DS: the 3D pass (contract nnh/platform/video3d.hpp; plan P22): between citro2d's draws of the top screen,
 // citro2d's batch is flushed, the mesh shader bound, depth test GREATER with writes (the frame-start clear left 0),
-// the lights set; each draw sets its uniforms, its material's state (texture, combiners, lighting, culling, alpha test
-// or blending — each only when it changes) and draws its index range; end_3d restores every texture parameter it
-// touched and the 2D state.
+// the lights set; each draw sets its matrices, the rest of its state (vertex buffer, fixed attributes, uv decode and
+// colour scale, texture, combiners, lighting, culling, alpha test or blending) only when it changes (pass_cache3d.hpp;
+// the optimisation round of 026a: citro3d resends what it is given), and draws its index range; end_3d restores every
+// texture parameter it touched and the 2D state.
 
 #include <3ds.h>
 #include <citro2d.h>
 
 #include "context_3ds.hpp"
+#include "pass_cache3d.hpp"
 #include "video3d_3ds.hpp"
 
 namespace nnh::platform {
@@ -21,10 +23,10 @@ struct PassState {
     int alpha = -1;
     int cutoff = -1;
     std::uint8_t flags = 0xFF; ///< attribute layout in use
-    C3D_Tex* texture = nullptr;
     C3D_Tex* touched[kMaxTouched]; ///< textures whose filter/wrap we changed, and their parameters
     u32 saved[kMaxTouched];
     int touched_count = 0;
+    ctr::PassCache3D cache;    ///< vertex buffer, fixed attributes, constants and texture last sent
 };
 PassState g;
 
@@ -54,6 +56,9 @@ void combiners(bool textured, bool lit) {
 void bind_texture(TextureHandle handle, const Material3DGpu& m) {
     C3D_Tex* tex = ctr::texture_of(handle);
     if (tex == nullptr) return;
+    const std::uint32_t params = static_cast<std::uint32_t>(m.filter) | (static_cast<std::uint32_t>(m.wrap_u) << 8) |
+                                 (static_cast<std::uint32_t>(m.wrap_v) << 16);
+    if (!g.cache.texture(reinterpret_cast<std::uintptr_t>(tex), params)) return; // bound with these parameters
     bool known = false;
     for (int i = 0; i < g.touched_count; ++i) known = known || g.touched[i] == tex;
     if (!known && g.touched_count < kMaxTouched) {
@@ -65,7 +70,6 @@ void bind_texture(TextureHandle handle, const Material3DGpu& m) {
     C3D_TexSetFilter(tex, f, f);
     C3D_TexSetWrap(tex, wraps[m.wrap_u > 2 ? 0 : m.wrap_u], wraps[m.wrap_v > 2 ? 0 : m.wrap_v]);
     C3D_TexBind(0, tex);
-    g.texture = tex;
 }
 
 void material_state(const Material3DGpu& m) {
@@ -122,18 +126,25 @@ void draw_3d(const Draw3D& d) {
         C3D_SetAttrInfo(&s.attrs[flags]);
         g.flags = flags;
     }
-    C3D_BufInfo* buf = C3D_GetBufInfo();
-    BufInfo_Init(buf);
-    const int loaders = 2 + ((flags & 1) != 0 ? 1 : 0) + ((flags & 2) != 0 ? 1 : 0);
-    BufInfo_Add(buf, mesh->vertices, mesh->stride, loaders, loaders == 2 ? 0x10 : (loaders == 3 ? 0x210 : 0x3210));
-    if ((flags & 1) == 0) C3D_FixedAttribSet(2, 0, 0, 0, 0);
-    if ((flags & 2) == 0) C3D_FixedAttribSet(3, 255, 255, 255, 255);
+    if (g.cache.vertex_buffer(d.mesh, flags)) {
+        C3D_BufInfo* buf = C3D_GetBufInfo();
+        BufInfo_Init(buf);
+        const int loaders = 2 + ((flags & 1) != 0 ? 1 : 0) + ((flags & 2) != 0 ? 1 : 0);
+        BufInfo_Add(buf, mesh->vertices, mesh->stride, loaders, loaders == 2 ? 0x10 : (loaders == 3 ? 0x210 : 0x3210));
+    }
+    if ((flags & 1) == 0 && g.cache.fixed_attribute(2)) C3D_FixedAttribSet(2, 0, 0, 0, 0);
+    if ((flags & 2) == 0 && g.cache.fixed_attribute(3)) C3D_FixedAttribSet(3, 255, 255, 255, 255);
     upload_rows(s.model_view, d.model_view, 3, 4);
     upload_rows(s.normal, d.normal, 3, 3);
-    C3D_FVUnifSet(GPU_VERTEX_SHADER, s.uv_decode, d.uv_scale[0], d.uv_scale[1], d.uv_offset[0], d.uv_offset[1]);
-    // The shader multiplies the 0..255 colour attribute by this: base × tint (core folded the tint) / 255.
-    C3D_FVUnifSet(GPU_VERTEX_SHADER, s.color_scale, m.base[0] / 255.0f, m.base[1] / 255.0f, m.base[2] / 255.0f,
-                  m.base[3] / 255.0f);
+    // uvDecode and colorScale follow normalMtx: sent together (or not at all) the matrices stay one uniform run.
+    const float constants[8] = {d.uv_scale[0], d.uv_scale[1], d.uv_offset[0], d.uv_offset[1],
+                                m.base[0],     m.base[1],     m.base[2],      m.base[3]};
+    if (g.cache.constants(constants)) {
+        C3D_FVUnifSet(GPU_VERTEX_SHADER, s.uv_decode, d.uv_scale[0], d.uv_scale[1], d.uv_offset[0], d.uv_offset[1]);
+        // The shader multiplies the 0..255 colour attribute by this: base × tint (core folded the tint) / 255.
+        C3D_FVUnifSet(GPU_VERTEX_SHADER, s.color_scale, m.base[0] / 255.0f, m.base[1] / 255.0f, m.base[2] / 255.0f,
+                      m.base[3] / 255.0f);
+    }
     material_state(m);
     C3D_DrawElements(GPU_TRIANGLES, static_cast<int>(d.index_count), C3D_UNSIGNED_SHORT,
                      mesh->indices + d.first_index);

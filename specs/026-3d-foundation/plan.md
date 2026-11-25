@@ -832,5 +832,90 @@ the maintainer's approval beyond the decisions above.
   holds 60 Hz. `draws 256` 29.21 ms avg (recording 2.757 ms), 598/600 missed; `cpu 512` 33.14 ms (recording 5.547 ms),
   598/600 missed — about 100 µs per draw on the frame, mostly per-draw state submission: many small draws don't fit a
   60 Hz frame on the Old 3DS. An optimisation round (fewer state changes and uniform uploads per draw, batching by
-  material) is queued before budgets are set.
+  material) is queued before budgets are set (done: next section; console rerun pending).
+
+## Optimisation round (026a, per-draw cost)
+
+After console run 1 (above), on the PC only (no console in this round): citro3d read from its headers and the
+disassembly of `libcitro3d.a` (devkitPro's build), the backend from the 3ds-dev disassembly. Numbers marked ≈ are
+estimates; the console rerun gives the real ones.
+
+**Where the ≈ 100 µs per draw goes.**
+
+- **CPU and GPU are serial within a frame.** `C3D_FrameBegin(C3D_FRAME_SYNCDRAW)`, at the start of `nnh::frame()`, waits
+  for the previous frame's GPU work; citro3d queues the frame's command list and starts the GPU only in `C3D_FrameEnd`
+  (`gxCmdQueueRun`). So a frame over 16.7 ms costs ≈ CPU (update + recording + submission) + GPU (the frame's commands):
+  the 100 µs is recording + CPU submission + the GPU's own time per draw, added up.
+- **Recording** is measured: 10.8 µs per draw (2.757 ms / 256, 5.547 ms / 512) for ≈ 800 instructions (the game's
+  `quat_euler` with three `sin_cos`, `to_mat4`, `gfx3d::draw`'s checks, copy and bounding sphere with a `vsqrt`): ≈ 3.6
+  cycles per instruction on this VFP-heavy code (VFP11 latencies), the rate used below. Not changed (bit-exact math).
+- **Lighting tables are not per draw.** `C3Di_LightEnvUpdate` uploads a table only when its dirty bit is set;
+  `lights3d_material` calls `C3D_LightEnvLut` only when the shininess level changes and `C3D_LightEnvMaterial` only when
+  the specular colour changes. Per frame: the specular table at the first lit draw (the level is reset in
+  `lights3d_begin`) and one distance table per point light (`C3D_LightDistAttn` in `lights3d_begin`), 322 command words
+  each: ≈ 970 words for the draws case, about four draws' worth. Kept per frame: robust after the HOME Menu, when
+  citro3d re-dirties only a bound environment and ours is unbound between passes.
+- **CPU submission per draw, before** (the draws case: a cube with uv and no colours, untextured, lit; ≈ instructions):
+  core's culling and ordering ≈ 150, `draw_parts` + `make_draw` ≈ 450 (12 `vdiv`), `draw_3d` ≈ 120 + citro3d setters ≈
+  200 (`BufInfo_Init`'s 148-byte `memset`, `BufInfo_Add`, `C3D_FixedAttribSet`, 8 `C3D_FVUnifSet`), `C3D_DrawElements`
+  ≈ 450 (15 `GPUCMD_Add`), and its `C3Di_UpdateContext` ≈ 1 600: the vertex buffer rewritten (citro3d dirties it on
+  every `C3D_GetBufInfo`), the fixed attribute (four software float→f24 conversions), the light environment scan and
+  `C3D_UpdateUniforms` for the vertex **and** the geometry shader, each scanning all 96 float registers (≈ 1 100
+  instructions together, unavoidable through citro3d's API). ≈ 3 000 instructions ≈ 40 µs, plus ≈ 6 µs of
+  write-allocate misses on the 448 command bytes: **≈ 45 µs of CPU per draw**, leaving **≈ 40–50 µs for the GPU**
+  (unmeasured; the rerun's new `sub` value separates them).
+- **Command words per draw, before** (`GPUCMD_Add` = 1 header + n words, padded to even): vertex buffer 40
+  (`GPUREG_ATTRIBBUFFERS_LOC` + 36 words of loader configuration), fixed attribute 6, uniforms 36 (one run `c4`–`c11`:
+  `modelView`, `normalMtx`, `uvDecode`, `colorScale`, read from the built `.shbin`), draw 30 (primitive, index buffer,
+  count, geometry-stage toggles, draw, post-vertex-cache clear): **112 words (448 B)**. A textured draw adds 12
+  (`C3Di_SetTex` 8, `GPUREG_TEXUNIT_CONFIG` twice, the first one **clearing the GPU's texture cache**): 124 words.
+
+**Changes.**
+
+- `engine/platforms/3ds/src/pass_cache3d.hpp` (new, pure, header-only): `PassCache3D` remembers, per pass, the vertex
+  buffer (mesh + attribute layout), the fixed attributes, the `uvDecode`/`colorScale` constants (8 floats compared as
+  bits, sent together so the matrices stay one uniform run) and the texture with its filter and wraps. `pass3d_3ds.cpp`
+  sends each only when it changes (reset in `begin_3d`: citro2d changes the same state between passes); the matrices
+  and the draw are sent every time. Tests: `tests/platform_3ds/test_pass_cache3d.cpp` (12); 15 hand mutants of the cache,
+  all killed.
+- Bench (`examples/models`): each case also logs `sub` (the `gfx submit` scope: core's submission and the backend's
+  command building, the HUD's 2D too) and `prep` (a new Development-only scope `gfx3d prepare` around culling and
+  ordering), per frame, and `cpu` = AC-8's CPU share as written: recording + `sub` for draws, recording + `prep` for
+  cpu (before, both were judged on recording alone). Two scopes a frame cost ≈ 9 µs on the 3DS (spec 023's
+  measurement). Targets unchanged.
+- No change to what a game reads (core math, culling, order, stats: the `A3BF4EDF` self-check) or to the PC's pixels
+  (core's `make_draw` and the CPU rasteriser untouched; pc-debug has no Development scope); `hello`'s 3DS size unchanged
+  (269 716 B, 3ds-dev); `models` +996 B.
+
+**After** (same draws): **66 command words (264 B)** when the colour changes every draw (the draws case alternates its
+two materials), **58 (232 B)** when the material repeats, textured or not (a repeated textured draw was 124, with a
+texture-cache clear). CPU ≈ −450 instructions per draw (vertex buffer ≈ 210, fixed attribute ≈ 270, less ≈ 30 for the
+checks) ≈ −6 µs, plus ≈ −2 µs of misses: **≈ 37 µs of CPU per draw**. GPU: no attribute-buffer reconfiguration or
+fixed-attribute write per draw; the saving is unknown (estimated 0–20 % of its share). The command buffer's 640 B per
+draw (`app_3ds.cpp`) now has more margin over a typical draw (232–264 B, was 448 B); draws that change much state at
+once (combiners, lights, a shininess table of 322 words) can exceed it, as before, inside the default 256 KB.
+
+**Old 3DS estimates for the rerun** (Development build): `draws 256` ≈ 25–27 ms avg (was 29.21), still missing 60 Hz;
+`rec` 2.76 unchanged; `sub` ≈ 9–12 ms; `cpu` (rec + sub) ≈ 12–15 ms against the 4 ms target. `cpu 512` ≈ 29–31 ms (was
+33.14); `rec` 5.55; `prep` ≈ 1.0–1.5 ms; `cpu` (rec + prep) ≈ 6.5–7 ms against 1 ms. `throughput` and `fill` unchanged
+(16.71). The targets stay as written until the rerun; then the budgets follow the policy (measurement + ≈ 25 %).
+
+**Not done in this round** (each needs a decision or the console):
+
+- **Overlapping CPU and GPU**: calling `platform::begin_frame` (its `C3D_FrameBegin` wait) just before the first
+  submission instead of at the start of `nnh::frame()` would let the GPU draw frame N while frame N + 1 updates and
+  records, for every game (2D too). A frame-structure change in core and the contract: it needs its own decision and
+  checks on every example.
+- **Bypassing citro3d per draw** (uniforms and the draw written with `GPUCMD_Add` when no other state changed) would
+  drop `C3Di_UpdateContext`'s two 96-register scans, ≈ 1/3 of the CPU per draw. Unsafe without the console: citro3d
+  keeps a shadow of every uniform it was given and re-uploads the ones ever set on a program bind — citro2d's matrices
+  use the same registers (`c4`–`c7`) — so direct writes and citro3d's would race.
+- **Batching or instancing** small draws (several model matrices per draw): an API and shader change (a later spec).
+- **Sorting opaque draws by material**: opaque draws keep call order (`docs/api/gfx3d.md`); the per-pass cache already
+  skips state between equal consecutive materials.
+- Core's per-draw divisions (12 `vdiv` in `make_draw`) feed the PC's pixels too: reciprocals would change bits.
+
+**Rerun** (Homebrew Launcher open, press Y):
+`build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/bench.nnhs` — record each case's `avg`, `rec`,
+`sub`, `prep` and `cpu`; the GPU per draw ≈ (`avg` − `rec` − `sub` − the frame's other CPU) / visible draws.
 

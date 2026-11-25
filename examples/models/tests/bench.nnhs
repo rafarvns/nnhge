@@ -1,8 +1,9 @@
 # Spec 026 AC-8 (mono, 026a), on the console: the bench (Y) runs four workloads of 600 frames — throughput (a textured,
 # lit 12 032-triangle sphere), draws (256 cubes, 1 directional + 2 point lights), cpu (512 draws, half behind the
 # camera, 128 blended), fill (three full-screen blended planes over a model) — one line each:
-#   3d bench: <case> avg <ms> worst <ms> missed <n>/600 rec <ms>
-# then the verdict against AC-8's targets. Record the numbers in plan 026 ("Stage 10 results") whatever the verdict.
+#   3d bench: <case> avg <ms> worst <ms> missed <n>/600 rec <ms> sub <ms> prep <ms> cpu <ms>
+# (per frame: rec = recording, sub = the "gfx submit" scope, prep = culling and ordering, cpu = AC-8's CPU share;
+# sub and prep exist in Development builds) then the verdict against AC-8's targets. Record the numbers in plan 026 ("Stage 10 results") whatever the verdict.
 # Console: nnh run models --script examples/models/tests/bench.nnhs   (Homebrew Launcher open, press Y)
 # (In the simulator the numbers mean nothing: it doesn't model the PICA200's speed.)
 fail-on "] E "

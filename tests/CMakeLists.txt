@@ -389,7 +389,8 @@ target_sources(nnh_tests PRIVATE ${_pc_src}/audio_mixer_pc.cpp ${_pc_src}/remote
 target_include_directories(nnh_tests PRIVATE ${_pc_src})
 # The 3DS homebrew loader's argument block is pure code too (spec 011 FR-4).
 set(_3ds_src ${PROJECT_SOURCE_DIR}/engine/platforms/3ds/src)
-target_sources(nnh_tests PRIVATE platform_3ds/test_hbldr_args.cpp ${_3ds_src}/hbldr_args.cpp)
+target_sources(nnh_tests PRIVATE platform_3ds/test_hbldr_args.cpp ${_3ds_src}/hbldr_args.cpp
+                                 platform_3ds/test_pass_cache3d.cpp) # the 3D pass's state cache (spec 026, header-only)
 target_include_directories(nnh_tests PRIVATE ${_3ds_src})
 # The platformer's automatic gate (spec 013 FR-6) and its level logic (spec 012 stage 7: camera, coins, replay,
 # 60 Hz meter, player physics) are pure files of the example, tested like core logic.

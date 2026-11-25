@@ -124,12 +124,19 @@ Spec 004, [rendering.md](../architecture/rendering.md). Files: `texture_3ds.cpp`
   GPU_WRITE_COLOR)` after every `C2D_Prepare()`), so 2D below the world never hides it; the frame-start
   `C2D_TargetClear` clears the depth to 0.
 - **The pass** (`pass3d_3ds.cpp`): `C2D_Flush()`, bind the mesh shader, depth test `GPU_GREATER` with writes (blended
-  draws: colour writes only), the light environment; per draw: uniforms (model-view 3×4 with the quantisation decode
-  folded in, normal matrix, uv decode, colour scale = base × tint / 255), the attribute layout of the mesh's vertex
-  format (12/16/20 bytes; missing texture coordinates and colours are fixed attributes), texture filter and wrap,
-  combiners, culling, alpha test or blending — each only when it changes — then `C3D_DrawElements(GPU_TRIANGLES, n,
-  C3D_UNSIGNED_SHORT, …)` from linear memory. At the end: touched textures' parameters restored, lighting unbound,
-  alpha test and culling off, every combiner reset, `C2D_Prepare()` and the 2D depth state.
+  draws: colour writes only), the light environment; per draw: the model-view (3×4, the quantisation decode folded in)
+  and normal matrices, then — each only when it changes in the pass (`pass_cache3d.hpp`; citro3d itself resends what it
+  is given: a vertex buffer costs 40 command words on every `C3D_GetBufInfo`, a `C3D_TexBind` clears the GPU's texture
+  cache) — the uv decode and colour scale (base × tint / 255), the attribute layout and vertex buffer of the mesh's
+  vertex format (12/16/20 bytes; missing texture coordinates and colours are fixed attributes, set once per pass),
+  texture filter, wrap and binding, combiners, culling, alpha test or blending, then `C3D_DrawElements(GPU_TRIANGLES,
+  n, C3D_UNSIGNED_SHORT, …)` from linear memory: 58–66 command words for a run of draws of one mesh (plan 026,
+  "Optimisation round"). At the end: touched textures' parameters restored, lighting unbound, alpha test and culling
+  off, every combiner reset, `C2D_Prepare()` and the 2D depth state.
+- **Frame timing**: `C3D_FrameBegin(C3D_FRAME_SYNCDRAW)` (at the start of `nnh::frame()`) waits for the previous
+  frame's GPU work and the GPU starts on a frame's commands only in `C3D_FrameEnd`, so a frame's CPU and GPU times add
+  up; citro3d's `C3D_UpdateUniforms` scans all 96 float registers of the vertex and the geometry shader at every draw.
+  Measured on the Old 3DS XL (console run 1): ≈ 100 µs of frame time per small 3D draw.
 - **Shader** `engine/platforms/3ds/shaders/mesh3d.v.pica`, built by `picasso` through `ctr_add_shader_library` and
   embedded by `dkp_add_embedded_binary_library` (`nnh_mesh3d_shader_shbin.h`): raw int16 positions × model-view,
   int8 normals × normal matrix → the normal quaternion (citro3d's `fragment_light` method), the view vector, uv × scale

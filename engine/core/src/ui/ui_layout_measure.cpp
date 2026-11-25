@@ -104,17 +104,19 @@ int container_size(const UiBlock& b, int s, bool horizontal) {
     const int axis = box_axis(b, s);
     const int spacing = box_spacing(b, s);
     int sum = 0, max = 0, n = 0;
-    if (axis == 3) { // grid box: per column (width) or per row (height) maximums
+    if (axis == 3) { // grid box: per column (width) or per row (height) maximums, one scan per track (no table)
         const int cols = grid_columns(b, s);
-        int track[256] = {};
-        int i = 0, tracks = 0;
-        for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c), ++i) {
-            const int k = horizontal ? i % cols : i / cols;
-            const int v = horizontal ? b.hot[c].min_w : b.hot[c].min_h;
-            if (k < 256 && v > track[k]) track[k] = v;
-            if (k + 1 > tracks) tracks = k + 1;
+        int count = 0;
+        for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) ++count;
+        const int tracks = horizontal ? (count < cols ? count : cols) : (count + cols - 1) / cols;
+        for (int k = 0; k < tracks; ++k) {
+            int i = 0, track = 0;
+            for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c), ++i) {
+                const int v = horizontal ? b.hot[c].min_w : b.hot[c].min_h;
+                if ((horizontal ? i % cols : i / cols) == k && v > track) track = v;
+            }
+            sum += track;
         }
-        for (int k = 0; k < tracks && k < 256; ++k) sum += track[k];
         return sum + (tracks > 1 ? (tracks - 1) * spacing : 0);
     }
     const bool stacked = axis == 0;

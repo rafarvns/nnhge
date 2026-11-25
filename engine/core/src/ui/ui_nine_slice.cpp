@@ -38,14 +38,14 @@ int nine_slice(const UiRect& dst, const Region& src, int left, int top, int righ
         for (int col = 0; col < 3; ++col) {
             if (dws[col] <= 0 || dhs[row] <= 0 || sws[col] <= 0 || shs[row] <= 0) continue;
             SlicePart& p = out[n++];
-            p.dx = dxs[col];
-            p.dy = dys[row];
-            p.dw = dws[col];
-            p.dh = dhs[row];
-            p.sx = sxs[col];
-            p.sy = sys[row];
-            p.sw = sws[col];
-            p.sh = shs[row];
+            p.dx = static_cast<std::int16_t>(dxs[col]);
+            p.dy = static_cast<std::int16_t>(dys[row]);
+            p.dw = static_cast<std::int16_t>(dws[col]);
+            p.dh = static_cast<std::int16_t>(dhs[row]);
+            p.sx = static_cast<std::int16_t>(sxs[col]);
+            p.sy = static_cast<std::int16_t>(sys[row]);
+            p.sw = static_cast<std::int16_t>(sws[col]);
+            p.sh = static_cast<std::int16_t>(shs[row]);
             p.scale_x = static_cast<float>(p.dw) / static_cast<float>(p.sw);
             p.scale_y = static_cast<float>(p.dh) / static_cast<float>(p.sh);
         }

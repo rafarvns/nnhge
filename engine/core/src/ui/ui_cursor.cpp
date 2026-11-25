@@ -36,7 +36,7 @@ int cursor_lerp(int from, int to, float eased) {
 void cursor_step(UiBlock& b) {
     UiCursor& c = b.cursor;
     const UiCursorStyle& st = b.theme->cursor;
-    if (st.pulse_frames > 0) c.pulse = static_cast<std::uint16_t>((c.pulse + 1) % st.pulse_frames);
+    if (st.pulse_frames > 0) c.pulse = static_cast<std::uint16_t>(c.pulse + 1 >= st.pulse_frames ? 0 : c.pulse + 1);
     if (b.focus == kUiNone) {
         c.placed = false;
         c.target = kUiNone;

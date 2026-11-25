@@ -16,6 +16,48 @@ namespace {
 using save::WireKind;
 using save::WireShape;
 
+/// Row templates of up to this many columns of fixed values and strings are walked quickly, as runs: the
+/// bytes of consecutive fixed values (1-128), or 0 for a string (a byte per run on the stack).
+constexpr std::uint32_t kQuickColumns = 16;
+
+/// Adds a column of `wire` to the runs. False for a struct or a sequence (the row isn't quick).
+bool add_quick_column(std::uint8_t wire, std::uint8_t* runs, std::uint32_t& count) {
+    const WireKind kind = wire_kind(wire);
+    if (wire_shape(wire) != WireShape::One || kind == WireKind::Struct) return false;
+    const int width = wire_width(kind);
+    if (width != 0 && count > 0 && runs[count - 1] != 0) {
+        runs[count - 1] = static_cast<std::uint8_t>(runs[count - 1] + width);
+    } else {
+        runs[count++] = static_cast<std::uint8_t>(width);
+    }
+    return true;
+}
+
+bool string_ok(const std::uint8_t* text, std::size_t length) {
+    if (length == 0) return true;
+    const char* s = reinterpret_cast<const char*>(text);
+    return utf8_valid(s, length) && std::memchr(s, 0, length) == nullptr;
+}
+
+/// Walks one quick row (`runs`) from `p`, every check of Walk::one and Walk::string included. Returns the
+/// row's end, or nullptr at the first fault (the caller walks the row again to name it).
+const std::uint8_t* quick_row(const std::uint8_t* runs, std::uint32_t count, const std::uint8_t* p,
+                              const std::uint8_t* end) {
+    for (std::uint32_t k = 0; k < count; ++k) {
+        const std::uint32_t width = runs[k];
+        if (width != 0) {
+            if (static_cast<std::uint32_t>(end - p) < width) return nullptr;
+            p += width;
+            continue;
+        }
+        if (p >= end || end - (p + 1) < static_cast<std::ptrdiff_t>(*p)) return nullptr;
+        const std::size_t length = *p++;
+        if (!string_ok(p, length)) return nullptr;
+        p += length;
+    }
+    return p;
+}
+
 struct Walk {
     std::uint32_t steps = 0;
     save::FieldPath path;
@@ -41,9 +83,10 @@ struct Walk {
         if (p >= end || end - (p + 1) < static_cast<std::ptrdiff_t>(*p))
             return fail(false, "string cut short");
         const std::size_t length = *p++;
-        const char* text = reinterpret_cast<const char*>(p);
-        if (!utf8_valid(text, length)) return fail(false, "string is not UTF-8");
-        if (length > 0 && std::memchr(text, 0, length) != nullptr) return fail(false, "string holds a NUL");
+        if (!string_ok(p, length)) {
+            const char* text = reinterpret_cast<const char*>(p);
+            return fail(false, "%s", utf8_valid(text, length) ? "string holds a NUL" : "string is not UTF-8");
+        }
         p += length;
         return true;
     }
@@ -150,11 +193,15 @@ bool Walk::rows(std::uint32_t count, const std::uint8_t*& p, const std::uint8_t*
         return fail(false, "template of %lu fields", static_cast<unsigned long>(fields_in_row));
     }
     const std::uint8_t* row_template = p;
+    std::uint8_t runs[kQuickColumns];
+    std::uint32_t run_count = 0;
+    bool quick = fields_in_row <= kQuickColumns;
     std::uint32_t previous = 0;
     for (std::uint32_t i = 0; i < fields_in_row; ++i) {
         ++steps;
         if (p >= end) return fail(false, "template cut short");
         if (!wire_valid(*p)) return fail(false, "template: bad wire byte 0x%02X", static_cast<unsigned>(*p));
+        if (quick) quick = add_quick_column(*p, runs, run_count);
         ++p;
         std::uint32_t id = 0;
         const int m = get_varint(p, end, id);
@@ -177,6 +224,13 @@ bool Walk::rows(std::uint32_t count, const std::uint8_t*& p, const std::uint8_t*
 #if defined(__GNUC__)
         __builtin_prefetch(p + 64);
 #endif
+        if (quick) { // a row of fixed values and strings, walked without a path; a fault is named below
+            if (const std::uint8_t* next = quick_row(runs, run_count, p, region_end)) {
+                steps += fields_in_row;
+                p = next;
+                continue;
+            }
+        }
         path.push(static_cast<std::uint16_t>(row), true);
         const std::uint8_t* t = row_template;
         for (std::uint32_t i = 0; i < fields_in_row; ++i) {

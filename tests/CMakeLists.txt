@@ -650,6 +650,7 @@ target_sources(nnh_tests PRIVATE
     platform_fake/test_power_cut_fake.cpp
     saves/test_backup.cpp
     saves/test_blob.cpp
+    saves/test_bulk.cpp
     saves/test_declare.cpp
     saves/test_dump.cpp
     saves/test_edges.cpp
@@ -666,6 +667,7 @@ target_sources(nnh_tests PRIVATE
     saves/test_raw_unchanged.cpp
     saves/test_reference.cpp
     saves/test_round_trip.cpp
+    saves/test_rows.cpp
     saves/test_save_cost.cpp
     saves/test_save_misuse.cpp
     saves/test_slots.cpp

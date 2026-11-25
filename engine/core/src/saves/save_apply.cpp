@@ -2,8 +2,10 @@
 
 #include "saves/save_apply.hpp"
 
+#include "saves/save_bulk.hpp"
 #include "saves/save_convert.hpp"
 #include "saves/save_cursor.hpp"
+#include "saves/save_rows.hpp"
 
 #include <cstring>
 
@@ -14,13 +16,6 @@ using save::WireKind;
 using save::WireShape;
 
 constexpr int kMaxCount = 65535;
-
-/// Whether `id` is one of the type's retired ids (`next` walks the sorted list once per struct).
-bool retired(const SaveTypeInfo& type, int& next, std::uint32_t id) {
-    while (next < type.retired_count && type.retired[next] < id)
-        ++next;
-    return next < type.retired_count && type.retired[next] == id;
-}
 
 bool is_integer(WireKind k) {
     return k >= WireKind::U8 && k <= WireKind::I64;
@@ -65,6 +60,13 @@ std::uint8_t* open_list(const SaveFieldInfo& f, std::uint8_t* member, std::uint3
     return items;
 }
 
+/// Item `i` of a sequence didn't fit: counted as dropped at its index.
+void drop_item(SaveApply& a, std::uint32_t i) {
+    a.enter(static_cast<std::uint16_t>(i), true);
+    a.note(SaveNote::Dropped);
+    a.leave();
+}
+
 bool apply_sequence(SaveApply& a, const SaveFieldInfo& f, std::uint8_t* member, WireKind from,
                     const std::uint8_t* value, const EnumInfo* names) {
     const std::uint8_t* p = value;
@@ -78,13 +80,7 @@ bool apply_sequence(SaveApply& a, const SaveFieldInfo& f, std::uint8_t* member, 
     std::uint8_t* items = f.shape == WireShape::List ? open_list(f, member, n) : member;
     a.visited += n;
     if (from == WireKind::Struct) {
-        const std::uint8_t* row = s.items;
-        for (std::uint32_t i = 0; i < n; ++i) {
-            a.enter(static_cast<std::uint16_t>(i), true);
-            apply_row(a, *f.nested, items + static_cast<std::size_t>(i) * f.stride, s.row_template,
-                      s.template_fields, row);
-            a.leave();
-        }
+        apply_rows(a, f, items, s, n);
         return true;
     }
     if (from == WireKind::String) {
@@ -100,21 +96,23 @@ bool apply_sequence(SaveApply& a, const SaveFieldInfo& f, std::uint8_t* member, 
         return true;
     }
     if (copies_as_is(from, f) || (from == f.kind && names == nullptr && is_integer(from))) {
-        std::memcpy(items, s.items, static_cast<std::size_t>(n) * f.stride); // the packed copy
+        copy_bytes(items, s.items, static_cast<std::size_t>(n) * f.stride); // the packed copy
         return true;
     }
-    if (from == f.kind &&
-        (from == WireKind::Bool || from == WireKind::F32)) { // the same kind: a check per item
+    if (from == f.kind && from == WireKind::Bool) { // words of 0/1 bytes copied, each other byte dropped
+        std::uint32_t i = 0;
+        while ((i += static_cast<std::uint32_t>(copy_bools(items + i, s.items + i, n - i))) < n) {
+            drop_item(a, i);
+            ++i;
+        }
+        return true;
+    }
+    if (from == f.kind && from == WireKind::F32) { // the same kind: a check per item
         for (std::uint32_t i = 0; i < n; ++i) {
-            const bool ok = from == WireKind::Bool ? s.items[i] <= 1 : f32_finite(load_u32(s.items + 4 * i));
-            if (!ok) {
-                a.enter(static_cast<std::uint16_t>(i), true);
-                a.note(SaveNote::Dropped);
-                a.leave();
-            } else if (from == WireKind::Bool) {
-                items[i] = s.items[i];
+            if (f32_finite(load_u32(s.items + 4 * i))) {
+                copy_value(items + static_cast<std::size_t>(i) * 4, s.items + 4 * i, 4);
             } else {
-                std::memcpy(items + static_cast<std::size_t>(i) * 4, s.items + 4 * i, 4);
+                drop_item(a, i);
             }
         }
         return true;
@@ -123,9 +121,7 @@ bool apply_sequence(SaveApply& a, const SaveFieldInfo& f, std::uint8_t* member, 
     for (std::uint32_t i = 0; i < n; ++i) {
         if (!convert_scalar(from, s.items + static_cast<std::size_t>(i) * static_cast<std::size_t>(width), f,
                             names, items + static_cast<std::size_t>(i) * f.stride)) {
-            a.enter(static_cast<std::uint16_t>(i), true);
-            a.note(SaveNote::Dropped);
-            a.leave();
+            drop_item(a, i);
         }
     }
     return true;
@@ -181,7 +177,7 @@ void apply_by_id(SaveApply& a, const SaveTypeInfo& type, Merge& m, std::uint8_t*
         a.enter(static_cast<std::uint16_t>(id), false);
         apply_field(a, f, base + f.offset, wire, value);
         a.leave();
-    } else if (!retired(type, m.retired, id)) {
+    } else if (!save_id_retired(type, m.retired, id)) {
         a.note(SaveNote::Unknown, static_cast<std::uint16_t>(id));
     }
 }

@@ -50,6 +50,14 @@ struct SaveApply {
     const EnumInfo* last_names_ = nullptr;
 };
 
+/// Whether `id` is one of `type`'s retired ids. `next` walks the sorted list once per struct (ids asked in
+/// ascending order; start at 0).
+inline bool save_id_retired(const SaveTypeInfo& type, int& next, std::uint32_t id) {
+    while (next < type.retired_count && type.retired[next] < id)
+        ++next;
+    return next < type.retired_count && type.retired[next] == id;
+}
+
 /// Applies the tagged fields [p, end) to the struct of `type` at `base` (already T{} or the caller's
 /// defaults).
 void apply_fields(SaveApply& a, const SaveTypeInfo& type, std::uint8_t* base, const std::uint8_t* p,

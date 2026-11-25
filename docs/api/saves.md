@@ -190,8 +190,8 @@ blob. They get versions, migrations and the backup for free.
 load needs room for the whole file: `LimitReached` otherwise). Keep it static or in a scene — the 3DS main thread's
 stack is small. `encode(value, out, capacity)` and `decode(data, size, value)` work in memory (a save inside the game's
 own file, several in one blob); `store`/`load` are built on them. Nothing allocates; the stack a load uses is about
-1.5 KB on the 3DS for a three-level save (plan 027 stage 7; about 2.9 KB at 8 levels). The module adds about
-22.6 KB of code to a 3DS game that uses it (the codec about 14.6 KB); games without structured saves pay nothing.
+1.6 KB on the 3DS for a three-level save (plan 027 stage 7 and T10.3; about 3.7 KB with 8 levels of struct lists).
+The module adds about 28 KB of code to a 3DS game that uses it; games without structured saves pay nothing.
 
 ## The dump
 
@@ -221,10 +221,11 @@ names (the calls return `Unsupported`; messages name ids).
 Synchronous: save at a save point or in a menu, after showing a "Saving…" indicator. A store is one encode (in memory)
 plus spec 002's five file operations; a load is three file operations plus one validation and one decode. On the PC
 (pc-dev, noisy) the reference save of `examples/saves` (3.8 KB) encodes in 0.01–0.02 ms and decodes in 0.03–0.07 ms;
-a store to disk takes about 4 ms, as long as a raw `save::write` of the same bytes. Estimated on an Old 3DS (plan 027's
-ARM pre-check): encode ≈ 0.3 ms, decode ≈ 0.65 ms. Old 3DS targets (AC-8; the console measurement is pending, stage 10): encode < 0.5 ms, decode < 1 ms, decode
-of a v1 file with two steps < 1.2 ms, store < 150 ms median (none over 300 ms), load < 50 ms, load from the backup
-< 100 ms, three slot summaries < 150 ms. SD timings vary between cards.
+a store to disk takes about 4 ms, as long as a raw `save::write` of the same bytes. On an Old 3DS XL (console run 2,
+2026-11-25, after an optimisation round: struct lists by a per-column plan, word-at-a-time copies) the reference save
+encodes in 0.203 ms, decodes in 0.383 ms and a v1 file with two steps in 0.234 ms; a store takes 130 ms (median), a
+load 35 ms, a load from the backup 72 ms, three slot summaries 108 ms. Budgets (AC-8, measurement + ≈ 25 %): 0.25,
+0.48, 0.29, 165 (none over 300), 45, 90 and 135 ms. SD timings vary between cards: these are one card's.
 
 ## Migrating from raw saves
 

@@ -298,7 +298,8 @@ spec; the order below is a proposal.
 - [x] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves — [spec 027](../specs/027-save-versions/spec.md),
   **implemented 2026-11-24**, Linux checks passed; Old 3DS run 1 (2026-11-25): every golden equal to the PC's, the card
-  workloads within target, encode 0.52 ms and decode 1.44 ms over target (optimisation round T10.3 next): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
+  workloads within target, encode 0.52 ms and decode 1.44 ms over target; after the T10.3 optimisation round (65–77 %
+  fewer instructions) run 2 measured encode 0.20 ms and decode 0.38 ms, and the budgets were set: `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
   with `NNH_SAVE_FIELD(member, id)`, retired ids, `NNH_SAVE_VERSION` and compile-time-complete `NNH_SAVE_STEP` chains
   (D45, D46); a self-describing little-endian format (tagged fields, packed sequences, one template per list of
   structs: 5 % framing) inside spec 002's `NNHS` container, the same bytes on PC and 3DS (golden v1–v3 files); the

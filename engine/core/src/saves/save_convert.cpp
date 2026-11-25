@@ -3,6 +3,7 @@
 
 #include "saves/save_convert.hpp"
 
+#include "saves/save_bulk.hpp"
 #include "saves/save_wire.hpp"
 
 #include <bit>
@@ -28,8 +29,7 @@ bool is_signed(WireKind k) {
 
 Int read_int(WireKind kind, const std::uint8_t* src) {
     const int width = wire_width(kind);
-    std::uint64_t raw = 0;
-    std::memcpy(&raw, src, static_cast<std::size_t>(width)); // little-endian: the low bytes
+    std::uint64_t raw = load_value(src, width); // little-endian: the low bytes
     Int v;
     if (is_signed(kind) && width < 8 && ((raw >> (8 * width - 1)) & 1u) != 0) {
         raw |= ~0ull << (8 * width); // sign extension
@@ -133,8 +133,7 @@ bool convert_scalar(WireKind from, const std::uint8_t* src, const SaveFieldInfo&
         const Int v = read_int(from, src);
         if (is_integer(to)) {
             if (!fits(v, to) || !enum_allows(names, v)) return false;
-            const std::uint64_t raw = v.negative ? 0 - v.magnitude : v.magnitude;
-            std::memcpy(dst, &raw, static_cast<std::size_t>(wire_width(to)));
+            store_value(dst, v.negative ? 0 - v.magnitude : v.magnitude, wire_width(to));
             return true;
         }
         std::uint64_t bits = 0;
@@ -184,7 +183,7 @@ bool convert_scalar(WireKind from, const std::uint8_t* src, const SaveFieldInfo&
         return true;
     default: // Color and the references: the same kind only
         if (to != from) return false;
-        std::memcpy(dst, src, static_cast<std::size_t>(wire_width(from)));
+        copy_value(dst, src, wire_width(from));
         return true;
     }
 }

@@ -1,7 +1,7 @@
 # Spec 027: Save data with versions
 
 Status: implemented 2026-11-24, Linux checks passed and console run 1 done 2026-11-25 (goldens PASS; encode and decode over
-target, T10.3 round next) (approved 2026-11-24 overnight by pre-approval: every
+target), T10.3 optimisation round done, console run 2 and budgets set 2026-11-25 (approved 2026-11-24 overnight by pre-approval: every
 "Decisions to take" item and open question as recommended; to review in the morning)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 002](../002-core-foundation/spec.md) (`nnh::save`: the `NNHS` container with CRC-32, atomic write
@@ -265,6 +265,10 @@ raw `nnh::save` keeps working unchanged.
   - store to the SD card (encode + spec 002's atomic write): **under 150 ms** median over 10 stores, none over
     **300 ms**; load from the SD card: **under 50 ms** median; load falling back to the backup: **under 100 ms**;
   - a partial load of three slot summaries for a "Load game" screen: **under 150 ms** in all.
+  **Budgets set 2026-11-25** from console run 2 (Old 3DS XL, the maintainer's SD card, after the T10.3 optimisation
+  round) + ≈ 25 % (plan "Console run 2 and budgets set"): encode **under 0.25 ms** (measured 0.203), decode **under
+  0.48 ms** (0.383), decode v1 **under 0.29 ms** (0.234), store **under 165 ms** median (129.8; none over 300 ms, the
+  spec's limit), load **under 45 ms** (35.4), backup **under 90 ms** (71.7), three summaries **under 135 ms** (107.6).
   The bench also logs spec 002's raw `nnh::save::write` of the same byte count, so the structured layer's share is
   visible. If a target is missed, the implementation is optimised first (fewer file operations within FR-6's rules,
   then the codec); if it is still missed, the budget is set from the first console measurement with margin and

@@ -786,6 +786,9 @@ target_sources(nnh_tests PRIVATE
     ui/test_ui_random_ops.cpp
     ui/test_values.cpp
     ui/test_wrap.cpp)
+# The UI example's self-check (spec 028 T7.1, AC-2): its golden checksums on every host compiler.
+target_sources(nnh_tests PRIVATE ui_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/ui/self_check.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/ui/self_check_script.cpp)
 # Spec 028 T6.1: the style structs are data-loadable (compile only: linking them would add types to the registry).
 if(NOT MSVC)
     add_test(NAME ui_style_structs_are_data_loadable

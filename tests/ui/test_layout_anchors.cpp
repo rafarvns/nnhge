@@ -34,8 +34,8 @@ NNH_TEST(ui_root_children_anchor_on_the_bottom_screen) {
 NNH_TEST(ui_root_child_fills_between_margins) {
     Ui ui = ui_test::make();
     const UiWidget bar = ui.progress(ui.root(Screen::Top),
-                                     {.layout = {.place = {.anchor = UiAnchor::Bottom, .x = 8, .y = -2, .fill_x = true,
-                                                           .right = 8}}});
+                                     {.layout = {.height = 12, .place = {.anchor = UiAnchor::Bottom, .x = 8, .y = -2,
+                                                                         .fill_x = true, .right = 8}}});
     CHECK((ui.rect(bar) == UiRect{8, 240 - 12 - 2, 384, 12}));
 }
 

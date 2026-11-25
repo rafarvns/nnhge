@@ -68,8 +68,8 @@ NNH_TEST(ui_min_list_rows_and_cell_width) {
 
 NNH_TEST(ui_min_progress_image_spacer) {
     Ui ui = ui_test::make();
-    CHECK((ui.rect(ui.progress(top(ui), {})) == UiRect{0, 0, 2, 12}));
-    CHECK(ui.rect(ui.progress(top(ui), {.value = 3, .max = 10, .show_text = true})).w == 40 + 2); // "10/10"
+    CHECK((ui.rect(ui.progress(top(ui), {})) == UiRect{0, 0, 2, 2})); // padding only: give it a size
+    CHECK((ui.rect(ui.progress(top(ui), {.value = 3, .max = 10, .show_text = true})) == UiRect{0, 0, 42, 12})); // "10/10"
     CHECK((ui.rect(ui.image(top(ui), {.texture = 0, .region = {0, 0, 16, 8}, .scale = 2})) == UiRect{0, 0, 32, 16}));
     CHECK((ui.rect(ui.spacer(top(ui))) == UiRect{0, 0, 0, 0}));
 }

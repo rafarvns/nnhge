@@ -84,7 +84,7 @@ int leaf_height(UiBlock& b, int s) {
     switch (kind_of(b, s)) {
     case UiKind::Label: return c.data.label.lines * line;
     case UiKind::Image: return (c.data.image.rh > 0 ? c.data.image.rh : 0) * c.data.image.scale;
-    case UiKind::Progress: return line;
+    case UiKind::Progress: return (c.data.progress.bits & 2) != 0 ? line : 0; // a bar alone: its fixed size
     case UiKind::Button: {
         const int text = seam_measure(text_of(b, s)).lines * line;
         const int icon = c.data.button.icon_texture >= 0 ? c.data.button.ih : 0;

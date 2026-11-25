@@ -863,7 +863,7 @@ Built test-first in the worktree `spec-028` from `9aac3be`; commits on `spec-028
 
 ### Stage 0 results (baseline)
 
-- `nnh_tests`: 3257 tests, `kMaxTests` 4096 (839 left: raised to 8192, as T0.3 asks below 500 after this spec).
+- `nnh_tests`: 3257 tests, `kMaxTests` 4096 (839 left). After this spec 3571: 525 left, so `kMaxTests` stays (T0.3 raises it below 500).
 - `hello` (text / data / bss): pc-release 134 880 / 22 052 / 212 400 (file 285 885 B); pc-debug 206 276 / 26 820 /
   215 152; 3ds-release 202 204 / 28 360 / 107 368 (`.3dsx` 247 628 B); 3ds-dev 220 488 / 32 872 / 109 976.
 - 3ds-release `.text`: sprites 222 668, text 204 584, actions 247 212, transitions 331 984, platformer 437 464.
@@ -880,7 +880,7 @@ Built test-first in the worktree `spec-028` from `9aac3be`; commits on `spec-028
 - **Sizes** (T6.8): hot node 32 B, cold record 56 B on the 3DS / 64 B on 64-bit PCs (`static_assert`ed): **88 B per
   widget on the 3DS** (96 on the PC); pooled row 72 B / 88 B; function slot 24 B / 32 B; result 20 B; a custom style
   about 600 B. The bench's options screen: 5 024 B for 17 widgets (PC).
-- **Tests**: 316 UI tests in `nnh_tests` (`ui_*`, `ui_example_*`) and the ctests `ui_style_structs_are_data_loadable`,
+- **Tests**: 314 UI tests in `nnh_tests` (`ui_*`, `ui_example_*`) and the ctests `ui_style_structs_are_data_loadable`,
   `ui_self_check_pc` and `ui_check_script_pc`.
 - **Self-check** (T7.1): goldens `89D4068F D85440B0 7C85E5EA 907D59A4 49E1D0E0 30400DA6` (pc-debug; equal in pc-release
   and in the example's check mode, which draws inside frames). Its test also checks that the script reaches every
@@ -947,6 +947,11 @@ listed about 60; this pass covered 24 across every pure helper and the main rule
 - **A choice's confirm wraps** to the first option even when the choice doesn't wrap on Left/Right.
 - **`UiDesc::functions`** counts callbacks, row fills and formatters; the resolver and the input source live in the
   block's header.
+- **Module files**: besides the plan's list, `ui_internal.hpp` (the module's internal function declarations, included at
+  the end of `ui_block.hpp`), `ui_layout.{hpp,cpp}` (the layout driver and the walks' helpers), `ui_widget_new.{hpp,cpp}`
+  (the generic part of creating a widget), `ui_release.cpp` (resources freed with a widget, slices compacted),
+  `ui_parts.{hpp,cpp}` (part rectangles shared by drawing and touch), `ui_focus.hpp`, `ui_cursor.hpp`, `ui_draw.hpp`,
+  `ui_draw_list.cpp` (lists split from per-kind drawing). 45 sources in all, the largest 236 lines.
 - **The example** keeps its HUD and background in `hud.{hpp,cpp}` and shares the scenes' plumbing in
   `menu_scene.{hpp,cpp}`; only the top scene draws (the options slide in over the background, not over the title).
 - **Tests written in batches**: stages 1–2 saw every test fail first (stub helpers, then a layout bug the tests caught);

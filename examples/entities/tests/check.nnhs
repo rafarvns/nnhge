@@ -40,6 +40,8 @@ expect "filter: none found 0" 10
 wait 5
 
 # Touches: the bottom screen shows the arena from world x 40. A coin, a flyer, a walker, then nothing.
+# These touches hit things that move (the flyers): the waits above and below keep their frames, shorter than the
+# 10 frames nnh asks for after an expect (its warnings), because a longer wait moves the targets.
 touch 84 184
 expect "destroyed: slot 13 gen 1 tags coin" 5
 wait 3

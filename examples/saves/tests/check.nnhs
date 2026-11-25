@@ -28,7 +28,7 @@ expect "saves: backup used sum D15774A7" 60
 expect "saves: summaries L300 empty empty" 60
 expect "saves: removed slot1 exists 0" 30
 expect "saves: PASS" 30
-wait 5
+wait 10
 screenshot check
 
 # Back to the showcase (SELECT): every slot empty (the check removed them).
@@ -61,7 +61,7 @@ expect "slot 3: selected" 10
 wait 10
 tap X
 expect "slot 3: stored 2207 bytes" 30
-wait 5
+wait 10
 screenshot saved
 
 # Load golden v1 (touch): the v1 file copied from the assets and loaded with its two steps.

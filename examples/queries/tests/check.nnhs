@@ -32,6 +32,7 @@ expect "queries: first hit cell 6,9 solid fraction 0.5909 normal 0,-1" 1
 screenshot pool
 
 # Without the water bit the ray goes over the pool ("queries: mask 0x1D" comes in the same frame, just before).
+wait 10
 tap A
 expect "queries: first hit none" 10
 wait 10
@@ -62,17 +63,17 @@ wait 10
 # What is under a touch: the bottom screen shows the room from world x 40.
 touch 72 152
 expect "under: cell 7,9 solid layers 0x2 tile 2 boxes 0" 5
-wait 5
+wait 10
 untouch
 wait 10
 touch 132 124
 expect "under: cell 10,7 empty layers 0x0 tile 4 boxes 1" 5
-wait 5
+wait 10
 untouch
 wait 10
 touch 210 82
 expect "under: cell 15,5 one-way layers 0x1 tile 3 boxes 0" 5
-wait 5
+wait 10
 screenshot touch
 untouch
 wait 10

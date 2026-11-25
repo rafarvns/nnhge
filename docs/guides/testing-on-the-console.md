@@ -119,7 +119,10 @@ so the same script gives the same frames every time, on the PC and on the consol
 The one thing to remember: **after an `expect`, wait before the next input.** `nnh` can only send what
 follows an `expect` once the matching line has arrived, and the input needs a few frames to reach the
 console over Wi-Fi. If it arrives after its frame, the script **fails** with "late" and the line number
-(it never shifts time silently). Use `wait 10` or more; the parser warns when there is less.
+(it never shifts time silently). Use `wait 10` or more; the parser warns when there is less. Even in the
+simulator a short wait fails now and then on a busy PC (`prefabs`' script did, one frame late, until its waits
+were raised). The one exception in the tree is `examples/entities/tests/check.nnhs`: its touches hit moving
+targets, so its waits keep the frames the expected lines were recorded with (and its warnings).
 
 Other rules worth knowing:
 

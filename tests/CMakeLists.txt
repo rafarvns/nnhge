@@ -748,6 +748,11 @@ target_sources(nnh_tests PRIVATE
     ui/test_callbacks.cpp
     ui/test_cancel.cpp
     ui/test_create.cpp
+    ui/test_cursor.cpp
+    ui/test_debug.cpp
+    ui/test_draw.cpp
+    ui/test_draw_equivalence.cpp
+    ui/test_draw_widgets.cpp
     ui/test_events.cpp
     ui/test_focus.cpp
     ui/test_geometric.cpp
@@ -765,17 +770,28 @@ target_sources(nnh_tests PRIVATE
     ui/test_nine_slice.cpp
     ui/test_no_leak.cpp
     ui/test_number.cpp
+    ui/test_prompt.cpp
     ui/test_remembered_focus.cpp
     ui/test_repeat.cpp
     ui/test_results.cpp
     ui/test_reveal.cpp
     ui/test_scene_binding.cpp
     ui/test_scroll_box.cpp
+    ui/test_style.cpp
     ui/test_text_sources.cpp
     ui/test_touch.cpp
     ui/test_tree.cpp
+    ui/test_ui_cost.cpp
+    ui/test_ui_misuse.cpp
+    ui/test_ui_random_ops.cpp
     ui/test_values.cpp
     ui/test_wrap.cpp)
+# Spec 028 T6.1: the style structs are data-loadable (compile only: linking them would add types to the registry).
+if(NOT MSVC)
+    add_test(NAME ui_style_structs_are_data_loadable
+             COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -Werror
+                     -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
+endif()
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.

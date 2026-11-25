@@ -1,6 +1,7 @@
 // A prefab library's block layout (spec 021 T2.1, FR-1, II): aligned parts, totals by formula, the name table's size,
 // the per-prefab and per-entry costs the plan states.
 
+#include "nnh/detail/target_layout.hpp"
 #include "prefabs/library_layout.hpp"
 
 #include "prefab_fixture.hpp"
@@ -25,7 +26,8 @@ std::size_t expected_total(int prefabs, int entries, int values, bool names) {
 } // namespace
 
 NNH_TEST(prefab_records_and_entries_have_the_plans_sizes) {
-    CHECK(sizeof(PrefabRecord) == (sizeof(void*) == 4 ? 72u : 80u));
+    if (nnh::detail::kThreeDsLayout) CHECK(sizeof(PrefabRecord) == 72u);
+    if (sizeof(void*) == 8) CHECK(sizeof(PrefabRecord) == 80u);
     CHECK(sizeof(PrefabEntry) == 4 * sizeof(void*));
 }
 
@@ -60,5 +62,5 @@ NNH_TEST(library_layout_of_the_plans_example_is_about_26_kb_on_the_3ds) {
     CHECK(l.total == expected_total(128, 512, 8192, false));
     const std::size_t on_3ds = 128 * (72 + 4 + 4) + 512 * 16 + 8192;
     CHECK(on_3ds == 26624);
-    if (sizeof(void*) == 4) CHECK(l.total > on_3ds && l.total < on_3ds + 256);
+    if (nnh::detail::kThreeDsLayout) CHECK(l.total > on_3ds && l.total < on_3ds + 256);
 }

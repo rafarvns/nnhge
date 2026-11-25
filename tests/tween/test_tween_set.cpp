@@ -1,6 +1,7 @@
 // Tween set storage (spec 015 FR-4, FR-18; T2.1): one block per set under the memory tag `tween`, freed on
 // destruction, moved with the set, capacities checked.
 
+#include "nnh/detail/target_layout.hpp"
 #include "nnh/memory.hpp"
 #include "tween/tween_block.hpp"
 #include "tween/tween_internal.hpp"
@@ -74,7 +75,8 @@ NNH_TEST(the_largest_set_fits_the_documented_ceilings) {
 }
 
 NNH_TEST(one_slot_stays_within_its_size_budget) {
-    CHECK(sizeof(nnh::detail::SlotHot) + sizeof(nnh::detail::SlotCold) <= (sizeof(void*) == 4 ? 192u : 256u));
+    CHECK(sizeof(nnh::detail::SlotHot) + sizeof(nnh::detail::SlotCold) <=
+          (nnh::detail::kThreeDsLayout ? 192u : 256u));
     CHECK(sizeof(nnh::detail::Step) == 8);
     CHECK(sizeof(TweenSet) == sizeof(void*));
 }

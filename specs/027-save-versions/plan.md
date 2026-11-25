@@ -1098,8 +1098,10 @@ On `nnhge-build` (VM 120, Ubuntu, 4 vCPU), 2026-11-25, `main` at the D47 and pro
   1128; `fuzz_mesh_reader` 600 s, 23 599 172 runs — no crash, leak or timeout in any.
 - **AC-2 on every compiler**: the v1/v2/v3 sums, `encode crc 11363B5C bytes 3768`, the slot and backup lines and the
   golden files in `tests/data/saves/` are checked by `nnh_tests` and the `--pc` script (GCC 13): identical everywhere.
-- **32-bit host build**: not done — the VM has no 32-bit multilib (`gcc-13 -m32` finds no `crti.o`); installing it is a
-  system change for the maintainer.
+- **32-bit host build**: not done at first — the VM had no 32-bit multilib (`gcc-13 -m32` found no `crti.o`). Done
+  2026-11-25 after the maintainer allowed installing it: GCC 13 `-m32 -msse2 -mfpmath=sse`, `nnh_tests` 3 257, 0
+  failures (every saves golden and sum identical), once the 3DS-only size checks tested the 3DS's layout
+  (`nnh::detail::kThreeDsLayout`) instead of `sizeof(void*) == 4`.
 
 ## Console run 1 (T10.2, 2026-11-25, Old 3DS XL, Development build)
 

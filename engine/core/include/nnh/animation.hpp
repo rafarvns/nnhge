@@ -25,6 +25,7 @@
 
 #include "nnh/detail/name_hash.hpp"
 #include "nnh/detail/small_function.hpp"
+#include "nnh/detail/target_layout.hpp"
 #include "nnh/math.hpp"
 #include "nnh/result.hpp"
 #include "nnh/time.hpp"
@@ -333,7 +334,8 @@ private:
     SpriteCallback callback_{};
 };
 
-static_assert(sizeof(void*) != 4 || sizeof(SpriteAnimator) <= 64, "nnh::SpriteAnimator is 64 bytes on 3DS");
+static_assert(!detail::kThreeDsLayout || sizeof(SpriteAnimator) <= 64,
+              "nnh::SpriteAnimator is 64 bytes on 3DS");
 static_assert(sizeof(SpriteAnimator) <= 96, "nnh::SpriteAnimator grew");
 
 } // namespace nnh

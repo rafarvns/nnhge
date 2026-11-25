@@ -3,6 +3,7 @@
 // [Step × s]. The hot part is what update() touches every frame; the cold part (callbacks, event) is read
 // only on loop or finish.
 
+#include "nnh/detail/target_layout.hpp"
 #include "nnh/tween.hpp"
 #include "scene/scene_attachments.hpp"
 
@@ -63,7 +64,7 @@ struct Step {
     std::uint8_t reserved[3] = {};
 };
 
-static_assert(sizeof(SlotHot) + sizeof(SlotCold) <= (sizeof(void*) == 4 ? 192u : 256u),
+static_assert(sizeof(SlotHot) + sizeof(SlotCold) <= (detail::kThreeDsLayout ? 192u : 256u),
               "tween slot over its documented size (plan 015: ≈ 184 B on 3DS)");
 static_assert(sizeof(Step) == 8);
 

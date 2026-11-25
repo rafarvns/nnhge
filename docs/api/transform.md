@@ -61,7 +61,8 @@ Constants: `kQuarterTurn` (`float(π/2)`), `kHalfTurn`, `kThreeQuarterTurn`, `kF
   tests on float bits (signs, mirrors, finiteness, the inverse's threshold), in a fixed order, compiled with
   `-ffp-contract=off`. The tests and the [hierarchy self-check](../../examples/hierarchy/self_check.cpp) hold golden
   bits on every host compiler and on the 3DS. Two limits: the 3DS flushes subnormal floats to zero (the PC doesn't), so
-  values whose products fall below 2⁻¹²⁶ (≈ 10⁻³⁸) may differ; 32-bit x86 hosts (x87) aren't supported.
+  values whose products fall below 2⁻¹²⁶ (≈ 10⁻³⁸) may differ; 32-bit x86 hosts need SSE floats (`-msse2
+  -mfpmath=sse`: every golden holds there), x87's extended precision isn't supported.
 - **The sine.** `sin_cos(a)`: `q = a · float(2/π)`, `n` the nearest whole, `f = q − n` (exact); `|f| < 2⁻²⁰` snaps to a
   whole quarter; the quadrant `n & 3` picks `±sin_quarter(|f|)` and `±sin_quarter(1 − |f|)` (spec 015's degree-7
   polynomial, shared with the easings). Error < 2·10⁻⁶ against the exact sine. **Quarter turns are exact**:

@@ -336,7 +336,9 @@ spec; the order below is a proposal.
 
 ## M8 — 3D
 - [ ] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)
-  (3D foundation): **part 026a (mono) built 2026-11-24**, console run (T10.1) and Linux VM (T9.3) pending; part 026b
+  (3D foundation): **part 026a (mono) built 2026-11-24**, console run 1 done (math bit-identical; ≈ 100 µs of frame per
+  small draw, so a per-draw optimisation round followed: T10.5), console rerun (T10.6), probe read-back and Linux VM
+  (T9.3) pending; part 026b
   (stereo: the slider, per-eye drawing) planned. `<nnh/math3d.hpp>` (same bits on PC and 3DS, golden `A3BF4EDF`),
   `<nnh/mesh.hpp>` (code-built meshes, primitives, glTF 2.0 → `.nnhmesh` by `nnh-assetc mesh`), `<nnh/gfx3d.hpp>`
   (camera, ambient + 4 lights, draws between the 2D layers, culling, order, `to_screen`/`screen_ray`, probe pixels);

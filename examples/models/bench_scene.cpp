@@ -2,8 +2,10 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <nnh/gfx.hpp>
 #include <nnh/input.hpp>
+#include <nnh/profile.hpp>
 #include <nnh/time.hpp>
 #include <nnh/transform.hpp>
 #include <utility>
@@ -16,13 +18,23 @@ constexpr std::int64_t kMissedNs = 17'500'000;  // a frame took longer than one 
 
 double ms(std::int64_t ns) { return static_cast<double>(ns) / 1e6; }
 
+/// The previous frame's time in a profile scope (0 without it: the engine's scopes exist in Development builds only).
+std::int64_t scope_ns(const char* name) {
+    nnh::profile::ScopeStats scopes[nnh::profile::kMaxScopes];
+    const int n = nnh::profile::slowest(scopes, nnh::profile::kMaxScopes);
+    for (int i = 0; i < n; ++i) {
+        if (std::strcmp(scopes[i].name, name) == 0) return scopes[i].total.ns;
+    }
+    return 0;
+}
+
 } // namespace
 
 void BenchScene::on_enter() {
     const char* frames = std::getenv("MODELS_BENCH_FRAMES");
     frames_per_case_ = frames != nullptr && std::atoi(frames) > 0 ? std::atoi(frames) : 600;
     case_ = frame_ = missed_ = 0;
-    sum_ns_ = worst_ns_ = rec_ns_ = 0;
+    sum_ns_ = worst_ns_ = rec_ns_ = sub_ns_ = prep_ns_ = 0;
     failed_ = done_ = false;
     const nnh::Material3D tex{.base_color = {255, 255, 255, 255}, .texture = nnh::texture_id(world_.checker)};
     if (auto r = nnh::make_sphere(1.1f, 48, 128, tex)) dense_ = std::move(r.value());
@@ -30,15 +42,20 @@ void BenchScene::on_enter() {
     NNH_LOG_INFO(example, "3d bench: started (%d frames per case)", frames_per_case_);
 }
 
+// AC-8's CPU shares: draws = recording + the whole submission (culling, ordering, the platform's state and draw calls;
+// "gfx submit" holds the HUD's 2D too, so it errs high); cpu = recording + culling and ordering ("gfx3d prepare").
 void BenchScene::finish_case() {
-    const std::int64_t avg = sum_ns_ / frames_per_case_, rec = rec_ns_ / frames_per_case_;
+    const std::int64_t n = frames_per_case_, timed = n > 2 ? n - 2 : 1; // the scopes are read from the third frame
+    const std::int64_t avg = sum_ns_ / n, rec = rec_ns_ / n, sub = sub_ns_ / timed, prep = prep_ns_ / timed;
+    const std::int64_t cpu = case_ == 2 ? rec + prep : rec + sub;
     bool ok = missed_ == 0;
-    if (case_ == 1) ok = ok && rec < 4'000'000;
-    if (case_ == 2) ok = rec < 1'000'000; // CPU alone: no frame-rate target
+    if (case_ == 1) ok = ok && cpu < 4'000'000;
+    if (case_ == 2) ok = cpu < 1'000'000; // CPU alone: no frame-rate target
     failed_ = failed_ || !ok;
-    NNH_LOG_INFO(example, "3d bench: %s avg %.2f worst %.2f missed %d/%d rec %.3f%s", kCases[case_], ms(avg),
-                 ms(worst_ns_), missed_, frames_per_case_, ms(rec), ok ? "" : " (over target)");
-    sum_ns_ = worst_ns_ = rec_ns_ = 0;
+    NNH_LOG_INFO(example, "3d bench: %s avg %.2f worst %.2f missed %d/%d rec %.3f sub %.3f prep %.3f cpu %.3f%s",
+                 kCases[case_], ms(avg), ms(worst_ns_), missed_, frames_per_case_, ms(rec), ms(sub), ms(prep), ms(cpu),
+                 ok ? "" : " (over target)");
+    sum_ns_ = worst_ns_ = rec_ns_ = sub_ns_ = prep_ns_ = 0;
     missed_ = frame_ = 0;
     if (++case_ == 4) {
         done_ = true;
@@ -56,6 +73,8 @@ void BenchScene::update() {
         sum_ns_ += d;
         worst_ns_ = d > worst_ns_ ? d : worst_ns_;
         missed_ += d > kMissedNs ? 1 : 0;
+        sub_ns_ += scope_ns("gfx submit"); // the previous frame's, a frame of this case from its third frame on
+        prep_ns_ += scope_ns("gfx3d prepare");
     } else {
         sum_ns_ += kFrameNs;
     }

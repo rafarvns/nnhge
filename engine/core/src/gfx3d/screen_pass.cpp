@@ -7,12 +7,16 @@
 #include "gfx/world_split.hpp"
 #include "gfx3d/pass3d.hpp"
 #include "mesh/mesh_internal.hpp"
+#include "nnh/profile.hpp"
 
 namespace nnh::detail {
 namespace {
 
 /// Culls every record, marks blended ones and their view depths, and orders them.
 Order prepare(State3D& g, const Camera3D& cam, const Mat4& view) {
+#if defined(NNH_FLAVOR_DEVELOPMENT)
+    NNH_PROFILE_SCOPE("gfx3d prepare"); // inside "gfx submit"; AC-8's CPU-alone case reads it (examples/models bench)
+#endif
     const Frustum f = make_frustum(cam);
     for (int i = 0; i < g.count; ++i) {
         const DrawRecord& r = g.records[i];

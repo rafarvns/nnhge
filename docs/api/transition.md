@@ -236,14 +236,12 @@ channel between PC and 3DS; geometry never does.
 - Draws per frame: the table above, per screen (an iris at band 4: up to 244 for both screens).
 - Games that never use transitions: the scene stack pays one null check per frame, the input path one load and branch;
   `hello` grew 88 bytes of 3DS text.
-- Old 3DS, Development build (provisional: the budgets are set after the console rerun). Run 1 measured ≈ 0.096 ms a
-  frame for a fade or a wipe on both screens, 0.11 for a split, 0.17 for 8 blinds, 0.96 for an iris at band 4 (worst
-  frame 1.75), 0.10 for a frame with a loading step; ≈ 5.6 µs per extra rectangle. Most of a fade's cost is fixed: the
-  first solid rectangle after textured draws makes citro2d flush its batch and switch its texture setup (on each screen),
-  and the transition's code runs once a frame, out of the cache. After the optimisation round (rectangles recorded
-  directly, the profiler's own cost out of the bench) the expected numbers are ≈ 0.08, 0.09–0.10, 0.15, 0.87 (worst
-  ≈ 1.6) and ≈ 0.08 ms. Details: [plan 023](../../specs/023-scene-transitions/plan.md) ("Console run 1", "Optimisation
-  round (T10.3)").
+- Old 3DS, Development build (console run 2, 2026-11-25), both screens, per frame: a fade 0.083 ms, a wipe 0.085, a
+  split 0.096, 8 blinds 0.153, an iris at band 4 0.835 (worst frame 1.46), a frame with a loading step 0.083 (the
+  engine's share); ≈ 5 µs per extra rectangle. Budgets (measurement + ≈ 25 %): 0.11, 0.11, 0.12, 0.19, 1.05 and 0.11 ms.
+  Most of a fade's cost is gfx's, not the transition's: the first solid rectangle after textured draws makes citro2d
+  flush its batch and switch its texture setup on each screen (≈ 0.063 ms, the bench's `rect` line); the module's own
+  share is ≈ 0.02 ms. Details: [plan 023](../../specs/023-scene-transitions/plan.md) ("Console run 2 and budgets set").
 - The example's bench (`TRANSITIONS_DEMO=bench`, Y) judges the Old 3DS targets in Development builds and logs gfx's
   share of one solid rectangle per screen apart (`transitions bench: rect …`). On the PC its numbers include the SDL
   software renderer filling the overlay's pixels (≈ 0.3 ms per full-screen pair) and fail the console's targets: the

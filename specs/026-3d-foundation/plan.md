@@ -919,3 +919,27 @@ once (combiners, lights, a shininess table of 322 words) can exceed it, as befor
 `build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/bench.nnhs` — record each case's `avg`, `rec`,
 `sub`, `prep` and `cpu`; the GPU per draw ≈ (`avg` − `rec` − `sub` − the frame's other CPU) / visible draws.
 
+
+## Console run 2 (T10.6, 2026-11-25, Old 3DS, Development build)
+
+After T10.5, script-owned controls. Log: `build/logs/models-20261125-092706.txt` (`bench.nnhs`, 600 frames per case).
+Times in ms per frame.
+
+| Case | Run 1 avg | Expected | Run 2 avg (worst) | missed | `rec` | `sub` | `prep` | `cpu` (AC-8's share) | AC-8 target |
+|------|-----------|----------|-------------------|--------|-------|-------|--------|----------------------|-------------|
+| `throughput 12000` | 16.71 | 16.71 | 16.71 (17.05) | 0/600 | 0.026 | 0.526 | 0.016 | 0.552 | 60 Hz: PASS |
+| `draws 256` | 29.21 | 25–27 | **28.34** (36.80) | 598/600 | 3.025 | 8.792 | 0.492 | 11.817 (rec + sub) | 4 ms, 60 Hz: over |
+| `cpu 512` | 33.14 | 29–31 | **30.22** (40.22) | 598/600 | 6.074 | 9.196 | 0.969 | 7.044 (rec + prep) | 1 ms: over |
+| `fill` | 16.71 | 16.71 | 16.71 (16.99) | 0/600 | 0.052 | 0.624 | 0.024 | 0.676 | 60 Hz: PASS |
+
+**Where `draws 256` goes now.** CPU submission = 8.79 ms / 256 = **34 µs per draw** (estimate ≈ 37: the cache works as
+designed). Recording 3.03 ms (11.8 µs per draw; run 1 2.76: the two new scopes and the HUD). The frame's other CPU is
+≈ 0.5 ms (the `throughput` case's whole `cpu`). So the GPU's own share is ≈ 28.34 − 3.03 − 8.79 − 0.5 ≈ **16 ms, ≈ 63 µs
+per draw**: the larger half, and the reason the gain was ≈ 0.9 ms instead of 2–4 (the T10.5 estimate assumed 40–50 µs
+of GPU per draw and a 0–20 % saving there). `cpu 512` gained 2.9 ms, inside its range.
+
+**What follows.** CPU and GPU still run one after the other (`C3D_FRAME_SYNCDRAW`, plan "Optimisation round"). Overlapped,
+a `draws 256` frame would cost ≈ max(CPU ≈ 12.3, GPU ≈ 16) ≈ 16 ms: about 60 Hz with no margin. The per-draw GPU time
+(≈ 63 µs for a 12-triangle cube: setup and the post-vertex-cache clear, not pixels) only falls with fewer draws
+(batching or instancing). Budgets for AC-8 wait for the maintainer's decision on the overlap (T10.2): set now from this
+run + ≈ 25 % (`draws 256` cpu < 14.8 ms, avg ≈ 35 ms; `cpu 512` cpu < 8.8 ms), or after the overlap's own console run.

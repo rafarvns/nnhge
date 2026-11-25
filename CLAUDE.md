@@ -154,7 +154,7 @@ Sprite animation (spec 016, implemented; demo `examples/animation`): `<nnh/anima
 sprite (`update()` on the frame clock, notices by callback or returned view, `draw_options()`); `<name>.ase.json`
 Aseprite exports → `nnh-assetc sprite` → `load_sprite_library("<name>")` (D31; fixtures in `tests/data/aseprite/`)
 ([api/animation.md](docs/api/animation.md)).
-Particles (spec 024, implemented, console check pending; D39; demo `examples/particles`): `<nnh/particles.hpp>` —
+Particles (spec 024, implemented, console runs done, budgets set; D39; demo `examples/particles`): `<nnh/particles.hpp>` —
 `ParticleEmitter::create(desc, capacity)` (one block, 48 B per particle), one plain `ParticleDesc` (rate, bursts,
 one-shots, shapes, cone/outward directions, gravity, damping, spin, colour/size keys over life, sprite frames, world or
 local space), `emit`/`emit_at`, `update()` once per frame or `bind(scene)` (D30), `draw(screen[, texture])` = one
@@ -182,7 +182,7 @@ limits (`set_limits(map.bounds())`), seeded trauma shake, zoom about the centre,
 screens as one world) or two rigs for two views, `to_world`/`to_screen`, `debug_draw()`. `Camera2D::zoom` (0.5–4)
 is applied by core to sprites, text, shapes and tile layers (snapped tile edges, row chunks below zoom 1; zoom 1
 byte-identical) ([api/camera.md](docs/api/camera.md), [gfx.md#zoom](docs/api/gfx.md#zoom)).
-Scene transitions (spec 023, implemented, console run 1 done, bench rerun pending after T10.3; D38; demo `examples/transitions`):
+Scene transitions (spec 023, implemented, console runs done, budgets set; D38; demo `examples/transitions`):
 `<nnh/transition.hpp>` — `transition::replace/push/pop/cover(scene, {.effect, .reveal, .bottom, .tall, .out, .hold,
 .in, .out_ease, .loading, .on_covered, .on_finished, .publish, ...})`: out → covered (the stack change through spec
 001's deferred path, `on_covered`, a loading step per frame, the hold) → in, whole 60 Hz frames, easings from
@@ -192,7 +192,7 @@ per screen or across both (`tall`), `reveal_at` for the reopening iris; no scene
 queries `running/phase/coverage/...`; pure `effect_rects/draw_effect`. Run by a scene-stack hook (one null check);
 self-check `BFE1D810` ([api/transition.md](docs/api/transition.md)). The platformer's doors use a tall iris
 (`PLATFORMER_DEMO=doors`, `tests/doors.nnhs`).
-3D foundation (spec 026, part 026a mono implemented, console run pending; 026b stereo planned; D41–D44; demo
+3D foundation (spec 026, part 026a mono implemented, console run 2 done, budgets pending; 026b stereo planned; D41–D44; demo
 `examples/models`): `<nnh/math3d.hpp>` — `Vec3`, `Quat`, `Mat4`, `Transform3D`, `look_at`, `perspective`, `slerp`… with
 the same bits on PC and 3DS ([api/math3d.md](docs/api/math3d.md)); `<nnh/mesh.hpp>` — `create_mesh`, `make_cube/plane/
 sphere`, `load_mesh("models/ship")` from glTF 2.0 converted by `nnh-assetc mesh` into quantised `.nnhmesh` (fixtures in

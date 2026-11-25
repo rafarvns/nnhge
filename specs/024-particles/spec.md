@@ -1,7 +1,7 @@
 # Spec 024: Particles
 
 Status: implemented 2026-11-24 (Linux T9.1 passed 2026-11-24; Old 3DS run 1: logic PASS, emit512 and offscreen over target;
-T10.3 optimisation round done on the PC, console rerun pending; FR-21/AC-3 by the fallback the spec allows,
+T10.3 optimisation round done; console run 2 done 2026-11-25 and the budgets set from it; FR-21/AC-3 by the fallback the spec allows,
 see plan "Stage 5 results"). Approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take"
 item and open question as recommended; to review in the morning). Implemented after spec 022 (it uses 022's transform value and sine)
 Author: NNHGE maintainers · Date: 2026-11-23
@@ -258,8 +258,11 @@ within a particle budget per frame that is separate from `max_draws`. The simula
   only opens the Homebrew Launcher and presses Y, and `nnh run particles --script examples/particles/tests/check.nnhs`
   passes; the same script passes with `--pc`. The verdict, log and screenshots are in the saved log folder.
 - **AC-7 Cost on the console.** The `bench` mode, measured on an Old 3DS with the profiler and logged as
-  `particles bench: PASS <numbers>` (or FAIL). **Targets** (the plan confirms them before code; they predate any
-  console measurement, and are estimated from the Old 3DS's 268 MHz ARM11 (VFPv2, no NEON), its 16 KB data cache with
+  `particles bench: PASS <numbers>` (or FAIL). **Budgets** set 2026-11-25 from console run 2 + ≈ 25 % (plan "Console
+  run 2 and budgets set"): `update()` of 1024 particles **under 0.8 ms** (measured 0.629), 16 × 64 **under 0.9 ms**
+  (0.693), emitting 512 **under 2.35 ms** (1.872), off-screen submit **under 0.06 ms** (0.047); the draw ratio (≤ 0.75,
+  measured 0.62) and the 60 Hz frame are unchanged. The first **targets** below (the plan confirmed them before code;
+  they predated any console measurement, and were estimated from the Old 3DS's 268 MHz ARM11 (VFPv2, no NEON), its 16 KB data cache with
   32-byte lines, no L2, no hardware prefetcher and ~110 cycles per miss: 1024 particles of ~48 bytes stream ~1500
   lines per update, about 0.6 ms of misses alone):
   - `update()` of **1024 live particles** in one emitter in steady state (rate emission, gravity, drag, angular

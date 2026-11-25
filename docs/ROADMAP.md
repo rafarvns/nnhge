@@ -175,8 +175,9 @@ transition or input-block symbol in either. `<nnh/transition.hpp>` 8,476 preproc
 
 ## M7 — Game structure
 - [x] Tilemaps and collision — [spec 012](../specs/012-tilemaps-and-collision/spec.md) (implemented 2026-11-22): pure `<nnh/collision.hpp>` (box queries, `collision::move` through any grid, one-way cells, no tunnelling; [api/collision.md](api/collision.md)); `<nnh/tilemap.hpp>` — maps built in code or drawn in Tiled (`.tmj` assets converted by `nnh-assetc` at build time, D27, and loaded with `load_tilemap`; bounded and fuzzed readers), objects, properties, animated tiles, a collision grid ([api/tilemap.md](api/tilemap.md), guide [Levels in Tiled](guides/levels.md)); `gfx::draw_tilemap` as tile batches (D26). **Old 3DS XL: 4 full 16×16 layers + 300 sprites at 60 Hz (avg 16.7 ms, worst 17.4 ms, 0 missed of 600); limits 6 layers / 600 sprites.** `examples/platformer`: level 1 from Tiled, the bonus level in code, a replay checked against `tests/level.nnhs`. Still with the maintainer: T7.4 (`tests/level.nnhs` on the Old 3DS); Linux, ASan/UBSan and the three libFuzzer targets ran clean on the build VM
-- [x] Scene transitions (spec 023, implemented on PC; Old 3DS run 1: logic and doors PASS, bench over target
-  for split and loading; optimisation round T10.3 done, console rerun pending): `<nnh/transition.hpp>` —
+- [x] Scene transitions (spec 023, implemented; Old 3DS runs 1 and 2: logic and doors PASS; after the T10.3
+  optimisation round the bench budgets were set from run 2 on 2026-11-25: fade/wipe 0.11, split 0.12, blinds 0.19,
+  iris 1.05, loading 0.11 ms): `<nnh/transition.hpp>` —
   replace/push/pop/cover through a fade, wipe, split, blinds, iris or a custom effect, on one or both screens or one
   tall area, a loading step while covered, input blocked (`input::set_blocked` too), whole frames, self-check
   `BFE1D810`; the platformer's doors close an iris on the player ([api/transition.md](api/transition.md))
@@ -283,7 +284,8 @@ spec; the order below is a proposal.
 - [ ] **UI widgets** (Godot Control nodes, Unity UI): labels, buttons, lists, 9-slice panels and layout boxes built
   in code, focus moved with the D-Pad and touch on the bottom screen; menus without drawing rectangles by hand
 - [x] **Particles** (Godot GPUParticles2D/CPUParticles2D, Unity Particle System) — [spec 024](../specs/024-particles/spec.md),
-  **implemented 2026-11-24**, Old 3DS check pending (T10.2): `<nnh/particles.hpp>` — game-owned emitters in one block
+  **implemented 2026-11-24**, Old 3DS runs 1 and 2 done (self-check `C5EF1A84` PASS; after the T10.3 round the budgets
+  were set from run 2 on 2026-11-25: update 1024 0.8 ms, emit 512 2.35 ms, off-screen 0.06 ms, draw ratio ≤ 0.75): `<nnh/particles.hpp>` — game-owned emitters in one block
   (48 B per particle) configured by one plain `ParticleDesc`: rate, bursts, one-shots, `emit`/`emit_at`; point, box,
   circle and line shapes, cone or outward directions; gravity, damping, spin; colour and size keys over life; sprite
   frames; world or local space through spec 022's transforms with sub-frame spreading; a seeded counter-based
@@ -295,7 +297,8 @@ spec; the order below is a proposal.
   from a table in the assets, the system language picked by default; the built-in font covers Latin-1
 - [x] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves — [spec 027](../specs/027-save-versions/spec.md),
-  **implemented 2026-11-24**, Old 3DS check pending (T10.2): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
+  **implemented 2026-11-24**, Old 3DS runs 1 and 2 done (self-check `C5EF1A84` PASS; after the T10.3 round the budgets
+  were set from run 2 on 2026-11-25: update 1024 0.8 ms, emit 512 2.35 ms, off-screen 0.06 ms, draw ratio ≤ 0.75): `<nnh/saves.hpp>` — `NNH_SAVE_TYPE`/`STRUCT`/`SUMMARY`
   with `NNH_SAVE_FIELD(member, id)`, retired ids, `NNH_SAVE_VERSION` and compile-time-complete `NNH_SAVE_STEP` chains
   (D45, D46); a self-describing little-endian format (tagged fields, packed sequences, one template per list of
   structs: 5 % framing) inside spec 002's `NNHS` container, the same bytes on PC and 3DS (golden v1–v3 files); the
@@ -337,8 +340,9 @@ spec; the order below is a proposal.
 ## M8 — 3D
 - [ ] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)
   (3D foundation): **part 026a (mono) built 2026-11-24**, console run 1 done (math bit-identical; ≈ 100 µs of frame per
-  small draw, so a per-draw optimisation round followed: T10.5), console rerun (T10.6), probe read-back and Linux VM
-  (T9.3) pending; part 026b
+  small draw, so a per-draw optimisation round followed: T10.5), console run 2 done 2026-11-25 (256 small draws 28.3 ms:
+  CPU ≈ 12 ms then GPU ≈ 16 ms, one after the other); budgets after the maintainer's decision on overlapping CPU and
+  GPU, probe read-back and Linux VM (T9.3) pending; part 026b
   (stereo: the slider, per-eye drawing) planned. `<nnh/math3d.hpp>` (same bits on PC and 3DS, golden `A3BF4EDF`),
   `<nnh/mesh.hpp>` (code-built meshes, primitives, glTF 2.0 → `.nnhmesh` by `nnh-assetc mesh`), `<nnh/gfx3d.hpp>`
   (camera, ambient + 4 lights, draws between the 2D layers, culling, order, `to_screen`/`screen_ray`, probe pixels);

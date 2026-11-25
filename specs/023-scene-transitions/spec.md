@@ -1,7 +1,8 @@
 # Spec 023: Scene transitions
 
 Status: implemented 2026-11-24, Linux checks T9.1 passed 2026-11-24, console run 1 done 2026-11-24 (logic and doors PASS,
-bench split and loading over target), optimisation round T10.3 done on the PC, console rerun pending (approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
+bench split and loading over target), optimisation round T10.3 done, console run 2 done 2026-11-25 and the budgets set
+from it (approved 2026-11-23 (overnight pre-approval by the maintainer: every "Decisions to take" item and open
 question as recommended; to review in the morning). The decision row is D38 (D37 is spec 022's)
 Author: NNHGE maintainers · Date: 2026-11-23
 Depends on: [spec 001](../001-event-bus-and-scenes/spec.md) (the scene stack, deferred `push`/`pop`/`replace`,
@@ -293,12 +294,13 @@ pixels on PC and 3DS. A game that keeps calling `scenes::replace` pays nothing.
   taken during a door's iris (the plan picks a start position or a scripted run that reaches a door) is checked by
   reading the PNG.
 - **AC-8 Cost on the console.** The `bench` mode, measured on an Old 3DS with the profiler and logged as
-  `transitions bench: PASS <numbers>` (or FAIL). **Targets** (the plan confirms them before code; they predate any
-  console measurement), CPU per frame for the transition step plus recording and submitting its overlay, both screens:
-  - fade, wipe or split: **under 0.1 ms**;
-  - blinds with 8 bars: **under 0.3 ms**;
-  - iris (circle, 4-pixel bands, centre in the middle — the heaviest default): **under 2 ms**;
-  - the frame with the loading step: the engine's own share (excluding the game's slice) **under 0.05 ms**;
+  `transitions bench: PASS <numbers>` (or FAIL). **Budgets** (set 2026-11-25 from console run 2 + ≈ 25 %, plan
+  "Console run 2 and budgets set"; the first targets were 0.1, 0.3, 2 and 0.05 ms), CPU per frame for the transition
+  step plus recording and submitting its overlay, both screens:
+  - fade or wipe: **under 0.11 ms** (measured 0.083, 0.085); split: **under 0.12 ms** (0.096);
+  - blinds with 8 bars: **under 0.19 ms** (0.153);
+  - iris (circle, 4-pixel bands, centre in the middle — the heaviest default): **under 1.05 ms** (0.835);
+  - the frame with the loading step: the engine's own share (excluding the game's slice) **under 0.11 ms** (0.083);
   - `examples/platformer`'s level 1 at 60 Hz through ten door irises (no frame over 25 ms, as the replay judges).
   If a target is missed, the implementation is optimised first; if it is still missed, the budget is set from the first
   console measurement with margin and written in the spec and the docs with the measured numbers (the maintainer's policy

@@ -1135,3 +1135,29 @@ Rerun (Homebrew Launcher open, press **Y** for each):
 build/pc-debug/tools/nnh/nnh run transitions --script examples/transitions/tests/check.nnhs
 build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/doors.nnhs
 ```
+
+## Console run 2 and budgets set (2026-11-25, Old 3DS, Development build)
+
+Scripts own the controls since spec 013's amendment (nobody's input counts during a run). Logs:
+`build/logs/transitions-20261125-090223.txt`, `build/logs/platformer-20261125-092129.txt`.
+
+- `check.nnhs`: `transitions: PASS BFE1D810`, every showcase line as before; the bench failed only on `loading engine`
+  (old target), as expected.
+- `doors.nnhs`: ten irises at the PC's frames, `doors: done 10 irises frames 891 worst 20.4 ms avg 16.7 ms: 60 Hz PASS`.
+
+| Workload | Run 1 | Expected | Run 2 avg (worst) | Old target | Budget (run 2 + ≈ 25 %) |
+|----------|-------|----------|-------------------|------------|--------------------------|
+| base submit / probe | — | — | 0.2651 / 0.0067 | — | — |
+| rect (not judged) | — | 0.03–0.05 | 0.0628 (0.178) | — | — |
+| fade | 0.0957 | 0.076–0.086 | 0.0829 (0.199) | < 0.1 | **< 0.11 ms** |
+| wipe | 0.0962 | 0.076–0.086 | 0.0845 (0.193) | < 0.1 | **< 0.11 ms** |
+| split | 0.1106 | 0.090–0.100 | 0.0956 (0.213) | < 0.1 | **< 0.12 ms** |
+| blinds8 | 0.1747 | 0.145–0.157 | 0.1526 (0.280) | < 0.3 | **< 0.19 ms** |
+| iris | 0.96 (1.75) | 0.86–0.87 (≈ 1.59) | 0.8351 (1.456) | < 2 | **< 1.05 ms** |
+| loading engine | 0.1046 | 0.075–0.086 | 0.0825 (0.198) | < 0.05 | **< 0.11 ms** |
+
+Every number landed in its expected range. The `rect` line confirms item 2: one solid rectangle per screen after text
+costs gfx ≈ 0.063 ms, i.e. three quarters of a fade; the transition module's own share of a fade is ≈ 0.02 ms. The
+budgets replace the old targets (the maintainer's policy: no target predating the measurement) in AC-8,
+`examples/transitions/bench.cpp` and `docs/api/transition.md`. The platformer's door verdict (no frame over 25 ms) is
+unchanged.

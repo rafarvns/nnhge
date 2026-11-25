@@ -1,6 +1,6 @@
 # Tasks 024: Particles
 
-Status: implemented 2026-11-24 through stage 8 and the stage 11 docs and stage 9 (T9.1 passed 2026-11-24; console run 1 recorded and the T10.3 round done on the PC 2026-11-24; the rerun and the merge
+Status: implemented 2026-11-24 through stage 8 and the stage 11 docs and stage 9 (T9.1 passed 2026-11-24; console run 1 recorded, the T10.3 round done 2026-11-24, console run 2 and budgets 2026-11-25; the merge
 T11.7 for the lead);
 approved 2026-11-24 (overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
@@ -310,14 +310,15 @@ hierarchy golden, `tweens: PASS B44CA3F6`, `data check: PASS checksum 0xD5BD3020
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths). Covers AC-5, AC-6, AC-7.
   *Run 1 (2026-11-24): the particles bench numbers are in plan.md "Console run 1" (self-check PASS; `emit512` and
   `offscreen` over target).*
-- [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
+- [x] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risk 1's list (and risk 2's tint-mode tracking if `draw512` shows flushes) without changing a result
   (every golden holds; tests first for any behaviour-preserving rewrite); then T10.2 run 1 again; if still missed, the
   budget is set from the measurement with ≈ 25 % margin, written in the spec's AC-7, `bench_scene.cpp` and
   `docs/api/particles.md` with the numbers. Files: plan.md ("Optimisation round", "Console run 2 and budgets set").
   Covers AC-7. *Optimisation round done on the PC (2026-11-24, branch `opt-024`): shape-specialised births with the two
   sines side by side (`sin_cos_flat2`), the frames' cull reach remembered per texture size, the bench's timer cost taken
-  out; every golden unchanged; see plan.md "Optimisation round (T10.3)". Pending: the console rerun, then the budgets.*
+  out; every golden unchanged; see plan.md "Optimisation round (T10.3)". Console run 2 (2026-11-25): `PASS C5EF1A84`; `emit512` 1.872 ms
+  still over 1.0, `offscreen` 0.047 PASS; budgets set from run 2 + ≈ 25 % (plan.md "Console run 2 and budgets set").*
 
 ## Stage 11: docs, roadmap, status
 

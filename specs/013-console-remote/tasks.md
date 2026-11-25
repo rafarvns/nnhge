@@ -445,4 +445,7 @@ is past the 0.10 dead zone and leaked into `examples/hierarchy` `check.nnhs:49` 
 - [x] **A5** ctest `hierarchy_check_script_resting_pad_pc` (`NNH_SIM_INPUT` resting pad): FAIL at line 49 without the
   flag, PASS with it; 19 mutants on the new logic, all killed
 - [x] **A6** Docs: spec, plan, `testing-on-the-console.md`, `nnh-tool.md`, `debugging.md`, ROADMAP
-- [ ] **A7** Console: the hierarchy script on the Old 3DS XL passes with the resting pad, and the warning shows
+- [x] **A7** Console: the hierarchy script on the Old 3DS XL passes with the resting pad, and the warning shows
+  *2026-11-25: the scripts own the controls on the console (hierarchy, transitions, doors, particles and models all
+  attached with `remote control on (script: only its input counts)`; hierarchy `nnh: PASS`, every bench PASS). The pad
+  was at rest in that run, so no warning showed; the warning path is covered by the PC ctest (A5).*

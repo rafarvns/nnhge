@@ -7,8 +7,8 @@ namespace tr = nnh::transition;
 namespace {
 
 constexpr BenchWorkload kWorkloads[] = {
-    {"base", 0},   {"rect", 0},    {"fade", 0.1},          {"wipe", 0.1}, {"split", 0.1},
-    {"blinds8", 0.3}, {"iris", 2.0}, {"loading engine", 0.05},
+    {"base", 0},   {"rect", 0},    {"fade", 0.11},          {"wipe", 0.11}, {"split", 0.12},
+    {"blinds8", 0.19}, {"iris", 1.05}, {"loading engine", 0.11},
 };
 static_assert(sizeof kWorkloads / sizeof kWorkloads[0] == static_cast<int>(BenchLoad::Count));
 

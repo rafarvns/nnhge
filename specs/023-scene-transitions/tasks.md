@@ -1,7 +1,7 @@
 # Tasks 023: Scene transitions
 
 Status: implemented 2026-11-24 (stages 0–8 and 11; Linux checks T9.1 passed; console run 1 done, optimisation round
-T10.3 done on the PC, the console rerun pending; merge T11.7 by the lead)
+T10.3 done; console run 2 done 2026-11-25 and the budgets set; merge T11.7 by the lead)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -282,7 +282,7 @@ replay lines **present in the tree** (never edited by this spec); `actions` and 
   builds of `transitions`, `platformer` and `actions` without a warning; T7.7's table still true; `hello.elf` within
   T0.1 + 96 bytes; plan.md's "Stage 10: console run (prepared)" completed with the recorded goldens, checkpoints,
   showcase lines and door frames. Covers AC-9, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Four runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** Old 3DS, nobody touching it after Y. Four runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run transitions --script examples/transitions/tests/check.nnhs` → every
      `transitions: <frame> sum` line and `transitions: PASS` equal the PC's, every `transition: done … seen 0`, the iris
      centre line, the bench lines and the verdict (numbers recorded); screenshots read back (geometry equal to the
@@ -295,7 +295,7 @@ replay lines **present in the tree** (never edited by this spec); `actions` and 
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths). Covers AC-6, AC-7, AC-8.
   *Runs 1 and 2 done 2026-11-24: `PASS BFE1D810`, doors `60 Hz PASS` (worst 20.9 ms); bench FAIL (split 0.1106 ms,
   loading engine 0.1046 ms), numbers in plan.md "Console run 1".*
-- [ ] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
+- [x] **T10.3** (only if a bench target is missed) Console bench refinement: find the cost in the 3ds-dev disassembly,
   apply plan risk 1's list without changing a result (every golden holds, or AC-3's golden re-recorded on the PC first
   for option (c)); then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin,
   written in the spec's AC-8, `bench_scene.cpp` and `docs/api/transition.md` with the numbers. Files: plan.md
@@ -304,6 +304,9 @@ replay lines **present in the tree** (never edited by this spec); `actions` and 
   nested loading scope and music removed from the measurement, a `rect` line for gfx's share; the overlay records
   rectangles directly (187 → 73 instructions each) and `isqrt` starts with `clz`; every golden unchanged. Pending: the
   console rerun of run 1 (and doors), then budgets from the measurement if loading still misses.*
+  *Console run 2 done 2026-11-25: `PASS BFE1D810`, doors `60 Hz PASS` (worst 20.4 ms); every workload in its expected
+  range, loading engine 0.0825 ms still over 0.05; budgets set from run 2 + ≈ 25 % (plan.md "Console run 2 and budgets
+  set").*
 
 ## Stage 11: docs, roadmap, status
 

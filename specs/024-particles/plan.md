@@ -1188,3 +1188,25 @@ build/pc-debug/tools/nnh/nnh run particles --script examples/particles/tests/che
 
 Expect `particles: PASS C5EF1A84` and the same logic lines. The base line now reads `particles bench: base gfx submit
 avg X ms timer Y ms`. Record the bench lines in "Console run 2 and budgets set".
+
+## Console run 2 and budgets set (2026-11-25, Old 3DS, Development build)
+
+Script-owned controls (spec 013's amendment). Log:
+`build/logs/particles-20261125-092316.txt`. `particles: 3600 sum C5EF1A84`, `particles: PASS C5EF1A84`, every showcase line as before; the
+bench failed only on `emit512` (old target). Base submit 0.3211 ms, timer 0.0066 ms.
+
+| Workload | Run 1 | Expected | Run 2 avg (worst) | Old target | Budget (run 2 + ≈ 25 %) |
+|----------|-------|----------|-------------------|------------|--------------------------|
+| `update1024` | 0.627 | 0.59–0.61 | 0.629 (0.737) | < 1.2 | **< 0.8 ms** |
+| `update16x64` | 0.703 | 0.66–0.69 | 0.693 (0.877) | < 1.4 | **< 0.9 ms** |
+| `emit512` | 2.546 | 1.45–1.8 | **1.872** (1.962) | < 1.0 | **< 2.35 ms** |
+| `draw512` (informative) | — | — | 3.959 | — | — |
+| draw ratio | 0.65 | 0.65 | 0.62 (7.73 / 12.47 µs) | ≤ 0.75 | **≤ 0.75** (a design ratio, kept) |
+| `offscreen` | 0.058 | 0.040–0.047 | 0.047, 512 culled | < 0.05 | **< 0.06 ms** |
+| `frame` (512 + 300 sprites) | 17.8 worst | unchanged | 18.7 worst, 0 of 600 missed | 60 Hz | 60 Hz (unchanged) |
+
+`emit512` improved by 26 % (2.55 → 1.87 ms, ≈ 3.7 µs per birth) but landed just above the estimate: births run at
+≈ 1.9 cycles per instruction, not 1.4–1.7 (the spilled registers of `births<Circle>`, 45 stack accesses, cost more than
+assumed). Further cuts change results (plan "Optimisation round (T10.3)", last paragraph), so the budget follows the
+measurement. `offscreen` passed its old target, tight, as expected. The budgets replace the old targets in AC-7,
+`examples/particles/bench_scene.cpp` (`kTargets`, the offscreen check) and `docs/api/particles.md`.

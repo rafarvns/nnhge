@@ -13,7 +13,7 @@ namespace {
 const char* const kNames[BenchScene::kPhases] = {"base", "update1024", "update16x64", "emit512",
                                                  "draw512", "sprite512", "offscreen", "frame"};
 // AC-7's targets as written (they predate any console measurement; the console run sets them with margin if missed).
-constexpr double kTargets[BenchScene::kPhases] = {0, 1.2, 1.4, 1.0, 0, 0, 0, 0};
+constexpr double kTargets[BenchScene::kPhases] = {0, 0.8, 0.9, 2.35, 0, 0, 0, 0};
 
 double scope_ms(const char* name) {
     nnh::profile::ScopeStats scopes[nnh::profile::kMaxScopes];
@@ -70,7 +70,7 @@ void BenchScene::finish() {
                       particle_us, sprite_us, ratio, judge, judged() ? (pass ? "PASS" : "FAIL") : "");
     } else if (p == kOffscreen) {
         const double submit = cost(p);
-        pass = submit < 0.05 && culled_ == ParticleBench::kDrawn;
+        pass = submit < 0.06 && culled_ == ParticleBench::kDrawn;
         std::snprintf(line, sizeof line, "particles bench: offscreen submit %.3f ms culled %d%s %s", submit, culled_,
                       judge, judged() ? (pass ? "PASS" : "FAIL") : "");
     } else if (p == kFrame) {

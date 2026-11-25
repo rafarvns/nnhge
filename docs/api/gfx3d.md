@@ -109,8 +109,8 @@ Old 3DS targets (AC-8, measured by `examples/models` bench mode, results in [pla
 12 000 textured lit triangles at 60 Hz, 256 draws with the CPU's share under 4 ms, 512 recorded and culled draws under
 1 ms, three full-screen blended planes at 60 Hz. The simulator doesn't model the PICA200's speed.
 
-First console run (Old 3DS XL, provisional until the rerun sets the budgets): 12 000 triangles and the fill case hold
-60 Hz; each small draw costs about 100 µs of frame time (recording ≈ 11 µs, the rest submission and the GPU, which run
-one after the other within a frame), so 256 separate draws take ≈ 29 ms. After the optimisation round (state sent only
-when it changes) the estimate is ≈ 90 µs. Draw fewer, larger meshes where you can; consecutive draws with the same mesh
-and material are the cheapest (the vertex buffer, texture and colour aren't sent again).
+Console run 2 (Old 3DS XL, 2026-11-25, after the optimisation round; budgets pending): 12 000 triangles and the fill case
+hold 60 Hz; each small draw costs about 110 µs of frame time — recording ≈ 12 µs, submission ≈ 34 µs, the GPU ≈ 63 µs,
+which run one after the other within a frame — so 256 separate draws take ≈ 28 ms. Draw fewer, larger meshes where you
+can; consecutive draws with the same mesh and material are the cheapest (the vertex buffer, texture and colour aren't
+sent again).

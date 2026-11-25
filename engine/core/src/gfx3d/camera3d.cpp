@@ -23,7 +23,9 @@ bool camera_valid(const Camera3D& c) {
     const float n = ((q.x * q.x + q.y * q.y) + q.z * q.z) + q.w * q.w;
     const bool finite_all = finite(c.position.x) && finite(c.position.y) && finite(c.position.z) && finite(n) &&
                             finite(c.near_plane) && finite(c.far_plane) && finite(c.fov_y) && finite(c.ortho_height);
-    return finite_all && n > 1e-20f && c.near_plane > 1e-6f && c.far_plane > c.near_plane &&
+    const bool stereo_ok = finite(c.stereo.strength) && finite(c.stereo.focal_distance) && c.stereo.strength >= 0.0f &&
+                           c.stereo.focal_distance > 1e-6f; // spec 026 FR-14
+    return finite_all && stereo_ok && n > 1e-20f && c.near_plane > 1e-6f && c.far_plane > c.near_plane &&
            (c.projection == Projection::Orthographic ? c.ortho_height > 1e-6f
                                                      : (c.fov_y > 1e-4f && c.fov_y < 3.1414f));
 }

@@ -97,6 +97,15 @@ class TileBatches {
     int tiles() const { return tiles_; }     ///< quads expanded this frame
     int dropped() const { return dropped_; } ///< quads over the budget this frame
 
+    /// The frame's budget spent so far, and going back to it: a stereo frame expands the top screen's batches once
+    /// per eye but spends the budget once (spec 026 FR-15).
+    struct Spent {
+        int tiles = 0;
+        int dropped = 0;
+    };
+    Spent spent() const { return {tiles_, dropped_}; }
+    void rewind(Spent s) { tiles_ = s.tiles, dropped_ = s.dropped; }
+
   private:
     TileBatchRecord* records_ = nullptr;
     platform::TileQuad2D* scratch_ = nullptr;

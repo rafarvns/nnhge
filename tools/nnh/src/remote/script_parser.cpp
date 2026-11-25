@@ -11,24 +11,26 @@ namespace {
 struct CommandInfo {
     const char* name;
     Command command;
-    std::size_t args;
+    std::size_t args;     ///< at least
+    std::size_t max_args; ///< at most
     const char* usage;
 };
 
 constexpr CommandInfo kCommands[] = {
-    {"wait", Command::Wait, 1, "wait N"},
-    {"press", Command::Press, 1, "press B[+B...]"},
-    {"release", Command::Release, 1, "release B[+B...] | release all"},
-    {"hold", Command::Hold, 2, "hold B[+B...] N"},
-    {"tap", Command::Tap, 1, "tap B[+B...]"},
-    {"stick", Command::Stick, 3, "stick circle|cstick X Y"},
-    {"touch", Command::Touch, 2, "touch X Y"},
-    {"drag", Command::Drag, 3, "drag X Y N"},
-    {"untouch", Command::Untouch, 0, "untouch"},
-    {"screenshot", Command::Screenshot, 1, "screenshot NAME"},
-    {"expect", Command::Expect, 2, "expect \"TEXT\" N"},
-    {"fail-on", Command::FailOn, 1, "fail-on \"TEXT\""},
-    {"end", Command::End, 0, "end"},
+    {"wait", Command::Wait, 1, 1, "wait N"},
+    {"press", Command::Press, 1, 1, "press B[+B...]"},
+    {"release", Command::Release, 1, 1, "release B[+B...] | release all"},
+    {"hold", Command::Hold, 2, 2, "hold B[+B...] N"},
+    {"tap", Command::Tap, 1, 1, "tap B[+B...]"},
+    {"stick", Command::Stick, 3, 3, "stick circle|cstick X Y"},
+    {"touch", Command::Touch, 2, 2, "touch X Y"},
+    {"drag", Command::Drag, 3, 3, "drag X Y N"},
+    {"untouch", Command::Untouch, 0, 0, "untouch"},
+    {"screenshot", Command::Screenshot, 1, 2, "screenshot NAME [eyes]"},
+    {"expect", Command::Expect, 2, 2, "expect \"TEXT\" N"},
+    {"fail-on", Command::FailOn, 1, 1, "fail-on \"TEXT\""},
+    {"end", Command::End, 0, 0, "end"},
+    {"slider", Command::Slider, 1, 1, "slider V|off"},
 };
 
 const CommandInfo* find_command(const std::string& name) {
@@ -91,7 +93,17 @@ std::string read_arguments(const std::vector<Token>& a, Step& step) {
     }
     case Command::Screenshot:
         step.text = a[1].text;
-        return valid_name(a[1].text) ? "" : "NAME is 1 to 32 of A-Z a-z 0-9 _ -";
+        if (!valid_name(a[1].text)) return "NAME is 1 to 32 of A-Z a-z 0-9 _ -";
+        step.eyes = a.size() == 3;
+        if (step.eyes && lower(a[2].text) != "eyes") return "the only option of screenshot is 'eyes' (both eyes of the top screen)";
+        return "";
+    case Command::Slider:
+        if (lower(a[1].text) == "off") {
+            step.command = Command::SliderOff;
+            return "";
+        }
+        return a[1].text[0] != '-' && parse_stick_value(a[1].text, step.x) ? ""
+                                                                         : "slider is 0 to 1 (at most 3 decimals) or off";
     case Command::Expect: {
         const std::string e = text_argument(a[1], step.text);
         if (!e.empty()) return e;
@@ -134,7 +146,9 @@ std::string parse_command(const ScriptParser& parser, const std::vector<Token>& 
     const std::string name = lower(tokens[0].text);
     const CommandInfo* info = tokens[0].quoted ? nullptr : find_command(name);
     if (info == nullptr) return "unknown command '" + tokens[0].text + "'";
-    if (tokens.size() != info->args + 1) return std::string("wrong number of arguments; usage: ") + info->usage;
+    if (tokens.size() < info->args + 1 || tokens.size() > info->max_args + 1) {
+        return std::string("wrong number of arguments; usage: ") + info->usage;
+    }
     step.command = info->command;
     const std::string error = read_arguments(tokens, step);
     if (!error.empty()) return error;

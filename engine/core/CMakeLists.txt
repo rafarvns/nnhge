@@ -104,6 +104,7 @@ add_library(nnh_core STATIC
     src/remote/remote_session.cpp
     src/remote/remote_wire.cpp
     src/system/system.cpp
+    src/system/stereo_slider.cpp
     src/text/builtin_font.cpp
     src/text/font_atlas.cpp
     src/text/font_texture.cpp
@@ -442,6 +443,7 @@ set(_nnh_gfx3d_sources
     src/gfx/gfx3d_hook.cpp
     src/gfx/world_split.cpp
     src/gfx3d/camera3d.cpp
+    src/gfx3d/eye_setup.cpp
     src/gfx3d/cull.cpp
     src/gfx3d/debug_draw3d.cpp
     src/gfx3d/gfx3d_init.cpp

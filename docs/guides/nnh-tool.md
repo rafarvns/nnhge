@@ -126,6 +126,8 @@ end
 | `drag X Y N` | move the touch from where it is to X Y, one step per frame; needs a touch down | +N+1 |
 | `untouch` | lift the touch | — |
 | `screenshot NAME` | save both screens at the end of the current frame; NAME is 1–32 of `A-Z a-z 0-9 _ -` | +1 |
+| `screenshot NAME eyes` | the same plus the top screen's right eye (`-top-right.png`; stereo 3D, spec 026) | +1 |
+| `slider V`, `slider off` | set the 3D slider the game reads, 0 to 1 (at most 3 decimals), from this frame; `off` gives it back (0 while a script runs). See [Testing on the console](testing-on-the-console.md#the-3d-slider) | — |
 | `expect "TEXT" N` | wait for a log line that matches TEXT, at the latest N frames from now | the line's frame + 1 |
 | `fail-on "TEXT"` | from here on, a log line that matches TEXT fails the script | — |
 | `end` | the script passes once everything before it is done; nothing may follow. Optional: the end of the file is the same | — |
@@ -220,6 +222,7 @@ console and in the simulator:
 build/logs/<game>-<date>-<time>.txt                                 the log
 build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-top.png            the screenshots of that run
 build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-bottom.png
+build/logs/<game>-<date>-<time>/frame-<n>-<NAME>-top-right.png     with `eyes`: the right eye (400×240)
 ```
 
 `<n>` is the captured frame, six digits, so the folder sorts by time. On the console a screenshot pair

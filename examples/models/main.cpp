@@ -2,10 +2,14 @@
 //   showcase   a spinning textured ship converted from glTF, a checker floor, a code-built cube and sphere, a vertex-
 //              coloured pylon, a cut-out fence, a blended glass pane, a directional and a circling point light; a 2D sky
 //              under the world, the HUD and a name tag over it; touch buttons on the bottom screen. Circle Pad: orbit;
-//              L/R: zoom; X: perspective/orthographic; SELECT: check; Y: bench; START: quit.
+//              L/R: zoom; X: perspective/orthographic; SELECT: check; Y: bench; START: quit. With the 3D slider up
+//              (simulator: F6/F7, F8 shows the right eye or an anaglyph) the top screen is drawn per eye; the
+//              showcase logs "slider: <v>" and "eyes: <n>" when they change (spec 026b).
 //   check      the 50 000-operation math script ("3d: <n> sum <x>" every 10 000, "3d: PASS <x>"), then fixed probe
-//              scenes whose pixels are read back and compared with FR-10's formula ("3d pixels: PASS").
-//   bench      AC-8's workloads timed: "3d bench: <case> avg <ms> worst <ms> missed <n>/600 cpu <ms>" and a verdict.
+//              scenes whose pixels are read back and compared with FR-10's formula ("3d pixels: PASS"), then the
+//              stereo script ("3d-stereo: PASS <x>") and, with the slider up, a stereo probe scene in both eyes.
+//   bench      AC-8's workloads timed: "3d bench: <case> avg <ms> worst <ms> missed <n>/600 cpu <ms>" and a verdict;
+//              two stereo cases follow once the slider is up (tests/bench.nnhs sets it).
 //   smoke      (DOWN in the showcase) a flat cube, then (A) a lit textured one; the backend logs "3d tilt: ..." at init.
 // MODELS_DEMO picks the first scene: showcase (default), check, bench, smoke. Screenshots:
 //   NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/models.png build/pc-debug/examples/models/models.exe

@@ -17,6 +17,12 @@ struct Context {
     bool c3d_waited = false;     // finish_frames() already entered citro3d's next frame (it waited for the GPU)
     bool remote_closed = false;  // a remote read or send found the log socket gone (remote_3ds.cpp)
     bool remote_no_delay = false; // TCP_NODELAY set on the log socket at the first remote send
+    // Stereo (spec 026b; only with 3D on): the top screen's two targets (video3d_3ds.cpp); select_eye swaps
+    // targets[0] between them (eyes_3ds.cpp). right_eye: the right target when the last frame drew two eyes, else
+    // null (remote_capture_right).
+    C3D_RenderTarget* left_target = nullptr;
+    C3D_RenderTarget* right_target = nullptr;
+    C3D_RenderTarget* right_eye = nullptr;
 };
 
 Context& context();

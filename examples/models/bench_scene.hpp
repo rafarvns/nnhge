@@ -6,6 +6,10 @@
 // cpu <ms>" per case (per frame: rec = the game's recording, sub = the "gfx submit" scope, prep = the "gfx3d prepare"
 // scope (culling and ordering, inside sub), cpu = AC-8's CPU share: rec + sub for draws, rec + prep for cpu; sub and
 // prep exist in Development builds only) and "3d bench: PASS" or "3d bench: FAIL ..." against AC-8's targets.
+// Then (spec 026b, AC-8 stereo) two stereo cases with the slider up — "throughput 6000 stereo" (a 6 016-triangle sphere)
+// and "draws 256 stereo" — logged and judged the same way (budgets from the console run of 2026-11-25): after the
+// mono cases the bench logs "3d bench: stereo waiting for the slider" and waits up to 300 frames for it to rise (a
+// script's `slider 1`), else "3d bench: stereo skipped (slider at 0)". Mono cases turn stereo off on their camera.
 // MODELS_BENCH_FRAMES shortens the cases (simulator smoke runs).
 
 #include <nnh/scene.hpp>
@@ -21,10 +25,14 @@ public:
 
 private:
     void finish_case();
+    /// Before the stereo cases: true once the slider is up (or they are skipped).
+    bool wait_for_slider();
 
     World& world_;
     Demos& demos_;
     nnh::Mesh dense_;   ///< the throughput sphere (48 rings × 128 segments)
+    nnh::Mesh half_;    ///< the stereo throughput sphere (48 rings × 64 segments)
+    int slider_wait_ = -1; ///< frames waited for the slider (−1: not waiting yet)
     nnh::Mesh plane_;   ///< a 1×1 plane for the fill case
     int frames_per_case_ = 600;
     int case_ = 0;

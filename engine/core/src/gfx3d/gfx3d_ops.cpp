@@ -2,8 +2,10 @@
 // is linked only through gfx3d_link(), which every mesh and 3D entry point calls, so a 2D-only game links no 3D code.
 
 #include "gfx/gfx3d_hook.hpp"
+#include "gfx/gfx_internal.hpp"
 #include "gfx3d/gfx3d_state.hpp"
 #include "mesh/mesh_internal.hpp"
+#include "nnh/platform/video3d.hpp"
 
 namespace nnh::detail {
 namespace {
@@ -14,6 +16,10 @@ void after_frame() {
     mesh_retire_released();
 }
 
+int eyes_this_frame() { return state3d().frame_eyes; }
+
+void select_eye(int eye) { platform::select_eye(static_cast<std::uint8_t>(eye), clear_color(Screen::Top)); }
+
 constexpr Gfx3DOps kOps{
     .init = &gfx3d_init,
     .shutdown = &gfx3d_shutdown,
@@ -21,6 +27,8 @@ constexpr Gfx3DOps kOps{
     .after_frame = &after_frame,
     .gpu_idle = &mesh_free_retired,
     .overlay_line = &gfx3d_overlay_line,
+    .eyes_this_frame = &eyes_this_frame,
+    .select_eye = &select_eye,
 };
 
 struct Registrar {

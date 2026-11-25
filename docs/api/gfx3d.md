@@ -5,8 +5,8 @@ Plan: [026](../../specs/026-3d-foundation/plan.md) · Decisions: [D41, D43, D44]
 Meshes and materials: [mesh.md](mesh.md) · Math: [math3d.md](math3d.md) · Rendering: [rendering.md](../architecture/rendering.md) ·
 Example: `examples/models`
 
-> Status: 026a (mono) implemented; stereo (the 3D slider, per-eye drawing) is spec 026's second part — the API
-> already carries `Camera3D::stereo` and `Eye`.
+> Status: 026a (mono) and 026b (stereo: the 3D slider, per-eye drawing) implemented and checked on the Old 3DS
+> ([plan 026](../../specs/026-3d-foundation/plan.md), "Stage 11/12 results" and "Stage 13 results").
 
 A game sets a **3D camera** and **lights** per screen and records **draws of meshes** inside a frame, like 2D. At the
 end of the frame the engine culls them, orders them and draws them **between the 2D layers**: layers below the
@@ -29,14 +29,14 @@ while (nnh::frame()) {
 
 `AppConfig::gfx.max_draws_3d` (default **0 = off**, up to 4096) reserves, once at `init()`: about **120 bytes per
 draw** (heap, tag `gfx3d`), the mesh table (4 KB), and on the 3DS 640 bytes of GPU command buffer per draw plus the top
-screen's 24-bit depth target (VRAM). With 0 nothing is reserved, meshes can't be made and `draw` asserts. A game that
+screen's 24-bit depth target and the right eye's colour and depth target (VRAM, 768 000 B each). With 0 nothing is reserved, meshes can't be made and `draw` asserts. A game that
 never calls the 3D functions links none of their code.
 
 ## Camera
 
 `Camera3D` is a value: `position`, `rotation` (looks down its −z), `projection` (`Perspective` with `fov_y` in radians,
 default 60°, or `Orthographic` with `ortho_height` world units visible), `near_plane` (0.1), `far_plane` (100),
-`stereo` (stage 2 of the spec). The aspect is the top screen's 400:240.
+`stereo` (see [Stereo](#stereo)). The aspect is the top screen's 400:240.
 
 | Function | Does |
 |----------|------|
@@ -45,8 +45,47 @@ default 60°, or `Orthographic` with `ortho_height` world units visible), `near_
 | `to_screen(screen, point)` | where a world point lands: pixel ((0, 0) top-left), depth along the view axis, `in_front`, `in_view` |
 | `screen_ray(screen, pixel)` | the world ray under a pixel (origin on the camera, unit direction) |
 | `to_screen(camera, point)`, `screen_ray(camera, pixel)` | the same for any camera (pure: no engine needed) |
+| `to_screen(camera, point, eye, slider)` | where the point lands in one eye's picture at a slider value (stereo) |
+| `in_view(camera, sphere, slider)` | the engine's culling test: is a world sphere in the view (either eye in stereo)? |
 
 `to_screen` and `screen_ray` are pure math: the same bits on PC and 3DS (a name tag over a character, picking later).
+
+## Stereo
+
+On a system with `Capability::Stereo3D` (a 3DS other than a 2DS, and the simulator), when the 3D slider
+(`nnh::system::stereo_slider()`, [system.md](system.md#the-3d-slider)) is above 0 and the camera is perspective with
+`stereo.enabled`, the top screen is drawn **once per eye**. Each eye sits half the eye separation to the side along the
+camera's right — separation = slider × `stereo.strength` (world units; 0 = `focal_distance / 20`) — and sees through an
+off-axis projection that puts the **focal plane** (`stereo.focal_distance` ahead, default 5) at screen depth: points on it
+land on the same pixel in both eyes, nearer ones in front of the screen, farther ones behind. With the defaults and a
+60° view, a point at infinity is about 10 px apart between the eyes at slider 1.
+
+| `StereoSettings` | Default | Meaning |
+|------------------|---------|---------|
+| `enabled` | true | false: this camera always draws one picture |
+| `strength` | 0 | eye separation at slider 1, world units; 0 = `focal_distance / 20` (≥ 0) |
+| `focal_distance` | 5 | distance ahead that appears at screen depth (> 0) |
+
+- **One picture** when the slider is at 0, on a 2DS, for orthographic cameras (no 3D depth for them), with
+  `stereo.enabled = false`, and in frames without 3D draws: nothing extra is spent.
+- **2D in stereo** (FR-15): the 2D layers below and above the world and the debug pass are drawn identically in both
+  eyes, at screen depth. Tile and particle budgets are spent once per frame, not per eye.
+- **Culling** keeps a draw when either eye sees it; blended draws are sorted once by the centre camera, so both eyes
+  draw them in the same order. `stats().eyes` is 2 and `triangles[0]`/`[1]` count each eye.
+- `to_screen(screen, point)` answers for the centre camera (the HUD sits at screen depth); `to_screen(camera, point,
+  eye, slider)` gives one eye's pixel, and `in_view(camera, sphere, slider)` the culling decision — both pure, the same
+  bits on PC and 3DS (the example's `3d-stereo` golden `B3550D40`).
+- Invalid stereo values (a negative strength, a focal distance ≤ 0, not finite) make `set_camera` assert and keep the
+  previous camera.
+- **Comfort**: the defaults (focal 5, strength focal / 20) were judged comfortable on an Old 3DS XL at slider ½ and 1,
+  with a modest depth at slider 1; a game that wants more depth raises `stereo.strength`. Keep what the player looks
+  at near the focal distance.
+- **Cost**: the 3DS draws the top screen's 2D and 3D twice (the per-draw GPU and submission cost doubles; recording and
+  culling are done once): on an Old 3DS XL 256 small draws take 51 ms a frame in stereo against 28 ms in mono, while
+  6 000 triangles still run at 60 Hz.
+- **The simulator**: F6/F7 move its slider, F8 shows the left eye, the right eye or a red/cyan anaglyph
+  ([simulator.md](simulator.md#the-3d-slider-and-the-eyes)); `nnh run --script` sets the slider with `slider V`
+  ([testing-on-the-console.md](../guides/testing-on-the-console.md)).
 
 ## Lights
 
@@ -92,7 +131,7 @@ are culled per material; triangles crossing the near plane are clipped.
 `stats()`: draws, culled, dropped, peak, triangles per eye, eyes, meshes and their bytes; the debug overlay shows a 3D
 line. `set_debug_draw(true)` (Debug/Development) draws each draw's box and the world axes as 2D lines on layer 15.
 `request_probes(screen, eye, points, n)` / `probe_results(out, n)` (Debug/Development): read back up to 32 pixels of the
-screen, read three frame ends after the request, so keep drawing the same picture until `probe_results` answers — the
+screen (`Eye::Right`: the right eye's picture of a stereo frame), read three frame ends after the request, so keep drawing the same picture until `probe_results` answers — the
 example's check compares them with the formula; it passes on the PC and on the Old 3DS (plan 026, "Console run 3").
 
 ## Determinism and tolerance
@@ -106,7 +145,10 @@ the console's are close: probes at least 2 px from an edge within ±2 per channe
 
 Old 3DS targets (AC-8, measured by `examples/models` bench mode, results in [plan 026](../../specs/026-3d-foundation/plan.md)):
 12 000 textured lit triangles at 60 Hz, 256 draws with the CPU's share under 4 ms, 512 recorded and culled draws under
-1 ms, three full-screen blended planes at 60 Hz. The simulator doesn't model the PICA200's speed.
+1 ms, three full-screen blended planes at 60 Hz; in stereo 6 000 triangles at 60 Hz and 256 draws with the CPU's share
+under 7 ms. Measured budgets (console + ≈ 25 %): stereo throughput at 60 Hz, stereo draws a frame under 63.8 ms with
+the CPU's share under 25.8 ms (mono: 35.5 and 14.8 ms). The simulator doesn't
+model the PICA200's speed.
 
 Console run 2 (Old 3DS XL, 2026-11-25, after the optimisation round): 12 000 triangles and the fill case hold 60 Hz;
 each small draw costs about 110 µs of frame time — recording ≈ 12 µs, submission ≈ 34 µs, the GPU ≈ 63 µs, which run

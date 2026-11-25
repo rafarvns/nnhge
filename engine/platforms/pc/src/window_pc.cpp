@@ -50,6 +50,34 @@ void show_notice() {
     ctx.notice_until_ms = SDL_GetTicks() + kNoticeMs;
 }
 
+/// The 3D slider and the eye view in the title for a moment: "My Game — 3D slider 0.50, right eye" (spec 026).
+void show_stereo_notice() {
+    pc::Context& ctx = pc::context();
+    static constexpr const char* kViews[3] = {"left eye", "right eye", "anaglyph (red/cyan)"};
+    const int h = static_cast<int>(ctx.slider * 100.0f + 0.5f);
+    char text[192];
+    std::snprintf(text, sizeof text, "%s — 3D slider %d.%02d, %s", ctx.title, h / 100, h % 100,
+                  kViews[static_cast<int>(ctx.eye_view)]);
+    SDL_SetWindowTitle(ctx.window, text);
+    ctx.notice_until_ms = SDL_GetTicks() + kNoticeMs;
+}
+
+/// F6/F7: the slider −/+ 0.1 (Shift: 0.01); F8: the eye view. @return true if `key` was one of them.
+bool stereo_key(SDL_Scancode key, SDL_Keymod mods) {
+    pc::Context& ctx = pc::context();
+    const int step = (mods & SDL_KMOD_SHIFT) != 0 ? 1 : 10;
+    const int h = static_cast<int>(ctx.slider * 100.0f + 0.5f);
+    if (key == SDL_SCANCODE_F6 || key == SDL_SCANCODE_F7) {
+        ctx.slider = static_cast<float>(pc::step_slider(h, key == SDL_SCANCODE_F7 ? step : -step)) / 100.0f;
+    } else if (key == SDL_SCANCODE_F8) {
+        ctx.eye_view = pc::next_eye(ctx.eye_view);
+    } else {
+        return false;
+    }
+    show_stereo_notice();
+    return true;
+}
+
 void set_fullscreen(bool on) {
     pc::Context& ctx = pc::context();
     if (ctx.fullscreen == on) return;
@@ -72,6 +100,7 @@ void pc::view_resize_window() {
 
 void pc::view_key_pressed(SDL_Scancode key, SDL_Keymod mods) {
     Context& ctx = context();
+    if (stereo_key(key, mods)) return;
     switch (key) {
     case SDL_SCANCODE_F2:
         ctx.layout = next_layout(ctx.layout);
@@ -118,12 +147,23 @@ bool scripted_run() {
     const char* driver = SDL_GetCurrentVideoDriver();
     return ctx.exit_after != 0 || ctx.screenshot_path != nullptr ||
            (driver != nullptr && std::strcmp(driver, "offscreen") == 0) || std::getenv("NNH_SIM_LAYOUT") != nullptr ||
-           std::getenv("NNH_SIM_SCALE") != nullptr;
+           std::getenv("NNH_SIM_SCALE") != nullptr || std::getenv("NNH_SIM_SLIDER") != nullptr ||
+           std::getenv("NNH_SIM_EYE") != nullptr;
+}
+
+/// NNH_SIM_SLIDER=0..1, NNH_SIM_EYE=left|right|anaglyph (spec 026); a script run (NNH_REMOTE) shows the left eye.
+void apply_stereo_environment() {
+    pc::Context& ctx = pc::context();
+    int h = 0;
+    if (pc::parse_slider(std::getenv("NNH_SIM_SLIDER"), h)) ctx.slider = static_cast<float>(h) / 100.0f;
+    pc::parse_eye(std::getenv("NNH_SIM_EYE"), ctx.eye_view);
+    if (std::getenv("NNH_REMOTE") != nullptr) ctx.eye_view = pc::SimEye::Left;
 }
 
 /// NNH_SIM_LAYOUT=stacked|side|large|top|bottom, NNH_SIM_SCALE=1..6|fit.
 void apply_environment() {
     pc::Context& ctx = pc::context();
+    apply_stereo_environment();
     pc::parse_layout(std::getenv("NNH_SIM_LAYOUT"), ctx.layout);
     if (const char* scale = std::getenv("NNH_SIM_SCALE")) {
         if (std::strcmp(scale, "fit") == 0) {
@@ -150,6 +190,8 @@ void load_settings_file() {
     ctx.scale = s.scale;
     ctx.fit = s.fit;
     ctx.fullscreen = s.fullscreen; // applied after the window exists
+    ctx.slider = static_cast<float>(s.slider) / 100.0f;
+    ctx.eye_view = s.eye;
     ctx.has_window_rect = s.has_window;
     ctx.window_x = s.x;
     ctx.window_y = s.y;
@@ -191,6 +233,7 @@ void pc::view_load(const char* data_folder) {
     std::snprintf(ctx.settings_path, sizeof ctx.settings_path, "%swindow.ini", folder);
     SDL_free(folder);
     load_settings_file();
+    if (std::getenv("NNH_REMOTE") != nullptr) ctx.eye_view = SimEye::Left; // driven by nnh run: the left eye
 }
 
 pc::SimSize pc::view_initial_window_size() {
@@ -225,6 +268,8 @@ void pc::view_save() {
     s.scale = ctx.scale;
     s.fit = ctx.fit;
     s.fullscreen = ctx.fullscreen;
+    s.slider = static_cast<int>(ctx.slider * 100.0f + 0.5f);
+    s.eye = ctx.eye_view;
     s.has_window = ctx.has_window_rect && ctx.window_w >= 100 && ctx.window_h >= 100;
     s.x = ctx.window_x;
     s.y = ctx.window_y;
@@ -255,7 +300,14 @@ void pc::compose_screens() {
     SDL_SetRenderDrawBlendMode(ctx.renderer, SDL_BLENDMODE_NONE);
     set_draw_color(rgb(12, 12, 12)); // around the screens
     SDL_RenderClear(ctx.renderer);
-    copy_screen(ctx.renderer, ctx.screens[0], kScreenWidth[0], layout.top);
+    if (ctx.compose_top != nullptr && layout.top.visible) { // a 3D game: the eye view (eyes_pc.cpp, spec 026)
+        const SDL_FRect dest{static_cast<float>(layout.top.x), static_cast<float>(layout.top.y),
+                             static_cast<float>(kScreenWidth[0] * layout.top.scale),
+                             static_cast<float>(kScreenHeight * layout.top.scale)};
+        ctx.compose_top(dest);
+    } else {
+        copy_screen(ctx.renderer, ctx.screens[0], kScreenWidth[0], layout.top);
+    }
     copy_screen(ctx.renderer, ctx.screens[1], kScreenWidth[1], layout.bottom);
     SDL_SetRenderDrawBlendMode(ctx.renderer, SDL_BLENDMODE_BLEND);
 }

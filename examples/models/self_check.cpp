@@ -16,7 +16,8 @@ constexpr std::uint32_t kSeed = 0x3D3D2026u;
 } // namespace
 
 std::uint32_t SelfCheck::hash(std::uint32_t salt) const {
-    const std::uint32_t words[3] = {kSeed, static_cast<std::uint32_t>(step_), salt};
+    const std::uint32_t seed = script_ == Script::Math ? kSeed : kSeed ^ 0x57E2E000u;
+    const std::uint32_t words[3] = {seed, static_cast<std::uint32_t>(step_), salt};
     char bytes[12];
     for (int i = 0; i < 12; ++i) bytes[i] = static_cast<char>((words[i / 4] >> (8 * (i % 4))) & 0xFFu);
     return nnh::detail::fnv1a32(bytes, sizeof bytes);
@@ -111,7 +112,8 @@ void SelfCheck::one() {
 
 bool SelfCheck::run(int count) {
     for (int i = 0; i < count && step_ < kOps; ++i) {
-        one();
+        if (script_ == Script::Math) one();
+        else one_stereo();
         ++step_;
         if (step_ % kCheckpointEvery == 0) checkpoints_[step_ / kCheckpointEvery - 1] = sum_;
     }

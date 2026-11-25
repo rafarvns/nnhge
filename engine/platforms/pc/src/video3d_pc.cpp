@@ -77,6 +77,7 @@ bool video3d_init(const Video3DConfig&) {
 
 void video3d_shutdown() {
     if (g == nullptr) return;
+    pc::eyes_shutdown();
     SDL_DestroyTexture(g->picture);
     delete g;
     g = nullptr;

@@ -77,6 +77,7 @@ if(NNH_BUILD_TESTS)
         tests/test_script_interactive.cpp
         tests/test_script_parser.cpp
         tests/test_script_runner.cpp
+        tests/test_script_stereo.cpp
         tests/test_script_timeline.cpp
         tests/test_serve.cpp
         tests/test_stdin_lines.cpp

@@ -15,12 +15,27 @@ nnh::SystemInfo info = nnh::system::info();   // {"Nintendo 3DS", "New 3DS XL", 
 |------------|-----|--------------|
 | `SecondScreen` | yes | yes (simulated) |
 | `TouchScreen` | yes | yes (mouse) |
-| `Stereo3D` | yes, except 2DS models | not yet |
+| `Stereo3D` | yes, except 2DS models | yes (F6/F7 slider, F8 eye view) |
 | `CirclePad` | yes | yes (keys or gamepad) |
 | `CStick`, `ZButtons` | New 3DS / New 2DS XL | yes (keys or gamepad) |
 
-Capabilities describe the hardware. Touch, sticks and ZL/ZR are read through [input.md](input.md); the
-engine API for stereo 3D arrives in a later milestone. `capability_name(c)` returns the enum name.
+Capabilities describe the hardware. Touch, sticks and ZL/ZR are read through [input.md](input.md); stereo 3D is
+drawn by [gfx3d.md](gfx3d.md#stereo) from the slider below. `capability_name(c)` returns the enum name.
+
+## The 3D slider
+
+`nnh::system::stereo_slider()` (spec 026 FR-16) is the 3D slider now: 0 (down) … 1 (up), and 0 without
+`Capability::Stereo3D` (a 2DS). Portable and cheap (read it every frame):
+
+| System | Value |
+|--------|-------|
+| 3DS | the hardware slider (`osGet3DSliderState`) |
+| PC simulator | its own slider: F6/F7 −/+ 0.1 (Shift: 0.01), `NNH_SIM_SLIDER=0..1`, remembered per game ([simulator.md](simulator.md#the-3d-slider-and-the-eyes)) |
+| a test script runs (`nnh run --script`, Debug/Development) | the script's `slider V` — 0 from its start until it sets one, back to 0 on `slider off` — never the console's own slider, like the other controls ([testing-on-the-console.md](../guides/testing-on-the-console.md)) |
+| interactive `nnh run` (typed `slider V`) | the typed value until `slider off`, then the console's own |
+
+3D drawing uses it for stereo; a 2D game may use it for its own depth effects. The 3DS-only `n3ds::slider_3d()`
+([3ds-extensions.md](3ds-extensions.md)) reads the hardware directly and ignores scripts.
 
 `SystemInfo`: `name` ("Nintendo 3DS", "PC simulator"), `model` (3DS model read from the system
 configuration, or the PC operating system) and `memory_mb` (approximate memory for the game).

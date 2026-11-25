@@ -2,19 +2,18 @@
 // under a pixel. Pure math with the camera's view and projection: the same bits everywhere. -ffp-contract=off.
 
 #include "gfx3d/gfx3d_state.hpp"
+#include "gfx3d/pass3d.hpp"
 
 namespace nnh::gfx3d {
 namespace {
 
 constexpr float kWidth = 400.0f, kHeight = 240.0f;
 
-} // namespace
-
-ScreenPoint to_screen(const Camera3D& camera, Vec3 world_point) {
+/// A world point through a view and a projection (the centre camera's, or an eye's).
+ScreenPoint project(const Camera3D& camera, const Mat4& view, const Mat4& projection, Vec3 world_point) {
     ScreenPoint s;
-    if (!detail::camera_valid(camera)) return s;
-    const Vec3 v = transform_point(detail::camera_view(camera), world_point);
-    const Vec4 c = detail::camera_projection(camera) * Vec4{v.x, v.y, v.z, 1};
+    const Vec3 v = transform_point(view, world_point);
+    const Vec4 c = projection * Vec4{v.x, v.y, v.z, 1};
     s.depth = -v.z;
     s.in_front = s.depth >= camera.near_plane;
     if (!s.in_front) return s;
@@ -22,6 +21,27 @@ ScreenPoint to_screen(const Camera3D& camera, Vec3 world_point) {
     s.pixel = {(nx + 1.0f) * (0.5f * kWidth), (1.0f - ny) * (0.5f * kHeight)};
     s.in_view = s.depth <= camera.far_plane && nx >= -1.0f && nx <= 1.0f && ny >= -1.0f && ny <= 1.0f;
     return s;
+}
+
+} // namespace
+
+ScreenPoint to_screen(const Camera3D& camera, Vec3 world_point) {
+    if (!detail::camera_valid(camera)) return {};
+    return project(camera, detail::camera_view(camera), detail::camera_projection(camera), world_point);
+}
+
+ScreenPoint to_screen(const Camera3D& camera, Vec3 world_point, Eye eye, float slider) {
+    if (!detail::camera_valid(camera)) return {};
+    const detail::Eyes eyes = detail::make_eyes(camera, slider > 1.0f ? 1.0f : slider);
+    const detail::EyeView& e = eyes.eye[eyes.count == 2 && eye == Eye::Right ? 1 : 0];
+    return project(camera, e.view, e.projection, world_point);
+}
+
+bool in_view(const Camera3D& camera, const Sphere& s, float slider) {
+    if (!detail::camera_valid(camera)) return false;
+    const detail::Eyes eyes = detail::make_eyes(camera, slider > 1.0f ? 1.0f : slider);
+    const Vec3 c = transform_point(detail::camera_view(camera), s.center);
+    return detail::sphere_in_eyes(detail::make_eye_cull(camera, eyes), c, s.radius);
 }
 
 Ray3 screen_ray(const Camera3D& camera, Vec2 pixel) {

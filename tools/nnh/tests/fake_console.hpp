@@ -154,10 +154,10 @@ private:
     }
 
     void send_screens(const wire::Message& m) {
-        for (std::uint8_t screen = 0; screen < 2; ++screen) {
+        for (const std::uint8_t screen : {std::uint8_t{0}, std::uint8_t{2}, std::uint8_t{1}}) { // as remote_screenshot.cpp
             if ((m.screens & (1u << screen)) == 0) continue;
             wire::ScreenHeader h{.id = m.id, .screen = screen, .layout = 1, .frame = frame,
-                                 .width = static_cast<std::uint16_t>(screen == 0 ? 400 : 320), .height = 240};
+                                 .width = static_cast<std::uint16_t>(screen == 1 ? 320 : 400), .height = 240};
             const std::uint32_t bytes = h.width * h.height * 4u;
             std::uint8_t head[wire::kMaxFixedRecord];
             std::vector<std::uint8_t> all(head, head + wire::encode_screen_record(h, bytes, head));

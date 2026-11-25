@@ -111,7 +111,7 @@ NNH_TEST(remote_wire_rejects_unknown_types) {
     Bytes m = hello();
     m.b[1] = 0;
     CHECK(decode(m) == Reject::Type);
-    m.b[1] = 7;
+    m.b[1] = 8; // 7 is the 3D slider (spec 026)
     CHECK(decode(m) == Reject::Type);
     m.b[1] = 0xFF;
     CHECK(decode(m) == Reject::Type);
@@ -186,8 +186,10 @@ NNH_TEST(remote_wire_rejects_touches_off_the_screen) {
 
 NNH_TEST(remote_wire_rejects_screenshots_of_no_screen_or_unknown_screens) {
     CHECK(decode(screenshot(0)) == Reject::Range);
-    CHECK(decode(screenshot(4)) == Reject::Range);
+    CHECK(decode(screenshot(8)) == Reject::Range);
     CHECK(decode(screenshot(3)) == Reject::None);
+    CHECK(decode(screenshot(7)) == Reject::None); // + the top screen's right eye (spec 026)
+    CHECK(round_trips(screenshot(4)));
 }
 
 NNH_TEST(remote_wire_rejects_a_bye_with_quit_other_than_0_or_1) {

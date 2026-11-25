@@ -1,6 +1,6 @@
 # Tasks 026: 3D foundation
 
-Status: approved 2026-11-24 (overnight pre-approval); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back and 3D texture orientation fixed, pixel check PASS on the console (run 3); Linux VM T9.3 passed)
+Status: approved 2026-11-24 (overnight pre-approval); **part 026b implemented 2026-11-25** (console run PASS after an exit-freeze fix, comfort judged, stereo budgets set, Linux VM passed; plan "Stage 11/12 results" and "Stage 13 results"); **part 026a implemented 2026-11-24** (console runs 1 and 2 done; T10.5 optimisation round done; the CPU/GPU overlap tried and dropped, T10.7; bench budgets set 2026-11-25; probe read-back and 3D texture orientation fixed, pixel check PASS on the console (run 3); Linux VM T9.3 passed)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops. `[P]` = can be done in parallel with the previous task. Every stage ends with
@@ -216,46 +216,54 @@ Prerequisite: spec 022 complete on `main`. Branch `spec-026` in a worktree from 
 
 ## Stage 11 — slider everywhere (026b)
 
-- [ ] **T11.1** Rebase. Contract `stereo_slider()`; `system::stereo_slider()` (+ override); fake `set_stereo_slider`;
+- [x] **T11.1** Rebase. Contract `stereo_slider()`; `system::stereo_slider()` (+ override); fake `set_stereo_slider`;
   `slider_3ds.cpp`; PC `Stereo3D` capability — test: `tests/system/test_stereo_slider.cpp` — covers FR-16
-- [ ] **T11.2** PC keys F6/F7/F8, `NNH_SIM_SLIDER`, `NNH_SIM_EYE`, title notice, `window.ini` (not for scripted runs;
+- [x] **T11.2** PC keys F6/F7/F8, `NNH_SIM_SLIDER`, `NNH_SIM_EYE`, title notice, `window.ini` (not for scripted runs;
   `NNH_REMOTE` forces the left view) — test: `tests/platform_pc/test_sim_settings.cpp` (if present) + screenshots —
   covers FR-16, FR-22
-- [ ] **T11.3** Remote `Slider` message (type 7) in `remote_wire`, session, `remote_slider.cpp` — test:
+- [x] **T11.3** Remote `Slider` message (type 7) in `remote_wire`, session, `remote_slider.cpp` — test:
   `test_remote_wire.cpp`, `test_remote_session.cpp` — covers FR-16
-- [ ] **T11.4** `tools/nnh`: `slider V|off`, `screenshot NAME eyes` (screen 2 → `-top-right.png`), runner counts screens
+- [x] **T11.4** `tools/nnh`: `slider V|off`, `screenshot NAME eyes` (screen 2 → `-top-right.png`), runner counts screens
   from the mask; `remote_capture_right` (pc, 3ds, fake) — test: `tools/nnh/tests/test_script_parser.cpp`,
   `test_script_runner.cpp` — covers FR-16, AC-7
 
 ## Stage 12 — stereo eyes (026b)
 
-- [ ] **T12.1** `eye_setup.cpp` stereo: eyes = 2 when capability, slider > 0, `stereo.enabled`, perspective, frame has
+- [x] **T12.1** `eye_setup.cpp` stereo: eyes = 2 when capability, slider > 0, `stereo.enabled`, perspective, frame has
   3D; off-axis frusta (`shift = sep/2 × near/focal`), eye offset along camera right — test: `test_eyes.cpp` (focal-plane
   point projects to the same pixel in both eyes; nearer/farther signs; slider 0 / ortho / off → 1 eye) — covers FR-14
-- [ ] **T12.2** Culling union, per-eye passes, stats per eye; `select_eye`/`set_stereo` calls; debug pass per eye
+- [x] **T12.2** Culling union, per-eye passes, stats per eye; `select_eye`/`set_stereo` calls; debug pass per eye
   (`debug_pass.cpp`) — test: `test_screen_pass_stereo.cpp` (identical 2D lists per eye, debug last per eye) — covers
   FR-14, FR-15, FR-20
-- [ ] **T12.3** Stereo golden `3d-stereo` (per-eye matrices, union decisions) — test: `test_golden_3d.cpp` — covers AC-2
-- [ ] **T12.4** PC `eyes_pc.cpp` (right target, eye views, anaglyph, restore after the frame) — screenshots right eye
+- [x] **T12.3** Stereo golden `3d-stereo` (per-eye matrices, union decisions) — test: `test_golden_3d.cpp` — covers AC-2
+- [x] **T12.4** PC `eyes_pc.cpp` (right target, eye views, anaglyph, restore after the frame) — screenshots right eye
   (`NNH_SIM_SLIDER=1 NNH_SIM_EYE=right`) and anaglyph read; right-eye golden hash — covers FR-22, FR-23, AC-5
-- [ ] **T12.5** 3DS `eyes_3ds.cpp` (right D24S8 target, `targets[0]` swap, `C2D_TargetClear` at first use, `gfxSet3D` on
+- [x] **T12.5** 3DS `eyes_3ds.cpp` (right D24S8 target, `targets[0]` swap, `C2D_TargetClear` at first use, `gfxSet3D` on
   change), `remote_capture_right_3ds.cpp` — covers FR-14, FR-26
+  *Built (3ds-dev, 3ds-release, no warning); `remote_capture_right` lives in `remote_capture_3ds.cpp`. Runs in T13.5.*
 
 ## Stage 13 — stereo example, console, docs, status (026b)
 
-- [ ] **T13.1** Showcase: slider value on the bottom screen; stereo probe scene (both eyes) in check mode; stereo bench
+- [x] **T13.1** Showcase: slider value on the bottom screen; stereo probe scene (both eyes) in check mode; stereo bench
   cases — covers AC-6, AC-7, AC-8
-- [ ] **T13.2** `tests/stereo.nnhs` (below), passing with `--pc` — covers AC-7
-- [ ] **T13.3** VM re-run (stereo golden, PNG hashes, ASan) — covers AC-1, AC-5
-- [ ] **T13.4** AC-9 re-measured (PC keys inside P14's budget) — covers AC-9
-- [ ] **T13.5** Console run stereo (prepared below) — covers AC-7, AC-8
-- [ ] **T13.6** Stereo defaults judged on the Old 3DS XL (maintainer looks at the showcase at slider 1/2 and 1: yes/no
+- [x] **T13.2** `tests/stereo.nnhs` (below), passing with `--pc` — covers AC-7
+- [x] **T13.3** VM re-run (stereo golden, PNG hashes, ASan) — covers AC-1, AC-5
+  *2026-11-25: GCC 13 `nnh_tests` 3 257, 0 failures; slider-1 left/right and smoke PNGs byte-identical to Windows;
+  clang 18 ASan + UBSan 3 257, 0 failures, no report.*
+- [x] **T13.4** AC-9 re-measured (PC keys inside P14's budget) — covers AC-9
+  *3DS +280 B, PC +2 232 B: over the first budget; the maintainer accepted it and P14 now reads ≤ 600 B / ≤ 4 KB.*
+- [x] **T13.5** Console run stereo (prepared below) — covers AC-7, AC-8
+  *2026-11-25: `stereo.nnhs`, `check.nnhs`, `bench.nnhs` PASS after an exit-freeze fix (the right target deleted inside
+  citro3d's frame); stereo budgets set (plan "Stage 13 results").*
+- [x] **T13.6** Stereo defaults judged on the Old 3DS XL (maintainer looks at the showcase at slider 1/2 and 1: yes/no
   "comfortable"); adjust P12's ratio if no — covers FR-14
-- [ ] **T13.7** Docs: stereo sections in `gfx3d.md`, `simulator.md` (F6/F7/F8, env vars), `3ds-extensions.md` (portable
+  *Yes (2026-11-25): comfortable, depth modest at slider 1; defaults kept, `stereo.strength` raises it.*
+- [x] **T13.7** Docs: stereo sections in `gfx3d.md`, `simulator.md` (F6/F7/F8, env vars), `3ds-extensions.md` (portable
   slider beside `slider_3d()`), `system.md`, `guides/testing-on-the-console.md` (`slider`, `screenshot NAME eyes`),
   `nnh-tool.md` — covers AC-10
-- [ ] **T13.8** `docs/ROADMAP.md` M8 first part checked; README status — covers AC-10
-- [ ] **T13.9** spec, plan, tasks status → implemented; `specs/README.md` row; D41–D44 change log "implemented" —
+  *Done 2026-11-25, with `rendering.md`, `devkitpro-3ds.md`, `sdl3.md`, D43's change-log line.*
+- [x] **T13.8** `docs/ROADMAP.md` M8 first part checked; README status — covers AC-10
+- [x] **T13.9** spec, plan, tasks status → implemented; `specs/README.md` row; D41–D44 change log "implemented" —
   covers all
 
 ## Console runs (fully prepared)
@@ -349,37 +357,32 @@ in plan 026 ("Stage 10 results") whatever the verdict.
 
 ### T13.5 stereo (026b)
 
+Prepared 2026-11-25 from the PC run (pc-debug, `nnh: PASS (47 lines, frames 1-213)`). Before: build the console
+Development game from the `spec-026b` branch (`nnh run` builds it).
+
 ```sh
-build/pc-debug/tools/nnh/nnh run models --pc --script examples/models/tests/stereo.nnhs
-build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/stereo.nnhs       # console (Y)
-build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/bench.nnhs        # with "slider 1" cases
+build/pc-debug/tools/nnh/nnh run models --pc --script examples/models/tests/stereo.nnhs   # PC first: nnh: PASS, exit 0
+build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/stereo.nnhs        # console (Y)
+build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/check.nnhs         # mono check unchanged (Y)
+build/pc-debug/tools/nnh/nnh run models --script examples/models/tests/bench.nnhs         # mono + stereo cases (Y)
 ```
 
-`stereo.nnhs`:
+`examples/models/tests/stereo.nnhs` as committed: `fail-on "] E "`, `"3d: FAIL"`, `"3d-stereo: FAIL"`,
+`"3d pixels: FAIL"` · `wait 30` · `slider 1` · `expect "slider: 1.00" 10` · `expect "eyes: 2" 10` · `wait 10` ·
+`screenshot stereo eyes` · `tap SELECT` · `expect "models: check started" 20` · `expect "3d: PASS A3BF4EDF" 120` ·
+`expect "3d pixels: PASS" 300` · `expect "3d-stereo: 10000 sum D6FA62DB" 120` · `… 20000 sum DBD4A6D4` ·
+`… 30000 sum 75E511BE` · `… 40000 sum 5A986EFB` · `… 50000 sum B3550D40` · `expect "3d-stereo: PASS B3550D40" 30` ·
+`expect "3d pixels stereo: PASS" 300` · `wait 10` · `tap SELECT` · `expect "models: showcase" 20` · `wait 10` ·
+`slider 0` · `expect "slider: 0.00" 10` · `expect "eyes: 1" 10` · `wait 10` · `screenshot mono eyes` · `slider off` ·
+`end`.
 
-```
-fail-on "] E "
-fail-on "3d pixels: FAIL"
-wait 30
-slider 1
-wait 3
-expect "slider: 1.00" 10
-screenshot stereo eyes
-tap SELECT
-expect "3d: PASS <c5>" 900
-expect "3d-stereo: PASS <s5>" 300
-expect "3d pixels: PASS" 300
-expect "3d pixels stereo: PASS" 300
-tap SELECT
-wait 3
-slider 0
-expect "slider: 0.00" 10
-expect "eyes: 1" 10
-wait 3
-slider off
-end
-```
-
-Expected: `stereo-top.png`, `stereo-top-right.png` differ horizontally only (read both), `nnh: PASS`. The bench adds
-`3d bench: throughput 6000 stereo avg …` and `3d bench: draws 256 stereo avg …`. T13.6: the maintainer moves the
-slider by hand once, answers "comfortable? yes/no".
+Expected on the console: every line above with the PC's sums bit for bit (`3d-stereo: PASS B3550D40`), `3d pixels
+stereo: PASS` (a FAIL names `stereo-left` or `stereo-right`, the pixel, got and want), `nnh: PASS`, exit 0. Read
+`stereo-top.png` and `stereo-top-right.png`: the same scene shifted horizontally only (on the PC the right eye's
+nearer objects sit further left), the HUD identical; `mono-top.png` and `mono-top-right.png` identical. The bench adds,
+after `3d bench: stereo waiting for the slider`, `3d bench: throughput 6000 stereo avg …` and
+`3d bench: draws 256 stereo avg …`, then `3d bench: PASS` (judged since the run of 2026-11-25): record every number in plan
+026; the stereo budgets follow the maintainer's policy (measurement + ≈ 25 %) against AC-8's targets (6 000 triangles
+at 60 Hz, draws' CPU share under 7 ms). T13.6: the maintainer moves the slider by hand in the showcase (no script:
+`nnh run models`, or the `.3dsx` from the Homebrew Launcher), looks at slider ½ and 1 and answers "comfortable?
+yes/no"; a "no" changes P12's default strength (focal / 20).

@@ -1,0 +1,47 @@
+# Spec 026 AC-7 (stereo, 026b), automatic (spec 013): the script sets the 3D slider (the console's own slider is ignored
+# while it runs), takes a screenshot of both eyes of the showcase, runs the check — the math golden, the mono probe
+# scenes, the stereo golden (per-eye to_screen and the culling union: the console must print the PC's sums bit for bit)
+# and the stereo probe scene read back in each eye — then puts the slider down: one picture again.
+# PC:      nnh run models --pc --script examples/models/tests/stereo.nnhs
+# Console: nnh run models --script examples/models/tests/stereo.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected lines are the PC's (pc-debug). The stereo sums change only if self_check_stereo.cpp or the stereo math
+# change: then run `MODELS_DEMO=check NNH_SIM_SLIDER=1 NNH_EXIT_AFTER_FRAMES=200 build/pc-debug/examples/models/models.exe`,
+# copy its lines here and the sum into kStereoGolden.
+fail-on "] E "
+fail-on "3d: FAIL"
+fail-on "3d-stereo: FAIL"
+fail-on "3d pixels: FAIL"
+
+wait 30
+slider 1
+expect "slider: 1.00" 10
+expect "eyes: 2" 10
+wait 10
+screenshot stereo eyes
+
+# The check (SELECT): the math script, the mono probes, the stereo script, the stereo probes in both eyes.
+tap SELECT
+expect "models: check started" 20
+expect "3d: PASS A3BF4EDF" 120
+expect "3d pixels: PASS" 300
+expect "3d-stereo: 10000 sum D6FA62DB" 120
+expect "3d-stereo: 20000 sum DBD4A6D4" 120
+expect "3d-stereo: 30000 sum 75E511BE" 120
+expect "3d-stereo: 40000 sum 5A986EFB" 120
+expect "3d-stereo: 50000 sum B3550D40" 120
+expect "3d-stereo: PASS B3550D40" 30
+expect "3d pixels stereo: PASS" 300
+wait 10
+
+# Back to the showcase; the slider down: one eye again.
+tap SELECT
+expect "models: showcase" 20
+wait 10
+slider 0
+expect "slider: 0.00" 10
+expect "eyes: 1" 10
+wait 10
+screenshot mono eyes
+slider off
+end

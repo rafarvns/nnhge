@@ -15,6 +15,15 @@ NNH_TEST(models_self_check_matches_the_golden) {
     CHECK(check.sum() == models::kSelfCheckGolden);
 }
 
+NNH_TEST(models_stereo_self_check_matches_its_golden) {
+    models::SelfCheck check(models::Script::Stereo);
+    while (!check.run(997)) {
+    }
+    for (int k = 1; k <= 5; ++k) std::printf("    3d-stereo: %d sum %08X\n", k * 10000, check.checkpoint(k));
+    CHECK(check.sum() == models::kStereoGolden);
+    CHECK(check.sum() != models::kSelfCheckGolden);
+}
+
 NNH_TEST(models_self_check_is_independent_of_the_slice_size) {
     models::SelfCheck a, b;
     while (!a.run(10000)) {

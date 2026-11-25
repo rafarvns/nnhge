@@ -76,3 +76,52 @@ NNH_TEST(settings_format_refuses_a_small_buffer) {
     char tiny[8];
     CHECK(format_settings(SimSettings{}, tiny, sizeof tiny) < 0);
 }
+
+// ---- the 3D slider and the eye view (spec 026 FR-16/FR-22, T11.2) ----------------------------------------------
+
+using nnh::platform::pc::SimEye;
+
+NNH_TEST(settings_remember_the_slider_and_the_eye_view) {
+    SimSettings s;
+    s.slider = 35;
+    s.eye = SimEye::Anaglyph;
+    char text[256];
+    const int length = format_settings(s, text, sizeof text);
+    CHECK(length > 0 && std::strstr(text, "slider=0.35\n") != nullptr && std::strstr(text, "eye=anaglyph\n") != nullptr);
+    SimSettings back;
+    CHECK(parse_settings(text, static_cast<std::size_t>(length), back));
+    CHECK(back.slider == 35 && back.eye == SimEye::Anaglyph);
+    CHECK(parse("slider=2\neye=middle\n", back)); // invalid: kept
+    CHECK(back.slider == 35 && back.eye == SimEye::Anaglyph);
+}
+
+NNH_TEST(slider_text_is_0_to_1_with_at_most_two_decimals) {
+    using nnh::platform::pc::parse_slider;
+    int h = -1;
+    CHECK(parse_slider("0", h) && h == 0);
+    CHECK(parse_slider("1", h) && h == 100);
+    CHECK(parse_slider("0.5", h) && h == 50);
+    CHECK(parse_slider("0.05", h) && h == 5);
+    CHECK(parse_slider("1.00", h) && h == 100);
+    h = 7;
+    CHECK(!parse_slider("1.5", h) && !parse_slider("-0.1", h) && !parse_slider("0.123", h));
+    CHECK(!parse_slider("", h) && !parse_slider(".5", h) && !parse_slider("0.", h) && !parse_slider("x", h));
+    CHECK(!parse_slider(nullptr, h) && h == 7);
+}
+
+NNH_TEST(slider_steps_stay_in_range) {
+    using nnh::platform::pc::step_slider;
+    CHECK(step_slider(35, 10) == 45 && step_slider(35, -1) == 34);
+    CHECK(step_slider(95, 10) == 100 && step_slider(4, -10) == 0);
+}
+
+NNH_TEST(eye_views_cycle_and_have_names) {
+    using nnh::platform::pc::eye_id;
+    using nnh::platform::pc::next_eye;
+    using nnh::platform::pc::parse_eye;
+    CHECK(next_eye(SimEye::Left) == SimEye::Right && next_eye(SimEye::Right) == SimEye::Anaglyph &&
+          next_eye(SimEye::Anaglyph) == SimEye::Left);
+    SimEye e = SimEye::Left;
+    CHECK(parse_eye("right", e) && e == SimEye::Right && std::strcmp(eye_id(e), "right") == 0);
+    CHECK(!parse_eye("both", e) && e == SimEye::Right && !parse_eye(nullptr, e));
+}

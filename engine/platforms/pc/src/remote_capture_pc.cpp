@@ -13,9 +13,8 @@ namespace {
 
 SDL_Surface* g_capture = nullptr;
 
-} // namespace
-
-bool remote_capture(Screen screen, ScreenPixels& out) {
+/// Reads a screen-sized render target back as RGBA8 rows.
+bool capture(SDL_Texture* target, ScreenPixels& out) {
     remote_capture_release();
     pc::Context& ctx = pc::context();
     if (ctx.frame_open) {
@@ -23,7 +22,7 @@ bool remote_capture(Screen screen, ScreenPixels& out) {
         return false;
     }
     SDL_Texture* previous = SDL_GetRenderTarget(ctx.renderer);
-    pc::draw_on(screen);
+    SDL_SetRenderTarget(ctx.renderer, target);
     SDL_Surface* raw = SDL_RenderReadPixels(ctx.renderer, nullptr);
     SDL_SetRenderTarget(ctx.renderer, previous);
     g_capture = raw != nullptr ? SDL_ConvertSurface(raw, SDL_PIXELFORMAT_RGBA32) : nullptr;
@@ -39,6 +38,18 @@ bool remote_capture(Screen screen, ScreenPixels& out) {
     out.size = static_cast<std::uint32_t>(g_capture->w) * static_cast<std::uint32_t>(g_capture->h) * 4u;
     out.layout = PixelLayout::Rgba8Rows;
     return true;
+}
+
+} // namespace
+
+bool remote_capture(Screen screen, ScreenPixels& out) {
+    return capture(pc::context().screens[screen == Screen::Top ? 0 : 1], out);
+}
+
+// The right eye of a frame that drew two (eyes_pc.cpp keeps it in ctx.right_eye), else the top screen (spec 026).
+bool remote_capture_right(ScreenPixels& out) {
+    const pc::Context& ctx = pc::context();
+    return capture(ctx.right_eye != nullptr ? ctx.right_eye : ctx.screens[0], out);
 }
 
 void remote_capture_release() {

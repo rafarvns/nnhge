@@ -90,9 +90,17 @@ void Timeline::add(const Step& step) {
     case Command::Screenshot: {
         wire::Message m;
         m.type = wire::MessageType::Screenshot;
-        m.screens = wire::kScreenTop | wire::kScreenBottom;
+        m.screens = wire::kScreenTop | wire::kScreenBottom | (step.eyes ? wire::kScreenTopRight : 0);
         send(m, now, line, step.text);
         open_.length += 1; // what follows lands after the captured frame, so it isn't in the picture
+        break;
+    }
+    case Command::Slider:
+    case Command::SliderOff: {
+        wire::Message m;
+        m.type = wire::MessageType::Slider;
+        m.slider = step.command == Command::SliderOff ? wire::kSliderRelease : static_cast<std::uint16_t>(step.x);
+        send(m, now, line);
         break;
     }
     case Command::FailOn:

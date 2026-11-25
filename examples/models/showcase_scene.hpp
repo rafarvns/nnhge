@@ -21,6 +21,7 @@ public:
 
 private:
     void touch_buttons();
+    void log_stereo();
     void log_tag();
     void draw_world();
     void draw_sky_and_hud();
@@ -36,4 +37,6 @@ private:
     bool textures_ = true, lighting_ = true, point_light_ = true, culling_ = true, debug_ = false;
     int flash_ = 0;
     bool moved_ = false;
+    float slider_ = -1; ///< the 3D slider last logged ("slider: 0.50")
+    int eyes_ = -1;     ///< the eyes last logged ("eyes: 2"), from the stats of the frame before
 };

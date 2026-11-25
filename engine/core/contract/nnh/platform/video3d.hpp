@@ -109,4 +109,18 @@ void draw_3d(const Draw3D& draw);
 /// Ends the pass and restores the 2D state (draw_2d works again).
 void end_3d();
 
+// ---- Stereo (spec 026b, FR-14/FR-15) -----------------------------------------------------------------------------
+// Core calls set_stereo once per frame with 3D on, before the top screen's pass. In a stereo frame it then draws the
+// top screen once per eye: select_eye(0) → 2D below → 3D → 2D above → select_eye(1) → the same again →
+// select_eye(0); the debug pass draws the top screen's items in both eyes the same way. A frame without
+// set_stereo(true) draws the top screen once, as before.
+
+/// This frame shows two pictures on the top screen (true) or one for both eyes (false). 3DS: gfxSet3D only when it
+/// changes; PC: the eye view (F8) applies to this frame.
+void set_stereo(bool on);
+/// The following top-screen draws (draw_2d, draw_tiles, begin_3d…end_3d) go to `eye`'s picture (0 left, 1 right).
+/// The right one is cleared to `top_clear` (colour and depth) at its first selection in a frame. Only in a frame
+/// after set_stereo(true).
+void select_eye(std::uint8_t eye, Color top_clear);
+
 } // namespace nnh::platform

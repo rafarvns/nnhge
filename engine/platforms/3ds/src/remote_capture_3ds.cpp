@@ -44,17 +44,14 @@ const char* unreadable(const C3D_RenderTarget* target, gfxScreen_t screen, u32 c
     return nullptr;
 }
 
-} // namespace
-
-bool remote_capture(Screen screen, ScreenPixels& out) {
+/// Reads `target` (a screen's, or the top screen's right eye) back; see the file comment.
+bool capture(C3D_RenderTarget* target, bool top, ScreenPixels& out) {
     if constexpr (!build::kDevToolsEnabled) return false;
     ctr::Context& ctx = ctr::context();
     if (ctx.frame_open) {
         ctr::set_error("a screen is read back after end_frame(), not while a frame is drawn");
         return false;
     }
-    const bool top = screen == Screen::Top;
-    C3D_RenderTarget* target = ctx.targets[top ? 0 : 1];
     const u32 columns = top ? 400 : 320;
     if (const char* why = unreadable(target, top ? GFX_TOP : GFX_BOTTOM, columns)) {
         ctr::set_error(why);
@@ -88,6 +85,20 @@ bool remote_capture(Screen screen, ScreenPixels& out) {
     out.height = static_cast<std::uint16_t>(kColumnPixels);
     out.layout = PixelLayout::Bgr8ColumnsBottomUp;
     return true;
+}
+
+} // namespace
+
+bool remote_capture(Screen screen, ScreenPixels& out) {
+    const bool top = screen == Screen::Top;
+    return capture(ctr::context().targets[top ? 0 : 1], top, out);
+}
+
+// The right eye's target after a stereo frame (eyes_3ds.cpp sets ctx.right_eye), else the top screen's (spec 026). The
+// same marker wait as remote_capture: C3D_SyncDisplayTransfer may return before its copy lands.
+bool remote_capture_right(ScreenPixels& out) {
+    const ctr::Context& ctx = ctr::context();
+    return capture(ctx.right_eye != nullptr ? ctx.right_eye : ctx.targets[0], true, out);
 }
 
 void remote_capture_release() {

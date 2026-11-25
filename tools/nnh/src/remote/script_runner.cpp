@@ -150,7 +150,8 @@ void ScriptRunner::send(wire::Message message, int line, const std::string& name
     if (message.type == wire::MessageType::Screenshot) {
         message.id = message.seq;
         sent.screens_left = ((message.screens & wire::kScreenTop) ? 1 : 0) +
-                            ((message.screens & wire::kScreenBottom) ? 1 : 0);
+                            ((message.screens & wire::kScreenBottom) ? 1 : 0) +
+                            ((message.screens & wire::kScreenTopRight) ? 1 : 0);
         ++screens_pending_;
     }
     sent_[message.seq] = sent;
@@ -208,8 +209,9 @@ void ScriptRunner::screen(Record& record) {
         return;
     }
     char file[96];
+    static constexpr const char* kSuffix[3] = {"top", "bottom", "top-right"};
     std::snprintf(file, sizeof file, "frame-%06u-%s-%s.png", static_cast<unsigned>(record.frame), sent.name.c_str(),
-                  record.screen.screen == 0 ? "top" : "bottom");
+                  kSuffix[record.screen.screen < 3 ? record.screen.screen : 0]);
     job.line = sent.line;
     job.name = sent.name;
     job.file_name = file;

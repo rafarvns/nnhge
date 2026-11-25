@@ -3,6 +3,7 @@
 // buffer freed when the PC leaves.
 
 #include "nnh/app.hpp"
+#include "nnh/platform/video3d.hpp"
 #include "remote_fixture.hpp"
 
 using namespace remote_test;
@@ -51,6 +52,28 @@ NNH_TEST(remote_screenshot_is_taken_at_the_end_of_its_frame) {
     CHECK(le16(b) == 0x0102 && b[2] == 1 && le32(b + 4) == 5 && le16(b + 8) == 320 && le16(b + 10) == 240);
     CHECK(bottom->length == wire::kScreenFixed + 320u * 240u * 4u);
     CHECK(pixel_is(b + 12, nnh::Screen::Bottom, 319, 0) && pixel_is(b + 12, nnh::Screen::Bottom, 17, 200));
+    nnh::shutdown();
+}
+
+NNH_TEST(remote_screenshot_of_the_right_eye_is_screen_2) {
+    start_attached();
+    send(screenshot(2, 1, 7, wire::kScreenTop | wire::kScreenTopRight));
+    frames(2); // frame 1 drew one picture: the right eye is the top screen
+    Sent s = sent();
+    CHECK(s.count_of(RecordType::Screen) == 2);
+    const Record* right = s.find(RecordType::Screen, 1);
+    CHECK(right != nullptr && right->payload[2] == 2 && le16(right->payload + 8) == 400);
+    CHECK(pixel_is(right->payload + 12, nnh::Screen::Top, 5, 6));
+    fake::remote_clear_sent();
+    send(screenshot(3, 3, 8, wire::kScreenTopRight));
+    CHECK(nnh::frame());
+    nnh::platform::set_stereo(true); // frame 3 draws two eyes
+    CHECK(nnh::frame());
+    s = sent();
+    CHECK(s.count_of(RecordType::Screen) == 1);
+    std::uint8_t want[4];
+    fake::remote_capture_right_pixel(5, 6, want);
+    CHECK(std::memcmp(s.find(RecordType::Screen)->payload + 12 + (6 * 400 + 5) * 4, want, 4) == 0 && want[2] == 0xC0);
     nnh::shutdown();
 }
 

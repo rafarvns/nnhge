@@ -2,7 +2,8 @@
 
 > Status: **2D implemented** ([spec 004](../../specs/004-2d-graphics/spec.md), PC and 3DS). **3D mono implemented**
 > ([spec 026](../../specs/026-3d-foundation/spec.md) part 026a: meshes, materials, lights, the 3D pass among the 2D
-> layers; PC rasteriser and citro3d backend, console run pending); stereo is the spec's second part.
+> layers; PC rasteriser and citro3d backend, checked on the Old 3DS); **stereo** (026b: the 3D slider, the top screen
+> drawn once per eye) implemented and checked on the Old 3DS.
 
 ## The frame, per screen
 
@@ -43,6 +44,16 @@ only mesh and 3D entry points link: a 2D-only game links no 3D code (its cost: t
   decision D41): into a 400×240 colour and depth buffer that starts as the clear colour or as the top target read back
   when 2D was drawn below the world, put back opaque, so every blend happens on the CPU and screenshots are the same on
   every renderer. The fake platform records every call and can run the same rasteriser for pixel tests.
+- **Stereo (026b, FR-14/FR-15)**: core reads `system::stereo_slider()` and, when it is above 0 with a perspective camera
+  whose stereo is on, makes two eyes (`gfx3d/eye_setup.cpp`: the view moved by ∓separation/2 along the camera's right,
+  an off-axis projection that keeps the focal plane on the same pixels). Culling runs once with both eyes' frusta (a
+  draw is kept if either sees it), the order once by the centre camera; then the screen's whole sequence — 2D below,
+  3D pass, 2D above — runs per eye after `platform::select_eye(eye)`, and `select_eye(0)` restores the left eye; the
+  debug pass draws the top screen's items in both eyes. `platform::set_stereo(on)` tells the backend each frame (3DS:
+  `gfxSet3D` on change; a frame without 3D draws shows one picture). The tile and particle budgets are rewound before
+  the second eye, so they are spent once. Backends: the 3DS swaps citro2d's top target between two RGBA8 + D24S8 targets
+  on the left and right outputs (the right one cleared at its first use in a frame); the PC swaps its top render target
+  and composes the eye view (left, right or a red/cyan anaglyph, F8) into the window; the fake records `L`/`R` calls.
 
 ## Tile layers (batches)
 
@@ -127,8 +138,8 @@ No contract change; the 3DS sizes citro2d for `max_particles` more objects. A de
 
 - **Order by layer** without making the game sort its calls.
 - **Batching**: consecutive draws of the same texture go to the GPU together.
-- **Stereoscopic 3D (spec 026's second part)**: the top screen is drawn twice, once per eye. A recorded list can be
-  submitted twice (and later with a horizontal offset per layer), so 2D needs no new calls.
+- **Stereoscopic 3D (spec 026b)**: the top screen is drawn twice, once per eye. The recorded list is submitted twice
+  (a horizontal offset per layer is a follow-up), so 2D needs no new calls.
 - **Testability**: the list is plain data, checked by unit tests on the fake platform.
 
 The list has a fixed capacity set at `init()` (no allocation per frame). It stores texture **handles**,

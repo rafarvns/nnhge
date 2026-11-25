@@ -142,5 +142,8 @@ NNH_TEST(ui_style_texture_slots_are_0_to_7) {
         static nnh::Texture t;
         g->set_texture(8, t);
     }));
-    CHECK(ui_test::asserts_or_is_ignored([] { (void)g->add_style({}); })); // UiDesc::styles is 0
+    CHECK(ui_test::asserts_or_is_ignored([] {
+        const nnh::UiStyle style; // a named value: GCC 13/14 on Linux refuse add_style({}) here
+        (void)g->add_style(style);
+    })); // UiDesc::styles is 0
 }

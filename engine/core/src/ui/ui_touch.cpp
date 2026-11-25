@@ -102,6 +102,7 @@ void held(UiBlock& b, int x, int y) {
         t.widget = kUiNone; // the press is cancelled
     }
     if (t.scrolling) {
+        if (t.scroller == kUiNone) return; // the dragged list or box was destroyed: the drag scrolls nothing
         const int sc = t.scroller;
         const int rows = dy / scroll_step(b, sc); // toward zero
         if (is_list(kind_of(b, sc))) {

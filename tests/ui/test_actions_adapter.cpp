@@ -22,7 +22,9 @@ nnh::ActionSet make_set() {
     CHECK(set.add(Act::Move, {.name = "move", .kind = nnh::ActionKind::Vector,
                         .bindings = {{.source = nnh::Source::dpad()}}}));
     CHECK(set.add(Act::Up, {.name = "up", .bindings = {{.source = nnh::Source::button(Button::Up)}}}));
-    CHECK(set.add(Act::Down, {.name = "down"})); // unbound
+    nnh::ActionDesc down; // unbound (GCC 13/14 on Linux refuse the braced form with only .name)
+    down.name = "down";
+    CHECK(set.add(Act::Down, down));
     return set;
 }
 

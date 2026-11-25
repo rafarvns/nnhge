@@ -142,6 +142,24 @@ NNH_TEST(ui_touch_drag_scrolls_by_whole_rows) {
     ui.update(touch_end(5, 52));
 }
 
+// Regression (found by ASan on Linux): destroying the list being dragged left the drag pointing at no slot, and the
+// next held touch read past the widget block.
+NNH_TEST(ui_touch_drag_survives_the_list_being_destroyed) {
+    Ui ui = ui_test::make({.rows = 16});
+    const UiWidget l = ui.list(ui.root(Screen::Bottom), {.rows = 4, .count = 20, .fill = [](int, nnh::UiRow&) {}});
+    ui_test::settle(ui);
+    ui.update(touch_start(5, 40));
+    ui.update(touch_hold(5, 10)); // a drag: scrolling
+    ui.destroy(l);
+    ui.update(touch_hold(5, 5));
+    const UiWidget again =
+        ui.list(ui.root(Screen::Bottom), {.rows = 4, .count = 20, .fill = [](int, nnh::UiRow&) {}});
+    ui_test::settle(ui);
+    ui.update(touch_hold(5, 0));
+    ui.update(touch_end(5, 0));
+    CHECK(ui.list_info(again).first_visible == 0 && !ui.activated(again));
+}
+
 NNH_TEST(ui_touch_ignores_disabled_and_refuses_inert) {
     Menu m;
     m.ui.set_enabled(m.b, false);

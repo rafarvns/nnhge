@@ -30,10 +30,14 @@ int distribute(UiBlock& b, int s, bool horizontal, int available) {
     const int total = box_distribute_each(
         [&](auto&& fn) {
             for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) {
+                // the item lives in the node between passes: size in w/h, `fixed` in the scratch flag
                 UiHot& h = b.hot[c];
-                BoxItem it{.min = horizontal ? h.min_w : h.min_h, .stretch = h.stretch, .expand = expands(h)};
+                std::int16_t& size = horizontal ? h.w : h.h;
+                BoxItem it{.min = horizontal ? h.min_w : h.min_h, .stretch = h.stretch, .expand = expands(h),
+                           .fixed = (h.flags & kUiScratch) != 0, .size = size};
                 fn(it);
-                (horizontal ? h.w : h.h) = i16(it.size);
+                size = i16(it.size);
+                h.flags = static_cast<std::uint8_t>(it.fixed ? h.flags | kUiScratch : h.flags & ~kUiScratch);
             }
         },
         space);

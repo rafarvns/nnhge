@@ -167,7 +167,7 @@ Input actions (spec 017, implemented; demo `examples/actions`): `<nnh/actions.hp
 touch areas), contexts bound to scenes, `pressed`/`vector`/`held_frames`/repeat and `ActionPressed` events in the same
 frame (D32 after-input hook), listen/conflicts/reset for a controls screen, `NNHB` overrides saved with `nnh::save`
 ([api/actions.md](docs/api/actions.md)).
-Save data with versions (spec 027, implemented, console check pending; D45, D46; demo `examples/saves`):
+Save data with versions (spec 027, implemented, Linux and console run 1 done, codec optimisation pending; D45, D46; demo `examples/saves`):
 `<nnh/saves.hpp>` — `NNH_SAVE_TYPE(Progress, "progress", NNH_SAVE_VERSION(3), NNH_SAVE_STEP(1, from_v1), ...,
 NNH_SAVE_FIELD(member, id), NNH_SAVE_RETIRED(ids...))` in the struct's namespace (tables found by ADL; ids, retired ids
 and a complete step chain checked at compile time), `NNH_SAVE_STRUCT`, `NNH_SAVE_SUMMARY`; `save::store`/`load` with a
@@ -192,7 +192,7 @@ per screen or across both (`tall`), `reveal_at` for the reopening iris; no scene
 queries `running/phase/coverage/...`; pure `effect_rects/draw_effect`. Run by a scene-stack hook (one null check);
 self-check `BFE1D810` ([api/transition.md](docs/api/transition.md)). The platformer's doors use a tall iris
 (`PLATFORMER_DEMO=doors`, `tests/doors.nnhs`).
-3D foundation (spec 026, part 026a mono implemented, console run 2 done, budgets set; 026b stereo planned; D41–D44, D47; demo
+3D foundation (spec 026, part 026a mono implemented, console and Linux checks passed, budgets set; 026b stereo planned; D41–D44, D47; demo
 `examples/models`): `<nnh/math3d.hpp>` — `Vec3`, `Quat`, `Mat4`, `Transform3D`, `look_at`, `perspective`, `slerp`… with
 the same bits on PC and 3DS ([api/math3d.md](docs/api/math3d.md)); `<nnh/mesh.hpp>` — `create_mesh`, `make_cube/plane/
 sphere`, `load_mesh("models/ship")` from glTF 2.0 converted by `nnh-assetc mesh` into quantised `.nnhmesh` (fixtures in

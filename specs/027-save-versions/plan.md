@@ -1079,6 +1079,44 @@ VM 120) and stage 10 (console) are the lead's and the maintainer's; T11.7 (merge
 - **Code size:** the module's ≈ 22.6 KB of 3ds-release `.text` (codec ≈ 14.6 KB, against the 7–10 KB estimate) is
   accepted: the module is opt-in (`hello` is byte-identical), so only games that use structured saves pay it.
 
+## Stage 9 results (T9.1)
+
+On `nnhge-build` (VM 120, Ubuntu, 4 vCPU), 2026-11-25, `main` at the D47 and probe fixes (specs 026a and 027 together):
+
+- **GCC 13** (pc-debug): `nnh_tests` 3 200 tests, 0 failures; ctest 331 of 341 at first — the 10 `*_script_pc` tests
+  need the `pc-dev` preset's folder (`build/pc-dev`), which `-B` builds don't make; with `pc-dev` built (GCC 13) 10 of 13
+  pass and the 3 left (`transitions_check_script_pc`, `particles_check_script_pc`, `platformer_doors_script_pc`) fail
+  only on their benches' timing verdicts (the VM draws with SDL's software renderer, no GPU: e.g. a fade 1.29 ms against
+  the console's 0.11 ms budget, a doors frame over 25 ms); every logic, self-check and golden line matched.
+- **GCC 14** (pc-debug): `nnh_tests` 3 200, 0 failures; ctest without the scripts 328 of 328. One warning, fixed:
+  `-Wformat-truncation` in `examples/models/check_scene.cpp` (a 128-byte text for up to 169 bytes; now 192).
+- **clang 18 with ASan + UBSan** (`-fno-sanitize-recover=undefined`, `ASAN_OPTIONS=detect_leaks=1`): `nnh_tests` 3 200,
+  0 failures, no sanitizer report. Only `nnh_tests` and the fuzzers were built with sanitizers: the VM's disk was full
+  (`/var/lib/containerd` holds 9.8 GB of container images; not touched).
+- **libFuzzer** (clang 18, ASan): `fuzz_saves` 600 s, 3 061 285 runs, cov 962; `fuzz_save` 300 s, 11 636 185 runs;
+  `fuzz_bindings` 300 s, 282 734 runs; `fuzz_data` 300 s, 4 145 137 runs; `fuzz_assetc_gltf` 600 s, 1 148 342 runs, cov
+  1128; `fuzz_mesh_reader` 600 s, 23 599 172 runs — no crash, leak or timeout in any.
+- **AC-2 on every compiler**: the v1/v2/v3 sums, `encode crc 11363B5C bytes 3768`, the slot and backup lines and the
+  golden files in `tests/data/saves/` are checked by `nnh_tests` and the `--pc` script (GCC 13): identical everywhere.
+- **32-bit host build**: not done — the VM has no 32-bit multilib (`gcc-13 -m32` finds no `crti.o`); installing it is a
+  system change for the maintainer.
+
+## Console run 1 (T10.2, 2026-11-25, Old 3DS XL, Development build)
+
+Scripts own the controls (spec 013's amendment). Logs: `build/logs/saves-20261125-104918.txt`, the `actions` and `data`
+runs right after.
+
+- `check.nnhs`: `saves: v1 sum 0F3BA8C8 migrated 2`, `v2 sum 1EFDB382 migrated 1`, `v3 sum D15774A7 migrated 0`,
+  `encode crc 11363B5C bytes 3768`, `slot sum F6C8D12F`, `backup used sum D15774A7` (with the expected warning
+  `backup used (slot1.sav: field ?: bad wire byte 0x7F)`), `summaries L300 empty empty`, `removed slot1 exists 0`,
+  `saves: PASS` — equal to the PC's.
+- Bench (old targets): `encode` avg **0.517 ms** (< 0.5: FAIL), `decode` avg **1.437 ms** (< 1: FAIL), `decode v1`
+  0.676 ms (< 1.2: PASS), store median 128.9 ms, max 131.3 (< 150, max 300: PASS), load median 36.3 ms (< 50: PASS),
+  backup median 72.5 ms (< 100: PASS), summaries median 109.5 ms (< 150: PASS), raw write median 2 154.4 ms (no target;
+  logged). Encode and decode are about twice the ARM pre-check's estimates (0.31, 0.65): T10.3's optimisation round.
+- `actions/tests/check.nnhs`: `actions: saved 40 bytes sum AAB4AA36`, `actions: PASS 7/7`, `nnh: PASS`.
+- `data/tests/check.nnhs`: `data check: PASS checksum 0xD5BD3020 (4 enemies, 3 items, 1 settings, index 595 bytes)`.
+
 ## Optimisation round (T10.3)
 
 **Console run 1** (Old 3DS XL, Development, 2026-11-25, as reported by the maintainer): every logic line equal to the

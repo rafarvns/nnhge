@@ -12,6 +12,7 @@
 #include "nnh/fs.hpp"
 #include "nnh/platform/input.hpp"
 #include "remote/remote_input.hpp"
+#include "reload/reload_wire.hpp"
 #include "remote/remote_reader.hpp"
 #include "remote/remote_schedule.hpp"
 
@@ -122,13 +123,24 @@ int remote_target(const std::uint8_t* data, std::size_t size) {
         std::size_t n = reader.bytes_wanted(schedule.room());
         if (n > (control & 0x3Fu)) n = control & 0x3Fu;
         if (n > size - pos) n = size - pos;
-        const FeedResult fed = reader.feed(data + pos, n, now, items, schedule.room());
-        if (fed.consumed != n || fed.items > kScheduleCapacity) std::abort(); // bounded reads always fit
-        pos += n;
-        for (std::size_t i = 0; i < fed.items; ++i) {
-            if (items[i].reason != Reject::None || items[i].message.type == MessageType::Hello) continue;
-            if (items[i].message.frame == 0 || !schedule.push(items[i].message, now)) std::abort();
+        // A read yields at most room messages; payload pieces (spec 031) may need another feed for the rest.
+        for (std::size_t at = 0; at < n;) {
+            const std::size_t capacity = schedule.room() > 0 ? schedule.room() : 1;
+            const FeedResult fed = reader.feed(data + pos + at, n - at, now, items, capacity);
+            if (fed.items > capacity || (fed.consumed == 0 && fed.items == 0)) std::abort();
+            at += fed.consumed;
+            for (std::size_t i = 0; i < fed.items; ++i) {
+                const ReadItem& it = items[i];
+                if (it.payload_size > 0) {
+                    if (it.payload < data || it.payload + it.payload_size > data + size) std::abort(); // inside the input
+                    continue;
+                }
+                if (it.reason != Reject::None || it.message.type == MessageType::Hello) continue;
+                if (is_reload_transfer(it.message.type)) continue; // handled at receipt, never scheduled
+                if (it.message.frame == 0 || !schedule.push(it.message, now)) std::abort();
+            }
         }
+        pos += n;
         Message due;
         while (schedule.pop_due(now, due)) {
             if (due.frame > now || due.frame < last_applied) std::abort(); // never early, always in order

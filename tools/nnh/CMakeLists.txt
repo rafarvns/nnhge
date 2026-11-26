@@ -51,6 +51,10 @@ add_library(nnh_tool_lib STATIC
     ${PROJECT_SOURCE_DIR}/engine/core/src/live/live_names.cpp
     ${PROJECT_SOURCE_DIR}/engine/core/src/live/live_steps.cpp
     ${PROJECT_SOURCE_DIR}/engine/core/src/remote/live_wire.cpp
+    # hot reload (spec 031): the reload messages and records, the same code as the game's
+    ${PROJECT_SOURCE_DIR}/engine/core/src/core/crc32_update.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/reload/reload_names.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/reload/reload_wire.cpp
 )
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${PROJECT_SOURCE_DIR}/engine/core/src/live/live_steps.cpp

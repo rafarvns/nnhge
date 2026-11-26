@@ -150,10 +150,10 @@ NNH_TEST(live_wire_pause_refuses_bad_fields) {
     }
 }
 
-NNH_TEST(live_wire_types_past_pause_are_unknown) {
+NNH_TEST(live_wire_types_past_the_last_are_unknown) {
     const std::uint8_t args[8] = {};
     std::uint8_t bytes[16];
-    raw(12, args, bytes);
+    raw(18, args, bytes); // 12–17 are spec 031's reload messages
     Message m;
     CHECK(decode(bytes, m) == Reject::Type);
 }

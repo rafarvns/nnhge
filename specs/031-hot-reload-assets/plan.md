@@ -665,3 +665,53 @@ swaps; D50's chain is reloadable at the apply point. Flagged for the maintainer:
     and compares at that frame's end, through two new `LiveOps` entries; ≤ 16 tunables tracked)? Recommended: yes — `nnh`
     can't see a struct the game reloads, the game can, and nothing is written to tunables (Q9 (a)). Alternative: drop the
     warning and document the "file wins" rule only (FR-23's text would change).
+
+## Implementation notes
+
+Built in the worktree `.claude/worktrees/spec-031` (branch `spec-031`, from `main` at `cf15822`, after spec 030's merge).
+
+### Implementation refinements
+
+- **R1 (T0.0) Numbers confirmed.** The merged `remote_wire.hpp` ends at `Pause = 11` and `LiveState = 12`; spec 030's names
+  are as this plan uses them (`dev_pause_state()`, `PauseOp::{Pause,Resume,Step}`, `LiveState` records, `LiveOps`
+  through `g_live_ops`, the live point right after `++g_frame_count` in `app.cpp`). Messages 12–17 and records 13–15 as
+  planned; no change to the plan.
+- **R2 (T1.1) Field mapping.** Begin/Apply keep `files` in `Message::x` (u16 fits an `int16_t` up to 256), Notice keeps
+  `others` in `Message::release`; the rest as planned. Every reload message but Apply must carry frame 0. `ReloadReason`
+  (the record's reason byte) is one enum: transfer reasons 1–9, validate/memory/restart 20–25, notices 30–31.
+- **R3 (T1.2) Transfer messages skip the frame order.** A transfer message resolves to the frame being read and does not
+  move the reader's "last frame": a script that scheduled input 100 frames ahead can still send a batch now (Apply keeps
+  the order, like every scheduled message). A refused but decoded message (NotAttached, Order) still has its payload
+  skipped; a decode failure never announces one.
+- **R4 (T1.2) Feeds until every byte is handled.** A read of `room × 16` bytes can now yield more than `room` items (a
+  payload piece is an item too), so the session (and the remote fuzz target) feed the rest of the bytes after handling
+  the items, instead of assuming one feed takes everything. `bytes_wanted(0)` is 0 in payload mode too.
+- **R5 (T1.5) Overlay tombstones.** A removed path keeps its slot (a tombstone); a path added again takes a new slot, so
+  `kOverlayPaths` counts slots taken in the session (removals included).
+- **R6 (stage 1) A latent padding compare.** `map_coins_equal_the_hand_written_coins` (platformer prefabs, spec 022)
+  compared `Barrel {int, bool}` component bytes including padding; the new tests changed the test order and the stale
+  heap bytes differed. The test now zeroes both Barrels after comparing their members, as it already did for `Turret`.
+
+### Stage 0 results
+
+- T0.0: see R1.
+- T0.1 (partial): baselines recorded in `build/ref-031/base/` (not committed): 3ds-release `hello.3dsx` SHA-256
+  `8c687f3dec3df9fa…`, stripped `hello.elf` `5cd5d9505dd67b73…`; pc-release `hello.exe` size `text 134880 data 22052 bss
+  212400` and its `nm -C` list (3001 lines); 3ds-dev `hello.elf` `text 227088 data 32872 bss 110096`; pc-debug `hello.exe`
+  `text 225744`. The per-object disassembly, the edit-one-`.cpp` timings and the header measurements were not taken
+  (see "Not done").
+- T0.2 and T0.3: not done (see "Not done").
+
+### Stage 1 results
+
+- New pure files: `reload/reload_wire.{hpp,cpp}`, `reload_receiver`, `reload_names`, `reload_overlay` (also in `nnh`:
+  the wire and names); `remote_wire` dispatches messages 12–17 and records 13–15; the reader has its payload mode.
+- New tests: `test_reload_wire` (17), `test_remote_reader_payload` (10), `test_reload_receiver` (20), `test_reload_names`
+  (5), `test_reload_overlay` (6), mini-fuzz `test_fuzz_reload` (2: 20 000 random streams, 20 000 mutated batches);
+  libFuzzer target `fuzz_reload_receiver` (`NNH_BUILD_FUZZERS`, for the VM at T9.1). T1.6 stays unticked: its 60 s
+  libFuzzer run needs clang's libFuzzer, which the Windows MinGW toolchain doesn't have (the mini-fuzz runs everywhere). Changed: `test_remote_wire`,
+  `test_remote_slider`, `test_live_wire` (type 18 is now the first unknown type), the remote fuzz target (R4).
+- Stage-end guards: `nnh_tests` 4051/4051, `nnh_tool_tests` 197/197; ctest pc-debug 373/373, pc-release 337/337;
+  3ds-release and 3ds-dev build with 0 warnings; 3ds-release `hello.3dsx` and stripped `hello.elf` SHA-256 identical to
+  T0.1; pc-release `hello` sizes and `nm -C` identical. 3ds-dev `hello` text +1 712 B (the reader's payload mode and
+  `reload_wire.cpp`, linked by the remote decoder), bss +8 B.

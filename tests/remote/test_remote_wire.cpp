@@ -117,7 +117,7 @@ NNH_TEST(remote_wire_rejects_unknown_types) {
     Bytes m = hello();
     m.b[1] = 0;
     CHECK(decode(m) == Reject::Type);
-    m.b[1] = 12; // 7 is the 3D slider (spec 026), 8 the language (spec 029), 9–11 live values (spec 030)
+    m.b[1] = 18; // 7 the 3D slider (spec 026), 8 the language (029), 9–11 live values (030), 12–17 reloads (031)
     CHECK(decode(m) == Reject::Type);
     m.b[1] = 0xFF;
     CHECK(decode(m) == Reject::Type);

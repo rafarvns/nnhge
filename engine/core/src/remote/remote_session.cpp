@@ -151,13 +151,20 @@ void accept(const Message& message, std::uint32_t frame) {
 bool read_messages(std::uint32_t frame) {
     NNH_PROFILE_SCOPE("remote"); // the per-frame poll's cost (a socket call on the console), in the overlay
     const std::size_t room = g_schedule.room() > 0 ? g_schedule.room() : 1;
-    const long got = platform::remote_receive(g_scratch, g_reader.bytes_wanted(room));
+    std::size_t wanted = g_reader.bytes_wanted(room);
+    if (wanted > sizeof g_scratch) wanted = sizeof g_scratch;
+    const long got = platform::remote_receive(g_scratch, wanted);
     if (got < 0) return false;
-    const FeedResult fed =
-        g_reader.feed(g_scratch, static_cast<std::size_t>(got), frame, g_items, room);
-    for (std::size_t i = 0; i < fed.items; ++i) {
-        if (g_items[i].reason == Reject::None) accept(g_items[i].message, frame);
-        else reject(g_items[i], frame);
+    // A read yields at most `room` messages, plus payload pieces (spec 031): feed until every byte is handled.
+    for (std::size_t at = 0; at < static_cast<std::size_t>(got);) {
+        const FeedResult fed =
+            g_reader.feed(g_scratch + at, static_cast<std::size_t>(got) - at, frame, g_items, kScheduleCapacity);
+        at += fed.consumed;
+        for (std::size_t i = 0; i < fed.items; ++i) {
+            if (g_items[i].payload_size > 0) continue;               // the reload receiver's (stage 2)
+            if (g_items[i].reason == Reject::None) accept(g_items[i].message, frame);
+            else reject(g_items[i], frame);
+        }
     }
     return true;
 }

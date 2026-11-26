@@ -25,7 +25,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 0: baseline
 
-- [ ] **T0.0** Start: spec 030 merged into `main` (the lead); worktree `spec-031` from that `main`; the numbers of plan.md
+- [x] **T0.0** Start: spec 030 merged into `main` (the lead); worktree `spec-031` from that `main`; the numbers of plan.md
   confirmed against the merged `remote_wire.hpp` (messages up to `Pause = 11`, records up to `LiveState = 12`); 030's
   final names used by this plan confirmed (`dev_pause_state()`, the `Pause` message ops, `LiveState`'s flow and its
   catalogue condition, `LiveOps`, the live point in `app.cpp`). Files: plan.md ("Stage 0 results"). Covers D28, FR-6.
@@ -51,28 +51,28 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 1: the pure pieces shared with `nnh`
 
-- [ ] **T1.1** The wire: `engine/core/src/reload/reload_wire.{hpp,cpp}` (messages 12–17 and records 13–15: encode,
+- [x] **T1.1** The wire: `engine/core/src/reload/reload_wire.{hpp,cpp}` (messages 12–17 and records 13–15: encode,
   decode, validate, `payload_length()`), `remote/remote_wire.{hpp,cpp}` (type numbers, decoder dispatch, record length
   rules; `Message` stays 32 bytes). Test: `tests/reload/test_reload_wire.cpp` (round trips; every refusal: batch 0, files
   0 and 257, total > 32 MiB, op 0 and 3, path length 0, size > 16 MiB, a remove with a size, chunk length 0 and 16385,
   frame ≠ 0 on a transfer message, non-zero reserved bytes; record lengths at their bounds and one past);
   `test_remote_wire.cpp` and 030's `test_live_wire.cpp` unchanged cases pass. Covers FR-18, X, D54.
-- [ ] **T1.2** The reader's payload mode: `remote/remote_reader.{hpp,cpp}` (after a message with a payload, the next
+- [x] **T1.2** The reader's payload mode: `remote/remote_reader.{hpp,cpp}` (after a message with a payload, the next
   bytes come out as payload pieces pointing into the caller's buffer, split across reads; `bytes_wanted()` in payload
   mode; decoding resumes after it; refusals of a payload-carrying message still skip its declared payload). Test:
   `tests/remote/test_remote_reader_payload.cpp` (every split point of a message + payload + message; payload of 1 and
   16384 bytes; a refused chunk keeps the stream in sync; 8 malformed headers in a row still switch the reader off);
   `test_remote_reader.cpp` unchanged cases pass. Covers FR-18, X.
-- [ ] **T1.3** The receiver: `reload/reload_receiver.{hpp,cpp}` (pure over a sink of function pointers: begin file,
+- [x] **T1.3** The receiver: `reload/reload_receiver.{hpp,cpp}` (pure over a sink of function pointers: begin file,
   append, finish with CRC, discard all; one batch at a time; order, offsets, totals, paths through `valid_asset_path`,
   CRC-32 through `core/crc32`; staged; apply request; cancel; detach). Test: `tests/reload/test_reload_receiver.cpp`
   (a complete batch of puts and removes → staged with the exact sink calls; every refusal and its record reason: out of
   order, wrong offset, short or long file, total mismatch, bad CRC, a bad path, `Begin` while busy, `Apply` for another
   batch or count, cancel and detach mid-file → sink discard; every limit and limit + 1). Covers FR-4, FR-18, X.
-- [ ] **T1.4** [P] Names: `reload/reload_names.{hpp,cpp}` (load names, `matches(path_or_name, path)`, the log line's list
+- [x] **T1.4** [P] Names: `reload/reload_names.{hpp,cpp}` (load names, `matches(path_or_name, path)`, the log line's list
   cut at 160 characters with `, ... (+N)`). Test: `tests/reload/test_reload_names.cpp` (paths with several dots, no
   extension, index files, the cut at every length around 160). Covers FR-13, FR-15.
-- [ ] **T1.5** [P] The overlay table: `reload/reload_overlay.{hpp,cpp}` pure part (path hash → file number and flags,
+- [x] **T1.5** [P] The overlay table: `reload/reload_overlay.{hpp,cpp}` pure part (path hash → file number and flags,
   512 slots, ≤ 256 paths, exact compare against the current index's stored path; replace returns the previous file to
   remove). Test: `tests/reload/test_reload_overlay.cpp` (insert, replace, remove, collisions forced by a test hash,
   capacity + 1 refused). Covers FR-5, FR-12, FR-16.
@@ -81,7 +81,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   write outside an open file, bytes written ≤ declared, no crash, state reset after cancel) and
   `tests/fuzz/libfuzzer_reload_receiver.cpp` (`NNH_BUILD_FUZZERS`); the remote fuzz corpus gains the new messages. Test:
   60 s clean locally (the VM's clang run at T9.1). Covers FR-18, X, AC-6.
-- [ ] **T1.7** Stage end: the stage-end guards (nothing links the new files yet); plan.md ("Stage 1 results"). Covers
+- [x] **T1.7** Stage end: the stage-end guards (nothing links the new files yet); plan.md ("Stage 1 results"). Covers
   AC-7.
 
 ## Stage 2: the game side — files, overlay, batch engine, apply point, queries

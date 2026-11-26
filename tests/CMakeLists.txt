@@ -1682,3 +1682,20 @@ if(TARGET live AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL 
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
 endif()
+
+# Hot reload of assets (spec 031): every test of the spec in one block.
+target_sources(nnh_tests PRIVATE
+    reload/test_reload_names.cpp
+    reload/test_reload_overlay.cpp
+    reload/test_reload_receiver.cpp
+    reload/test_reload_wire.cpp
+    remote/test_remote_reader_payload.cpp
+    fuzz/test_fuzz_reload.cpp)
+# The reload receiver's fuzz target (T1.6, AC-6): mini-fuzz above, libFuzzer on the build VM.
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_reload_receiver.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_reload_receiver fuzz/libfuzzer_reload_receiver.cpp)
+    target_link_libraries(fuzz_reload_receiver PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_reload_receiver PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_reload_receiver PRIVATE -fsanitize=fuzzer,address)
+endif()

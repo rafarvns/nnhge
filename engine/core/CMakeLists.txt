@@ -609,6 +609,15 @@ target_sources(nnh_core PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_sour
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_live_steps_source} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Hot reload of assets (spec 031, D53, D54): the wire, the receiver and names are pure and shared with the `nnh` tool.
+# Reached only from Debug/Development branches (the remote session, the apply point): Release links none of it.
+set(_nnh_reload_pure_sources
+    src/reload/reload_names.cpp
+    src/reload/reload_overlay.cpp
+    src/reload/reload_receiver.cpp
+    src/reload/reload_wire.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_reload_pure_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis nnh_ryu)

@@ -139,6 +139,9 @@ void ScriptRunner::on_record(Record record) {
     case wire::RecordType::LiveValue:
     case wire::RecordType::LiveRefused:
     case wire::RecordType::LiveState: on_live_record(record); return;
+    case wire::RecordType::ReloadStaged:
+    case wire::RecordType::ReloadApplied:
+    case wire::RecordType::ReloadRefused: return; // spec 031: the reload controller's (stage 3)
     }
 }
 

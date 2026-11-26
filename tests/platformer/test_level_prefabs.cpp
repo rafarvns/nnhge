@@ -120,6 +120,13 @@ NNH_TEST(map_coins_equal_the_hand_written_coins) {
     if (ta == nullptr || tb == nullptr) return;
     std::memset(static_cast<void*>(ta), 0, sizeof(Turret));
     std::memset(static_cast<void*>(tb), 0, sizeof(Turret));
+    // Barrel has padding too (int, bool): the same rule (spec 031 found it when the test order changed).
+    level::Barrel* ba = a.get<level::Barrel>(barrel);
+    level::Barrel* bb = b.get<level::Barrel>(barrel);
+    CHECK(ba != nullptr && bb != nullptr && ba->frame == bb->frame && ba->lit == bb->lit);
+    if (ba == nullptr || bb == nullptr) return;
+    std::memset(static_cast<void*>(ba), 0, sizeof(level::Barrel));
+    std::memset(static_cast<void*>(bb), 0, sizeof(level::Barrel));
     CHECK(prefab_test::same_state(a, b));
 }
 

@@ -1,6 +1,6 @@
 # Plan 030: Live values
 
-Status: implemented, Linux and console pending (stages 9 and 10); approved 2026-11-26 (the maintainer, the seven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as
+Status: implemented 2026-11-26; Linux checks passed; console correctness passed, console run 2 (bench budgets) pending; approved 2026-11-26 (the maintainer, the seven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as
 recommended, and those answers are this plan's decisions; seven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D51, D52 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -1101,3 +1101,39 @@ ctest pc-debug 373/373 (with `platformer_paused_equals_running_pc`; the goldens 
 platformer's replay lines unchanged), pc-release 337/337; 3ds-release and 3ds-dev 0 warnings; `hello.3dsx` identical,
 `hello.elf` without debug info identical, sections and symbols identical; pc-release `hello` sections and symbols
 identical; Development `hello` 3ds-dev text 227 088. Console run 2 (the lead) sets the bench budgets.
+
+### Stage 9 results (Linux, VM 120, 2026-11-26, run by the lead)
+
+Trees sent by `git archive` (f6fc593, then 0ea8f50 for the exhaustive test, then 1248bdc).
+
+| Check | Result |
+|-------|--------|
+| GCC 13.3, pc-debug, full ctest | all pass but `platformer_doors_script_pc`, the known timing flake |
+| GCC 14 | `nnh_tests` 3991/3991 |
+| clang 18 ASan + UBSan, `detect_leaks=1` | `nnh_tests` 3991/3991, `nnh_tool_tests` 197/197, no report |
+| 32-bit host (`-m32 -msse2 -mfpmath=sse`) | `nnh_tests` 3991/3991: every golden identical |
+| `live_float_text_exhaustive` (`NNH_SLOW_TESTS=ON`, pc-release) | PASS: every one of the 2^32 floats' text reads back to the same bits (≈ 9.6 min) |
+| libFuzzer under ASan/UBSan, 10 min each | `fuzz_live_remote` 81 k runs, `fuzz_remote` 2.7 M runs: no crash |
+
+Found and fixed: clang's `-Wunused-function` on an unused helper in `overlay.cpp` (0ea8f50).
+
+### Console status (2026-11-26) and what stays pending
+
+Done on the Old 3DS XL (3ds-dev of the lead's commits after f6fc593, before the optimisation round):
+- `check.nnhs` — correctness PASS, `live: sum 7A849F13` (the PC's); bench FAIL (run 1 above).
+  - The live scripts needed `wait 10` after each expect and between `expect-value`s: the console's log arrives a frame
+    late, and each `expect-value` queries a frame (b0dee64, c755183, f7df285).
+- `panel.nnhs` — PASS (120 lines).
+- `keep.nnhs` then `--tunes … keep_second.nnhs` — PASS: `player/jump` 7.5 at frame 1.
+- The platformer `level.nnhs` with its live values — `replay: done 900 frames sum E445E8B2: 60 Hz PASS`.
+- Yes/no by hand: raising `jump` in the panel makes the jump higher; SELECT+Y pauses, SELECT+X steps one frame, SELECT+Y
+  resumes — **YES** (the maintainer).
+
+PC yes/no (T3.7): the maintainer's first try failed. Keys injected by the lead reproduced it: the paused replay lost the
+tile layers. That is fixed in 1248bdc, test first.
+
+Pending for the maintainer, merged anyway with their approval of 2026-11-26:
+- **Console run 2:** `check.nnhs` after the optimisation round. The bench budgets are set from it + ≈ 25 %; until then a
+  `live bench: FAIL` line is expected.
+- **The paused screen on the console:** check it shows the whole level.
+- **The PC Pause/F10 check** (T3.7).

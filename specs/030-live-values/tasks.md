@@ -1,6 +1,6 @@
 # Tasks 030: Live values
 
-Status: implemented, Linux and console pending (stages 9 and 10); approved 2026-11-26 (with plan.md)
+Status: implemented 2026-11-26; Linux checks passed; console correctness passed, console run 2 (bench budgets) pending; approved 2026-11-26 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -275,7 +275,7 @@ the tree at T0.3).
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14 and
+- [x] **T9.1** (done 2026-11-26: plan.md "Stage 9 results") On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14 and
   clang 18 (ASan/UBSan): `nnh_tests`, `nnh_tool_tests` and ctest pass in pc-debug and pc-release; AC-2's goldens identical
   on all three and on the 32-bit host build (`-m32 -msse2 -mfpmath=sse`); `live_float_text_exhaustive` (all 2³² floats);
   libFuzzer `libfuzzer_live_remote` and the remote targets 10 minutes each, plus the mini-fuzzers; the `--pc` scripts.
@@ -283,7 +283,7 @@ the tree at T0.3).
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
+- [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target live_3dsx platformer_3dsx` without a warning; T7.7's table still true;
   3ds-release `hello.elf` byte-identical to T0.1's. Covers AC-6, II.
 - [ ] **T10.2** Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
@@ -301,7 +301,7 @@ the tree at T0.3).
      SELECT + X steps one frame — yes/no.
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths, the screenshot comparison). Covers AC-1, AC-2, AC-3,
   AC-7, AC-8, FR-16, FR-22.
-- [ ] **T10.3** (only if a bench target is missed) Optimisation round: find the cost (3ds-dev disassembly, the bench's
+- [x] **T10.3** (round done 2026-11-26: plan.md "Optimisation round"; budgets from console run 2, pending) (only if a bench target is missed) Optimisation round: find the cost (3ds-dev disassembly, the bench's
   phases), apply risk 1's list without changing a pixel, value or golden (tests first for any rewrite); then T10.2 run 1
   again; if still missed, the budget is set from the measurement with ≈ 25 % margin and written in the spec's AC-7,
   `bench.cpp` and `docs/api/live.md`. Files: plan.md ("Optimisation round", "Console run 2 and budgets set"). Covers AC-7.

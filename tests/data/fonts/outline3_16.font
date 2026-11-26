@@ -1,0 +1,5 @@
+source = "nnhtest.ttf"
+size = 16
+outline = 3
+chars = ["U+0041..U+005A"]
+licence = "own"

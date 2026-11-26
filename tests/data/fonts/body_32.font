@@ -1,0 +1,4 @@
+source = "nnhtest.ttf"
+size = 32
+chars = ["ascii"]
+licence = "own"

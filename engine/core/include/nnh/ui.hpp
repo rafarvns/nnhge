@@ -471,6 +471,10 @@ public:
     UiStyleId add_style(const UiStyle& style);    ///< copied into the block; {} when full (asserts)
     void set_style_value(UiStyleId id, const UiStyle& style);
     void set_texture(int slot, const Texture& texture); ///< 0..7; the game keeps it alive
+    /// Font slot 0..7 (UiFont::Slot0..Slot7, spec 029): styles naming it measure, wrap and draw with `font`; FontRef{}
+    /// gives the built-in font back. Every root is laid out again. The game keeps the font alive (a destroyed one:
+    /// asserts in Debug/Development, the built-in font in Release). A slot outside 0..7 is ignored (asserts).
+    void set_font(int slot, FontRef font);
     void set_layer(Screen screen, int layer);
     void set_root_visible(Screen screen, bool on);
     /// Records the visible roots with gfx calls (ignore_camera, on each root's layer). Completes a pending layout first;

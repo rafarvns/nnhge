@@ -9,6 +9,7 @@ installed toolchain headers, not written from memory; when a version changes, re
 | CMake + Ninja (+ ccache) | Build system for every target | `CMakeLists.txt`, `cmake/`, `CMakePresets.json` | [cmake.md](cmake.md) |
 | C++20 (engine subset) | All engine and tool code | everywhere | [cpp.md](cpp.md) |
 | SDL 3.4 | PC simulator backend | `engine/platforms/pc/` | [sdl3.md](sdl3.md) |
+| stb_vorbis, stb_truetype, stb_image | Ogg decoding; baking fonts (host only) | `third_party/` | [third-party.md](third-party.md) |
 | GitHub Actions | CI (Linux PC + 3DS container) | `.github/workflows/ci.yml` | [cmake.md](cmake.md#ci) |
 
 Versions in use (2026-11-17): devkitARM r68 (GCC 16.1), libctru 2.7.1, citro2d 1.7.0, citro3d 1.7.1, 3dstools 1.3.1,

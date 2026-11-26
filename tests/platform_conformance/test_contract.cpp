@@ -8,9 +8,12 @@
 #include "nnh/platform/input.hpp"
 #include "nnh/platform/log.hpp"
 #include "nnh/platform/remote.hpp"
+#include "nnh/platform/system.hpp"
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
 #include "test.hpp"
+
+#include <cstring>
 
 namespace platform = nnh::platform;
 
@@ -72,6 +75,52 @@ NNH_TEST(texture_create_rgba_accepts_pixels) {
     CHECK(platform::texture_create_rgba(pixels, 16, 8, info));
     CHECK(info.handle != 0 && info.width == 16 && info.height == 8 && info.bytes >= 16u * 8u * 4u);
     platform::texture_destroy(info.handle);
+    platform::shutdown();
+}
+
+NNH_TEST(texture_create_alpha_accepts_coverage) {
+    CHECK(platform::init(config()));
+    static unsigned char coverage[1024 * 1024];
+    for (unsigned i = 0; i < sizeof coverage; ++i) coverage[i] = static_cast<unsigned char>((i % 16) * 17);
+    for (int side = 8; side <= 1024; side *= 2) {
+        const int h = side >= 16 ? side / 2 : side;
+        platform::TextureInfo info;
+        CHECK(platform::texture_create_alpha(coverage, side, h, info));
+        CHECK(info.handle != 0 && info.width == side && info.height == h);
+        CHECK(info.bytes == static_cast<std::size_t>(side) * static_cast<std::size_t>(h));
+        if (side == 8) { // a frame drawing a sprite of it
+            CHECK(platform::poll_events());
+            platform::begin_frame(nnh::colors::black, nnh::colors::black);
+            platform::DrawItem2D glyph;
+            glyph.texture = info.handle;
+            glyph.region = {0, 0, 8, 8};
+            glyph.x = 10;
+            glyph.y = 10;
+            glyph.w = 8;
+            glyph.h = 8;
+            glyph.color = nnh::colors::red;
+            platform::draw_2d(nnh::Screen::Top, &glyph, 1);
+            platform::end_frame();
+            platform::finish_frames();
+        }
+        platform::texture_destroy(info.handle);
+    }
+    platform::shutdown();
+}
+
+NNH_TEST(system_language_is_a_well_formed_tag_and_stable) {
+    CHECK(platform::init(config()));
+    const char* first = platform::system_language();
+    CHECK(first != nullptr);
+    const std::size_t n = first != nullptr ? std::strlen(first) : 0;
+    CHECK(n >= 2 && n <= 15);
+    CHECK(n >= 2 && first[0] >= 'a' && first[0] <= 'z' && first[1] >= 'a' && first[1] <= 'z');
+    for (std::size_t i = 0; i < n; ++i) {
+        const char c = first[i];
+        CHECK((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-');
+    }
+    const char* again = platform::system_language();
+    CHECK(again != nullptr && first != nullptr && std::strcmp(first, again) == 0);
     platform::shutdown();
 }
 

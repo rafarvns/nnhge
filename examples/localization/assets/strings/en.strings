@@ -1,0 +1,60 @@
+# The base language of examples/localization (spec 029). Every other language translates every key (the example builds
+# with STRICT_STRINGS); a key a language left out would come from its fallback chain, ending here.
+
+[language]
+name = "English"
+grouping = ","
+grouping_min = 4
+
+[language.fonts]
+body = "fonts/body_16"
+title = "fonts/title_32"
+hud = "fonts/hud"
+
+[language.limits]
+menu = 16
+
+[game]
+title = "Lantern Road"
+hint = "SELECT: language   START: quit"
+
+[menu]
+new_game = "New game"
+continue = "Continue"
+shop = "Shop"
+dialog = "Dialog"
+fonts = "Fonts"
+options = "Options"
+quit = "Quit"
+
+[options]
+title = "Options"
+language = "Language"
+system = "System language"
+back = "Back"
+
+[dialog]
+speaker = "Old keeper"
+text = """
+The lanterns along the road went dark one by one. \
+Carry this flame to the last tower before dawn, \
+and do not let the wind of the valley put it out."""
+hint = "A: show all   B: back"
+shown = "Shown {shown} of {total}"
+
+[shop]
+title = "Lantern shop"
+greeting = "Welcome, {name}!"
+items.one = "{count} lantern"
+items.other = "{count} lanterns"
+price = "Price: {gold} gold"
+buy = "Buy"
+
+[hud]
+score = "{score}"
+coins = "x{coins}"
+
+[gallery]
+title = "Fonts"
+sample = "The quick brown fox jumps over the lazy dog."
+metrics = "size {size}  line {line}  ascent {ascent}"

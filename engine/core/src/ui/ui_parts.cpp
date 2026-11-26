@@ -8,15 +8,21 @@ namespace nnh::detail {
 namespace {
 
 int label_width(UiBlock& b, int s) {
-    const int cells = seam_measure(text_of(b, s)).cells;
-    return cells > 0 ? cells * seam_cell(style_of(b, s).text) + kUiGap : 0;
+    const int w = seam_measure(b, style_of(b, s).text, text_of(b, s)).width;
+    return w > 0 ? w + kUiGap : 0;
 }
 
-int text_cells_of(UiBlock& b, int s, int v) {
+int text_width_of(UiBlock& b, int s, int v) {
     char buf[64];
     const int n = value_text(b, s, v, buf, 63);
     buf[n] = 0;
-    return seam_measure(buf).cells;
+    return seam_measure(b, style_of(b, s).text, buf).width;
+}
+
+/// A choice's text arrow ("<" or ">"): a cell of the built-in font, else the glyph's width.
+int text_arrow_width(const UiBlock& b, const UiStyle& st, const char* arrow) {
+    if (!st.choice.text_arrows) return 0;
+    return seam_builtin(st.text) ? seam_cell(st.text) : seam_width(b, st.text, arrow, 1);
 }
 
 } // namespace
@@ -30,8 +36,8 @@ UiRect content_rect(const UiBlock& b, int s) {
 int slider_value_width(UiBlock& b, int s) {
     const UiSliderData& x = b.cold[s].data.slider;
     if (x.show_value == 0) return 0;
-    const int a = text_cells_of(b, s, x.min), z = text_cells_of(b, s, x.max);
-    return (a > z ? a : z) * seam_cell(style_of(b, s).text);
+    const int a = text_width_of(b, s, x.min), z = text_width_of(b, s, x.max);
+    return a > z ? a : z;
 }
 
 SliderParts slider_parts(UiBlock& b, int s) {
@@ -67,10 +73,9 @@ int slider_value_at(const UiBlock& b, int s, const UiRect& track, int x) {
 ChoiceParts choice_parts(UiBlock& b, int s) {
     const UiRect c = content_rect(b, s);
     const UiStyle& st = style_of(b, s);
-    const int cell = seam_cell(st.text);
     const int lw = label_width(b, s);
-    const int aw_l = st.choice.left.texture >= 0 ? st.choice.left.region.w : (st.choice.text_arrows ? cell : 0);
-    const int aw_r = st.choice.right.texture >= 0 ? st.choice.right.region.w : (st.choice.text_arrows ? cell : 0);
+    const int aw_l = st.choice.left.texture >= 0 ? st.choice.left.region.w : text_arrow_width(b, st, "<");
+    const int aw_r = st.choice.right.texture >= 0 ? st.choice.right.region.w : text_arrow_width(b, st, ">");
     ChoiceParts p;
     p.label = {c.x, c.y, lw > 0 ? lw - kUiGap : 0, c.h};
     p.left = {c.x + lw, c.y, aw_l, c.h};

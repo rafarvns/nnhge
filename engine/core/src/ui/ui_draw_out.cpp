@@ -8,6 +8,8 @@
 #include "ui/ui_draw_out.hpp"
 #include "ui/ui_nine_slice.hpp"
 #include "ui/ui_text_seam.hpp"
+#include "text/text_runs.hpp"
+#include "text/text_wrap.hpp"
 
 namespace nnh::detail {
 namespace {
@@ -94,9 +96,13 @@ void out_run(const UiBlock& b, const DrawCtx& d, int x, int y, const char* utf8,
     char run[kUiRunBytes + 8];
     int n = length < 0 ? 0 : (length > kUiRunBytes ? kUiRunBytes : length);
     std::memcpy(run, utf8, static_cast<std::size_t>(n));
+    const bool builtin = seam_builtin(look);
+    const TextFace face = builtin ? TextFace{} : seam_face(b, look); // a slot's font (spec 029)
     if (ellipsis) {
-        std::memcpy(run + n, "...", 3);
-        n += 3;
+        const char* dots = ellipsis_text(face); // "..." (built-in) or the font's "…"
+        const int k = static_cast<int>(std::strlen(dots));
+        std::memcpy(run + n, dots, static_cast<std::size_t>(k));
+        n += k;
     }
     if (n == 0) return;
     std::memset(run + n, 0, 4); // the NUL, and the zero bytes of the hash's last word
@@ -108,6 +114,7 @@ void out_run(const UiBlock& b, const DrawCtx& d, int x, int y, const char* utf8,
     fold(b, c);
     fold(b, static_cast<int>(look.scale) | (look.shadow ? 0x100 : 0));
     if (look.shadow) fold(b, shadow);
+    if (!builtin) fold(b, static_cast<int>(look.font) | 0x200); // only a slot: the built-in sequence is spec 028's
     // the run's bytes in little-endian words, the last one zero-padded: byte by byte, the same FNV-1a sequence
     std::uint32_t h = b.draw_hash;
     const int padded = (n + 3) & ~3;
@@ -118,19 +125,24 @@ void out_run(const UiBlock& b, const DrawCtx& d, int x, int y, const char* utf8,
     b.draw_hash = h;
     // glyphs as gfx counts them (ASCII inline; other bytes decoded exactly as gfx does)
     int glyphs = 0;
-    for (const char* p = run; *p != 0;) {
-        const auto ch = static_cast<unsigned char>(*p);
-        if (ch < 0x80) {
-            glyphs += ch != ' ' && ch != '\n' && ch != '\r' ? 1 : 0;
-            ++p;
-        } else {
-            glyphs += seam_next_slow(p) != 0xA0 ? 1 : 0;
+    if (builtin) {
+        for (const char* p = run; *p != 0;) {
+            const auto ch = static_cast<unsigned char>(*p);
+            if (ch < 0x80) {
+                glyphs += ch != ' ' && ch != '\n' && ch != '\r' ? 1 : 0;
+                ++p;
+            } else {
+                glyphs += seam_next_slow(p) != 0xA0 ? 1 : 0;
+            }
         }
+    } else { // a run has no '\n' (the UI draws line by line)
+        walk_run(face, run, run + n, [&](const RunItem& it) { glyphs += it.draw ? 1 : 0; });
     }
     b.draws += look.shadow ? 2 * glyphs : glyphs;
-    gfx::draw_text(d.screen, {static_cast<float>(x + d.dx), static_cast<float>(y + d.dy)}, run,
-                   {.color = c, .scale = look.scale, .shadow = look.shadow, .shadow_color = shadow,
-                    .layer = d.layer, .ignore_camera = true});
+    TextOptions o{.color = c, .scale = look.scale, .shadow = look.shadow, .shadow_color = shadow, .layer = d.layer,
+                  .ignore_camera = true};
+    if (!builtin) o.font = b.fonts[static_cast<int>(look.font) - static_cast<int>(UiFont::Slot0)];
+    gfx::draw_text(d.screen, {static_cast<float>(x + d.dx), static_cast<float>(y + d.dy)}, run, o);
 }
 
 void out_background(const UiBlock& b, const DrawCtx& d, const UiRect& r, const UiBackground& bg) {

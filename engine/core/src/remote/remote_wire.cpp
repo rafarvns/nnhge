@@ -2,6 +2,10 @@
 
 #include "remote/remote_wire.hpp"
 
+#include <cstring>
+
+#include "system/language_tag.hpp" // pack_language (the `nnh` tool's side)
+
 namespace nnh::detail::remote {
 namespace {
 
@@ -30,6 +34,23 @@ bool zero_from(const std::uint8_t* in, std::size_t from) {
 }
 
 bool stick_axis_ok(std::int16_t v) { return v >= -kStickMax && v <= kStickMax; }
+
+/// A Language message's bytes 8–15: all zero, or a code then zeros (no interior NUL) of 2 lowercase letters followed by
+/// letters, digits and '-' only. The full tag rules (system/language_tag.hpp) are checked by the `nnh` tool before it
+/// sends and by system::language() before it uses the code, so a Debug/Development game links nothing more here.
+bool language_ok(const std::uint8_t* a) {
+    int n = 0;
+    while (n < kLanguageCodeBytes && a[n] != 0) {
+        const std::uint8_t c = a[n];
+        const bool lower = c >= 'a' && c <= 'z';
+        if (!(lower || (n >= 2 && ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-')))) return false;
+        ++n;
+    }
+    for (int i = n; i < kLanguageCodeBytes; ++i) {
+        if (a[i] != 0) return false;
+    }
+    return n == 0 || n >= 2;
+}
 
 /// Validates the argument bytes (8–15) of a message whose type is known, filling `out`.
 bool decode_arguments(const std::uint8_t* in, Message& out) {
@@ -69,6 +90,10 @@ bool decode_arguments(const std::uint8_t* in, Message& out) {
         out.slider = a[0] == 1 ? kSliderRelease : value;
         return a[0] <= 1 && a[1] == 0 && value <= kSliderMax && (a[0] == 0 || value == 0) && zero_from(in, 12);
     }
+    case MessageType::Language:
+        out.press = get32(a);
+        out.release = get32(a + 4);
+        return language_ok(a);
     }
     return false;
 }
@@ -102,6 +127,7 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
         put16(a + 2, m.exclusive ? kHelloExclusive : 0);
         break;
     case MessageType::Buttons:
+    case MessageType::Language:
         put32(a, m.press);
         put32(a + 4, m.release);
         break;
@@ -125,7 +151,7 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
 
 Reject decode_message(const std::uint8_t in[kMessageSize], Message& out) {
     if (in[0] != kMessageMagic) return Reject::Magic;
-    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Slider)) {
+    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Language)) {
         return Reject::Type;
     }
     out = Message{};
@@ -136,6 +162,30 @@ Reject decode_message(const std::uint8_t in[kMessageSize], Message& out) {
 }
 
 std::uint16_t message_seq(const std::uint8_t in[kMessageSize]) { return get16(in + 2); }
+
+bool pack_language(const char* code, Message& message) {
+    std::uint8_t bytes[kLanguageCodeBytes] = {};
+    const bool off = code == nullptr || code[0] == 0;
+    if (!off) {
+        int n = 0;
+        while (n <= kLanguageCodeBytes && code[n] != 0) ++n;
+        if (n > kLanguageCodeBytes || !language_tag_valid(code)) return false;
+        for (int i = 0; i < n; ++i) bytes[i] = static_cast<std::uint8_t>(code[i]);
+    }
+    message.press = get32(bytes);
+    message.release = get32(bytes + 4);
+    return true;
+}
+
+bool unpack_language(const Message& message, char out[kLanguageCodeBytes + 1]) {
+    // The words hold the bytes little-endian (decode_message's get32), the byte order of every system NNHGE runs on:
+    // copied as they are (a few instructions in every Debug/Development game).
+    static_assert(sizeof message.press == 4 && sizeof message.release == 4, "two words of 4 bytes");
+    std::memcpy(out, &message.press, 4);
+    std::memcpy(out + 4, &message.release, 4);
+    out[kLanguageCodeBytes] = 0;
+    return out[0] != 0;
+}
 
 void encode_record_header(RecordType type, std::uint32_t length, std::uint8_t out[kRecordHeaderSize]) {
     out[0] = kRecordMark[0];

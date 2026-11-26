@@ -1,0 +1,51 @@
+# German.
+
+[language]
+name = "Deutsch"
+grouping = "."
+grouping_min = 5
+
+[game]
+title = "Laternenstraße"
+hint = "SELECT: Sprache   START: Ende"
+
+[menu]
+new_game = "Neues Spiel"
+continue = "Fortsetzen"
+shop = "Laden"
+dialog = "Dialog"
+fonts = "Schriften"
+options = "Optionen"
+quit = "Beenden"
+
+[options]
+title = "Optionen"
+language = "Sprache"
+system = "Systemsprache"
+back = "Zurück"
+
+[dialog]
+speaker = "Alter Wächter"
+text = """
+Die Laternen entlang der Straße erloschen eine nach der anderen. \
+Trag diese Flamme vor dem Morgengrauen zum letzten Turm \
+und lass sie nicht vom Wind des Tals löschen."""
+hint = "A: alles zeigen   B: zurück"
+shown = "{shown} von {total} gezeigt"
+
+[shop]
+title = "Laternenladen"
+greeting = "Willkommen, {name}!"
+items.one = "{count} Laterne"
+items.other = "{count} Laternen"
+price = "Preis: {gold} Gold"
+buy = "Kaufen"
+
+[hud]
+score = "{score}"
+coins = "x{coins}"
+
+[gallery]
+title = "Schriften"
+sample = "Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich."
+metrics = "Größe {size}  Zeile {line}  Oberlänge {ascent}"

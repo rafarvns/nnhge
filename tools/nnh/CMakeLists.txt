@@ -40,6 +40,7 @@ add_library(nnh_tool_lib STATIC
     # pure core files (no engine includes), shared with the console (spec 013, D28)
     ${PROJECT_SOURCE_DIR}/engine/core/src/core/crc32.cpp
     ${PROJECT_SOURCE_DIR}/engine/core/src/remote/remote_wire.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/system/language_tag.cpp
 )
 target_include_directories(nnh_tool_lib PUBLIC src ${PROJECT_SOURCE_DIR}/engine/core/src)
 nnh_engine_options(nnh_tool_lib)

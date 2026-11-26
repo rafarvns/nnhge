@@ -1,6 +1,6 @@
 # Plan 029: Game fonts and localization
 
-Status: approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
+Status: implemented 2026-11-26 (T9 Linux checks and T10.2 console runs passed, budgets set; see "Implementation notes"); approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
 recommended, and those recommendations are this plan's decisions; five plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D49, D50 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 005 (`gfx::draw_text`/`measure_text`, the built-in font, `detail::next_codepoint`, the hollow box, one sprite
@@ -928,7 +928,7 @@ The spec's open questions are decided as it recommends. Plan-level decisions:
 |---------|-----|------|
 | I | ✅ | Two contract functions in their own files per platform with conformance tests; every rule integer and shared; bytes baked by the build; goldens on every compiler and the console |
 | II | ✅ | 20 B per glyph, 1 byte per page pixel, CJK subset from strings, ≤ 8 pages ≤ 1024, one block per chain, the example ≈ 1.45 MiB peak; glyph cost ≈ built-in + 3 %; four AC-6 targets at risk with an optimisation list and the bench policy |
-| III | ✅ | Light headers measured; per-file converters with depfiles off the game-code path; host-only third-party code; times measured (T8.4) |
+| III | ⚠️ exception, approved by the maintainer 2026-11-26 | Light headers measured; per-file converters with depfiles off the game-code path; host-only third-party code. Times (T8.4, review round S5): editing one scene of the example rebuilds the simulator in 2.12–2.27 s (budget < 2 s; one scene compile and the link, like the UI example's 2.1 s) and the `.3dsx` in 4.86–5.06 s (budget < 5 s; 3.3 s of it is the host-tool check every 3DS build pays). The fonts reconverting on every 3DS build (absolute depfile paths) was the cause of the earlier 6.8 s and is fixed |
 | IV | ✅ | Queries; one `LanguageChanged` per switch; no module dependency from gfx/UI to localization |
 | V | ✅ | No allocation, `printf`, `virtual`, RTTI or exceptions in `tr`, `format`, measuring, wrapping, drawing |
 | VI | ✅ | Tests first; CLDR samples; equivalence with the old wrapper; goldens; fuzzing; random operations; mutants |
@@ -969,3 +969,539 @@ committed (T7.1). (4) One size per font description. (5) Accept the Debug/Develo
    (decoder case + override), as spec 026b's `Slider` did; Release `hello` stays byte-identical. Accept (recommended), or
    ask for a Development budget of 0 (then the language override needs a second remote path linked only by localized
    games)?
+
+## Implementation notes
+
+### Stage 0 results (2026-11-26, worktree `spec-029` at `8d9c5c5`, Windows, WinLibs GCC 16.2)
+
+Scripts in `build/ref-029/` (not committed): `hello_snapshot.sh` (sizes, `nm -C`, SHA-256), `compare.sh` (reference
+screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micro.sh` (the UI micro-benchmark).
+
+- **`hello`** (`size`: text / data / bss; file bytes): 3ds-release 202 204 / 28 360 / 107 368, `.3dsx` 247 628 B,
+  `hello.elf` SHA-256 `506034e0…b8b96035`, `.3dsx` `ade4dcef…5600ff8c9`; 3ds-dev 220 488 / 32 872 / 109 976, `.3dsx`
+  270 652 B; pc-release 134 880 / 22 052 / 212 400, 285 885 B; pc-debug 206 276 / 26 820 / 215 152, 1 339 674 B. `nm -C`
+  lists kept (3ds-release 1 377 lines, 3ds-dev 1 479, pc-release 3 001, pc-debug 4 953); 3ds-release `texture_3ds.o`
+  SHA-256 `0b318282…90b80339`.
+- **3ds-release `.text`**: `text` 189 956 B, `sprites` 207 132 B, `ui` 301 116 B, `platformer` 396 340 B.
+- **Build times**: edit `examples/ui/title_scene.cpp` → pc-debug 2.75 / 2.10 / 2.09 s, 3ds-release `.3dsx` 5.21 / 4.02 /
+  6.23 s; clean `nnh_core` (pc-debug) 21.9 s; clean `nnh-assetc` (pc-debug) 7.7 s.
+- **Header cost**: a one-line TU with `<nnh/gfx.hpp>` + `<nnh/result.hpp>`: 7 844 preprocessed lines, `-fsyntax-only`
+  0.45 s.
+- **UI micro-benchmark**: plan 028's `build/ref-028/micro` isn't in the tree, so `build/ref-029/micro_ui` was written
+  again from plan 028's description (examples/ui's bench workloads in tight loops, pc-release `-O2`, the fake platform)
+  and its baseline recorded before any change: relayout128 best of runs 10.85–11.56 µs (one cold run 14.8), **draw hash
+  `367085C2`** (40 frames of the 128-widget UI and both lists; it stands in for plan 028's `7429F9EB`, whose program is
+  gone). The T0.1 executable is kept (`micro_ui_t01.exe`) to rerun side by side.
+- **Reference screenshots** (T0.2): 15 PNGs in `build/ref-029/ref/`; `compare.sh` retakes them identical except
+  `sprites_bench` and `platformer_bench`, which differ run to run already at `8d9c5c5` (timing-driven) and are only
+  compared by eye.
+- **Tests** (T0.3): `nnh_tests` 3 582 tests, 0 failures; 514 left under `kMaxTests` (4096) → raised to 8192.
+
+### Stage 1 results (2026-11-26)
+
+- ctest pc-debug 346/346 and pc-release 318/318 pass; 3ds-release and 3ds-dev build without a warning.
+- **Release `hello`**: 3ds-release `hello.elf` and `.3dsx` byte-identical to T0.1 (SHA-256 above), `size` and `nm -C`
+  identical; pc-release `size`, `nm` and bytes identical.
+- **Debug/Development `hello`** (the remote `language` message, question 5): 3ds-dev text +432 B (220 488 → 220 920),
+  bss +16 B, `.3dsx` +440 B (270 652 → 271 092); pc-debug (unoptimised) text ≈ +3.4 KB. Over the plan's ≈ 150–250 B:
+  the first version (decoder and override checking the full tag rules) added 952 B; the full rules then moved out of
+  the console's path (see the refinements below), leaving the decoder's shape check, the 16-byte override and the
+  session's apply/off/exclusive/detach calls. Reported to the maintainer.
+
+### Stage 2 results (2026-11-26)
+
+- Every stage-end guard holds: ctest pc-debug 346/346, pc-release 318/318; 3ds-release and 3ds-dev without a warning;
+  3ds-release `hello.elf`/`.3dsx` byte-identical to T0.1, pc-release `hello` size/`nm`/bytes identical; `compare.sh`:
+  every reference screenshot identical (the UI's included); `ui_self_check_pc` `30400DA6`.
+- `tests/ui/test_ui_seam_equivalence.cpp`: the shared wrapper through the built-in face equals the frozen pre-029 wrapper
+  on 100 000 seeded Latin-1 strings × widths 1..60 cells × max lines 0..4 × scales 1..3 (lines, bytes, widths, ellipsis
+  flags), and the longest word on 20 000 strings. Spec 028's `test_wrap.cpp` cases moved to `tests/text/test_text_wrap.cpp`
+  with their expected lines unchanged (widths cells × 8); `tests/ui/test_text_seam.cpp` calls the moved wrapper (the
+  only edit in `tests/ui/`).
+- UI micro-benchmark: draw hash `367085C2` unchanged; relayout128 side by side with T0.1's executable: 10.56–11.33 µs vs
+  10.59–11.39 µs (within noise).
+- 3ds-release `.text`: `ui` 301 116 → 304 916 B (+3.8 KB: the shared wrapper's ID breaks and kinsoku, the break table);
+  `text`, `sprites`, `platformer` unchanged.
+
+### Stage 3 results (2026-11-26)
+
+- ctest pc-debug 346/346, pc-release 318/318; 3ds-release and 3ds-dev without a warning; `compare.sh` identical (the
+  UI's screenshots included); `ui_self_check_pc` `30400DA6`; micro-benchmark draw hash `367085C2`, relayout128 ≈ 10.4 µs.
+- **`hello`**: 3ds-release `.3dsx` and the stripped `.elf` byte-identical to T0.1; the unstripped `.elf` differs only
+  in the order of DWARF strings (`gfx.hpp` gained declarations; every edit above `draw` kept its line numbers, the new
+  ones are at the end). pc-release `hello` size, `nm` and bytes identical.
+- Headers: `<nnh/gfx.hpp>` + `<nnh/result.hpp>` 7 887 preprocessed lines (T0.1: 7 844), `<nnh/font.hpp>` 7 959; parse
+  time within noise of T0.1's 0.45 s.
+- 3ds-release `.text`: `text` 189 956 → 197 860, `sprites` 207 132 → 214 948, `platformer` 396 340 → 404 412 (+≈ 8 KB
+  each: `draw_text` dispatches to the layout path whenever an option asks for it, so a game that draws text links that
+  path even without a font); `ui` 304 916 → 310 276. To be weighed by the maintainer (a split dispatch would keep the
+  built-in-only games at their old size).
+
+### Stage 4 results (2026-11-26)
+
+- `stb_truetype.h` v1.28 and `stb_image.h` v2.32 from `nothings/stb` commit `9f755b604db3492df2cbeb39bf84b81e3e3932e3`,
+  unmodified (SHA-256 in each `README.md`), host-only object libraries linked into `nnh-assetc`.
+- Test fonts: `scripts/make_test_fonts.py` (fontTools' FontBuilder, the maintainer's pre-approved Python tool, instead of
+  a stdlib-only writer) writes `tests/data/fonts/`; reruns give the same bytes.
+- `nnh_assetc_tests`: `test_charsets`, `test_font_desc`, `test_cli_font` (both sources end to end, core's validator
+  accepts every output). Not yet written: the per-parser suites of T4.3/T4.6/T4.7/T4.8 (`test_bmfont_text`, `test_ttf_check`,
+  `test_ttf_raster`, `test_glyph_pack`), the `font_routing`/`font_fixtures_golden` ctests and the T4.10 fuzzers.
+
+### Stage 5 results (2026-11-26)
+
+- `nnh_assetc_tests` 298/298 (`test_strings`: placeholders, the 36 shipped rules against CLDR 46 samples, checks with
+  their exact messages, tables accepted by core's validator in Debug and Release forms, the index and `qps`).
+- Not yet written: T5.1's TOML strings mode (string files have their own reader, see the refinements), T5.7's
+  `strings_declaration_*`/`strings_incremental` ctests, T5.8's assetc fuzzer.
+
+### Stage 6 results (2026-11-26)
+
+- `nnh_tests` 3 776 (pc-debug) / 3 714 (pc-release) pass; 55 `loc_` tests and 4 `plural_` tests: validators (each
+  reason), start (player > system > base, the pseudo-language only by choice, `LanguageChanged` once, damaged files leave
+  nothing), lookup (chains, markers, show keys, 300 keys), format (grouping per language, en/ru/ja plurals, texts, keys,
+  `{{`, a missing argument, UTF-8 truncation), switching (next frame, last call wins, failure keeps the language, following
+  the system), role fonts and `apply` (chain roles, no leak over switches, unknown role), 100 000 random operations, no
+  allocation after start, and mini-fuzz of tables and manifests (20 000 mutations each, re-sealed).
+- 3ds-release/3ds-dev build without a warning; `hello` (3ds-release, 3ds-dev stripped/`.3dsx`, pc-release) identical to
+  stage 3's; `.text` of `text`, `sprites`, `ui`, `platformer` unchanged (localization is linked only when called).
+
+### Stage 7 results (2026-11-26)
+
+- **T7.1, the Japanese font** (pre-approved by the maintainer 2026-11-26): upstream
+  `https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf`,
+  noto-cjk release `Sans2.004`, SHA-256 `dff723ba59d57d136764a04b9b2d03205544f7cd785a711442d6d2d085ac5073` (4 533 028 B);
+  licence `Sans/LICENSE` at the same commit, OFL 1.1, SHA-256 `6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2`.
+  Subset `examples/localization/assets/fonts/src/NNHExampleSansJP.otf` ("NNHGE Example Sans JP"), **268 956 B**, 1 671 code
+  points, SHA-256 `9159b504457730539cd4b63dbe0abf5203e02a328eeffa8b6c3c09d408ead590`, made by
+  `examples/localization/fonts/make_subset.py` (fontTools 4.63; byte-identical on reruns; layout features `kern`/`palt`
+  only: with every feature it was 401 KB). Licence packed as `assets/licences/OFL-NNHExampleSansJP.txt` with the font's
+  copyright notice (`© 2014-2021 Adobe`) prepended. Provenance also in `examples/localization/fonts/README.md`.
+- Converted fonts (pc-debug): `body_16` 280 glyphs 82 KB, `body_ja_13` 1 358 glyphs one 1024 × 512 page 295 KB,
+  `title_32` 238 glyphs and `title_ja_32` 161 glyphs one 512 × 512 page each (outline 2), `bench_1024` one 1024 × 1024
+  page, `hud` (BMFont, 22 glyphs). Tables: en 78 KB in Release (95 KB Debug, with names), the others 1.4–1.8 KB.
+- Build output: notes for characters the subset lacks (U+FFFD, part of Cyrillic) and one warning per language for the
+  1 024 base-only bench keys (+ pt-BR's deliberate `menu.continue`); so the example is **not** `STRICT_STRINGS`-clean
+  (deviation from T7.1's test: base-only keys can't be marked).
+- Self-check: checkpoints en `92FEBB1D`, pt-BR `A166BC22`, de `1DE842A2`, ru `7E4FE058`, ja `21809981` =
+  `kLocCheckGolden`; pc-debug and pc-release agree (Release read from its screenshot: Release has no log).
+  `tests/check.nnhs` passes twice with `--pc` (116 lines, frames 1–3 699). 3ds-release and 3ds-dev build the example
+  without a warning (`.3dsx` 1 137 852 / 1 323 388 B).
+- Bench on the PC (pc-dev, PC numbers): base submit 0.017 ms; **glyphs builtin 0.57 µs, font 0.82 µs per glyph, ratio
+  1.43 (target ≤ 1.15: FAIL on the PC)**; frame worst 17.5 ms, 0 missed; measure_latin 0.056 ms; measure_ja 0.062 ms;
+  tr1000 0.042 ms; format100 0.018 ms; page1024 load + release ≈ 15 ms; memory body 82 KB, ja 295 KB. The switch phase
+  reads the hook's profile scope (`loc switch`); its read was fixed after the run above (it read a frame too early).
+- Deviations: one showcase scene per screen sharing a `LocScene` base (no separate `roles.hpp`/`settings.*`: the
+  player's choice is not saved in the example — `set_language` only); the self-check folds `measure_text` and
+  `measure_chars` (pure, the same items' positions) instead of the internal layout items, and the `nnh_tests` copy of
+  the self-check (T7.2's `tests/loc_example/`) is not written: the example's ctest `loc_self_check_pc` covers it.
+
+### Stage 7 ARM pre-check (3ds-dev objects, 2026-11-26)
+
+- `__aeabi_*` calls: none in `src/loc/*` after the fix below, none in `src/text/*` or `src/font/*`. The plural
+  interpreter called `__aeabi_uldivmod` (64-bit `n % 10^k`); it now reduces `n` to `n mod 10^6` byte by byte with
+  32-bit constant divisions (tests: `plural_moduli_of_numbers_beyond_32_bits`, the CLDR samples).
+- VFP instructions: `text_draw.o` 32, `layout.o` 3, `text_measure.o` 2, `font_debug.o` 8 (Debug only) — the final
+  positions and colours handed to gfx; not yet compared one by one with the plan's table, nor `-fstack-usage` measured
+  (left for T10.1 with the console numbers).
+- Expected console numbers: the plan's table stands (glyph ratio and `tr1000` at risk; the PC's 1.43 glyph ratio is a
+  warning sign for T10.2).
+
+### Stage 8 results (2026-11-26)
+
+- Mutation: 19 hand mutants on the localization runtime (`build/ref-029/mutants.py`: number grouping, plural operands
+  and negation, form fallback, chain walk, UTF-8 truncation, placeholder spans, the language of a key's table, switch
+  no-op and failure restore, `set_language` ending following, region-less matching, pseudo-language by system,
+  validator checks, role fonts from the chain): 16 killed at first; the 3 survivors became tests
+  (`loc_format_uses_the_rule_of_the_language_whose_text_it_is`, `loc_format_a_form_the_key_lacks_is_its_other_form`,
+  `loc_start_prefers_the_language_without_a_region`) and are killed. Font/text mutants, T8.2 (release strings script),
+  T8.3 (link probes) and T8.4 (build times) were not run.
+- `hello`: 3ds-release/3ds-dev stripped `.elf` and `.3dsx`, pc-release `size`/`nm`/bytes identical to stage 3's after
+  stages 6 and 7.
+
+### Stage 9 results (Linux, VM 120, 2026-11-26, run by the lead)
+
+Ubuntu 24.04 on `nnhge-build`, trees sent by `git archive` (341d488 early pass, then d481985, a4d1072 and bd61f78).
+
+| Check | Result |
+|-------|--------|
+| GCC 13.3, pc-debug, full ctest | 358/359; the one failure is `platformer_doors_script_pc`, the known timing flake (it passes alone and on Windows) |
+| GCC 14, all targets | `nnh_tests` 3787/3787, `nnh_assetc_tests` 332/332, ctest clean but `nnh_script_pc_smoke`, which only runs from a preset build folder (it looks for `build/pc-dev`) and isn't a 029 regression |
+| clang 18 ASan + UBSan, `detect_leaks=1` | `nnh_tests` 3787/3787, `nnh_assetc_tests` 332/332, no report |
+| 32-bit host (`-m32 -msse2 -mfpmath=sse`) | `nnh_tests` 3787/3787: every golden and the localization self-check identical |
+| libFuzzer under ASan/UBSan, 10 min each | `ttf` 27.3 M runs, `png_pages` 35.4 M, `font_validate` 18.5 M, `toml` 3.1 M, `font_desc` 1.9 M, `bmfont` 0.7 M, `strings` 13.6 k (each clean file evaluates its rules over 10^6 integers): no crash |
+
+Found and fixed (each with a test that failed first):
+
+1. GCC 13.3 internal compiler error (`gimple_add_tmp_var`) on `s = LocState{};`: brace value-initialisation of structs
+   with array member initialisers. `LocState`, `Entry`, `FontEntryExtra`, `TextFace` and `FontBlock` use parentheses,
+   with a comment.
+2. ASan stack-use-after-scope: a test built a `TextWrapper` over a temporary `TextFace`; `TextWrapper(const TextFace&&)`
+   is now deleted (a `static_assert` checks it).
+3. ASan heap-buffer-overflow in stb_truetype: a damaged `cmap` mapped a character to a glyph past `numGlyphs`. The
+   converter now refuses it (`cmap maps U+0041 to glyph 60000, a glyph the font doesn't have`), honours the first table
+   of a repeated tag as stb does, and checks format 4's `idRangeOffset` against the subtable.
+4. LeakSanitizer: two `test_ui_fonts.cpp` tests created a UI and a font inside an asserting lambda.
+5. `font_routing` and `font_fixtures_golden` failed under Linux CMake: their `-P` scripts didn't set policies
+   (`IN_LIST` needs CMP0057); they now call `cmake_minimum_required(VERSION 3.25)` like the other scripts.
+6. libFuzzer + UBSan: a strings file with no keys encoded its empty arrays with `memcpy` from a null pointer
+   (`assetc_strings_target_takes_an_empty_file`).
+
+### Stage 10: console run (prepared)
+
+On the Old 3DS: Homebrew Launcher → **Y**, nobody touching the console, then on the PC:
+
+1. `build/pc-debug/tools/nnh/nnh run localization --script examples/localization/tests/check.nnhs` (3ds-dev build).
+   Expected, in order (recorded from the `--pc` run): `loc: showcase`; `language pt-BR (system)`; `language de (system)`;
+   `loc: focus shop`; `loc: shop 1 1 Laterne`; `loc: shop 21 ru 323120D184D0BED0BDD0B0D180D18C`;
+   `loc: shop 21 ja E383A9E383B3E382BFE383B33231E5808B`; `loc: focus shop`; `loc: focus dialog`; `loc: dialog shown …`;
+   `loc: focus dialog`; `loc: check started`; `loc: en sum 92FEBB1D`; `loc: pt-BR sum A166BC22`; `loc: de sum 1DE842A2`;
+   `loc: ru sum 7E4FE058`; `loc: ja sum 21809981`; `loc: PASS 21809981`; `loc: focus dialog`; `loc: focus options`;
+   `loc: saved language en` (Options → Right from "System language"); `loc: saved language (system)` (Left: back to
+   following, so the next run starts as this one); `loc: focus options`; `loc: focus fonts`;
+   `loc: fonts hud …`; `loc bench: started`; `loc bench: base gfx submit …`; `loc bench: glyphs builtin … ratio …
+   PASS|FAIL`; `loc bench: frame worst … missed … PASS|FAIL`; `loc bench: measure_latin …`; `loc bench: measure_ja …`;
+   `loc bench: tr1000 …`; `loc bench: format100 …`; `loc bench: switch avg … worst …`; `loc bench: page1024 …`;
+   `loc bench: memory body 279 glyphs 82144 B ja 1358 glyphs 295000 B`; `loc bench: PASS`. Screenshots in
+   `build/logs/localization-<date>/` (title, shop, ru, dialog, options, gallery), to compare with the `--pc` run's.
+   The script's last line fails if a bench target is missed (`loc bench: FAIL (…)`): then T10.3. If an earlier run
+   failed after choosing a language, its save makes the game start in that language: delete
+   `sdmc:/3ds/nnhge-localization/localization.sav` (or pick "System language" in Options) first.
+2. `build/pc-debug/tools/nnh/nnh run ui --script examples/ui/tests/check.nnhs` → `ui: PASS 30400DA6`, relayout < 0.93 ms,
+   draw ratio ≤ 1.15.
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS …`.
+4. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` → the replay lines, `60 Hz PASS`.
+5. Yes/no: System Settings → language Português (or Deutsch), HBL → Y, `build/pc-debug/tools/nnh/nnh run localization`
+   (no script): the log shows `language pt-BR (system)` (or `de`; the 3DS reports Portuguese as `pt-BR` or `pt-PT` by
+   region: either starts in pt-BR) and the title is in that language. Then the setting goes back.
+
+### Console run 1 (2026-11-26, Old 3DS, 3ds-dev build of `a69ebbf`, run by the maintainer and the lead)
+
+1. **localization `check.nnhs`** (log `E:\RANDOM\nnhge-console-loc.log`, screenshots
+   `build/logs/localization-20261126-094808/`): correctness **PASS** — every checkpoint equal to the PC's, `loc: PASS
+   21809981`, ru/ja plurals, the system-language switches, saved language en → (system), dialog 69/69, the fonts
+   gallery. AC-5, screenshots against the `--pc` run's (same frames, `build/logs/localization-20261126-102503/`,
+   compared pixel by pixel with `build/ref-029/compare_png.py`): no position differs and no pixel differs by more than
+   **3/255** in a channel (the blended edges of glyphs and panels: 246–9 520 pixels per screen; title top 3 676, shop
+   top 5 051, ru top 5 860, dialog top 3 906, options top 1 380, gallery top 9 520, bottoms 246–1 789). The bench
+   missed five targets:
+
+   | Phase | Console | Target |
+   |---|---|---|
+   | base gfx submit | avg 0.156 ms | — |
+   | glyphs CPU | built-in 1.066 µs, font 2.855 µs | — |
+   | glyphs submit | built-in 4.228 µs, font 4.259 µs | — |
+   | glyph ratio (total) | built-in 5.29 µs, font 7.11 µs → **1.34** | ≤ 1.15, FAIL |
+   | frame worst | 17.7 ms, 0/600 missed | PASS |
+   | measure_latin | avg **0.947 ms**, worst 1.154 | < 0.1 ms, FAIL |
+   | measure_ja | avg **0.809 ms**, worst 0.946 | < 0.15 ms, FAIL |
+   | tr1000 | avg **0.479 ms**, worst 0.562 | < 0.1 ms, FAIL |
+   | format100 | avg **0.458 ms**, worst 0.607 | < 0.1 ms, FAIL |
+   | switch | avg 92.6 ms, worst 94.5 over 20 | < 100 ms, PASS |
+   | page1024 load + release | avg 228.7 ms | — |
+   | memory | body 279 glyphs 82 128 B, ja 1 358 glyphs 294 984 B | — |
+
+   Every phase is 24–38× the PC's (pc-dev bench the same day: glyph CPU 0.031/0.082 µs, measure_latin 0.032 ms,
+   measure_ja 0.034, tr1000 0.013, format100 0.012): the targets were first guesses that the ARM11 can't reach (1 000
+   `tr` in 0.1 ms is 27 cycles each). The submit side is equal for both fonts; the gap is the font path's CPU
+   (≈ 1.8 µs ≈ 480 cycles more per glyph) → T10.3 below.
+2. **ui `check.nnhs`** (`E:\RANDOM\nnhge-console-ui.log`): `ui: PASS 30400DA6`, `ui bench: PASS` — base gfx submit
+   0.1671 ms; idle128 0.028 ms (< 0.05); move128 0.053 (< 0.15); geo128 0.103 (< 0.15); relayout128 avg 0.638, worst
+   0.777 ms (< 0.93; spec 028 measured 0.744); list10000 0.053 ms, ratio 1.01; draw ratio 1.13 (ui 7.41 µs, hand
+   6.57 µs, 372 draws); frame worst 17.5 ms, 0/600 missed; 88 B per widget. The shared wrapper costs the UI nothing.
+3. **platformer `gate.nnhs`** (`E:\RANDOM\nnhge-console-gate.log`): PASS, 4 layers + 300 sprites, avg 16.7 ms, worst
+   17.4 ms, 0/600; limits 6 layers with 300 sprites, 600 sprites with 4 layers (unchanged).
+4. **platformer `level.nnhs`** (`E:\RANDOM\nnhge-console-level.log`): `replay: done 900 frames sum E445E8B2: 60 Hz PASS`
+   (level1 worst 19.0 ms, 0/599; bonus worst 18.5 ms, 0/299).
+5. **System language** (yes/no, `E:\RANDOM\nnhge-console-lang.log`): with the console set to Português the log showed
+   `language pt-BR (system)` and the maintainer confirmed the title in pt-BR: **YES**.
+
+### Optimisation round (T10.3, 2026-11-26)
+
+Found on the 3ds-dev objects (`arm-none-eabi-objdump -dr`, calls per object) and measured on the PC with a temporary
+harness (`build/ref-029/zz_perf_029.cpp`, not committed: the bench's phases with the example's real fonts and tables,
+pc-release, best of 15 batches; ±5 % between runs). Every change keeps the output: no glyph item, string, golden or
+draw hash moved: after the round `nnh_tests` 3 807 tests, 0 failures; ctest pc-debug 359/359 (every example's `--pc`
+script and golden, `loc: PASS 21809981` included) and pc-release 328/328; `nnh_assetc_tests` 333/0; `hello` identical.
+
+- **Per glyph, game fonts** (draw, measure, the wrapper): `face_glyph` was a call per code point on the ARM11 (GCC -O2
+  didn't inline it), and it called `break_class` (a binary search above U+02FF) for every glyph only to overwrite the
+  result with the font's own break bits. Now: Latin-1 in the first font is answered inline (one table read) and
+  `face_glyph` is always inlined; the rest is `face_glyph_slow` (`text_face.cpp`), which checks zero-width code points
+  with `is_zero_width` (twelve ranges, no search) and calls `break_class` only for a code point no font has. UTF-8:
+  `next_codepoint_fast` decodes ASCII and the well-formed 3-byte sequences (kana, CJK) inline; `break_class_fast`
+  answers below U+0300 inline. Tests: `break_class_inline_helpers_agree_with_the_table_for_every_code_point` (all
+  1 114 112), `utf8_fast_decoding_equals_next_codepoint` (every lead with every second and third byte).
+- **Per drawn glyph**: the sprite command was rebuilt from scratch per glyph (with a `gfx_clamp_layer` call); now one
+  command per text holds what glyphs share and each glyph sets slot, region, position and colour; a game font's plain
+  glyph (no shadow or outline) is emitted inline (`emit_fast`), one call less.
+- **Wrapper**: the kinsoku look-back (`Seen[3]`) was shifted on every character; now a ring.
+- **`tr`**: `loc_state()` was a call (twice per `tr`): the state is now an inline-visible global; a plural key's form
+  index used `std::popcount` → `__popcountsi2` (a libgcc loop on the ARM11): now a 64-entry table.
+- **`format`**: integers are written with 32-bit divisions once below 2^32 (64-bit division by 10 is a multi-word
+  sequence on the ARM11); the plural operand's `n mod 10^6` is one 32-bit modulo below 2^32; spans are copied with
+  `memcpy` instead of a checked byte loop. Tests: `loc_number_around_the_32_bit_boundary`, ru plurals at 2^32 − 1,
+  2^32 − 3 and 2^32 − 5.
+- Mutation (`build/ref-029/mutants_opt.py`, not committed): 18 mutants on the round's code, 15 killed at first; 3
+  survivors became tests and were killed: `text_face_spaces_draw_nothing_even_with_pixels_in_the_font` (the inline
+  Latin-1 path keeps "spaces never draw"), `loc_format_never_writes_past_its_capacity` (a span one byte longer than the
+  room: with the bug, one byte past the buffer) and `loc_lookup_forms_before_counts_like_popcount` (the table, now
+  `forms_before()`; its upper half was unreachable — a category is at most Other — so it has 32 entries).
+- After the round no hot object calls a libgcc helper (`__aeabi_*`, `__popcountsi2`, soft-float): checked on
+  `text_draw`, `text_measure`, `text_wrap`, `text_face`, `loc_lookup`, `loc_format`, `loc_number`, `plural`.
+
+PC (pc-release, µs; before → after): glyph built-in 0.062 → 0.062, font 0.097 → **0.077** (the font path's extra CPU
+0.035 → 0.015 per glyph); measure_latin 15.6 → **14.3**; measure_ja 13.4 → **10.9**; tr1000 9.1 → **7.6**; format100
+7.7 → **5.8**. The ARM11-specific parts (calls removed per glyph, the libgcc popcount, 64-bit divisions) should gain
+more on the console than on the PC. Scaling run 1 by the PC's ratios alone gives glyph ratio ≈ 1.15, measure_latin
+≈ 0.87 ms, measure_ja ≈ 0.66, tr1000 ≈ 0.40, format100 ≈ 0.34 — not a prediction to set budgets from (the PC hides
+call costs the ARM11 pays), so the four targets stay as they are in `bench_scene.cpp`, marked **"to be set from
+console run 2"** (+ ~25 %, the bench policy); run 2 will FAIL those lines until then.
+
+Cost: 3ds-release `.text` text 199 212 → 203 180, sprites 216 300 → 220 268, ui 311 636 → 317 548, platformer
+405 772 → 409 732 (the inlined lookup and decoder in each per-glyph loop: ≈ 4 KB; the wrapper's `measure` was left a
+call, inlining it cost 0.8 KB more for ≈ 5 %). `hello` (Release and Development) byte-identical. Stack (T7.7,
+3ds-dev `-fstack-usage`): `draw_text_layout` 256 → 344 B, `TextWrapper::next` 208 → 256 B, `emit` 104 (the sprite
+inlined): the draw path ≈ 0.7 KiB (was 0.67); `tr` 80 B, `loc::format` 144 B, `format_integer` 72 B. Both 3DS presets
+build without a warning.
+
+Also in this round: libFuzzer entry points `tests/fuzz/libfuzzer_loc_table.cpp` and `libfuzzer_loc_manifest.cpp`
+(`fuzz_loc_table`, `fuzz_loc_manifest` with `NNH_BUILD_FUZZERS`, next to `fuzz_font_validate`; documented in
+docs/tech/cmake.md); before, only the mini-fuzz ran those targets. The Linux pass on `a69ebbf` (lead): ASan/UBSan
+`nnh_tests` 3 801/3 801 and assetc 333/333, GCC 13 ctest (the known doors flake only), 32-bit 3 801/3 801, libFuzzer
+`font_validate` and `assetc_ttf` 10 min each: clean.
+
+### Console run 2 and budgets set (2026-11-26, Old 3DS, 3ds-dev of `48501a0`, then of the budget commit)
+
+Run 2 (after the optimisation round): correctness again `loc: PASS 21809981`; bench, run 1 → run 2:
+
+| Phase | Run 1 | Run 2 | Budget (run 2 + ≈ 25 %) |
+|-------|-------|-------|-------------------------|
+| glyph CPU, font | 2.855 µs | 1.867 µs | — |
+| glyph total, font / built-in | 7.11 / 5.29 µs, ratio 1.34 | 6.08 / 5.23 µs, ratio 1.16 | ratio ≤ 1.25 |
+| frame, 400 glyphs + 300 sprites | worst 17.7 ms, 0 missed | worst 17.2 ms, 0 missed | 0 missed (as specified) |
+| measure_latin | 0.947 ms | 0.711 ms | < 0.9 ms |
+| measure_ja | 0.809 ms | 0.733 ms | < 0.92 ms |
+| tr1000 | 0.479 ms | 0.451 ms | < 0.57 ms |
+| format100 | 0.458 ms | 0.393 ms | < 0.5 ms |
+| switch | 92.6 ms | 92.6 ms | < 100 ms (as specified) |
+| page1024 load + release | 228.7 ms | 228.4 ms | not judged |
+
+The first targets were PC-derived guesses: the console pays ≈ 4.2 µs of submit per glyph whatever the font, and the
+measure/`tr`/`format` paths an order of magnitude more than the PC. The budgets are in `bench_scene.cpp`
+(`kTargets`, `kGlyphRatio`) and the spec's AC-6. Run 3 with them (same tree plus the budgets): `loc: PASS 21809981`,
+ratio 1.16, Latin 0.693 ms, Japanese 0.708 ms, `tr` 0.451 ms, `format` 0.397 ms, switch 92.5 ms, frame worst 17.7 ms
+with 0 missed — `loc bench: PASS`, `nnh: PASS`. T10.4 (glyph batching) isn't needed. Logs: `E:\RANDOM\nnhge-console-
+loc2.log`, `loc3.log` (the maintainer's machine).
+
+### Overnight round (2026-11-26, the lead's decisions on the five questions)
+
+Each **lead decision, confirmed by the maintainer 2026-11-26** (with item 2 as reversed after the review round below):
+
+1. **Glyph cost**: the T10.3 round done on the PC. The per-glyph CPU of the font path was 5× the built-in's (0.197 µs
+   against 0.040): text without wrapping walked every line twice (the wrapper, then the run). Lines without a wrap
+   width or a line limit now split at `'\n'` only and are walked once (twice when aligned). PC pc-dev: CPU 0.102 µs per
+   glyph; with submit, built-in 0.73 µs, font 0.69 µs — **ratio 1.23 → 0.96** (target ≤ 1.15). No item changed (test
+   `text_draw_unwrapped_text_equals_the_wrapper_path_with_a_huge_width`; the self-check and screenshots unchanged).
+   T10.4 not needed on the PC; the console decides.
+2. **Dispatch split** (lead decision, reversed after review: S3 in the review round below — `draw_text` links the layout
+   strongly again, as at stage 3, and the no-wrap fast path of item 1 stays; the maintainer approved the reversal
+   2026-11-26). What the round had done: on ELF targets `draw_text` referred to `draw_text_layout` weakly
+   (`NNH_TEXT_LAYOUT_WEAK`); `load_font` and `measure_text(utf8, options)`/`measure_chars` called `text_layout_link()`,
+   which linked it. 3ds-release `.text` then: text 197 860 → 190 156 (T0.1 189 956), sprites 214 948 → 207 244
+   (207 132), platformer 404 412 → 396 708 (396 340), ui 310 276 → 307 388. The cost was a trap: wrapping with the
+   built-in font in a game that never loads a font needed a `measure_text(utf8, options)` call somewhere (an assert in
+   Debug/Development, unwrapped text in Release). Since the review round the numbers are those of S3 below.
+3. **STRICT_STRINGS**: the example builds with it. pt-BR translates `menu.continue` (the fallback is shown by core
+   tests and the `qps` path instead); the 1 024 bench keys are gone (no API added: `tr1000` cycles the game's 27 keys —
+   the lookup cost is a bucket and one or two compares whatever the table's size); `make_bench_strings.py` removed. New
+   self-check: en `92FEBB1D`, pt-BR `A166BC22`, de `1DE842A2`, ru `7E4FE058`, ja `21809981` (golden). The subset was
+   regenerated from the new strings: **268 956 B**, 1 670 code points, SHA-256
+   `9159b504457730539cd4b63dbe0abf5203e02a328eeffa8b6c3c09d408ead590` (upstream unchanged).
+4. **Saved language**: `examples/localization/settings.{hpp,cpp}` keep the choice in `localization.sav` (spec 027,
+   `data::String<15>`, empty = follow the system); `main.cpp` starts in it (screenshots and demos ignore it); Options
+   saves on change. The script ends on "System language"; the ctest fixture `loc_reset_saved_language` deletes a
+   stale save before `loc_check_script_pc`.
+5. **`-static-libstdc++` on `nnh_tests` under MinGW**: accepted; documented in docs/tech/cmake.md.
+
+Also in this round:
+- Linux findings fixed: GCC 13.3 ICE (`gimplify.cc:774`) on `s = LocState{}` → value-init with parentheses there and on
+  `Entry`, `FontEntryExtra`, `TextFace`, the placement-new `FontBlock` (comments say why); the ASan stack-use-after-scope
+  in `text_wrap_kerning_and_ink_count_in_a_lines_width` (a temporary face) fixed, and `TextWrapper(const TextFace&&)`
+  deleted (static_assert in the test).
+- Stage 4/5 leftovers: `test_bmfont_text` (6), `test_ttf_check` (6; found a single font accepting face 1 → refused now),
+  `test_ttf_raster` (7), `test_glyph_pack` (6), `test_cli_strings`; ctests `font_fixtures_golden` (11 fixtures, SHA-256
+  in `tests/data/fonts/golden.cmake`, pc-debug = pc-release), `font_routing`, `strings_declaration_*` (7),
+  `strings_incremental` (which failed first: every table step depended on every language's files; now its own and the
+  base's); fuzz bodies `fuzz_assetc_{bmfont,ttf,png_pages,font_desc,strings}` (libFuzzer) with their mini-fuzz.
+- Stage 6/7 leftovers: `loc_show_keys_from_the_environment_at_start`, `test_loc_docs_snippets.cpp` (the API page's
+  example and scene pattern), `tests/loc_example/test_self_check.cpp` (the example's sums over its converted assets on
+  the fake).
+- T8.2: `check_release_strings.sh` gains the font/localization texts and the example's key names; 3ds-release
+  `localization.3dsx` passes (after `text_missing.cpp` was made Release-empty: its "log full" text was linked through
+  `text_missing_reset`). pc-release `.exe`s of every example contain `NNH_REMOTE` (hello's too, unchanged since T0.1):
+  pre-existing, not spec 029's — reported.
+- T8.3 link probes (3ds-release, `build/ref-029/probes`, not committed): a font-only game has no `nnh::loc::`, no
+  `stbtt_`/`stbi_`; a `tr`-only game has no `loc::format`, no plural code, no font table, no wrapper, and
+  `draw_text_layout` only as a weak undefined symbol (until the review round's S3: now linked by `draw_text`); a
+  `format` game adds `plural_category` and `loc::format` only; the UI example has no `Ui::set_font`.
+- T8.4 build times (pc-debug, this machine): edit `title_scene.cpp` → simulator 2.46 s (budget < 2 s: over, like the UI
+  example's 2.1 s), `.3dsx` 6.8 s (budget < 5 s: over; the romfs holds 1.1 MB of fonts); edit `de.strings` → 1.47 s, steps
+  run: Strings de, the two fonts listing de (body_16, title_32), Languages; clean `nnh_core` 16.2 s, clean `nnh-assetc`
+  10.7 s (T0.1: 7.7 s; stb_truetype, stb_image and the converters added).
+- The switch bench phase reads the hook's profile scope one frame later (it read 0.0 before): pc-debug avg 14.6 ms,
+  worst 21.8 ms; pc-dev avg 11.2 ms, worst 26.1 ms.
+- pc-dev bench after the round: measure_latin 0.050 ms, measure_ja 0.048 ms, tr1000 0.023 ms, format100 0.020 ms, frame
+  worst 17.2 ms with 0 of 600 missed, page1024 25 ms. The glyph ratio over five runs: 0.96, 1.08, 1.12, 1.25, 1.37 —
+  the font path's CPU is steady (0.106–0.129 µs per glyph against 0.035–0.041 built-in), the spread is the simulator's
+  submit, which varies ±0.1 µs per glyph between the two phases. The target is judged on the console (where a glyph's
+  submit is ≈ 12 µs, so the CPU difference is ≈ 1 %).
+- Mutation (T8.1), besides stage 6's 19 on localization (all killed): 16 font/text mutants in pc-debug
+  (`build/ref-029/mutants_font_text.py`): 14 killed at first, 2 survivors became tests (a font with no page; a PackBits
+  literal longer than the output), 1 equivalent on Windows (removing `load_font`'s `text_layout_link()`: the weak
+  reference exists only on ELF; the link probes cover it). 5 Release-path mutants in pc-release
+  (`mutants_release.py`): `??` for unknown keys and the missing placeholder killed; the stale-font re-init (`alive()`)
+  survived and became `load_font_after_an_engine_restart_loads_live_pages_again`, then killed; 2 equivalent (the face
+  reset after a failed resolve — the resolver never touches the face on failure; `set_show_keys` in Release — nothing
+  reads the flag there).
+- T7.7 stack usage (3ds-dev objects, `-fstack-usage`): draw path `draw_text_layout` 256 + `TextWrapper::next` 208 +
+  `emit` 104 + `sprite` 104 ≈ 0.67 KiB; format path `loc::format` 144 ≈ 0.2 KiB; **switch path** hook 48 +
+  `switch_fonts` 144 + `load_font` 120 + `load_entry` 656 + `make_page`/`texture_from_page` 64 ≈ 1.03 KiB plus the
+  platform's upload — over the plan's 1 KiB (the main thread has 32 KiB+; no risk, but noted): `load_entry`'s frame
+  holds several `Result<…>` temporaries, each with a 64-byte `Error` message; moving the error paths out of line
+  saved only 32 B (not kept). VFP instructions: `text_draw.o` 32, `layout.o` 3, `text_measure.o` 2 (positions,
+  colours and scales handed to gfx), none in loc; no `__aeabi_*` in text, font or loc.
+- Found by the full suite: a font still loaded at `nnh::shutdown()` left its pages' bytes on the font's tag (gfx takes
+  every live texture off the `textures` tag), and in Release a font loaded again after an engine restart leaked its old
+  block. The block now remembers each page's accounted bytes; the font module's shutdown hook (and, in Release, the
+  stale-entry path of `load_font`) moves them back and frees the block. Test:
+  `load_font_pages_alive_at_shutdown_leave_no_accounting_behind` (failed first).
+- Lead's stage-9 ASan pass on `d481985`: (1) a heap-buffer-overflow read in stb_truetype (`stbtt_GetGlyphHMetrics`)
+  from the ttf mini-fuzz — a damaged `cmap` mapped a code point to a glyph index past `numGlyphs`, and stb reads hmtx,
+  loca and glyf at that index unchecked. Reproduced deterministically on Windows (a segfault) by
+  `ttf_raster_refuses_a_cmap_naming_a_glyph_the_font_lacks`; the rasteriser now refuses such a font ("cmap maps U+0041
+  to glyph 60000, a glyph the font doesn't have"). The same review closed two more gaps in `ttf_check`: the first table
+  of a tag is the one checked (stb_truetype's lookup takes the first; a later duplicate was checked instead), and a
+  format 4 segment's `idRangeOffset` must point inside the subtable. BMFont rectangles are already checked against
+  their pages and stb_image is given sizes checked before decoding. (2) LSan: two `test_ui_fonts.cpp` tests created a
+  UI inside an asserting lambda; the objects now live outside it (the other new crash lambdas allocate nothing).
+- `<nnh/localization.hpp>`: 8 055 preprocessed lines (gfx + result: 7 844 at T0.1), parse time equal within noise
+  (0.44–0.46 s for both, 10 runs each).
+
+### Review round (2026-11-26, independent review: "changes needed")
+
+Each finding was fixed test first (the test seen failing before the fix):
+
+- **B1 bucket bounds**: the `.nnhstr` validator checked only that each key lay in its bucket and the ends were 0 and
+  `key_count`; buckets `[0, 50000, 0, 0, 1]` passed and `tr()` of a bucket-0 hash walked 50 000 records past the table.
+  Every bucket is now `buckets[b] <= buckets[b + 1] <= key_count`
+  (`loc_validate_refuses_buckets_that_decrease_or_pass_the_key_count`); the fuzz target's `walk_table` looks up every
+  key through its bucket (it must be found) and random hashes, aborting on an index past the keys.
+- **S1 alignment**: tables refuse `off_buckets % 2` and `off_keys`/`off_strings`/`off_placeholders % 4`; manifests
+  `off_languages`/`off_roles`/`off_role_fonts % 4` (`loc_validate_refuses_misaligned_sections`): the loader reads them
+  through typed pointers (an alignment fault on the ARM11).
+- **S2 fallback first loaded as a fallback**: an entry remembers whether its own fallbacks were loaded
+  (`FontEntryExtra::fallbacks_loaded`); `load_font()` of a font first loaded as another's fallback loads them then
+  (`load_font_a_fallback_loaded_later_on_its_own_gets_its_fallbacks`). That made loops possible (a → b, b → a, both
+  loaded): a fallback that already reaches the font is skipped and logged, so no two entries keep each other alive
+  (`load_font_fallbacks_that_loop_are_skipped_not_leaked`).
+- **S3 dispatch split reversed** (lead decision changed after review; approved by the maintainer 2026-11-26): the weak
+  reference, `text_layout_link()` and the not-linked assert are gone; `draw_text` links the layout path as at stage 3;
+  the no-wrap fast path stays. fonts.md's linking caveat, rendering.md and patterns.md updated. `hello` Release and
+  Development byte-identical to stage 3 (3DS code SHA-256, sizes; pc-release `nm` and bytes). 3ds-release `.text`:
+  text 199 212, sprites 216 300, ui 311 636, platformer 405 772 (stage 3: 197 860, 214 948, 310 276, 404 412; the rest is
+  the fast path and this round's fixes).
+- **S4 `debug_draw_pages`**: it claimed "scaled down to fit, with glyph rectangles" but drew at scale 1 with page
+  outlines only. It now draws every page shown at one scale (never above 1) that fits the room right of and below `at`,
+  4 pixels apart, and a rectangle per glyph with pixels
+  (`font_debug_draw_pages_draws_each_page_its_outline_and_glyph_rectangles`,
+  `font_debug_draw_pages_scales_a_page_bigger_than_the_screen_to_fit`: 512×256 on the top screen at 0.78125).
+- **S5 build times** (Constitution III): the cause of most of the `.3dsx` overrun was found and removed. `nnh-assetc
+  font` wrote absolute `E:/...` paths in its depfiles; devkitPro's MSYS Ninja read them as missing relative files, so
+  all six fonts of the example reconverted on **every** 3DS build (the map, sprite and mesh steps already wrote paths
+  relative to the working directory: `from_working_dir`, now in `depfile.cpp` and used by the font step too;
+  `cli_font_depfile_paths_are_relative_to_the_working_directory`). Measured after the fix (this machine): edit
+  `title_scene.cpp` → `.3dsx` 4.86–5.06 s (was 6.8 s; a no-op 3DS build is 3.3 s, the host-tool ExternalProject check
+  every 3DS game pays), simulator 2.12–2.27 s (one scene compile and the link; the UI example is 2.1 s). The simulator
+  stays over the 2 s budget and the `.3dsx` at its edge: **constitution exception, approved by the maintainer
+  2026-11-26** (the Constitution Check below says so).
+- **N1** validator offset sums in `std::uint64_t`; a manifest's `block_bytes` above 256 MiB (`kMaxBlockBytes`) is
+  refused, so `loc::start()`'s rounding can't wrap (`loc_validate_refuses_a_block_size_that_wraps`; the sum is 64-bit
+  too).
+- **N2** a font naming itself as a fallback is refused (Corrupted); a path whose FNV-1a hash matches a loaded font's
+  other path is refused (InvalidArgument), not shared (`load_font_refuses_a_font_that_falls_back_to_itself`,
+  `load_font_two_paths_with_one_hash_are_not_shared`: `fonts/f13979` and `fonts/f342604`).
+- **N3** following the system language never picks the pseudo-language, like `start()`
+  (`loc_switch_following_the_system_never_picks_the_pseudo_language`).
+- **N4** `loc::font(role)` turning `use_fonts()` on is kept and documented (the API page's example relies on it).
+- **N5** `measure_chars` clamps carets to −32768..32767 (documented on `TextCaret`;
+  `measure_chars_clamps_positions_past_the_int16_range`).
+- **N6** `// clang-format off/on` with the reason around `<nnh/gfx.hpp>`'s line-preserving declarations, as trailing
+  comments (no line moves).
+- **N7** a manifest's language codes must be well-formed tags (`loc_validate_refuses_an_ill_formed_language_code`).
+- **N8** `loc::arg` clamps an unsigned value above `LLONG_MAX`
+  (`loc_format_clamps_unsigned_arguments_above_the_long_long_range`).
+- Also: rendering.md and item 1 of the overnight round had a literal line break where `'\n'` was meant.
+- Mutation (`build/ref-029/mutants_review.py`, pc-debug, not committed): 21 mutants on this round's logic, 16 killed at
+  first. 4 survivors became tests and were then killed: `loc_validate_refuses_buckets_that_decrease_inside_the_keys`,
+  `load_font_a_late_fallback_load_that_fails_holds_nothing` (a late fallback load that fails lets go of the fonts it
+  loaded) and a check in the S2 test that a font loaded twice holds its fallback once (2 mutants). 1 survivor is
+  equivalent: dropping `hi > key_count` from the bucket loop (non-decreasing buckets that must end at `key_count` can't
+  pass it).
+- Runs: ctest pc-debug 359/359 and pc-release 328/328 (before the mutation tests were added); then `nnh_tests` 3 801
+  tests, 0 failures, and `nnh_assetc_tests` 333, 0 failures. 3ds-release and 3ds-dev built without a warning; `hello`
+  identical to stage 3; docs check 0 broken links.
+
+### Implementation refinements
+
+- **Stage 1.** (1) `texture_3ds.cpp` is unchanged: `Texture3ds` keeps its anonymous-namespace definition there and
+  `texture_3ds.hpp` holds a copy of the same layout (static_assert) for `texture_alpha_3ds.cpp`, because moving the
+  struct changed the debug information of every game's `.elf` (hello's included; its `.3dsx` stayed identical).
+  (2) New contract declarations go at the end of `video.hpp`/`system.hpp`, after the existing ones, so their lines (in
+  every game's DWARF) don't move — inserted in the middle, they changed `hello.elf`'s bytes. (3) The tag rules
+  (`system/language_tag.hpp`) are a header-only `constexpr` check for the PC platform library (which includes the header
+  through a private include path and links nothing of core) and the `nnh` tool, plus one out-of-line copy for core
+  (`language_tag_valid`). (4) The remote decoder checks a Language code's *shape* (2 lowercase letters, then letters,
+  digits, `-`; NUL padding, no interior NUL); `pack_language` (the tool) and `system::language()` check the full rules,
+  and `set_language_override` copies what it is given — an ill-formed override is ignored by `system::language()`
+  (the platform's language shows). This keeps the tag rules out of every Debug/Development game. (5) The PC's
+  `language.ini` is read only when the simulator remembers its view (never in scripted runs: `NNH_EXIT_AFTER_FRAMES`,
+  `nnh run`), so screenshots stay `en` unless `NNH_SIM_LANGUAGE` says otherwise. (6) The fake's `set_system_language`
+  takes `nullptr` (the platform answers null) to prove core's "never null" guard.
+- **Stage 2.** (1) The `.nnhfont` header has one more flag, `kFlagBmp` (a glyph in U+0100..U+FFFF), set by `font_write`
+  and checked by the validator, so the loader sizes the block (BMP buckets or not) from the header before it reads the
+  code points. (2) The writer takes pages already in their decoded form (A4 packed by `a4_pack`, or RGBA8), so it needs
+  no buffer of its own (core never allocates in it). (3) Buckets: a full bucket (32 glyphs) is read directly; otherwise
+  a binary search (≤ 3 compares on a ≈ 3 000-kanji table: tested). (4) Kinsoku in the wrapper: only boundaries between
+  two ID characters are break opportunities; a forbidden one moves back one or two characters (never to the line's
+  start), else stays — so "あいぁぁぁう" at three characters wraps "あ|いぁぁ|ぁう". (5) `WrapLine` carries `width` (pixels
+  at scale 1) and `chars` (what spec 028 called cells: code points but '
+'); the wrapper takes a width in pixels at the
+  face's scale; a wrapping UI label with the built-in font passes `cells × cell`, so it wraps exactly as before.
+- **Stage 3.** (1) `load_font` reads the whole `.nnhfont` once (`assets::load`), validates it, copies the tables into the
+  block and decodes each page into a temporary buffer — instead of streaming sections — because the files are small
+  next to their pages and one validated buffer keeps the loader simple. (2) Error codes: a damaged font is `Corrupted`,
+  the 33rd font `LimitReached` (the engine's existing codes; the plan said `InvalidData`/`Unsupported`). (3) `gfx.hpp`
+  edits keep every existing declaration on its line (one merged line, `FontRef` after `kFontLineHeight`), new
+  declarations at the end — the hello criterion became "`.3dsx` and stripped `.elf` identical" (the DWARF string order of
+  the unstripped `.elf` moves). (4) Release skips the shutdown hooks, so the font table checks that an entry's first
+  page is still a live texture (`alive()`) and forgets entries of an earlier engine run.
+- **Stage 4.** (1) The test fonts come from fontTools (see Stage 4 results). (2) BMFont pages and TrueType sources are
+  not packed; the `.font`/`.fnt` step owns them.
+- **Stage 5.** (1) String files have their own small reader (`strings_read.cpp`: sections, dotted keys, basic and
+  multi-line strings, the `[language]` tables) rather than a mode of the data TOML reader — it keeps the data pipeline
+  untouched; it accepts the plan's syntax. (2) Header sizes: `.nnhstr` 80 bytes, `.nnh_loc` 48 bytes (one more offset
+  each than sketched). (3) Coverage is checked with each language's first role font (its own or its chain's) and that
+  font's fallbacks.
+- **Stage 6.** (1) The after-input hook is registered by `start()` and stays registered until `stop()` (one branch per
+  frame when nothing is pending), so `set_language()` needs no registration. (2) Matching lives in `loc_state.cpp`
+  (`match_language`) — no `loc_match.*` files; `tests/loc/test_loc_start.cpp` covers it (exact, same language other
+  region, pseudo-language never by system). (3) Release skips shutdown hooks: a Release game that restarts the engine
+  calls `loc::stop()` first (documented on `stop()`); the module's role fonts live in a union so no static destructor
+  runs after the engine is gone. (4) Core tests build tables and manifests with a small writer in
+  `tests/loc/loc_fixture.hpp` (the layout of `strings_check.cpp`/`strings_index.cpp`), so each test states exactly its
+  languages, chains, rules and fonts and can corrupt them; `nnh_assetc_tests` checks that the real writer's output passes
+  the same validators. (5) `nnh_tests` links libstdc++/libgcc statically on MinGW: Git Bash puts its own msvcrt-based
+  `libstdc++-6.dll` first on PATH, and a string that DLL allocated, freed by an inlined Release destructor through the
+  UCRT, corrupted the heap (found by the localization fixtures; tests only, games use no C++ runtime allocation).
+  (6) `tr()`'s show-keys path and `format()`'s "{name}" marker are compiled only in Debug/Development (`#if`), so Release
+  keeps no key names.

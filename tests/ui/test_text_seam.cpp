@@ -4,36 +4,44 @@
 #include <cstring>
 
 #include "test.hpp"
+#include "ui/ui_block.hpp"
 #include "ui/ui_text_seam.hpp"
-#include "ui/ui_wrap.hpp"
+#include "text/text_wrap.hpp"
 
-using nnh::detail::seam_measure;
 using nnh::detail::TextSize;
+using nnh::detail::TextFace;
+using nnh::detail::TextWrapper;
 using nnh::detail::WrapLine;
-using nnh::detail::Wrapper;
 
 namespace {
 
 /// Lines and total cells as the wrapper (no width, no line limit) counts them.
 TextSize by_wrapper(const char* text) {
-    Wrapper w(text, static_cast<int>(std::strlen(text)), 0, 0);
+    const TextFace builtin;
+    TextWrapper w(builtin, text, static_cast<int>(std::strlen(text)), 0, 0);
     WrapLine line;
     TextSize t;
     while (w.next(line)) {
         ++t.lines;
-        t.total += line.cells;
-        if (line.cells > t.cells) t.cells = line.cells;
+        t.total += line.chars;
+        if (line.width > t.width) t.width = line.width; // the built-in face: chars × 8
     }
     return t;
 }
 
-bool same(const TextSize& a, const TextSize& b) { return a.cells == b.cells && a.lines == b.lines && a.total == b.total; }
+bool same(const TextSize& a, const TextSize& b) { return a.width == b.width && a.lines == b.lines && a.total == b.total; }
+
+/// A block whose looks use the built-in font (the seam reads only its font slots).
+const nnh::detail::UiBlock g_block{};
+const nnh::UiTextLook g_look{};
+
+TextSize seam_measure(const char* text) { return nnh::detail::seam_measure(g_block, g_look, text); }
 
 } // namespace
 
 NNH_TEST(ui_seam_measure_counts_widest_lines_and_total) {
     const TextSize t = seam_measure("ab\ncdef\r\nx");
-    CHECK(t.cells == 4 && t.lines == 3 && t.total == 7);
+    CHECK(t.width == 32 && t.lines == 3 && t.total == 7);
     CHECK(same(seam_measure(""), TextSize{}));
 }
 

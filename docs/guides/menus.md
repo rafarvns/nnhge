@@ -54,6 +54,16 @@ touches drag sliders and tap toggles and choice arrows, the box scrolls by whole
 is the box's back widget (`ui_.set_back(box, back)`): B activates it, so `if (ui_.activated(Key::Back)) pop();` handles
 both. Read values with `ui_.value(Key::Music)` or react in the frame they change (`ui_.changed(Key::Music)`).
 
+## A language option
+
+A `choice` lists "System language" and then every shipped language by its own name (`nnh::loc::language_name(i)`, kept
+alive by localization, passed as `UiText::borrow`); changing it calls `nnh::loc::set_language(code)` (or
+`follow_system(true)`) and saves the code with [saves](../api/saves.md). The scene calls `nnh::loc::apply(ui_, roles)`
+in `on_enter()` and from a `LanguageChanged` subscription, so every widget shows the new language and fonts in the
+frame the switch takes effect. Give the body font the characters of every language's name (or a fallback font that has
+them). Example: [`examples/localization/options_scene.cpp`](../../examples/localization/options_scene.cpp); guide
+[localizing a game](localizing-a-game.md).
+
 ## Inventory
 
 A `list` with a row fill function and the item's description elsewhere

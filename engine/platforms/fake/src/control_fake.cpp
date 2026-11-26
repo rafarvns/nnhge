@@ -21,6 +21,8 @@ void reset() {
     detail::fs_reset();
     detail::remote_reset();
     detail::video3d_reset();
+    detail::alpha_reset();
+    detail::language_reset();
 }
 
 void set_held_buttons(std::uint32_t mask) { g_controls.input.buttons = mask; }

@@ -346,6 +346,12 @@ endif()
 # Sound fixtures (tests/data/sounds, made by make_sounds.py) are read from the source tree.
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
+# MinGW: the C++ runtime linked in. Git Bash puts its own /mingw64/bin (a libstdc++-6.dll built against msvcrt.dll) first
+# on PATH; a string that DLL allocates and an inlined Release destructor frees through the UCRT corrupts the heap
+# (spec 029 stage 6, the localization fixtures). Tests only: games use no C++ runtime allocation.
+if(MINGW)
+    target_link_options(nnh_tests PRIVATE -static-libstdc++ -static-libgcc)
+endif()
 # The tests' data schema (spec 014), declared like a game's: compiled into nnh_tests and into its schema program
 # nnh_tests_data_schema (cmake/nnh_data.cmake), whose description converts the fixtures of data/data_assets/game
 # through the real asset pipeline (target nnh_test_data) for the code-vs-file test (T7.5, test_round_trip.cpp).
@@ -785,8 +791,7 @@ target_sources(nnh_tests PRIVATE
     ui/test_ui_cost.cpp
     ui/test_ui_misuse.cpp
     ui/test_ui_random_ops.cpp
-    ui/test_values.cpp
-    ui/test_wrap.cpp)
+    ui/test_values.cpp)
 # The UI example's self-check (spec 028 T7.1, AC-2): its golden checksums on every host compiler.
 target_sources(nnh_tests PRIVATE ui_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/ui/self_check.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/ui/self_check_script.cpp
@@ -812,6 +817,129 @@ if(NOT MSVC)
              COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -Werror
                      -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
 endif()
+# Game fonts and localization (spec 029): every test of the spec in one block.
+# The converted font fixtures: the same bytes on every compiler and host (T4.9, AC-2).
+add_test(NAME font_fixtures_golden
+         COMMAND ${CMAKE_COMMAND} -DASSETC=$<TARGET_FILE:nnh_assetc> -DFONTS=${CMAKE_CURRENT_SOURCE_DIR}/data/fonts
+                 -DOUT=${CMAKE_CURRENT_BINARY_DIR}/font_fixtures -P ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/golden.cmake)
+set_tests_properties(font_fixtures_golden PROPERTIES PASS_REGULAR_EXPRESSION "font fixtures golden: PASS")
+# Routing (T4.9): the example's asset index has the converted fonts, the tables, the manifest and the licence, and none
+# of the sources (.font, .fnt, BMFont pages, .otf) nor the string files; editing one language's strings reruns only its
+# own table step (T5.7: the per-language step depends on its files and the base's).
+if(TARGET localization_assets)
+    add_test(NAME font_routing
+             COMMAND ${CMAKE_COMMAND} -DINDEX=${CMAKE_BINARY_DIR}/examples/localization/assets/.nnh_assets
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/routing.cmake)
+    set_tests_properties(font_routing PROPERTIES PASS_REGULAR_EXPRESSION "font routing: PASS")
+    if(CMAKE_GENERATOR MATCHES "Ninja")
+        add_test(NAME strings_incremental
+                 COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_BINARY_DIR} -t query
+                         examples/localization/assets/strings/en.nnhstr)
+        set_tests_properties(strings_incremental PROPERTIES
+            PASS_REGULAR_EXPRESSION "en[.]strings" FAIL_REGULAR_EXPRESSION "de[.]strings|ja[.]strings")
+    endif()
+endif()
+# Declarations of LANGUAGES (T5.7): a fixture project configured once per case; each refusal names the fix.
+foreach(_case "missing|language de has no strings/de.strings"
+              "unlisted|strings/fr.strings belongs to fr, which is not in"
+              "bad_code|\"PT_br\" is not a language code"
+              "both_forms|de has both strings/de.strings and strings/de/: keep"
+              "bad_base|BASE ja is not in LANGUAGES"
+              "no_languages|string files but no LANGUAGES")
+    string(REPLACE "|" ";" _case "${_case}")
+    list(GET _case 0 _name)
+    list(GET _case 1 _expected)
+    add_test(NAME strings_declaration_${_name}
+             COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/data/strings_decl
+                     -B ${CMAKE_CURRENT_BINARY_DIR}/strings_decl_${_name} -DCASE=${_name}
+                     -DNNH_ROOT=${PROJECT_SOURCE_DIR})
+    set_tests_properties(strings_declaration_${_name} PROPERTIES PASS_REGULAR_EXPRESSION "${_expected}")
+endforeach()
+add_test(NAME strings_declaration_good
+         COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/data/strings_decl
+                 -B ${CMAKE_CURRENT_BINARY_DIR}/strings_decl_good -DCASE=good -DNNH_ROOT=${PROJECT_SOURCE_DIR})
+set_tests_properties(strings_declaration_good PROPERTIES PASS_REGULAR_EXPRESSION "strings declaration: [^\n]*en=[^\n]*de=")
+# The localization example's self-check on the fake platform, over the example's own converted assets (T7.2).
+if(TARGET localization_assets)
+    target_sources(nnh_tests PRIVATE loc_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/localization/self_check.cpp)
+    target_compile_definitions(nnh_tests PRIVATE
+        NNH_LOC_EXAMPLE_ASSETS="${CMAKE_BINARY_DIR}/examples/localization/assets")
+    add_dependencies(nnh_tests localization_assets)
+endif()
+# The localization example in the simulator (T7.4, T7.6): its self-check (every language switched like a player would),
+# and its console script played with --pc.
+if(TARGET localization AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME loc_self_check_pc COMMAND localization)
+    set_tests_properties(loc_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;LOC_DEMO=check;NNH_EXIT_AFTER_FRAMES=60"
+        PASS_REGULAR_EXPRESSION "loc: PASS 21809981" FAIL_REGULAR_EXPRESSION "loc: FAIL|\] E " TIMEOUT 120)
+    get_filename_component(_loc_preset ${CMAKE_BINARY_DIR} NAME)
+    # the script starts from "follow the system language": a saved choice left by an earlier, failed run is removed
+    add_test(NAME loc_reset_saved_language
+             COMMAND ${CMAKE_COMMAND} -E rm -f
+                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav
+                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav.bak)
+    set_tests_properties(loc_reset_saved_language PROPERTIES FIXTURES_SETUP loc_saved_language)
+    add_test(NAME loc_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run localization --pc --no-build --script examples/localization/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(loc_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_loc_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port FIXTURES_REQUIRED loc_saved_language)
+endif()
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_font.cpp fuzz/fuzz_loc.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_font_validate fuzz/libfuzzer_font_validate.cpp)
+    target_link_libraries(fuzz_font_validate PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_font_validate PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_font_validate PRIVATE -fsanitize=fuzzer,address)
+    foreach(_loc_fuzz loc_table loc_manifest)
+        add_executable(fuzz_${_loc_fuzz} fuzz/libfuzzer_${_loc_fuzz}.cpp)
+        target_link_libraries(fuzz_${_loc_fuzz} PRIVATE nnh_fuzz_targets)
+        target_compile_options(fuzz_${_loc_fuzz} PRIVATE -fsanitize=fuzzer,address)
+        target_link_options(fuzz_${_loc_fuzz} PRIVATE -fsanitize=fuzzer,address)
+    endforeach()
+endif()
+target_sources(nnh_tests PRIVATE
+    font/test_font_cost.cpp
+    font/test_font_debug.cpp
+    font/test_font_format.cpp
+    font/test_font_load.cpp
+    font/test_font_lookup.cpp
+    font/test_font_misuse.cpp
+    font/test_font_table.cpp
+    font/test_font_validate.cpp
+    font/test_page_codec.cpp
+    fuzz/test_fuzz_font.cpp
+    fuzz/test_fuzz_loc.cpp
+    loc/test_loc_cost.cpp
+    loc/test_loc_docs_snippets.cpp
+    loc/test_loc_fonts.cpp
+    loc/test_loc_format.cpp
+    loc/test_loc_lookup.cpp
+    loc/test_loc_number.cpp
+    loc/test_loc_random_ops.cpp
+    loc/test_loc_start.cpp
+    loc/test_loc_switch.cpp
+    loc/test_loc_ui.cpp
+    loc/test_loc_validate.cpp
+    loc/test_plural_rules.cpp
+    platform_fake/test_texture_alpha_fake.cpp
+    remote/test_remote_language.cpp
+    system/test_language_tag.cpp
+    system/test_system_language.cpp
+    text/test_text_runs.cpp
+    text/test_text_wrap.cpp
+    ui/reference/ui_wrap_cells.cpp
+    ui/test_ui_fonts.cpp
+    ui/test_ui_seam_equivalence.cpp
+    text/test_break_class.cpp
+    text/test_measure_chars.cpp
+    text/test_text_builtin_unchanged.cpp
+    text/test_text_draw_fonts.cpp
+    text/test_text_measure_box.cpp
+    text/test_text_missing.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.
@@ -940,6 +1068,9 @@ target_link_libraries(nnh_conformance_pc PRIVATE SDL3::SDL3)
 # nnh_link's sockets.
 target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_remote_pc.cpp)
 target_link_libraries(nnh_conformance_pc PRIVATE nnh_link)
+# PC only (spec 029): coverage textures draw like white RGBA texels of that alpha, read back.
+target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_texture_alpha_pc.cpp
+                                          platform_conformance/test_language_pc.cpp)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 # Headless and quiet: no display, no sound card needed (the dummy audio driver still runs the backend).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;SDL_AUDIO_DRIVER=dummy")

@@ -72,9 +72,9 @@ NNH_TEST(remote_slider_message_refuses_bad_values) {
     Bytes pad = slider_bytes(0, 10);
     pad.b[9] = 1;
     CHECK(decode(pad, out) == wire::Reject::Range);
-    Bytes type8 = slider_bytes(0, 10);
-    type8.b[1] = 8;
-    CHECK(decode(type8, out) == wire::Reject::Type);
+    Bytes type9 = slider_bytes(0, 10);
+    type9.b[1] = 9; // 8 is the language (spec 029)
+    CHECK(decode(type9, out) == wire::Reject::Type);
 }
 
 NNH_TEST(remote_slider_interactive_overrides_until_released) {

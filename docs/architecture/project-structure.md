@@ -14,6 +14,8 @@ engine/
                                              files — schema, fingerprint, validators — and animation/
                                              sprite_format.hpp, sprite_layout, sprite_sequence, sprite_validate
                                              with tools/assetc)
+                                             font/font_format, font_validate, page_codec and loc/loc_file,
+                                             loc_validate, plural (spec 029) with tools/assetc too
   core/src/core/                             engine-wide internal state shared by modules; pure helpers with no
                                              engine includes that host tools compile too (crc32)
   core/contract/nnh/platform/<area>.hpp      platform contract (what each platform library implements)
@@ -39,7 +41,13 @@ tests/
   <example>/test_<concept>.cpp               an example's pure logic, compiled from examples/<example>/
                                              (tests/platformer: the benchmark's gate, camera, coins, player,
                                              replay; replay_matches_script.cmake checks tests/level.nnhs;
-                                             tests/animation_example: examples/animation's self-check)
+                                             tests/animation_example: examples/animation's self-check;
+                                             tests/loc_example: examples/localization's self-check over its
+                                             converted assets)
+  font/ loc/ text/                           spec 029: fonts (font_fixture.hpp builds .nnhfont in memory),
+                                             localization (loc_fixture.hpp writes tables and manifests), the shared
+                                             wrapper and run layout; data/fonts: make_test_fonts.py's fixtures and
+                                             golden.cmake, routing.cmake; data/strings_decl: LANGUAGES cases
 examples/<name>/                             one small program per feature (main.cpp + CMakeLists.txt)
   tests/*.nnhs                               test scripts (spec 013): nnh run <name> [--pc] --script ...
                                              (guide: guides/testing-on-the-console.md)
@@ -57,7 +65,9 @@ tools/<tool>/                                host tools: tools/nnh (the nnh comm
                                              scripts and the console remote's PC side, spec 013); tools/assetc
                                              (nnh-assetc, build-time conversions, spec 012, D27: Tiled maps; src/
                                              json*, tiled_*, map_writer; spec 014: toml*, schema_read, data_*,
-                                             data_index_build, index_writer; tests/ with the fuzz targets; built by
+                                             data_index_build, index_writer; spec 029: font_desc, charsets*, ttf_check,
+                                             ttf_raster, bmfont_*, png_pages, glyph_pack, font_writer, convert_font,
+                                             strings_*, plural_*; tests/ with the fuzz targets; built by
                                              cmake/nnh_host_tools.cmake, standalone-capable CMakeLists.txt);
                                              tools/data_schema (spec 014: main() of each game's data schema
                                              program, cmake/nnh_data.cmake)

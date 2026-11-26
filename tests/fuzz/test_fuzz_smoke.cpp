@@ -92,7 +92,7 @@ NNH_TEST(ogg_target_survives_mutated_inputs) {
 NNH_TEST(remote_target_survives_mutated_inputs) {
     // A valid session (control byte: 16 bytes arrive, then bits 6-7 frames pass) to mutate from.
     using namespace nnh::detail::remote;
-    Message messages[7];
+    Message messages[8];
     messages[0].type = MessageType::Hello;
     messages[0].version = kVersion;
     messages[1].type = MessageType::Buttons;
@@ -113,9 +113,12 @@ NNH_TEST(remote_target_survives_mutated_inputs) {
     messages[5].type = MessageType::Buttons;
     messages[5].frame = 9;
     messages[5].release = 0x0001;
-    messages[6].type = MessageType::Bye;
-    messages[6].frame = 12;
-    std::uint8_t seed[7 * (1 + kMessageSize)];
+    messages[6].type = MessageType::Language; // spec 029
+    messages[6].frame = 10;
+    CHECK(pack_language("pt-BR", messages[6]));
+    messages[7].type = MessageType::Bye;
+    messages[7].frame = 12;
+    std::uint8_t seed[8 * (1 + kMessageSize)];
     std::size_t size = 0;
     for (const Message& m : messages) {
         seed[size++] = static_cast<std::uint8_t>(kMessageSize | (1u << 6));

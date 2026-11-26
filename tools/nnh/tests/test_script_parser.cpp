@@ -244,3 +244,18 @@ NNH_TEST(parser_reads_lines_one_at_a_time_for_interactive_use) {
     CHECK(script.steps.size() == 2 && script.steps[1].command == Command::Drag);
     CHECK(errors.size() == 1 && has(errors[0], "typed:3: unknown button"));
 }
+
+// Spec 029 FR-27: `language CODE|off` — a well-formed code of at most 8 bytes (it travels in one remote message).
+NNH_TEST(parser_reads_the_language) {
+    const Step s = one("language pt-BR");
+    CHECK(s.command == Command::Language && s.text == "pt-BR");
+    CHECK(one("language ja").text == "ja" && one("language zh-Hant").text == "zh-Hant");
+    CHECK(one("language off").command == Command::LanguageOff && one("LANGUAGE Off").command == Command::LanguageOff);
+    for (const char* bad : {"language JA", "language pt-br", "language -ja", "language Japanese", "language zh-Hans-CN",
+                            "language j", "language es-41"}) {
+        CHECK(has(error_of(bad), "t.nnhs:1: language is a code like ja, pt-BR or zh-Hant (at most 8 characters) or off"));
+    }
+    CHECK(has(error_of("language"), "wrong number of arguments; usage: language CODE|off"));
+    CHECK(has(error_of("language ja en"), "wrong number of arguments; usage: language CODE|off"));
+    CHECK(has(error_of("language \"ja\""), "only TEXT goes in double quotes"));
+}

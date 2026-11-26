@@ -25,6 +25,13 @@ forbidden="$forbidden"'|\(not 0/1\)|\(retired\) |NNH_SAVE_DUMP|play_frames|best_
 # UI widgets (spec 028 FR-30, FR-32): the dump's and overflow warning's texts and the misuse messages (Release keeps one
 # generic line per UI).
 forbidden="$forbidden"'|ui dump:|overflows: its content|a stale or null|the UI is full|a key used twice|Ui::set_'
+# Game fonts and localization (spec 029 FR-20, FR-31, FR-33, AC-8): the dumps, the missing-key and missing-glyph texts,
+# the misuse messages, NNH_LOC_SHOW_KEYS and the localization example's key names (Release tables keep no names; check
+# the .3dsx, whose romfs holds the tables, or the pc-release assets folder).
+forbidden="$forbidden"'|chain of %d tables|loc: not started|font: none \(the built-in font\)|kerning pair%s'
+forbidden="$forbidden"'|its own fallback fonts are ignored|unknown key "|is not declared|no argument for|outline_color ignored'
+forbidden="$forbidden"'|not in %s|log full|loc::tr before|called twice|stale FontRef|a buffer of capacity'
+forbidden="$forbidden"'|NNH_LOC_SHOW_KEYS|menu[.]new_game|dialog[.]speaker|gallery[.]sample'
 
 if grep -aEq "$forbidden" "$binary"; then
     echo "FAIL: $binary contains debug-only strings:"

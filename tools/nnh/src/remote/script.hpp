@@ -6,6 +6,7 @@
 //   hold B[+B…] N          tap B[+B…]             stick circle|cstick X Y   touch X Y   drag X Y N
 //   untouch                screenshot NAME [eyes] expect "TEXT" N       fail-on "TEXT"        end
 //   slider V|off           (spec 026: the 3D slider 0…1, or back to the script's default 0)
+//   language CODE|off      (spec 029: the system language, e.g. ja or pt-BR, or back to the script's default en)
 
 #include <cstdint>
 #include <string>
@@ -16,7 +17,7 @@ namespace nnh::tool::remote {
 
 enum class Command : std::uint8_t {
     Wait, Press, Release, ReleaseAll, Hold, Tap, Stick, Touch, Drag, Untouch, Screenshot, Expect, FailOn, End,
-    Slider, SliderOff,
+    Slider, SliderOff, Language, LanguageOff,
 };
 
 /// One script line. Only the fields of its command are meaningful.
@@ -29,7 +30,7 @@ struct Step {
     std::int16_t x = 0;         ///< Stick: thousandths −1000…1000; Touch, Drag: 0…319; Slider: thousandths 0…1000
     std::int16_t y = 0;         ///< Stick: thousandths, up; Touch, Drag: 0…239
     bool eyes = false;          ///< Screenshot: the top screen's right eye too (`eyes`, spec 026)
-    std::string text;           ///< Screenshot: NAME; Expect, FailOn: the pattern (log_match.hpp)
+    std::string text;           ///< Screenshot: NAME; Expect, FailOn: the pattern (log_match.hpp); Language: the code
 };
 
 struct Script {

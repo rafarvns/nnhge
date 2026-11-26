@@ -19,6 +19,10 @@ nnh::SystemInfo info = nnh::system::info();   // {"Nintendo 3DS", "New 3DS XL", 
 | `CirclePad` | yes | yes (keys or gamepad) |
 | `CStick`, `ZButtons` | New 3DS / New 2DS XL | yes (keys or gamepad) |
 
+`system::language()` is the system's language as a well-formed tag (`"en"`, `"pt-BR"`, `"ja"`, `"zh-Hant"`…; never null,
+`"en"` when unknown): the 3DS's System Settings, the simulator's `NNH_SIM_LANGUAGE` (or `language=` in `language.ini`),
+a test script's `language` override. [Localization](localization.md) starts in it and can follow it.
+
 Capabilities describe the hardware. Touch, sticks and ZL/ZR are read through [input.md](input.md); stereo 3D is
 drawn by [gfx3d.md](gfx3d.md#stereo) from the slider below. `capability_name(c)` returns the enum name.
 

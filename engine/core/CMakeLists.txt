@@ -481,6 +481,7 @@ set(_nnh_ui_sources
     src/ui/ui_draw_widgets.cpp
     src/ui/ui_events.cpp
     src/ui/ui_focus.cpp
+    src/ui/ui_fonts.cpp
     src/ui/ui_geometric.cpp
     src/ui/ui_input_raw.cpp
     src/ui/ui_layout.cpp
@@ -512,12 +513,64 @@ set(_nnh_ui_sources
     src/ui/ui_widgets_boxes.cpp
     src/ui/ui_widgets_display.cpp
     src/ui/ui_widgets_input.cpp
-    src/ui/ui_wrap.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_ui_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_ui_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Game fonts and localization (spec 029, D49, D50): integer-only. The system language (system::language(), the remote's
+# override, tag rules) is linked only by games that ask for it (localization does) and by the Debug/Development remote.
+set(_nnh_language_sources
+    src/system/language_override.cpp
+    src/system/language_tag.cpp
+    src/system/system_language.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_language_sources})
+# Shared text code (D49): line-break classes, faces, runs, the one wrapper (spec 028's labels and draw_text), measuring,
+# drawing with game fonts. break_class.cpp is pure (also in nnh-assetc).
+set(_nnh_text_sources
+    src/text/break_class.cpp
+    src/text/font_metrics.cpp
+    src/text/font_resolve.cpp
+    src/text/text_draw.cpp
+    src/text/text_measure.cpp
+    src/text/text_missing.cpp
+    src/text/text_face.cpp
+    src/text/text_wrap.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_text_sources})
+# Game fonts (spec 029, D49): the .nnhfont format and validator (pure, shared with nnh-assetc), the page codec, the font
+# table, loading, lookups. Reached only through load_font() (it sets gfx's resolver): a game that never loads a font
+# links none of it.
+set(_nnh_font_sources
+    src/font/font.cpp
+    src/font/font_debug.cpp
+    src/font/font_format.cpp
+    src/font/font_index.cpp
+    src/font/font_load.cpp
+    src/font/font_table.cpp
+    src/font/font_validate.cpp
+    src/font/page_codec.cpp
+    src/gfx/texture_alpha.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_font_sources})
+# Localization (spec 029, D50): the converted formats' validator and the plural interpreter (pure, shared with
+# nnh-assetc), the module state, lookups, format, switching; fonts per language and the UI's adapter in their own files.
+# Reached only through loc:: calls: a game that never calls them links none of it.
+set(_nnh_loc_sources
+    src/loc/loc_debug.cpp
+    src/loc/loc_fonts.cpp
+    src/loc/loc_format.cpp
+    src/loc/loc_lookup.cpp
+    src/loc/loc_number.cpp
+    src/loc/loc_queries.cpp
+    src/loc/loc_state.cpp
+    src/loc/loc_switch.cpp
+    src/loc/loc_ui.cpp
+    src/loc/loc_validate.cpp
+    src/loc/plural.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_loc_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

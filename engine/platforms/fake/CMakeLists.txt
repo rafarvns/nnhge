@@ -9,10 +9,12 @@ add_library(nnh_platform_fake STATIC
     src/crash_fake.cpp
     src/fs_fake.cpp
     src/input_fake.cpp
+    src/language_fake.cpp
     src/log_fake.cpp
     src/memory_fake.cpp
     src/remote_fake.cpp
     src/system_fake.cpp
+    src/texture_alpha_fake.cpp
     src/time_fake.cpp
     src/video_fake.cpp
     src/video3d_fake.cpp

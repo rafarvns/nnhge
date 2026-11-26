@@ -268,3 +268,28 @@ Written from the published designs, no code copied:
   https://github.com/rxi/microui, https://github.com/ocornut/imgui
 - Console menu conventions (DS/3DS games): held-direction repeat, wrap on a fresh press only, L/R pages, A confirm /
   B back, touch and D-Pad parity on the lower screen.
+
+## Game fonts and localization (spec 029)
+
+Written from the published specifications and documentation; the only third-party code is the vendored, unmodified
+`stb_truetype` and `stb_image` ([third-party.md](tech/third-party.md)), used by `nnh-assetc` on the host:
+
+- **stb_truetype**, **stb_image** (Sean Barrett, public domain) — https://github.com/nothings/stb
+- **AngelCode BMFont** file format (text and XML forms) — https://www.angelcode.com/products/bmfont/doc/file_format.html
+- **OpenType / TrueType** table specification (the pre-validator's checks: `cmap`, `loca`/`glyf`, `kern`, `GPOS`, CFF) —
+  https://learn.microsoft.com/en-us/typography/opentype/spec/
+- **Unicode CLDR 46** plural rules (integer cardinals of the 36 shipped languages, transcribed with their samples;
+  Unicode License V3) — https://cldr.unicode.org/index/cldr-spec/plural-rules,
+  https://github.com/unicode-org/cldr/blob/release-46/common/supplemental/plurals.xml
+- **UAX #14** Unicode line breaking (the break classes the wrapper uses, simplified) — https://www.unicode.org/reports/tr14/
+- **JIS X 4051** / W3C *Requirements for Japanese Text Layout* (kinsoku: characters that may not start or end a line) —
+  https://www.w3.org/TR/jlreq/
+- **BCP 47** language tags — https://www.rfc-editor.org/info/bcp47
+- **libctru** `cfgu.h` (`CFGU_GetSystemLanguage`, region) and **3dbrew** Config Services — https://github.com/devkitPro/libctru,
+  https://www.3dbrew.org/wiki/Config_Services
+- **Noto Sans CJK / Noto Sans JP** (Adobe and Google, SIL Open Font License 1.1): the example's font is a renamed subset —
+  https://github.com/notofonts/noto-cjk ([provenance](../examples/localization/fonts/README.md))
+- **fontTools** (subsetting the example's font, writing the test fonts; MIT) — https://github.com/fonttools/fonttools
+- **kanji-data** (the kyoiku list's grades; MIT) — https://github.com/davidluzgouveia/kanji-data
+- Design references, no code: **Godot** `tr()`, `TranslationServer` and FontFile; **Unity** Localization and
+  TextMeshPro font assets; **gettext** plural forms (considered: rules as C expressions, not chosen).

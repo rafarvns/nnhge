@@ -121,4 +121,13 @@ void finish_frames();
 
 static_assert(sizeof(TileQuad2D) <= 12, "tile quads stay compact (core's scratch holds 1600)");
 
+// Spec 029 (D49), declared last so the declarations above keep their lines in every game's debug information.
+/// Creates a texture from coverage in memory (spec 029, D49): one byte per pixel, row-major, top row first, sides
+/// powers of two from 8 to 1024; nearest filtering; freed by texture_destroy(). Each texel draws as white with that alpha, so draw_2d's tint gives it its
+/// colour (the multiply path of every other sprite). Core passes multiples of 17 (16 levels); a platform may store
+/// fewer bits as long as those 16 levels survive exactly (3DS: GPU_LA4, luminance 15). `out.bytes` is width × height on
+/// every platform (the PC holds RGBA8 but accounts what the console uses, D4). Load time only (may allocate).
+/// @return false (and `out.handle` 0) if out of memory or the arguments are invalid.
+bool texture_create_alpha(const void* coverage, int width, int height, TextureInfo& out);
+
 } // namespace nnh::platform

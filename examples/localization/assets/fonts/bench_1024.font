@@ -1,0 +1,6 @@
+# The bench font (AC-6): one full 1024 x 1024 page, the size the spec budgets.
+source = "src/NNHExampleSansJP.otf"
+size = 24
+chars = ["ascii", "kana", "kyoiku"]
+page = 1024
+licence = "licences/OFL-NNHExampleSansJP.txt"

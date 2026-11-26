@@ -1,0 +1,4 @@
+source = "nnhtest_cff.otf"
+size = 16
+chars = ["ascii", "U+2026"]
+licence = "own"

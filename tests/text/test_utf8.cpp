@@ -1,6 +1,7 @@
 // UTF-8 decoding for text (text/utf8.hpp, spec 005 FR-2): never crashes, never reads past the end.
 
 #include <cstdint>
+#include <initializer_list>
 
 #include "test.hpp"
 #include "text/utf8.hpp"
@@ -123,4 +124,61 @@ NNH_TEST(utf8_random_bytes_always_end_at_the_terminator) {
         CHECK(steps <= length);
         seed = seed * 1664525u + 1013904223u;
     }
+}
+
+// Spec 029 FR-12: every sequence length at its edges, every overlong length, surrogates, the limit U+10FFFF, sequences
+// truncated at the NUL and continuation bytes alone (maximal subparts: one replacement each, resumed at the next byte that
+// can't continue the sequence).
+NNH_TEST(utf8_decodes_the_first_and_last_code_point_of_every_length) {
+    char32_t c[8];
+    CHECK(decode_all("\x01\x7F", c, 8) == 2 && c[0] == 0x01 && c[1] == 0x7F);
+    CHECK(decode_all("\xC2\x80\xDF\xBF", c, 8) == 2 && c[0] == 0x80 && c[1] == 0x7FF);
+    CHECK(decode_all("\xE0\xA0\x80\xEF\xBF\xBF", c, 8) == 2 && c[0] == 0x800 && c[1] == 0xFFFF);
+    CHECK(decode_all("\xF0\x90\x80\x80\xF4\x8F\xBF\xBF", c, 8) == 2 && c[0] == 0x10000 && c[1] == 0x10FFFF);
+    CHECK(decode_all("\xED\x9F\xBF\xEE\x80\x80", c, 8) == 2 && c[0] == 0xD7FF && c[1] == 0xE000); // around surrogates
+}
+
+NNH_TEST(utf8_refuses_u110000_and_every_overlong_length) {
+    char32_t c[8];
+    CHECK(decode_all("\xF4\x90\x80\x80", c, 8) == 4 && c[0] == kReplacementChar); // U+110000: F4 then 3 strays
+    CHECK(decode_all("\xC1\xBF", c, 8) == 2 && c[0] == kReplacementChar && c[1] == kReplacementChar);
+    CHECK(decode_all("\xE0\x9F\xBF", c, 8) == 3 && c[0] == kReplacementChar);
+    CHECK(decode_all("\xF0\x8F\xBF\xBF", c, 8) == 4 && c[0] == kReplacementChar);
+    CHECK(decode_all("\xED\xBF\xBF", c, 8) == 3 && c[0] == kReplacementChar); // low surrogate U+DFFF
+}
+
+NNH_TEST(utf8_sequences_cut_by_the_nul_stop_there) {
+    for (const char* cut : {"\xE2", "\xE2\x82", "\xF0", "\xF0\x9F", "\xF0\x9F\x98"}) {
+        const char* p = cut;
+        CHECK(next_codepoint(p) == kReplacementChar);
+        CHECK(*p == '\0');
+        CHECK(next_codepoint(p) == 0);
+    }
+}
+
+NNH_TEST(utf8_continuation_bytes_alone_are_one_replacement_each) {
+    char32_t c[8];
+    CHECK(decode_all("\x80\xBF\x80" "a", c, 8) == 4);
+    CHECK(c[0] == kReplacementChar && c[1] == kReplacementChar && c[2] == kReplacementChar && c[3] == U'a');
+    CHECK(decode_all("\xE2\x82\xAC\xAC", c, 8) == 2 && c[0] == 0x20AC && c[1] == kReplacementChar);
+}
+
+NNH_TEST(utf8_fast_decoding_equals_next_codepoint) {
+    // T10.3: next_codepoint_fast() decodes ASCII and common 3-byte sequences inline; every lead byte with every second
+    // and third byte (and a terminator after each), decoded to the end by both
+    int wrong = 0;
+    for (int a = 0; a < 256; ++a) {
+        for (int b = 0; b < 256; ++b) {
+            for (int c = 0; c < 256; c += (a >= 0xE0 && a <= 0xF4) ? 1 : 51) {
+                const char s[5] = {static_cast<char>(a), static_cast<char>(b), static_cast<char>(c), static_cast<char>(0x80), 0};
+                const char* p = s;
+                const char* q = s;
+                for (int i = 0; i < 5; ++i) {
+                    const char32_t x = next_codepoint(p), y = nnh::detail::next_codepoint_fast(q);
+                    wrong += x != y || p != q ? 1 : 0;
+                }
+            }
+        }
+    }
+    CHECK(wrong == 0);
 }

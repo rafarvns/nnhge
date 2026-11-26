@@ -1,6 +1,6 @@
 # Spec 029: Game fonts and localization
 
-Status: approved 2026-11-25 (the maintainer, every open question as recommended)
+Status: implemented 2026-11-26 (Linux checks T9 and the console run T10.2 passed, budgets set); approved 2026-11-25 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-25
 Depends on: [spec 005](../005-text-and-builtin-font/spec.md) (`gfx::draw_text`/`measure_text`, the built-in font, UTF-8
 decoding, the hollow box, one sprite per glyph, `max_draws`), [spec 004](../004-2d-graphics/spec.md) (textures, the draw
@@ -350,6 +350,10 @@ doesn't use any of this links nothing new.
   - `tr` of 1000 keys: **under 0.1 ms**; `format` of 100 strings with two placeholders and a plural: **under 0.1 ms**;
   - switching language (a 64 KiB table and one 1024×1024 alpha page from romfs, then spec 028's `text_changed()` on the
     example's menu): **under 100 ms**, documented as a menu-time operation;
+  - **Budgets set 2026-11-26 by that policy** (the first targets above were missed on the console; after the
+    optimisation round, console run 2 measured ratio 1.16, Latin 0.711 ms, Japanese 0.733 ms, `tr` 0.451 ms, `format`
+    0.393 ms): ratio **≤ 1.25**, Latin **< 0.9 ms**, Japanese **< 0.92 ms**, `tr` **< 0.57 ms**, `format` **< 0.5 ms**;
+    the frame (0 missed) and the switch (92.6 ms) met their targets as written;
   - memory: the plan states bytes per glyph, per key, per font and the example's totals; a **Japanese body font** of the
     example's strings plus the 1006 kyōiku kanji and kana at 12–13 px fits in **one 1024×1024 page** (≤ 1 MiB A8), and the
     whole example (fonts + tables) stays **under 2 MiB** of linear memory.

@@ -38,6 +38,12 @@ Bytes screenshot(std::uint8_t screens) {
 }
 Bytes bye(std::uint8_t quit) { return {{0x52, 6, 0x01, 0x02, 0x0B, 0x0A, 0, 0, quit, 0, 0, 0, 0, 0, 0, 0}}; }
 
+Bytes language(const char* code) {
+    Bytes m{{0x52, 8, 0x01, 0x02, 0x0B, 0x0A, 0, 0}};
+    for (int i = 0; i < 8 && code[i] != 0; ++i) m.b[8 + i] = static_cast<std::uint8_t>(code[i]);
+    return m;
+}
+
 Reject decode(const Bytes& m) {
     Message out;
     return decode_message(m.b, out);
@@ -111,7 +117,7 @@ NNH_TEST(remote_wire_rejects_unknown_types) {
     Bytes m = hello();
     m.b[1] = 0;
     CHECK(decode(m) == Reject::Type);
-    m.b[1] = 8; // 7 is the 3D slider (spec 026)
+    m.b[1] = 9; // 7 is the 3D slider (spec 026), 8 the language (spec 029)
     CHECK(decode(m) == Reject::Type);
     m.b[1] = 0xFF;
     CHECK(decode(m) == Reject::Type);
@@ -299,4 +305,57 @@ NNH_TEST(remote_wire_screen_records_are_capped) {
 
 NNH_TEST(remote_wire_a_full_screen_fits_the_record_cap) {
     CHECK(kScreenFixed + 400u * 240u * 4u <= kMaxRecordPayload);
+}
+
+// Spec 029 FR-27: the Language message — bytes 8–15 the code, NUL-padded; all zero = off (the console's own language).
+NNH_TEST(remote_wire_language_messages_round_trip) {
+    CHECK(round_trips(language("ja")));
+    CHECK(round_trips(language("pt-BR")));
+    CHECK(round_trips(language("zh-Hant")));
+    CHECK(round_trips(language("es-419")));
+    CHECK(round_trips(language("")));
+}
+
+NNH_TEST(remote_wire_a_language_message_decodes_its_code) {
+    Message out;
+    CHECK(decode_message(language("pt-BR").b, out) == Reject::None);
+    CHECK(out.type == MessageType::Language);
+    char code[kLanguageCodeBytes + 1] = {};
+    CHECK(unpack_language(out, code));
+    CHECK(std::strcmp(code, "pt-BR") == 0);
+    CHECK(decode_message(language("").b, out) == Reject::None);
+    CHECK(!unpack_language(out, code)); // off
+    CHECK(code[0] == 0);
+}
+
+NNH_TEST(remote_wire_a_language_message_built_in_code_encodes_its_bytes) {
+    Message m;
+    m.type = MessageType::Language;
+    m.seq = 0x0201;
+    m.frame = 0x0A0B;
+    CHECK(pack_language("zh-Hant", m));
+    std::uint8_t out[kMessageSize];
+    encode_message(m, out);
+    CHECK(std::memcmp(out, language("zh-Hant").b, kMessageSize) == 0);
+    CHECK(pack_language(nullptr, m)); // off
+    encode_message(m, out);
+    CHECK(std::memcmp(out, language("").b, kMessageSize) == 0);
+    CHECK(!pack_language("zh-Hans-CN", m)); // longer than 8 bytes
+    CHECK(!pack_language("Japanese", m));
+}
+
+NNH_TEST(remote_wire_rejects_language_codes_of_the_wrong_shape) {
+    // the decoder checks the shape; the full tag rules are pack_language's and system::language()'s
+    CHECK(decode(language("j@")) == Reject::Range);
+    CHECK(decode(language("-ja")) == Reject::Range);
+    CHECK(decode(language("JA")) == Reject::Range);
+    CHECK(decode(language("j")) == Reject::Range);
+    CHECK(decode(language("ja ")) == Reject::Range);
+    CHECK(decode(language("ja_JP")) == Reject::Range);
+    Bytes interior = language("ja");
+    interior.b[11] = 'x'; // "ja", NUL, then a byte: an interior NUL
+    CHECK(decode(interior) == Reject::Range);
+    Bytes high = language("ja");
+    high.b[9] = 0xE3;
+    CHECK(decode(high) == Reject::Range);
 }

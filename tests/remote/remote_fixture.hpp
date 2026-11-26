@@ -98,6 +98,16 @@ inline wire::Message slider(std::uint16_t seq, std::uint32_t frame, std::uint16_
     return m;
 }
 
+/// The system language (spec 029 FR-27): a code (at most 8 bytes), or nullptr for `language off`.
+inline wire::Message language(std::uint16_t seq, std::uint32_t frame, const char* code) {
+    wire::Message m;
+    m.type = wire::MessageType::Language;
+    m.seq = seq;
+    m.frame = frame;
+    CHECK(wire::pack_language(code, m));
+    return m;
+}
+
 /// 16 bytes with a bad magic and the given seq (Rejected{seq, Magic}).
 inline void send_garbage(std::uint16_t seq) {
     std::uint8_t bytes[wire::kMessageSize] = {0x00, 2, static_cast<std::uint8_t>(seq),

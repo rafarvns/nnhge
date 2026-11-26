@@ -12,6 +12,7 @@ add_library(nnh_platform_3ds STATIC
     src/hbldr_args.cpp
     src/input_3ds.cpp
     src/lights3d_3ds.cpp
+    src/language_3ds.cpp
     src/launch_3ds.cpp
     src/log_3ds.cpp
     src/memory_3ds.cpp
@@ -22,6 +23,7 @@ add_library(nnh_platform_3ds STATIC
     src/slider_3ds.cpp
     src/system_3ds.cpp
     src/texture_3ds.cpp
+    src/texture_alpha_3ds.cpp
     src/tilt3d_3ds.cpp
     src/time_3ds.cpp
     src/video_3ds.cpp

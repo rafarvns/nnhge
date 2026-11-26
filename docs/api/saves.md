@@ -181,7 +181,9 @@ nnh::save::load("slot2.sav", summary, g_buffer.bytes, sizeof g_buffer.bytes);   
 ```
 
 **Settings** are another save type in another file (`settings.sav`): volume, language, an `ActionSet`'s bindings
-blob. They get versions, migrations and the backup for free.
+blob. They get versions, migrations and the backup for free. The player's language is a code in a `data::String<15>`
+(empty: follow the system), read before `loc::start({.language = saved})` and written when the player picks one — the
+localization example's [settings.cpp](../../examples/localization/settings.cpp) ([localization.md](localization.md)).
 
 ## Buffers and sizes
 

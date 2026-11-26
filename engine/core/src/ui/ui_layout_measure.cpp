@@ -4,7 +4,7 @@
 
 #include "ui/ui_layout.hpp"
 #include "ui/ui_text_seam.hpp"
-#include "ui/ui_wrap.hpp"
+#include "text/text_wrap.hpp"
 
 #include <cstring>
 
@@ -16,26 +16,27 @@ namespace {
 
 constexpr int kToggleBox = 10, kGap = 4, kTrackMin = 48;
 
-int value_cells(UiBlock& b, int s, int v) {
+/// Pixels of a slider's or progress bar's value text.
+int value_width(UiBlock& b, int s, int v) {
     char buf[64];
     const int n = value_text(b, s, v, buf, 63);
     buf[n] = 0;
-    return seam_measure(buf).cells;
+    return seam_measure(b, style_of(b, s).text, buf).width;
 }
 
-/// Width of a choice or slider arrow / text part.
-int arrow_w(const UiImagePart& part, const UiStyle& st) {
+/// Width of a choice or slider arrow / text part ("<" or ">").
+int arrow_w(const UiBlock& b, const UiImagePart& part, const UiStyle& st, const char* text) {
     if (part.texture >= 0) return part.region.w;
-    return st.choice.text_arrows ? seam_cell(st.text) : 0;
+    if (!st.choice.text_arrows) return 0;
+    return seam_builtin(st.text) ? seam_cell(st.text) : seam_width(b, st.text, text, 1);
 }
 
-int labelled(int text_cells, int cell) { return text_cells > 0 ? text_cells * cell + kGap : 0; }
+int labelled(int text_width) { return text_width > 0 ? text_width + kGap : 0; }
 
 int leaf_width(UiBlock& b, int s) {
     const UiStyle& st = style_of(b, s);
-    const int cell = seam_cell(st.text);
     UiCold& c = b.cold[s];
-    const TextSize t = seam_measure(text_of(b, s));
+    const TextSize t = seam_measure(b, st.text, text_of(b, s));
     switch (kind_of(b, s)) {
     case UiKind::Label: {
         UiLabelData& l = c.data.label;
@@ -44,37 +45,37 @@ int leaf_width(UiBlock& b, int s) {
                 l.lines = static_cast<std::uint8_t>(t.lines > 255 ? 255 : t.lines);
                 l.cells = static_cast<std::uint16_t>(t.total > 65534 ? 65534 : t.total);
             }
-            return t.cells * cell;
+            return t.width;
         }
         const char* text = text_of(b, s);
-        return longest_word_cells(text, static_cast<int>(std::strlen(text))) * cell;
+        return longest_word_width(seam_face(b, st.text), text, static_cast<int>(std::strlen(text)));
     }
     case UiKind::Image: return (c.data.image.rw > 0 ? c.data.image.rw : 0) * c.data.image.scale;
     case UiKind::Progress:
-        return (c.data.progress.bits & 2) != 0 ? value_cells(b, s, c.data.progress.max) * cell : 0;
+        return (c.data.progress.bits & 2) != 0 ? value_width(b, s, c.data.progress.max) : 0;
     case UiKind::Button: {
         c.data.button.lines = static_cast<std::uint8_t>(t.lines > 255 ? 255 : t.lines); // for pass 3
         const int icon = c.data.button.icon_texture >= 0 ? c.data.button.iw : 0;
-        return icon + (icon > 0 && t.cells > 0 ? kGap : 0) + t.cells * cell;
+        return icon + (icon > 0 && t.width > 0 ? kGap : 0) + t.width;
     }
-    case UiKind::Toggle: return kToggleBox + (t.cells > 0 ? kGap + t.cells * cell : 0);
+    case UiKind::Toggle: return kToggleBox + (t.width > 0 ? kGap + t.width : 0);
     case UiKind::Slider: {
         const UiSliderData& x = c.data.slider;
-        int w = labelled(t.cells, cell) + kTrackMin;
+        int w = labelled(t.width) + kTrackMin;
         if (x.show_value != 0) {
-            const int a = value_cells(b, s, x.min), z = value_cells(b, s, x.max);
-            w += kGap + (a > z ? a : z) * cell;
+            const int a = value_width(b, s, x.min), z = value_width(b, s, x.max);
+            w += kGap + (a > z ? a : z);
         }
         return w;
     }
     case UiKind::Choice: {
         int widest = 0;
         for (int i = 0; i < c.data.choice.count; ++i) {
-            const int w = seam_measure(option_text(b, c.data.choice.first_text + i)).cells;
+            const int w = seam_measure(b, st.text, option_text(b, c.data.choice.first_text + i)).width;
             if (w > widest) widest = w;
         }
-        return labelled(t.cells, cell) + arrow_w(st.choice.left, st) + kGap + widest * cell + kGap +
-               arrow_w(st.choice.right, st);
+        return labelled(t.width) + arrow_w(b, st.choice.left, st, "<") + kGap + widest + kGap +
+               arrow_w(b, st.choice.right, st, ">");
     }
     case UiKind::List:
     case UiKind::Grid: {
@@ -87,7 +88,7 @@ int leaf_width(UiBlock& b, int s) {
 
 int leaf_height(UiBlock& b, int s) {
     const UiStyle& st = style_of(b, s);
-    const int line = seam_line(st.text);
+    const int line = seam_line(b, st.text);
     const UiCold& c = b.cold[s];
     switch (kind_of(b, s)) {
     case UiKind::Label: return c.data.label.lines * line;

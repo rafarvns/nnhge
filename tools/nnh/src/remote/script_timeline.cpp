@@ -103,6 +103,14 @@ void Timeline::add(const Step& step) {
         send(m, now, line);
         break;
     }
+    case Command::Language:
+    case Command::LanguageOff: {
+        wire::Message m;
+        m.type = wire::MessageType::Language;
+        wire::pack_language(step.command == Command::Language ? step.text.c_str() : nullptr, m); // checked by the parser
+        send(m, now, line);
+        break;
+    }
     case Command::FailOn:
         send(wire::Message{}, now, line, step.text);
         open_.events.back().kind = TimedEvent::Kind::FailOn;

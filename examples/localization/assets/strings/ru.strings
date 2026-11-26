@@ -1,0 +1,53 @@
+# Russian: four plural forms (one, few, many, other), numbers grouped with a no-break space from five digits.
+
+[language]
+name = "Русский"
+grouping = " "
+grouping_min = 5
+
+[game]
+title = "Дорога фонарей"
+hint = "SELECT: язык   START: выход"
+
+[menu]
+new_game = "Новая игра"
+continue = "Продолжить"
+shop = "Магазин"
+dialog = "Диалог"
+fonts = "Шрифты"
+options = "Настройки"
+quit = "Выход"
+
+[options]
+title = "Настройки"
+language = "Язык"
+system = "Язык системы"
+back = "Назад"
+
+[dialog]
+speaker = "Старый смотритель"
+text = """
+Фонари вдоль дороги гасли один за другим. \
+Донеси это пламя до последней башни до рассвета \
+и не дай ветру долины задуть его."""
+hint = "A: показать всё   B: назад"
+shown = "Показано {shown} из {total}"
+
+[shop]
+title = "Лавка фонарей"
+greeting = "Добро пожаловать, {name}!"
+items.one = "{count} фонарь"
+items.few = "{count} фонаря"
+items.many = "{count} фонарей"
+items.other = "{count} фонаря"
+price = "Цена: {gold} золота"
+buy = "Купить"
+
+[hud]
+score = "{score}"
+coins = "x{coins}"
+
+[gallery]
+title = "Шрифты"
+sample = "Съешь же ещё этих мягких французских булок, да выпей чаю."
+metrics = "размер {size}  строка {line}  высота {ascent}"

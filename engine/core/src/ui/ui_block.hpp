@@ -256,6 +256,7 @@ struct UiBlock {
     // look
     const UiTheme* theme = nullptr;
     const Texture* textures[kMaxUiTextures] = {};
+    FontRef fonts[kMaxUiFonts] = {}; ///< Ui::set_font (spec 029); 32 bytes
     UiCursor cursor{};
     // scene binding, events
     Scene* scene = nullptr;

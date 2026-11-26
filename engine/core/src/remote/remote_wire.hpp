@@ -37,10 +37,16 @@ inline constexpr std::uint16_t kHelloExclusive = 1u << 0;
 /// Every Hello flag this version knows; any other bit is Reject::Range.
 inline constexpr std::uint16_t kHelloFlags = kHelloExclusive;
 
-/// Slider (spec 026, additive in version 1): an older game rejects it as Reject::Type.
+/// Slider (spec 026) and Language (spec 029) are additive in version 1: an older game rejects them as Reject::Type.
 enum class MessageType : std::uint8_t {
-    Hello = 1, Buttons = 2, Stick = 3, Touch = 4, Screenshot = 5, Bye = 6, Slider = 7,
+    Hello = 1, Buttons = 2, Stick = 3, Touch = 4, Screenshot = 5, Bye = 6, Slider = 7, Language = 8,
 };
+
+/// The system language (spec 029 FR-27): bytes 8–15 hold a code NUL-padded, or are all zero for `language off`. The
+/// decoder checks its shape (2 lowercase letters, then letters, digits, '-'; no interior NUL); pack_language() and
+/// system::language() check the full tag rules (system/language_tag.hpp). Decoded, the 8 bytes sit in Message::press (bytes 8–11) and Message::release (12–15),
+/// little-endian, so the message stays 32 bytes: pack_language() / unpack_language().
+inline constexpr int kLanguageCodeBytes = 8;
 
 /// Why a message was refused (the `reason` of a `Rejected` record). A non-zero reserved byte is `Range`.
 enum class Reject : std::uint8_t {
@@ -75,6 +81,13 @@ struct Message {
 /// The frame a message applies to: its own, or for frame 0 ("the next frame") `now`, the frame whose start is
 /// processing it (the first frame that can still see it).
 constexpr std::uint32_t resolve_frame(std::uint32_t frame, std::uint32_t now) { return frame == 0 ? now : frame; }
+
+/// Puts `code` (nullptr or "": off) into a Language message's press/release. @return false (the message unchanged) for
+/// an ill-formed code or one longer than kLanguageCodeBytes.
+bool pack_language(const char* code, Message& message);
+
+/// The code of a decoded Language message into `out` (NUL-terminated; "" for off). @return false for off.
+bool unpack_language(const Message& message, char out[kLanguageCodeBytes + 1]);
 
 /// Writes `message` as 16 bytes (unused bytes 0). Never allocates.
 void encode_message(const Message& message, std::uint8_t out[kMessageSize]);

@@ -90,6 +90,7 @@ void texture_destroy(TextureHandle handle) {
     if (handle != 0) --mutable_state().live_textures;
     if (handle != 0 && mutable_state().gpu_busy) ++mutable_state().destroyed_while_gpu_busy;
     platform_fake::detail::texture_forgotten(handle);
+    platform_fake::detail::alpha_texture_forgotten(handle);
 }
 
 void draw_2d(Screen screen, const DrawItem2D* items, int count) {

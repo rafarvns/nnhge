@@ -150,7 +150,7 @@ transition or input-block symbol in either. `<nnh/transition.hpp>` 8,476 preproc
 ## M2 — 2D graphics
 - [x] Textures, sprites, sprite batching, both screens, camera — [spec 004](../specs/004-2d-graphics/spec.md): `<nnh/texture.hpp>` (`IMAGES` in `nnh_add_game`), `gfx::draw`/shapes/layers/`Camera2D`, draw list ready for 3D passes and stereo, `examples/sprites` — verified on PC and an Old 3DS XL (2026-11-18)
 - [x] Text with the built-in NNHGE font ([spec 005](../specs/005-text-and-builtin-font/spec.md)): `gfx::draw_text`/`measure_text`, UTF-8 + Latin-1, scale, alignment, shadow; debug text and overlay on the same font — pixel-identical on PC and an Old 3DS XL (2026-11-18), `examples/text`
-- [ ] Game fonts (the game's own bitmap fonts, like `IMAGES`) — follow-up spec
+- [x] Game fonts — [spec 029](../specs/029-game-fonts-and-localization/spec.md) (see "Game fonts and localization" below)
 - [x] Simulator window ([spec 006](../specs/006-simulator-window/spec.md)): five layouts (F2), scale 1–6× (F3/F4), fit (F5), fullscreen (F9, Alt+Enter), remembered per game; each screen rendered at native resolution and composed — checked by the maintainer (2026-11-18). The 3D slider (F6/F7) and eye view (F8) came with spec 026b
 
 ## M3 — Assets
@@ -304,8 +304,18 @@ spec; the order below is a proposal.
   draw list, expanded at submit under `AppConfig::gfx.max_particles` (D39) ([api/particles.md](api/particles.md)).
   `examples/particles`: gallery, touch bursts, a text-file preset, self-check and bench; the platformer gets landing
   dust, bullet puffs and muzzle flashes with its replay lines unchanged
-- [ ] **Localization** (Godot `tr()`, Unity Localization): text by key per language, registered in code or read
-  from a table in the assets, the system language picked by default; the built-in font covers Latin-1
+- [x] **Game fonts and localization** (Godot `tr()` and FontFile, Unity Localization and TextMeshPro) —
+  [spec 029](../specs/029-game-fonts-and-localization/spec.md), **implemented 2026-11-26, console and Linux checks
+  passed, budgets set** (decisions D49, D50): `<nnh/font.hpp>` — fonts baked by the build from TrueType/OpenType descriptions (one
+  size, named character sets, the characters of chosen languages' strings, outline, fallbacks, a packed licence) or
+  BMFonts into 4-bit coverage pages ≤ 1024, drawn by `gfx::draw_text` through `TextOptions::font` with kerning,
+  wrapping (CJK and kinsoku), line limits with `…`, outlines, `measure_text`/`measure_chars`, the same layout on PC and
+  3DS ([api/fonts.md](api/fonts.md)); `<nnh/localization.hpp>` — per-language string files checked by the build
+  (keys, placeholders, CLDR plural forms, glyph coverage, the `qps` pseudo-language), `tr`/`format` without allocation,
+  the system language followed or the player's choice, switching at the next frame with `LanguageChanged`, role fonts
+  per language, spec 028's widgets through `loc::apply` ([api/localization.md](api/localization.md), guide
+  [localizing a game](guides/localizing-a-game.md)). `examples/localization`: en, pt-BR, de, ru, ja (a Noto Sans JP OFL
+  subset), self-check `21809981` (pc-debug = pc-release), bench, `tests/check.nnhs` passes with `--pc`; `hello` unchanged
 - [x] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves — [spec 027](../specs/027-save-versions/spec.md),
   **implemented 2026-11-24**, Linux checks passed; Old 3DS run 1 (2026-11-25): every golden equal to the PC's, the card

@@ -1,0 +1,54 @@
+# Japanese: its own fonts (the OFL subset at 13 and 32 px), no grouping, one plural form.
+
+[language]
+name = "日本語"
+grouping = ","
+grouping_min = 5
+
+[language.fonts]
+body = "fonts/body_ja_13"
+title = "fonts/title_ja_32"
+
+[game]
+title = "ランタンの道"
+hint = "SELECT：言語　START：終了"
+
+[menu]
+new_game = "はじめから"
+continue = "つづきから"
+shop = "お店"
+dialog = "会話"
+fonts = "フォント"
+options = "設定"
+quit = "終了"
+
+[options]
+title = "設定"
+language = "言語"
+system = "本体の言語"
+back = "もどる"
+
+[dialog]
+speaker = "年老いた番人"
+text = """
+道ぞいのランタンが、ひとつ、またひとつと消えていった。\
+夜明けまでに、この火を最後の塔へ運んでほしい。\
+谷の風に消されないように、気をつけて。"""
+hint = "A：すべて表示　B：もどる"
+shown = "{total}文字中{shown}文字を表示"
+
+[shop]
+title = "ランタン屋"
+greeting = "ようこそ、{name}さん！"
+items.other = "ランタン{count}個"
+price = "値段：{gold}ゴールド"
+buy = "買う"
+
+[hud]
+score = "{score}"
+coins = "x{coins}"
+
+[gallery]
+title = "フォント"
+sample = "いろはにほへと　ちりぬるを　わかよたれそ　つねならむ。"
+metrics = "大きさ{size}　行{line}　アセント{ascent}"

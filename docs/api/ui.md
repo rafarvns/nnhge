@@ -216,8 +216,11 @@ Every text is a `UiText`: a **copy** (a string literal converts to one), a **bor
 (std::uint32_t key)`, the text kept alive by the game; nullptr draws nothing). Keys are resolved once and cached;
 `text_changed()` resolves them all again and relayouts — the hook the localization spec uses when the language changes
 (the example switches English/Português this way). All measuring, wrapping and drawing goes through one internal seam
-whose only font today is the [built-in font](text.md); `UiTextLook::font` is the game-fonts spec's hook. Characters
-the font lacks draw as its hollow box.
+in pixels, shared with `gfx::draw_text`'s wrapper ([text.md](text.md)). A style's `text.font` is the
+[built-in font](text.md) (`UiFont::Builtin`) or one of the UI's 8 font slots (`UiFont::Slot0..Slot7`), filled with
+`ui.set_font(slot, font)` ([fonts.md](fonts.md)); `nnh::loc::apply(ui, roles)` sets the resolver to `loc::resolve`, each
+slot to the current language's role font and calls `text_changed()` ([localization.md](localization.md#api)).
+Characters a font lacks draw as its replacement glyph or a hollow box.
 
 Numbers (slider values, progress text, list counts) are formatted without `printf`; a `UiFormat` function
 (`int (int value, char* out, int capacity)`) writes anything else ("75%", "Off").

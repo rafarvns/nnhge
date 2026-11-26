@@ -5,7 +5,10 @@ Header: `<nnh/assets.hpp>` · Spec: [007](../../specs/007-assets-and-romfs/spec.
 
 Declare the folder in the game's build: `nnh_add_game(my_game SOURCES ... ASSETS assets)` — every file
 under `assets/` becomes an asset named by its relative path ([cmake.md](../tech/cmake.md#common-changes)).
-Example: [`examples/sprites`](../../examples/sprites/main.cpp) (textures and a level file). Sounds and music
+Example: [`examples/sprites`](../../examples/sprites/main.cpp) (textures and a level file). Fonts and string files
+are converted too (spec 029): a `<name>.font` description or a BMFont `<name>.fnt` becomes `<name>.nnhfont` (the
+TTF/OTF sources, `.chars` files and BMFont pages are not packed; [fonts.md](fonts.md)), and with `LANGUAGES` the files
+of `strings/` become `strings/<code>.nnhstr` plus the manifest `.nnh_loc` ([localization.md](localization.md)). Sounds and music
 are assets too: `.wav`/`.ogg` files are checked by the build and loaded by path without extension
 ([audio.md](audio.md), [`examples/audio`](../../examples/audio/main.cpp)). Tiled maps (`.tmj`) are converted by
 the build into `.nnhmap` assets of the same path (`levels/level1.tmj` → `levels/level1.nnhmap`, loaded with

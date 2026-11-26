@@ -39,11 +39,12 @@ the linker ([patterns.md](patterns.md)).
 
 Games link one target, `nnh::engine`, which is `nnh::core` + the selected platform.
 
-> Design (spec 029, D49/D50, [plan](../../specs/029-game-fonts-and-localization/plan.md), for review): video gains
-> `texture_create_alpha` (8-bit coverage in multiples of 17, drawn as white texels of that alpha) and system gains
-> `system_language()` (a BCP 47-style code). Each is implemented in its own source file per platform
-> (`texture_alpha_<system>.cpp`, `language_<system>.cpp`), so a game that never uses fonts or localization links
-> neither, and conformance tests cover both.
+Spec 029 (D49/D50, implemented): video has `texture_create_alpha` (8-bit coverage in multiples of 17, drawn as white
+texels of that alpha: 3DS `GPU_LA4`, PC RGBA8 accounted as 1 byte per pixel, the fake a copy) and system has
+`system_language()` (a BCP 47-style tag: 3DS CFGU language and region, PC `NNH_SIM_LANGUAGE` or `language.ini`, fake
+settable). Each lives in its own source file per platform (`texture_alpha_<system>.cpp`, `language_<system>.cpp`), so
+a game that never uses fonts or localization links neither; conformance tests cover both. Their declarations sit at
+the end of `video.hpp`/`system.hpp` so the existing ones keep their lines in every game's debug information.
 
 ## Contract rules
 

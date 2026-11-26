@@ -12,8 +12,9 @@
 
 namespace nnh {
 
-/// The font a style's text uses. Only the built-in font today; the game-fonts spec adds values (FR-24's seam).
-enum class UiFont : std::uint8_t { Builtin };
+/// The font a style's text uses (spec 029 FR-14): the built-in font, or one of the UI's 8 font slots (Ui::set_font).
+enum class UiFont : std::uint8_t { Builtin, Slot0, Slot1, Slot2, Slot3, Slot4, Slot5, Slot6, Slot7 };
+inline constexpr int kMaxUiFonts = 8; ///< font slots a UI's styles refer to
 
 /// What a background is: nothing, a solid colour (with an optional 1-pixel border) or a 9-slice of a texture.
 enum class UiBackgroundKind : std::uint8_t { None, Solid, NineSlice };

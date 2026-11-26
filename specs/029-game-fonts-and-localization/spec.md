@@ -1,6 +1,6 @@
 # Spec 029: Game fonts and localization
 
-Status: implemented 2026-11-26 (Linux checks T9 and the console run T10.2 pending); approved 2026-11-25 (the maintainer, every open question as recommended)
+Status: implemented 2026-11-26 (Linux checks T9 passed; the console run T10.2 pending); approved 2026-11-25 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-25
 Depends on: [spec 005](../005-text-and-builtin-font/spec.md) (`gfx::draw_text`/`measure_text`, the built-in font, UTF-8
 decoding, the hollow box, one sprite per glyph, `max_draws`), [spec 004](../004-2d-graphics/spec.md) (textures, the draw

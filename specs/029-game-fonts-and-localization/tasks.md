@@ -1,6 +1,6 @@
 # Tasks 029: Game fonts and localization
 
-Status: implemented 2026-11-26 except stages 9 and 10 (the lead's) and the items marked pending; approved 2026-11-26 (with plan.md)
+Status: implemented 2026-11-26 except stage 10 (the console run) and the items marked pending; approved 2026-11-26 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -322,7 +322,7 @@ values re-read from the tree at T0.3).
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14
+- [x] **T9.1** (done 2026-11-26: all pass, six findings fixed; plan.md "Stage 9 results") On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14
   and clang 18 (ASan/UBSan): `nnh_tests`, `nnh_assetc_tests` and ctest pass; `font_fixtures_golden` and AC-2's
   checkpoints identical on all three; the 32-bit host build (`-m32 -msse2 -mfpmath=sse`): the fixture goldens and AC-2
   identical; libFuzzer targets of stage 4/5 (`bmfont`, `ttf`, `png_pages`, `font_desc`, `strings`, `toml`) 10 minutes

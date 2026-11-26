@@ -175,7 +175,7 @@ and a complete step chain checked at compile time), `NNH_SAVE_STRUCT`, `NNH_SAVE
 `NNHS` container (same bytes on PC and 3DS), the whole file validated first, exact conversions, a `Report`
 (unknown/dropped/adjusted, backup), the backup on any damage, `OldFields` for steps, a Debug dump and `NNH_SAVE_DUMP`;
 golden files in `tests/data/saves/`, fuzz target `fuzz_saves` ([api/saves.md](docs/api/saves.md)).
-Game fonts and localization (spec 029, implemented, console and Linux checks pending; D49, D50; demo
+Game fonts and localization (spec 029, implemented, Linux checks passed, console checks pending; D49, D50; demo
 `examples/localization`): `<nnh/font.hpp>` — `load_font("fonts/body_16")` of a `.nnhfont` the build baked from a
 `<name>.font` description (TTF/OTF via vendored host-only `third_party/stb_truetype`; size, named character sets, the
 characters of chosen languages' strings, outline, ≤ 3 fallbacks, a packed licence) or a BMFont `.fnt` (pages via

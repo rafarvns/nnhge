@@ -1,6 +1,6 @@
 # Plan 029: Game fonts and localization
 
-Status: implemented 2026-11-26 (T9 and T10.2 pending; see "Implementation notes"); approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
+Status: implemented 2026-11-26 (T9 Linux checks passed; T10.2 pending; see "Implementation notes"); approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
 recommended, and those recommendations are this plan's decisions; five plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D49, D50 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 005 (`gfx::draw_text`/`measure_text`, the built-in font, `detail::next_codepoint`, the hollow box, one sprite
@@ -1117,6 +1117,34 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
   T8.3 (link probes) and T8.4 (build times) were not run.
 - `hello`: 3ds-release/3ds-dev stripped `.elf` and `.3dsx`, pc-release `size`/`nm`/bytes identical to stage 3's after
   stages 6 and 7.
+
+### Stage 9 results (Linux, VM 120, 2026-11-26, run by the lead)
+
+Ubuntu 24.04 on `nnhge-build`, trees sent by `git archive` (341d488 early pass, then d481985, a4d1072 and bd61f78).
+
+| Check | Result |
+|-------|--------|
+| GCC 13.3, pc-debug, full ctest | 358/359; the one failure is `platformer_doors_script_pc`, the known timing flake (it passes alone and on Windows) |
+| GCC 14, all targets | `nnh_tests` 3787/3787, `nnh_assetc_tests` 332/332, ctest clean but `nnh_script_pc_smoke`, which only runs from a preset build folder (it looks for `build/pc-dev`) and isn't a 029 regression |
+| clang 18 ASan + UBSan, `detect_leaks=1` | `nnh_tests` 3787/3787, `nnh_assetc_tests` 332/332, no report |
+| 32-bit host (`-m32 -msse2 -mfpmath=sse`) | `nnh_tests` 3787/3787: every golden and the localization self-check identical |
+| libFuzzer under ASan/UBSan, 10 min each | `ttf` 27.3 M runs, `png_pages` 35.4 M, `font_validate` 18.5 M, `toml` 3.1 M, `font_desc` 1.9 M, `bmfont` 0.7 M, `strings` 13.6 k (each clean file evaluates its rules over 10^6 integers): no crash |
+
+Found and fixed (each with a test that failed first):
+
+1. GCC 13.3 internal compiler error (`gimple_add_tmp_var`) on `s = LocState{};`: brace value-initialisation of structs
+   with array member initialisers. `LocState`, `Entry`, `FontEntryExtra`, `TextFace` and `FontBlock` use parentheses,
+   with a comment.
+2. ASan stack-use-after-scope: a test built a `TextWrapper` over a temporary `TextFace`; `TextWrapper(const TextFace&&)`
+   is now deleted (a `static_assert` checks it).
+3. ASan heap-buffer-overflow in stb_truetype: a damaged `cmap` mapped a character to a glyph past `numGlyphs`. The
+   converter now refuses it (`cmap maps U+0041 to glyph 60000, a glyph the font doesn't have`), honours the first table
+   of a repeated tag as stb does, and checks format 4's `idRangeOffset` against the subtable.
+4. LeakSanitizer: two `test_ui_fonts.cpp` tests created a UI and a font inside an asserting lambda.
+5. `font_routing` and `font_fixtures_golden` failed under Linux CMake: their `-P` scripts didn't set policies
+   (`IN_LIST` needs CMP0057); they now call `cmake_minimum_required(VERSION 3.25)` like the other scripts.
+6. libFuzzer + UBSan: a strings file with no keys encoded its empty arrays with `memcpy` from a null pointer
+   (`assetc_strings_target_takes_an_empty_file`).
 
 ### Stage 10: console run (prepared)
 

@@ -305,7 +305,7 @@ spec; the order below is a proposal.
   `examples/particles`: gallery, touch bursts, a text-file preset, self-check and bench; the platformer gets landing
   dust, bullet puffs and muzzle flashes with its replay lines unchanged
 - [x] **Game fonts and localization** (Godot `tr()` and FontFile, Unity Localization and TextMeshPro) —
-  [spec 029](../specs/029-game-fonts-and-localization/spec.md), **implemented 2026-11-26, console and Linux checks
+  [spec 029](../specs/029-game-fonts-and-localization/spec.md), **implemented 2026-11-26, Linux checks passed, console checks
   pending** (decisions D49, D50): `<nnh/font.hpp>` — fonts baked by the build from TrueType/OpenType descriptions (one
   size, named character sets, the characters of chosen languages' strings, outline, fallbacks, a packed licence) or
   BMFonts into 4-bit coverage pages ≤ 1024, drawn by `gfx::draw_text` through `TextOptions::font` with kerning,

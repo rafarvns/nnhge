@@ -14,6 +14,11 @@
 #   *.gltf, *.glb (glTF 2.0 models, spec 026, D42) -> converted by nnh-assetc into <path without the extension>.nnhmesh;
 #       a depfile lists the model, its buffers and its PNGs (packed as images, as usual); a model's buffers —
 #       <model>.bin and <model>_<any>.bin beside a <model>.gltf — are not packed (plan 026 P25);
+#   *.font (font descriptions, spec 029, D49) and *.fnt (BMFont) -> converted by nnh-assetc font into <path without the
+#       extension>.nnhfont; a depfile lists the description, its source font, .chars files and the string files of
+#       its `strings` languages (or the .fnt and its pages); *.ttf, *.otf, *.ttc, *.chars and a BMFont's pages
+#       <font>_<any>.png beside its .fnt are not packed (the converter reads them); the licence a description names is
+#       an ordinary asset;
 #   others -> copied unchanged, except in a game with a data schema (spec 014, nnh_data.cmake): there every other
 #       file goes through `nnh-assetc data`, which converts a file whose extension is a declared key
 #       (`enemies/goblin.enemy`, same output name) and copies any other, writing a references sidecar in
@@ -37,8 +42,11 @@ set(_NNH_ASSETS_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 # nnh_asset_output_name(<name> <out_var>): the asset name a source file becomes ("" = not packed).
 function(nnh_asset_output_name name out_var)
-    if(name MATCHES "\\.(tsj|tiled-project|tiled-session|ase|aseprite)$")
+    if(name MATCHES "\\.(tsj|tiled-project|tiled-session|ase|aseprite|ttf|otf|ttc|chars)$")
         set(${out_var} "" PARENT_SCOPE)
+    elseif(name MATCHES "\\.(font|fnt)$") # spec 029: before the data rule (D29's routing, as D31)
+        string(REGEX REPLACE "\\.(font|fnt)$" ".nnhfont" converted "${name}")
+        set(${out_var} "${converted}" PARENT_SCOPE)
     elseif(name MATCHES "\\.ase\\.json$")
         string(REGEX REPLACE "\\.ase\\.json$" ".nnhsprite" converted "${name}")
         set(${out_var} "${converted}" PARENT_SCOPE)
@@ -138,6 +146,54 @@ function(_nnh_add_mesh_step target source out name output_name assetc assetc_dep
         VERBATIM)
 endfunction()
 
+# One font conversion step (spec 029): <source>/<name> (.font or .fnt) -> <out>/<output name> (.nnhfont), with a
+# depfile; every string file of the game is passed (`--strings code=file`): the converter reads those of the languages
+# the description lists.
+function(_nnh_add_font_step target source out name output_name assetc assetc_depends)
+    set(output "${out}/${output_name}")
+    set(depfile "${CMAKE_CURRENT_BINARY_DIR}/nnh_fonts/${output_name}.d")
+    get_filename_component(output_dir "${output}" DIRECTORY)
+    get_filename_component(depfile_dir "${depfile}" DIRECTORY)
+    string(REGEX REPLACE "\\.(font|fnt)$" "" shown "${name}")
+    get_target_property(strings ${target} NNH_STRING_SOURCES) # "code=file" entries (nnh_strings.cmake)
+    set(strings_args "")
+    if(strings)
+        foreach(entry IN LISTS strings)
+            list(APPEND strings_args --strings "${entry}")
+        endforeach()
+    endif()
+    add_custom_command(OUTPUT "${output}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir} ${depfile_dir}
+        COMMAND ${assetc} font ${source}/${name} ${output} --assets ${source} --show ${shown} --depfile ${depfile}
+                ${strings_args}
+        DEPENDS "${source}/${name}" ${assetc_depends}
+        DEPFILE "${depfile}"
+        COMMENT "Font ${name}"
+        VERBATIM)
+endfunction()
+
+# _nnh_bmfont_pages(<files> <out_var>): the PNG pages that belong to a .fnt beside them (<font>_<any>.png).
+function(_nnh_bmfont_pages files out_var)
+    set(pages "")
+    foreach(name IN LISTS files)
+        if(NOT name MATCHES "^(.*)\\.fnt$")
+            continue()
+        endif()
+        set(stem "${CMAKE_MATCH_1}")
+        string(LENGTH "${stem}" n)
+        foreach(other IN LISTS files)
+            string(SUBSTRING "${other}" 0 ${n} head)
+            if(head STREQUAL stem)
+                string(SUBSTRING "${other}" ${n} -1 rest)
+                if(rest MATCHES "^_[^/]+\\.png$")
+                    list(APPEND pages "${other}")
+                endif()
+            endif()
+        endforeach()
+    endforeach()
+    set(${out_var} "${pages}" PARENT_SCOPE)
+endfunction()
+
 # _nnh_model_buffers(<files> <out_var>): the .bin files that belong to a .gltf beside them (plan 026 P25).
 function(_nnh_model_buffers files out_var)
     set(buffers "")
@@ -185,8 +241,12 @@ function(nnh_add_assets target folder)
         nnh_assetc_command(assetc assetc_depends "Aseprite exports (.ase.json)")
     elseif(files MATCHES "\\.(gltf|glb)(;|$)")
         nnh_assetc_command(assetc assetc_depends "glTF models (.gltf, .glb)")
+    elseif(files MATCHES "\\.(font|fnt)(;|$)")
+        nnh_assetc_command(assetc assetc_depends "fonts (.font, .fnt)")
     endif()
     _nnh_model_buffers("${files}" model_buffers)
+    _nnh_bmfont_pages("${files}" font_pages)
+    list(APPEND model_buffers ${font_pages}) # not packed either
 
     set(outputs "")
     set(names "") # output names, for the index
@@ -211,6 +271,8 @@ function(nnh_add_assets target folder)
             _nnh_add_map_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
         elseif(name MATCHES "\\.(gltf|glb)$")
             _nnh_add_mesh_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
+        elseif(name MATCHES "\\.(font|fnt)$")
+            _nnh_add_font_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
         elseif(name MATCHES "\\.ase\\.json$")
             _nnh_add_sprite_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}"
                                  "${assetc_depends}")

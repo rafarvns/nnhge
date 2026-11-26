@@ -1,0 +1,4 @@
+source = "nnhtest.ttf"
+size = 16
+outline = 1
+licence = "own"

@@ -31,7 +31,9 @@ constexpr const char* kUsage =
     "       nnh-assetc mesh <in.gltf|in.glb> <out.nnhmesh> --assets <assets folder> [--depfile <out.d>]\n"
     "       nnh-assetc data <in> <out> --schema <schema> --refs <out.refs> --name <asset name> [--show <path>]\n"
     "       nnh-assetc data-index --out <.nnh_data> --schema <schema> --assets-list <file> --refs-list <file>\n"
-    "                  [--show <assets folder>]\n";
+    "                  [--show <assets folder>]\n"
+    "       nnh-assetc font <in.font|in.fnt> <out.nnhfont> --assets <assets folder> --show <asset name>\n"
+    "                  [--depfile <out.d>] [--strings <code>=<string file>]...\n";
 
 struct MapArgs {
     std::string in, out, assets, depfile;
@@ -127,6 +129,10 @@ int run_cli(int argc, const char* const* argv, std::FILE* out, std::FILE* err) {
     }
     if (argc >= 2 && std::strcmp(argv[1], "data-index") == 0) {
         const int code = run_data_index(argc, argv, err);
+        if (code != 2) return code;
+    }
+    if (argc >= 2 && std::strcmp(argv[1], "font") == 0) { // spec 029
+        const int code = run_font(argc, argv, out, err);
         if (code != 2) return code;
     }
     std::fputs(kUsage, err);

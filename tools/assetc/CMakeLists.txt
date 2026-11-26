@@ -18,10 +18,16 @@ add_library(nnh_assetc_lib STATIC
     src/aseprite_frames.cpp
     src/aseprite_slices.cpp
     src/aseprite_tags.cpp
+    src/bmfont_convert.cpp
+    src/bmfont_text.cpp
+    src/charsets.cpp
+    src/charsets_cjk.cpp
     src/cli.cpp
     src/cli_data.cpp
     src/cli_data_index.cpp
+    src/cli_font.cpp
     src/convert.cpp
+    src/convert_font.cpp
     src/convert_mesh.cpp
     src/convert_sprite.cpp
     src/data_convert.cpp
@@ -33,11 +39,14 @@ add_library(nnh_assetc_lib STATIC
     src/diagnostics.cpp
     src/depfile.cpp
     src/files.cpp
+    src/font_desc.cpp
+    src/font_writer.cpp
     src/gltf_accessors.cpp
     src/gltf_document.cpp
     src/gltf_materials.cpp
     src/gltf_nodes.cpp
     src/gltf_primitives.cpp
+    src/glyph_pack.cpp
     src/index_writer.cpp
     src/json.cpp
     src/json_fields.cpp
@@ -45,6 +54,7 @@ add_library(nnh_assetc_lib STATIC
     src/json_string.cpp
     src/map_writer.cpp
     src/paths.cpp
+    src/png_pages.cpp
     src/png_size.cpp
     src/schema_read.cpp
     src/sprite_writer.cpp
@@ -57,6 +67,8 @@ add_library(nnh_assetc_lib STATIC
     src/toml.cpp
     src/toml_parse.cpp
     src/toml_value.cpp
+    src/ttf_check.cpp
+    src/ttf_raster.cpp
     # pure core files (no engine includes), shared with the console: the format, its layout and validator
     ${_core}/core/crc32.cpp
     ${_core}/tilemap/map_layout.cpp
@@ -85,11 +97,24 @@ add_library(nnh_assetc_lib STATIC
     ${_core}/mesh/mesh_measure.cpp
     ${_core}/mesh/mesh_quantize.cpp
     ${_core}/mesh/mesh_validate.cpp
+    # game fonts (spec 029, D49): the engine's .nnhfont writer, validator and page codec, its break classes and decoder
+    ${_core}/font/font_format.cpp
+    ${_core}/font/font_validate.cpp
+    ${_core}/font/page_codec.cpp
+    ${_core}/text/break_class.cpp
+    ${_core}/text/utf8.cpp
 )
+# The vendored stb_truetype and stb_image (spec 029): host-only object libraries (third_party/*/CMakeLists.txt).
+if(NOT TARGET nnh_stb_truetype)
+    add_subdirectory(${_nnh_root}/third_party/stb_truetype ${CMAKE_CURRENT_BINARY_DIR}/stb_truetype)
+    add_subdirectory(${_nnh_root}/third_party/stb_image ${CMAKE_CURRENT_BINARY_DIR}/stb_image)
+endif()
+target_sources(nnh_assetc_lib PRIVATE $<TARGET_OBJECTS:nnh_stb_truetype> $<TARGET_OBJECTS:nnh_stb_image>)
+target_include_directories(nnh_assetc_lib PRIVATE ${_nnh_root}/third_party/stb_truetype ${_nnh_root}/third_party/stb_image)
 # The mesh builder and the glTF baking (double) without fused multiply-add: Windows and Linux converters write the same
 # bytes (spec 026 FR-23's rule for the tool).
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    set_source_files_properties(${_core}/mesh/mesh_build.cpp ${_core}/mesh/mesh_measure.cpp
+    set_source_files_properties(src/ttf_raster.cpp ${_core}/mesh/mesh_build.cpp ${_core}/mesh/mesh_measure.cpp
                                 ${_core}/mesh/mesh_quantize.cpp src/gltf_accessors.cpp src/gltf_document.cpp
                                 src/gltf_materials.cpp src/gltf_nodes.cpp src/gltf_primitives.cpp src/convert_mesh.cpp
                                 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
@@ -138,9 +163,11 @@ if(NNH_BUILD_TESTS)
         tests/test_aseprite_frames.cpp
         tests/test_aseprite_slices.cpp
         tests/test_aseprite_tags.cpp
+        tests/test_charsets.cpp
         tests/test_cli.cpp
         tests/test_cli_data.cpp
         tests/test_cli_data_index.cpp
+        tests/test_cli_font.cpp
         tests/test_cli_mesh.cpp
         tests/test_cli_sprite.cpp
         tests/test_data_convert.cpp
@@ -150,6 +177,7 @@ if(NNH_BUILD_TESTS)
         tests/test_data_writer.cpp
         tests/test_depfile.cpp
         tests/test_diagnostics.cpp
+        tests/test_font_desc.cpp
         tests/test_fuzz_assetc.cpp
         tests/test_fuzz_assetc_sprite.cpp
         tests/test_fuzz_assetc_gltf.cpp
@@ -174,7 +202,8 @@ if(NNH_BUILD_TESTS)
     )
     target_link_libraries(nnh_assetc_tests PRIVATE nnh_assetc_fuzz nnh_assetc_lib nnh_test_framework)
     target_compile_definitions(nnh_assetc_tests PRIVATE NNH_ASSETC_TEST_TMP="${CMAKE_CURRENT_BINARY_DIR}"
-                                                        NNH_GLTF_DIR="${_nnh_root}/tests/data/gltf")
+                                                        NNH_GLTF_DIR="${_nnh_root}/tests/data/gltf"
+                                                        NNH_FONTS_DIR="${_nnh_root}/tests/data/fonts")
     target_include_directories(nnh_assetc_tests PRIVATE ${_nnh_root}/tests/data_assets)
     # test_cli.cpp writes a small game's assets here (the tool itself never creates folders: the build does).
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cli/assets/levels ${CMAKE_CURRENT_BINARY_DIR}/cli/assets/tiles

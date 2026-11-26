@@ -1,0 +1,5 @@
+source = "nnhtest.ttf"
+size = 12
+antialias = false
+threshold = 128
+licence = "own"

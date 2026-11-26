@@ -13,4 +13,8 @@ int run_data(int argc, const char* const* argv, std::FILE* err);
 /// [--show <assets folder shown>]` (spec 014): returns the exit code (2 for a usage error).
 int run_data_index(int argc, const char* const* argv, std::FILE* err);
 
+/// `font <in.font|in.fnt> <out.nnhfont> --assets <folder> --show <asset name> [--depfile <out.d>]
+/// [--strings <code>=<file>]...` (spec 029): the report line and notes go to `out`; returns the exit code (2: usage).
+int run_font(int argc, const char* const* argv, std::FILE* out, std::FILE* err);
+
 } // namespace nnh::assetc

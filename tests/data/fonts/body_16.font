@@ -1,0 +1,4 @@
+source = "nnhtest.ttf"
+size = 16
+chars = ["ascii", "U+2026", "U+FFFD", "kana"]
+licence = "own"

@@ -969,3 +969,30 @@ committed (T7.1). (4) One size per font description. (5) Accept the Debug/Develo
    (decoder case + override), as spec 026b's `Slider` did; Release `hello` stays byte-identical. Accept (recommended), or
    ask for a Development budget of 0 (then the language override needs a second remote path linked only by localized
    games)?
+
+## Implementation notes
+
+### Stage 0 results (2026-11-26, worktree `spec-029` at `8d9c5c5`, Windows, WinLibs GCC 16.2)
+
+Scripts in `build/ref-029/` (not committed): `hello_snapshot.sh` (sizes, `nm -C`, SHA-256), `compare.sh` (reference
+screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micro.sh` (the UI micro-benchmark).
+
+- **`hello`** (`size`: text / data / bss; file bytes): 3ds-release 202 204 / 28 360 / 107 368, `.3dsx` 247 628 B,
+  `hello.elf` SHA-256 `506034e0…b8b96035`, `.3dsx` `ade4dcef…5600ff8c9`; 3ds-dev 220 488 / 32 872 / 109 976, `.3dsx`
+  270 652 B; pc-release 134 880 / 22 052 / 212 400, 285 885 B; pc-debug 206 276 / 26 820 / 215 152, 1 339 674 B. `nm -C`
+  lists kept (3ds-release 1 377 lines, 3ds-dev 1 479, pc-release 3 001, pc-debug 4 953); 3ds-release `texture_3ds.o`
+  SHA-256 `0b318282…90b80339`.
+- **3ds-release `.text`**: `text` 189 956 B, `sprites` 207 132 B, `ui` 301 116 B, `platformer` 396 340 B.
+- **Build times**: edit `examples/ui/title_scene.cpp` → pc-debug 2.75 / 2.10 / 2.09 s, 3ds-release `.3dsx` 5.21 / 4.02 /
+  6.23 s; clean `nnh_core` (pc-debug) 21.9 s; clean `nnh-assetc` (pc-debug) 7.7 s.
+- **Header cost**: a one-line TU with `<nnh/gfx.hpp>` + `<nnh/result.hpp>`: 7 844 preprocessed lines, `-fsyntax-only`
+  0.45 s.
+- **UI micro-benchmark**: plan 028's `build/ref-028/micro` isn't in the tree, so `build/ref-029/micro_ui` was written
+  again from plan 028's description (examples/ui's bench workloads in tight loops, pc-release `-O2`, the fake platform)
+  and its baseline recorded before any change: relayout128 best of runs 10.85–11.56 µs (one cold run 14.8), **draw hash
+  `367085C2`** (40 frames of the 128-widget UI and both lists; it stands in for plan 028's `7429F9EB`, whose program is
+  gone). The T0.1 executable is kept (`micro_ui_t01.exe`) to rerun side by side.
+- **Reference screenshots** (T0.2): 15 PNGs in `build/ref-029/ref/`; `compare.sh` retakes them identical except
+  `sprites_bench` and `platformer_bench`, which differ run to run already at `8d9c5c5` (timing-driven) and are only
+  compared by eye.
+- **Tests** (T0.3): `nnh_tests` 3 582 tests, 0 failures; 514 left under `kMaxTests` (4096) → raised to 8192.

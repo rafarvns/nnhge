@@ -105,6 +105,7 @@ private:
     void send_bye();
     void tick(std::uint32_t frame);
     void screen(Record& record);
+    void on_live_record(const Record& record); // script_runner_live.cpp (spec 030)
     void finish(Verdict verdict, int line, const std::string& why);
     void problem(int line, const std::string& why);
     std::string where(int line) const;

@@ -26,6 +26,7 @@ add_library(nnh_tool_lib STATIC
     src/remote/script_interactive.cpp
     src/remote/script_parser.cpp
     src/remote/script_runner.cpp
+    src/remote/script_runner_live.cpp
     src/remote/script_timeline.cpp
     src/remote/script_tokens.cpp
     src/remote/stdin_lines.cpp
@@ -41,11 +42,21 @@ add_library(nnh_tool_lib STATIC
     ${PROJECT_SOURCE_DIR}/engine/core/src/core/crc32.cpp
     ${PROJECT_SOURCE_DIR}/engine/core/src/remote/remote_wire.cpp
     ${PROJECT_SOURCE_DIR}/engine/core/src/system/language_tag.cpp
+    # live values (spec 030): names, stepping, value text and the live messages, the same code as the game's
+    ${PROJECT_SOURCE_DIR}/engine/core/src/live/live_format.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/live/live_names.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/live/live_steps.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/remote/live_wire.cpp
 )
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${PROJECT_SOURCE_DIR}/engine/core/src/live/live_steps.cpp
+                                TARGET_DIRECTORY nnh_tool_lib PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 target_include_directories(nnh_tool_lib PUBLIC src ${PROJECT_SOURCE_DIR}/engine/core/src)
 nnh_engine_options(nnh_tool_lib)
 find_package(Threads REQUIRED) # the HTTP server runs on a thread
-target_link_libraries(nnh_tool_lib PUBLIC Threads::Threads nnh_link)
+target_link_libraries(nnh_tool_lib PUBLIC Threads::Threads nnh_link PRIVATE nnh_ryu)
+target_include_directories(nnh_tool_lib PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/include)
 
 add_executable(nnh src/main.cpp)
 target_link_libraries(nnh PRIVATE nnh_tool_lib)

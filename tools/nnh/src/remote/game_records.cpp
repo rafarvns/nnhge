@@ -58,6 +58,14 @@ Record decode_record(const wire::RecordHeader& header, const std::uint8_t* p) {
         r.screen.screen = p[2];
         r.frame = r.screen.frame = get32(p + 3);
         break;
+    case wire::RecordType::LiveEntry:
+    case wire::RecordType::LiveRemoved:
+    case wire::RecordType::LiveValue:
+    case wire::RecordType::LiveRefused:
+    case wire::RecordType::LiveState:
+        r.payload.assign(p, p + header.length);
+        if (header.type != wire::RecordType::LiveRefused) r.frame = get32(p);
+        break;
     }
     return r;
 }

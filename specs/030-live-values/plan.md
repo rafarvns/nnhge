@@ -729,3 +729,61 @@ for the maintainer: questions 1–7 below and the panel's frame cost at risk (ri
 7. **Development `hello` growth**: pause, engine controls, pages, the replay, audio hold and the remote decoders are in
    every Debug/Development game: estimated 3–6 KB of `.text` (Release unchanged). Accept (recommended), or ask for a
    smaller budget (then the replay — the largest part — becomes the fallback of risk 2).
+
+## Implementation notes
+
+Built in the worktree `spec-030` from `main` at `dfd2867` (spec 029 merged). Results per stage below; deviations from
+the plan are listed under "Implementation refinements".
+
+### Implementation refinements
+
+- **R1 (T1.1) Name rules in the public header.** The constexpr rule checker (`detail::live_name::check`) lives in
+  `<nnh/live.hpp>` (≈ 25 lines), because `Name`'s `consteval` constructor needs it and games can't see `src/`;
+  `src/live/live_names.{hpp,cpp}` reuses it and adds the leaf/group split, group hashes and the run-time check. An empty
+  name is `live_name_empty_part`.
+- **R2 (T1.5) LiveEntry bounds.** The fixed part is 32 bytes (u32 frame, u32 hash, u8 kind, u8 flags, u8 name length,
+  u8 enum count, 5 × u32), so a record is 33..575 bytes (not 28..540): names 1..31 bytes, enum names 1..15 bytes each
+  (`remote::kMaxEnumNameBytes`, a limit the plan left open; `tune()` asserts it), at most 32 of them.
+- **R3 (T1.5) Kinds.** One `live::Kind` enum covers tunables and watches (`Float 1, Int32 2, Bool 3, Color 4, Enum 5,
+  Action 6, Int8 7, Int16 8, UInt8 9, UInt16 10, UInt32 11, Vec2 12, Text 13`): the `kind` byte of LiveEntry and
+  LiveValue records.
+- **R4 (T1.3) Ryu configuration.** `RYU_FLOAT_FULL_TABLE` (the 3 KB float table; the double tables aren't vendored) and
+  `NDEBUG` are set on the object library's command line; the files are unmodified. `f2s_buffered_n()` prints `d.dddE±x`;
+  `live_format.cpp` splits its digits and exponent and lays them out.
+- **R5 (T1.4) The exhaustive ctest** `live_float_text_exhaustive` is registered with label `slow` and `DISABLED` unless
+  `-DNNH_SLOW_TESTS=ON` (minutes long; the build VM runs it at T9.1).
+- **R6 (T1.5) Older tests.** `remote_wire_rejects_unknown_types` and `remote_slider_message_refuses_bad_values` used
+  type 9 as "the first unknown type"; they now use 12.
+- **R7 (T1.5) `nnh` side.** `game_records` keeps a live record's payload (`Record::payload`) and the script runner routes
+  live records to `on_live_record()` (`script_runner_live.cpp`, filled at T6.3).
+
+### Stage 0 results
+
+- T0.0: `remote_wire.hpp` on `main` at `dfd2867`: messages 1–8 (`Language = 8`), records 1–7. Spec 030 takes messages
+  9–11 and records 8–12 as planned.
+- T0.1 (baselines in `build/ref-030/t0/`, script `build/ref-030/hello_id.sh`): `hello`
+  - 3ds-release `hello.elf`: text 202204, data 28360, bss 107368, file 2 509 112 B; SHA-256 `2423db7941cf922f…`
+    (`hello.3dsx` `ec4a65bad1d226a4…`);
+  - 3ds-dev: text 220920, data 32872, bss 109992;
+  - pc-release `hello.exe`: text 134880, data 22052, bss 212400, file 285 885 B (the PE timestamp changes per link, so
+    pc-release is compared by `size` and the `nm -C` symbol list, as the plan says);
+  - pc-debug: text 209596, data 26820, bss 215152.
+  - 3ds-release `platformer.elf` `.text` 452672.
+  - Header cost (GCC 15, MinGW): a one-line TU with `<nnh/math.hpp>` preprocesses to 63 lines (math.hpp includes nothing);
+    `<cstdint>` + `<cstddef>` alone add ≈ 550 lines, `<type_traits>` ≈ 3 200. See "Stage 2 results" for the header.
+- T0.2/T0.3: the reference screenshots and the full per-object disassembly were not taken: every stage end compares
+  the Release `hello` bytes (3ds-release SHA-256, pc-release size and symbols), which is the property they protect; the
+  goldens are checked by the ctests of both PC presets at each stage end (368 pc-debug / 337 pc-release ctests at
+  stage 1). `kMaxTests` has room (see stage 2).
+
+### Stage 1 results
+
+- Ryu vendored from <https://github.com/ulfjack/ryu> at commit `4c0618b0e44f7ef027ebae05d2cc7812048f7c8f`
+  (2026-02-09), BSL-1.0 chosen (`LICENSE-Boost`); the files and their SHA-256 are in `third_party/ryu/README.md`
+  (`ryu/f2s.c` `0a98f4fce6be4c59…`).
+- New tests: `test_live_names` (14), `test_live_steps` (23), `test_live_format` (11, including 10⁶ seeded floats and
+  every power of two read back through `std::from_chars`), `test_live_wire` (14), `test_fuzz_live_wire` (1); compile-fail
+  ctests `live_name_{too_long,bad_character,empty_part,too_deep}_{fails,explains}` and `live_name_good_compiles`.
+- Stage-end guards: ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev build with 0 warnings; 3ds-release
+  `hello.elf` SHA-256 identical, pc-release `hello` size and symbols identical. Debug/Development `hello` (the remote
+  decoder now links `live_wire.cpp` and the name check): 3ds-dev text +488 B, pc-debug text +5 976 B.

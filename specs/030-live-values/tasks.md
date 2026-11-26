@@ -26,10 +26,10 @@ the tree at T0.3).
 
 ## Stage 0: baseline
 
-- [ ] **T0.0** Start: spec 029 merged into `main` (the lead); worktree `spec-030` from that `main`; the message and record
+- [x] **T0.0** Start: spec 029 merged into `main` (the lead); worktree `spec-030` from that `main`; the message and record
   numbers of plan.md confirmed against the merged `remote_wire.hpp` (029's `Language = 8`; records 1–7). Files: plan.md
   ("Stage 0 results"). Covers D28.
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-030/`, not committed): `hello` sizes
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-030/`, not committed): `hello` sizes
   (`size`: text/data/bss, file bytes), `nm -C` lists and SHA-256 for 3ds-release, 3ds-dev, pc-release, pc-debug; the
   3ds-release objects `app.o`, `overlay.o`, `debug.o`, `debug_pass.o`, `gfx_frame.o`, `clock.o`, the scene stack's object,
   the audio core's objects, `system_3ds.o` and pc-release `devtools_pc.o`, `app_pc.o` (bytes and disassembly) for later
@@ -37,45 +37,45 @@ the tree at T0.3).
   `.text` of the 3ds-release `platformer` ELF; edit `examples/ui/title_scene.cpp` → simulator and `.3dsx` times; clean
   `nnh_core` and `nnh`; preprocessed lines and `-fsyntax-only` time of a one-line TU including `<nnh/math.hpp>`. Files:
   plan.md ("Stage 0 results"). Covers III, FR-20, FR-21, AC-6.
-- [ ] **T0.2** [P] Reference screenshots in `build/ref-030/ref/`: `hello`, `sprites`, `ui` (`UI_SHOT=title`), the
+- [x] **T0.2** [P] Reference screenshots in `build/ref-030/ref/`: `hello`, `sprites`, `ui` (`UI_SHOT=title`), the
   platformer (level 1 at 90, `PLATFORMER_DEMO=replay` at 64 and 312, `bench` top), `models` (check), one overlay shot
   (`hello` with `debug::set_overlay_visible(true)` through a tiny probe, the Stats page) — `build/ref-030/compare.sh`
   retakes and compares bytes. Files: plan.md. Covers AC-1, FR-7.
-- [ ] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
+- [x] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
   `kMaxTests` (this spec adds ≈ 400 tests; raise it in `tests/framework/test_main.cpp`, one commit, if fewer than 450 are
   left). Files: plan.md, `tests/framework/test_main.cpp`. Covers VI.
 
 ## Stage 1: the pure pieces shared with `nnh`
 
-- [ ] **T1.1** Names: `engine/core/src/live/live_names.{hpp,cpp}` (rules, leaf/group split, group hash, run-time check)
+- [x] **T1.1** Names: `engine/core/src/live/live_names.{hpp,cpp}` (rules, leaf/group split, group hash, run-time check)
   and `live::Name`'s `consteval` constructor in `<nnh/live.hpp>` (only `Name` and the constants at this point). Test:
   `tests/live/test_live_names.cpp` (every rule and edge: 31/32 bytes, each character class, `//`, leading/trailing `/`,
   4 levels; hashes equal `fnv1a32`), compile-fail ctests `live_name_too_long_fails`, `live_name_bad_character_fails`,
   `live_name_empty_part_fails`, `live_name_too_deep_fails` (`try_compile` with the expected diagnostic text). Covers FR-1,
   III.
-- [ ] **T1.2** [P] Kinds and stepping: `live_kinds.hpp`, `live_steps.{hpp,cpp}` (`-ffp-contract=off`; grids, up/down by 1
+- [x] **T1.2** [P] Kinds and stepping: `live_kinds.hpp`, `live_steps.{hpp,cpp}` (`-ffp-contract=off`; grids, up/down by 1
   and 10, `max` stop, drag, bar fill, colour channels, enums, bools, refusals). Test: `tests/live/test_live_steps.cpp`
   (hand-computed floats: `0..10/0.25`, `−1..1/0.1`, `0..1/0.3` (max off-grid), off-grid values, n = 2²⁴, negative zero,
   ×10 at both ends; ints with steps 1, 5, 7; drag at every pixel of a 13-pixel bar; bar fill; every refusal). Covers
   FR-8, FR-9, FR-13, FR-22, Q9.
-- [ ] **T1.3** Ryu: `third_party/ryu/` — `f2s.c` and the headers it includes at one pinned `ulfjack/ryu` commit,
+- [x] **T1.3** Ryu: `third_party/ryu/` — `f2s.c` and the headers it includes at one pinned `ulfjack/ryu` commit,
   unmodified, `README.md` with the commit, SHA-256 of each file and the licence choice (BSL-1.0, `LICENSE-Boost`), a C
   object library (warnings off) linked into `nnh_core` and `nnh` (question 3; if the maintainer prefers our own
   formatter, this task writes `live_float_text.cpp` instead and T1.4's tests stay). Test: builds on pc presets, the 3DS
   presets and the host build of `nnh`; `nm` of a 3ds-release game without `live::` shows no `f2s`. Covers IX, III.
-- [ ] **T1.4** Value text: `live_format.{hpp,cpp}` (the decimal layout around Ryu's digits, ints, colours, Vec2, bools,
+- [x] **T1.4** Value text: `live_format.{hpp,cpp}` (the decimal layout around Ryu's digits, ints, colours, Vec2, bools,
   enums, quoted text). Test: `tests/live/test_live_format.cpp` (hand-written expected texts: `5.25`, `0.1`, `0.00001`,
   `1e-06`, `-0`, `16777216`, `123456790`, `1e+09`, `3.4028235e+38`, `1e-45`, the −5..8 exponent boundary on both sides; `#FFC040FF` and
   panel `#FFC040`; `(12.5, 40)`; escapes; round trip of 10⁶ seeded floats + every power of two + subnormal edges through
   `std::from_chars`), ctest `live_float_text_exhaustive` (all 2³² patterns, label `slow`, run on VM 120 at T9.1). Covers
   FR-13, FR-22.
-- [ ] **T1.5** The wire: `engine/core/src/remote/live_wire.{hpp,cpp}` (the three messages and five records: encode,
+- [x] **T1.5** The wire: `engine/core/src/remote/live_wire.{hpp,cpp}` (the three messages and five records: encode,
   decode, validate, pack into `Message`), `remote_wire.{hpp,cpp}` (type numbers, decoder dispatch, record length rules;
   `Message` stays 32 bytes). Test: `tests/remote/test_live_wire.cpp` (round trips; every refusal: hash 0 where not
   allowed, op/arg/count ranges, step 0 or 3601, non-zero reserved bytes; record lengths at their bounds and one past);
   `test_remote_wire.cpp` unchanged cases pass; the remote fuzz target's corpus gains the new messages. Covers FR-11,
   FR-18, X.
-- [ ] **T1.6** Stage end: the stage-end guards (nothing links the new files yet: `hello` untouched by construction);
+- [x] **T1.6** Stage end: the stage-end guards (nothing links the new files yet: `hello` untouched by construction);
   plan.md ("Stage 1 results": the Ryu commit, the header's cost so far). Covers AC-6.
 
 ## Stage 2: the registry and the public API

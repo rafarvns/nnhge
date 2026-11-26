@@ -1576,3 +1576,39 @@ if(TARGET models AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
 endif()
+# Live values (spec 030): every test of the spec in one block.
+target_sources(nnh_tests PRIVATE
+    live/test_live_format.cpp
+    live/test_live_names.cpp
+    live/test_live_steps.cpp
+    fuzz/test_fuzz_live_wire.cpp
+    remote/test_live_wire.cpp)
+# Every float's text read back (T1.4): minutes long, so label "slow" and off unless NNH_SLOW_TESTS (the build VM, T9.1).
+option(NNH_SLOW_TESTS "Run the slow exhaustive tests (spec 030's all-floats text check)" OFF)
+add_executable(live_float_text_exhaustive live/exhaustive_float_text.cpp)
+target_link_libraries(live_float_text_exhaustive PRIVATE nnh::core)
+target_include_directories(live_float_text_exhaustive PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
+nnh_engine_options(live_float_text_exhaustive)
+add_test(NAME live_float_text_exhaustive COMMAND live_float_text_exhaustive)
+set_tests_properties(live_float_text_exhaustive PROPERTIES LABELS slow TIMEOUT 3600
+                     PASS_REGULAR_EXPRESSION "live float text exhaustive: PASS")
+if(NOT NNH_SLOW_TESTS)
+    set_tests_properties(live_float_text_exhaustive PROPERTIES DISABLED TRUE)
+endif()
+# The value text and stepping tests compare bits with expressions folded by the compiler: no fused multiply-add.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(live/test_live_steps.cpp PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# Names checked at compile time (T1.1, FR-1): a good literal compiles with -Werror; each broken rule fails to compile
+# AND names the rule.
+if(NOT MSVC)
+    set(_live_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    set(_live_cases ${CMAKE_CURRENT_SOURCE_DIR}/live/compile_fail)
+    add_test(NAME live_name_good_compiles COMMAND ${_live_check} -Werror ${_live_cases}/good.cpp)
+    foreach(_case too_long bad_character empty_part too_deep)
+        add_test(NAME live_name_${_case}_fails COMMAND ${_live_check} ${_live_cases}/${_case}.cpp)
+        set_tests_properties(live_name_${_case}_fails PROPERTIES WILL_FAIL TRUE)
+        add_test(NAME live_name_${_case}_explains COMMAND ${_live_check} ${_live_cases}/${_case}.cpp)
+        set_tests_properties(live_name_${_case}_explains PROPERTIES PASS_REGULAR_EXPRESSION "live_name_${_case}")
+    endforeach()
+endif()

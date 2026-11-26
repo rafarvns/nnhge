@@ -126,6 +126,11 @@ void ScriptRunner::on_record(Record record) {
         return;
     case wire::RecordType::Screen:
     case wire::RecordType::ScreenFailed: screen(record); return;
+    case wire::RecordType::LiveEntry:
+    case wire::RecordType::LiveRemoved:
+    case wire::RecordType::LiveValue:
+    case wire::RecordType::LiveRefused:
+    case wire::RecordType::LiveState: on_live_record(record); return;
     }
 }
 

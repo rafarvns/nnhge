@@ -571,9 +571,23 @@ set(_nnh_loc_sources
     src/loc/plural.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_loc_sources})
+# Live values (spec 030, D51): names, stepping, the value text (Ryu's f2s, third_party/ryu) and the wire's live messages
+# are pure and shared with the `nnh` tool. Stepping has no fused multiply-add, so the panel, `nnh` and every system step
+# to the same bits. The module is reached only through live:: calls (and the remote decoder, Debug/Development): a game
+# that never calls them links none of it; Release links none of it.
+set(_nnh_live_pure_sources
+    src/live/live_format.cpp
+    src/live/live_names.cpp
+    src/remote/live_wire.cpp
+)
+set(_nnh_live_steps_source src/live/live_steps.cpp)
+target_sources(nnh_core PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_source})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_live_steps_source} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
-target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)
+target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis nnh_ryu)
 target_include_directories(nnh_core PRIVATE ${PROJECT_SOURCE_DIR}/third_party/stb_vorbis)
 nnh_engine_options(nnh_core)
 

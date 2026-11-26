@@ -1,6 +1,6 @@
 # Tasks 028: UI widgets
 
-Status: stages 0–8 and 11 done on the PC 2026-11-25; stage 9 (Linux) and 10 (console) pending; approved 2026-11-25 (with plan.md)
+Status: implemented 2026-11-25 (stages 0–11 done; console and Linux checks passed, budgets set); approved 2026-11-25 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -250,7 +250,7 @@ replay ctest with the tree's lines — values re-read from the tree at T0.3).
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14
+- [x] **T9.1** On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14
   and clang 18 (ASan/UBSan): `nnh_tests` and ctest pass; AC-2's checkpoints identical on all three; the 32-bit host
   build (`-m32 -msse2 -mfpmath=sse`) of `nnh_tests`: the UI tests and AC-2 identical; ASan/UBSan clean over the random
   operations, touch, lists and layout. Files: tasks.md (results), plan.md ("Stage 9 results"). Covers I, X, FR-29, AC-1,
@@ -258,11 +258,11 @@ replay ctest with the tree's lines — values re-read from the tree at T0.3).
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC; the builds are done: 3ds-release and 3ds-dev `ui_3dsx platformer_3dsx` without a warning,
+- [x] **T10.1** (on the PC; the builds are done: 3ds-release and 3ds-dev `ui_3dsx platformer_3dsx` without a warning,
   `hello.elf` byte-identical, T7.7's table in plan.md) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target ui_3dsx platformer_3dsx` without a warning; T7.7's table still true;
   `hello.elf` byte-identical to T0.1's. Covers AC-7, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** Old 3DS, nobody touching it after Y. Three runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run ui --script examples/ui/tests/check.nnhs` → every checksum line equal to the
      PC's and `ui: PASS <G>`, every showcase line, the bench lines and the verdict (numbers recorded); screenshots read
      back against the `--pc` run's (AC-5);
@@ -272,13 +272,14 @@ replay ctest with the tree's lines — values re-read from the tree at T0.3).
      lines and `60 Hz PASS`.
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths). Covers AC-4, AC-5, AC-6. Every expected line
   of run 1 is in plan.md, "Stage 10: console run (prepared)" (recorded from the `--pc` run).
-- [ ] **T10.3** (only if a bench target is missed) Optimisation round: find the cost (3ds-dev disassembly, the bench's
+- [x] **T10.3** (only if a bench target is missed) Optimisation round: find the cost (3ds-dev disassembly, the bench's
   numbers), apply risk 1's list without changing a rectangle, the golden or the draw hash (tests first for any rewrite);
   then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin and written in the
   spec's AC-6, `bench_scene.cpp` and `docs/api/ui.md`. Files: plan.md ("Optimisation round", "Console run 2 and budgets
   set"). Covers AC-6. *2026-11-25: the round is done on the PC (plan.md, "Optimisation round": list bench attribution,
-  relayout −59 %, the UI's draw work −62 %, a `'\r'` fix); console run 2 pending.*
-- [ ] **T10.4** (contingency, only if the frame target or the draw ratio is still missed after T10.3, and with the
+  relayout −59 %, the UI's draw work −62 %, a `'\r'` fix); console run 2: list and draw ratio pass, relayout 0.744 ms →
+  budget < 0.93 ms (plan.md, "Console run 2 and budgets set").*
+- [ ] **T10.4** *(not needed: the frame target and the draw ratio pass)* (contingency, only if the frame target or the draw ratio is still missed after T10.3, and with the
   maintainer's OK) A UI glyph batch through D39's mechanism (plan.md risk 2): the design written into plan.md and D39's
   row first (an amendment), then tests (items equal to the glyph sprites `draw_text` would make; budgets), then code;
   every reference screenshot unchanged. Covers AC-6, II.

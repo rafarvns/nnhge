@@ -281,8 +281,8 @@ spec; the order below is a proposal.
   `examples/camera`: playground, self-check (`tests/check.nnhs`), bench (PC: 0.0013 ms per pair of rigs); the
   platformer follows its player with the rig (dead zone, smoothing on y, look-ahead, landing shake) and its bench
   zooms (B; `tests/zoom_gate.nnhs`)
-- [x] **UI widgets** (Godot Control nodes, Unity UI) — [spec 028](../specs/028-ui-widgets/spec.md), **implemented on the
-  PC 2026-11-25, console run pending** (Linux checks and the Old 3DS run T10.2 next): `<nnh/ui.hpp>` — a retained widget
+- [x] **UI widgets** (Godot Control nodes, Unity UI) — [spec 028](../specs/028-ui-widgets/spec.md), **implemented
+  2026-11-25, console and Linux checks passed, budgets set** (Old 3DS: relayout < 0.93 ms, list 0.051 ms, draw 1.13×): `<nnh/ui.hpp>` — a retained widget
   tree built in code in one block the game owns (88 B per widget on the 3DS): labels (wrap, `...`, typewriter reveal),
   images, progress bars, solid or 9-slice panels, buttons, toggles, sliders, choices, virtualised lists and grids
   (a row pool filled by the game only for rows coming into view; 65 535 items), VBox/HBox/grid box/stack/scroll box with

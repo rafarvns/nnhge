@@ -1,6 +1,6 @@
 # Plan 028: UI widgets
 
-Status: implemented on the PC 2026-11-25 (stages 0–8, 11; Linux T9.1 and console T10.2 pending); approved 2026-11-25 (the maintainer, the three questions at the end as recommended; the spec was approved 2026-11-25 with every open question as
+Status: implemented 2026-11-25 (stages 0–11; console and Linux checks passed, budgets set); approved 2026-11-25 (the maintainer, the three questions at the end as recommended; the spec was approved 2026-11-25 with every open question as
 recommended, and those recommendations are this plan's decisions)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D48 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 004/005 (public `gfx::draw`, `fill_rect`, `draw_rect`, `draw_text`, `measure_text`; the built-in font: a
@@ -1002,8 +1002,18 @@ LeakSanitizer reported 8840 B in one allocation, the block of
 `ui_callbacks_destroying_the_ui_asserts_and_is_safe_in_release`: in Debug the assert stops `delete g` after `~Ui` has
 dropped the block, so nothing freed it. Fixed in the test (T10.3's commit): it keeps the block pointer before the
 update, and when the assert fired it clears `busy`, frees the block with `ui_free` and deletes the `Ui` (its block now
-null: only the storage goes). Release checks the same as before (no crash, the block freed when the update ends). ASan
-to be rerun by the lead.
+null: only the storage goes). Release checks the same as before (no crash, the block freed when the update ends).
+
+Before that, the first stage 9 run (at 99e493e) had found two more things, fixed in 96d76a2: GCC 13/14 refused two
+test initialisers (`{.name = "down"}` as an `ActionDesc`, `add_style({})`; MinGW's newer GCC accepts them; replaced by
+named values), and ASan a heap overflow — destroying the list being dragged cleared `touch.scroller` but left
+`touch.scrolling` set, so the next held touch indexed the block with `kUiNone` (fixed in `held()`, regression test
+`ui_touch_drag_survives_the_list_being_destroyed`, red under ASan first).
+
+**Rerun at 1e02202 (after the optimisation round):** GCC 13 ctest 345/346 (only `platformer_doors_script_pc`: worst
+frame 36.1 ms, average 16.8 ms in the VM, the known PC timing flake; the platformer doesn't link the UI); GCC 14 3 582
+tests, 0 failures; clang 18 ASan + UBSan (`detect_leaks=1`) 3 582, 0 failures, no report; 32-bit 3 582, 0 failures.
+The self-check test (golden `30400DA6`) passes on all four.
 
 ### Console run 1 (2026-11-25, Old 3DS XL, pre-optimisation build)
 
@@ -1067,6 +1077,21 @@ still misses relayout128 (the likeliest), the next steps without the contingency
 width until its text or style changes (`text_changed()` re-resolves every key, so the bench would still measure every
 label), or setting the budget from the measurement with ≈ 25 % margin as T10.3 allows; neither the list nor the draw
 target should need T10.4.
+
+### Console run 2 and budgets set (2026-11-25, Old 3DS XL, at 1e02202)
+
+`ui.3dsx` 408 KB (3ds-dev). Functional: the six checkpoints and `ui: PASS 30400DA6` as on the PC, every showcase line.
+Bench: idle128 avg 0.025 ms (worst 0.104) PASS, move128 0.051 (0.140) PASS, geo128 0.099 (0.187) PASS, **relayout128
+avg 0.744 ms, worst 0.889 (target < 0.6) — missed**, list10000 0.051 / list20 0.051 ms, ratio 1.00 PASS, draw ui 7.52 µs
+vs hand 6.66 µs per draw, **ratio 1.13** over 372 draws PASS, frame worst 18.0 ms, 0 missed of 600 PASS; memory widget
+88 B, row 72 B, options 4640 B for 17 widgets. The optimisation halved the relayout (1.48 → 0.744 ms), below the
+round's projection; by the maintainer's bench policy (optimise first, then the measurement with ≈ 25 % margin) its
+budget is **< 0.93 ms**, written in the spec's AC-6, `bench_scene.cpp` and `docs/api/ui.md`. A full relayout with 64
+texts changed at once is a rare event (a language switch), under 5 % of a frame. The frame target and the draw ratio
+pass, so the T10.4 contingency doesn't run. Spec 012's tile gate (`bench: PASS 4 layers + 300 sprites`, avg 16.7 ms,
+worst 17.4, 0 missed; limits 6 layers and 600 sprites as before) and the platformer's replay (every checksum line, `60
+Hz PASS`, level1 worst 19.6 ms, bonus 18.3 ms, 0 missed) passed in run 1 on this branch (the UI isn't in the
+platformer).
 
 ## Constitution Check (after design)
 

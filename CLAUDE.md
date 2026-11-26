@@ -202,7 +202,7 @@ at the world layer (default 8), opaque then blended back to front, culling, `to_
 ([api/gfx3d.md](docs/api/gfx3d.md)); on by `AppConfig::gfx.max_draws_3d` (default 0: a 2D game links no 3D code); the
 simulator draws 3D with the engine's CPU rasteriser (`engine/platforms/shared/raster3d/`), the 3DS with citro3d
 (`engine/platforms/3ds/shaders/mesh3d.v.pica`).
-UI widgets (spec 028, implemented on the PC, console T10.2 pending; D48; demo `examples/ui`, guide
+UI widgets (spec 028, implemented, console and Linux checks passed, budgets set; D48; demo `examples/ui`, guide
 [menus](docs/guides/menus.md)): `<nnh/ui.hpp>` — `Ui::create(desc)` (one block, 88 B per widget on the 3DS, roots per
 screen), widgets built in code under a parent (`label` with wrap/`...`/typewriter reveal, `image`, `progress`, `panel`
 (solid or 9-slice), `spacer`, `button`, `toggle`, `slider`, `choice`, `list` (a row pool filled by the game's `fill`

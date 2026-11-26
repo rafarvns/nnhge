@@ -301,10 +301,22 @@ draws and hash, dropped results, the block's bytes.
 Measured on the PC (pc-dev, WinLibs GCC) by the example's bench: an idle update of a 128-widget UI 0.002 ms, a focus
 move 0.012 ms, a geometric move 0.006 ms, a full relayout of 64 keyed texts 0.048 ms, a 10 000-item list scrolling a
 row a frame 0.047 ms (ratio to a 20-item list 0.99), the UI's cost per recorded draw 0.91× the same calls written by
-hand, the options screen with 300 sprites at 60 Hz with no missed frame. Old 3DS budgets (AC-6: idle < 0.05 ms, move
-< 0.15 ms, relayout < 0.6 ms, list < 0.2 ms within 10 %, draw ratio ≤ 1.15, no missed frame) are checked by the console
-run (pending; see [plan 028](../../specs/028-ui-widgets/plan.md)). The idle update makes no division and touches no
-widget; text dominates drawing on the console (one sprite per glyph).
+hand, the options screen with 300 sprites at 60 Hz with no missed frame.
+
+Measured on an Old 3DS (3ds-dev, the same bench) against the budgets the console run checks:
+
+| Workload | Old 3DS | Budget |
+|----------|---------|--------|
+| idle update, 128 widgets | 0.025 ms (worst 0.104) | < 0.05 ms |
+| focus move / geometric move | 0.051 / 0.099 ms | < 0.15 ms |
+| full relayout, 64 keyed texts changed | 0.744 ms (worst 0.889) | < 0.93 ms |
+| 10 000-item list scrolling a row a frame | 0.051 ms (ratio to 20 items 1.00) | < 0.2 ms, within 10 % |
+| UI cost per recorded draw vs by hand | 7.52 vs 6.66 µs (1.13×) | ≤ 1.15× |
+| options screen + 300 sprites, 600 frames | worst 18.0 ms, none missed | no missed frame |
+
+A full relayout is for rare moments (a language switch, a new screen), not every frame; details in
+[plan 028](../../specs/028-ui-widgets/plan.md). The idle update makes no division and touches no widget; text
+dominates drawing on the console (one sprite per glyph).
 
 ## Misuse
 

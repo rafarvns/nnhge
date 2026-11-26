@@ -1,6 +1,6 @@
 # Spec 028: UI widgets
 
-Status: implemented on the PC 2026-11-25 (console T10.2 and Linux T9.1 pending); approved 2026-11-25 (the maintainer, every open question as recommended)
+Status: implemented 2026-11-25 (console and Linux checks passed, budgets set); approved 2026-11-25 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-25
 Depends on: [spec 004](../004-2d-graphics/spec.md) (textures and regions, `gfx::draw`, `fill_rect`/`draw_rect`, layers,
 `ignore_camera`, `max_draws`), [spec 005](../005-text-and-builtin-font/spec.md) (`gfx::draw_text`/`measure_text`, the
@@ -347,7 +347,8 @@ widget code. A game that doesn't use it pays nothing.
   policy: optimise first, else set the budget from the first console measurement with margin and write it in the spec
   and docs):
   - `update()` of a UI with **128 widgets** and no input: **under 0.05 ms**; with a focus move: **under 0.15 ms**; with a
-    full relayout of both roots (text changed): **under 0.6 ms**;
+    full relayout of both roots (text changed): **under 0.6 ms** — *budget set 2026-11-25: under 0.93 ms* (missed
+    after the optimisation round: Old 3DS 0.744 ms avg, 0.889 ms worst; the measurement + ≈ 25 %);
   - a **list of 10 000 items** scrolling one row per frame (the row callback filling 12 visible rows): **under 0.2 ms**
     per update, and within 10 % of the same list with 20 items;
   - `draw()` of the options screen (2 9-slice panels, 12 rows, about 350 glyphs): the UI's own CPU cost per recorded

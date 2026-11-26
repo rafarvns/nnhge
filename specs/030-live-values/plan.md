@@ -1029,3 +1029,11 @@ info identical, sections and symbols identical; pc-release `hello` sections and 
 `docs/architecture/decisions.md` (D51, D52 implemented), `docs/REFERENCES.md`, the Ryu row of
 `docs/tech/third-party.md`; `CLAUDE.md` (the live values paragraph and commands), `docs/ROADMAP.md` (the item ticked),
 statuses: spec, plan, tasks and `specs/README.md` "implemented, Linux and console pending". `docs_tool check`: 0 broken.
+
+### Final stage-end guards (run `sfinal`, after stages 6–8 and 11)
+
+ctest pc-debug 372/372 (with `live_self_check_pc`, `live_check_script_pc`, `live_panel_script_pc`, `live_keep_pc`),
+pc-release 337/337; `nnh_tests` 3990, `nnh_tool_tests` 193; 3ds-release and 3ds-dev 0 warnings; `hello.3dsx` identical
+to T0.1, `hello.elf` without debug info identical, sections and symbols identical; pc-release `hello` sections and symbols
+identical; Development `hello` 3ds-dev text 226 904 (+5 984 B over T0.1). `docs_tool check`: 0 broken links. Open: T3.7
+(the maintainer's PC yes/no above), stage 9 (VM 120), stage 10 (console), T11.8 (merge).

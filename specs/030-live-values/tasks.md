@@ -80,36 +80,36 @@ the tree at T0.3).
 
 ## Stage 2: the registry and the public API
 
-- [ ] **T2.1** The block and registry: `live_block.hpp`, `live_registry.{hpp,cpp}` (create on first use with
+- [x] **T2.1** The block and registry: `live_block.hpp`, `live_registry.{hpp,cpp}` (create on first use with
   `configure()`'s capacities, tag `live`; add/remove with the sorted index; find by hash; generations; group-clash check;
   shutdown hook; `g_live_ops` set), `engine/core/src/debug/live_hook.hpp` (`LiveOps`). Test:
   `tests/live/test_live_registry.cpp` (block size formula per capacity, tag accounting, sorted order on random
   insert/remove, generations, every assert through the test hook, capacity + 1, `configure()` after use asserts, the
   block freed at shutdown, `g_live_ops` null until the first registration). Covers FR-1, FR-6, FR-18, FR-19.
-- [ ] **T2.2** Tunables and actions: `<nnh/live.hpp>` (the full API of plan.md, Release inline forms), `live_tune.cpp`
+- [x] **T2.2** Tunables and actions: `<nnh/live.hpp>` (the full API of plan.md, Release inline forms), `live_tune.cpp`
   (`tune` for each kind, enums, `action`, `Handle` move/destroy/`changed`/`reset`, `reset_all`, `reset_group`). Test:
   `tests/live/test_live_tune.cpp` (defaults from the variable, every kind's entry, enum sizes 1/2/4, actions, handle moves,
   stale use asserts, run-time names copied), `tests/live/test_live_release.cpp` (built in pc-release: every call compiles,
   nothing registered, `changed()` false, `sizeof(Handle) == 4`, no allocation). Covers FR-1, FR-2, FR-4, FR-5, FR-6,
   FR-20, Q9.
-- [ ] **T2.3** The application point: `live_apply.{hpp,cpp}` (pending edits, the remote op queue, `live` frame start:
+- [x] **T2.3** The application point: `live_apply.{hpp,cpp}` (pending edits, the remote op queue, `live` frame start:
   resolve, refuse, write, `changed_frame`, callbacks in sorted order, actions), the call in `app.cpp`'s Dev branch after
   `++frame_count`. Test: `tests/live/test_live_apply.cpp` (plan.md's FR-3/4/5 cases on the fake's `nnh::frame()`; a
   callback that registers or destroys handles; a `set` for a tunable registered in that frame's `on_enter()`; queue full
   → refused). Covers FR-3, FR-4, FR-5, Q6, Q9.
-- [ ] **T2.4** [P] Watches: `live_watch.cpp` (registered watches of every kind, `show()` with its hash table, expiry every
+- [x] **T2.4** [P] Watches: `live_watch.cpp` (registered watches of every kind, `show()` with its hash table, expiry every
   60 frames after 120 unseen, reading values into bytes at the frame end). Test: `tests/live/test_live_watch.cpp` (every
   kind's bytes; a read counter proves registered watches are read only when shown or followed; latest `show()` wins;
   text cut at 31 bytes with one warning; expiry; the frame-end read point). Covers FR-17, FR-19.
-- [ ] **T2.5** [P] The dump: `live_dump.cpp`. Test: `tests/live/test_live_dump.cpp` (the exact lines of plan.md:
+- [x] **T2.5** [P] The dump: `live_dump.cpp`. Test: `tests/live/test_live_dump.cpp` (the exact lines of plan.md:
   ungrouped first, nested tables, colours, enums, bools, `# default`, nothing changed, ordering). Covers FR-14.
-- [ ] **T2.6** [P] Cost and plain loops: `tests/live/test_live_cost.cpp` (no allocation over 100 000 frames of edits,
+- [x] **T2.6** [P] Cost and plain loops: `tests/live/test_live_cost.cpp` (no allocation over 100 000 frames of edits,
   `show()` and follows; a registry-walk counter stays 0 with the overlay hidden and nothing pending),
   `tests/live/test_live_plain_loop.cpp` (tunables and watches in a `while (nnh::frame())` game). Covers FR-19, FR-21.
-- [ ] **T2.7** [P] Misuse and random operations: `tests/live/test_live_misuse.cpp` (plan.md's misuse list asserts and is
+- [x] **T2.7** [P] Misuse and random operations: `tests/live/test_live_misuse.cpp` (plan.md's misuse list asserts and is
   harmless on the Release path), `tests/live/test_live_random_ops.cpp` (100 000 seeded registrations, removals, edits,
   shows, resets with guard bytes around every variable; invariants). Covers FR-6, FR-18.
-- [ ] **T2.8** Stage end: the stage-end guards; include check (`<nnh/live.hpp>` within +250 lines and +0.03 s of T0.1's
+- [x] **T2.8** Stage end: the stage-end guards; include check (`<nnh/live.hpp>` within +250 lines and +0.03 s of T0.1's
   `<nnh/math.hpp>` TU); plan.md ("Stage 2 results": bytes per entry measured on 3ds-dev and pc-debug against plan.md's
   table). Covers III, II.
 

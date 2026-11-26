@@ -1581,6 +1581,14 @@ target_sources(nnh_tests PRIVATE
     live/test_live_format.cpp
     live/test_live_names.cpp
     live/test_live_steps.cpp
+    live/test_live_apply.cpp
+    live/test_live_cost.cpp
+    live/test_live_dump.cpp
+    live/test_live_random_ops.cpp
+    live/test_live_registry.cpp
+    live/test_live_release.cpp
+    live/test_live_tune.cpp
+    live/test_live_watch.cpp
     fuzz/test_fuzz_live_wire.cpp
     remote/test_live_wire.cpp)
 # Every float's text read back (T1.4): minutes long, so label "slow" and off unless NNH_SLOW_TESTS (the build VM, T9.1).

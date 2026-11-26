@@ -10,6 +10,7 @@
 #include "core/shutdown_hooks.hpp"
 #include "crash/crash_internal.hpp"
 #include "debug/dev_tools.hpp"
+#include "debug/live_hook.hpp"
 #include "events/events_internal.hpp"
 #include "scene/scenes_internal.hpp"
 #include "nnh/input.hpp"
@@ -44,6 +45,9 @@ char g_data_folder[48];
 void close_frame() {
     if (g_frame_open) {
         detail::gfx_submit();
+        if constexpr (build::kDevToolsEnabled) { // live values (spec 030): follows, dumps, per-frame watches' sweep
+            if (detail::g_live_ops != nullptr) detail::g_live_ops->frame_end(static_cast<std::uint32_t>(g_frame_count), false);
+        }
         detail::overlay_draw();     // recorded after the game's debug text, so it covers it
         detail::debug_text_flush(); // the debug pass
         platform::end_frame();
@@ -128,6 +132,9 @@ bool frame() {
     detail::gfx_gpu_idle(); // the GPU finished the previous frame: free what was retired when it was submitted
     g_frame_open = true;
     ++g_frame_count;
+    if constexpr (build::kDevToolsEnabled) { // live values (spec 030 FR-3): the one point where edits apply
+        if (detail::g_live_ops != nullptr) detail::g_live_ops->frame_start(static_cast<std::uint32_t>(g_frame_count));
+    }
     detail::input_publish_events();
     if (detail::g_run_input_hooks != nullptr) detail::g_run_input_hooks(); // D32: input actions, before dispatch
     detail::audio_frame(time::delta()); // ended voices -> SoundFinished

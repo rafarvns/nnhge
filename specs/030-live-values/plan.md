@@ -787,3 +787,39 @@ the plan are listed under "Implementation refinements".
 - Stage-end guards: ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev build with 0 warnings; 3ds-release
   `hello.elf` SHA-256 identical, pc-release `hello` size and symbols identical. Debug/Development `hello` (the remote
   decoder now links `live_wire.cpp` and the name check): 3ds-dev text +488 B, pc-debug text +5 976 B.
+- **R8 (T2.2) Integers by size and signedness.** `std::int32_t` is `long` on the 3DS and `int` on the PC, so
+  `tune(name, int*)` would compile on one and not the other (constitution I). The int overload is a template accepting
+  `int` and 32-bit `long`; watches and `show()` map any integer type (not `char`, not `bool`) to its kind by size and
+  signedness (`detail::live_api::kind_of<T>()`). The header uses `__is_same`/`__is_enum` instead of `<type_traits>`
+  (GCC, Clang and MSVC builtins), keeping it light.
+- **R9 (T2.8) The Release `hello` check with debug info.** 3ds-release builds with `-g`: editing `app.cpp` (even only
+  inside discarded `if constexpr` branches) moves its line table, so `hello.elf`'s SHA-256 changes by its DWARF alone.
+  The guard therefore compares `hello.3dsx` (what ships) byte for byte and `hello.elf` with its debug info stripped
+  (`arm-none-eabi-strip --strip-debug`) against T0.1's, built again from `dfd2867`'s `app.cpp` to confirm (both
+  identical at stage 2); the ELF's section sizes and symbols are compared too. pc-release: section sizes and `nm -C`.
+- **R10 (T2.3) Remote operations over panel edits.** At the application point the queue is resolved first, then the
+  pending values are written, so a remote `set` overrides a panel edit made earlier in the same frame
+  (`live_apply_latest_edit_wins`).
+- **R11 (T2.5) The dump's first line** is `dump: begin frame <F> (<n> changed of <m>)`: the game's name is left out
+  (core doesn't keep the title in Release-linked state, and `nnh` names the file); `m` counts tunables without actions.
+- **R12 (T2.6) Plain loops** are tested in `test_live_cost.cpp` (`live_cost_a_plain_loop_game_uses_everything`) instead of
+  a separate file.
+
+### Stage 2 results
+
+- The module (`src/live/`): `live_block.hpp`, `live_registry`, `live_tune.cpp`, `live_apply`, `live_watch`, `live_dump`,
+  `live_ops`, `live_control.cpp` (pause/show_panel back ends, filled at stages 3–4), `debug/live_hook.{hpp,cpp}` (the
+  ops pointer). `app.cpp` calls `frame_start` after `++frame_count` and `frame_end` after the 2D submit, both in
+  Development branches.
+- Entry sizes (pc-debug, 64-bit): `Entry` 104 B, `WatchEntry` 56 B, `ShownEntry` 76 B, `Follow` 12 B, `RemoteOp` 12 B;
+  the 3DS's 32-bit pointers give `Entry` ≤ 84 B (checked by `live_registry_block_size_follows_the_capacities` when
+  pointers are 4 bytes; measured on the console run). The block at the defaults: `block_bytes(128, 64, 64)`.
+- Tests: `test_live_registry` (9), `test_live_tune` (10), `test_live_release` (1), `test_live_apply` (12),
+  `test_live_watch` (7), `test_live_dump` (3), `test_live_cost` (3), `test_live_random_ops` (2, 100 000 seeded
+  operations with guard bytes). `nnh_tests live_`: 132 pass in pc-debug and pc-release; the whole `nnh_tests`: 3917.
+- Header: a one-line TU with `<nnh/live.hpp>` preprocesses to 1 020 lines against 611 for `<cstdint>` + `<cstddef>` +
+  `<nnh/math.hpp>` (+409, over the plan's +250: the header's own API and docs; no `<type_traits>`), `-fsyntax-only`
+  ≈ 0.39 s for both (no measurable difference, within the +0.03 s budget).
+- Stage-end guards: ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev 0 warnings (two Release-only
+  unused warnings fixed after the run); `hello.3dsx` identical, `hello.elf` without debug info identical (R9);
+  pc-release `hello` sections and symbols identical. Development `hello`: 3ds-dev text 221 456 (+536 B over T0.1).

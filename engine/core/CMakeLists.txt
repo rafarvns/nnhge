@@ -581,7 +581,19 @@ set(_nnh_live_pure_sources
     src/remote/live_wire.cpp
 )
 set(_nnh_live_steps_source src/live/live_steps.cpp)
-target_sources(nnh_core PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_source})
+# The module: the registry block, tunables, the application point, watches, the dump, the ops table core reaches it by
+# (debug/live_hook.cpp holds the pointer: Debug/Development branches only).
+set(_nnh_live_sources
+    src/debug/live_hook.cpp
+    src/live/live_apply.cpp
+    src/live/live_control.cpp
+    src/live/live_dump.cpp
+    src/live/live_ops.cpp
+    src/live/live_registry.cpp
+    src/live/live_tune.cpp
+    src/live/live_watch.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_source} ${_nnh_live_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_live_steps_source} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()

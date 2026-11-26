@@ -104,7 +104,7 @@ int run_strings_index(int argc, const char* const* argv, std::FILE* out, std::FI
         std::fprintf(err, "%s: not a language list\n", a.languages.c_str());
         return 1;
     }
-    IndexInput in;
+    StringsIndexInput in;
     in.base = list.base;
     in.release = a.release;
     in.fonts_dir = a.fonts;

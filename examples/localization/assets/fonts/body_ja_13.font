@@ -1,0 +1,7 @@
+# The Japanese body font: kana, the 1 006 kyoiku kanji and what ja.strings uses, at 13 px.
+source = "src/NNHExampleSansJP.otf"
+size = 13
+chars = ["ascii", "kana", "cjk-punctuation", "kyoiku"]
+strings = ["ja"]
+licence = "licences/OFL-NNHExampleSansJP.txt"
+fallback = ["fonts/body_16"]

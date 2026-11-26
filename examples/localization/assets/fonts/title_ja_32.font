@@ -1,0 +1,7 @@
+# Japanese titles: only the characters ja.strings uses.
+source = "src/NNHExampleSansJP.otf"
+size = 32
+chars = ["U+0020"]
+strings = ["ja"]
+outline = 2
+licence = "licences/OFL-NNHExampleSansJP.txt"

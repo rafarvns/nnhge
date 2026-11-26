@@ -1,0 +1,51 @@
+# Brazilian Portuguese. "menu.continue" is left out on purpose: it comes from the base (en).
+
+[language]
+name = "Português (Brasil)"
+grouping = "."
+grouping_min = 4
+
+[game]
+title = "Estrada das Lanternas"
+hint = "SELECT: idioma   START: sair"
+
+[menu]
+new_game = "Novo jogo"
+shop = "Loja"
+dialog = "Diálogo"
+fonts = "Fontes"
+options = "Opções"
+quit = "Sair"
+
+[options]
+title = "Opções"
+language = "Idioma"
+system = "Idioma do sistema"
+back = "Voltar"
+
+[dialog]
+speaker = "Velho guardião"
+text = """
+As lanternas da estrada se apagaram uma a uma. \
+Leve esta chama até a última torre antes do amanhecer \
+e não deixe o vento do vale apagá-la."""
+hint = "A: mostrar tudo   B: voltar"
+shown = "Mostrado {shown} de {total}"
+
+[shop]
+title = "Loja de lanternas"
+greeting = "Bem-vindo, {name}!"
+items.one = "{count} lanterna"
+items.many = "{count} de lanternas"
+items.other = "{count} lanternas"
+price = "Preço: {gold} de ouro"
+buy = "Comprar"
+
+[hud]
+score = "{score}"
+coins = "x{coins}"
+
+[gallery]
+title = "Fontes"
+sample = "À noite, vovô Kowalsky vê o ímã cair no pé do pinguim."
+metrics = "tamanho {size}  linha {line}  ascendente {ascent}"

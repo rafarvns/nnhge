@@ -818,6 +818,22 @@ if(NOT MSVC)
                      -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
 endif()
 # Game fonts and localization (spec 029): every test of the spec in one block.
+# The localization example in the simulator (T7.4, T7.6): its self-check (every language switched like a player would),
+# and its console script played with --pc.
+if(TARGET localization AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME loc_self_check_pc COMMAND localization)
+    set_tests_properties(loc_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;LOC_DEMO=check;NNH_EXIT_AFTER_FRAMES=60"
+        PASS_REGULAR_EXPRESSION "loc: PASS 4877A4A7" FAIL_REGULAR_EXPRESSION "loc: FAIL|\] E " TIMEOUT 120)
+    get_filename_component(_loc_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME loc_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run localization --pc --no-build --script examples/localization/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(loc_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_loc_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port)
+endif()
 target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_font.cpp fuzz/fuzz_loc.cpp)
 if(NNH_BUILD_FUZZERS)
     add_executable(fuzz_font_validate fuzz/libfuzzer_font_validate.cpp)

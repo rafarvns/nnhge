@@ -1,0 +1,7 @@
+# Titles of the Latin and Cyrillic languages, with a baked outline.
+source = "src/NNHExampleSansJP.otf"
+size = 32
+chars = ["ascii", "latin1"]
+strings = ["en", "pt-BR", "de", "ru"]
+outline = 2
+licence = "licences/OFL-NNHExampleSansJP.txt"

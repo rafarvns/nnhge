@@ -24,7 +24,7 @@ namespace ff = nnh::detail::font;
 
 std::string where(const Where& w) { return w.file + ":" + std::to_string(w.line) + ": "; }
 
-int index_of(const IndexInput& in, const std::string& code) {
+int index_of(const StringsIndexInput& in, const std::string& code) {
     for (std::size_t i = 0; i < in.languages.size(); ++i)
         if (in.languages[i].code == code) return static_cast<int>(i);
     return -1;
@@ -48,7 +48,7 @@ bool font_cps(FileSource& files, const std::string& dir, const std::string& path
     return true;
 }
 
-void chains(const IndexInput& in, std::vector<std::vector<int>>& out, CheckResult& r) {
+void chains(const StringsIndexInput& in, std::vector<std::vector<int>>& out, CheckResult& r) {
     out.assign(in.languages.size(), {});
     for (std::size_t i = 0; i < in.languages.size(); ++i) {
         std::vector<int>& c = out[i];
@@ -123,7 +123,7 @@ StringsLanguage make_pseudo(const StringsLanguage& base) {
     return q;
 }
 
-void build_index(FileSource& files, const IndexInput& in, std::vector<std::uint8_t>& out, CheckResult& r) {
+void build_index(FileSource& files, const StringsIndexInput& in, std::vector<std::uint8_t>& out, CheckResult& r) {
     const std::size_t n = in.languages.size();
     // hash collisions across every key of every language
     std::map<std::uint32_t, std::pair<std::string, Where>> hashes;

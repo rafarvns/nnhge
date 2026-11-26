@@ -176,6 +176,7 @@ if(NNH_BUILD_TESTS)
         tests/test_cli_data.cpp
         tests/test_cli_data_index.cpp
         tests/test_cli_font.cpp
+        tests/test_cli_strings.cpp
         tests/test_cli_mesh.cpp
         tests/test_cli_sprite.cpp
         tests/test_data_convert.cpp

@@ -1,0 +1,116 @@
+# Spec 029 AC-4, automatic (spec 013): the system language followed (pt-BR, de, ru, ja), the shop's plural lines in
+# each, the Japanese dialog, the self-check (its sums must be the PC's bit for bit), the language chosen in Options, the
+# font gallery, then the bench and its verdict.
+# PC:      nnh run localization --pc --script examples/localization/tests/check.nnhs
+# Console: nnh run localization --script examples/localization/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# Timeouts are in frames; every expect is followed by a wait before the next input. The expected lines are the PC's
+# (pc-debug). The sums change only if the example's strings, fonts or self_check.cpp (or the text, font or loc modules)
+# change: then run `LOC_DEMO=check NNH_EXIT_AFTER_FRAMES=60 build/pc-debug/examples/localization/localization.exe`,
+# copy its lines here and the values into kCheckpoints/kLocCheckGolden. Non-ASCII shop lines are logged in hex.
+fail-on "] E "
+fail-on "loc: FAIL"
+# A bench target missed fails the run too, but only at the bench's verdict line, logged after every bench number.
+fail-on "loc bench: FAIL"
+
+expect "loc: showcase" 60
+wait 10
+
+# The system language, followed: Brazilian Portuguese (menu.continue comes from en), then German.
+language pt-BR
+expect "language pt-BR (system)" 30
+wait 10
+screenshot title
+language de
+expect "language de (system)" 30
+wait 10
+
+# The shop: five plural lines per language shown, logged in one frame (one expect each time: 1 in German; 21 takes
+# the "one" form in Russian; Japanese has one form).
+tap DOWN
+expect "loc: focus shop" 10
+wait 10
+tap A
+expect "loc: shop 1 1 Laterne" 20
+wait 10
+screenshot shop
+language ru
+expect "loc: shop 21 ru 323120D184D0BED0BDD0B0D180D18C" 30
+wait 10
+screenshot ru
+language ja
+expect "loc: shop 21 ja E383A9E383B3E382BFE383B33231E5808B" 30
+wait 10
+tap B
+expect "loc: focus shop" 20
+wait 10
+
+# The Japanese dialog: revealed a character every two frames, A shows it all.
+tap DOWN
+expect "loc: focus dialog" 10
+wait 10
+tap A
+wait 60
+screenshot dialog
+tap A
+expect "loc: dialog shown" 20
+wait 10
+tap B
+expect "loc: focus dialog" 20
+wait 10
+
+# The self-check (Y): every language switched to, its sum, the verdict, then back to the title (in ja: the check ends
+# in the language the game was in).
+tap Y
+expect "loc: check started" 20
+expect "loc: en sum 888A15B1" 30
+expect "loc: pt-BR sum BA716B7C" 30
+expect "loc: de sum 03A28B3C" 30
+expect "loc: ru sum 4917046A" 30
+expect "loc: ja sum 4877A4A7" 30
+expect "loc: PASS 4877A4A7" 10
+expect "loc: focus dialog" 90
+wait 10
+
+# Options: the language chosen by the player (Right: the next one in the list after ja).
+tap DOWN
+tap DOWN
+expect "loc: focus options" 20
+wait 10
+tap A
+wait 20
+tap RIGHT
+expect "language" 20
+wait 10
+screenshot options
+tap B
+expect "loc: focus options" 20
+wait 10
+
+# The font gallery (the current language's body, title and hud fonts).
+tap UP
+expect "loc: focus fonts" 10
+wait 10
+tap A
+expect "loc: fonts hud" 20
+wait 10
+screenshot gallery
+tap B
+wait 20
+
+# X: the bench (about a minute), its lines and the verdict.
+language off
+tap X
+expect "loc bench: started" 20
+expect "loc bench: base gfx submit" 400
+expect "loc bench: glyphs builtin" 700
+expect "loc bench: frame worst" 700
+expect "loc bench: measure_latin" 400
+expect "loc bench: measure_ja" 400
+expect "loc bench: tr1000" 400
+expect "loc bench: format100" 400
+expect "loc bench: switch" 700
+expect "loc bench: page1024" 100
+expect "loc bench: memory" 10
+expect "loc bench: PASS" 10
+end

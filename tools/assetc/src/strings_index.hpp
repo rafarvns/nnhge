@@ -18,7 +18,7 @@ namespace nnh::assetc {
 StringsLanguage make_pseudo(const StringsLanguage& base);
 std::string pseudo_text(const std::string& text);
 
-struct IndexInput {
+struct StringsIndexInput {
     std::vector<StringsLanguage> languages; ///< in the declared order (+ qps last when made)
     int base = 0;
     bool release = false;
@@ -26,6 +26,6 @@ struct IndexInput {
 };
 
 /// Checks across languages and writes the manifest into `out`.
-void build_index(FileSource& files, const IndexInput& in, std::vector<std::uint8_t>& out, CheckResult& result);
+void build_index(FileSource& files, const StringsIndexInput& in, std::vector<std::uint8_t>& out, CheckResult& result);
 
 } // namespace nnh::assetc

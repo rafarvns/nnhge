@@ -8,6 +8,7 @@
 #include "loc/loc_state.hpp"
 #include "nnh/assert.hpp"
 #include "nnh/log.hpp"
+#include "nnh/profile.hpp"
 #include "nnh/system.hpp"
 
 namespace nnh {
@@ -33,6 +34,7 @@ void detail::loc::loc_frame_hook(InputHook&) {
     const int previous = s.current, target = s.pending;
     s.pending = -1;
     if (target == previous) return;
+    NNH_PROFILE_SCOPE("loc switch"); // the bench's switch phase (Development); nothing in Release
     if (const char* why = load_chain(target)) {
         NNH_LOG_ERROR(loc, "language %s: %s (staying in %s)", s.languages[target].code, why, s.languages[previous].code);
         if (load_chain(previous) != nullptr) NNH_LOG_ERROR(loc, "language %s can't be reloaded", s.languages[previous].code);

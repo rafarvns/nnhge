@@ -330,6 +330,6 @@ the tree at T0.3).
   plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
 - [x] **T11.6** `docs/ROADMAP.md`: the "Live values in the simulator" checkbox, with the implemented summary.
 - [x] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
-- [ ] **T11.8** (the lead) Merge `spec-030` into `main` (rebased; insertions after 029's blocks); then the full ctest
+- [x] **T11.8** (done 2026-11-26: merge `3547b64`; main pc-debug ctest all pass, 3ds-release without a warning) (the lead) Merge `spec-030` into `main` (rebased; insertions after 029's blocks); then the full ctest
   (pc-debug, pc-release), every example's `--pc` script, AC-2's golden and every earlier golden, one 3ds-release build;
   T10.2 runs repeated if the merge happened after them.

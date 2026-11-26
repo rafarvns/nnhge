@@ -32,6 +32,13 @@ forbidden="$forbidden"'|chain of %d tables|loc: not started|font: none \(the bui
 forbidden="$forbidden"'|its own fallback fonts are ignored|unknown key "|is not declared|no argument for|outline_color ignored'
 forbidden="$forbidden"'|not in %s|log full|loc::tr before|called twice|stale FontRef|a buffer of capacity'
 forbidden="$forbidden"'|NNH_LOC_SHOW_KEYS|menu[.]new_game|dialog[.]speaker|gallery[.]sample'
+# Live values (spec 030 FR-20, AC-6): the dump, refusals, the held start and replay notes, the panel's hints, the
+# misuse messages, the module's and Ryu's symbols, and the live example's names (Release registers nothing). Check the
+# .3dsx (or a stripped .elf) and the .exe: a 3DS .elf keeps DWARF.
+forbidden="$forbidden"'|dump: begin|refused it|not declared by the game|waiting for nnh|frame not held'
+forbidden="$forbidden"'|A open X reset|SEL[+]R page|registered twice|can.t also be a group|raise live::configure'
+forbidden="$forbidden"'|f2s_buffered|live_registry|live_panel|dev_pause|overlay_pages|g_live_ops'
+forbidden="$forbidden"'|player/jump|colors/sky|spawn/alive|frame/count'
 
 if grep -aEq "$forbidden" "$binary"; then
     echo "FAIL: $binary contains debug-only strings:"

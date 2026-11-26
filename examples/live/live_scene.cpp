@@ -58,6 +58,8 @@ void LiveScene::on_enter() {
     }
     if (std::strcmp(s, "colour") == 0) nnh::live::show_panel(nnh::live::Page::Tunables, "colors/sky");
     if (std::strcmp(s, "watches") == 0) nnh::live::show_panel(nnh::live::Page::Watches, "player/pos");
+    const char* demo = std::getenv("LIVE_DEMO");
+    if (demo != nullptr && std::strcmp(demo, "bench") == 0) bench_.start();
     if (std::strcmp(s, "paused") == 0) nnh::live::show_panel(nnh::live::Page::Tunables, "player/jump");
 }
 
@@ -75,7 +77,8 @@ void LiveScene::update() {
     nnh::live::show("spawn/alive", world_.ball_count);
     if (handles_.count.changed()) NNH_LOG_INFO(example, "live: spawn count %d", tuning_.count);
     if (nnh::input::pressed(Button::Y)) self_check();
-    if (nnh::input::pressed(Button::X)) bench();
+    if (nnh::input::pressed(Button::X) && !bench_.running()) bench_.start();
+    if (bench_.running()) bench_.update();
     if (nnh::input::pressed(Button::Start)) nnh::scenes::pop();
 }
 
@@ -103,5 +106,3 @@ void LiveScene::self_check() {
     NNH_LOG_INFO(example, "live: sum %08X", static_cast<unsigned>(sum));
     if (sum == kLiveDefaultsGolden) NNH_LOG_INFO(example, "live: PASS defaults");
 }
-
-void LiveScene::bench() { run_live_bench(); }

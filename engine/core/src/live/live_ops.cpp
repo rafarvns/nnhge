@@ -11,6 +11,7 @@
 #include "live/live_registry.hpp"
 #include "live/live_watch.hpp"
 #include "nnh/log.hpp"
+#include "nnh/profile.hpp"
 
 namespace nnh {
 
@@ -65,6 +66,9 @@ void uninstall_ops() {
 }
 
 void frame_end(std::uint32_t frame, bool paused) {
+#if defined(NNH_FLAVOR_DEVELOPMENT)
+    NNH_PROFILE_SCOPE("live end");
+#endif
     Registry* r = g_registry;
     if (r == nullptr) return;
     if (r->follow_count > 0 && g_follows_frame_end != nullptr) g_follows_frame_end(*r, frame, paused);

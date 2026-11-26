@@ -11,6 +11,7 @@
 #include "nnh/debug.hpp"
 #include "nnh/input.hpp"
 #include "nnh/platform/system.hpp"
+#include "nnh/profile.hpp"
 
 namespace nnh::detail {
 namespace {
@@ -57,6 +58,9 @@ void overlay_show_page(int page) {
 
 bool overlay_pages_draw() {
     if (g_page == kPageStats) return false;
+#if defined(NNH_FLAVOR_DEVELOPMENT)
+    NNH_PROFILE_SCOPE("live page"); // the bench's page cost (CPU: model, layout, text, recording)
+#endif
     const auto frame = static_cast<std::uint32_t>(frame_count());
     const bool paused = dev_pause_state().paused();
     if (g_live_ops != nullptr) {

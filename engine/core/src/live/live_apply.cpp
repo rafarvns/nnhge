@@ -6,6 +6,7 @@
 
 #include "live/live_names.hpp"
 #include "live/live_registry.hpp"
+#include "nnh/profile.hpp"
 #include "remote/live_wire.hpp"
 
 namespace nnh::detail::live {
@@ -193,6 +194,9 @@ void reset_now(Entry& e) {
 }
 
 void frame_start(std::uint32_t frame) {
+#if defined(NNH_FLAVOR_DEVELOPMENT)
+    NNH_PROFILE_SCOPE("live start"); // the bench's hidden cost (Development only, like gfx submit)
+#endif
     Registry* reg = g_registry;
     if (reg == nullptr || (reg->op_count == 0 && reg->pending_count == 0)) return;
     Registry& r = *reg;

@@ -7,6 +7,7 @@
 
 #include <nnh/scene.hpp>
 
+#include "bench.hpp"
 #include "sim.hpp"
 #include "tuning_handles.hpp"
 
@@ -20,7 +21,6 @@ public:
 private:
     static void respawn(void* self);
     void self_check();
-    void bench();
 
     Tuning tuning_;
     World world_;
@@ -28,4 +28,5 @@ private:
     const char* state_text_ = "idle";
     std::uint32_t frames_ = 0;
     int shot_frames_ = 0;
+    LiveBench bench_;
 };

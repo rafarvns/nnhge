@@ -36,6 +36,6 @@ tap Y
 expect "live: sum 7A849F13" 60
 wait 10
 tap X
-expect "live bench: " 600
+expect "live bench: memory" 2000
 wait 10
 end

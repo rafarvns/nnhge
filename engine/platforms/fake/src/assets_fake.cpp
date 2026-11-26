@@ -61,7 +61,9 @@ bool asset_read_at(AssetStream stream, std::uint64_t offset, void* buffer, std::
 }
 
 void asset_close(AssetStream stream) {
-    if (stream != 0) --platform_fake::detail::mutable_state().open_asset_streams;
+    if (stream == 0) return;
+    --platform_fake::detail::mutable_state().open_asset_streams;
+    platform_fake::detail::reload_stream_closed(reinterpret_cast<const platform_fake::detail::FakeAsset*>(stream));
 }
 
 } // namespace nnh::platform

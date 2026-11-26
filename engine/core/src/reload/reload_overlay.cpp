@@ -46,7 +46,9 @@ bool OverlayTable::put(const char* path, std::uint32_t hash, std::uint16_t file,
     if (slots_ == nullptr || paths_ >= kOverlayPaths) return false;
     for (int i = 0; i < kOverlaySlots; ++i) {
         OverlayEntry& e = slots_[(hash + static_cast<std::uint32_t>(i)) % kOverlaySlots];
-        if (e.used != 0) continue; // tombstones stay: the probes of other paths go past them
+        if (e.path != nullptr) continue; // live: another path's
+        // An empty slot or a tombstone (the path isn't live further along: live_slot() said so). A tombstone keeps
+        // `used`, so the probes of other paths still go past it.
         e = OverlayEntry{.hash = hash, .file = file, .used = 1, .size = size, .path = path};
         ++paths_;
         return true;
@@ -61,6 +63,7 @@ std::uint16_t OverlayTable::remove(const char* path, std::uint32_t hash) {
     live->file = 0;
     live->size = 0;
     live->path = nullptr;
+    --paths_;
     return file;
 }
 
@@ -79,6 +82,7 @@ void OverlayTable::repoint(const char* (*resolve)(void* context, const char* old
         e.file = 0;
         e.size = 0;
         e.path = nullptr;
+        --paths_;
     }
 }
 

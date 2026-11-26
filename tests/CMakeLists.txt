@@ -1685,11 +1685,21 @@ endif()
 
 # Hot reload of assets (spec 031): every test of the spec in one block.
 target_sources(nnh_tests PRIVATE
+    assets/test_assets_overlay.cpp
+    data_assets/test_data_reload.cpp
+    reload/test_reload_apply.cpp
+    reload/test_reload_batch.cpp
+    reload/test_reload_cost.cpp
+    reload/test_reload_files.cpp
     reload/test_reload_names.cpp
     reload/test_reload_overlay.cpp
+    reload/test_reload_queries.cpp
+    reload/test_reload_random.cpp
+    reload/test_reload_release.cpp
     reload/test_reload_receiver.cpp
     reload/test_reload_wire.cpp
     remote/test_remote_reader_payload.cpp
+    tilemap/test_map_reload.cpp
     fuzz/test_fuzz_reload.cpp)
 # The reload receiver's fuzz target (T1.6, AC-6): mini-fuzz above, libFuzzer on the build VM.
 target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_reload_receiver.cpp)

@@ -31,6 +31,7 @@
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
 #include "remote/remote_internal.hpp"
+#include "reload/reload_apply.hpp"
 #include "time/time_internal.hpp"
 
 namespace nnh {
@@ -147,7 +148,10 @@ bool frame() {
     if constexpr (build::kDevToolsEnabled) detail::gfx_begin_recording(); // the held lists go (spec 030)
     g_frame_open = true;
     ++g_frame_count;
-    if constexpr (build::kDevToolsEnabled) { // live values (spec 030 FR-3): the one point where edits apply
+    if constexpr (build::kDevToolsEnabled) {
+        // Hot reload (spec 031 FR-6): a batch due now is applied first, so the live point and the game see it.
+        if (detail::g_reload_apply != nullptr) detail::g_reload_apply(static_cast<std::uint32_t>(g_frame_count));
+        // Live values (spec 030 FR-3): the one point where edits apply.
         if (detail::g_live_ops != nullptr) detail::g_live_ops->frame_start(static_cast<std::uint32_t>(g_frame_count));
     }
     detail::input_publish_events();

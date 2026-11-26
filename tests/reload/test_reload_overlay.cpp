@@ -43,9 +43,10 @@ NNH_TEST(reload_overlay_put_find_replace_remove) {
     CHECK(tb.t.remove(path, path_hash(path)) == 2);
     CHECK(tb.t.find(path, path_hash(path)) == nullptr);
     CHECK(tb.t.remove(path, path_hash(path)) == 0);
-    CHECK(tb.t.put(path, path_hash(path), 3, 1, replaced)); // added again: a new slot
+    CHECK(tb.t.paths() == 0);
+    CHECK(tb.t.put(path, path_hash(path), 3, 1, replaced)); // added again: its tombstone is reused
     CHECK(replaced == 0);
-    CHECK(tb.t.paths() == 2);
+    CHECK(tb.t.paths() == 1);
 }
 
 NNH_TEST(reload_overlay_collisions_compare_exactly) {
@@ -131,4 +132,18 @@ NNH_TEST(reload_overlay_attach_forgets_everything) {
     tb.t.attach(tb.slots);
     CHECK(tb.t.find("a", path_hash("a")) == nullptr);
     CHECK(tb.t.paths() == 0);
+}
+
+NNH_TEST(reload_overlay_adding_and_removing_forever_never_fills_it) {
+    Table tb;
+    static char names[40][8];
+    std::uint16_t replaced = 0;
+    for (int round = 0; round < 5000; ++round) {
+        char* n = names[round % 40];
+        std::snprintf(n, 8, "p%d", round % 40);
+        CHECK(tb.t.put(n, path_hash(n), static_cast<std::uint16_t>(1 + round % 60000), 1, replaced));
+        if (round % 3 == 0) tb.t.remove(n, path_hash(n));
+    }
+    CHECK(tb.t.paths() <= 40);
+    CHECK(tb.t.find("p1", path_hash("p1")) != nullptr || tb.t.find("p2", path_hash("p2")) != nullptr);
 }

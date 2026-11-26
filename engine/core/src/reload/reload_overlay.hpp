@@ -1,9 +1,10 @@
 #pragma once
 // The overlay table (spec 031 D53, FR-5, FR-12, FR-16): asset path → the received file that replaces it
 // (`.nnh_reload/<n>.bin`). Open addressing over kOverlaySlots entries in a caller-given array (allocated at the first
-// batch, tag `reload`); at most kOverlayPaths slots taken per session (more: the batch is refused, "restart"). Removing a
-// path leaves its slot taken (a tombstone; a path added again takes a new one). Entries point at their path in the
-// current asset index (repoint() when a batch swaps the index), so lookups compare exactly; the hash only picks the slot.
+// batch, tag `reload`); at most kOverlayPaths live paths (more: the batch is refused, "restart"). Removing a path leaves a
+// tombstone that later puts reuse, so a session may add and remove paths any number of times. Entries point at their
+// path in the current asset index (repoint() when a batch swaps the index), so lookups compare exactly; the hash only
+// picks the slot.
 // Pure, no heap. Tests: tests/reload/test_reload_overlay.cpp.
 
 #include <cstddef>
@@ -33,12 +34,12 @@ public:
 
     /// The live entry for `path` (exact compare), or nullptr (not in the overlay, or removed).
     const OverlayEntry* find(const char* path, std::uint32_t hash) const;
-    /// Slots taken this session (live and removed).
+    /// Live paths (received files the overlay names).
     int paths() const { return paths_; }
 
     /// `path` (stable: in the current index) now reads from `file` of `size` bytes; `replaced` receives the file it
-    /// replaces (0: none), to remove. False when the path isn't live and kOverlayPaths slots are taken (check find()
-    /// and paths() first).
+    /// replaces (0: none), to remove. False when the path isn't live and kOverlayPaths paths are (check find() and
+    /// paths() first).
     bool put(const char* path, std::uint32_t hash, std::uint16_t file, std::uint32_t size, std::uint16_t& replaced);
     /// `path` no longer reads from a received file. @return the file to remove (0: none).
     std::uint16_t remove(const char* path, std::uint32_t hash);

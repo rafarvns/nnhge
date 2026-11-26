@@ -692,6 +692,32 @@ Built in the worktree `.claude/worktrees/spec-031` (branch `spec-031`, from `mai
   compared `Barrel {int, bool}` component bytes including padding; the new tests changed the test order and the stale
   heap bytes differed. The test now zeroes both Barrels after comparing their members, as it already did for `Turret`.
 
+- **R7 (T2.1) Files through the platform contract.** `reload_files.cpp` writes `.nnh_reload/<n>.bin` with the
+  platform's `fs_append`/`fs_remove` directly (the names are the game's own and pass `nnh::fs::validate_path`: tested),
+  not through `nnh::fs`'s public calls, so the receive buffer's in-place reads need no copy. A chunk is read straight into
+  the free part of the 16 KB receive buffer (`ReloadFiles::window`), and the sink appends it without copying.
+- **R8 (T2.1) The batch block at Begin.** The block listing a batch's files (entries + paths, bounded by the Begin's
+  total) is allocated when the batch begins, not at the apply point: a transfer frame allocates once per batch.
+- **R9 (T2.3) Reads during prepare.** While a batch is prepared, every asset read (`assets::`, music, the data index)
+  first looks at the batch's own files (puts found, removes gone), then the current index and the overlay: the kinds call
+  their normal loaders and see the new bytes, while nothing visible has changed yet. `assets.cpp`, `music.cpp` and
+  `data_index.cpp` consult the reload layer only in `if constexpr (build::kDevToolsEnabled)` branches
+  (`g_reload_assets_active`, set at the first applied batch).
+- **R10 (T2.4) The asset index is the engine's, not a registered kind.** The batch engine parses a batch's
+  `.nnh_assets` first (consistency is checked against it), commits it before the kinds, and removes its received file
+  once parsed. Kinds are prepared file by file in batch order, kinds in registration order.
+- **R11 (T1.5, T2.8) Tombstones are reused.** A path removed and added again reuses its tombstone, so `kOverlayPaths`
+  bounds live paths, not paths ever seen (the random test adds and removes paths thousands of times). R5 is superseded.
+- **R12 (T2.5) Reading pace.** A frame reads messages once (as before, one socket read when idle); while a batch's
+  payload arrives it goes on reading, up to 16 KB of payload per frame (`kReloadReadPerFrame`), then flushes the buffer
+  with at most one `fs_append`. Records: `ReloadStaged`/`Applied`/`Refused` only after a `ReloadBegin`, `ReloadNotice`
+  or `ReloadApply` in the attachment. A transfer refusal is one warning and one record; the rest of that batch is ignored
+  quietly until the next Begin or Cancel; refusals never count toward the 8-in-a-row shutoff.
+- **R13 (T2.7) Data index state shared.** `data_index.cpp`'s state moved to `data/data_index_state.hpp`
+  (`g_data_index_state`, `data_index_read`, `data_index_match_types` made non-static, same code), so the data kind's
+  prepare/commit live in `data/data_reload.cpp` and Release links none of it. Data reload tests are in
+  `tests/data_assets/test_data_reload.cpp` (beside the data module's other tests and fixtures) instead of `tests/data/`.
+
 ### Stage 0 results
 
 - T0.0: see R1.
@@ -715,3 +741,29 @@ Built in the worktree `.claude/worktrees/spec-031` (branch `spec-031`, from `mai
   3ds-release and 3ds-dev build with 0 warnings; 3ds-release `hello.3dsx` and stripped `hello.elf` SHA-256 identical to
   T0.1; pc-release `hello` sizes and `nm -C` identical. 3ds-dev `hello` text +1 712 B (the reader's payload mode and
   `reload_wire.cpp`, linked by the remote decoder), bss +8 B.
+
+### Stage 2 results
+
+- Game side: `reload_files` (received files, the receive buffer, the wipe), `reload_assets` (reads through the staged
+  batch, the current index and the overlay; `reload_asset_open` for music and the data index), `reload_kind.hpp`,
+  `reload_batch` (prepare/commit/abandon, consistency, the overlay's room), `reload_index` (the asset-index kind),
+  `reload_apply` (the pending batch, `g_reload_apply` called by `app.cpp` right before the live point, FR-13's back ends,
+  `AssetsReloaded`, the log lines, records), `remote/remote_reload.cpp` (the session's glue; `remote_session.cpp` routes
+  transfer messages at receipt, `ReloadApply` from the schedule, payload pieces, detach). Kinds so far: data
+  (`data/data_reload.cpp`) and tilemap (`tilemap/map_reload.cpp`, validate only). The platform contract
+  `nnh/platform/reload.hpp` with `reload_{pc,3ds,fake}.cpp` (PC: `CreateFileW` with every share flag behind
+  `SDL_OpenIO`); the fake gained `replace_asset`, `fail_next_appends` and stream counters.
+- Public API: `<nnh/assets.hpp>` gained `AssetsReloaded` (8 bytes), `kReloadEnabled`, `ReloadedPaths`, `reload_count()`,
+  `reloaded()`, `reloaded_paths()` (Release: inline constants).
+- New tests: `test_reload_files` (7), `test_assets_overlay` (6), `test_reload_apply` (10), `test_reload_batch` (8),
+  `test_reload_queries` (3), `test_reload_release` (1), `test_data_reload` (5), `test_map_reload` (2), `test_reload_cost`
+  (3, 100 000 idle frames), `test_reload_random` (1: 2 000 seeded batches against a model), `test_reload_overlay` +1.
+- Stage-end guards: `nnh_tests` 4097/4097 (pc-debug), 4035/4035 (pc-release); `nnh_tool_tests` 197/197; ctest pc-release
+  337/337; 3ds-release and 3ds-dev built (3ds-release had two unused-parameter warnings in `reload_apply.cpp`, Release
+  only: fixed with `[[maybe_unused]]`); 3ds-release `hello.3dsx` and stripped `hello.elf` SHA-256 identical to T0.1;
+  pc-release `hello` sizes and `nm -C` identical. Debug/Development `hello` growth: 3ds-dev text 227 088 → 242 648
+  (+15 560 B, over question 9's 6–9 KB estimate: the receiver, the files, the overlay, the batch engine, the asset-index
+  kind, the apply point and their log texts are all reachable from the session), bss +88 B; pc-debug text +33 224 B.
+- Open in stage 2 (unticked): T2.2's conformance test on the PC platform (the shared open surviving a rewrite) is not
+  written (the fake's shared open is tested); T2.8's random test runs 2 000 batches, not 10 000, without guard bytes
+  (ASan on the VM covers the bounds); T2.9's header measurement was not taken.

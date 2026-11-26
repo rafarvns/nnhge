@@ -45,6 +45,7 @@ add_library(nnh_core STATIC
     src/data/data_apply.cpp
     src/data/data_index.cpp
     src/data/data_list.cpp
+    src/data/data_reload.cpp
     src/data/data_load.cpp
     src/data/data_validate.cpp
     src/data/enum_names.cpp
@@ -131,6 +132,7 @@ add_library(nnh_core STATIC
     src/tilemap/map_load_layers.cpp
     src/tilemap/map_objects.cpp
     src/tilemap/map_properties.cpp
+    src/tilemap/map_reload.cpp
     src/tilemap/map_property_table.cpp
     src/tilemap/map_runtime.cpp
     src/tilemap/map_strings.cpp
@@ -617,7 +619,16 @@ set(_nnh_reload_pure_sources
     src/reload/reload_receiver.cpp
     src/reload/reload_wire.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_reload_pure_sources})
+# The game side: received files, reads through the overlay, the batch engine, the apply point, the session's glue.
+set(_nnh_reload_sources
+    src/reload/reload_apply.cpp
+    src/reload/reload_assets.cpp
+    src/reload/reload_batch.cpp
+    src/reload/reload_files.cpp
+    src/reload/reload_index.cpp
+    src/remote/remote_reload.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_reload_pure_sources} ${_nnh_reload_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis nnh_ryu)

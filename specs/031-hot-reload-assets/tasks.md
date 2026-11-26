@@ -86,7 +86,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 2: the game side — files, overlay, batch engine, apply point, queries
 
-- [ ] **T2.1** Files on the data folder: `reload/reload_files.{hpp,cpp}` (`.nnh_reload/<n>.bin` names, the receive buffer
+- [x] **T2.1** Files on the data folder: `reload/reload_files.{hpp,cpp}` (`.nnh_reload/<n>.bin` names, the receive buffer
   allocated at the first batch with tag `reload`, the sink over `fs_append`/`fs_rename`/`fs_remove`, the wipe at the
   first batch (counter files until 16 missing) and the Dev shutdown hook). Test: `tests/reload/test_reload_files.cpp`
   (names pass `fs::validate_path`; an SD write failure (the fake's failure injection) refuses the batch and removes its
@@ -96,19 +96,19 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   platforms' CMake lists. Test: `tests/platform_conformance/test_reload_streams.cpp` (a data-folder file read through
   `asset_read_at`/`asset_close`; on the PC platform a shared stream survives a rewrite of its file by another handle —
   Windows); 3ds-dev builds. Covers FR-5, AC-9, I.
-- [ ] **T2.3** Reads through the overlay: `reload/reload_overlay.cpp` glue (`g_reload_assets`: the current index and the
+- [x] **T2.3** Reads through the overlay: `reload/reload_overlay.cpp` glue (`g_reload_assets`: the current index and the
   table), `assets/assets.cpp` and `assets_internal.hpp` (Dev branches in `locate`, `asset_lookup`, `size`, `read`; the
   `detail::asset_stream_open/read_at/close` wrappers), `audio/music.cpp` and `data/data_index.cpp` through the wrappers.
   Test: `tests/assets/test_assets_overlay.cpp` (reads, sizes, `exists`, streams and case hints through the overlay; a
   removed path → `NotFound`; the original file untouched; Release-path behaviour unchanged in pc-release). Covers FR-5,
   FR-12.
-- [ ] **T2.4** The batch engine: `reload/reload_kind.hpp`, `reload/reload_batch.{hpp,cpp}` (kinds registered by
+- [x] **T2.4** The batch engine: `reload/reload_kind.hpp`, `reload/reload_batch.{hpp,cpp}` (kinds registered by
   modules, prepare in batch order, consistency rules, commit, abandon, refusal texts), `reload/reload_index.cpp` (the
   asset-index kind). Test: `tests/reload/test_reload_batch.cpp` (fake kinds recording calls: one failing prepare abandons
   every prepared item and commits nothing; an allocation failure injected at each step; consistency with and without
   `.nnh_assets`; plain files; two kinds claiming one path; the index kind's add/remove/rename). Covers FR-4, FR-11,
   FR-12, FR-16.
-- [ ] **T2.5** The session and the apply point: `remote/remote_reload.cpp` (payload reads into the receive buffer at most
+- [x] **T2.5** The session and the apply point: `remote/remote_reload.cpp` (payload reads into the receive buffer at most
   16 KB per frame, transfer messages at receipt, `ReloadApply` from the schedule, `Cancel`, `Notice`, detach → cancel;
   records only after a `Begin` or `Notice`), `remote_session.cpp`, `remote_internal.hpp`, `reload/reload_apply.cpp`
   (pending apply, the apply point, `ReloadApplied` with its µs, `ReloadRefused`), `app/app.cpp`'s Dev call right before
@@ -116,13 +116,13 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   `nnh::frame()`, before the live point and the input events; frame 0 = next; a late `Apply` → `Late`; paused → files
   still received on paused ticks, the apply waits for step or resume; a disconnect mid-transfer removes the files; no
   record before a `Begin`), `tests/remote/test_remote_session.cpp` unchanged cases pass. Covers FR-6, FR-18, Q10.
-- [ ] **T2.6** Queries, event, log line: `<nnh/assets.hpp>` (`AssetsReloaded`, `kReloadEnabled`, `ReloadedPaths`,
+- [x] **T2.6** Queries, event, log line: `<nnh/assets.hpp>` (`AssetsReloaded`, `kReloadEnabled`, `ReloadedPaths`,
   `reload_count`, `reloaded`, `reloaded_paths`; Release inline), their back ends in `reload_apply.cpp`, the
   `I assets reloaded N (frame F): …` line, the removal and refusal warnings. Test:
   `tests/reload/test_reload_queries.cpp` (counter, by path and by load name, this frame only, the event delivered in the
   batch's frame before the scene's update, the exact log lines), `tests/reload/test_reload_release.cpp` (pc-release:
   constants, nothing published, `sizeof` of the event 8). Covers FR-13, FR-15, FR-19, Q5.
-- [ ] **T2.7** [P] Data and tilemap kinds: `data/data_reload.cpp` (data files validated against the compiled schema —
+- [x] **T2.7** [P] Data and tilemap kinds: `data/data_reload.cpp` (data files validated against the compiled schema —
   a fingerprint mismatch refuses with "rebuild and restart"; the index into a new block, swapped at commit),
   `data/data_index.cpp` (Dev: the swap hook), `tilemap/map_reload.cpp` (spec 012's validator only). Test:
   `tests/data/test_data_reload.cpp` (`count`/`name`/`find`/`path` after add, remove and rename; the game's structs

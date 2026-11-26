@@ -113,6 +113,9 @@ struct State {
     bool remote_capture_held = false;      ///< a capture buffer is held (until remote_capture_release())
     int remote_capture_releases = 0;       ///< remote_capture_release() calls that freed a held buffer
     int remote_send_calls = 0;             ///< remote_send() calls while connected (spec 030: records are batched)
+    // Hot reload (spec 031)
+    int reload_stream_opens = 0; ///< reload_stream_open() calls that succeeded (they count in open_asset_streams too)
+    int shared_asset_opens = 0;  ///< asset_open_shared() calls that succeeded (they count in open_asset_streams too)
 };
 
 const State& state();
@@ -134,6 +137,11 @@ void release_touch();
 /// Adds a read-only asset (spec 007; at most 64): `data` must stay alive until reset(). The game "has assets" (mount
 /// succeeds) once one is added. Paths are matched exactly, case included.
 void add_asset(const char* path, const void* data, std::size_t size);
+
+/// Replaces the bytes of an asset added with add_asset() (spec 031: the build rewrote the file). Streams already open
+/// on it read the new bytes from now on, as a file rewritten underneath them. `data` must stay alive until reset().
+/// Does nothing for an unknown path.
+void replace_asset(const char* path, const void* data, std::size_t size);
 
 /// When false, audio_init() fails like a system without audio output (default true).
 void set_audio_available(bool available);
@@ -172,6 +180,9 @@ void set_alloc_fill(int byte);
 /// The next `count` fs_write() calls fail after writing half the data (a torn write, e.g. power loss).
 /// Files live in memory and survive nnh::shutdown()/init() until reset().
 void fail_next_writes(int count);
+
+/// The next `count` fs_append() calls fail and write nothing (spec 031: the SD card refuses a received file's bytes).
+void fail_next_appends(int count);
 
 /// Flips the bits of one byte of a stored file (simulates corruption on the SD card).
 void corrupt_file(const char* path, std::size_t byte_index);

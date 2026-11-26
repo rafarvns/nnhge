@@ -9,6 +9,7 @@
 #include "gfx/gfx_state.hpp"
 #include "log/engine_channels.hpp"
 #include "nnh/assets.hpp"
+#include "nnh/build.hpp"
 #include "nnh/log.hpp"
 #include "nnh/texture.hpp"
 #include "tilemap/map_copy.hpp"
@@ -112,6 +113,7 @@ void detail::release_map_textures(std::uint8_t* block) {
 Result<Tilemap> load_tilemap(const char* path, const LoadTilemapOptions& options) {
     if (path == nullptr) return Error::make(ErrorCode::InvalidArgument, "load_tilemap(nullptr)");
     if (!detail::gfx_state().ready) return Error::make(ErrorCode::Unsupported, "load_tilemap before nnh::init()");
+    if constexpr (build::kDevToolsEnabled) detail::map_reload_register(); // spec 031: reloaded maps are validated
     char asset[detail::kMaxAssetPath + 1];
     if (std::snprintf(asset, sizeof asset, "%s.nnhmap", path) >= static_cast<int>(sizeof asset)) {
         return refuse(ErrorCode::InvalidArgument, path, "path too long");

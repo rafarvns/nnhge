@@ -9,8 +9,10 @@
 #include "assets/asset_path.hpp"
 #include "assets/assets_internal.hpp"
 #include "log/engine_channels.hpp"
+#include "nnh/build.hpp"
 #include "nnh/log.hpp"
 #include "nnh/platform/assets.hpp"
+#include "reload/reload_assets.hpp"
 
 namespace nnh {
 
@@ -79,6 +81,16 @@ Result<const char*> locate(const char* path) {
     if (!detail::valid_asset_path(path)) {
         return Error::make(ErrorCode::InvalidArgument, "invalid asset path \"%.40s\"", path != nullptr ? path : "");
     }
+    if constexpr (build::kDevToolsEnabled) { // hot reload (spec 031): the newest index and the received files
+        if (detail::g_reload_assets_active) {
+            detail::AssetRedirect r;
+            if (detail::reload_asset_lookup(path, r)) return r.stored;
+            if (const char* hint = detail::reload_asset_case_hint(path)) {
+                NNH_LOG_WARN(assets, "asset \"%s\" not found; paths are case-sensitive: did you mean \"%s\"?", path, hint);
+            }
+            return Error::make(ErrorCode::NotFound, "asset \"%.44s\" not found", path);
+        }
+    }
     if (const char* stored = g_index.find(path)) return stored;
     if (const char* hint = g_index.find_ignoring_case(path)) {
         NNH_LOG_WARN(assets, "asset \"%s\" not found; paths are case-sensitive: did you mean \"%s\"?", path, hint);
@@ -95,6 +107,7 @@ void detail::assets_init() {
     g_mounted = platform::assets_mount();
     if (g_mounted) read_index();
     g_ready = true;
+    if constexpr (build::kDevToolsEnabled) detail::g_reload_original_index = &g_index; // spec 031
 }
 
 void detail::assets_shutdown() {
@@ -105,6 +118,12 @@ void detail::assets_shutdown() {
 }
 
 const char* detail::asset_lookup(const char* path) {
+    if constexpr (build::kDevToolsEnabled) {
+        if (detail::g_reload_assets_active) {
+            detail::AssetRedirect r;
+            return g_ready && valid_asset_path(path) && detail::reload_asset_lookup(path, r) ? r.stored : nullptr;
+        }
+    }
     return g_ready && valid_asset_path(path) ? g_index.find(path) : nullptr;
 }
 
@@ -136,6 +155,10 @@ Result<std::size_t> assets::size(const char* path) {
     auto found = locate(path);
     if (!found) return found.error();
     std::size_t size = 0;
+    if constexpr (build::kDevToolsEnabled) {
+        detail::AssetRedirect r;
+        if (detail::g_reload_assets_active && detail::reload_asset_lookup(path, r) && r.file != 0) return r.size;
+    }
     if (!platform::asset_size(found.value(), size)) {
         return Error::make(ErrorCode::IoError, "asset \"%.44s\" can't be opened", path);
     }
@@ -149,6 +172,15 @@ Result<std::size_t> assets::read(const char* path, void* buffer, std::size_t cap
         return Error::make(ErrorCode::LimitReached, "asset needs %zu bytes, buffer has %zu", size.value(), capacity);
     }
     std::size_t read = 0;
+    if constexpr (build::kDevToolsEnabled) {
+        detail::AssetRedirect r;
+        if (detail::g_reload_assets_active && detail::reload_asset_lookup(path, r) && r.file != 0) {
+            if (!detail::reload_read_file(r, buffer, read) || read != size.value()) {
+                return Error::make(ErrorCode::IoError, "asset \"%.44s\" could not be read", path);
+            }
+            return read;
+        }
+    }
     if (!platform::asset_read(path, buffer, capacity, read) || read != size.value()) {
         return Error::make(ErrorCode::IoError, "asset \"%.44s\" could not be read", path);
     }

@@ -77,5 +77,9 @@ inline void map_object_at(const MapView& v, int index, MapObject& out) {
 /// For the Result-returning edits: an error if the map is empty.
 inline bool map_empty(const Tilemap& map) { return TilemapAccess::block(map) == nullptr; }
 
+/// Registers the tilemap kind of hot reload (map_reload.cpp, spec 031): Debug/Development builds, at the first
+/// load_tilemap().
+void map_reload_register();
+
 } // namespace detail
 } // namespace nnh

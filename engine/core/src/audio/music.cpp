@@ -8,9 +8,11 @@
 #include "audio/music_track.hpp"
 #include "log/engine_channels.hpp"
 #include "nnh/assets.hpp"
+#include "nnh/build.hpp"
 #include "nnh/events.hpp"
 #include "nnh/log.hpp"
 #include "nnh/platform/assets.hpp"
+#include "reload/reload_assets.hpp"
 
 namespace nnh {
 
@@ -96,7 +98,13 @@ Result<void> open_slot(int i, const char* path, const music::Options& options, f
     const bool ogg = found.value();
     Slot& s = g_slots[i];
     auto size = assets::size(asset);
-    if (!size || !platform::asset_open(asset, s.asset)) return Error::make(ErrorCode::IoError, "\"%s\": can't open", path);
+    if constexpr (build::kDevToolsEnabled) { // spec 031: a received file, or a packed one the build may rewrite
+        if (!size || !detail::reload_asset_open(asset, s.asset, true)) {
+            return Error::make(ErrorCode::IoError, "\"%s\": can't open", path);
+        }
+    } else {
+        if (!size || !platform::asset_open(asset, s.asset)) return Error::make(ErrorCode::IoError, "\"%s\": can't open", path);
+    }
     s.asset_size = size.value();
     if (ogg) {
         s.arena = mem::alloc(MemRegion::Heap, detail::audio_memory_tag(), detail::OggDecoder::kDefaultArenaBytes, 16);

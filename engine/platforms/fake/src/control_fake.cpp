@@ -1,5 +1,7 @@
 // Fake platform: test controls and recordings (nnh/platform_fake.hpp).
 
+#include <cstring>
+
 #include "fake_internal.hpp"
 
 namespace nnh::platform_fake {
@@ -20,6 +22,7 @@ void reset() {
     g_controls = {};
     detail::fs_reset();
     detail::remote_reset();
+    detail::reload_reset();
     detail::video3d_reset();
     detail::alpha_reset();
     detail::language_reset();
@@ -42,6 +45,14 @@ void set_touch(int x, int y) {
 void release_touch() { g_controls.input.touching = false; }
 void add_asset(const char* path, const void* data, std::size_t size) {
     if (g_controls.asset_count < detail::kMaxFakeAssets) g_controls.assets[g_controls.asset_count++] = {path, data, size};
+}
+void replace_asset(const char* path, const void* data, std::size_t size) {
+    for (int i = 0; i < g_controls.asset_count; ++i) {
+        if (std::strcmp(g_controls.assets[i].path, path) == 0) {
+            g_controls.assets[i].data = data;
+            g_controls.assets[i].size = size;
+        }
+    }
 }
 void set_quit_requested(bool quit) {
     g_controls.quit_requested = quit;

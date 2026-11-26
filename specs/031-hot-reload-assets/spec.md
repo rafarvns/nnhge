@@ -1,6 +1,6 @@
 # Spec 031: Hot reload of assets
 
-Status: draft
+Status: approved 2026-11-26 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-26
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (the assets folder, one build step per file, the asset index
 `.nnh_assets`, romfs on 3DS and a folder next to the program on PC), [spec 010](../010-nnh-cli-run/spec.md) (`nnh run`
@@ -281,25 +281,27 @@ file never reaches the game. A Release build has none of it.
 
 ## Open questions
 
-- [ ] **Q1 Simulator only, or the console too?** The ROADMAP item says "in the simulator". — **Recommendation: both, in
+Answered 2026-11-26: the maintainer approved every recommendation below.
+
+- [x] **Q1 Simulator only, or the console too?** The ROADMAP item says "in the simulator". — **Recommendation: both, in
       one spec, with the plan free to split it into 031a (simulator) and 031b (console) as spec 026 did.** The console
       is the constraint (II) and the reason the edit loop hurts most (resend + Y); spec 013's connection already exists
       and spec 030 put its tools on both systems. A simulator-only 1.0 is the fallback if the console part doesn't fit
       before the release.
-- [ ] **Q2 Who watches files: `nnh` or the game?** — **Recommendation: `nnh`, on the PC.** It owns the source folder,
+- [x] **Q2 Who watches files: `nnh` or the game?** — **Recommendation: `nnh`, on the PC.** It owns the source folder,
       runs conversions and already talks to both systems; the game then only applies batches, one code path for PC and
       console. A game watching its own folder would work only in the simulator, would see converted outputs being
       written (races) and would need a file-watching contract per OS. Consequence: a simulator started from an IDE
       without `nnh run` doesn't reload (documented); a later `nnh watch <game>` that attaches to a running simulator is
       a possible follow-up.
-- [ ] **Q3 Reconversion: the build (`cmake --build --target <game>_assets`) or `nnh-assetc` directly?** —
+- [x] **Q3 Reconversion: the build (`cmake --build --target <game>_assets`) or `nnh-assetc` directly?** —
       **Recommendation: the build's asset target**, then the batch is the outputs whose bytes changed (the tools already
       rewrite only changed bytes; `nnh` compares content hashes). The build is the one place that knows every rule
       (D27, D29, D31, D42, D49, D50 routing, depfiles for tilesets/strings/fonts, both indexes, `tex3ds`); calling
       `nnh-assetc` directly would duplicate that routing in `nnh` and drift. Cost: one Ninja invocation (spec 012
       measured 0.2 s for a map); adding a file reruns CMake's configure through `CONFIGURE_DEPENDS` (slower, still no
       compile). The plan checks that building the asset target on 3DS doesn't repack the `.3dsx`.
-- [ ] **Q4 How do converted files reach the console, and where are they kept?** Options: (a) chunked transfer messages
+- [x] **Q4 How do converted files reach the console, and where are they kept?** Options: (a) chunked transfer messages
       over the log connection (additive to D28), files kept in a Development-only folder inside the game's own data
       folder on the SD card (`sdmc:/3ds/<data_folder>/` + a reserved subfolder), wiped at start and at exit, looked up
       before the romfs; (b) the same messages, files kept in a RAM overlay with a fixed capacity; (c) the console
@@ -308,27 +310,27 @@ file never reaches the game. A Release build has none of it.
       reloaded file like any other, where a RAM overlay would compete with the game for the Old 3DS's memory (II); the
       folder is inside the game's own folder (X) and never read in Release. (c) needs an HTTP client on the console and
       a second port for no gain.
-- [ ] **Q5 What must a game do, and how is it told?** — **Recommendation: nothing for engine-owned handles (FR-7 to
+- [x] **Q5 What must a game do, and how is it told?** — **Recommendation: nothing for engine-owned handles (FR-7 to
       FR-10); for the rest, FR-13's queries plus one small bus event `AssetsReloaded` (the batch's counter and number
       of paths) delivered in the frame the batch is applied; no per-asset callbacks.** A scene that keeps data or a map
       reacts with a subscription or a check in `update()`. Unlike spec 030's Q6 (no `TunableChanged`), a reload is a
       fact about the world the game's scenes naturally listen for, and it fires only in development builds by
       definition; the docs say game logic must not depend on it. Alternative: queries only, like spec 030.
-- [ ] **Q6 Tilemaps: announced only, or reloaded in place?** — **Recommendation: announced only (FR-11) in this spec;
+- [x] **Q6 Tilemaps: announced only, or reloaded in place?** — **Recommendation: announced only (FR-11) in this spec;
       the example shows the usual reaction (load the map again and re-enter the room, or replace the scene).** A
       `Tilemap` block is referenced by the game's `collision::Grid` values, path maps synced from it, objects spawned
       from it and edits made with `set_tile`; swapping the block would leave those stale or silently undo game changes.
       A follow-up `Tilemap::reload()` that swaps in place when the game asks is possible once a real game shows the
       need.
-- [ ] **Q7 Voices of a reloaded sound.** — **Recommendation: stopped at the reload point (with `SoundFinished`); music
+- [x] **Q7 Voices of a reloaded sound.** — **Recommendation: stopped at the reload point (with `SoundFinished`); music
       continues at the same position (FR-9).** Keeping old samples alive until each voice ends would double the memory
       of a reloaded sound and need per-voice ownership; one cut-off sound in development is harmless. Alternative: let
       voices finish on the old samples.
-- [ ] **Q8 Which kinds for 1.0?** — **Recommendation: all of the kinds in this spec, staged by the plan:** (1) the
+- [x] **Q8 Which kinds for 1.0?** — **Recommendation: all of the kinds in this spec, staged by the plan:** (1) the
       edit loop, batches, FR-13's announcements for every kind and textures, data assets and string tables; (2) sprite
       libraries, sounds, music and fonts; (3) meshes; (4) the console. If the release can't wait, cut from the end:
       meshes, then fonts, fall back to "announced only" (FR-11) for any kind not reloaded in place.
-- [ ] **Q9 Live values and writing back (spec 030's Q5).** Options: (a) no coupling: a reload doesn't touch tunables
+- [x] **Q9 Live values and writing back (spec 030's Q5).** Options: (a) no coupling: a reload doesn't touch tunables
       (FR-23); a game that wants the panel's "changed" marks to follow the file registers its tunables again after
       `data::load` (030's RAII handle captures the new default); spec 030's dump stays the way to keep panel values;
       (b) `nnh` patches spec 014 data asset text files on the PC for tunables named `<data path>/<field>` (a
@@ -336,11 +338,11 @@ file never reaches the game. A Release build has none of it.
       defaults after a reload. — **Recommendation: (a) in this spec; (b) as a follow-up spec after 1.0.** With hot
       reload, "dump → paste the lines into the data file → save" already closes the loop in seconds; (b) needs a
       binding from tunables to asset fields and a writer that keeps comments and layout, a feature of its own.
-- [ ] **Q10 A batch while the game is paused (D52).** — **Recommendation: like D51's edits, it waits and is applied at
+- [x] **Q10 A batch while the game is paused (D52).** — **Recommendation: like D51's edits, it waits and is applied at
       the next game frame or step.** The held frame's lists stay consistent with the content they were recorded with.
       Alternative: apply while paused and redraw the held frame (it re-resolves textures by slot and generation, so new
       texture pixels would appear while paused), which is more immediate but makes a paused frame change content.
-- [ ] **Q11 How does a script test a reload without leaving the source tree dirty?** Options: (a) a script command
+- [x] **Q11 How does a script test a reload without leaving the source tree dirty?** Options: (a) a script command
       `swap-asset <source path> <fixture>` that copies the fixture over the source file, waits for its batch, and
       restores the original byte for byte when the script ends, fails or is interrupted (a backup next to the build
       logs, and `nnh` refuses to start while an unrestored backup exists); (b) the build reads the assets folder through
@@ -348,12 +350,12 @@ file never reaches the game. A Release build has none of it.
       build's command line for that asset and sends the result, bypassing the source. — **Recommendation: (a)** for
       testing exactly the developer's path (save → build → batch); plus `expect-reload [path] within N frames`.
       (b) changes every game's build for a test need; (c) skips the build the spec promises to use.
-- [ ] **Q12 How does the engine find what to swap?** Per-kind tables already exist for some kinds (textures by slot,
+- [x] **Q12 How does the engine find what to swap?** Per-kind tables already exist for some kinds (textures by slot,
       fonts' 32-entry table, mesh slots); sounds and sprite libraries are game-held blocks. Options: (a) Development
       builds record each loaded object's asset path hash beside it (a few bytes per object, in the existing block or
       slot); (b) a fixed reload registry of loaded objects. — **Recommendation: (a)**, decided in detail by the plan:
       no new registry, nothing in Release, and objects created from code (not loaded from a path) are never touched.
-- [ ] **Q13 Where does the API live?** — **Recommendation: FR-13's queries (and the event, if Q5 keeps it) in
+- [x] **Q13 Where does the API live?** — **Recommendation: FR-13's queries (and the event, if Q5 keeps it) in
       `<nnh/assets.hpp>`, namespace `nnh::assets` (`reload_count()`, `reloaded(path)`, `reloaded_paths()`)**: reloading
       is a property of assets, and every kind already depends on that module. Alternative: a new `<nnh/reload.hpp>`.
 

@@ -125,3 +125,11 @@ Live values (spec 030): `engine/core/src/live/` (the module: names, steps, value
 remote side), Development-only core files `app/dev_pause.*`, `debug/dev_controls.*`, `debug/overlay_pages.*`,
 `debug/debug_held.cpp`, `gfx/gfx_replay.*`, `audio/audio_hold.cpp`, `remote/live_wire.*`, `remote/remote_live.cpp`;
 `third_party/ryu/` (Ryu's `f2s`).
+
+Hot reload (spec 031, Debug/Development only): `engine/core/src/reload/` (the wire, the receiver, names and the overlay —
+pure, the wire and names also in `nnh` —, received files, reads through the overlay, the batch engine, the asset-index
+kind, the apply point), `remote/remote_reload.*` (the session's glue), one `<kind>_reload.cpp` per reloaded kind in its
+own module (`gfx/texture_reload.*`, `data/data_reload.cpp`, `tilemap/map_reload.cpp`), the contract
+`nnh/platform/reload.hpp` with `reload_<system>.cpp` per platform; `tools/nnh/src/reload/` (the output mirror, the
+source watcher, the asset build, the batch encoder, the controller, the paths file) and
+`tools/nnh/src/remote/script_runner_reload.cpp`, `commands/run_reload.cpp`.

@@ -131,3 +131,47 @@ Editing one export reconverts only it (a depfile lists the JSON and the PNG).
 `*.gltf` and `*.glb` files in the assets folder are converted into `<name>.nnhmesh` by the build (spec 026): load them
 with `load_mesh("models/ship")` ([mesh.md](mesh.md), export guide [models.md](../guides/models.md)). A model's buffers
 (`<model>.bin`, `<model>_<any>.bin` beside a `.gltf`) are not packed; `gltf`, `glb` and `nnhmesh` aren't data keys.
+
+## Hot reload
+
+> Status: in progress (spec 031). Implemented: the edit loop on the PC (`nnh run <game> --pc` watches the assets folder,
+> builds the asset target and sends the changed outputs; the same transfer runs on the console but has not been checked
+> there yet), batches applied whole at one point of a frame, the queries and the event below, plain files, data assets,
+> Tiled maps and textures. Not yet: string tables, sprite libraries, sounds, music, fonts, meshes, script commands
+> (`swap-asset`, `expect-reload`). See [plan 031](../../specs/031-hot-reload-assets/plan.md) ("Implementation notes").
+
+In a Debug or Development game run with `nnh run <game> [--pc]`, saving a file in the game's assets folder reconverts it
+with the build's own steps and reloads it in the running game at the start of a frame — no restart, relink or resend
+(guide: [nnh-tool.md](../guides/nnh-tool.md#hot-reload-of-assets)). Release builds have none of it.
+
+- **Behind your handles** (no code needed): a `Texture` loaded from an asset shows the new pixels, and `width()`/`height()`
+  the new size (Debug/Development read the texture's slot; Release returns the size cached at load). A tilemap's tileset
+  and UI images keep using the same texture slot, so they follow.
+- **Announced** (your copies are yours): structs filled by `data::load`, a `Tilemap`, bytes from `assets::load`/`read`.
+  Later reads get the new content; reload your copy when told:
+
+```cpp
+// In a scene's update(), or a subscription to nnh::AssetsReloaded:
+if (nnh::assets::reloaded("levels/room")) map = std::move(nnh::load_tilemap("levels/room").value());
+if (nnh::assets::reloaded("enemies/goblin")) (void)nnh::data::load("enemies/goblin", goblin);
+```
+
+| API | |
+|-----|-|
+| `assets::reload_count()` | batches applied since `nnh::init()` (Release: 0) |
+| `assets::reloaded(path_or_name)` | the batch applied **this frame** added, replaced or removed it: an exact path (`levels/room.nnhmap`) or a load name, the path without its last extension (`levels/room`) (Release: false) |
+| `assets::reloaded_paths()` | this frame's paths, as the index stores them (index files such as `.nnh_assets` included) |
+| `AssetsReloaded{count, changed, removed}` | published in the batch's frame, delivered before the scene's update (never in Release) |
+
+A batch is **all or nothing**: every file is checked by its loader's validator (maps, data files against the compiled
+struct, images) and new memory is allocated before anything changes; if one file fails, nothing of the batch applies,
+the game logs one line — `W assets reload refused (frame 1234): levels/room.nnhmap: corrupted (old content kept)` — and
+keeps running with what it had. A data file converted for another version of its struct is refused with "made for another
+struct: rebuild and restart". An applied batch logs `I assets reloaded 2 (frame 1234): art/hero, levels/room`; a removed
+asset can no longer be loaded (`NotFound`) but what was loaded from it keeps its content (one warning).
+
+Received files are kept in `.nnh_reload/` of the game's data folder (wiped at the session's first batch and at
+shutdown) and read before the packed assets; the packed assets (the romfs on the 3DS) never change. Memory
+(Debug/Development only): a 16 KB receive buffer and an 8 KB overlay table (12 KB on a 64-bit PC) from the first batch, 8 bytes per texture slot,
+and during a batch the old and new content of its assets at once (a batch that doesn't fit is refused cleanly).
+Game logic must not depend on reloads: in Release the queries are constants.

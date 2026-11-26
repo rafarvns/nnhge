@@ -160,6 +160,16 @@ screenshot requests (decision D28, [debugging](debugging.md#driving-a-game-from-
   splitter and script parser have mini-fuzz tests in `nnh_tool_tests`. `nnh_tests` and `nnh_tool_tests`
   passed under ASan + UBSan (clang 18, Linux) the same day.
 
+## Hot reload (spec 031)
+
+A Debug/Development game under `nnh run` receives converted asset files from the PC (D54) and writes them into its own
+data folder, only as `.nnh_reload/<n>.bin` with names it picks itself (never a received path; they pass
+`nnh::fs::validate_path`). Every transfer message is bounded and checked (one batch at a time, files in order,
+contiguous chunks, sizes, totals, a CRC-32 per file; paths must be valid asset paths); every received file is validated
+by its loader's own validator before anything changes, and a refused batch leaves the old content. The reader and the
+receiver are fuzz targets (`fuzz_reload_receiver`, and the mini-fuzz in `nnh_tests`). The folder is wiped at the
+session's first batch and at shutdown, and Release builds contain no code that reads or writes it.
+
 ## Supply chain and CI
 
 - Already: downloaded dependencies pinned by URL + SHA-256 (`cmake/nnh_sdl3.cmake`); no binaries in git.

@@ -39,6 +39,10 @@ public:
 
     /// The texture's data, or nullptr if the handle is stale.
     const TextureData* get(int slot, std::uint32_t generation) const;
+    /// The same, writable (spec 031: a reload swaps a slot's data behind its handles).
+    TextureData* mutable_get(int slot, std::uint32_t generation) {
+        return const_cast<TextureData*>(static_cast<const TextureTable*>(this)->get(slot, generation));
+    }
 
     int active_count() const;
     std::size_t total_bytes() const;

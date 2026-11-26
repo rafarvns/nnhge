@@ -1,6 +1,6 @@
 # Tasks 031: Hot reload of assets
 
-Status: approved 2026-11-26 (with plan.md)
+Status: approved 2026-11-26 (with plan.md); in progress (stages 1–2 done; stage 3 and T4.1 partly)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -139,12 +139,12 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 3: the `nnh` side (end to end on PC)
 
-- [ ] **T3.1** Where and what: `cmake/nnh_assets.cmake` (`nnh_reload_<game>.txt` at configure time),
+- [x] **T3.1** Where and what: `cmake/nnh_assets.cmake` (`nnh_reload_<game>.txt` at configure time),
   `tools/nnh/src/reload/output_snapshot.{hpp,cpp}` (the mirror: FNV-1a 64 + size per output, rescans by size/mtime, the
   diff → batch list in plan.md's order with indexes last; hash-collision warning). Test:
   `tools/nnh/tests/test_output_snapshot.cpp` (fixture build folders: changed, unchanged, added, removed; order; the mirror
   moves only on `Applied`). Covers FR-2, FR-4.
-- [ ] **T3.2** [P] Watching: `reload/source_watcher.{hpp,cpp}` (100 ms polls, 250 ms quiet period restarted by changes;
+- [x] **T3.2** [P] Watching: `reload/source_watcher.{hpp,cpp}` (100 ms polls, 250 ms quiet period restarted by changes;
   injected clock and lister). Test: `tools/nnh/tests/test_source_watcher.cpp` (one save, a temporary file + rename, a
   `.tmj` + `.tsj` burst, an add, a remove, a rename, a change during the quiet period, nothing for touch-free polls).
   Covers FR-1.
@@ -158,7 +158,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   `remote/game_records.*` (records 13–15). Test: `tools/nnh/tests/test_batch_sender.cpp` (exact bytes of a batch;
   limits refused locally with "too many changes for one reload: restart"), `test_game_session.cpp` (over loopback with a
   fake game that logs heavily during a 4 MB transfer: no deadlock). Covers FR-4, FR-18.
-- [ ] **T3.5** The controller: `reload/reload_controller.{hpp,cpp}` (idle → quiet → building → sending → waiting;
+- [x] **T3.5** The controller: `reload/reload_controller.{hpp,cpp}` (idle → quiet → building → sending → waiting;
   coalescing; the dry run beside the transfer and `Apply` after it; notices; the printed lines with times), `cli.cpp`
   (`--no-reload`), `commands/run.cpp`, `run_pc.cpp`, `remote/script_interactive.cpp` (`reload [PATH]`), the older-game
   message. Test: `tools/nnh/tests/test_reload_controller.cpp` (a fake builder and game: every state change, a save

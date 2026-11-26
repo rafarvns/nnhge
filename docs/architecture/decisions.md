@@ -360,3 +360,9 @@ never through `#ifdef` in game code.
   `Texture::width()` through the slot in Development builds, exact paths in FR-13's list, no 031a/031b split, the
   Debug/Development `hello` growth, transfer pacing, FR-23's warning on the game side).
 - 2026-11-26: D53 and D54 **approved** with plan 031 (the maintainer; the eleven plan questions as recommended).
+- 2026-11-26: D53 and D54 **in implementation** (spec 031 stages 1–3 and the texture kind): additive to D28 as messages
+  12–17 and records 13–15; transfer messages skip the reader's frame order; a refused-but-decoded message still has its
+  payload skipped; `nnh` paces a batch by the game's ticks (64 KB, then 48 KB per tick) with the session's ordinary
+  writes instead of a non-blocking sender; the dry run ignores CMake's glob re-check and re-run lines; D47 also retires
+  raw platform textures a reload replaced (a Development-only list freed at the next GPU idle). Refinements R1–R13 in
+  [plan 031](../../specs/031-hot-reload-assets/plan.md#implementation-refinements).

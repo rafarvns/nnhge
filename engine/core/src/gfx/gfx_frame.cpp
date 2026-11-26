@@ -4,6 +4,8 @@
 #include "gfx/gfx3d_hook.hpp"
 #include "gfx/gfx_internal.hpp"
 #include "gfx/gfx_replay.hpp"
+#include "nnh/build.hpp"
+#include "gfx/texture_reload.hpp"
 #include "gfx/gfx_state.hpp"
 #include "log/engine_channels.hpp"
 #include "memory/memory_internal.hpp"
@@ -237,6 +239,9 @@ void detail::gfx_submit() {
 void detail::gfx_gpu_idle() {
     free_pending(g_state.retired_count);
     g_state.retired_count = 0;
+    if constexpr (build::kDevToolsEnabled) { // spec 031: platform textures a reload replaced
+        if (g_texture_retire_hook != nullptr) g_texture_retire_hook();
+    }
     if (g_3d_on) g_gfx_3d_ops->gpu_idle();
 }
 

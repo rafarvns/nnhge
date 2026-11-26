@@ -91,6 +91,7 @@ add_library(nnh_core STATIC
     src/gfx/texture_table.cpp
     src/gfx/tile_batches.cpp
     src/gfx/textures.cpp
+    src/gfx/texture_reload.cpp
     src/input/dpad_mirror.cpp
     src/input/input.cpp
     src/input/input_block.cpp

@@ -100,7 +100,10 @@ copied — or, in a game with `DATA_SCHEMA`, go through the data steps ([Data as
 build for names that break the asset path rules, use characters outside `A-Z a-z 0-9 space - _ .`, are
 reserved, or differ from another only by letter case; it also deletes outputs of removed assets. On PC
 that folder is next to the executable; on 3DS the target `<game>_assets` is a devkitPro asset target
-passed as `ROMFS` to `ctr_create_3dsx`, so the `.3dsx` is repacked when an asset changes. The folder is
+passed as `ROMFS` to `ctr_create_3dsx`, so the `.3dsx` is repacked when an asset changes. At configure time
+`nnh_add_assets()` also writes `<binary dir>/nnh_reload_<game>.txt` (`assets=`, `game=`, `out=`: the source folder, the
+game's folder and the converted folder) for `nnh run`'s hot reload (spec 031), which builds `<game>_assets` alone and
+dry-runs `<game>` (`-- -n`) to tell whether a change needs a rebuild. The folder is
 scanned with `file(GLOB_RECURSE ... CONFIGURE_DEPENDS)` — the one exception to "no GLOB" below: assets
 are data, and adding a file must not require editing CMake. Script tests: `asset_index_*` (fixtures in
 `tests/data/asset_lists/`; `asset_index_names_maps_by_their_output` checks the output names).

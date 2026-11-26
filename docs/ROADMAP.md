@@ -361,7 +361,10 @@ spec; the order below is a proposal.
   `expect-value`, `pause`, `step`), dumps and `--tunes`; nothing in Release ([api/live.md](api/live.md),
   [guide](guides/tuning-your-game.md), `examples/live`, the platformer's movement numbers)
 - [ ] **Hot reload of assets in the simulator** (both engines): a changed image, map or data file reloads in the
-  running game; with "hot reload of game code" below, the fastest edit loop
+  running game; with "hot reload of game code" below, the fastest edit loop. **In progress:**
+  [spec 031](../specs/031-hot-reload-assets/spec.md) (simulator and console; branch `spec-031`: the edit loop, batches,
+  data assets, maps and textures work in the simulator; strings, sprites, sounds, music, fonts, meshes, scripts, the
+  example and the console check are open)
 
 ## M8 — 3D
 - [x] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)

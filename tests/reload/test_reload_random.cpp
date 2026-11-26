@@ -1,4 +1,4 @@
-// Random batches against a model (spec 031 T2.8, FR-4, FR-12, FR-18): seeded batches of puts, adds, removes and refused
+// Random batches against a model (spec 031 T2.8, FR-4, FR-12, FR-18): 10 000 seeded batches of puts, adds, removes and refused
 // batches (a put the index doesn't list); after each, every path the model has reads its expected bytes and every path
 // it removed is gone; the reload memory never grows past one batch's worth.
 
@@ -59,7 +59,7 @@ NNH_TEST(reload_random_batches_match_the_model) {
     std::uint32_t seed = 31;
     int applied = 0, refused = 0;
     std::size_t peak = 0;
-    for (int round = 1; round <= 2000; ++round) {
+    for (int round = 1; round <= 10000; ++round) {
         Model after = model;
         std::vector<std::string> bpaths, bdata;
         std::vector<bool> bremove;

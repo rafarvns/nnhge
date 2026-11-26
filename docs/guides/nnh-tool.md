@@ -318,3 +318,26 @@ D28, [plan 013](../../specs/013-console-remote/plan.md); code: `tools/nnh/src/re
   —, starts the game held before frame 1 (`NNH_HOLD=1` in the simulator, `--nnh-hold` in the console's argv), sends the
   values (names the game doesn't declare are reported and skipped) and resumes it; `--hold` only holds;
 - an older game answers `the game has no live values (built before spec 030)`.
+
+## Hot reload of assets
+
+> Status: in progress (spec 031): interactive `nnh run` watches and reloads; the script commands `swap-asset`,
+> `restore-asset` and `expect-reload` are not implemented yet.
+
+While `nnh run <game> [--pc]` follows a Debug or Development game, it watches the game's assets folder (`nnh: hot reload
+on: ...`). Saving a file there — an image, a Tiled map, a data file — starts a reload once nothing changed for 250 ms (so
+an editor's save through a temporary file, or Tiled saving a map and its tileset, is one reload):
+
+1. `nnh` builds the game's asset target (`cmake --build --preset <p> --target <game>_assets`: the same converters, checks
+   and output bytes as a normal build; nothing is compiled or linked, the `.3dsx` isn't repacked) and shows its output.
+   A conversion error prints the converter's `file:line: reason`, and the game logs one warning and keeps its old content.
+2. A Ninja dry run of the game's program tells whether the change needs a rebuild (a `DATA_SCHEMA` source, `IMAGES`, the
+   CMake declaration): `nnh: reload refused: <command>: rebuild and restart (nnh run)`.
+3. The converted files whose bytes changed go to the game as one batch over the log connection (the simulator's loopback
+   too): `nnh: reload 1: 2 files, 6.2 KB (build 0.21 s)`, then `nnh: reload 1 applied at frame 1234, 0.58 s after the
+   save: art/hero, levels/room`.
+
+Typed commands: `reload` (build and send now, without waiting for a save), `reload <output path>` (send that converted
+file again, e.g. `reload art/hero.png`). `nnh run --no-reload` turns watching off; scripts (`--script`) never watch.
+Release builds and games built before spec 031 don't reload (`the game has no hot reload (built before spec 031):
+watching off`). What reloads by itself and what a game reloads on its own: [assets.md](../api/assets.md#hot-reload).

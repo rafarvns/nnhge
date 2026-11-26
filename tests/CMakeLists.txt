@@ -1687,6 +1687,7 @@ endif()
 target_sources(nnh_tests PRIVATE
     assets/test_assets_overlay.cpp
     data_assets/test_data_reload.cpp
+    gfx/test_texture_reload.cpp
     reload/test_reload_apply.cpp
     reload/test_reload_batch.cpp
     reload/test_reload_cost.cpp

@@ -1,6 +1,6 @@
 # Plan 031: Hot reload of assets
 
-Status: approved 2026-11-26 (the maintainer, the eleven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as recommended, and those answers
+Status: approved 2026-11-26 (the maintainer, the eleven questions at the end as recommended); in progress (see "Implementation notes"); the spec was approved 2026-11-26 with every open question as recommended, and those answers
 are this plan's decisions; eleven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D53, D54 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -686,7 +686,8 @@ Built in the worktree `.claude/worktrees/spec-031` (branch `spec-031`, from `mai
 - **R4 (T1.2) Feeds until every byte is handled.** A read of `room × 16` bytes can now yield more than `room` items (a
   payload piece is an item too), so the session (and the remote fuzz target) feed the rest of the bytes after handling
   the items, instead of assuming one feed takes everything. `bytes_wanted(0)` is 0 in payload mode too.
-- **R5 (T1.5) Overlay tombstones.** A removed path keeps its slot (a tombstone); a path added again takes a new slot, so
+- **R5 (T1.5) Overlay entries are 16 bytes on the 3DS (24 on a 64-bit PC)**: {hash, file, used, size, path pointer}, so
+  the table is 8 KB on the 3DS instead of the planned 4 KB (the exact compare needs the path). **Overlay tombstones.** A removed path keeps its slot (a tombstone); a path added again takes a new slot, so
   `kOverlayPaths` counts slots taken in the session (removals included).
 - **R6 (stage 1) A latent padding compare.** `map_coins_equal_the_hand_written_coins` (platformer prefabs, spec 022)
   compared `Barrel {int, bool}` component bytes including padding; the new tests changed the test order and the stale
@@ -717,6 +718,30 @@ Built in the worktree `.claude/worktrees/spec-031` (branch `spec-031`, from `mai
   (`g_data_index_state`, `data_index_read`, `data_index_match_types` made non-static, same code), so the data kind's
   prepare/commit live in `data/data_reload.cpp` and Release links none of it. Data reload tests are in
   `tests/data_assets/test_data_reload.cpp` (beside the data module's other tests and fixtures) instead of `tests/data/`.
+
+- **R14 (T3.4) Pacing instead of a non-blocking sender.** `net::Socket` (in `link/`, shared with the console) has no
+  non-blocking send, so the controller paces a batch by the game's ticks: 64 KB at once, then 48 KB per Tick record
+  (ticks come every 4 frames; the game reads 16 KB a frame), handed to the session's ordinary write after the frame
+  messages. The game never has more than about a second of payload waiting, so neither side can block the other for
+  long; the loopback stress test with a game logging heavily during a 4 MB transfer is not written (Not done).
+- **R15 (T3.5) The dry run before the batch.** The build call does the asset build and the dry run back to back (about
+  0.1 s more) before the batch is encoded, instead of the dry run running while the batch is sent; the Apply then simply
+  follows the batch's bytes.
+- **R16 (T3.3) Dry-run lines that aren't the game's.** A Ninja dry run always lists CMake's CONFIGURE_DEPENDS check
+  (`Re-checking globbed directories...`) and, because it can't know that check finds nothing, CMake's re-run
+  (`Re-running CMake...`); both are ignored (the asset build has already re-run CMake when a declaration changed, and
+  what that changes in the game shows as compiles and links). Found by the end-to-end check (plan risk 3).
+- **R17 (T2.1, found end to end) Received files made with fs_write.** On the PC `fs_append` doesn't create folders, so
+  the first put of a session failed ("could not write the file"); a put now starts with `fs_write(name, nothing)` (makes
+  the folder, replaces a leftover), then appends.
+- **R18 (T3.5) Interactive runs attach at once.** With hot reload on, interactive `nnh run` sends its (non-exclusive)
+  Hello when the game connects instead of at the first typed command, so a save can reach the game; the console's own
+  input still counts.
+- **R19 (T4.1) Raw texture retirement.** A reload's replaced platform textures go to a Development-only list in
+  `gfx/texture_reload.cpp` freed by a hook `gfx_gpu_idle()` calls in a Development branch (D47), so `GfxState`'s layout
+  (and the Release bytes) don't change. The path-hash side table holds {hash, generation} per slot (8 bytes).
+- **R20 (T2.1) Log wording.** The applied line is `I assets reloaded N (frame F): ...` (channel `assets`, message
+  `reloaded ...`), as planned; a refusal is `W assets reload refused (frame F): <path>: <reason> (old content kept)`.
 
 ### Stage 0 results
 
@@ -757,7 +782,7 @@ Built in the worktree `.claude/worktrees/spec-031` (branch `spec-031`, from `mai
   `reloaded()`, `reloaded_paths()` (Release: inline constants).
 - New tests: `test_reload_files` (7), `test_assets_overlay` (6), `test_reload_apply` (10), `test_reload_batch` (8),
   `test_reload_queries` (3), `test_reload_release` (1), `test_data_reload` (5), `test_map_reload` (2), `test_reload_cost`
-  (3, 100 000 idle frames), `test_reload_random` (1: 2 000 seeded batches against a model), `test_reload_overlay` +1.
+  (3, 100 000 idle frames), `test_reload_random` (1: 10 000 seeded batches against a model since stage 4; 2 000 at stage 2), `test_reload_overlay` +1.
 - Stage-end guards: `nnh_tests` 4097/4097 (pc-debug), 4035/4035 (pc-release); `nnh_tool_tests` 197/197; ctest pc-release
   337/337; 3ds-release and 3ds-dev built (3ds-release had two unused-parameter warnings in `reload_apply.cpp`, Release
   only: fixed with `[[maybe_unused]]`); 3ds-release `hello.3dsx` and stripped `hello.elf` SHA-256 identical to T0.1;
@@ -766,4 +791,91 @@ Built in the worktree `.claude/worktrees/spec-031` (branch `spec-031`, from `mai
   kind, the apply point and their log texts are all reachable from the session), bss +88 B; pc-debug text +33 224 B.
 - Open in stage 2 (unticked): T2.2's conformance test on the PC platform (the shared open surviving a rewrite) is not
   written (the fake's shared open is tested); T2.8's random test runs 2 000 batches, not 10 000, without guard bytes
-  (ASan on the VM covers the bounds); T2.9's header measurement was not taken.
+  (ASan on the VM covers the bounds); T2.9's header measurement is recorded after stage 4.
+
+### Stage 3 results (partial)
+
+- `nnh` side: `cmake/nnh_assets.cmake` writes `nnh_reload_<game>.txt`; `tools/nnh/src/reload/`: `output_snapshot` (the
+  mirror), `source_watcher`, `asset_build` (commands per preset, the MSYS form, one retry, dry-run parsing),
+  `batch_sender` (exact bytes, local limits), `reload_controller` (the cycle, pacing, notices, older games, the printed
+  lines), `reload_setup` (the paths file, the run's session); `script_runner_reload.cpp` (typed `reload [PATH]`, records,
+  paced bytes), `game_session.cpp` (polls the controller, writes its bytes after the frame messages),
+  `commands/run_reload.cpp` (`start_reload` after the build), `cli` (`--no-reload`).
+- New tests (`nnh_tool_tests`, 217 in all): `test_reload_tool` (12: mirror, watcher, build, dry run, batch bytes, limits,
+  paths file, `--no-reload`), `test_reload_controller` (8: save, batch, applied; failed build, notice; needs a restart;
+  refused keeps the mirror; nothing changed; older game; pacing; typed reload of one path).
+- End to end by hand (T3.7, `build/ref-031/e2e_data.py`, not committed): `nnh run data --pc --no-build`, `goblin.enemy`
+  saved with `speed = 2.5` gave `I assets reloaded 1 (frame 303): enemies/goblin` and `nnh: reload 1 applied at frame
+  303, 2.20 s after the save`; then `speed = "fast"` gave the converter's `assets/enemies/goblin.enemy:4: speed: expected
+  a number, found a string`, `nnh: reload refused: conversion failed`, the game's warning, old content kept; then the
+  file restored gave `reload 2 applied ... 2.01 s after the save`. Save to frame is about 2.0-2.2 s on Windows, of which
+  the asset build is about 1.6 s (the CONFIGURE_DEPENDS glob check and the data steps): over AC-8's proposed 1 s; T0.2's
+  measurements and the persistent-shell / Ninja-direct options are open.
+
+### Stage 4 results (partial: T4.1)
+
+- Textures: `gfx/texture_reload.{hpp,cpp}` (the kind, the path-hash side table, raw retirement, `texture_width_dev`),
+  `textures.cpp` (records the path of an asset-loaded texture, Development branch), `gfx_frame.cpp` (the retire hook in a
+  Development branch), `texture_table.hpp` (`mutable_get`), `<nnh/texture.hpp>` (`width()`/`height()` read the slot in
+  Debug/Development; `cached_width()`/`cached_height()`).
+- New tests: `test_texture_reload` (5: the same handle with the new size and the new platform texture in draws; the old
+  one freed at the next GPU idle; two textures from one path follow and another doesn't; a bad image refuses the batch;
+  released textures read their cached size).
+- T4.4's preview by hand (a throwaway driver): `nnh run sprites --pc --no-build`, `art/tiles.png` copied over
+  `art/hero.png` while the game runs → `nnh: reload 1: 1 files, 0.6 KB (build 1.62 s)`, `I assets reloaded 1 (frame
+  241): art/hero`, `nnh: reload 1 applied at frame 241, 2.16 s after the save`; the exit screenshot shows the hero sprite
+  drawn from the tiles image (the example's code untouched: AC-4b's behaviour). The PNG was restored afterwards.
+
+### Stage-end guards after stages 3 (partial) and 4 (T4.1)
+
+Header cost (T2.9's check, by `g++ -E` of a one-line TU): `<nnh/assets.hpp>` 7 643 → 7 698 lines (+55, most of them
+the new Doxygen comments, which `-E` keeps as blank lines; the code adds `<nnh/build.hpp>`), `<nnh/texture.hpp>` 7 505
+→ 7 526 (+21); `-fsyntax-only` time unchanged within noise.
+
+`nnh_tests` 4102/4102 (pc-debug), 4040/4040 (pc-release); `nnh_tool_tests` 217/217; ctest pc-release 337/337 and pc-debug
+(recorded in the stage commit); 3ds-release and 3ds-dev built with 0 warnings; 3ds-release `hello.3dsx` and stripped
+`hello.elf` SHA-256 identical to T0.1; pc-release `hello` sizes and `nm -C` identical. 3ds-dev `hello`: text 242 624,
+bss 110 456.
+
+### Not done (open, for the lead or a next session)
+
+- Stage 0: T0.1's per-object disassembly, edit-one-`.cpp` timings and header measurements; T0.2 (the edit loop's pieces,
+  the MSYS start-up, the dry-run cases, Windows file sharing); T0.3 (goldens and reference screenshots).
+- Stage 1: T1.6's 60 s libFuzzer run (needs clang; T9.1 on the VM).
+- Stage 2: T2.2's conformance test of the PC platform's shared open; T2.8's guard bytes around the buffers (the random
+  run has 10 000 batches; ASan on the VM checks the bounds).
+- Stage 3: T3.3's persistent MSYS shell (depends on T0.2); T3.4's loopback stress test; **T3.6** (`swap-asset`,
+  `restore-asset`, `expect-reload`, the held flow through D52's pause, `asset_swap` with backups and the journal,
+  `nnh restore-assets`); T3.7's ctest `reload_data_smoke_pc` (needs T3.6).
+- Stage 4: T4.1's tests of tileset and mesh textures following and of a Linear-memory refusal with its bytes; T4.2
+  (string tables), T4.3 (UI relayout).
+- Stages 5-6: sprite libraries (identity and current blocks, the animator rebind), sounds, music, fonts, meshes, FR-23
+  (live values).
+- Stage 7: `examples/reload` (assets, fixtures, scenes, self-check, screenshots, bench, scripts), the ARM pre-check;
+  `examples/sprites/tests/reload.nnhs`.
+- Stage 8: mutation testing, release-string hygiene (`scripts/check_release_strings.sh` gains the reload texts), opt-in
+  probes, build times.
+- Stage 9 (the lead, VM 120) and stage 10 (the console): see below.
+- Stage 11: the remaining docs (the kinds' pages, the guide "editing assets while the game runs", the console-testing
+  guide, `devkitpro-3ds.md`, `REFERENCES.md`, ROADMAP).
+
+## Stage 10: console run (prepared)
+
+The scripted runs of T10.2 need stage 7's example and T3.6's script commands, which aren't built yet. What can be checked
+on the Old 3DS now is the interactive loop (yes/no, about 2 minutes; the lead edits a file on the PC):
+
+1. PC: `scripts/dkp.sh cmake --build --preset 3ds-dev --target sprites_3dsx`. Console: Homebrew Launcher, press **Y**.
+   PC: `build/pc-debug/tools/nnh/nnh run sprites` (it prints `nnh: hot reload on: saving a file in .../examples/sprites/
+   assets reloads it`). Change a few pixels of `examples/sprites/assets/art/hero.png` in an image editor (same size) and
+   save it. Expected on the PC: `nnh: reload 1: 1 files, ... (build ...)`, the game's line `I assets reloaded 1 (frame
+   N): art/hero` and `nnh: reload 1 applied at frame N, X s after the save: art/hero`. **Does the console show the new
+   hero within 3 s, without a restart? yes/no.** Note X (save to frame).
+2. Same run: save the PNG at another power-of-two size (e.g. twice as wide). Expected: applied as above; the sprite draws
+   at its new size. yes/no.
+3. Same run: save it at 30 x 30 pixels. Expected: `nnh` prints the image check's error and `reload refused: conversion
+   failed`; the console logs `W assets reload refused (frame N): art/hero.png: conversion failed (see nnh) (old content
+   kept)` and keeps drawing the previous hero. yes/no.
+4. `git checkout examples/sprites/assets/art/hero.png`, let it reload, close the game; `git status` clean.
+
+Log: `build/logs/sprites-<date>-<time>.txt`. The first failure to look for: `transfer: could not write the file` (the SD
+card's `sdmc:/3ds/<data folder>/.nnh_reload/` could not be created or written).

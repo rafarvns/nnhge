@@ -818,6 +818,13 @@ if(NOT MSVC)
                      -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
 endif()
 # Game fonts and localization (spec 029): every test of the spec in one block.
+# The localization example's self-check on the fake platform, over the example's own converted assets (T7.2).
+if(TARGET localization_assets)
+    target_sources(nnh_tests PRIVATE loc_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/localization/self_check.cpp)
+    target_compile_definitions(nnh_tests PRIVATE
+        NNH_LOC_EXAMPLE_ASSETS="${CMAKE_BINARY_DIR}/examples/localization/assets")
+    add_dependencies(nnh_tests localization_assets)
+endif()
 # The localization example in the simulator (T7.4, T7.6): its self-check (every language switched like a player would),
 # and its console script played with --pc.
 if(TARGET localization AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -860,6 +867,7 @@ target_sources(nnh_tests PRIVATE
     fuzz/test_fuzz_font.cpp
     fuzz/test_fuzz_loc.cpp
     loc/test_loc_cost.cpp
+    loc/test_loc_docs_snippets.cpp
     loc/test_loc_fonts.cpp
     loc/test_loc_format.cpp
     loc/test_loc_lookup.cpp

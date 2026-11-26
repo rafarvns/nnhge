@@ -2,6 +2,7 @@
 // (logged once) in Debug/Development and "??" in Release; key names on demand; run-time keys; resolve() for the UI.
 
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 
 #include "crash/crash_internal.hpp"
@@ -128,4 +129,23 @@ NNH_TEST(loc_dump_describes_the_current_language) {
     nnh::loc::dump();
     if (nnh::build::kDevToolsEnabled) CHECK(info.contains("loc: ja (日本語), 4 languages, chain of 2 tables"));
     else CHECK(info.lines.empty());
+}
+
+NNH_TEST(loc_show_keys_from_the_environment_at_start) {
+    const StopAtEnd stop_at_end;
+#if defined(_WIN32)
+    _putenv("NNH_LOC_SHOW_KEYS=1");
+#else
+    setenv("NNH_LOC_SHOW_KEYS", "1", 1);
+#endif
+    started("pt-BR");
+#if defined(_WIN32)
+    _putenv("NNH_LOC_SHOW_KEYS=");
+#else
+    unsetenv("NNH_LOC_SHOW_KEYS");
+#endif
+    CHECK(text("menu.new_game") == (nnh::build::kDevToolsEnabled ? "menu.new_game" : "Novo jogo"));
+    nnh::loc::stop();
+    started("pt-BR"); // without the variable: texts again
+    CHECK(text("menu.new_game") == "Novo jogo");
 }

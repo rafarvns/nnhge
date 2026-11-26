@@ -12,6 +12,7 @@ set colors/sky "#FFC040"
 set colors/ground "#206030FF"
 set fx/dust 20
 expect "live: dust rebuilt 20" 60
+wait 10 # the console's log arrives a frame or two late: commands after an expect need room
 expect-value player/jump == 6.25
 expect-value spawn/alive == 9 within 60
 expect-value spawn/shape == diamond

@@ -813,11 +813,24 @@ if(NOT MSVC)
                      -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
 endif()
 # Game fonts and localization (spec 029): every test of the spec in one block.
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_font.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_font_validate fuzz/libfuzzer_font_validate.cpp)
+    target_link_libraries(fuzz_font_validate PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_font_validate PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_font_validate PRIVATE -fsanitize=fuzzer,address)
+endif()
 target_sources(nnh_tests PRIVATE
+    font/test_font_format.cpp
+    font/test_font_lookup.cpp
+    font/test_font_validate.cpp
+    font/test_page_codec.cpp
+    fuzz/test_fuzz_font.cpp
     platform_fake/test_texture_alpha_fake.cpp
     remote/test_remote_language.cpp
     system/test_language_tag.cpp
-    system/test_system_language.cpp)
+    system/test_system_language.cpp
+    text/test_break_class.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.

@@ -75,4 +75,10 @@ int mesh_reader_target(const std::uint8_t* data, std::size_t size);
 /// For the mini-fuzz: whether `data`, with its size and CRC fixed as mesh_reader_target does, is accepted.
 bool mesh_fixed_accepted(const std::uint8_t* data, std::size_t size);
 
+/// `.nnhfont` fonts (spec 029, fuzz_font.cpp): validated as given, then with the header's size and CRC fixed; an accepted
+/// font is walked (every glyph and outline inside its page, every kerning run inside the pairs, every page decoded).
+int font_validate_target(const std::uint8_t* data, std::size_t size);
+/// For the mini-fuzz: whether `data`, with its size and CRC fixed, is accepted.
+bool font_fixed_accepted(const std::uint8_t* data, std::size_t size);
+
 } // namespace nnh::fuzz

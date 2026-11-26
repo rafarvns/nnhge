@@ -526,6 +526,22 @@ set(_nnh_language_sources
     src/system/system_language.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_language_sources})
+# Shared text code (D49): line-break classes, faces, runs, the one wrapper (spec 028's labels and draw_text), measuring,
+# drawing with game fonts. break_class.cpp is pure (also in nnh-assetc).
+set(_nnh_text_sources
+    src/text/break_class.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_text_sources})
+# Game fonts (spec 029, D49): the .nnhfont format and validator (pure, shared with nnh-assetc), the page codec, the font
+# table, loading, lookups. Reached only through load_font() (it sets gfx's resolver): a game that never loads a font
+# links none of it.
+set(_nnh_font_sources
+    src/font/font_format.cpp
+    src/font/font_index.cpp
+    src/font/font_validate.cpp
+    src/font/page_codec.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_font_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

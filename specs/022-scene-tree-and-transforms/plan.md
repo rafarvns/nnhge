@@ -818,7 +818,7 @@ Two AC-7 targets are flagged at risk and keep the spec's measurement-with-margin
 
 ### Stage 0 results
 
-Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at commit `7c9e3a5`. Scripts in
+Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-23, at commit `9ada061`. Scripts in
 `build/ref-022/` (not committed; adapted from `build/ref-021/`).
 
 - **`hello` sizes (bytes)**: pc-release `hello.exe` 278 856 (`text` 130 572), pc-debug 1 284 282 (`text` 198 464);

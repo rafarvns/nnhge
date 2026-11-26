@@ -21,7 +21,7 @@ namespace {
 
 enum class Act { Jump, Attack, Move, Pause };
 
-// Pinned at T0.2 (main at bafd9f2, before spec 027).
+// Pinned at T0.2 (main at 668e1ae, before spec 027).
 constexpr std::size_t kRawFileSize = 116;
 constexpr std::uint32_t kRawFileCrc = 0x7E97C64Du;
 constexpr std::size_t kBindingsSize = 28;

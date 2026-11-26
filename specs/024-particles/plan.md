@@ -806,7 +806,7 @@ page gains a "Batch draw command" row. Flagged for the maintainer: AC-8's `hello
 
 ### Stage 0 results
 
-Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-24, worktree `spec-024` at `18297dc` (spec 022
+Windows, WinLibs GCC (pc presets) and devkitARM (3DS presets), 2026-11-24, worktree `spec-024` at `bfd6fa8` (spec 022
 complete and spec 025 merged). Scripts in `build/ref-024/` (not committed; adapted from `build/ref-022/`). Other
 worktrees (specs 023, 026, 027) were building on the same PC at the same time: every time below is noisy.
 
@@ -1051,7 +1051,7 @@ On `nnhge-build` (VM 120), 2026-11-24, branch `fix-024`. Four findings, all fixe
   - Regression: `tests/particles/test_header_alone.cpp`, which includes the header first, with a `sizeof(Texture)`
     and a `DrawsWithBracedOptions` `static_assert`. Rule added to [cpp.md](../../docs/tech/cpp.md#headers).
 - **LeakSanitizer**: one test-only leak. `emit_moved_from` in `test_particle_misuse.cpp` made an emitter inside the
-  asserting call, and the crash longjmp skipped its destructor. The emitter is now made by the test, as in 499f433.
+  asserting call, and the crash longjmp skipped its destructor. The emitter is now made by the test, as in bdf5b43.
   No engine leak.
 - **ctest `platformer_doors_script_pc` under ASan**: an environment issue, not a 60 Hz verdict. The `_script_pc`
   tests run `nnh run --no-build` on the build folder named after `NNH_PRESET`. The VM's folders (`asan`, `g13`) are
@@ -1158,7 +1158,7 @@ Goldens unchanged:
 - `particles_check_script_pc`.
 - The platformer's replay ctest and doors script.
 - The screenshots `PARTICLES_SHOT=gallery|trail|explosion|touch|local|world|full` and the platformer's `level1`,
-  `bonus` and replay: byte-identical to builds of `208e375`.
+  `bonus` and replay: byte-identical to builds of `0359b6e`.
 - The full pc-debug ctest.
 
 ### Expected on the Old 3DS (console rerun)

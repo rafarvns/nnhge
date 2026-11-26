@@ -9,7 +9,7 @@ public input queries, which already read idle under `input::set_blocked` and tra
 scene attachments, the bus), spec 015 (`<nnh/ease.hpp>`, the `SmallFunction` callback pattern of tween sets), spec 020
 (`nnh::Handle` and `next_generation` from `nnh/detail/handle.hpp`, `slot_bits.hpp`), spec 017 (only in the separately
 linked adapter), spec 002 (asserts, logs, `Result`, tagged memory, profiler), spec 013 (scripts). Built in one worktree
-(branch `spec-028`) from `main` at `d862b00`; no other spec is being built in parallel.
+(branch `spec-028`) from `main` at `aab09ed`; no other spec is being built in parallel.
 
 ## Constitution Check (before design)
 
@@ -859,7 +859,7 @@ The spec's open questions are decided as it recommends. Plan-level decisions:
 
 ## Implementation (2026-11-25, on the PC)
 
-Built test-first in the worktree `spec-028` from `9aac3be`; commits on `spec-028`, not merged.
+Built test-first in the worktree `spec-028` from `29aeadd`; commits on `spec-028`, not merged.
 
 ### Stage 0 results (baseline)
 
@@ -994,7 +994,7 @@ logs and screenshots in `build/logs/`):
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (≈ 40 s). Expected:
    exactly the `replay: … sum` lines in the tree and `60 Hz PASS`; `nnh: PASS`.
 
-### Stage 9 results (Linux, run by the lead at 96d76a2)
+### Stage 9 results (Linux, run by the lead at d846a8f)
 
 GCC 13: `nnh_tests` all pass, ctest 345/346 (only `platformer_doors_script_pc`, the known 60 Hz flake). GCC 14: 3572
 tests, 0 failures. 32-bit (`-m32 -msse2 -mfpmath=sse`): 3572, 0 failures. clang 18 ASan + UBSan: no runtime error;
@@ -1004,13 +1004,13 @@ dropped the block, so nothing freed it. Fixed in the test (T10.3's commit): it k
 update, and when the assert fired it clears `busy`, frees the block with `ui_free` and deletes the `Ui` (its block now
 null: only the storage goes). Release checks the same as before (no crash, the block freed when the update ends).
 
-Before that, the first stage 9 run (at 99e493e) had found two more things, fixed in 96d76a2: GCC 13/14 refused two
+Before that, the first stage 9 run (at b0940a5) had found two more things, fixed in d846a8f: GCC 13/14 refused two
 test initialisers (`{.name = "down"}` as an `ActionDesc`, `add_style({})`; MinGW's newer GCC accepts them; replaced by
 named values), and ASan a heap overflow — destroying the list being dragged cleared `touch.scroller` but left
 `touch.scrolling` set, so the next held touch indexed the block with `kUiNone` (fixed in `held()`, regression test
 `ui_touch_drag_survives_the_list_being_destroyed`, red under ASan first).
 
-**Rerun at 1e02202 (after the optimisation round):** GCC 13 ctest 345/346 (only `platformer_doors_script_pc`: worst
+**Rerun at 656c1f2 (after the optimisation round):** GCC 13 ctest 345/346 (only `platformer_doors_script_pc`: worst
 frame 36.1 ms, average 16.8 ms in the VM, the known PC timing flake; the platformer doesn't link the UI); GCC 14 3 582
 tests, 0 failures; clang 18 ASan + UBSan (`detect_leaks=1`) 3 582, 0 failures, no report; 32-bit 3 582, 0 failures.
 The self-check test (golden `30400DA6`) passes on all four.
@@ -1078,7 +1078,7 @@ width until its text or style changes (`text_changed()` re-resolves every key, s
 label), or setting the budget from the measurement with ≈ 25 % margin as T10.3 allows; neither the list nor the draw
 target should need T10.4.
 
-### Console run 2 and budgets set (2026-11-25, Old 3DS XL, at 1e02202)
+### Console run 2 and budgets set (2026-11-25, Old 3DS XL, at 656c1f2)
 
 `ui.3dsx` 408 KB (3ds-dev). Functional: the six checkpoints and `ui: PASS 30400DA6` as on the PC, every showcase line.
 Bench: idle128 avg 0.025 ms (worst 0.104) PASS, move128 0.051 (0.140) PASS, geo128 0.099 (0.187) PASS, **relayout128

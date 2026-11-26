@@ -197,7 +197,7 @@ go into plan.md as "Stage N refinements", as in plans 012–017.
   goldens, the zoom-1 regression hash and the AC-2 checksums are identical on all three. Files: tasks.md (results).
   Covers I, FR-12, AC-2.
 
-  **Result (2026-11-22, VM 120, merge 43979d6):** GCC 13 and GCC 14 build without warnings and pass ctest 257/257
+  **Result (2026-11-22, VM 120, merge 5f5ccc5):** GCC 13 and GCC 14 build without warnings and pass ctest 257/257
   (`nnh_script_pc_smoke` skipped: it needs a `pc-dev` folder); clang 18 ASan/UBSan ctest 257/257, `nnh_tests`
   1849/1849 and `nnh_assetc_tests` 260/260 with leak checks on. The noise goldens, the zoom-1 hash `0x276C0CD5` and the
   self-check `0x5201E6CF` are test assertions, so they hold on all three compilers.

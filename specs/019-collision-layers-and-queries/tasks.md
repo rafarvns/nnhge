@@ -240,7 +240,7 @@ refinements", as in plans 012–018.
   all three (they are test assertions); libFuzzer `libfuzzer_tilemap` and the assetc map target run 10 minutes each
   with the new seeds, clean. Files: tasks.md (results). Covers I, X, FR-16, AC-1, AC-2, AC-3.
 
-  **Result (2026-11-23, VM 120, merge 0950b62):** GCC 13 and GCC 14 build without warnings and pass ctest 263/263
+  **Result (2026-11-23, VM 120, merge 8c61610):** GCC 13 and GCC 14 build without warnings and pass ctest 263/263
   (`nnh_script_pc_smoke` skipped: it needs a `pc-dev` folder); clang 18 ASan/UBSan ctest 263/263, `nnh_tests`
   2014/2014 and `nnh_assetc_tests` 265/265 with leak checks on. libFuzzer 600 s each, seeded (`fuzz_tilemap` with the
   5 converted `.nnhmap` files of the GCC build, `fuzz_assetc_map` with the 25 `tests/data/maps/*.tmj`): `fuzz_tilemap`

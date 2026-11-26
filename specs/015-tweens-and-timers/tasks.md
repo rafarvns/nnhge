@@ -12,7 +12,7 @@ Deviations found while building go into plan.md as "Stage N refinements", as in 
 
 VM 120 results (2026-11-22, after the merge into main): GCC 13, GCC 14 and clang 18 each ran `nnh_tests` 1367/1367;
 the easing goldens (T1.4) and the self-check checksum are identical on all three. ASan/UBSan found one leak, in a
-misuse test (a `TweenSet` local to a call that asserts and jumps out); fixed in `8d52baa`, then clean.
+misuse test (a `TweenSet` local to a call that asserts and jumps out); fixed in `9757250`, then clean.
 
 - [x] **T0.1** Baseline numbers (Windows, 3 runs each). Measure: the `hello.exe` and `hello.3dsx`/`.elf` sizes
   (`size`); edit `examples/hello/main.cpp` → simulator and `.3dsx` build times; clean engine build; the

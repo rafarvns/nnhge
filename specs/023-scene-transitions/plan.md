@@ -742,7 +742,7 @@ queries); D28 noted (remote input is game input and is filtered); spec 001's "th
 D38's exception. The patterns page gains an "Optional frame hook" row (D30, D32, D38). The iris's worst frame is
 flagged at risk and keeps the spec's measurement-with-margin fallback.
 
-## Stage 0 results (2026-11-24, worktree branch from `main` at 407ff10)
+## Stage 0 results (2026-11-24, worktree branch from `main` at 117b27b)
 
 Windows, WinLibs GCC, Ninja; devkitARM through `scripts/dkp.sh`. Scripts in `build/ref-023/` (not committed):
 `measure.sh` (sizes, `nm` lists, disassembly), `headers.sh` (header costs), `objsum.sh` (object disassembly sums),

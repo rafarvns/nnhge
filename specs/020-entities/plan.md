@@ -659,7 +659,7 @@ measurement-with-margin fallback.
 
 ## Stage 0 results
 
-Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), at `aca6e3e`, before any spec 020
+Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), at `6f7a4b5`, before any spec 020
 change.
 
 - `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 572 / 22 020 / 211 696; pc-debug 198 464 /

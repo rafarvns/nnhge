@@ -810,7 +810,7 @@ patterns page gains a "Time-sliced job" row.
 
 ## Stage 0 results
 
-Windows, WinLibs GCC 16.2, devkitARM; built in the `spec-025` worktree from `main` at `1e4570b`. Three other builds ran
+Windows, WinLibs GCC 16.2, devkitARM; built in the `spec-025` worktree from `main` at `40922a6`. Three other builds ran
 on this PC at the same time (other agents): times below are noisy, sizes are exact.
 
 - **Sizes** (`build/ref-025/base/sizes.txt`, `nm -C` lists beside it): `hello.exe` pc-release 278 856 B, pc-debug
@@ -1138,7 +1138,7 @@ was ≈ 1.5–2× T7.6's estimate. T10.3 follows (risk 1's list first, no result
 
 ## Optimisation round (T10.3)
 
-Done on the PC in the `opt-025` worktree (from `main` at `499f433`); no console run yet.
+Done on the PC in the `opt-025` worktree (from `main` at `bdf5b43`); no console run yet.
 
 **A calibrated ARM11 model.** To find where the cycles go without the console, the module was run under a small ARMv6
 interpreter (scratch tools in `build/o25/`, not committed): the pathfinding sources and `check_maps.cpp` compiled with
@@ -1235,7 +1235,7 @@ cost ranges, JPS for uniform costs, a stronger heuristic for weighted levels), n
 the budgets come from the next console measurement with ≈ 25 % margin.
 
 **PC bench** (pc-dev, GCC 16 -O2, avg / worst, other builds running: noisy, and the PC says little about the ARM11;
-before = a clean `git archive` of `499f433`): astar 0.183 / 0.386 → 0.187 / 0.349 µs; maze one 0.033 → 0.032 ms; maze
+before = a clean `git archive` of `bdf5b43`): astar 0.183 / 0.386 → 0.187 / 0.349 µs; maze one 0.033 → 0.032 ms; maze
 slices 0.021 / 0.054 → 0.020 / 0.078 ms; replans 0.880 → 0.916 ms; field one 0.563 → 0.326 ms; field slices 0.103 /
 0.246 → 0.060 / 0.529 ms (one preempted frame); next 0.023 → 0.005 ms; next_crowd 0.020 → 0.005 ms; smooth 0.012 →
 0.011 ms; sync 0.101 → 0.113 ms; door 0.002 → 0.002 ms. The same expansion and size line (`maze path 405 cells, 494
@@ -1250,7 +1250,7 @@ checkpoints, AC-2's 512 / 2 048 random maps against the literal A* and the brute
 `check.nnhs --pc` script, entities `C8FB9A41`, prefabs `7BB7901E`, hierarchy `23DB5C36`, the platformer replay
 `E445E8B2`); 3ds-release and 3ds-dev build every target with 0 warnings; the model's results checksum is the same before
 and after. `hello`: pc-release 278 856 B and 3ds-release `.3dsx` 246 512 B (stage 0's), `nm` lists identical to a clean
-build of `499f433`. `python -I scripts/docs_tool.py check`: 0 broken links.
+build of `bdf5b43`. `python -I scripts/docs_tool.py check`: 0 broken links.
 
 **Next (console, the maintainer presses Y):** Homebrew Launcher open on the Old 3DS, then on the PC
 `build/pc-debug/tools/nnh/nnh run pathfinding --script examples/pathfinding/tests/check.nnhs` (≈ 75 s). Expected: every

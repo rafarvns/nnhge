@@ -711,7 +711,7 @@ schema" row. Flagged for the maintainer: the compile-time chain check (decision 
 ## Stage 0 results
 
 Measured 2026-11-24 on the maintainer's Windows machine (WinLibs GCC 15, devkitARM), in the `spec-027` worktree at
-`bafd9f2`, before any spec 027 change. Scripts in `build/ref-027/` (not committed). Other agents were building on the
+`668e1ae`, before any spec 027 change. Scripts in `build/ref-027/` (not committed). Other agents were building on the
 same PC at the same time: timings are noisy.
 
 - **T0.1** `hello` sizes (`size`: text / data / bss, file bytes): pc-release `hello.exe` 130 668 / 22 020 / 211 696

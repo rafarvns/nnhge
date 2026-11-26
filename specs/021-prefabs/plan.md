@@ -644,7 +644,7 @@ memory expectation is corrected above.
 
 ## Stage 0 results
 
-Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), at `fda2e9e`, before any spec 021
+Measured 2026-11-23 on the maintainer's Windows machine (WinLibs GCC, devkitARM), at `7b00e5f`, before any spec 021
 change. Scripts in `build/ref-021/` (not committed).
 
 - `hello` sizes (`size`, text / data / bss): pc-release `hello.exe` 130 572 / 22 020 / 211 696; pc-debug 198 464 /

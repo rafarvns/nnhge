@@ -6,7 +6,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 VM 120 results (2026-11-22, on the branch before the merge): GCC 13 and 14 failed to compile
 `test_action_declare.cpp`'s one-line callers (`add(Act::Jump, {.name = ...})` → "cannot convert brace-enclosed
-initializer list"; the same braces inside test bodies compile); fixed by naming `nnh::ActionDesc{...}` there (35c7319).
+initializer list"; the same braces inside test bodies compile); fixed by naming `nnh::ActionDesc{...}` there (5804d1e).
 After that GCC 13/14 pass ctest (apart from spec 014's compile-message regexes, fixed in main since, and
 `nnh_script_pc_smoke`, which needs a `pc-dev` build folder). clang 18 ASan/UBSan: `nnh_tests` 1540/1540 clean; the
 example ctests pass with `detect_leaks=0` (SDL's offscreen EGL driver leaks). `fuzz_bindings` 2 minutes: cov 436, no

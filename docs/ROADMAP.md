@@ -55,7 +55,7 @@ Spec 012 stage 5 (2026-11-21, same machine; the Tiled converter and the `.tmj` a
 2.68–2.73 s after (no change: games without maps don't touch the converter). 3DS no-op 1.81 s. Editing a `.tsj`
 reconverts only the maps that use it, on PC and 3DS (`ninja -d explain`).
 
-Spec 013 (2026-11-21, same machine; before = commit `82f6e91`, the approved plan without remote code, after = the
+Spec 013 (2026-11-21, same machine; before = commit `2ec6270`, the approved plan without remote code, after = the
 finished spec; separate build folders, 3DS without ccache, PC with ccache but every edit a miss; three edits each):
 edit `examples/hello/main.cpp` → simulator 1.66–2.07 s before, 1.77–2.04 s after; → `.3dsx` 2.97–3.05 s before,
 2.93–2.97 s after. Clean 3DS engine (`nnh_core` + `nnh_platform_3ds`) 10.2 → 11.7 s; the rest (examples, NNH Link,

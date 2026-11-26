@@ -14,7 +14,7 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
   build times; clean engine build; `hello.exe` and `hello.3dsx` sizes and their Ninja step lists
   (`ninja -t commands hello`); `platformer` builds clean — files: this file (result) — covers III, AC-6
 
-  **Result (2026-11-22, commit `b9e52bf`, maintainer's PC: WinLibs GCC 16.2 + ccache with every edit a miss /
+  **Result (2026-11-22, commit `7aebf9a`, maintainer's PC: WinLibs GCC 16.2 + ccache with every edit a miss /
   devkitARM GCC 16.1 without ccache):** edit `examples/hello/main.cpp` → simulator (`pc-debug`, target `hello`)
   1.71 / 1.66 / 1.67 s; → `.3dsx` (`3ds-release`, target `hello`) 2.67 / 2.64 / 2.62 s. Clean 3DS engine
   (`nnh_core` + `nnh_platform_3ds`) 10.97 / 10.92 s; the rest of a clean `3ds-release` (examples, NNH Link, host
@@ -297,7 +297,7 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
   **Result (2026-11-22, Old 3DS XL, Development):** `data check: PASS checksum 0xD5BD3020 (4 enemies, 3 items, 1
   settings, index 595 bytes)`, the simulator's checksum; the two provoked warnings; the goblin/yeti/check screenshots
   as on PC. The first run stopped at "the game didn't answer": the example loads its media before frame 1 (2.2 s) and
-  `nnh` waited only 3 s for the `Hello` answer — now 10 s, restarted by each log line (commit 4530bd1).
+  `nnh` waited only 3 s for the `Hello` answer — now 10 s, restarted by each log line (commit a5111e0).
 
   **Result (2026-11-22, T8.1–T8.3):** `examples/data` (4 enemies, 3 items, `game.settings`; art and sounds by
   `art/make_art.py`). Screenshots read back: the bestiary (goblin, tinted from its data file, stats, drops with
@@ -314,7 +314,7 @@ T8.4, a scripted check where the maintainer only presses Y. Deviations found whi
   `fuzz_data`, `fuzz_data_index`, `fuzz_assetc_toml`, `fuzz_assetc_data` 60 s each without findings; `3ds-release`
   with the host-built programs — covers AC-5, FR-16
 
-  **Result (2026-11-22, VM 120, commit 905c708):** GCC 13 builds and passes ctest 229/229 (one `-Wformat-truncation`
+  **Result (2026-11-22, VM 120, commit b8a228c):** GCC 13 builds and passes ctest 229/229 (one `-Wformat-truncation`
   warning in `examples/data/check_scene.cpp`, fixed by a 128-byte buffer). clang 18 ASan/UBSan: `nnh_tests`
   1371/1371 and `nnh_assetc_tests` 233/233 with leak checks on; ctest green except `data_schema_explains_unknown_
   {member,enum_name}`, whose regexes knew only GCC's wording — they now also accept clang's ("no member named",

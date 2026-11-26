@@ -410,7 +410,7 @@ Verifiable: the gate script passes in the simulator; the console result recorded
     CLAUDE.md. The wiki needs nothing: `docs/guides` is already a section of `scripts/docs_tool.py`.
 - [x] **T8.6** [P] build budgets (edit one game `.cpp` → simulator and `.3dsx`; clean engine), before/after; ROADMAP
   baseline table — covers III
-  - Done (before = `82f6e91`, after = this tree, separate build folders, three edits of `examples/hello/main.cpp`):
+  - Done (before = `2ec6270`, after = this tree, separate build folders, three edits of `examples/hello/main.cpp`):
     simulator 1.66–2.07 → 1.77–2.04 s, `.3dsx` 2.97–3.05 → 2.93–2.97 s, clean 3DS engine 10.2 → 11.7 s, the rest of
     the 3DS tree 12.7 → 13.1 s; Release `hello.3dsx` +148 bytes. Recorded in the ROADMAP.
 - [x] **T8.7** [P] `docs/guides/debugging-on-3ds.md` and `docs/architecture/debugging.md` (remote section from design

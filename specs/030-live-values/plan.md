@@ -1019,7 +1019,7 @@ info identical, sections and symbols identical; pc-release `hello` sections and 
   inside discarded branches. The 3DS link uses `-ffunction-sections` and the 3dsx specs; no new out-of-line function was
   added to a Release-linked object (rule 2), so it didn't need `--gc-sections`.
 - **T0.3**: the goldens are checked by the ctests of both PC presets at every stage end (370 pc-debug / 337 pc-release at
-  the end); `kMaxTests` is 8192 against 3 990 tests, no raise needed.
+  the end); `kMaxTests` is 8192 against 3 982 tests, no raise needed.
 
 ### Stage 11 results
 
@@ -1033,7 +1033,7 @@ statuses: spec, plan, tasks and `specs/README.md` "implemented, Linux and consol
 ### Final stage-end guards (run `sfinal`, after stages 6–8 and 11)
 
 ctest pc-debug 372/372 (with `live_self_check_pc`, `live_check_script_pc`, `live_panel_script_pc`, `live_keep_pc`),
-pc-release 337/337; `nnh_tests` 3990, `nnh_tool_tests` 193; 3ds-release and 3ds-dev 0 warnings; `hello.3dsx` identical
+pc-release 337/337; `nnh_tests` 3982, `nnh_tool_tests` 193; 3ds-release and 3ds-dev 0 warnings; `hello.3dsx` identical
 to T0.1, `hello.elf` without debug info identical, sections and symbols identical; pc-release `hello` sections and symbols
 identical; Development `hello` 3ds-dev text 226 904 (+5 984 B over T0.1). `docs_tool check`: 0 broken links. Open: T3.7
 (the maintainer's PC yes/no above), stage 9 (VM 120), stage 10 (console), T11.8 (merge).

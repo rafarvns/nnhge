@@ -3,6 +3,7 @@
 
 #include "gfx/gfx3d_hook.hpp"
 #include "gfx/gfx_internal.hpp"
+#include "gfx/gfx_replay.hpp"
 #include "gfx/gfx_state.hpp"
 #include "log/engine_channels.hpp"
 #include "memory/memory_internal.hpp"
@@ -207,9 +208,20 @@ void detail::gfx_submit() {
     const int dropped = g_state.draws.dropped();
     const int dropped_tiles = g_state.tiles.dropped();
     // Cleared before asserting: a crash here leaves the frame open, and shutdown() submits it again.
-    g_state.draws.clear();
-    g_state.tiles.clear();
-    if (detail::g_gfx_particle_ops != nullptr) detail::g_gfx_particle_ops->end_frame();
+    if constexpr (build::kDevToolsEnabled) {
+        // Kept for paused ticks (spec 030 D52), cleared by gfx_begin_recording(); a frame that overflowed is cleared
+        // now as before (the asserts below must not see it again when shutdown() submits the open frame).
+        detail::g_gfx_held = dropped == 0 && dropped_tiles == 0;
+        if (!detail::g_gfx_held) {
+            g_state.draws.clear();
+            g_state.tiles.clear();
+            if (detail::g_gfx_particle_ops != nullptr) detail::g_gfx_particle_ops->end_frame();
+        }
+    } else {
+        g_state.draws.clear();
+        g_state.tiles.clear();
+        if (detail::g_gfx_particle_ops != nullptr) detail::g_gfx_particle_ops->end_frame();
+    }
     if (dropped > 0) {
         g_state.dropped_total += dropped;
         NNH_LOG_WARN(gfx, "%d draws dropped this frame (AppConfig::gfx.max_draws = %d)", dropped, g_state.max_draws);

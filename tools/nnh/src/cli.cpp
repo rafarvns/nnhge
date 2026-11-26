@@ -41,6 +41,19 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
                 return false;
             }
             out.console = args[++i];
+        } else if (a == "--tunes" || a == "--hold") {
+            if (out.command != Command::Run) {
+                error = a + " is for nnh run";
+                return false;
+            }
+            out.hold = true;
+            if (a == "--tunes") {
+                if (i + 1 >= args.size()) {
+                    error = "--tunes needs a file (a dump)";
+                    return false;
+                }
+                out.tunes = args[++i];
+            }
         } else if (a == "--script" || a == "--no-build" || a == "--keep-open") {
             if (out.command != Command::Run) {
                 error = a + " is for nnh run";
@@ -74,6 +87,10 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
         error = "install puts a .cia on the console: --pc doesn't apply";
         return false;
     }
+    if (out.hold && out.release) {
+        error = "Release builds have no live values: --tunes and --hold need a Development build (no --release)";
+        return false;
+    }
     if (!out.script.empty() && out.release) {
         error = "Release builds have no remote control: run scripts on a Development build (no --release)";
         return false;
@@ -88,7 +105,7 @@ const char* help_text() {
            "\n"
            "  nnh build <game> [--release] [--pc]   build a game for the 3DS (Development) or the PC\n"
            "  nnh run <game> [--release] [--console <ip>] [--pc] [--script <file.nnhs>] [--keep-open]\n"
-           "                [--no-build]\n"
+           "                [--no-build] [--tunes <file>] [--hold]\n"
            "                                        build, send to the Homebrew Launcher (press Y on the\n"
            "                                        console) and show the game's log; --pc runs the simulator.\n"
            "                                        While it runs, type script commands to drive the game\n"
@@ -97,7 +114,9 @@ const char* help_text() {
            "                                        only): exit 0 pass, 1 fail, 2 could not run. At its end\n"
            "                                        the game closes (the console goes back to the Homebrew\n"
            "                                        Launcher); --keep-open leaves it running. --no-build\n"
-           "                                        runs what is already built\n"
+           "                                        runs what is already built. --tunes <file> starts the game\n"
+           "                                        held and sends a dump's values before frame 1; --hold only\n"
+           "                                        starts it held (live values, Debug/Development builds)\n"
            "  nnh install <game> [--console <ip>]   build the .cia and install it with FBI (Remote Install ->\n"
            "                                        Receive URLs over the network)\n"
            "  nnh serve [--release]                 wait for NNH Link on the console: it lists the games,\n"

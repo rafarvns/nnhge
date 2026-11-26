@@ -1,3 +1,4 @@
+#include "tuning.hpp"
 #include "player.hpp"
 
 #include <nnh/input.hpp>
@@ -5,10 +6,6 @@
 namespace {
 
 // Pixels per frame (60 Hz).
-constexpr float kRunSpeed = 1.75f;
-constexpr float kGravity = 0.3f;
-constexpr float kJumpSpeed = 5.6f;
-constexpr float kMaxFall = 6.0f;
 
 } // namespace
 
@@ -33,12 +30,12 @@ void Player::spawn(nnh::Vec2 feet) {
 
 void Player::update(const nnh::collision::Grid& grid, const PlayerInput& input) {
     const float run = static_cast<float>(input.run);
-    velocity_.x = run * kRunSpeed;
+    velocity_.x = run * g_tuning.run_speed;
     if (input.run != 0) facing_left_ = input.run < 0;
 
     const bool drop = input.jump && input.down && on_ground_; // through a one-way plank
-    if (input.jump && on_ground_ && !drop) velocity_.y = -kJumpSpeed;
-    velocity_.y = velocity_.y + kGravity > kMaxFall ? kMaxFall : velocity_.y + kGravity;
+    if (input.jump && on_ground_ && !drop) velocity_.y = -g_tuning.jump_speed;
+    velocity_.y = velocity_.y + g_tuning.gravity > g_tuning.max_fall ? g_tuning.max_fall : velocity_.y + g_tuning.gravity;
 
     const auto moved = nnh::collision::move(grid, box_, velocity_, {.drop_through = drop});
     box_.x = moved.position.x;

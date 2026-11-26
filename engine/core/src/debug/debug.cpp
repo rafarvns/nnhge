@@ -10,6 +10,8 @@
 #include "core/engine_state.hpp"
 #include "debug/debug_list.hpp"
 #include "debug/dev_tools.hpp"
+#include "gfx/gfx_replay.hpp"
+#include "nnh/build.hpp"
 
 namespace nnh {
 namespace {
@@ -34,17 +36,26 @@ detail::DebugList& current() {
 } // namespace
 
 void detail::debug_record_text(Screen screen, int x, int y, const char* text, Color color) {
-    current().add(screen, x, y, text, color);
+    if constexpr (build::kDevToolsEnabled) { // counted for the held frame's replay (spec 030)
+        if (current().add(screen, x, y, text, color)) ++g_debug_recorded;
+    } else {
+        current().add(screen, x, y, text, color);
+    }
 }
 
 void detail::debug_record_rect(Screen screen, int x, int y, int w, int h, Color color) {
-    current().add_rect(screen, x, y, w, h, color);
+    if constexpr (build::kDevToolsEnabled) {
+        if (current().add_rect(screen, x, y, w, h, color)) ++g_debug_recorded;
+    } else {
+        current().add_rect(screen, x, y, w, h, color);
+    }
 }
 
 void detail::debug_text_flush() {
     debug_pass_submit(current());
     g_current ^= 1;
     current().clear();
+    if constexpr (build::kDevToolsEnabled) g_debug_recorded = 0;
 }
 
 void detail::debug_text_clear() {

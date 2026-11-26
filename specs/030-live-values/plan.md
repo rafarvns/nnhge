@@ -1,6 +1,6 @@
 # Plan 030: Live values
 
-Status: approved 2026-11-26 (the maintainer, the seven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as
+Status: implemented 2026-11-26; Linux checks passed; console correctness passed, console run 2 (bench budgets) pending; approved 2026-11-26 (the maintainer, the seven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as
 recommended, and those answers are this plan's decisions; seven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D51, D52 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -124,7 +124,7 @@ at the start of the frame it names. A step while running pauses first.
 poll events (quit still quits), read input, the remote session (messages due at the next game frame are applied: sets
 queue, gets and follows answer at once with the current values, screenshots are taken, `step`/`resume` end the pause),
 engine controls, the overlay and panel, then a platform frame that **replays the held frame** — the last game frame's
-recorded 2D, tile, particle and 3D lists (in Development builds gfx clears them when the next game frame's recording
+recorded 2D, tile and particle lists (3D is not replayed: R14) (in Development builds gfx clears them when the next game frame's recording
 begins instead of after submitting) — plus that frame's game debug text and the live overlay drawn now. The replay
 re-resolves textures by slot and generation (D47: a released texture is skipped) and is dropped (cleared screens and
 the panel only, with the note `frame not held: the scenes changed`) when scene changes were applied at the start of the
@@ -465,9 +465,9 @@ No other overlap: 030 doesn't touch `gfx.hpp`, `TextOptions`, the UI, fonts, loc
 
 | Item | 3DS | 64-bit PC | Notes |
 |------|-----|-----------|-------|
-| tunable or action | 80 B | 96 B | pointer, hash, default/min/max/step/pending bits, changed frame, callback + context, enum names, slot generation, kind, flags (48 B on the 3DS) + name 32 B |
+| tunable or action | 84 B | 104 B | pointer, hash, default/min/max/step/pending bits, changed frame, callback + context, enum names, slot generation, kind, flags (48 B on the 3DS) + name 32 B |
 | registered watch | 48 B | 56 B | pointer, hash, generation, kind, flags + name |
-| per-frame watch | 80 B | 80 B | hash, last frame, kind, length, value 32 B, name 32 B |
+| per-frame watch | 76 B | 76 B | hash, last frame, kind, length, value 32 B, name 32 B |
 | follow | 12 B × 16 | same | hash, every, frames left, next frame |
 | remote op queue | 12 B × 64 | same | kind, seq, hash, bits |
 | sorted indexes, shown table | 2 B × (128 + 64 + 64) + 2 B × 128 | same | |
@@ -729,3 +729,411 @@ for the maintainer: questions 1–7 below and the panel's frame cost at risk (ri
 7. **Development `hello` growth**: pause, engine controls, pages, the replay, audio hold and the remote decoders are in
    every Debug/Development game: estimated 3–6 KB of `.text` (Release unchanged). Accept (recommended), or ask for a
    smaller budget (then the replay — the largest part — becomes the fallback of risk 2).
+
+## Implementation notes
+
+Built in the worktree `spec-030` from `main` at `dfd2867` (spec 029 merged). Results per stage below; deviations from
+the plan are listed under "Implementation refinements".
+
+### Implementation refinements
+
+- **R1 (T1.1) Name rules in the public header.** The constexpr rule checker (`detail::live_name::check`) lives in
+  `<nnh/live.hpp>` (≈ 25 lines), because `Name`'s `consteval` constructor needs it and games can't see `src/`;
+  `src/live/live_names.{hpp,cpp}` reuses it and adds the leaf/group split, group hashes and the run-time check. An empty
+  name is `live_name_empty_part`.
+- **R2 (T1.5) LiveEntry bounds.** The fixed part is 32 bytes (u32 frame, u32 hash, u8 kind, u8 flags, u8 name length,
+  u8 enum count, 5 × u32), so a record is 33..575 bytes (not 28..540): names 1..31 bytes, enum names 1..15 bytes each
+  (`remote::kMaxEnumNameBytes`, a limit the plan left open; `tune()` asserts it), at most 32 of them.
+- **R3 (T1.5) Kinds.** One `live::Kind` enum covers tunables and watches (`Float 1, Int32 2, Bool 3, Color 4, Enum 5,
+  Action 6, Int8 7, Int16 8, UInt8 9, UInt16 10, UInt32 11, Vec2 12, Text 13`): the `kind` byte of LiveEntry and
+  LiveValue records.
+- **R4 (T1.3) Ryu configuration.** `RYU_FLOAT_FULL_TABLE` (the 3 KB float table; the double tables aren't vendored) and
+  `NDEBUG` are set on the object library's command line; the files are unmodified. `f2s_buffered_n()` prints `d.dddE±x`;
+  `live_format.cpp` splits its digits and exponent and lays them out.
+- **R5 (T1.4) The exhaustive ctest** `live_float_text_exhaustive` is registered with label `slow` and `DISABLED` unless
+  `-DNNH_SLOW_TESTS=ON` (minutes long; the build VM runs it at T9.1).
+- **R6 (T1.5) Older tests.** `remote_wire_rejects_unknown_types` and `remote_slider_message_refuses_bad_values` used
+  type 9 as "the first unknown type"; they now use 12.
+- **R7 (T1.5) `nnh` side.** `game_records` keeps a live record's payload (`Record::payload`) and the script runner routes
+  live records to `on_live_record()` (`script_runner_live.cpp`, filled at T6.3).
+
+### Stage 0 results
+
+- T0.0: `remote_wire.hpp` on `main` at `dfd2867`: messages 1–8 (`Language = 8`), records 1–7. Spec 030 takes messages
+  9–11 and records 8–12 as planned.
+- T0.1 (baselines in `build/ref-030/t0/`, script `build/ref-030/hello_id.sh`): `hello`
+  - 3ds-release `hello.elf`: text 202204, data 28360, bss 107368, file 2 509 112 B; SHA-256 `2423db7941cf922f…`
+    (`hello.3dsx` `ec4a65bad1d226a4…`);
+  - 3ds-dev: text 220920, data 32872, bss 109992;
+  - pc-release `hello.exe`: text 134880, data 22052, bss 212400, file 285 885 B (the PE timestamp changes per link, so
+    pc-release is compared by `size` and the `nm -C` symbol list, as the plan says);
+  - pc-debug: text 209596, data 26820, bss 215152.
+  - 3ds-release `platformer.elf` `.text` 452672.
+  - Header cost (GCC 15, MinGW): a one-line TU with `<nnh/math.hpp>` preprocesses to 63 lines (math.hpp includes nothing);
+    `<cstdint>` + `<cstddef>` alone add ≈ 550 lines, `<type_traits>` ≈ 3 200. See "Stage 2 results" for the header.
+- T0.2/T0.3: the reference screenshots and the full per-object disassembly were not taken: every stage end compares
+  the Release `hello` bytes (3ds-release SHA-256, pc-release size and symbols), which is the property they protect; the
+  goldens are checked by the ctests of both PC presets at each stage end (368 pc-debug / 337 pc-release ctests at
+  stage 1). `kMaxTests` has room (see stage 2).
+
+### Stage 1 results
+
+- Ryu vendored from <https://github.com/ulfjack/ryu> at commit `4c0618b0e44f7ef027ebae05d2cc7812048f7c8f`
+  (2026-02-09), BSL-1.0 chosen (`LICENSE-Boost`); the files and their SHA-256 are in `third_party/ryu/README.md`
+  (`ryu/f2s.c` `0a98f4fce6be4c59…`).
+- New tests: `test_live_names` (14), `test_live_steps` (23), `test_live_format` (11, including 10⁶ seeded floats and
+  every power of two read back through `std::from_chars`), `test_live_wire` (14), `test_fuzz_live_wire` (1); compile-fail
+  ctests `live_name_{too_long,bad_character,empty_part,too_deep}_{fails,explains}` and `live_name_good_compiles`.
+- Stage-end guards: ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev build with 0 warnings; 3ds-release
+  `hello.elf` SHA-256 identical, pc-release `hello` size and symbols identical. Debug/Development `hello` (the remote
+  decoder now links `live_wire.cpp` and the name check): 3ds-dev text +488 B, pc-debug text +5 976 B.
+- **R8 (T2.2) Integers by size and signedness.** `std::int32_t` is `long` on the 3DS and `int` on the PC, so
+  `tune(name, int*)` would compile on one and not the other (constitution I). The int overload is a template accepting
+  `int` and 32-bit `long`; watches and `show()` map any integer type (not `char`, not `bool`) to its kind by size and
+  signedness (`detail::live_api::kind_of<T>()`). The header uses `__is_same`/`__is_enum` instead of `<type_traits>`
+  (GCC, Clang and MSVC builtins), keeping it light.
+- **R9 (T2.8) The Release `hello` check with debug info.** 3ds-release builds with `-g`: editing `app.cpp` (even only
+  inside discarded `if constexpr` branches) moves its line table, so `hello.elf`'s SHA-256 changes by its DWARF alone.
+  The guard therefore compares `hello.3dsx` (what ships) byte for byte and `hello.elf` with its debug info stripped
+  (`arm-none-eabi-strip --strip-debug`) against T0.1's, built again from `dfd2867`'s `app.cpp` to confirm (both
+  identical at stage 2); the ELF's section sizes and symbols are compared too. pc-release: section sizes and `nm -C`.
+- **R10 (T2.3) Remote operations over panel edits.** At the application point the queue is resolved first, then the
+  pending values are written, so a remote `set` overrides a panel edit made earlier in the same frame
+  (`live_apply_latest_edit_wins`).
+- **R11 (T2.5) The dump's first line** is `dump: begin frame <F> (<n> changed of <m>)`: the game's name is left out
+  (core doesn't keep the title in Release-linked state, and `nnh` names the file); `m` counts tunables without actions.
+- **R12 (T2.6) Plain loops** are tested in `test_live_cost.cpp` (`live_cost_a_plain_loop_game_uses_everything`) instead of
+  a separate file.
+
+### Stage 2 results
+
+- The module (`src/live/`): `live_block.hpp`, `live_registry`, `live_tune.cpp`, `live_apply`, `live_watch`, `live_dump`,
+  `live_ops`, `live_control.cpp` (pause/show_panel back ends, filled at stages 3–4), `debug/live_hook.{hpp,cpp}` (the
+  ops pointer). `app.cpp` calls `frame_start` after `++frame_count` and `frame_end` after the 2D submit, both in
+  Development branches.
+- Entry sizes (pc-debug, 64-bit): `Entry` 104 B, `WatchEntry` 56 B, `ShownEntry` 76 B, `Follow` 12 B, `RemoteOp` 12 B;
+  the 3DS's 32-bit pointers give `Entry` ≤ 84 B (checked by `live_registry_block_size_follows_the_capacities` when
+  pointers are 4 bytes; measured on the console run). The block at the defaults: `block_bytes(128, 64, 64)`.
+- Tests: `test_live_registry` (9), `test_live_tune` (10), `test_live_release` (1), `test_live_apply` (12),
+  `test_live_watch` (7), `test_live_dump` (3), `test_live_cost` (3), `test_live_random_ops` (2, 100 000 seeded
+  operations with guard bytes). `nnh_tests live_`: 132 pass in pc-debug and pc-release; the whole `nnh_tests`: 3917.
+- Header: a one-line TU with `<nnh/live.hpp>` preprocesses to 1 020 lines against 611 for `<cstdint>` + `<cstddef>` +
+  `<nnh/math.hpp>` (+409, over the plan's +250: the header's own API and docs; no `<type_traits>`), `-fsyntax-only`
+  ≈ 0.39 s for both (no measurable difference, within the +0.03 s budget).
+- Stage-end guards: ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev 0 warnings (two Release-only
+  unused warnings fixed after the run); `hello.3dsx` identical, `hello.elf` without debug info identical (R9);
+  pc-release `hello` sections and symbols identical. Development `hello`: 3ds-dev text 221 456 (+536 B over T0.1).
+- **R13 (T3.1) The pause and the overlay's toggle read the engine controls in core.** `overlay_update()` keeps the
+  frame-time history only; SELECT + L, F1 and the pages' chords are taken by `overlay_pages_input()` from the dev
+  controls of each tick (so they work on paused ticks). A new engine starts with the overlay hidden on the Stats page
+  (`overlay_reset()`'s Development branch): an existing test (`visible_overlay_draws_fps_and_memory_before_the_frame_ends`)
+  left it shown for whichever test ran next, which the new test order exposed.
+- **R14 (T3.4) The held frame.** In Development `gfx_submit()` keeps the 2D, tile and particle lists (flag
+  `g_gfx_held`, defined in the Development-only `gfx_replay.cpp`); `gfx_begin_recording()` clears them right after the next
+  game frame's `begin_frame()`, before any game code. A frame that dropped draws or tiles is cleared at once as before
+  (its assert must not fire again when `shutdown()` submits the open frame). The debug text the game recorded is counted
+  in `debug.cpp`'s Development branch and replayed from `debug_list_last_frame()`. 3D draws are not replayed (the 3D
+  module's records end with its own submit); a paused 3D game shows its 2D layers and the overlay.
+- **R15 (T3.4, rule 2) Shared state** between Release-linked files and the new Development files goes through `extern`
+  variables the Development files define (`g_gfx_held`, `g_debug_recorded`, `g_debug_game_mark`, `g_time_keep_delta`,
+  `g_dev_scenes_changed`, `g_dev_frame_requests`), used only inside discarded branches in Release.
+- **R16 (T3.1) Fake platform.** `platform_fake::queue_dev_requests({...})` returns one mask per `poll_dev_requests()` (so a
+  test drives a pause and its ticks inside one `nnh::frame()`), and `quit_after_polls(n)`.
+- **R17 (T4.2) Rows on demand.** The panel's rows are generated from the sorted index when asked (`row_count`, `row_at`),
+  nothing stored; groups open by hash (16 at most).
+- **R18 (stages 3–4) One commit** for stages 3 and 4: they share `overlay.cpp`, `dev_pause.cpp`, `live_ops.cpp` and the
+  CMake lists, and one stage-end run covered both.
+
+### Stages 3 and 4 results
+
+- Pause and step in core (`app/dev_pause.*`, `app/pause_state.cpp`), engine controls (`debug/dev_controls.*`), the
+  held frame (`gfx/gfx_replay.*`, `debug/debug_held.cpp`), audio hold (`audio/audio_hold.cpp`), the frame clock restart
+  (`clock.cpp`'s Development branch); the simulator's Pause/F10 and `NNH_HOLD=1`, the 3DS's `--nnh-hold`, the fake's
+  requests. The overlay's pages (`debug/overlay_pages.*`), the DevPanel blocker, the panel's model, touch, layout and
+  drawing (`live/live_panel_*`).
+- Tests: `test_dev_pause_state` (11), `test_dev_pause` (7), `test_dev_controls` (5), `test_gfx_replay` (4),
+  `test_audio_hold` (2), `test_overlay_pages` (6), `test_live_panel_model` (10), `test_live_panel_touch` (5),
+  `test_live_panel_draw` (3). The whole `nnh_tests`: 3970 pass.
+- Stage-end guards (run `s34`): ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev one warning each
+  (a `-Wformat-truncation` in `live_panel_draw.cpp`, fixed after the run: 0); `hello.3dsx` identical, `hello.elf` without
+  debug info identical, sections and symbols identical; pc-release `hello` sections and symbols identical.
+  Development `hello`: 3ds-dev text 225 976 (+5 056 B over T0.1: pause, controls, pages, replay, audio hold, remote
+  decoders — inside question 7's 3–6 KB), pc-debug text 223 988.
+- Not done in this pass: T3.7's by-hand simulator check (Pause/F10 by keyboard) and T4.5's screenshot comparison
+  script; the pages' look is checked by the example's screenshots (stage 7).
+
+### Stage 5 results
+
+- Session glue `remote/remote_live.cpp` (LiveSet/Live to the module or refused with reason 7 and an empty catalogue
+  without it; Pause to core's pause; LiveState on each pause change, after a catalogue, and on each paused tick that
+  applied messages), `remote_session.cpp` (dispatch, detach). The module's side `live/live_remote.cpp` (catalogue in
+  name order in pieces from the registry, LiveEntry/LiveRemoved while the PC listens, Get/Follow answered by LiveValue at
+  the frame end — at once on paused ticks, flagged paused —, refusals as LiveRefused).
+- Fuzzing: `tests/fuzz/fuzz_live_remote.cpp` (the target: a registry of every kind with guard bytes, pauses bounded by
+  the fake's `quit_after_polls`), the mini-fuzz `live_remote_target_survives_mutated_sessions` (1 500 mutants) and
+  `libfuzzer_live_remote.cpp` for the build VM (T9.1).
+- Tests: `test_remote_live` (7 + `remote_pause_step_and_resume_by_messages`); `nnh_tests`: 3979 pass.
+- **R19 (T5.1) Stage-end run.** Stage 5 was committed with the whole `nnh_tests` green; its ctest/3DS/`hello` guards ran
+  with stage 6's (see "Stage 6 results").
+
+### Stages 6 and 7 results (partial)
+
+- `nnh` side: the catalogue mirror (`live_catalog.*`), typed value parsing and comparison (`live_text.*`, exact bits,
+  the refusal texts of the plan, did-you-mean), the script lines (`script_live.*`: set, reset, action, dump, pause,
+  resume, step [N], expect-value NAME OP VALUE [~ E] [within N], the paused-section rules), the timeline's live events,
+  the runner (`script_runner_live.cpp`: the catalogue requested at the Hello answer when the script uses live values —
+  the script's clock starts after it —, names and values resolved when their message is sent, expect-value through a
+  follow, LiveState as progress while paused, refusals failing with their line, dumps captured from the log and saved
+  by the session as `build/logs/<game>-<date>-<time>-tunes.toml`), interactive `tunes`, `watches`, `get`, `watch`,
+  `unwatch` and the typed script commands; the `--tunes` reader (`tunes_file.*`).
+- `examples/live`: the showcase (`live_scene.*`, `sim.*`, `tuning_handles.*`), the self-check (defaults golden
+  **`29C765A7`**, check script golden **`7A849F13`**, also in `nnh_tests` as `live_example_*`), a reduced bench
+  (`show64`, `register150`), `tests/check.nnhs`. ctests `live_self_check_pc` and `live_check_script_pc` pass:
+  `nnh: PASS (41 lines, frames 1-88)` — every set, expect-value, the group reset, the dump (saved, 8 changed of 9), the
+  pause, `step 3`, the paused screenshot, the resume, the self-check's sum and the bench lines.
+- Screenshots read back (`LIVE_SHOT=tunables|watches|paused`): the Tunables page (groups, values right-aligned, bars,
+  ranges, the `*` mark, `-`/`+` and `run` buttons, the footer), the paused frame (the held world and debug text, header
+  `F 20 PAUSED`).
+- Bench on PC (pc-debug, not judged): `show64` avg 0.0415 ms (worst 6.79 ms, the first call's table setup),
+  `register150` avg 27.8 ms (Debug; registration is not a per-frame operation).
+- **R20 (T6.2) Colours in scripts are quoted** (`set colors/sky "#FFC040"`): `#` starts a comment in `.nnhs`.
+- **R21 (T6.2) A screenshot while paused takes no frame** (the parser marks steps written in a paused section; the
+  timeline doesn't move the clock for them), as the plan says; the runner treats a paused LiveState's frame as applied.
+- **R22 (T7.5) The 3-frame step** is checked by the unit tests (`dev_pause_step_runs_exactly_n_game_frames`,
+  `remote_pause_step_and_resume_by_messages`); `check.nnhs` checks the paused value with `expect-value frame/count > 0`
+  because absolute frame numbers differ between the simulator and the console (the catalogue's answer frame).
+- **R23 (T7.2) The example draws its balls with rectangles** and has no particle emitter (fx/dust's callback logs
+  `live: dust rebuilt <n>` instead of rebuilding a ParticleDesc).
+
+### Not done (open, for the lead)
+
+- T6.1–T6.5 unit tests on the `nnh` side (`test_live_catalog`, `test_live_text`, `test_script_live`,
+  `test_script_timeline_live`, `test_script_runner_live`, `test_tunes_file`, `test_dump_capture`): the code is exercised
+  end to end by `live_check_script_pc`, but has no unit tests yet. Interactive `expect-value` isn't supported.
+- `nnh run --tunes FILE` and `--hold` (cli.cpp, run_pc.cpp `NNH_HOLD=1`, netloader `--nnh-hold`): the reader exists
+  (`tunes_file.*`) and the game side (held start) is done; the options and `keep.nnhs`/`keep_second.nnhs` are not.
+- `panel.nnhs` (AC-3 by script), the platformer's tunables (T7.6), the full bench phases (hidden192, tunables page
+  frame cost: they need profile scopes), the ARM pre-check (T7.7), stage 8 (mutants, release strings, probes, build
+  times), stage 11 (docs: `docs/api/live.md`, the guide, ROADMAP, statuses).
+- Stage 9 (VM 120) and stage 10 (console) are the lead's.
+
+## Stage 10: console run (prepared)
+
+Old 3DS XL, Development builds (`scripts/dkp.sh cmake --build --preset 3ds-dev --target live_3dsx`). Each run: Homebrew
+Launcher, press **Y**, then on the PC:
+
+1. `build/pc-debug/tools/nnh/nnh run live --script examples/live/tests/check.nnhs` — expected (as in the simulator,
+   frame numbers may differ): the eight `expect-value ... passed` lines, `expect "live: dust rebuilt 20" matched`,
+   `dump saved: build/logs/live-<date>-<time>-tunes.toml` (8 changed of 9), `expect-value frame/count > 0 passed`, the
+   `paused` screenshots (top: the held world; bottom: `F <n> PAUSED`), **`live: sum 7A849F13`** (the PC's), the bench
+   lines (`live bench: show64 ...`, `register150 ...`, `live bench: PASS|FAIL`), `nnh: PASS`.
+2. (yes/no, by hand, ≈ 1 minute) `build/pc-debug/tools/nnh/nnh run live` (no script): SELECT + L, SELECT + R (Tunables),
+   open `player`, raise `jump` with the D-Pad Right, close the overlay (SELECT + L), press A: a higher jump? SELECT + L,
+   SELECT + R, SELECT + Y: the world stays on screen, `PAUSED`; SELECT + X steps one frame; SELECT + Y resumes — yes/no.
+
+### Stage-end guards after stages 5–7 (run `s67`)
+
+ctest pc-debug 370/370 (with `live_self_check_pc` and `live_check_script_pc`), pc-release 337/337; 3ds-release and
+3ds-dev 0 warnings (the whole tree, `examples/live` included); `hello.3dsx` identical to T0.1, `hello.elf` without debug
+info identical, sections and symbols identical; pc-release `hello` sections and symbols identical. Development `hello`:
+3ds-dev text 226 880 (+5 960 B over T0.1, question 7's 3–6 KB), pc-debug text 225 416. `nnh_tests` 3982,
+`nnh_tool_tests` 171. `docs_tool check`: 0 broken links.
+
+### Stage 6 completed (second pass)
+
+- Tests: `tools/nnh/tests/test_live_tool.cpp` (11: catalogue, value parsing with every refusal's exact text,
+  expected values and comparisons, the `--tunes` reader, its errors, a 20 000-mutant mini-fuzz, the steps it becomes,
+  `--tunes`/`--hold` on the command line, `--nnh-hold` in the netloader's argv) and `test_script_live.cpp` (12: parsing,
+  errors with lines, paused sections, the timeline's clock, the runner against a fake console — catalogue first, sets
+  resolved when sent, expect-value pass/fail/within, refusals, an older game, `--tunes` names skipped, dumps captured,
+  interactive tunes/get/expect-value). `nnh_tool_tests`: 193.
+- `nnh run --tunes FILE` (implies `--hold`) and `--hold`: the file is read and checked before anything is built; its
+  values become `set` steps (origin `file:line`, an undeclared name noted and skipped) and a `resume` before the script,
+  or typed lines in interactive mode; the simulator gets `NNH_HOLD=1`, the console `--nnh-hold` in its argv.
+- Interactive `expect-value`: reported (pass or the value seen), never ends the session.
+- Scripts: `keep.nnhs` / `keep_second.nnhs` (ctest `live_keep_pc`: run 1 dumps, run 2 with `--tunes` finds
+  `player/jump == 7.5` **at frame 1**), `panel.nnhs` (ctest `live_panel_script_pc`: buttons — open, step, ×10 with L and
+  R, the max stop, an action, a colour channel —, touch — a group row, a bool, a drag across a bar, `+` —, the Watches
+  page, A held while the overlay closes stays blocked until released): `nnh: PASS (110 lines, frames 1-192)`.
+- **R24 (T7.5) Script timing.** A `touch` and its `untouch` need a frame between them, and a button pressed in the same
+  frame as the SELECT + L that closes the overlay reaches the game (the blocker lifts before that frame's input is
+  read): `panel.nnhs` waits between them.
+
+### Stage 7 completed (second pass)
+
+- **T7.6 The platformer** (`examples/platformer/tuning.{hpp,cpp}`): `player/run`, `player/gravity`, `player/jump`,
+  `player/max_fall`, `camera/look_ahead`, `camera/look_ahead_speed`, registered once in `main()` (R25: not in the level
+  scene, because two level scenes can be entered at once through the doors and a name can't be registered twice), with
+  the old constants as defaults. `platformer_replay_matches_script` passes; `level.nnhs --pc` matches every replay line
+  (`replay: done 900 frames sum E445E8B2: 60 Hz PASS`). `gate.nnhs` is the console's 60 Hz tile gate: in the pc-debug
+  simulator it reports `bench: FAIL` on timing alone (as before this spec; not a check that applies to a Debug PC build).
+- **T7.4 The full bench** (frame-driven `LiveBench`; Development profile scopes `live start`, `live end`, `live page`):
+  pc-dev — `show64` 0.0226 ms (worst 0.078), `hidden192` 0.0008 ms (worst 0.043), `tunables` page 0.0332 ms (worst
+  0.155), `watches` 0.0296 ms, `register` (100 tunables + 50 watches) 0.442 ms: `live bench: PASS`. Debug logs `not judged`.
+  `check.nnhs` waits for `live bench: memory`, the line before the verdict.
+- **T7.7 ARM pre-check** (3ds-dev objects, `build/ref-030/arm_precheck.sh`): two `__aeabi_*` calls found and removed —
+  `__aeabi_l2f` in the int bar fill (now unsigned 32-bit differences, a VFP conversion) and `__aeabi_uidivmod` in the
+  per-frame watches' hash table, i.e. in `show()` (R26: the table is a power of two, indexed by a mask). Now none in
+  stepping, drawing, `show()`, the panel, the pause or the replay. Instructions: `live_steps` 682, `live_panel_draw` 658,
+  `live_panel_model` 1425, `live_panel_touch` 320, `live_watch` 377, `live_format` 484, `live_apply` 598, `live_registry`
+  1313, `live_remote` 637, `dev_pause` 197, `pause_state` 70, `dev_controls` 86, `overlay_pages` 184, `debug_held` 47,
+  `gfx_replay` 84, `audio_hold` 100. Largest stack frames (`sub sp`): `live_panel_draw` 308 B, `live_dump` 272 B,
+  `live_apply` 196 B, `live_remote` 116 B, `dev_pause` 72 B: along the page drawing and the paused tick well under 1 KiB.
+  Expected on the console: the hidden cost a few µs, the Tunables page's CPU 0.2–0.4 ms (≈ 10× the pc-dev figures).
+
+### Stage 8 results
+
+- **T8.1 Mutants** (`build/ref-030/mutants.py`, 20, filters `live_ dev_ overlay gfx_replay remote_live remote_pause
+  audio_hold`): grid `>` as `>=`, down floored at min + step, the max stop dropped, drag rounding down, colour channels
+  wrapping, enums wrapping, `changed` on equal bits, the callback before the write, `changed()` for ever, a stale
+  generation accepted, duplicate names accepted, `show()` never expiring, the dump with unchanged values, the float text's
+  exponent bound −6, step N running N + 1, the frame clock not restarted, the panel never blocking the game, the replay
+  after a scene change, wrapping on repeats, ×10 as ×9: **all 20 killed**.
+- **T8.2 Release strings**: `check_release_strings.sh` gains the dump, refusal, held-start and replay texts, the panel's
+  hints, the misuse messages, the module's and Ryu's symbols and the example's names. pc-release `live`, `hello` and
+  `platformer` have none of them; the script still stops at `NNH_REMOTE`, which every pc-release game has had since spec
+  013 (`remote_pc.cpp`'s getenv, present in T0.1's `hello` symbols too) — not this spec's. pc-release `live.exe` has no
+  live-values symbol (`nm`); its self-check prints the defaults' sum.
+- **T8.3 Link probes** (3ds-dev): `hello` links no module code — its only live symbol is
+  `remote::encode_live_refused` (the session refusing live messages in a game without the module, reason 7); the live
+  example links the module and Ryu: ≈ 34.4 KB of live symbols (module objects 38.2 KB of text before linking; Ryu's
+  `f2s` 3.9 KB), above the plan's 10–14 KB estimate (R27: the panel, the remote side and the formatter are bigger than
+  estimated; Development builds only). Release `hello`: unchanged (every stage end).
+- **T8.4 Build times** (this machine today): edit `examples/live/live_scene.cpp` → pc-debug 2.1–2.3 s, `.3dsx` (3ds-dev)
+  4.1–4.3 s; the same edit to `examples/ui/title_scene.cpp` takes 2.3–2.5 s today, so the live example is in line (the
+  machine is slower than when the 2 s budget was measured).
+- **T0.2 / T4.5 Screenshots**: `build/ref-030/compare.sh` takes `hello`, `sprites`, `ui` (title), the platformer (level 1
+  at 90, replay at 64 and 312) and `models` (check) from a pc-debug tree of `dfd2867` and from this branch: all identical
+  byte for byte. The platformer's bench HUD shows frame times (never byte-stable, even between two runs of the same build)
+  and the Stats page likewise, so they are left out.
+- **T3.7** (Pause/F10 by keyboard in the simulator) can't be driven by a script (keys, not remote messages): the same
+  requests are covered by the fake platform's tests; it is on the maintainer's yes/no list below.
+
+### Maintainer's yes/no list (PC)
+
+1. `build/pc-debug/examples/platformer/platformer.exe`: press Pause — the level stays on screen and the music holds;
+   F10 steps one frame; Pause resumes. F1, SELECT + R (Tunables), raise `player/jump`: a higher jump. Yes/no.
+- **T0.1 object listings** (`build/ref-030/t0/objects/*.base.txt` / `*.now.txt`): a 3ds-release tree of `dfd2867` built
+  apart (`/e/tmp/base030`) and this branch: the disassembly of `app.o`, `overlay.o`, `debug.o`, `gfx_frame.o`, `clock.o`,
+  `scenes.o` and `system_3ds.o` is identical instruction for instruction — every Release-linked file this spec edits only
+  inside discarded branches. The 3DS link uses `-ffunction-sections` and the 3dsx specs; no new out-of-line function was
+  added to a Release-linked object (rule 2), so it didn't need `--gc-sections`.
+- **T0.3**: the goldens are checked by the ctests of both PC presets at every stage end (370 pc-debug / 337 pc-release at
+  the end); `kMaxTests` is 8192 against 3 982 tests, no raise needed.
+
+### Stage 11 results
+
+`docs/api/live.md` (complete), `docs/guides/tuning-your-game.md` (new), and sections in `docs/api/debug.md`,
+`docs/api/simulator.md`, `docs/architecture/debugging.md`, `docs/guides/nnh-tool.md`,
+`docs/guides/testing-on-the-console.md`, `docs/tech/devkitpro-3ds.md`, `docs/architecture/project-structure.md`,
+`docs/architecture/decisions.md` (D51, D52 implemented), `docs/REFERENCES.md`, the Ryu row of
+`docs/tech/third-party.md`; `CLAUDE.md` (the live values paragraph and commands), `docs/ROADMAP.md` (the item ticked),
+statuses: spec, plan, tasks and `specs/README.md` "implemented, Linux and console pending". `docs_tool check`: 0 broken.
+
+### Final stage-end guards (run `sfinal`, after stages 6–8 and 11)
+
+ctest pc-debug 372/372 (with `live_self_check_pc`, `live_check_script_pc`, `live_panel_script_pc`, `live_keep_pc`),
+pc-release 337/337; `nnh_tests` 3982, `nnh_tool_tests` 193; 3ds-release and 3ds-dev 0 warnings; `hello.3dsx` identical
+to T0.1, `hello.elf` without debug info identical, sections and symbols identical; pc-release `hello` sections and symbols
+identical; Development `hello` 3ds-dev text 226 904 (+5 984 B over T0.1). `docs_tool check`: 0 broken links. Open: T3.7
+(the maintainer's PC yes/no above), stage 9 (VM 120), stage 10 (console), T11.8 (merge).
+
+## Console run 1 (Old 3DS XL, 3ds-dev; log `nnhge-console-live1.log`, by the lead)
+
+Correctness passed: every `expect-value`, the dump saved, `live: sum 7A849F13` (the PC's), `nnh: PASS`. The bench missed
+every target: `show64` 1.1356 ms (worst 1.408), `hidden192` 0.3082 ms (worst 88.67), the Tunables page 1.4408 ms (worst
+1.694), the Watches page 1.3550 ms (worst 1.582), `register` (100 tunables + 50 watches) 693 ms (worst 1142).
+
+## Optimisation round (T10.3)
+
+- **Cause** (`register` ≈ 1500× the PC, a 88 ms spike while idle): every live record went out in its own
+  `platform::remote_send` — two per registration (the LiveEntry's fixed part and its name), one per removal. The check
+  script had asked for the catalogue, so the bench's 150 registrations and 150 removals a frame made ≈ 450 socket sends
+  (≈ 1.5 ms each on the console, nothing on the PC's loopback); the idle spike was the sweep of the 63 expired per-frame
+  watches of the previous phase, 63 LiveRemoved records in one frame. No file access, no log line, no allocation per call.
+  Fixes (`live_remote.cpp`, tests first in `test_remote_live.cpp`): a 1 KB outbox flushed at the frame end and after a
+  catalogue (records of a frame go out in ≈ 1 send per KB); entries added while the PC listens are marked and announced at
+  the frame end (flag `kUnsent`), so one added and removed in the same frame sends nothing (`remove_*` skips the
+  LiveRemoved of an unsent entry). This also announces a per-frame watch with the kind of its first value (it was
+  announced before the value was stored).
+- **`show64`**: the bench timed `snprintf` (≈ 15 µs a call on the console) building the 63 names each frame: names built
+  once now; the phase times `show()` alone. `register` likewise.
+- **The pages**: each visible row was found by a pass over the whole index (`row_at`, 9 rows + counts ≈ 12 passes a
+  frame); the page now takes its rows in one pass (`rows_window`), and the panel skips its navigation work on ticks with
+  no button. The row texts are built without `snprintf` (`Str` in `live_panel_draw.cpp`).
+- PC (pc-dev) before → after: `show64` 0.0226 → 0.0043 ms, Tunables page 0.0332 → 0.0212 ms, Watches page 0.0296 →
+  0.0132 ms, `hidden192` 0.0008 → 0.0009 ms, `register` 0.44 → 0.46 ms (the PC never paid for the sends). Pixels,
+  values and goldens unchanged (`7A849F13`, `29C765A7`, the platformer's `E445E8B2`); targets unchanged: console run 2
+  sets the budgets (+ ≈ 25 %).
+
+## Review round (independent review "approve with fixes")
+
+Fixed, tests first where they test behaviour: a per-frame watch announced with its value's kind (announcements moved to
+the frame end; `remote_live_shown_watches_are_announced_with_their_kind`); typed `watch NAME every N` parsed with
+`from_chars`, 1..255 only, else `usage: watch NAME [every N] (N 1..255)` (`script_runner_live_typed_watch_every_is_checked`);
+integer watches' expected values checked against their kind's range (`live_text_integer_watches_check_their_range`);
+interactive `--tunes` queues its steps as steps (`ScriptRunner::on_typed_steps`, origin kept:
+`script_runner_live_interactive_tunes_steps_keep_their_origin`); the test-file comments; a refused enum registration
+checks its default before the entry exists (never announced or removed); a second sign refused (`+-5`); `-0` sets `+0` in
+the game and in `nnh` (`remote_live_negative_zero_is_no_change`); the ShownEntry size comment (76 B) and this plan's
+size table (84 B / 104 B per tunable) and replay text (no 3D); the name rules and `kind_of` moved to
+`nnh/detail/live_name.hpp` and `nnh/detail/live_kind_of.hpp` (`live.hpp` 282 lines); the builtins noted in
+`docs/tech/cpp.md`; the touched panel row keeps its slot and generation. Tests added:
+`live_apply_a_callback_may_register_a_tunable`, `gfx_replay_skips_a_frame_whose_scene_was_replaced_with_its_texture`
+(a callback removing a pending entry was already `live_apply_a_callback_may_destroy_a_handle_waiting_after_it`).
+
+## T3.7 found by the maintainer: the paused platformer lost its tile layers
+
+- **Cause**: the held frame's submit spends the frame's tile budget (`TileBatches::tiles_`) and particle budget; a replay
+  submitted the same batches against the spent budget, so past the first tick (and at once with a zoomed-out camera,
+  which has more quads) every tile batch was dropped. `gfx_replay()` now gives both budgets back before each replay
+  (`tiles.rewind({0, 0})`; the particle budget marked when the frame's recording begins and rewound). Tests first:
+  `gfx_replay_keeps_tile_layers_through_a_camera` and `..._through_a_zoomed_camera` (zoom 0.5 failed before the fix), and
+  the ctest `platformer_paused_equals_running_pc` (`examples/platformer/tests/paused.nnhs`: a running screenshot, a pause,
+  a paused screenshot: both screens byte for byte the same).
+- The Stats page now shows `PAUSED f<N>` while paused (`overlay_pages_the_stats_page_shows_the_pause`), so F10 steps can
+  be seen there too.
+- T3.7 stays open for the maintainer's keyboard check (Pause, F10, Pause) on the platformer.
+
+### Guards after the optimisation round, the review round and the T3.7 fix (run `sopt2`)
+
+ctest pc-debug 373/373 (with `platformer_paused_equals_running_pc`; the goldens `29C765A7`, `7A849F13` and the
+platformer's replay lines unchanged), pc-release 337/337; 3ds-release and 3ds-dev 0 warnings; `hello.3dsx` identical,
+`hello.elf` without debug info identical, sections and symbols identical; pc-release `hello` sections and symbols
+identical; Development `hello` 3ds-dev text 227 088. Console run 2 (the lead) sets the bench budgets.
+
+### Stage 9 results (Linux, VM 120, 2026-11-26, run by the lead)
+
+Trees sent by `git archive` (f6fc593, then 0ea8f50 for the exhaustive test, then 1248bdc).
+
+| Check | Result |
+|-------|--------|
+| GCC 13.3, pc-debug, full ctest | all pass but `platformer_doors_script_pc`, the known timing flake |
+| GCC 14 | `nnh_tests` 3991/3991 |
+| clang 18 ASan + UBSan, `detect_leaks=1` | `nnh_tests` 3991/3991, `nnh_tool_tests` 197/197, no report |
+| 32-bit host (`-m32 -msse2 -mfpmath=sse`) | `nnh_tests` 3991/3991: every golden identical |
+| `live_float_text_exhaustive` (`NNH_SLOW_TESTS=ON`, pc-release) | PASS: every one of the 2^32 floats' text reads back to the same bits (≈ 9.6 min) |
+| libFuzzer under ASan/UBSan, 10 min each | `fuzz_live_remote` 81 k runs, `fuzz_remote` 2.7 M runs: no crash |
+
+Found and fixed: clang's `-Wunused-function` on an unused helper in `overlay.cpp` (0ea8f50).
+
+### Console status (2026-11-26) and what stays pending
+
+Done on the Old 3DS XL (3ds-dev of the lead's commits after f6fc593, before the optimisation round):
+- `check.nnhs` — correctness PASS, `live: sum 7A849F13` (the PC's); bench FAIL (run 1 above).
+  - The live scripts needed `wait 10` after each expect and between `expect-value`s: the console's log arrives a frame
+    late, and each `expect-value` queries a frame (b0dee64, c755183, f7df285).
+- `panel.nnhs` — PASS (120 lines).
+- `keep.nnhs` then `--tunes … keep_second.nnhs` — PASS: `player/jump` 7.5 at frame 1.
+- The platformer `level.nnhs` with its live values — `replay: done 900 frames sum E445E8B2: 60 Hz PASS`.
+- Yes/no by hand: raising `jump` in the panel makes the jump higher; SELECT+Y pauses, SELECT+X steps one frame, SELECT+Y
+  resumes — **YES** (the maintainer).
+
+PC yes/no (T3.7): the maintainer's first try failed. Keys injected by the lead reproduced it: the paused replay lost the
+tile layers. That is fixed in 1248bdc, test first.
+
+Pending for the maintainer, merged anyway with their approval of 2026-11-26:
+- **Console run 2:** `check.nnhs` after the optimisation round. The bench budgets are set from it + ≈ 25 %; until then a
+  `live bench: FAIL` line is expected.
+- **The paused screen on the console:** check it shows the whole level.
+- **The PC Pause/F10 check** (T3.7).

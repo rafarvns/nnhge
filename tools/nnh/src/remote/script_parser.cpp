@@ -4,6 +4,7 @@
 
 #include "remote/remote_wire.hpp"
 #include "remote/script.hpp"
+#include "remote/script_live.hpp"
 #include "remote/script_tokens.hpp"
 
 namespace nnh::tool::remote {
@@ -33,6 +34,14 @@ constexpr CommandInfo kCommands[] = {
     {"end", Command::End, 0, 0, "end"},
     {"slider", Command::Slider, 1, 1, "slider V|off"},
     {"language", Command::Language, 1, 1, "language CODE|off"},
+    {"set", Command::Set, 2, 2, "set NAME VALUE"},
+    {"reset", Command::Reset, 1, 1, "reset NAME|GROUP|all"},
+    {"action", Command::Action, 1, 1, "action NAME"},
+    {"dump", Command::Dump, 0, 0, "dump"},
+    {"pause", Command::Pause, 0, 0, "pause"},
+    {"resume", Command::Resume, 0, 0, "resume"},
+    {"step", Command::StepFrames, 0, 1, "step [N]"},
+    {"expect-value", Command::ExpectValue, 3, 7, "expect-value NAME OP VALUE [~ E] [within N]"},
 };
 
 const CommandInfo* find_command(const std::string& name) {
@@ -43,7 +52,8 @@ const CommandInfo* find_command(const std::string& name) {
 }
 
 bool is_input(Command c) {
-    return c != Command::Wait && c != Command::Expect && c != Command::FailOn && c != Command::End;
+    return c != Command::Wait && c != Command::Expect && c != Command::FailOn && c != Command::End &&
+           !is_live_command(c);
 }
 
 const char* const kFramesError = "frames must be a whole number 1 to 216000";
@@ -61,6 +71,7 @@ std::string text_argument(const Token& t, std::string& out) {
 
 /// Fills `step` from the arguments of its command (count already checked). @return "" or the error.
 std::string read_arguments(const std::vector<Token>& a, Step& step) {
+    if (is_live_command(step.command)) return read_live_arguments(a, step); // values may be quoted (text, colours)
     for (std::size_t i = 1; i < a.size(); ++i) {
         const bool text_slot = (step.command == Command::Expect || step.command == Command::FailOn) && i == 1;
         if (a[i].quoted && !text_slot) return "only TEXT goes in double quotes";
@@ -151,6 +162,7 @@ void remember(ScriptParser& parser, const Step& step, Script& script) {
     case Command::End: parser.ended = true; break;
     default: break;
     }
+    remember_live(parser, step);
 }
 
 /// @return "" and fills `step`, or the error of this line.
@@ -166,7 +178,7 @@ std::string parse_command(const ScriptParser& parser, const std::vector<Token>& 
     const std::string error = read_arguments(tokens, step);
     if (!error.empty()) return error;
     if (step.command == Command::Drag && !parser.touching) return "drag needs a touch down first (touch X Y)";
-    return "";
+    return paused_rule(parser, step);
 }
 
 } // namespace
@@ -188,6 +200,7 @@ void parse_script_line(ScriptParser& parser, std::string_view text, int line, Sc
         errors.push_back(where + error);
         return;
     }
+    step.paused = parser.paused;
     remember(parser, step, script);
     script.steps.push_back(std::move(step));
 }

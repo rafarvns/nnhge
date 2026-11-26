@@ -344,6 +344,9 @@ never through `#ifdef` in game code.
   `AppConfig` field, 80-byte entries, Ryu, names resolved per script segment, the held start, the dump's TOML tables, the
   Debug/Development `hello` growth).
 - 2026-11-26: D51 and D52 **approved** with plan 030 (the maintainer; the seven plan questions as recommended).
+- 2026-11-26: D51 and D52 implemented (spec 030; refinements R1–R24 in its plan). D28 gains messages 9–11 and
+  records 8–12; D38's input block gains the `DevPanel` blocker; D17's overlay gains pages; the simulator's pause moved
+  from the platform library into core.
 - 2026-11-26: D53 (hot reload of assets: `nnh` watches, builds the asset target and sends changed outputs as one batch
   into a Development-only overlay in the game's data folder; prepare-then-commit at one point of the frame; same handles,
   new content; game-held content announced) and D54 (payload messages in D28: chunked files with CRC-32 handled at

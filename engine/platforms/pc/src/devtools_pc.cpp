@@ -37,8 +37,9 @@ void pc::dev_key_pressed(SDL_Scancode key) {
     Context& ctx = context();
     switch (key) {
     case SDL_SCANCODE_F1: ctx.dev_requests |= kDevToggleOverlay; break;
-    case SDL_SCANCODE_PAUSE: ctx.paused = !ctx.paused; break;
-    case SDL_SCANCODE_F10: ctx.step_requested = true; break;
+    // Pause and step run in core since spec 030 (D52): requests, so the live overlay stays usable while paused.
+    case SDL_SCANCODE_PAUSE: ctx.dev_requests |= kDevTogglePause; break;
+    case SDL_SCANCODE_F10: ctx.dev_requests |= kDevStepFrame; break;
     case SDL_SCANCODE_F11: ctx.slow_motion = !ctx.slow_motion; break;
     case SDL_SCANCODE_F12: ctx.screenshot_requested = true; break;
     default: break;

@@ -25,6 +25,13 @@ add_library(nnh_core STATIC
     src/animation/sprite_validate.cpp
     src/app/app.cpp
     src/app/data_folder.cpp
+    src/app/dev_pause.cpp
+    src/app/pause_state.cpp
+    src/audio/audio_hold.cpp
+    src/debug/debug_held.cpp
+    src/debug/dev_controls.cpp
+    src/debug/overlay_pages.cpp
+    src/gfx/gfx_replay.cpp
     src/collision/aabb.cpp
     src/collision/grid.cpp
     src/collision/grid_move.cpp
@@ -98,6 +105,7 @@ add_library(nnh_core STATIC
     src/scene/scene_stack.cpp
     src/scene/scenes.cpp
     src/remote/remote_input.cpp
+    src/remote/remote_live.cpp
     src/remote/remote_reader.cpp
     src/remote/remote_schedule.cpp
     src/remote/remote_screenshot.cpp
@@ -571,9 +579,39 @@ set(_nnh_loc_sources
     src/loc/plural.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_loc_sources})
+# Live values (spec 030, D51): names, stepping, the value text (Ryu's f2s, third_party/ryu) and the wire's live messages
+# are pure and shared with the `nnh` tool. Stepping has no fused multiply-add, so the panel, `nnh` and every system step
+# to the same bits. The module is reached only through live:: calls (and the remote decoder, Debug/Development): a game
+# that never calls them links none of it; Release links none of it.
+set(_nnh_live_pure_sources
+    src/live/live_format.cpp
+    src/live/live_names.cpp
+    src/remote/live_wire.cpp
+)
+set(_nnh_live_steps_source src/live/live_steps.cpp)
+# The module: the registry block, tunables, the application point, watches, the dump, the ops table core reaches it by
+# (debug/live_hook.cpp holds the pointer: Debug/Development branches only).
+set(_nnh_live_sources
+    src/debug/live_hook.cpp
+    src/live/live_apply.cpp
+    src/live/live_control.cpp
+    src/live/live_dump.cpp
+    src/live/live_ops.cpp
+    src/live/live_panel_draw.cpp
+    src/live/live_panel_model.cpp
+    src/live/live_panel_touch.cpp
+    src/live/live_remote.cpp
+    src/live/live_registry.cpp
+    src/live/live_tune.cpp
+    src/live/live_watch.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_source} ${_nnh_live_sources})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${_nnh_live_steps_source} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
-target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)
+target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis nnh_ryu)
 target_include_directories(nnh_core PRIVATE ${PROJECT_SOURCE_DIR}/third_party/stb_vorbis)
 nnh_engine_options(nnh_core)
 

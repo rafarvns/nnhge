@@ -79,3 +79,11 @@ control is released.
 | Running out of memory | overlay memory per tag → leak report at exit |
 | Visual glitch | simulator pause + frame step, screenshot |
 | Needs someone at the console to check | a test script with `nnh run --script` (screenshots, log checks) |
+
+## Live values, pause and step (spec 030, D51, D52)
+
+Pause and step run in core on every system: `nnh::frame()` runs paused ticks (events, input, the remote session, the
+engine controls, the held frame drawn again with the live overlay) until a step or a resume; the frame clock and
+`frame_count()` stop and audio holds. The remote protocol gains LiveSet (9), Live (10) and Pause (11) messages and
+LiveEntry, LiveRemoved, LiveValue, LiveRefused and LiveState records (8–12), sent only after a catalogue request
+([api/live.md](../api/live.md), plan: [specs/030-live-values/plan.md](../../specs/030-live-values/plan.md)).

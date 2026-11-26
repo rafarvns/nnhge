@@ -293,3 +293,12 @@ Written from the published specifications and documentation; the only third-part
 - **kanji-data** (the kyoiku list's grades; MIT) — https://github.com/davidluzgouveia/kanji-data
 - Design references, no code: **Godot** `tr()`, `TranslationServer` and FontFile; **Unity** Localization and
   TextMeshPro font assets; **gettext** plural forms (considered: rules as C expressions, not chosen).
+
+## Live values (spec 030)
+
+- Godot's remote scene tree and debugging tools: <https://docs.godotengine.org/en/stable/tutorials/scripting/debug/overview_of_debugging_tools.html>
+- Unity's Inspector in Play Mode (changes reverted when Play Mode ends).
+- Shawn Hargreaves, MotoGP tweakables: <https://shawnhargreaves.com/blog/motogp-tweakables.html>; Wikipedia, Debug menu.
+- GameDev.net, Tweakable Constants and Configuration and Tweaking; cbloom, Tweakable Vars; Corrade's `Utility::Tweakable`;
+  tunable-cpp; AntTweakBar.
+- Ulf Adams, Ryū: fast float-to-string conversion (PLDI 2018); <https://github.com/ulfjack/ryu> (vendored `f2s`, BSL-1.0).

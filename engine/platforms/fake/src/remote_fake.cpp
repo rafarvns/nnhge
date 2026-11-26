@@ -69,6 +69,7 @@ long platform::remote_receive(void* buffer, std::size_t size) {
 
 bool platform::remote_send(const void* data, std::size_t size) {
     if (!g_remote.connected || g_remote.closed) return false;
+    ++platform_fake::detail::mutable_state().remote_send_calls;
     const auto* bytes = static_cast<const std::uint8_t*>(data);
     g_remote.sent.insert(g_remote.sent.end(), bytes, bytes + size);
     return true;

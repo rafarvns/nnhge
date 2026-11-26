@@ -14,6 +14,7 @@
 #include "netloader.hpp"
 #include "remote/script_runner.hpp"
 #include "remote/stdin_lines.hpp"
+#include "remote/tunes_file.hpp"
 #include "repo.hpp"
 #include "user_config.hpp"
 
@@ -94,7 +95,9 @@ int run_on_console(const Options& options, const GameRun& run, bool scripted) {
     const bool listening = logs.open(Ipv4{}, kNetloaderPort);
     std::printf("nnh: sending %s (%zu KB) to %s\n", (options.game + ".3dsx").c_str(), file.size() / 1024,
                 to_string(*console).c_str());
-    const std::string error = send_3dsx(*console, kNetloaderPort, options.game + ".3dsx", file, {});
+    std::vector<std::string> extra; // spec 030: --tunes/--hold start the game held (core's held start, D52)
+    if (options.hold) extra.push_back("--nnh-hold");
+    const std::string error = send_3dsx(*console, kNetloaderPort, options.game + ".3dsx", file, extra);
     if (!error.empty()) {
         std::fprintf(stderr, "nnh: %s\n", error.c_str());
         return cannot_run;
@@ -123,10 +126,25 @@ int command_run(const Options& options) {
     }
     std::optional<remote::Script> script;
     if (scripted && !(script = load_script(options.script))) return 2;
+    std::vector<remote::Step> tunes; // spec 030 FR-15: read and checked before anything is built or sent
+    if (!options.tunes.empty()) {
+        std::vector<std::uint8_t> bytes;
+        if (!read_bytes(options.tunes, bytes, remote::kMaxTunesBytes + 1)) {
+            std::fprintf(stderr, "nnh: can't read the tunes file %s\n", options.tunes.c_str());
+            return 2;
+        }
+        const remote::TunesFile file = remote::read_tunes(
+            std::string_view(reinterpret_cast<const char*>(bytes.data()), bytes.size()), options.tunes);
+        for (const std::string& e : file.errors) std::fprintf(stderr, "%s\n", e.c_str());
+        if (!file.errors.empty()) return 2;
+        tunes = remote::tunes_steps(file, options.tunes);
+        if (scripted) script->steps.insert(script->steps.begin(), tunes.begin(), tunes.end());
+    }
     remote::RunnerOptions runner_options{.interactive = !scripted, .quit_at_end = closes_game_at_end(options)};
     remote::ScriptRunner runner(scripted ? std::move(*script) : remote::Script{}, runner_options);
     StdinLines typed;
     if (!scripted) typed.start(stdin); // interactive mode: every typed line is a command (spec 013 FR-5)
+    if (!scripted) runner.on_typed_steps(tunes); // origin kept: undeclared names are noted and skipped
     const GameRun run{.runner = &runner, .typed = scripted ? nullptr : &typed, .linger_ms = 1000};
     return options.pc ? run_on_pc(options, run) : run_on_console(options, run, scripted);
 }

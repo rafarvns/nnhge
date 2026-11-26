@@ -43,7 +43,11 @@ void release_touch() { g_controls.input.touching = false; }
 void add_asset(const char* path, const void* data, std::size_t size) {
     if (g_controls.asset_count < detail::kMaxFakeAssets) g_controls.assets[g_controls.asset_count++] = {path, data, size};
 }
-void set_quit_requested(bool quit) { g_controls.quit_requested = quit; }
+void set_quit_requested(bool quit) {
+    g_controls.quit_requested = quit;
+    g_controls.quit_after_polls = -1;
+}
+void quit_after_polls(int polls) { g_controls.quit_after_polls = polls; }
 void set_init_fails(bool fails) { g_controls.init_fails = fails; }
 void set_time_ns(std::int64_t ns) { g_controls.time_ns = ns; }
 void advance_time(Duration elapsed) { g_controls.time_ns += elapsed.ns; }

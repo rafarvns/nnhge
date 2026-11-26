@@ -289,3 +289,9 @@ What our backend (`input_3ds.cpp`) does:
 - [3dbrew wiki](https://www.3dbrew.org/) — hardware and system reference
 - Texture/VRAM rules: [devkitPro forum t=9219](https://devkitpro.org/viewtopic.php?t=9219), citro3d `source/texture.c`
 - Memory split in practice: [sh23ds PERFORMANCE.md](https://github.com/ankushKun/sh23ds/blob/main/port/PERFORMANCE.md)
+
+## Live values on the 3DS (spec 030)
+
+`nnh run --tunes/--hold` adds `--nnh-hold` to the netloader's argv; `poll_dev_requests()` returns it once
+(Development only) and core holds the game before frame 1. While paused, voices and streams are held with
+`ndspChnSetPaused` (through `voice_pause`/`stream_pause`) and released for a stepped frame.

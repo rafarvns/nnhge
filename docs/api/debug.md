@@ -31,3 +31,9 @@ nnh::debug::printf(nnh::Screen::Top, 8, 8 + line, "x=%d y=%d", x, y);
 over the last 2 s), a frame-time graph (green ≤ 1 frame, yellow ≤ 2, red more), memory per region
 (used / capacity), 2D draws and textures ([gfx.md](gfx.md#capacities)) and the slowest profile scopes ([profile.md](profile.md)). Debug and Development
 only; always hidden in Release.
+
+## Overlay pages (spec 030)
+
+With the overlay shown, SELECT + R cycles Stats → Tunables → Watches; the live pages and their controls are in
+[live.md](live.md#the-overlays-pages). The Stats page gains a line `live 12/128 tun 5/64 wat 3/64 shown 20.1 KB` when the
+game registers live values. A new engine starts with the overlay hidden on the Stats page.

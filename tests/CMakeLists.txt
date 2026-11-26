@@ -423,6 +423,7 @@ target_sources(nnh_tests PRIVATE
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp
     ${_platformer}/player.cpp
+    ${_platformer}/tuning.cpp
     ${_platformer}/player_sprite.cpp
     ${_platformer}/replay_run.cpp
     ${_platformer}/replay_script.cpp
@@ -1573,6 +1574,111 @@ if(TARGET models AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUA
              WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
     set_tests_properties(models_stereo_script_pc PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+endif()
+# Live values (spec 030): every test of the spec in one block.
+target_sources(nnh_tests PRIVATE
+    live/test_live_format.cpp
+    live/test_live_names.cpp
+    live/test_live_steps.cpp
+    app/test_dev_pause.cpp
+    app/test_dev_pause_state.cpp
+    audio/test_audio_hold.cpp
+    debug/test_dev_controls.cpp
+    debug/test_overlay_pages.cpp
+    gfx/test_gfx_replay.cpp
+    gfx/test_gfx_replay_tiles.cpp
+    live/test_live_apply.cpp
+    live/test_live_cost.cpp
+    live/test_live_dump.cpp
+    live/test_live_panel_draw.cpp
+    live/test_live_panel_model.cpp
+    live/test_live_panel_touch.cpp
+    live/test_live_random_ops.cpp
+    live/test_live_registry.cpp
+    live/test_live_release.cpp
+    live/test_live_tune.cpp
+    live/test_live_watch.cpp
+    fuzz/test_fuzz_live_wire.cpp
+    remote/test_live_wire.cpp
+    remote/test_remote_live.cpp
+    fuzz/test_fuzz_live_remote.cpp)
+# The live values' remote fuzz target (T5.3, AC-5): mini-fuzz above, libFuzzer on the build VM.
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_live_remote.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_live_remote fuzz/libfuzzer_live_remote.cpp)
+    target_link_libraries(fuzz_live_remote PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_live_remote PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_live_remote PRIVATE -fsanitize=fuzzer,address)
+endif()
+# Every float's text read back (T1.4): minutes long, so label "slow" and off unless NNH_SLOW_TESTS (the build VM, T9.1).
+option(NNH_SLOW_TESTS "Run the slow exhaustive tests (spec 030's all-floats text check)" OFF)
+add_executable(live_float_text_exhaustive live/exhaustive_float_text.cpp)
+target_link_libraries(live_float_text_exhaustive PRIVATE nnh::core)
+target_include_directories(live_float_text_exhaustive PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/src)
+nnh_engine_options(live_float_text_exhaustive)
+add_test(NAME live_float_text_exhaustive COMMAND live_float_text_exhaustive)
+set_tests_properties(live_float_text_exhaustive PROPERTIES LABELS slow TIMEOUT 3600
+                     PASS_REGULAR_EXPRESSION "live float text exhaustive: PASS")
+if(NOT NNH_SLOW_TESTS)
+    set_tests_properties(live_float_text_exhaustive PROPERTIES DISABLED TRUE)
+endif()
+# The value text and stepping tests compare bits with expressions folded by the compiler: no fused multiply-add.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(live/test_live_steps.cpp PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# Names checked at compile time (T1.1, FR-1): a good literal compiles with -Werror; each broken rule fails to compile
+# AND names the rule.
+if(NOT MSVC)
+    set(_live_check ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -I${PROJECT_SOURCE_DIR}/engine/core/include)
+    set(_live_cases ${CMAKE_CURRENT_SOURCE_DIR}/live/compile_fail)
+    add_test(NAME live_name_good_compiles COMMAND ${_live_check} -Werror ${_live_cases}/good.cpp)
+    foreach(_case too_long bad_character empty_part too_deep)
+        add_test(NAME live_name_${_case}_fails COMMAND ${_live_check} ${_live_cases}/${_case}.cpp)
+        set_tests_properties(live_name_${_case}_fails PROPERTIES WILL_FAIL TRUE)
+        add_test(NAME live_name_${_case}_explains COMMAND ${_live_check} ${_live_cases}/${_case}.cpp)
+        set_tests_properties(live_name_${_case}_explains PROPERTIES PASS_REGULAR_EXPRESSION "live_name_${_case}")
+    endforeach()
+endif()
+# The live example's self-check (spec 030 T7.1, AC-2): its goldens on every host compiler.
+target_sources(nnh_tests PRIVATE live_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/live/self_check.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/live/sim.cpp)
+target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/live/self_check.cpp ${PROJECT_SOURCE_DIR}/examples/live/sim.cpp
+                                PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# The live example in the simulator (T7.2, T7.5): its self-check, and its console script played with --pc.
+if(TARGET live AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME live_self_check_pc COMMAND live)
+    set_tests_properties(live_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;LIVE_DEMO=check;NNH_EXIT_AFTER_FRAMES=30"
+        PASS_REGULAR_EXPRESSION "live: PASS defaults" FAIL_REGULAR_EXPRESSION "\] E " TIMEOUT 120)
+    get_filename_component(_live_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME live_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run live --pc --no-build --script examples/live/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(live_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+    add_test(NAME platformer_paused_equals_running_pc
+             COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/live_example/paused_shot.cmake)
+    set_tests_properties(platformer_paused_equals_running_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
+        PASS_REGULAR_EXPRESSION "paused shot: PASS" TIMEOUT 300 RESOURCE_LOCK nnh_remote_port)
+    add_test(NAME live_keep_pc COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+                                       -P ${CMAKE_CURRENT_SOURCE_DIR}/live_example/keep.cmake)
+    set_tests_properties(live_keep_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
+        PASS_REGULAR_EXPRESSION "live keep: PASS" TIMEOUT 300 RESOURCE_LOCK nnh_remote_port)
+    add_test(NAME live_panel_script_pc
+             COMMAND $<TARGET_FILE:nnh> run live --pc --no-build --script examples/live/tests/panel.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(live_panel_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
 endif()

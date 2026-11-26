@@ -2,7 +2,15 @@
 
 #include <3ds.h>
 
+#include <cstring>
+
+#include "nnh/build.hpp"
 #include "nnh/platform/system.hpp"
+
+extern "C" {
+extern int __system_argc;    // libctru: the netloader's argv (D23)
+extern char** __system_argv;
+}
 
 namespace nnh::platform {
 namespace {
@@ -53,6 +61,19 @@ SystemInfo system_info() {
     return SystemInfo{"Nintendo 3DS", model_name(console_model()), bytes / (1024 * 1024)};
 }
 
-std::uint32_t poll_dev_requests() { return 0; } // the overlay combo (SELECT + L) is handled by core
+// The overlay combo (SELECT + L) and the pause are handled by core. Development: `nnh run --tunes/--hold` puts
+// --nnh-hold in the netloader's argv (spec 030), returned once as kDevHoldAtStart.
+std::uint32_t poll_dev_requests() {
+    if constexpr (build::kDevToolsEnabled) {
+        static bool polled = false;
+        if (!polled) {
+            polled = true;
+            for (int i = 1; i < __system_argc; ++i) {
+                if (std::strcmp(__system_argv[i], "--nnh-hold") == 0) return kDevHoldAtStart;
+            }
+        }
+    }
+    return 0;
+}
 
 } // namespace nnh::platform

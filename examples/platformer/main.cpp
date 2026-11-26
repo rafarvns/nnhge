@@ -25,6 +25,7 @@
 #include "flips.hpp"
 #include "level_scene.hpp"
 #include "replay.hpp"
+#include "tuning.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -130,7 +131,9 @@ int main() {
     nnh::gfx::set_clear_color(nnh::Screen::Bottom, nnh::rgb(24, 26, 36));
     const char* error = nullptr;
     std::unique_ptr<Game> game = make_game(error);
+    TuningHandles tuning; // spec 030: the movement and camera numbers on the overlay's Tunables page
     if (error == nullptr) {
+        register_tuning(tuning);
         if (env_is("gate")) game->bench.start_gate();
         if (env_is("replay")) game->replay.start();
         if (env_is("doors")) game->doors.start(); // ten irises through the levels' doors (spec 023)
@@ -139,6 +142,7 @@ int main() {
         while (nnh::frame() && !nnh::input::pressed(nnh::Button::Start))
             nnh::debug::print(nnh::Screen::Top, 8, 8, error, nnh::colors::red);
     }
+    tuning = TuningHandles{};
     game.reset(); // maps and textures go before the engine
     nnh::shutdown();
     return 0;

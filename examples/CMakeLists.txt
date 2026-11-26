@@ -22,3 +22,4 @@ add_subdirectory(transitions)
 add_subdirectory(ui)
 add_subdirectory(localization)
 add_subdirectory(tweens)
+add_subdirectory(live) # spec 030

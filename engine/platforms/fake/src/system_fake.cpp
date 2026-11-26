@@ -11,8 +11,9 @@ SystemInfo platform::system_info() { return SystemInfo{"Fake platform", "unit te
 
 std::uint32_t platform::poll_dev_requests() {
     auto& c = platform_fake::detail::controls();
-    const std::uint32_t requests = c.dev_requests;
+    std::uint32_t requests = c.dev_requests;
     c.dev_requests = 0;
+    if (c.dev_queue_next < c.dev_queue_count) requests |= c.dev_queue[c.dev_queue_next++];
     return requests;
 }
 
@@ -23,6 +24,18 @@ void platform_fake::set_capabilities(std::initializer_list<Capability> capabilit
 }
 
 void platform_fake::request_overlay_toggle() { detail::controls().dev_requests |= platform::kDevToggleOverlay; }
+void platform_fake::request_pause() { detail::controls().dev_requests |= platform::kDevTogglePause; }
+void platform_fake::request_step() { detail::controls().dev_requests |= platform::kDevStepFrame; }
+void platform_fake::request_hold() { detail::controls().dev_requests |= platform::kDevHoldAtStart; }
+
+void platform_fake::queue_dev_requests(std::initializer_list<std::uint32_t> masks) {
+    auto& c = detail::controls();
+    c.dev_queue_count = 0;
+    c.dev_queue_next = 0;
+    for (std::uint32_t m : masks) {
+        if (c.dev_queue_count < 64) c.dev_queue[c.dev_queue_count++] = m;
+    }
+}
 
 // Reported as set, even without Stereo3D (core applies the capability and the clamp).
 float platform::stereo_slider() { return platform_fake::detail::controls().stereo_slider; }

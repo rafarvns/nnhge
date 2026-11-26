@@ -1,6 +1,8 @@
 // The engine's scene stack and nnh::run() (nnh/scene.hpp), and the transition hook (scene_hook.hpp, D38).
 
+#include "app/dev_pause.hpp"
 #include "nnh/app.hpp"
+#include "nnh/build.hpp"
 #include "nnh/scene.hpp"
 #include "scene/scene_attachments.hpp"
 #include "scene/scene_hook.hpp"
@@ -21,7 +23,10 @@ void cancel_transition() {
 
 const detail::SceneTransitionHook* detail::g_scene_transition = nullptr;
 
-void detail::scenes_apply_pending() { g_stack.apply_pending(); }
+void detail::scenes_apply_pending() {
+    if constexpr (build::kDevToolsEnabled) g_dev_scenes_changed = g_stack.pending() > 0; // the held frame (spec 030)
+    g_stack.apply_pending();
+}
 void detail::scenes_shutdown() {
     cancel_transition();
     g_stack.clear();

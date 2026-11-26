@@ -3,6 +3,8 @@
 
 #include "remote/remote_internal.hpp"
 
+#include "app/dev_pause.hpp"
+
 #include "log/engine_channels.hpp"
 #include "nnh/build.hpp"
 #include "nnh/platform/remote.hpp"
@@ -15,6 +17,12 @@
 #include "system/system_internal.hpp"
 
 namespace nnh::detail {
+
+// remote_live.cpp (spec 030): live value and pause messages, the PC detaching, LiveState records.
+void remote_live_message(const remote::Message& m, std::uint32_t frame);
+void remote_live_detached();
+void remote_send_live_state(std::uint32_t next_frame, std::uint8_t flags);
+
 namespace {
 
 using namespace remote;
@@ -67,6 +75,7 @@ void detach() {
     stereo_slider_override(-1.0f); // the console's own slider again
     set_language_override(nullptr); // and its own language (spec 029)
     screenshots_clear();
+    remote_live_detached();
 }
 
 /// The 3D slider (spec 026 FR-16): a value replaces the console's slider; `slider off` gives it back — to the script's
@@ -153,9 +162,12 @@ bool read_messages(std::uint32_t frame) {
     return true;
 }
 
-void apply_due(std::uint32_t frame) {
+/// @return how many messages were applied.
+int apply_due(std::uint32_t frame) {
     Message message;
+    int applied = 0;
     while (g_schedule.pop_due(frame, message)) {
+        ++applied;
         if (is_late(message, frame)) {
             std::uint8_t record[kMaxFixedRecord];
             send_record(record, encode_late_record(message.seq, message.frame, frame, record));
@@ -164,14 +176,18 @@ void apply_due(std::uint32_t frame) {
         case MessageType::Screenshot: screenshots_request(message.id, message.screens, frame); break;
         case MessageType::Slider: apply_slider(message); break;
         case MessageType::Language: apply_language(message); break;
+        case MessageType::LiveSet:
+        case MessageType::Live:
+        case MessageType::Pause: remote_live_message(message, frame); break;
         case MessageType::Bye:
             NNH_LOG_INFO(remote, "PC detached: remote control off");
             g_session.quit = g_session.quit || message.quit;
             detach();
-            return; // nothing after a Bye was queued by this connection
+            return applied; // nothing after a Bye was queued by this connection
         default: g_input.apply(message); break;
         }
     }
+    return applied;
 }
 
 /// The console's own controls a script hides, said once when it attaches (a resting Circle Pad past the dead
@@ -211,7 +227,8 @@ bool remote_frame_start(std::uint64_t frame_number, platform::InputSample& sampl
         if (!read_messages(frame)) {
             disconnected();
         } else {
-            apply_due(frame);
+            // A paused tick (spec 030 D52) that applied messages tells the PC: its frames don't move meanwhile.
+            if (apply_due(frame) > 0 && g_session.attached && dev_pause_state().paused()) remote_send_live_state(frame, 0);
             if (g_session.attached && frame >= g_session.next_tick) {
                 std::uint8_t record[kMaxFixedRecord];
                 send_record(record, encode_tick_record(frame, record));

@@ -120,3 +120,8 @@ When a file grows past the aim, split it by concept before adding more (e.g. `vi
 | A helper used once | Next to its user, in an anonymous namespace |
 | A test | `tests/<module>/test_<concept>.cpp` |
 | A demo of a feature | `examples/<feature>/` |
+
+Live values (spec 030): `engine/core/src/live/` (the module: names, steps, value text, the registry, the panel, the
+remote side), Development-only core files `app/dev_pause.*`, `debug/dev_controls.*`, `debug/overlay_pages.*`,
+`debug/debug_held.cpp`, `gfx/gfx_replay.*`, `audio/audio_hold.cpp`, `remote/live_wire.*`, `remote/remote_live.cpp`;
+`third_party/ryu/` (Ryu's `f2s`).

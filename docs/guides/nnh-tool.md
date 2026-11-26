@@ -303,3 +303,18 @@ D28, [plan 013](../../specs/013-console-remote/plan.md); code: `tools/nnh/src/re
 010](../../specs/010-nnh-cli-run/plan.md); code: `tools/nnh/`. On Windows,
 3DS builds run through devkitPro's MSYS2 shell (`DEVKITPRO_MSYS2` overrides its location), like
 `scripts/dkp.sh`.
+
+## Live values (spec 030)
+
+`nnh run <game> [--pc]` speaks to a Debug/Development game's live values ([api/live.md](../api/live.md)):
+
+- typed: `tunes [GROUP]` (name, value, default, range, step, `*` when changed), `watches [GROUP]`, `get NAME`,
+  `watch NAME [every N]` (values printed as `[frame] name = value`), `unwatch NAME|all`, and the script commands `set`,
+  `reset`, `action`, `dump`, `pause`, `resume`, `step [N]`, `expect-value` (reported, never ending the session);
+- a value is refused before anything is sent, in plain words (`player/jump: 12 is outside 0..10`,
+  `unknown name "player/jmp" (did you mean "player/jump"?)`);
+- a dump (`dump`, or Y on the Tunables page) is saved next to the log as `build/logs/<game>-<date>-<time>-tunes.toml`;
+- `--tunes FILE` reads a dump (or `"full/name" = value` lines) before anything is built — errors as `file:line: reason`
+  —, starts the game held before frame 1 (`NNH_HOLD=1` in the simulator, `--nnh-hold` in the console's argv), sends the
+  values (names the game doesn't declare are reported and skipped) and resumes it; `--hold` only holds;
+- an older game answers `the game has no live values (built before spec 030)`.

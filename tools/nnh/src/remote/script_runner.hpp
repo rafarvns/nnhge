@@ -26,6 +26,8 @@
 #include <vector>
 
 #include "remote/game_records.hpp"
+#include "remote/live_catalog.hpp"
+#include "remote/live_text.hpp"
 #include "remote/screen_image.hpp"
 #include "remote/script.hpp"
 #include "remote/script_timeline.hpp"
@@ -69,12 +71,16 @@ public:
     void on_closed();
     /// Interactive mode: one typed line.
     void on_typed(const std::string& text);
+    /// Interactive mode: steps given as steps (`--tunes`: their origin kept, values never re-tokenised).
+    void on_typed_steps(const std::vector<Step>& steps);
 
     /// What to send, in order (16-byte messages).
     std::vector<MessageBytes> take_messages();
     /// Progress and result lines, without the "nnh: " prefix.
     std::vector<std::string> take_notes();
     std::vector<ScreenJob> take_screens();
+    /// Dumps the game wrote (spec 030 FR-14): each a TOML file's text, for the session to save next to the log.
+    std::vector<std::string> take_dumps();
 
     Verdict verdict() const { return verdict_; }
     /// Script mode: a verdict was reached. Interactive mode: the game closed.
@@ -105,6 +111,16 @@ private:
     void send_bye();
     void tick(std::uint32_t frame);
     void screen(Record& record);
+    // live values (script_runner_live.cpp, spec 030)
+    void on_live_record(const Record& record);
+    bool script_uses_live() const;
+    void request_catalogue();
+    bool prepare_live(const TimedEvent& e, wire::Message& m);
+    void start_expect_value(const Step& step, std::uint32_t from);
+    void live_value(const Record& record);
+    void live_state(const Record& record);
+    void dump_line(const std::string& line);
+    bool typed_live(const std::string& text);
     void finish(Verdict verdict, int line, const std::string& why);
     void problem(int line, const std::string& why);
     std::string where(int line) const;
@@ -152,6 +168,26 @@ private:
     std::deque<TimedEvent> typed_; ///< offset = absolute frame
     std::vector<Step> waiting_;    ///< typed before the Hello was answered
     int typed_lines_ = 0;
+
+    // live values
+    struct ValueWatch {
+        bool active = false;
+        bool within = false;
+        int line = 0;
+        std::uint32_t hash = 0, from = 0, to = 0;
+        CompareOp op = CompareOp::Eq;
+        double tolerance = 0;
+        Expected expected;
+        std::string text;
+    };
+    LiveCatalog catalog_;
+    bool waiting_catalogue_ = false;
+    bool expect_value_sent_ = false;
+    bool paused_ = false;
+    ValueWatch value_watch_;
+    bool in_dump_ = false;
+    std::vector<std::string> dump_lines_;
+    std::vector<std::string> dumps_;
 
     std::vector<MessageBytes> messages_;
     std::vector<std::string> notes_;

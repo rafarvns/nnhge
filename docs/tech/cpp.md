@@ -85,3 +85,9 @@ Public functions document: does it allocate? is it per-frame safe? what happens 
 - [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)
 - Butano's design ([GValiente/butano](https://github.com/GValiente/butano)): C++ without heap/exceptions on GBA
 - Mike Acton, *Data-Oriented Design and C++* (CppCon 2014)
+
+## Compiler builtins instead of `<type_traits>` in light headers
+
+`<nnh/live.hpp>` (spec 030) tests types with `__is_same(T, U)` and `__is_enum(T)` instead of `<type_traits>`, which
+adds ≈ 3 200 preprocessed lines to every game file that includes it. GCC, Clang and MSVC all provide these builtins;
+use them only in headers that must stay light, and only for these simple checks.

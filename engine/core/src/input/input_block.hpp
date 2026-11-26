@@ -13,8 +13,9 @@ struct InputSample;
 
 namespace nnh::detail {
 
-/// Who blocks: the game and transitions are independent (one never lifts the other).
-enum class InputBlocker : std::uint8_t { Game = 1, Transition = 2 };
+/// Who blocks: the game, transitions and the live panel (spec 030, while a live page of the debug overlay has the
+/// controls) are independent (one never lifts another).
+enum class InputBlocker : std::uint8_t { Game = 1, Transition = 2, DevPanel = 4 };
 
 struct InputBlock {
     std::uint32_t filtered = 0; ///< buttons held when the block lifted (or pressed during it), until released

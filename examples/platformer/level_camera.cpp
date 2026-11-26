@@ -1,3 +1,4 @@
+#include "tuning.hpp"
 #include "level_camera.hpp"
 
 nnh::CameraSettings level_camera_settings(nnh::Rect bounds) {
@@ -10,9 +11,10 @@ nnh::CameraSettings level_camera_settings(nnh::Rect bounds) {
 }
 
 float look_ahead_step(float current, bool facing_left) {
-    const float goal = facing_left ? -kLookAhead : kLookAhead;
-    if (current < goal) return current + kLookAheadSpeed > goal ? goal : current + kLookAheadSpeed;
-    if (current > goal) return current - kLookAheadSpeed < goal ? goal : current - kLookAheadSpeed;
+    const float ahead = g_tuning.look_ahead, speed = g_tuning.look_ahead_speed; // live values (spec 030)
+    const float goal = facing_left ? -ahead : ahead;
+    if (current < goal) return current + speed > goal ? goal : current + speed;
+    if (current > goal) return current - speed < goal ? goal : current - speed;
     return current;
 }
 

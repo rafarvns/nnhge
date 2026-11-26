@@ -27,6 +27,9 @@ struct Record {
     wire::Reject reason = wire::Reject::None; ///< Rejected (any byte value is kept)
     wire::ScreenHeader screen;      ///< Screen (id, screen, layout, frame, size); ScreenFailed: id, screen
     std::vector<std::uint8_t> pixels; ///< Screen: everything after the fixed part, unchecked
+    /// Live records (spec 030: LiveEntry, LiveRemoved, LiveValue, LiveRefused, LiveState): the whole payload, decoded by
+    /// remote/live_wire.hpp's functions where it is used.
+    std::vector<std::uint8_t> payload;
 };
 
 /// Decodes a payload whose header decode_record_header() accepted (so its length suits its type).

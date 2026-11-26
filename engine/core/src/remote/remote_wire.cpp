@@ -4,6 +4,7 @@
 
 #include <cstring>
 
+#include "remote/live_wire.hpp"
 #include "system/language_tag.hpp" // pack_language (the `nnh` tool's side)
 
 namespace nnh::detail::remote {
@@ -94,6 +95,9 @@ bool decode_arguments(const std::uint8_t* in, Message& out) {
         out.press = get32(a);
         out.release = get32(a + 4);
         return language_ok(a);
+    case MessageType::LiveSet: return decode_live_set_arguments(a, out);
+    case MessageType::Live: return decode_live_arguments(a, out);
+    case MessageType::Pause: return decode_pause_arguments(a, out);
     }
     return false;
 }
@@ -108,6 +112,11 @@ bool record_length_ok(std::uint8_t type, std::uint32_t length) {
     case RecordType::Dropped: return length == kDroppedPayload;
     case RecordType::Screen: return length >= kScreenFixed && length <= kMaxRecordPayload;
     case RecordType::ScreenFailed: return length == kScreenFailedPayload;
+    case RecordType::LiveEntry:
+    case RecordType::LiveRemoved:
+    case RecordType::LiveValue:
+    case RecordType::LiveRefused:
+    case RecordType::LiveState: return live_record_length_ok(static_cast<RecordType>(type), length);
     }
     return false;
 }
@@ -128,6 +137,7 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
         break;
     case MessageType::Buttons:
     case MessageType::Language:
+    case MessageType::LiveSet:
         put32(a, m.press);
         put32(a + 4, m.release);
         break;
@@ -146,12 +156,14 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
         a[0] = m.slider == kSliderRelease ? 1 : 0;
         put16(a + 2, m.slider == kSliderRelease ? 0 : m.slider);
         break;
+    case MessageType::Live:
+    case MessageType::Pause: encode_live_arguments(m, a); break;
     }
 }
 
 Reject decode_message(const std::uint8_t in[kMessageSize], Message& out) {
     if (in[0] != kMessageMagic) return Reject::Magic;
-    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Language)) {
+    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Pause)) {
         return Reject::Type;
     }
     out = Message{};

@@ -3,7 +3,9 @@
 // anti-aliasing off, glyf and CFF giving the same glyphs, kerning from `kern` and GPOS, code points not in the font
 // counted, the same bytes twice.
 
+#include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <set>
 #include <string>
 #include <vector>
@@ -132,4 +134,50 @@ NNH_TEST(ttf_raster_refuses_a_damaged_file) {
     RasterOptions o;
     r.problem = raster_font(junk, o, {U'A'}, r.font, r.skipped, r.first_skipped);
     CHECK(!r.problem.empty());
+}
+
+namespace {
+
+std::uint32_t be16(const std::vector<unsigned char>& d, std::size_t at) { return (std::uint32_t{d[at]} << 8) | d[at + 1]; }
+std::uint32_t be32v(const std::vector<unsigned char>& d, std::size_t at) { return (be16(d, at) << 16) | be16(d, at + 2); }
+void put16v(std::vector<unsigned char>& d, std::size_t at, std::uint32_t v) {
+    d[at] = static_cast<unsigned char>(v >> 8);
+    d[at + 1] = static_cast<unsigned char>(v);
+}
+
+/// Makes the fixture's cmap (format 4) map `cp` to glyph `glyph`. @return false when the layout isn't the expected one.
+bool remap(std::vector<unsigned char>& d, std::uint32_t cp, std::uint32_t glyph) {
+    std::size_t cmap = 0;
+    for (std::uint32_t i = 0, n = be16(d, 4); i < n; ++i)
+        if (std::memcmp(&d[12 + i * 16], "cmap", 4) == 0) cmap = be32v(d, 12 + i * 16 + 8);
+    if (cmap == 0) return false;
+    for (std::uint32_t r = 0, n = be16(d, cmap + 2); r < n; ++r) {
+        const std::size_t sub = cmap + be32v(d, cmap + 4 + r * 8 + 4);
+        if (be16(d, sub) != 4) continue;
+        const std::uint32_t segs = be16(d, sub + 6) / 2;
+        const std::size_t ends = sub + 14, starts = ends + segs * 2 + 2, deltas = starts + segs * 2, ranges = deltas + segs * 2;
+        for (std::uint32_t s = 0; s < segs; ++s) {
+            const std::uint32_t end = be16(d, ends + s * 2), start = be16(d, starts + s * 2);
+            if (cp < start || cp > end) continue;
+            const std::uint32_t ro = be16(d, ranges + s * 2);
+            if (ro == 0) put16v(d, deltas + s * 2, (glyph - cp) & 0xFFFFu);
+            else put16v(d, ranges + s * 2 + ro + (cp - start) * 2, glyph);
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
+NNH_TEST(ttf_raster_refuses_a_cmap_naming_a_glyph_the_font_lacks) {
+    // stb_truetype reads hmtx and loca at the glyph index cmap gives, unchecked: index 60000 of a 90-glyph font read
+    // past the file (ASan, Linux, 2026-11-26). The font is refused with its reason instead.
+    auto data = load("nnhtest.ttf");
+    CHECK(remap(data, U'A', 60000));
+    Raster r;
+    RasterOptions o;
+    r.problem = raster_font(data, o, {U'A', U'B'}, r.font, r.skipped, r.first_skipped);
+    CHECK(r.problem.find("U+0041") != std::string::npos);
+    CHECK(r.problem.find("a glyph the font doesn't have") != std::string::npos);
 }

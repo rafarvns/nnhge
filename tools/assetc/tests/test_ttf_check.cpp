@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -136,4 +137,30 @@ NNH_TEST(ttf_check_refuses_bad_collections) {
     CHECK(!check_ttf(ttc.data(), ttc.size(), 0).empty()); // face 0 points into nothing
     CHECK(!check_ttf(ttc.data(), ttc.size(), 1).empty());
     CHECK(!check_ttf(ttc.data(), ttc.size(), 2).empty()); // no face 2
+}
+
+NNH_TEST(ttf_check_checks_the_first_table_of_a_tag_as_stb_truetype_reads_it) {
+    // two "hmtx" records: stb_truetype takes the first (here the 96-byte OS/2 table renamed), so that one is checked
+    auto d = load("nnhtest.ttf");
+    const std::size_t os2 = record(d, "OS/2"), hmtx = record(d, "hmtx");
+    CHECK(os2 != 0 && hmtx != 0 && os2 < hmtx);
+    if (os2 == 0) return;
+    std::memcpy(&d[os2], "hmtx", 4);
+    CHECK(check(d) == "hmtx is cut short");
+}
+
+NNH_TEST(ttf_check_refuses_a_cmap_format_4_range_outside_it) {
+    auto d = load("nnhtest.ttf");
+    const std::size_t cmap = be32(d, record(d, "cmap") + 8);
+    std::size_t sub = 0;
+    for (std::uint32_t r = 0, n = (d[cmap + 2] << 8) | d[cmap + 3]; r < n; ++r) {
+        const std::size_t s = cmap + be32(d, cmap + 4 + r * 8 + 4);
+        if (d[s] == 0 && d[s + 1] == 4) sub = s;
+    }
+    CHECK(sub != 0);
+    if (sub == 0) return;
+    const std::uint32_t segs = ((d[sub + 6] << 8) | d[sub + 7]) / 2;
+    const std::size_t ranges = sub + 14 + segs * 2 + 2 + segs * 4;
+    put16(d, ranges, 0x7FF0); // the first segment reads its glyph ids far past the subtable
+    CHECK(check(d) == "a cmap format 4 range lies outside it");
 }

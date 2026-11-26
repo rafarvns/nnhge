@@ -125,21 +125,30 @@ NNH_TEST(ui_fonts_the_draw_hash_folds_a_slot_only) {
 
 NNH_TEST(ui_fonts_a_slot_outside_0_to_7_is_ignored) {
     with_font();
+    // the UI lives outside the asserting lambda: an assert jumps out of it and would leak it (LSan, Linux)
+    static Ui* ui = nullptr;
+    Ui owned = ui_test::make({.widgets = 4});
+    ui = &owned;
     CHECK(ui_test::asserts_or_is_ignored([] {
-        Ui ui = ui_test::make({.widgets = 4});
-        ui.set_font(8, g_font);
-        ui.set_font(-1, g_font);
+        ui->set_font(8, g_font);
+        ui->set_font(-1, g_font);
     }));
+    ui = nullptr;
     g_font = nnh::Font{};
 }
 
 NNH_TEST(ui_fonts_a_destroyed_font_draws_with_the_builtin) {
     with_font();
+    // the UI and its font live outside the asserting lambda: an assert jumps out of it and would leak them (LSan, Linux)
+    static FontUi* u = nullptr;
+    static UiWidget l{};
+    FontUi owned;
+    u = &owned;
+    l = u->ui.label(u->ui.root(Screen::Top), {.text = "ab", .style = u->style});
     CHECK(ui_test::asserts_or_is_ignored([] {
-        FontUi u;
-        const UiWidget l = u.ui.label(u.ui.root(Screen::Top), {.text = "ab", .style = u.style});
         g_font = nnh::Font{}; // the slot's font is gone
-        CHECK(u.ui.rect(l).w == 16);
+        CHECK(u->ui.rect(l).w == 16);
     }));
+    u = nullptr;
     g_font = nnh::Font{};
 }

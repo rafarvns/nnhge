@@ -1229,6 +1229,15 @@ Also in this round:
   block. The block now remembers each page's accounted bytes; the font module's shutdown hook (and, in Release, the
   stale-entry path of `load_font`) moves them back and frees the block. Test:
   `load_font_pages_alive_at_shutdown_leave_no_accounting_behind` (failed first).
+- Lead's stage-9 ASan pass on `d481985`: (1) a heap-buffer-overflow read in stb_truetype (`stbtt_GetGlyphHMetrics`)
+  from the ttf mini-fuzz — a damaged `cmap` mapped a code point to a glyph index past `numGlyphs`, and stb reads hmtx,
+  loca and glyf at that index unchecked. Reproduced deterministically on Windows (a segfault) by
+  `ttf_raster_refuses_a_cmap_naming_a_glyph_the_font_lacks`; the rasteriser now refuses such a font ("cmap maps U+0041
+  to glyph 60000, a glyph the font doesn't have"). The same review closed two more gaps in `ttf_check`: the first table
+  of a tag is the one checked (stb_truetype's lookup takes the first; a later duplicate was checked instead), and a
+  format 4 segment's `idRangeOffset` must point inside the subtable. BMFont rectangles are already checked against
+  their pages and stb_image is given sizes checked before decoding. (2) LSan: two `test_ui_fonts.cpp` tests created a
+  UI inside an asserting lambda; the objects now live outside it (the other new crash lambdas allocate nothing).
 - `<nnh/localization.hpp>`: 8 055 preprocessed lines (gfx + result: 7 844 at T0.1), parse time equal within noise
   (0.44–0.46 s for both, 10 runs each).
 

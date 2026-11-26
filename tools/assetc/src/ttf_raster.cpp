@@ -3,6 +3,8 @@
 
 #include "ttf_raster.hpp"
 
+#include <cstdio>
+
 #include "stb_truetype.h"
 #include "ttf_check.hpp"
 
@@ -38,6 +40,12 @@ std::string raster_font(const std::vector<unsigned char>& file, const RasterOpti
     first_skipped = 0;
     for (const char32_t cp : wanted) {
         const int g = stbtt_FindGlyphIndex(&info, static_cast<int>(cp));
+        if (g >= info.numGlyphs) { // stb_truetype would read hmtx, loca and glyf at that index unchecked
+            char why[96];
+            std::snprintf(why, sizeof why, "cmap maps U+%04X to glyph %d, a glyph the font doesn't have (%d glyphs)",
+                          static_cast<unsigned>(cp), g, info.numGlyphs);
+            return why;
+        }
         if (g == 0) {
             if (skipped++ == 0) first_skipped = cp;
             continue;

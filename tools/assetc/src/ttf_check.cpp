@@ -35,16 +35,20 @@ std::string directory(const Span& file, std::uint64_t at, Tables& t) {
         if (!file.has(off, len)) return "a table lies outside the file";
         const Span s = file.sub(off, len);
         const char* tag = reinterpret_cast<const char*>(file.p + r);
-        if (std::memcmp(tag, "cmap", 4) == 0) t.cmap = s;
-        else if (std::memcmp(tag, "head", 4) == 0) t.head = s;
-        else if (std::memcmp(tag, "hhea", 4) == 0) t.hhea = s;
-        else if (std::memcmp(tag, "hmtx", 4) == 0) t.hmtx = s;
-        else if (std::memcmp(tag, "maxp", 4) == 0) t.maxp = s;
-        else if (std::memcmp(tag, "loca", 4) == 0) t.loca = s;
-        else if (std::memcmp(tag, "glyf", 4) == 0) t.glyf = s;
-        else if (std::memcmp(tag, "kern", 4) == 0) t.kern = s;
-        else if (std::memcmp(tag, "GPOS", 4) == 0) t.gpos = s;
-        else if (std::memcmp(tag, "CFF ", 4) == 0) t.cff = s;
+        // the first table of a tag wins, as stb_truetype's own lookup: a later duplicate must not be the one checked
+        const auto take = [&](Span& into) {
+            if (into.p == nullptr) into = s;
+        };
+        if (std::memcmp(tag, "cmap", 4) == 0) take(t.cmap);
+        else if (std::memcmp(tag, "head", 4) == 0) take(t.head);
+        else if (std::memcmp(tag, "hhea", 4) == 0) take(t.hhea);
+        else if (std::memcmp(tag, "hmtx", 4) == 0) take(t.hmtx);
+        else if (std::memcmp(tag, "maxp", 4) == 0) take(t.maxp);
+        else if (std::memcmp(tag, "loca", 4) == 0) take(t.loca);
+        else if (std::memcmp(tag, "glyf", 4) == 0) take(t.glyf);
+        else if (std::memcmp(tag, "kern", 4) == 0) take(t.kern);
+        else if (std::memcmp(tag, "GPOS", 4) == 0) take(t.gpos);
+        else if (std::memcmp(tag, "CFF ", 4) == 0) take(t.cff);
         else if (std::memcmp(tag, "CFF2", 4) == 0) t.cff2 = true;
     }
     return "";
@@ -118,6 +122,15 @@ std::string cmap(const Span& c) {
         if (!c.has(off, length)) return "a cmap subtable is cut short";
         const Span s = c.sub(off, length);
         if (format == 4 && (s.u16(6) % 2 != 0 || !s.has(14, std::uint64_t{s.u16(6)} * 4 + 2))) return "a cmap format 4 is cut short";
+        if (format == 4) { // segments read through idRangeOffset point into glyphIndexArray: inside the subtable
+            const std::uint64_t segs = s.u16(6) / 2, ends = 14, starts = ends + segs * 2 + 2, ranges = starts + segs * 4;
+            if (!s.has(ranges, segs * 2)) return "a cmap format 4 is cut short";
+            for (std::uint64_t k = 0; k < segs; ++k) {
+                const std::uint64_t ro = s.u16(ranges + k * 2), end = s.u16(ends + k * 2), start = s.u16(starts + k * 2);
+                if (ro == 0 || end == 0xFFFF) continue;
+                if (end < start || !s.has(ranges + k * 2 + ro, (end - start + 1) * 2)) return "a cmap format 4 range lies outside it";
+            }
+        }
         if (format == 12 && !s.has(16, std::uint64_t{s.u32(12)} * 12)) return "a cmap format 12 is cut short";
         if (format == 6 && !s.has(10, std::uint64_t{s.u16(8)} * 2)) return "a cmap format 6 is cut short";
         if (format == 0 && length < 262) return "a cmap format 0 is cut short";

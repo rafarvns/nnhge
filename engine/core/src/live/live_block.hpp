@@ -25,6 +25,7 @@ inline constexpr std::uint8_t kPending = 1u << 1;    ///< a panel or remote valu
 inline constexpr std::uint8_t kChanged = 1u << 2;    ///< changed_frame is meaningful
 inline constexpr std::uint8_t kRunPending = 1u << 3; ///< an action waits for the application point
 inline constexpr std::uint8_t kTextPointer = 1u << 4; ///< a text watch through `const char* const*`
+inline constexpr std::uint8_t kUnsent = 1u << 5; ///< added while the PC listens, announced at the frame end (T10.3)
 
 /// A tunable or an action (≈ 80 bytes on the 3DS).
 struct Entry {
@@ -57,7 +58,7 @@ struct WatchEntry {
     char name[kNameBytes] = {};
 };
 
-/// A per-frame watch (80 bytes).
+/// A per-frame watch (76 bytes).
 struct ShownEntry {
     std::uint32_t hash = 0;
     std::uint32_t last_frame = 0;
@@ -99,6 +100,7 @@ struct PanelState {
     int watch_scroll = 0;
     std::uint8_t touch_mode = 0; ///< live_panel_touch.cpp: none, ignored, drag, minus, plus
     std::uint16_t touch_slot = 0;
+    std::uint16_t touch_generation = 0; ///< the touched entry's generation (a removed one is left alone)
     int touch_ticks = 0;
 };
 
@@ -117,6 +119,7 @@ struct Registry {
     RemoteOp ops[kMaxOps];
     int op_count = 0;
     int pending_count = 0; ///< entries with kPending or kRunPending
+    int unsent_count = 0;  ///< entries with kUnsent: the frame end announces them (one batch, not a send each)
     bool dump_requested = false;
     bool text_cut_warned = false;
     std::uint32_t next_sweep = 0;

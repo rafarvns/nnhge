@@ -219,6 +219,17 @@ bool row_at(const Registry& r, int page, int index, Row& out) {
     return found;
 }
 
+int rows_window(const Registry& r, int page, int first, int n, Row* out, int& total) {
+    int at = 0, got = 0;
+    each_row(r, page, [&](const Row& row) {
+        if (at >= first && got < n) out[got++] = row;
+        ++at;
+        return true;
+    });
+    total = at;
+    return got;
+}
+
 const char* row_label(const Row& row, int& length) {
     const char* start = leaf(row.name, row.length);
     length = static_cast<int>(row.name + row.length - start);
@@ -256,6 +267,10 @@ void panel_buttons(Registry& r, int page, const DevInput& in) {
     if ((in.held & bit(Button::Select)) != 0) return; // chords belong to the overlay's pages
     const int count = row_count(r, page);
     if (count == 0) return;
+    if (in.pressed == 0 && in.repeated == 0 && in.held == 0) { // nothing pressed: only keep the selection in range
+        keep_visible(r, page);
+        return;
+    }
     keep_visible(r, page);
     move(r, page, in, count);
     keep_visible(r, page);

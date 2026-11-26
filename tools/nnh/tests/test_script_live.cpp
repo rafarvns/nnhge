@@ -279,3 +279,45 @@ NNH_TEST(script_runner_live_interactive_tunes_get_and_expect_value) {
     r.on_record(value_record("player/jump", 12, 6.0f));
     CHECK(has_note(r, "expect-value player/jump == 6 passed at frame 12", notes));
 }
+
+// Review: `watch NAME every N` takes 1..255 only, never throwing.
+NNH_TEST(script_runner_live_typed_watch_every_is_checked) {
+    ScriptRunner r(Script{}, RunnerOptions{.interactive = true});
+    r.start();
+    r.on_typed("set player/jump 1");
+    r.on_record(hello_record(1));
+    r.on_record(entry_record("player/jump", lv::Kind::Float, 0, lv::float_bits(10.0f)));
+    r.on_record(state_record(3, false, wire::kStateCatalogueComplete));
+    (void)decoded(r);
+    std::vector<std::string> notes;
+    const char* const bad[] = {"watch player/jump every abc", "watch player/jump every 0", "watch player/jump every 256",
+                               "watch player/jump every 300", "watch player/jump every 99999999999", "watch player/jump x"};
+    for (const char* b : bad) {
+        notes.clear();
+        r.on_typed(b);
+        CHECK(has_note(r, "usage: watch NAME [every N] (N 1..255)", notes));
+    }
+    (void)decoded(r);
+    r.on_typed("watch player/jump every 255");
+    const std::vector<wire::Message> sent = decoded(r);
+    CHECK(sent.size() == 1 && wire::live_op(sent[0]) == wire::LiveOp::Follow && wire::live_arg(sent[0]) == 255);
+}
+
+// Review: interactive --tunes steps keep their origin (an undeclared name is noted and skipped).
+NNH_TEST(script_runner_live_interactive_tunes_steps_keep_their_origin) {
+    ScriptRunner r(Script{}, RunnerOptions{.interactive = true});
+    r.start();
+    Step s;
+    s.command = Command::Set;
+    s.text = "player/dash";
+    s.value = "a\"b";
+    s.origin = "keep.toml:6";
+    Step resume;
+    resume.command = Command::Resume;
+    r.on_typed_steps({s, resume});
+    r.on_record(hello_record(1));
+    r.on_record(entry_record("player/jump", lv::Kind::Float, 0, lv::float_bits(10.0f)));
+    r.on_record(state_record(1, true, wire::kStateCatalogueComplete));
+    std::vector<std::string> notes;
+    CHECK(has_note(r, "keep.toml:6: unknown name \"player/dash\": skipped", notes));
+}

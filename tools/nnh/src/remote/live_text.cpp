@@ -17,10 +17,23 @@ namespace lv = detail::live;
 
 std::string quote(const std::string& s) { return "\"" + s + "\""; }
 
+/// The values an integer watch of `k` can hold.
+void integer_range(Kind k, std::int64_t& lo, std::int64_t& hi) {
+    switch (k) {
+    case Kind::Int8: lo = -128, hi = 127; return;
+    case Kind::Int16: lo = -32768, hi = 32767; return;
+    case Kind::UInt8: lo = 0, hi = 255; return;
+    case Kind::UInt16: lo = 0, hi = 65535; return;
+    case Kind::UInt32: lo = 0, hi = 4294967295LL; return;
+    default: lo = -2147483648LL, hi = 2147483647LL; return;
+    }
+}
+
 bool parse_float(const std::string& t, float& out) {
     const char* b = t.data();
     const char* e = b + t.size();
     if (b != e && *b == '+') ++b;
+    if (b != e && (*b == '+' || (*b == '-' && b != t.data()))) return false; // one sign at most
     const auto r = std::from_chars(b, e, out);
     return r.ec == std::errc{} && r.ptr == e && !t.empty();
 }
@@ -29,6 +42,7 @@ bool parse_int(const std::string& t, std::int64_t& out) {
     const char* b = t.data();
     const char* e = b + t.size();
     if (b != e && *b == '+') ++b;
+    if (b != e && (*b == '+' || (*b == '-' && b != t.data()))) return false; // one sign at most
     const auto r = std::from_chars(b, e, out);
     return r.ec == std::errc{} && r.ptr == e && !t.empty();
 }
@@ -109,7 +123,7 @@ std::string parse_set_value(const LiveItem& item, const std::string& text, std::
             return item.name + ": " + text + " is outside " + float_text(lv::bits_float(item.min)) + ".." +
                    float_text(lv::bits_float(item.max));
         }
-        bits = lv::float_bits(v);
+        bits = lv::float_bits(v == 0 ? 0.0f : v); // -0 sets +0 (a tunable's -0 never differs from a +0 default)
         return "";
     }
     case Kind::Int32: {
@@ -188,6 +202,9 @@ std::string parse_expected(const LiveItem& item, const std::string& text, Compar
         } else {
             std::int64_t v = 0;
             if (!parse_int(text, v)) return item.name + " is an integer: " + quote(text) + " is not a whole number";
+            std::int64_t lo = 0, hi = 0;
+            integer_range(item.kind, lo, hi);
+            if (v < lo || v > hi) return item.name + ": " + text + " is outside " + std::to_string(lo) + ".." + std::to_string(hi);
             bits = static_cast<std::uint32_t>(v);
         }
     } else {

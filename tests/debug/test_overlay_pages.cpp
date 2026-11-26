@@ -130,3 +130,23 @@ NNH_TEST(overlay_pages_without_live_values_show_a_note) {
     for (int i = 0; i < l.count(); ++i) note = note || std::strcmp(l.text(i), "no live values in this game") == 0;
     CHECK(note);
 }
+
+// The maintainer's T3.7 check: the Stats page shows the pause and the frame too.
+NNH_TEST(overlay_pages_the_stats_page_shows_the_pause) {
+    if constexpr (!nnh::build::kDevToolsEnabled) return;
+    restart();
+    nnh::debug::set_overlay_visible(true);
+    CHECK(nnh::frame());
+    CHECK(nnh::frame());
+    fake::queue_dev_requests({nnh::platform::kDevTogglePause, 0, nnh::platform::kDevTogglePause});
+    CHECK(nnh::frame()); // the last paused tick's list stays readable until the next flush
+    bool marked = false;
+    CHECK(nnh::frame());
+    fake::queue_dev_requests({nnh::platform::kDevTogglePause, 0});
+    fake::quit_after_polls(3);
+    (void)nnh::frame(); // paused ticks, then the quit
+    const nnh::detail::DebugList& l = nnh::detail::debug_list_last_frame();
+    for (int i = 0; i < l.count(); ++i) marked = marked || std::strncmp(l.text(i), "PAUSED f", 8) == 0;
+    CHECK(marked);
+    fake::set_quit_requested(false);
+}

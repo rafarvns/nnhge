@@ -77,29 +77,32 @@ bool LiveBench::update() {
     if (phase_ < 0) return false;
     double ms = 0;
     if (phase_ == 0) {
-        const nnh::Duration start = nnh::time::now();
-        for (int i = 0; i < 63; ++i) { // with the showcase's spawn/alive: 64, the table's size
-            char name[16];
-            std::snprintf(name, sizeof name, "bench/s%d", i);
-            nnh::live::show(nnh::live::Name::runtime(name), i + frame_);
+        static char names[63][16]; // built once: the phase times show() itself, not snprintf (console run 1)
+        static nnh::live::Name keys[63];
+        if (frame_ == 0) {
+            for (int i = 0; i < 63; ++i) {
+                std::snprintf(names[i], sizeof names[i], "bench/s%d", i);
+                keys[i] = nnh::live::Name::runtime(names[i]);
+            }
         }
+        const nnh::Duration start = nnh::time::now();
+        for (int i = 0; i < 63; ++i) nnh::live::show(keys[i], i + frame_); // with spawn/alive: 64, the table's size
         ms = since_ms(start);
     } else if (phase_ == 1) {
         ms = scope_ms("live start", "live end");
     } else if (phase_ == 2 || phase_ == 3) {
         ms = scope_ms("live page", nullptr);
     } else {
+        static char tnames[100][16], wnames[50][16]; // built once: the phase times registration, not snprintf
+        if (frame_ == 0) {
+            for (int i = 0; i < 100; ++i) std::snprintf(tnames[i], sizeof tnames[i], "bench/t%d", i);
+            for (int i = 0; i < 50; ++i) std::snprintf(wnames[i], sizeof wnames[i], "bench/w%d", i);
+        }
         const nnh::Duration start = nnh::time::now();
         for (int i = 0; i < 100; ++i) {
-            char name[24];
-            std::snprintf(name, sizeof name, "bench/t%d", i);
-            tunables_[i] = nnh::live::tune(nnh::live::Name::runtime(name), &values_[i], {.min = 0, .max = 1, .step = 0.5f});
+            tunables_[i] = nnh::live::tune(nnh::live::Name::runtime(tnames[i]), &values_[i], {.min = 0, .max = 1, .step = 0.5f});
         }
-        for (int i = 0; i < 50; ++i) {
-            char name[24];
-            std::snprintf(name, sizeof name, "bench/w%d", i);
-            watches_[i] = nnh::live::watch(nnh::live::Name::runtime(name), &ints_[i]);
-        }
+        for (int i = 0; i < 50; ++i) watches_[i] = nnh::live::watch(nnh::live::Name::runtime(wnames[i]), &ints_[i]);
         for (auto& h : tunables_) h = nnh::live::Handle{};
         for (auto& h : watches_) h = nnh::live::Handle{};
         ms = since_ms(start);

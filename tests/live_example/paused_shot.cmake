@@ -1,0 +1,22 @@
+# Spec 030 T3.7 (ctest platformer_paused_equals_running_pc): examples/platformer/tests/paused.nnhs takes a running
+# screenshot, pauses, and takes one of the held frame; both screens must be byte for byte the same.
+file(GLOB _before "${SOURCE_DIR}/build/logs/platformer-*/frame-*-paused-top.png")
+execute_process(COMMAND ${NNH} run platformer --pc --no-build --script examples/platformer/tests/paused.nnhs
+                WORKING_DIRECTORY ${SOURCE_DIR} RESULT_VARIABLE _r OUTPUT_VARIABLE _o ERROR_VARIABLE _o)
+message("${_o}")
+file(GLOB _after "${SOURCE_DIR}/build/logs/platformer-*/frame-*-paused-top.png")
+list(REMOVE_ITEM _after ${_before})
+list(LENGTH _after _n)
+if(NOT _r EQUAL 0 OR NOT _n EQUAL 1)
+    message(FATAL_ERROR "paused shot: the script failed or took no paused screenshot")
+endif()
+get_filename_component(_dir ${_after} DIRECTORY)
+foreach(_screen top bottom)
+    file(GLOB _run "${_dir}/frame-*-running-${_screen}.png")
+    file(GLOB _paused "${_dir}/frame-*-paused-${_screen}.png")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${_run} ${_paused} RESULT_VARIABLE _same)
+    if(NOT _same EQUAL 0)
+        message(FATAL_ERROR "paused shot: the ${_screen} screen differs from the running frame")
+    endif()
+endforeach()
+message("paused shot: PASS")

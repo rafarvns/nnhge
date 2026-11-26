@@ -71,7 +71,8 @@ void frame_end(std::uint32_t frame, bool paused) {
 #endif
     Registry* r = g_registry;
     if (r == nullptr) return;
-    if (r->follow_count > 0 && g_follows_frame_end != nullptr) g_follows_frame_end(*r, frame, paused);
+    // follows, announcements and the outbox's flush (one call a frame; it returns at once with nothing to do)
+    if (g_follows_frame_end != nullptr) g_follows_frame_end(*r, frame, paused);
     if (r->dump_requested) {
         r->dump_requested = false;
         write_dump(*r, frame, log_line, nullptr);

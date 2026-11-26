@@ -112,6 +112,7 @@ struct State {
     int remote_captures = 0;               ///< remote_capture() calls that succeeded
     bool remote_capture_held = false;      ///< a capture buffer is held (until remote_capture_release())
     int remote_capture_releases = 0;       ///< remote_capture_release() calls that freed a held buffer
+    int remote_send_calls = 0;             ///< remote_send() calls while connected (spec 030: records are batched)
 };
 
 const State& state();

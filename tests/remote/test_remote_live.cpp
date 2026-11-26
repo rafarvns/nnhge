@@ -3,7 +3,9 @@
 // LiveRefused, no live record before a catalogue request, a game without the module, Pause / step / resume with
 // LiveState records, values while paused flagged.
 
+#include <cstdio>
 #include <cstring>
+#include <string>
 
 #include "live/live_kinds.hpp"
 #include "nnh/app.hpp"
@@ -83,12 +85,15 @@ NNH_TEST(remote_live_catalogue_in_name_order_then_its_end) {
     CHECK(v.header.hash == hash("w/n") && (v.header.flags & wire::kEntryWatch) != 0);
     const Record* state = s.find(wire::RecordType::LiveState);
     CHECK(state != nullptr && (state->payload[5] & wire::kStateCatalogueComplete) != 0);
-    // registered after the catalogue: sent at once
+    // registered after the catalogue: announced at the frame end
     fake::remote_clear_sent();
     float c = 0;
     live::Handle hc = live::tune("c", &c, {.min = 0, .max = 1, .step = 1});
+    CHECK(sent().count_of(wire::RecordType::LiveEntry) == 0);
+    CHECK(nnh::frame());
     CHECK(sent().count_of(wire::RecordType::LiveEntry) == 1);
     hc = live::Handle{};
+    CHECK(nnh::frame());
     CHECK(sent().count_of(wire::RecordType::LiveRemoved) == 1);
 }
 
@@ -178,4 +183,90 @@ NNH_TEST(remote_live_values_while_paused_are_flagged) {
     wire::LiveValueRecord v;
     CHECK(value != nullptr && wire::decode_live_value(value->payload, value->length, v));
     CHECK((v.flags & wire::kValuePaused) != 0);
+}
+
+// Console run 1 (spec 030 T10.3): records were sent one platform call each — ≈ 1.5 ms per call on the 3DS.
+NNH_TEST(remote_live_entries_added_and_removed_in_one_frame_send_nothing) {
+    if constexpr (!live::kEnabled) return;
+    restart_attached();
+    float a = 0;
+    live::Handle h = live::tune("a", &a, {.min = 0, .max = 1, .step = 1});
+    send(stamped(wire::live_message(wire::LiveOp::Catalogue, 0, 0, 0), 2, 0));
+    CHECK(nnh::frame());
+    fake::remote_clear_sent();
+    static float values[100];
+    for (int round = 0; round < 3; ++round) {
+        for (int i = 0; i < 100; ++i) {
+            char name[16];
+            std::snprintf(name, sizeof name, "b/t%d", i);
+            live::Handle t = live::tune(live::Name::runtime(name), &values[i], {.min = 0, .max = 1, .step = 1});
+        }
+    }
+    CHECK(nnh::frame());
+    CHECK(sent().count_of(wire::RecordType::LiveEntry) == 0);
+    CHECK(sent().count_of(wire::RecordType::LiveRemoved) == 0);
+}
+
+NNH_TEST(remote_live_records_of_a_frame_go_out_in_few_sends) {
+    if constexpr (!live::kEnabled) return;
+    restart_attached();
+    float a = 0;
+    live::Handle h = live::tune("a", &a, {.min = 0, .max = 1, .step = 1});
+    static float values[64];
+    static live::Handle handles[64];
+    for (int i = 0; i < 64; ++i) {
+        char name[16];
+        std::snprintf(name, sizeof name, "b/t%d", i);
+        handles[i] = live::tune(live::Name::runtime(name), &values[i], {.min = 0, .max = 1, .step = 1});
+    }
+    send(stamped(wire::live_message(wire::LiveOp::Catalogue, 0, 0, 0), 2, 0));
+    const int before = fake::state().remote_send_calls;
+    CHECK(nnh::frame());
+    CHECK(sent().count_of(wire::RecordType::LiveEntry) == 65);
+    CHECK(fake::state().remote_send_calls - before <= 8); // ~4.5 KB of records in 1 KB batches, plus the tick
+    const int mid = fake::state().remote_send_calls;
+    for (auto& x : handles) x = live::Handle{};
+    CHECK(nnh::frame());
+    CHECK(sent().count_of(wire::RecordType::LiveRemoved) == 64);
+    CHECK(fake::state().remote_send_calls - mid <= 3);
+}
+
+// Review: a per-frame watch is announced with the kind of its first value.
+NNH_TEST(remote_live_shown_watches_are_announced_with_their_kind) {
+    if constexpr (!live::kEnabled) return;
+    restart_attached();
+    float a = 0;
+    live::Handle h = live::tune("a", &a, {.min = 0, .max = 1, .step = 1});
+    send(stamped(wire::live_message(wire::LiveOp::Catalogue, 0, 0, 0), 2, 0));
+    CHECK(nnh::frame());
+    fake::remote_clear_sent();
+    live::show("w/speed", 1.5f);
+    live::show("w/state", "idle");
+    live::show("w/pos", nnh::Vec2{1, 2});
+    CHECK(nnh::frame());
+    const Sent s = sent();
+    CHECK(s.count_of(wire::RecordType::LiveEntry) == 3);
+    int found = 0;
+    for (int i = 0; i < 3; ++i) {
+        const Record* r = s.find(wire::RecordType::LiveEntry, i);
+        wire::LiveEntryView v;
+        if (r == nullptr || !wire::decode_live_entry(r->payload, r->length, v)) continue;
+        const std::string name(v.name, v.header.name_length);
+        if (name == "w/speed" && v.header.kind == nnh::detail::live::Kind::Float) ++found;
+        if (name == "w/state" && v.header.kind == nnh::detail::live::Kind::Text) ++found;
+        if (name == "w/pos" && v.header.kind == nnh::detail::live::Kind::Vec2) ++found;
+    }
+    CHECK(found == 3);
+}
+
+// Review: -0 sets +0, so it doesn't count as a change against a +0 default.
+NNH_TEST(remote_live_negative_zero_is_no_change) {
+    if constexpr (!live::kEnabled) return;
+    restart_attached();
+    float a = 0;
+    live::Handle h = live::tune("a", &a, {.min = -1, .max = 1, .step = 0.5f});
+    send(stamped(wire::live_set_message(hash("a"), 0x80000000u), 2, 0));
+    CHECK(nnh::frame());
+    CHECK(!h.changed());
+    CHECK(nnh::detail::live::float_bits(a) == 0);
 }

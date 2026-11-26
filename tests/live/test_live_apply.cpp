@@ -242,3 +242,24 @@ NNH_TEST(live_apply_nothing_is_walked_while_nothing_waits) {
     frames(1);
     CHECK(g_registry->walks == walks + 1);
 }
+
+namespace {
+float g_born = 3;
+live::Handle g_born_handle;
+void register_one(void*) { g_born_handle = live::tune("z/born", &g_born, {.min = 0, .max = 9, .step = 1}); }
+} // namespace
+
+// Review: a callback that registers a new tunable inside the application point.
+NNH_TEST(live_apply_a_callback_may_register_a_tunable) {
+    if constexpr (!live::kEnabled) return;
+    restart();
+    float x = 0, y = 0;
+    live::Handle ha = live::tune("a/x", &x, {.min = 0, .max = 9, .step = 1}, {register_one, nullptr});
+    live::Handle hb = live::tune("b/y", &y, {.min = 0, .max = 9, .step = 1});
+    set_pending(*g_registry, id_slot(ha.id()), float_bits(1.0f));
+    set_pending(*g_registry, id_slot(hb.id()), float_bits(2.0f));
+    frames(1);
+    CHECK(x == 1.0f && y == 2.0f && g_born_handle.valid());
+    CHECK(g_registry->tunable_count == 3 && g_registry->pending_count == 0);
+    g_born_handle = live::Handle{};
+}

@@ -1,7 +1,7 @@
 // The session's live value messages (spec 030 D51, D52): LiveSet and Live go to the live module when the game has one
 // (refused with reason 7 otherwise, a Catalogue answered empty); Pause drives core's pause; LiveState records give the
 // PC the pause state and flow control while frames stop. Debug/Development only (remote_session.cpp's apply_due).
-// Tests: tests/remote/test_remote_live.cpp, test_remote_pause.cpp.
+// Tests: tests/remote/test_remote_live.cpp.
 
 #include "app/dev_pause.hpp"
 #include "debug/live_hook.hpp"

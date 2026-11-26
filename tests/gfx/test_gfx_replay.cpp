@@ -5,6 +5,8 @@
 #include <cstring>
 
 #include "gfx/gfx_replay.hpp"
+#include "gfx_fixture.hpp"
+#include "app/dev_pause.hpp"
 #include "nnh/app.hpp"
 #include "nnh/build.hpp"
 #include "nnh/debug.hpp"
@@ -107,4 +109,37 @@ NNH_TEST(gfx_replay_release_submits_and_clears_as_before) {
     CHECK(!nnh::detail::g_gfx_held);
     CHECK(nnh::frame());
     CHECK(fake::state().last_frame_item_count == 0);
+}
+
+namespace {
+struct Textured : nnh::Scene {
+    nnh::Texture hero;
+    void on_enter() override { hero = gfx_test::load("hero"); }
+    void on_exit() override { hero = nnh::Texture{}; } // released: the held lists still name it
+    void draw() override { nnh::gfx::draw(nnh::Screen::Top, hero, {10, 10}); }
+};
+struct Other : nnh::Scene {};
+} // namespace
+
+// Review: a scene replace applied at the start of the frame that pauses, its texture released in on_exit.
+NNH_TEST(gfx_replay_skips_a_frame_whose_scene_was_replaced_with_its_texture) {
+    if constexpr (!nnh::build::kDevToolsEnabled) return;
+    gfx_test::restart();
+    static Textured textured;
+    static Other other;
+    nnh::scenes::push(textured);
+    CHECK(nnh::frame());
+    nnh::scenes::update_and_draw(); // records the hero sprite
+    nnh::scenes::replace(other);    // applied at the start of the next frame, which pauses
+    fake::queue_dev_requests({kDevTogglePause, 0, kDevTogglePause});
+    CHECK(nnh::frame()); // no crash, no stale-texture assert
+    int sprites = 0;
+    for (int i = 0; i < fake::state().last_frame_item_count; ++i) {
+        const nnh::platform::DrawItem2D& it = fake::state().last_frame_items[i];
+        sprites += it.w == 64 && it.h == 32 ? 1 : 0; // the hero (64 x 32), never a glyph
+    }
+    CHECK(sprites == 0); // the released texture's sprite was not submitted again
+    CHECK(nnh::detail::g_dev_scenes_changed);
+    nnh::scenes::pop();
+    CHECK(nnh::frame());
 }

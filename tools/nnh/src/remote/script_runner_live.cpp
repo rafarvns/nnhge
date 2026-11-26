@@ -5,6 +5,7 @@
 // from the log for the session to save.
 
 #include <algorithm>
+#include <charconv>
 
 #include "remote/live_text.hpp"
 #include "remote/script_live.hpp"
@@ -259,7 +260,17 @@ bool ScriptRunner::typed_live(const std::string& text) {
     }
     const std::uint32_t hash = item != nullptr ? item->hash : 0;
     std::uint8_t every = 1;
-    if (word == "watch" && t.size() == 4 && t[2].text == "every") every = static_cast<std::uint8_t>(std::stoi(t[3].text));
+    if (word == "watch" && t.size() != 2) {
+        int n = 0;
+        const std::string& v = t.size() == 4 ? t[3].text : std::string();
+        const auto r = std::from_chars(v.data(), v.data() + v.size(), n);
+        if (t.size() != 4 || t[2].text != "every" || r.ec != std::errc{} || r.ptr != v.data() + v.size() || n < 1 ||
+            n > 255) {
+            notes_.push_back("usage: watch NAME [every N] (N 1..255)");
+            return true;
+        }
+        every = static_cast<std::uint8_t>(n);
+    }
     const wire::LiveOp op = word == "get" ? wire::LiveOp::Get : (word == "watch" ? wire::LiveOp::Follow : wire::LiveOp::Unfollow);
     wire::Message m = wire::live_message(op, op == wire::LiveOp::Follow ? every : 0, 0, hash);
     m.frame = std::max(last_sent_frame_, last_frame_ + kTypedDelay);

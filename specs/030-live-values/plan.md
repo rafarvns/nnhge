@@ -124,7 +124,7 @@ at the start of the frame it names. A step while running pauses first.
 poll events (quit still quits), read input, the remote session (messages due at the next game frame are applied: sets
 queue, gets and follows answer at once with the current values, screenshots are taken, `step`/`resume` end the pause),
 engine controls, the overlay and panel, then a platform frame that **replays the held frame** — the last game frame's
-recorded 2D, tile, particle and 3D lists (in Development builds gfx clears them when the next game frame's recording
+recorded 2D, tile and particle lists (3D is not replayed: R14) (in Development builds gfx clears them when the next game frame's recording
 begins instead of after submitting) — plus that frame's game debug text and the live overlay drawn now. The replay
 re-resolves textures by slot and generation (D47: a released texture is skipped) and is dropped (cleared screens and
 the panel only, with the note `frame not held: the scenes changed`) when scene changes were applied at the start of the
@@ -465,9 +465,9 @@ No other overlap: 030 doesn't touch `gfx.hpp`, `TextOptions`, the UI, fonts, loc
 
 | Item | 3DS | 64-bit PC | Notes |
 |------|-----|-----------|-------|
-| tunable or action | 80 B | 96 B | pointer, hash, default/min/max/step/pending bits, changed frame, callback + context, enum names, slot generation, kind, flags (48 B on the 3DS) + name 32 B |
+| tunable or action | 84 B | 104 B | pointer, hash, default/min/max/step/pending bits, changed frame, callback + context, enum names, slot generation, kind, flags (48 B on the 3DS) + name 32 B |
 | registered watch | 48 B | 56 B | pointer, hash, generation, kind, flags + name |
-| per-frame watch | 80 B | 80 B | hash, last frame, kind, length, value 32 B, name 32 B |
+| per-frame watch | 76 B | 76 B | hash, last frame, kind, length, value 32 B, name 32 B |
 | follow | 12 B × 16 | same | hash, every, frames left, next frame |
 | remote op queue | 12 B × 64 | same | kind, seq, hash, bits |
 | sorted indexes, shown table | 2 B × (128 + 64 + 64) + 2 B × 128 | same | |
@@ -1037,3 +1037,67 @@ pc-release 337/337; `nnh_tests` 3982, `nnh_tool_tests` 193; 3ds-release and 3ds-
 to T0.1, `hello.elf` without debug info identical, sections and symbols identical; pc-release `hello` sections and symbols
 identical; Development `hello` 3ds-dev text 226 904 (+5 984 B over T0.1). `docs_tool check`: 0 broken links. Open: T3.7
 (the maintainer's PC yes/no above), stage 9 (VM 120), stage 10 (console), T11.8 (merge).
+
+## Console run 1 (Old 3DS XL, 3ds-dev; log `nnhge-console-live1.log`, by the lead)
+
+Correctness passed: every `expect-value`, the dump saved, `live: sum 7A849F13` (the PC's), `nnh: PASS`. The bench missed
+every target: `show64` 1.1356 ms (worst 1.408), `hidden192` 0.3082 ms (worst 88.67), the Tunables page 1.4408 ms (worst
+1.694), the Watches page 1.3550 ms (worst 1.582), `register` (100 tunables + 50 watches) 693 ms (worst 1142).
+
+## Optimisation round (T10.3)
+
+- **Cause** (`register` ≈ 1500× the PC, a 88 ms spike while idle): every live record went out in its own
+  `platform::remote_send` — two per registration (the LiveEntry's fixed part and its name), one per removal. The check
+  script had asked for the catalogue, so the bench's 150 registrations and 150 removals a frame made ≈ 450 socket sends
+  (≈ 1.5 ms each on the console, nothing on the PC's loopback); the idle spike was the sweep of the 63 expired per-frame
+  watches of the previous phase, 63 LiveRemoved records in one frame. No file access, no log line, no allocation per call.
+  Fixes (`live_remote.cpp`, tests first in `test_remote_live.cpp`): a 1 KB outbox flushed at the frame end and after a
+  catalogue (records of a frame go out in ≈ 1 send per KB); entries added while the PC listens are marked and announced at
+  the frame end (flag `kUnsent`), so one added and removed in the same frame sends nothing (`remove_*` skips the
+  LiveRemoved of an unsent entry). This also announces a per-frame watch with the kind of its first value (it was
+  announced before the value was stored).
+- **`show64`**: the bench timed `snprintf` (≈ 15 µs a call on the console) building the 63 names each frame: names built
+  once now; the phase times `show()` alone. `register` likewise.
+- **The pages**: each visible row was found by a pass over the whole index (`row_at`, 9 rows + counts ≈ 12 passes a
+  frame); the page now takes its rows in one pass (`rows_window`), and the panel skips its navigation work on ticks with
+  no button. The row texts are built without `snprintf` (`Str` in `live_panel_draw.cpp`).
+- PC (pc-dev) before → after: `show64` 0.0226 → 0.0043 ms, Tunables page 0.0332 → 0.0212 ms, Watches page 0.0296 →
+  0.0132 ms, `hidden192` 0.0008 → 0.0009 ms, `register` 0.44 → 0.46 ms (the PC never paid for the sends). Pixels,
+  values and goldens unchanged (`7A849F13`, `29C765A7`, the platformer's `E445E8B2`); targets unchanged: console run 2
+  sets the budgets (+ ≈ 25 %).
+
+## Review round (independent review "approve with fixes")
+
+Fixed, tests first where they test behaviour: a per-frame watch announced with its value's kind (announcements moved to
+the frame end; `remote_live_shown_watches_are_announced_with_their_kind`); typed `watch NAME every N` parsed with
+`from_chars`, 1..255 only, else `usage: watch NAME [every N] (N 1..255)` (`script_runner_live_typed_watch_every_is_checked`);
+integer watches' expected values checked against their kind's range (`live_text_integer_watches_check_their_range`);
+interactive `--tunes` queues its steps as steps (`ScriptRunner::on_typed_steps`, origin kept:
+`script_runner_live_interactive_tunes_steps_keep_their_origin`); the test-file comments; a refused enum registration
+checks its default before the entry exists (never announced or removed); a second sign refused (`+-5`); `-0` sets `+0` in
+the game and in `nnh` (`remote_live_negative_zero_is_no_change`); the ShownEntry size comment (76 B) and this plan's
+size table (84 B / 104 B per tunable) and replay text (no 3D); the name rules and `kind_of` moved to
+`nnh/detail/live_name.hpp` and `nnh/detail/live_kind_of.hpp` (`live.hpp` 282 lines); the builtins noted in
+`docs/tech/cpp.md`; the touched panel row keeps its slot and generation. Tests added:
+`live_apply_a_callback_may_register_a_tunable`, `gfx_replay_skips_a_frame_whose_scene_was_replaced_with_its_texture`
+(a callback removing a pending entry was already `live_apply_a_callback_may_destroy_a_handle_waiting_after_it`).
+
+## T3.7 found by the maintainer: the paused platformer lost its tile layers
+
+- **Cause**: the held frame's submit spends the frame's tile budget (`TileBatches::tiles_`) and particle budget; a replay
+  submitted the same batches against the spent budget, so past the first tick (and at once with a zoomed-out camera,
+  which has more quads) every tile batch was dropped. `gfx_replay()` now gives both budgets back before each replay
+  (`tiles.rewind({0, 0})`; the particle budget marked when the frame's recording begins and rewound). Tests first:
+  `gfx_replay_keeps_tile_layers_through_a_camera` and `..._through_a_zoomed_camera` (zoom 0.5 failed before the fix), and
+  the ctest `platformer_paused_equals_running_pc` (`examples/platformer/tests/paused.nnhs`: a running screenshot, a pause,
+  a paused screenshot: both screens byte for byte the same).
+- The Stats page now shows `PAUSED f<N>` while paused (`overlay_pages_the_stats_page_shows_the_pause`), so F10 steps can
+  be seen there too.
+- T3.7 stays open for the maintainer's keyboard check (Pause, F10, Pause) on the platformer.
+
+### Guards after the optimisation round, the review round and the T3.7 fix (run `sopt2`)
+
+ctest pc-debug 373/373 (with `platformer_paused_equals_running_pc`; the goldens `29C765A7`, `7A849F13` and the
+platformer's replay lines unchanged), pc-release 337/337; 3ds-release and 3ds-dev 0 warnings; `hello.3dsx` identical,
+`hello.elf` without debug info identical, sections and symbols identical; pc-release `hello` sections and symbols
+identical; Development `hello` 3ds-dev text 227 088. Console run 2 (the lead) sets the bench budgets.

@@ -1588,6 +1588,7 @@ target_sources(nnh_tests PRIVATE
     debug/test_dev_controls.cpp
     debug/test_overlay_pages.cpp
     gfx/test_gfx_replay.cpp
+    gfx/test_gfx_replay_tiles.cpp
     live/test_live_apply.cpp
     live/test_live_cost.cpp
     live/test_live_dump.cpp
@@ -1662,6 +1663,12 @@ if(TARGET live AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL 
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
+    add_test(NAME platformer_paused_equals_running_pc
+             COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/live_example/paused_shot.cmake)
+    set_tests_properties(platformer_paused_equals_running_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
+        PASS_REGULAR_EXPRESSION "paused shot: PASS" TIMEOUT 300 RESOURCE_LOCK nnh_remote_port)
     add_test(NAME live_keep_pc COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
                                        -P ${CMAKE_CURRENT_SOURCE_DIR}/live_example/keep.cmake)
     set_tests_properties(live_keep_pc PROPERTIES

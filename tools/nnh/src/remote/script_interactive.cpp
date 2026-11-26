@@ -53,6 +53,16 @@ void ScriptRunner::on_typed(const std::string& text) {
     pump_typed();
 }
 
+void ScriptRunner::on_typed_steps(const std::vector<Step>& steps) {
+    if (!options_.interactive || closed_) return;
+    for (const Step& step : steps) {
+        if (!hello_sent_) send_hello();
+        if (attached_) typed_step(step);
+        else waiting_.push_back(step);
+    }
+    pump_typed();
+}
+
 void ScriptRunner::typed_step(const Step& step) {
     const std::string why = missing_control(step);
     if (!why.empty()) {

@@ -1,7 +1,8 @@
 // The live module's side of the remote (spec 030 FR-11, FR-14, FR-17, FR-18; plan "Remote protocol"): the catalogue
 // in name order, LiveEntry/LiveRemoved while attached, Get and Follow answered by LiveValue records at the frame end,
-// refusals as LiveRefused. Records are written in pieces from the registry (no buffer beyond a 72-byte scratch).
-// Tests: tests/live/test_live_remote.cpp.
+// refusals as LiveRefused. Records go out in batches through a 1 KB outbox (console run 1: a platform send costs
+// ≈ 1.5 ms on the 3DS), flushed at the frame end and after a catalogue; entries added while the PC listens are announced
+// at the frame end, so one added and removed in the same frame costs nothing. Tests: tests/remote/test_remote_live.cpp.
 
 #include <cstring>
 
@@ -25,7 +26,24 @@ using remote::LiveOp;
 bool g_records = false; // the PC asked for the catalogue in this attachment
 std::uint32_t g_frame = 0;
 
-void send(const std::uint8_t* bytes, std::size_t size) { remote::send_record(bytes, size); }
+constexpr std::size_t kOutbox = 1024;
+std::uint8_t g_out[kOutbox];
+std::size_t g_out_used = 0;
+
+void flush() {
+    if (g_out_used > 0) remote::send_record(g_out, g_out_used);
+    g_out_used = 0;
+}
+
+void send(const std::uint8_t* bytes, std::size_t size) {
+    if (g_out_used + size > kOutbox) flush();
+    if (size > kOutbox) {
+        remote::send_record(bytes, size);
+        return;
+    }
+    for (std::size_t i = 0; i < size; ++i) g_out[g_out_used + i] = bytes[i];
+    g_out_used += size;
+}
 
 std::uint8_t entry_flags(const Entry& e) {
     std::uint8_t f = e.kind == Kind::Action ? remote::kEntryAction : remote::kEntryTunable;
@@ -85,15 +103,48 @@ void send_watch(const Registry& r, std::uint16_t ref) {
     send_named(h, w.name, w.name_length, nullptr, 0);
 }
 
-void send_catalogue(const Registry& r) {
-    for (int i = 0; i < r.tunable_count; ++i) send_tunable(r.entries[r.tunable_index[i]]);
-    for (int i = 0; i < r.watch_count + r.shown_count; ++i) send_watch(r, r.watch_index[i]);
+std::uint8_t& flags_of(Registry& r, std::uint16_t ref, bool watch) {
+    if (!watch) return r.entries[ref].flags;
+    if ((ref & kShownRef) != 0) return r.shown[ref & ~kShownRef].flags;
+    return r.watches[ref].flags;
 }
 
+void send_catalogue(Registry& r) {
+    for (int i = 0; i < r.tunable_count; ++i) {
+        r.entries[r.tunable_index[i]].flags &= static_cast<std::uint8_t>(~kUnsent);
+        send_tunable(r.entries[r.tunable_index[i]]);
+    }
+    for (int i = 0; i < r.watch_count + r.shown_count; ++i) {
+        flags_of(r, r.watch_index[i], true) &= static_cast<std::uint8_t>(~kUnsent);
+        send_watch(r, r.watch_index[i]);
+    }
+    r.unsent_count = 0;
+}
+
+/// Marks an entry for the frame end's announcement (its kind and value are set by then).
 void on_added(int ref, bool watch) {
     if (!g_records || g_registry == nullptr) return;
-    if (watch) send_watch(*g_registry, static_cast<std::uint16_t>(ref));
-    else send_tunable(g_registry->entries[ref]);
+    std::uint8_t& f = flags_of(*g_registry, static_cast<std::uint16_t>(ref), watch);
+    if ((f & kUnsent) != 0) return;
+    f |= kUnsent;
+    ++g_registry->unsent_count;
+}
+
+/// Sends the entries added since the last frame end, in name order.
+void announce(Registry& r) {
+    for (int i = 0; i < r.tunable_count; ++i) {
+        Entry& e = r.entries[r.tunable_index[i]];
+        if ((e.flags & kUnsent) == 0) continue;
+        e.flags &= static_cast<std::uint8_t>(~kUnsent);
+        send_tunable(e);
+    }
+    for (int i = 0; i < r.watch_count + r.shown_count; ++i) {
+        std::uint8_t& f = flags_of(r, r.watch_index[i], true);
+        if ((f & kUnsent) == 0) continue;
+        f &= static_cast<std::uint8_t>(~kUnsent);
+        send_watch(r, r.watch_index[i]);
+    }
+    r.unsent_count = 0;
 }
 
 void on_removed(std::uint32_t hash) {
@@ -134,6 +185,7 @@ bool value_of(Registry& r, std::uint32_t hash, remote::LiveValueRecord& v) {
 
 void follows_frame_end(Registry& r, std::uint32_t frame, bool paused) {
     g_frame = frame;
+    if (r.unsent_count > 0 && g_records) announce(r);
     int kept = 0;
     for (int i = 0; i < r.follow_count; ++i) {
         Follow f = r.follows[i];
@@ -152,6 +204,7 @@ void follows_frame_end(Registry& r, std::uint32_t frame, bool paused) {
         if (keep) r.follows[kept++] = f;
     }
     r.follow_count = kept;
+    flush();
 }
 
 void add_follow(Registry& r, std::uint16_t seq, std::uint32_t hash, std::uint8_t every, std::uint16_t count, bool once,
@@ -188,6 +241,7 @@ void handle_op(std::uint8_t op, std::uint8_t arg, std::uint16_t count, std::uint
     case LiveOp::Catalogue:
         g_records = true;
         send_catalogue(r);
+        flush(); // before the session's LiveState that ends the catalogue
         return;
     case LiveOp::Get: add_follow(r, seq, hash, 1, 1, true, g_frame); return;
     case LiveOp::Follow: add_follow(r, seq, hash, arg, count, false, g_frame); return;

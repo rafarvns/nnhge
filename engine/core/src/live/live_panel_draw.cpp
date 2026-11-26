@@ -25,6 +25,30 @@ constexpr Color kButton{70, 70, 90, 230};
 constexpr Color kBarBack{60, 60, 70, 230};
 constexpr Color kBarFill{90, 200, 120, 255};
 
+/// Text built without printf (console run 1: snprintf costs several µs a call on the 3DS).
+struct Str {
+    char* p;
+    int cap;
+    int n = 0;
+    Str(char* buffer, int capacity) : p(buffer), cap(capacity) { p[0] = '\0'; }
+    Str& s(const char* t, int length = -1) {
+        for (int i = 0; (length < 0 ? t[i] != '\0' : i < length) && n < cap - 1; ++i) p[n++] = t[i];
+        p[n] = '\0';
+        return *this;
+    }
+    Str& u(unsigned v) {
+        char d[10];
+        int k = 0;
+        do {
+            d[k++] = static_cast<char>('0' + v % 10u);
+            v /= 10u;
+        } while (v != 0);
+        while (k > 0 && n < cap - 1) p[n++] = d[--k];
+        p[n] = '\0';
+        return *this;
+    }
+};
+
 void text(int x, int y, const char* t, Color c) { debug_record_text(kBottom, x, y, t, c); }
 void rect(int x, int y, int w, int h, Color c) { debug_record_rect(kBottom, x, y, w, h, c); }
 int width(const char* t) { return static_cast<int>(std::strlen(t)) * kCell; }
@@ -33,19 +57,19 @@ int width(const char* t) { return static_cast<int>(std::strlen(t)) * kCell; }
 void value_text(const Entry& e, std::uint32_t bits, char* out, int size) {
     if (e.kind == Kind::Enum) {
         const char* n = bits < e.enum_count && e.enum_names != nullptr ? e.enum_names[bits] : "?";
-        std::snprintf(out, static_cast<std::size_t>(size), "< %s >", n);
+        Str(out, size).s("< ").s(n).s(" >");
         return;
     }
     char v[kValueTextBytes];
     format_bits(e.kind, bits, true, v);
-    std::snprintf(out, static_cast<std::size_t>(size), "%s", v);
+    Str(out, size).s(v);
 }
 
 void range_text(const Entry& e, char* out) {
     char a[kValueTextBytes], b[kValueTextBytes], t[2 * kValueTextBytes + 4];
     format_bits(e.kind, e.min, true, a);
     format_bits(e.kind, e.max, true, b);
-    std::snprintf(t, sizeof t, "%s..%s", a, b);
+    Str(t, sizeof t).s(a).s("..").s(b);
     int n = 0;
     while (n < 10 && t[n] != '\0') { // cut to 10 characters
         out[n] = t[n];
@@ -113,7 +137,7 @@ void draw_tunable(const Registry& r, const Row& row, int y, bool selected) {
         if (selected) draw_channels(bits, bar_x0(depth) + 16, y + kLine2Dy, r.panel.channel);
     } else if (e.kind == Kind::Enum) {
         char t[16];
-        std::snprintf(t, sizeof t, "%u/%u", static_cast<unsigned>(bits + 1), static_cast<unsigned>(e.enum_count));
+        Str(t, sizeof t).u(bits + 1).s("/").u(e.enum_count);
         text(bar_x0(depth), y + kLine2Dy, t, kGray);
     }
 }
@@ -122,9 +146,9 @@ void draw_label(const Row& row, int y) {
     int n = 0;
     const char* label = row_label(row, n);
     char t[48];
-    if (row.type == RowType::Group && row.open) std::snprintf(t, sizeof t, "- %.*s", n, label);
-    else if (row.type == RowType::Group) std::snprintf(t, sizeof t, "+ %.*s (%u)", n, label, static_cast<unsigned>(row.count));
-    else std::snprintf(t, sizeof t, "%.*s", n, label);
+    if (row.type == RowType::Group && row.open) Str(t, sizeof t).s("- ").s(label, n);
+    else if (row.type == RowType::Group) Str(t, sizeof t).s("+ ").s(label, n).s(" (").u(row.count).s(")");
+    else Str(t, sizeof t).s(label, n);
     text(kNameX + row.depth * kCell, y, t, row.type == RowType::Group ? kCyan : kWhite);
 }
 
@@ -137,13 +161,13 @@ void watch_value(const Registry& r, const Row& row, char* out, int size) {
         std::memcpy(xy, v.bytes, 8);
         char t[kVec2TextBytes];
         format_vec2(xy[0], xy[1], t);
-        std::snprintf(out, static_cast<std::size_t>(size), "%s", t);
+        Str(out, size).s(t);
     } else if (v.kind == Kind::Text) {
         format_text(reinterpret_cast<const char*>(v.bytes), v.length, out, size);
     } else {
         char t[kValueTextBytes];
         format_bits(v.kind, word, true, t);
-        std::snprintf(out, static_cast<std::size_t>(size), "%s", t);
+        Str(out, size).s(t);
     }
 }
 
@@ -164,10 +188,12 @@ void panel_draw_page(const Registry& r, int page, std::uint32_t frame, bool paus
     const int height = tunables ? kRowHeight : kWatchRowHeight;
     const int visible = tunables ? kTunableRowsVisible : kWatchRowsVisible;
     const int scroll = panel_scroll(r, page), selected = panel_selected(r, page);
-    if (row_count(r, page) == 0) text(kNameX, kRowsTop + 2, tunables ? "no tunables" : "no watches", kGray);
-    for (int i = 0; i < visible; ++i) {
-        Row row;
-        if (!row_at(r, page, scroll + i, row)) break;
+    Row rows[kWatchRowsVisible];
+    int total = 0;
+    const int shown = rows_window(r, page, scroll, visible, rows, total); // one pass over the index (console run 1)
+    if (total == 0) text(kNameX, kRowsTop + 2, tunables ? "no tunables" : "no watches", kGray);
+    for (int i = 0; i < shown; ++i) {
+        const Row& row = rows[i];
         const int y = row_y(i, height);
         if (scroll + i == selected) rect(0, y, kScreenW, height - 1, kSelected);
         draw_label(row, y + (tunables ? 2 : 1));

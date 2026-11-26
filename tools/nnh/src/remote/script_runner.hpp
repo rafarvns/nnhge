@@ -71,6 +71,8 @@ public:
     void on_closed();
     /// Interactive mode: one typed line.
     void on_typed(const std::string& text);
+    /// Interactive mode: steps given as steps (`--tunes`: their origin kept, values never re-tokenised).
+    void on_typed_steps(const std::vector<Step>& steps);
 
     /// What to send, in order (16-byte messages).
     std::vector<MessageBytes> take_messages();

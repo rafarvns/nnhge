@@ -144,12 +144,7 @@ int command_run(const Options& options) {
     remote::ScriptRunner runner(scripted ? std::move(*script) : remote::Script{}, runner_options);
     StdinLines typed;
     if (!scripted) typed.start(stdin); // interactive mode: every typed line is a command (spec 013 FR-5)
-    if (!scripted) {
-        for (const remote::Step& s : tunes) {
-            runner.on_typed(s.command == remote::Command::Resume ? std::string("resume")
-                                                                 : "set " + s.text + " \"" + s.value + "\"");
-        }
-    }
+    if (!scripted) runner.on_typed_steps(tunes); // origin kept: undeclared names are noted and skipped
     const GameRun run{.runner = &runner, .typed = scripted ? nullptr : &typed, .linger_ms = 1000};
     return options.pc ? run_on_pc(options, run) : run_on_console(options, run, scripted);
 }

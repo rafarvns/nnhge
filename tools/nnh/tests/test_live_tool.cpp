@@ -84,7 +84,7 @@ NNH_TEST(live_text_parses_every_kind_into_exact_bits) {
     const LiveCatalog c = sample();
     std::uint32_t b = 0;
     CHECK(set(c, "player/jump", "5", b).empty() && b == lv::float_bits(5.0f));
-    CHECK(set(c, "player/jump", "-0", b).empty() && b == 0x80000000u);
+    CHECK(set(c, "player/jump", "-0", b).empty() && b == 0); // -0 sets +0 (review)
     CHECK(set(c, "player/jump", "1e-3", b).empty() && b == lv::float_bits(1e-3f));
     CHECK(set(c, "spawn/count", "+9", b).empty() && b == 9);
     CHECK(set(c, "debug/hitboxes", "true", b).empty() && b == 1);
@@ -203,4 +203,36 @@ NNH_TEST(netloader_args_carry_the_hold) {
     const std::vector<std::uint8_t> a = nnh::tool::netloader_args({"live.3dsx", "--nnh-hold"});
     const std::string s(a.begin(), a.end());
     CHECK(s.find("--nnh-hold") != std::string::npos);
+}
+
+NNH_TEST(live_text_refuses_a_second_sign) {
+    const LiveCatalog c = sample();
+    std::uint32_t b = 0;
+    CHECK(!set(c, "player/jump", "+-5", b).empty());
+    CHECK(!set(c, "spawn/count", "+-5", b).empty());
+    CHECK(set(c, "player/jump", "-0", b).empty() && b == 0); // -0 sets +0
+}
+
+NNH_TEST(live_text_integer_watches_check_their_range) {
+    LiveCatalog c;
+    struct Case {
+        const char* name;
+        Kind kind;
+        const char* bad;
+        const char* why;
+    };
+    const Case cases[] = {
+        {"w/i8", Kind::Int8, "128", "w/i8: 128 is outside -128..127"},
+        {"w/i16", Kind::Int16, "-32769", "w/i16: -32769 is outside -32768..32767"},
+        {"w/i32", Kind::Int32, "2147483648", "w/i32: 2147483648 is outside -2147483648..2147483647"},
+        {"w/u8", Kind::UInt8, "256", "w/u8: 256 is outside 0..255"},
+        {"w/u16", Kind::UInt16, "-1", "w/u16: -1 is outside 0..65535"},
+        {"w/u32", Kind::UInt32, "4294967296", "w/u32: 4294967296 is outside 0..4294967295"},
+    };
+    for (const Case& k : cases) add(c, k.name, k.kind, wire::kEntryWatch, 0, 0, 0, 0);
+    for (const Case& k : cases) {
+        Expected e;
+        CHECK(parse_expected(*c.find(k.name), k.bad, CompareOp::Eq, e) == k.why);
+        CHECK(parse_expected(*c.find(k.name), "1", CompareOp::Eq, e).empty());
+    }
 }

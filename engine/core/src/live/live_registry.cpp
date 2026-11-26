@@ -93,6 +93,13 @@ bool name_taken(const char* existing, int n, const char* name, int length, std::
     return false;
 }
 
+/// Whether the PC was told about an entry (an unsent one goes without a LiveRemoved record).
+bool announced(Registry& r, std::uint8_t flags) {
+    if ((flags & kUnsent) == 0) return true;
+    --r.unsent_count;
+    return false;
+}
+
 void drop_follows(Registry& r, std::uint32_t hash) {
     int kept = 0;
     for (int i = 0; i < r.follow_count; ++i) {
@@ -268,8 +275,9 @@ void remove_tunable(Registry& r, int slot) {
     sorted_erase(r.tunable_index, r.tunable_count, static_cast<std::uint16_t>(slot));
     --r.tunable_count;
     const std::uint32_t hash = e.hash;
+    const bool seen = announced(r, e.flags);
     e = Entry{};
-    if (g_on_removed != nullptr) g_on_removed(hash);
+    if (seen && g_on_removed != nullptr) g_on_removed(hash);
 }
 
 void remove_watch(Registry& r, int slot) {
@@ -278,8 +286,9 @@ void remove_watch(Registry& r, int slot) {
     sorted_erase(r.watch_index, r.watch_count + r.shown_count, static_cast<std::uint16_t>(slot));
     --r.watch_count;
     const std::uint32_t hash = w.hash;
+    const bool seen = announced(r, w.flags);
     w = WatchEntry{};
-    if (g_on_removed != nullptr) g_on_removed(hash);
+    if (seen && g_on_removed != nullptr) g_on_removed(hash);
 }
 
 void remove_shown(Registry& r, int slot) {
@@ -291,6 +300,7 @@ void remove_shown(Registry& r, int slot) {
     const int buckets = r.shown_buckets;
     for (int b = 0; b < buckets; ++b) r.shown_table[b] = 0;
     const std::uint32_t hash = s.hash;
+    const bool seen = announced(r, s.flags);
     s = ShownEntry{};
     for (int i = 0; i < r.max_shown; ++i) {
         if ((r.shown[i].flags & kUsed) == 0) continue;
@@ -298,7 +308,7 @@ void remove_shown(Registry& r, int slot) {
         while (r.shown_table[b] != 0) b = b + 1 == buckets ? 0 : b + 1;
         r.shown_table[b] = static_cast<std::uint16_t>(i + 1);
     }
-    if (g_on_removed != nullptr) g_on_removed(hash);
+    if (seen && g_on_removed != nullptr) g_on_removed(hash);
 }
 
 Entry* tunable_of(Registry& r, std::uint32_t id) {

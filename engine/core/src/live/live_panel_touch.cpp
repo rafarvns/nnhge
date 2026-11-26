@@ -54,6 +54,7 @@ void start(Registry& r, const DevInput& in) {
     const int y = in.touch_y - row_y(visible, kRowHeight);
     const int x = in.touch_x;
     p.touch_slot = row.ref;
+    p.touch_generation = e.generation;
     if (e.kind == Kind::Action) {
         if (x >= kMinusX) request_run(r, row.ref);
         return;
@@ -78,7 +79,10 @@ void held(Registry& r, const DevInput& in) {
     PanelState& p = r.panel;
     if (p.touch_mode == kDrag) {
         Row row;
-        if (!row_at(r, kPageTunables, p.selected, row) || row.type != RowType::Tunable || row.ref != p.touch_slot) return;
+        if (!row_at(r, kPageTunables, p.selected, row) || row.type != RowType::Tunable || row.ref != p.touch_slot ||
+            r.entries[row.ref].generation != p.touch_generation) {
+            return;
+        }
         set_pending(r, row.ref, drag_bits(r.entries[row.ref], in.touch_x, row.depth));
         return;
     }
@@ -86,7 +90,8 @@ void held(Registry& r, const DevInput& in) {
     const int t = ++p.touch_ticks;
     if (t >= kDevRepeatDelay && (t - kDevRepeatDelay) % kDevRepeatEvery == 0) {
         Row row;
-        if (row_at(r, kPageTunables, p.selected, row) && row.type == RowType::Tunable && row.ref == p.touch_slot) {
+        if (row_at(r, kPageTunables, p.selected, row) && row.type == RowType::Tunable && row.ref == p.touch_slot &&
+            r.entries[row.ref].generation == p.touch_generation) {
             step_button(r, row.ref, p.touch_mode == kMinus ? -1 : 1);
         }
     }

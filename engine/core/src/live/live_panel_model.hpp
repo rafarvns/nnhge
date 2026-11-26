@@ -34,6 +34,8 @@ struct Row {
 /// Rows are generated from the sorted index on demand (nothing stored): their count, and row `index`.
 int row_count(const Registry& r, int page);
 bool row_at(const Registry& r, int page, int index, Row& out);
+/// Rows [first, first + n) into `out` in one pass (drawing: console run 1). @return how many; `total` all the rows.
+int rows_window(const Registry& r, int page, int first, int n, Row* out, int& total);
 
 /// The text shown for a row: the leaf of an entry, the last part of a group path. Not NUL-terminated.
 const char* row_label(const Row& row, int& length);

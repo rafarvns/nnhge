@@ -15,12 +15,19 @@ void gfx_begin_recording() {
     GfxState& g = gfx_state();
     g.draws.clear();
     g.tiles.clear();
-    if (g_gfx_particle_ops != nullptr) g_gfx_particle_ops->end_frame();
+    if (g_gfx_particle_ops != nullptr) {
+        g_gfx_particle_ops->end_frame();
+        g_gfx_particle_ops->budget_mark(); // the frame's particle budget before any submit, for the replay
+    }
 }
 
 bool gfx_replay(bool scenes_changed) {
     GfxState& g = gfx_state();
     if (!g.ready || !g_gfx_held || scenes_changed) return false;
+    // The held frame's submit spent the tile and particle budgets: give them back, or a replay draws nothing past what
+    // the first submit used (the maintainer's T3.7 check: the paused platformer lost its tile layers).
+    g.tiles.rewind({0, 0});
+    if (g_gfx_particle_ops != nullptr) g_gfx_particle_ops->budget_rewind();
     for (Screen screen : {Screen::Top, Screen::Bottom}) {
         const Pass2D pass = gfx_build_pass(screen); // released textures are skipped (counted in pass.stale)
         gfx_submit_slice(screen, 0, pass.items, 0, pass.splits);

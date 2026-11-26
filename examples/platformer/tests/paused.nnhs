@@ -1,0 +1,11 @@
+# Spec 030 T3.7: a paused frame looks like the running frame it holds (tile layers, sprites, HUD).
+#   nnh run platformer [--pc] --script examples/platformer/tests/paused.nnhs
+fail-on "] E "
+wait 90
+screenshot running
+pause
+screenshot paused
+step 1
+resume
+wait 10
+end

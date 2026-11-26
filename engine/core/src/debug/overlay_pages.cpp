@@ -2,6 +2,9 @@
 
 #include "debug/overlay_pages.hpp"
 
+#include <cstdio>
+#include <cstring>
+
 #include "app/dev_pause.hpp"
 #include "debug/dev_controls.hpp"
 #include "debug/dev_tools.hpp"
@@ -57,7 +60,16 @@ void overlay_show_page(int page) {
 }
 
 bool overlay_pages_draw() {
-    if (g_page == kPageStats) return false;
+    if (g_page == kPageStats) { // the Stats page says so too while paused (the maintainer's T3.7 check)
+        if (dev_pause_state().paused()) {
+            char t[32];
+            const auto f = static_cast<unsigned long>(frame_count());
+            std::snprintf(t, sizeof t, "PAUSED f%lu", f);
+            const int w = static_cast<int>(std::strlen(t)) * 8;
+            debug_record_text(Screen::Bottom, screen_width(Screen::Bottom) - 4 - w, 4, t, colors::yellow);
+        }
+        return false;
+    }
 #if defined(NNH_FLAVOR_DEVELOPMENT)
     NNH_PROFILE_SCOPE("live page"); // the bench's page cost (CPU: model, layout, text, recording)
 #endif

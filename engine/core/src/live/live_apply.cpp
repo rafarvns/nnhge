@@ -168,6 +168,7 @@ ValueRule rule_of(const Entry& e) {
 
 void set_pending(Registry& r, int slot, std::uint32_t bits) {
     Entry& e = r.entries[slot];
+    if (e.kind == Kind::Float && bits == 0x80000000u) bits = 0; // -0 is +0: it never differs from a +0 default
     e.pending = bits;
     mark_pending(r, e, kPending);
 }

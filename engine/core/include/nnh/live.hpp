@@ -9,56 +9,11 @@
 #include <cstdint>
 
 #include "nnh/build.hpp"
+#include "nnh/detail/live_kind_of.hpp"
 #include "nnh/detail/name_hash.hpp"
 #include "nnh/math.hpp"
 
-namespace nnh::live {
-
-/// Live values are compiled in (Debug and Development).
-inline constexpr bool kEnabled = build::kDevToolsEnabled;
-/// The longest name: ASCII letters, digits, '_', '-' and '/', with at most 3 group levels.
-inline constexpr int kMaxNameBytes = 31;
-/// Group levels in a name (`a/b/c/leaf`).
-inline constexpr int kMaxGroupLevels = 3;
-/// The most names an enum tunable may have (values 0..N-1).
-inline constexpr int kMaxEnumNames = 32;
-
-} // namespace nnh::live
-
-namespace nnh::detail::live_name {
-
-/// What is wrong with a name (the order of the checks: length, then characters, then parts, then depth).
-enum class Error : std::uint8_t { None, TooLong, BadCharacter, EmptyPart, TooDeep };
-
-constexpr bool name_char(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' ||
-           c == '/';
-}
-
-/// The name rules (spec 030 FR-1, plan "Names"): 1..31 bytes of [A-Za-z0-9_-/], no empty part (leading, trailing or
-/// double '/', or an empty name), at most 3 '/'. Shared by the compile-time check, the registry and `nnh`.
-constexpr Error check(const char* text, std::size_t length) {
-    if (length > static_cast<std::size_t>(nnh::live::kMaxNameBytes)) return Error::TooLong;
-    for (std::size_t i = 0; i < length; ++i) {
-        if (!name_char(text[i])) return Error::BadCharacter;
-    }
-    if (length == 0 || text[0] == '/' || text[length - 1] == '/') return Error::EmptyPart;
-    int slashes = 0;
-    for (std::size_t i = 0; i < length; ++i) {
-        if (text[i] != '/') continue;
-        if (text[i + 1] == '/') return Error::EmptyPart;
-        ++slashes;
-    }
-    return slashes > nnh::live::kMaxGroupLevels ? Error::TooDeep : Error::None;
-}
-
-// Called only when a literal name breaks a rule: not constexpr, so the compiler stops and names the rule.
-void live_name_too_long();
-void live_name_bad_character();
-void live_name_empty_part();
-void live_name_too_deep();
-
-} // namespace nnh::detail::live_name
+#include "nnh/detail/live_name.hpp"
 
 namespace nnh::live {
 
@@ -149,35 +104,6 @@ void reset_group(const nnh::live::Name& group);
 void configure(int max_tunables, int max_watches, int max_shown);
 void pause();
 void show_panel(std::uint8_t page, const char* select);
-
-/// A plain integer type of `T` (not bool, not char, which reads as text).
-template <typename T>
-constexpr bool is_integer() {
-    return __is_same(T, signed char) || __is_same(T, unsigned char) || __is_same(T, short) ||
-           __is_same(T, unsigned short) || __is_same(T, int) || __is_same(T, unsigned int) || __is_same(T, long) ||
-           __is_same(T, unsigned long) || __is_same(T, long long) || __is_same(T, unsigned long long);
-}
-/// A 32-bit signed integer type: `int`, and `long` where it has 32 bits (std::int32_t is `long` on the 3DS).
-template <typename T>
-constexpr bool is_int32() {
-    return (__is_same(T, int) || __is_same(T, long)) && sizeof(T) == 4;
-}
-
-/// The kind byte of a watched type (src/live/live_kinds.hpp's Kind), by size and signedness for integers so `int`,
-/// `long` and the <cstdint> types work the same on every system; 0 for unsupported types.
-template <typename T>
-constexpr std::uint8_t kind_of() {
-    if constexpr (__is_same(T, bool)) return 3;
-    else if constexpr (__is_same(T, float)) return 1;
-    else if constexpr (__is_same(T, nnh::Vec2)) return 12;
-    else if constexpr (__is_same(T, nnh::Color)) return 4;
-    else if constexpr (is_integer<T>() && sizeof(T) <= 4) {
-        constexpr bool sign = static_cast<T>(-1) < static_cast<T>(0);
-        if constexpr (sizeof(T) == 1) return sign ? 7 : 9;
-        else if constexpr (sizeof(T) == 2) return sign ? 8 : 10;
-        else return sign ? 2 : 11;
-    } else return 0;
-}
 
 } // namespace nnh::detail::live_api
 

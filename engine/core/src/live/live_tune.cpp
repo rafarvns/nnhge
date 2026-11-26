@@ -134,6 +134,14 @@ std::uint32_t tune_enum(const nnh::live::Name& name, void* value, int value_byte
     NNH_ASSERT(names_ok, "live: \"%.*s\": an enum needs 1..32 names of 1..15 bytes", name.length, name.text);
     NNH_ASSERT(value_bytes == 1 || value_bytes == 2 || value_bytes == 4, "live: enums of 1, 2 or 4 bytes");
     if (!names_ok || (value_bytes != 1 && value_bytes != 2 && value_bytes != 4)) return 0;
+    Entry probe; // the default, read before the entry exists (a refused enum never reaches the PC)
+    probe.kind = Kind::Enum;
+    probe.target = value;
+    probe.value_bytes = static_cast<std::uint8_t>(value_bytes);
+    const std::uint32_t def = value != nullptr ? read_bits(probe) : 0;
+    NNH_ASSERT(def < static_cast<std::uint32_t>(count), "live: \"%.*s\": enum value %u outside 0..%d", name.length,
+               name.text, static_cast<unsigned>(def), count - 1);
+    if (def >= static_cast<std::uint32_t>(count)) return 0;
     Registry* r = start(name, value);
     if (r == nullptr) return 0;
     Entry* e = add(*r, name, Kind::Enum, value, on_change);
@@ -142,13 +150,7 @@ std::uint32_t tune_enum(const nnh::live::Name& name, void* value, int value_byte
     e->enum_names = names;
     e->enum_count = static_cast<std::uint8_t>(count);
     e->max = static_cast<std::uint32_t>(count - 1);
-    e->def = read_bits(*e);
-    NNH_ASSERT(e->def < static_cast<std::uint32_t>(count), "live: \"%.*s\": enum value %u outside 0..%d", name.length,
-               name.text, static_cast<unsigned>(e->def), count - 1);
-    if (e->def >= static_cast<std::uint32_t>(count)) {
-        remove_tunable(*r, static_cast<int>(e - r->entries));
-        return 0;
-    }
+    e->def = def;
     return id_of(*r, e);
 }
 

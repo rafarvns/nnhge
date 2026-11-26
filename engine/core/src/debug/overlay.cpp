@@ -28,8 +28,6 @@ Duration g_history[kHistory];
 int g_history_next = 0;
 int g_history_count = 0;
 
-constexpr std::uint32_t bit(Button b) { return static_cast<std::uint32_t>(b); }
-
 Color bar_color(Duration d) {
     if (d.ns <= 17'000'000) return rgba(80, 220, 120, 220);
     if (d.ns <= 34'000'000) return rgba(240, 200, 60, 220);

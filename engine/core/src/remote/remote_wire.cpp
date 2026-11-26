@@ -2,6 +2,8 @@
 
 #include "remote/remote_wire.hpp"
 
+#include "system/language_tag.hpp"
+
 namespace nnh::detail::remote {
 namespace {
 
@@ -30,6 +32,20 @@ bool zero_from(const std::uint8_t* in, std::size_t from) {
 }
 
 bool stick_axis_ok(std::int16_t v) { return v >= -kStickMax && v <= kStickMax; }
+
+/// A Language message's bytes 8–15: all zero, or a well-formed code then zeros (no interior NUL).
+bool language_ok(const std::uint8_t* a) {
+    char code[kLanguageCodeBytes + 1] = {};
+    int n = 0;
+    while (n < kLanguageCodeBytes && a[n] != 0) {
+        code[n] = static_cast<char>(a[n]);
+        ++n;
+    }
+    for (int i = n; i < kLanguageCodeBytes; ++i) {
+        if (a[i] != 0) return false;
+    }
+    return n == 0 || language_tag_well_formed(code);
+}
 
 /// Validates the argument bytes (8–15) of a message whose type is known, filling `out`.
 bool decode_arguments(const std::uint8_t* in, Message& out) {
@@ -69,6 +85,10 @@ bool decode_arguments(const std::uint8_t* in, Message& out) {
         out.slider = a[0] == 1 ? kSliderRelease : value;
         return a[0] <= 1 && a[1] == 0 && value <= kSliderMax && (a[0] == 0 || value == 0) && zero_from(in, 12);
     }
+    case MessageType::Language:
+        out.press = get32(a);
+        out.release = get32(a + 4);
+        return language_ok(a);
     }
     return false;
 }
@@ -102,6 +122,7 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
         put16(a + 2, m.exclusive ? kHelloExclusive : 0);
         break;
     case MessageType::Buttons:
+    case MessageType::Language:
         put32(a, m.press);
         put32(a + 4, m.release);
         break;
@@ -125,7 +146,7 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
 
 Reject decode_message(const std::uint8_t in[kMessageSize], Message& out) {
     if (in[0] != kMessageMagic) return Reject::Magic;
-    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Slider)) {
+    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Language)) {
         return Reject::Type;
     }
     out = Message{};
@@ -136,6 +157,29 @@ Reject decode_message(const std::uint8_t in[kMessageSize], Message& out) {
 }
 
 std::uint16_t message_seq(const std::uint8_t in[kMessageSize]) { return get16(in + 2); }
+
+bool pack_language(const char* code, Message& message) {
+    std::uint8_t bytes[kLanguageCodeBytes] = {};
+    const bool off = code == nullptr || code[0] == 0;
+    if (!off) {
+        int n = 0;
+        while (n <= kLanguageCodeBytes && code[n] != 0) ++n;
+        if (n > kLanguageCodeBytes || !language_tag_well_formed(code)) return false;
+        for (int i = 0; i < n; ++i) bytes[i] = static_cast<std::uint8_t>(code[i]);
+    }
+    message.press = get32(bytes);
+    message.release = get32(bytes + 4);
+    return true;
+}
+
+bool unpack_language(const Message& message, char out[kLanguageCodeBytes + 1]) {
+    std::uint8_t bytes[kLanguageCodeBytes];
+    put32(bytes, message.press);
+    put32(bytes + 4, message.release);
+    for (int i = 0; i < kLanguageCodeBytes; ++i) out[i] = static_cast<char>(bytes[i]);
+    out[kLanguageCodeBytes] = 0;
+    return out[0] != 0;
+}
 
 void encode_record_header(RecordType type, std::uint32_t length, std::uint8_t out[kRecordHeaderSize]) {
     out[0] = kRecordMark[0];

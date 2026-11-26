@@ -518,6 +518,14 @@ target_sources(nnh_core PRIVATE ${_nnh_ui_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_ui_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Game fonts and localization (spec 029, D49, D50): integer-only. The system language (system::language(), the remote's
+# override, tag rules) is linked only by games that ask for it (localization does) and by the Debug/Development remote.
+set(_nnh_language_sources
+    src/system/language_override.cpp
+    src/system/language_tag.cpp
+    src/system/system_language.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_language_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

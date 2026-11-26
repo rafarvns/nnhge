@@ -8,4 +8,8 @@ namespace nnh::detail {
 /// releases it. Never allocates.
 void stereo_slider_override(float value);
 
+/// The console remote's language (spec 029 FR-27, language_override.cpp): a well-formed code replaces the platform's
+/// for system::language() (copied; an ill-formed one is ignored); nullptr releases it. Never allocates.
+void set_language_override(const char* code);
+
 } // namespace nnh::detail

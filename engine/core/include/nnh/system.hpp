@@ -41,5 +41,13 @@ const char* capability_name(Capability capability);
 /// 3D drawing reads it for stereo (docs/api/gfx3d.md#stereo); a 2D game may read it for its own effects.
 float stereo_slider();
 
+/// The system's language as a BCP 47-style code (spec 029 FR-27): "ja", "en-US", "pt-BR", "zh-Hant"… never null, at most
+/// 15 bytes. 3DS: the console's language setting, with a region the console's region decides (`pt-BR` on an American
+/// console, `pt-PT` on a European one; docs/api/system.md#language); the PC simulator: NNH_SIM_LANGUAGE, else
+/// `language=` in the game's language.ini beside window.ini, else "en". While a test script runs (`nnh run --script`,
+/// Debug and Development builds) its `language` command sets it instead ("en" until it does). Cheap (the platform's
+/// value is read once); never allocates. Localization matches it against the game's languages (docs/api/localization.md).
+const char* language();
+
 } // namespace system
 } // namespace nnh

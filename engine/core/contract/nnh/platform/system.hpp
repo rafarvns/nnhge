@@ -27,4 +27,9 @@ std::uint32_t poll_dev_requests();
 /// (core reads it once per frame with 3D on); never allocates.
 float stereo_slider();
 
+/// The system's language as a well-formed BCP 47-style code (spec 029 FR-27; at most 15 bytes, never null): 3DS: the
+/// console's setting and region (CFG); PC: NNH_SIM_LANGUAGE, else language.ini, else "en"; fake: set by tests. Cheap
+/// after the first call (cached); never allocates.
+const char* system_language();
+
 } // namespace nnh::platform

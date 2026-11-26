@@ -812,6 +812,12 @@ if(NOT MSVC)
              COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -Werror
                      -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
 endif()
+# Game fonts and localization (spec 029): every test of the spec in one block.
+target_sources(nnh_tests PRIVATE
+    platform_fake/test_texture_alpha_fake.cpp
+    remote/test_remote_language.cpp
+    system/test_language_tag.cpp
+    system/test_system_language.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.
@@ -940,6 +946,9 @@ target_link_libraries(nnh_conformance_pc PRIVATE SDL3::SDL3)
 # nnh_link's sockets.
 target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_remote_pc.cpp)
 target_link_libraries(nnh_conformance_pc PRIVATE nnh_link)
+# PC only (spec 029): coverage textures draw like white RGBA texels of that alpha, read back.
+target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_texture_alpha_pc.cpp
+                                          platform_conformance/test_language_pc.cpp)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 # Headless and quiet: no display, no sound card needed (the dummy audio driver still runs the backend).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;SDL_AUDIO_DRIVER=dummy")

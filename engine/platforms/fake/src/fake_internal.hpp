@@ -47,6 +47,9 @@ void video3d_frame_ended(); // video3d_fake.cpp
 /// 3D pixel tests.
 void texture_recorded(platform::TextureHandle handle, int width, int height, const void* rgba);
 void texture_forgotten(platform::TextureHandle handle);
+void language_reset();                                       // language_fake.cpp
+void alpha_reset();                                          // texture_alpha_fake.cpp
+void alpha_texture_forgotten(platform::TextureHandle handle); // texture_alpha_fake.cpp
 void set_last_error(const char* message); // app_fake.cpp
 
 } // namespace nnh::platform_fake::detail

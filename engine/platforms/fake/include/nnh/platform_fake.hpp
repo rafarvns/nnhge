@@ -86,6 +86,7 @@ struct State {
     // 2D drawing (spec 004)
     int live_textures = 0;      ///< created and not yet destroyed
     int rgba_textures_created = 0; ///< texture_create_rgba() calls that succeeded
+    int alpha_textures_created = 0; ///< texture_create_alpha() calls that succeeded (spec 029: font pages)
     int asset_reads = 0;        ///< asset_size() + asset_read() calls (invalid paths must not add any)
     int item_count = 0;         ///< draw_2d() items in the current frame (first kMaxRecordedItems kept)
     platform::DrawItem2D items[kMaxRecordedItems];
@@ -193,6 +194,14 @@ void set_capabilities(std::initializer_list<Capability> capabilities);
 
 /// Makes the next poll_dev_requests() ask to toggle the debug overlay (like F1 on PC).
 void request_overlay_toggle();
+
+/// The coverage bytes a texture_create_alpha() texture was made from (a copy; `width` × `height`), or nullptr for a
+/// handle that isn't a live coverage texture (spec 029).
+const std::uint8_t* alpha_texture_coverage(platform::TextureHandle handle, int& width, int& height);
+
+/// The code platform::system_language() reports from now on (default "en" after reset(); spec 029 FR-27). nullptr or an
+/// ill-formed code test core's guard (system::language() then says "en"). Copied (at most 31 bytes).
+void set_system_language(const char* code);
 
 /// The value platform::stereo_slider() reports from now on (default 0; spec 026 FR-16). Core reads it only with
 /// Capability::Stereo3D (set_capabilities) and clamps it to 0..1.

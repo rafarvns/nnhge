@@ -14,6 +14,7 @@ const char* const kHelp[] = {
     "  press B[+B...]   release B[+B...]   release all   hold B[+B...] N   tap B[+B...]   wait N",
     "  stick circle|cstick X Y (-1..1)   touch X Y   drag X Y N   untouch   screenshot NAME [eyes]",
     "  slider V (the 3D slider, 0..1)   slider off (the console's own slider again)",
+    "  language CODE (the system language: ja, pt-BR...)   language off (the console's own again)",
     "  expect \"TEXT\" N (report a matching log line within N frames)   fail-on \"TEXT\"",
     "  end (detach: the game gets its controls back)   help",
 };

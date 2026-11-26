@@ -65,6 +65,7 @@ void detach() {
     g_schedule.clear();
     g_input.release_all();
     stereo_slider_override(-1.0f); // the console's own slider again
+    set_language_override(nullptr); // and its own language (spec 029)
     screenshots_clear();
 }
 
@@ -73,6 +74,14 @@ void detach() {
 void apply_slider(const Message& m) {
     if (m.slider != kSliderRelease) stereo_slider_override(static_cast<float>(m.slider) / static_cast<float>(kSliderMax));
     else stereo_slider_override(g_session.exclusive ? 0.0f : -1.0f);
+}
+
+/// The system language (spec 029 FR-27): a code replaces the console's language; `language off` gives it back — to the
+/// script's default "en" while a script owns the controls, to the console's own otherwise.
+void apply_language(const Message& m) {
+    char code[kLanguageCodeBytes + 1];
+    if (unpack_language(m, code)) set_language_override(code);
+    else set_language_override(g_session.exclusive ? "en" : nullptr);
 }
 
 void warn_rejected(std::uint16_t seq, Reject reason, std::uint32_t frame) {
@@ -100,6 +109,7 @@ void attach(std::uint32_t frame, bool exclusive) {
     g_session.exclusive = exclusive;
     g_session.check_rest = exclusive;
     stereo_slider_override(exclusive ? 0.0f : -1.0f); // a script owns the slider too: 0 until it sets one
+    set_language_override(exclusive ? "en" : nullptr); // and the language: "en" until it sets one (spec 029)
     std::uint8_t record[kMaxFixedRecord];
     send_record(record, encode_hello_record(frame, platform::capabilities(), build::flavor_name(), record));
     send_record(record, encode_tick_record(frame, record));
@@ -153,6 +163,7 @@ void apply_due(std::uint32_t frame) {
         switch (message.type) {
         case MessageType::Screenshot: screenshots_request(message.id, message.screens, frame); break;
         case MessageType::Slider: apply_slider(message); break;
+        case MessageType::Language: apply_language(message); break;
         case MessageType::Bye:
             NNH_LOG_INFO(remote, "PC detached: remote control off");
             g_session.quit = g_session.quit || message.quit;
@@ -223,6 +234,7 @@ void remote_frame_ended(std::uint64_t frame) {
 
 void remote_reset() {
     stereo_slider_override(-1.0f);
+    set_language_override(nullptr);
     g_session = Session{};
     g_reader.reset();
     g_schedule.clear();

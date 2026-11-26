@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "remote/remote_wire.hpp"
 #include "remote/script.hpp"
 #include "remote/script_tokens.hpp"
 
@@ -31,6 +32,7 @@ constexpr CommandInfo kCommands[] = {
     {"fail-on", Command::FailOn, 1, 1, "fail-on \"TEXT\""},
     {"end", Command::End, 0, 0, "end"},
     {"slider", Command::Slider, 1, 1, "slider V|off"},
+    {"language", Command::Language, 1, 1, "language CODE|off"},
 };
 
 const CommandInfo* find_command(const std::string& name) {
@@ -104,6 +106,17 @@ std::string read_arguments(const std::vector<Token>& a, Step& step) {
         }
         return a[1].text[0] != '-' && parse_stick_value(a[1].text, step.x) ? ""
                                                                          : "slider is 0 to 1 (at most 3 decimals) or off";
+    case Command::Language: {
+        if (lower(a[1].text) == "off") {
+            step.command = Command::LanguageOff;
+            return "";
+        }
+        detail::remote::Message probe; // the code must fit one Language message (well-formed, at most 8 bytes)
+        step.text = a[1].text;
+        return detail::remote::pack_language(step.text.c_str(), probe)
+                   ? ""
+                   : "language is a code like ja, pt-BR or zh-Hant (at most 8 characters) or off";
+    }
     case Command::Expect: {
         const std::string e = text_argument(a[1], step.text);
         if (!e.empty()) return e;

@@ -1,6 +1,6 @@
 # Spec 030: Live values
 
-Status: draft
+Status: approved 2026-11-26 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-26
 Depends on: [spec 002](../002-core-foundation/spec.md) (build flavors and `kDevToolsEnabled`, the debug overlay and its
 SELECT + L / `F1` toggle, the simulator's `Pause` / `F10` / `F11` keys, logs, asserts, tagged memory),
@@ -267,7 +267,11 @@ Release build has none of it: not one byte of code, data or names, and every tun
 
 ## Open questions
 
-- [ ] **Q1 How does a game declare a tunable?** Options: (a) a namespace-scope macro
+Answered 2026-11-26: the maintainer approved every recommendation below (Q1 (b) by pointer, Q2 both, Q3 overlay +
+`nnh`, Q4 as proposed, Q5 (a) dump and reapply only, Q6 `changed()` + optional callback, Q7 audio holds while paused,
+Q8 the capacities, Q9 enums and actions added, Q10 both examples, Q11 `<nnh/live.hpp>`).
+
+- [x] **Q1 How does a game declare a tunable?** Options: (a) a namespace-scope macro
       `NNH_TUNABLE(float, jump_speed, "player/jump", 4.5f, .min = 0, .max = 10, .step = 0.25f)` that, in
       Debug/Development, defines a small object registered at static initialisation into a fixed table, and in Release
       a plain `const` variable; (b) registering a value the game owns by pointer at run time,
@@ -279,26 +283,26 @@ Release build has none of it: not one byte of code, data or names, and every tun
       (FR-6). (a) is the shortest to write for true constants, but it needs a registry filled before `main`, and its
       Release form (`const`, not `constexpr`) differs from its Debug form in subtle ways. The constitution pressure is
       noted below.
-- [ ] **Q2 Watches: registered, per-frame, or both?** — **Recommendation: both.** A per-frame watch
+- [x] **Q2 Watches: registered, per-frame, or both?** — **Recommendation: both.** A per-frame watch
       (`nnh::live::show("enemies/alive", count)`, collected in a fixed buffer like debug text) has no lifetime to
       manage and suits computed values; a registered watch (`watch("player/pos", &player.pos)`, RAII like Q1) costs
       nothing on frames it isn't shown and suits values the game keeps anyway. Only the per-frame form, if the maintainer
       prefers one.
-- [ ] **Q3 Where does the developer see and change values: overlay panel, separate PC window, or the `nnh` CLI?** —
+- [x] **Q3 Where does the developer see and change values: overlay panel, separate PC window, or the `nnh` CLI?** —
       **Recommendation: the overlay panel (PC and 3DS) plus `nnh` commands; no separate window.** The panel is the only
       surface that works on the console in hand and looks the same in the simulator; `nnh` gives exact typing, scripts
       and dumps on both; a separate SDL window would be simulator-only (it can't help the console), adds a second
       renderer path and a GUI to maintain. Drawing the panel with spec 028's widgets was considered and not
       recommended: it would make a development tool depend on an optional feature (XI), spend the game's `max_draws`
       and change look when a game restyles its UI; debug text and overlay rectangles have their own capacity.
-- [ ] **Q4 Engine controls on the console.** The overlay is SELECT + L. Proposed: with the overlay shown, SELECT + R
+- [x] **Q4 Engine controls on the console.** The overlay is SELECT + L. Proposed: with the overlay shown, SELECT + R
       cycles its pages (Stats → Tunables → Watches); on the Tunables and Watches pages the panel **takes the controls**
       (FR-10) until SELECT + L closes the overlay or the Stats page is shown again; on the Tunables page SELECT + Y
       pauses/resumes and SELECT + X steps one frame. In the simulator the same chords plus the existing `Pause`/`F10`,
       and `F1` for the overlay. — **Recommendation: as proposed.** Alternative: the panel never takes the controls and
       is edited only by touch, which leaves the game playable while tuning but makes the D-Pad flow of the roadmap
       ("sliders driven by buttons") impossible; a "hold SELECT to edit" mode is another option the maintainer may prefer.
-- [ ] **Q5 Writing values back to data assets or source files?** Options: (a) never: dump text (FR-14) and reapply it
+- [x] **Q5 Writing values back to data assets or source files?** Options: (a) never: dump text (FR-14) and reapply it
       (FR-15), the developer copies lines where they belong; (b) `nnh` (on the PC, never the game) patches spec 014
       data asset text files in the project when a tunable is bound to an asset field, keeping comments and layout;
       (c) also patching C++ default values. — **Recommendation: (a) in this spec.** The game must not write outside its
@@ -306,26 +310,26 @@ Release build has none of it: not one byte of code, data or names, and every tun
       comment-preserving TOML writer, and fits better with the next roadmap item (hot reload of assets), where editing a
       data file reloads it in the running game; (c) is fragile (cbloom-style source parsing). The dump's `name = value`
       lines are already in spec 014's format, so a tunable named like a data field can be pasted into a data file.
-- [ ] **Q6 How does the game react to a change?** — **Recommendation: the `changed()` query (FR-4) plus an optional
+- [x] **Q6 How does the game react to a change?** — **Recommendation: the `changed()` query (FR-4) plus an optional
       callback at registration, no bus event.** A query is the project's rule for state; a callback at FR-3's point
       suits "rebuild the particle description"; a `TunableChanged` event would put dev-only facts on the gameplay bus,
       and in Release it would never fire, inviting Debug-only behaviour.
-- [ ] **Q7 Audio while paused.** — **Recommendation: voices and music hold while paused and continue on resume; a step
+- [x] **Q7 Audio while paused.** — **Recommendation: voices and music hold while paused and continue on resume; a step
       plays one frame of audio.** Alternative: audio keeps playing (today's simulator behaviour must be checked by the
       plan), which is harmless but makes paused screenshots and steps noisier.
-- [ ] **Q8 Capacities and names.** — **Recommendation:** 128 tunables, 64 registered watches, 64 per-frame watches per
+- [x] **Q8 Capacities and names.** — **Recommendation:** 128 tunables, 64 registered watches, 64 per-frame watches per
       frame, names ≤ 31 bytes (ASCII letters, digits, `_`, `-`, `/`), groups up to 3 levels, fixed in Debug/Development
       (an `AppConfig` field to raise them if a game needs more); Release 0. The plan confirms the memory per entry
       (target ≤ 64 bytes, so ≈ 16 KB in all) against the Old 3DS Development budget.
-- [ ] **Q9 More kinds now?** Candidates: enums shown by name (a list of names at declaration), `Vec2`, `uint8_t`
+- [x] **Q9 More kinds now?** Candidates: enums shown by name (a list of names at declaration), `Vec2`, `uint8_t`
       ranges, and "actions" (a named button that calls a game function: "respawn", "give 99 coins", as debug menus
       often have). — **Recommendation: add enums and actions** (cheap, high value, same panel rows), keep `Vec2` and
       strings out (two floats or a watch cover them).
-- [ ] **Q10 Example: new `examples/live`, the platformer, or both?** — **Recommendation: both.** `examples/live` shows
+- [x] **Q10 Example: new `examples/live`, the platformer, or both?** — **Recommendation: both.** `examples/live` shows
       every kind, the pages, pause/step and the self-check; the platformer turns its movement constants into tunables
       with the same defaults, so its replay lines stay unchanged (proof that defaults are exact) and the real use —
       tuning a jump — is shown where it matters.
-- [ ] **Q11 Module name.** `<nnh/live.hpp>`, namespace `nnh::live` — **Recommendation: yes** (short, matches the
+- [x] **Q11 Module name.** `<nnh/live.hpp>`, namespace `nnh::live` — **Recommendation: yes** (short, matches the
       ROADMAP item); `<nnh/tune.hpp>` is the alternative.
 
 ## Constitution pressure

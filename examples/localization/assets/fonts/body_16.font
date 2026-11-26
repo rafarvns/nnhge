@@ -1,6 +1,6 @@
 # The body font of the Latin and Cyrillic languages: the OFL subset at 16 px.
 source = "src/NNHExampleSansJP.otf"
 size = 16
-chars = ["ascii", "latin1", "U+0400..U+045F", "U+2010..U+2027", "U+65E5", "U+672C", "U+8A9E"]
+chars = ["ascii", "latin1", "U+0401", "U+0410..U+044F", "U+0451", "U+2010..U+2027", "U+65E5", "U+672C", "U+8A9E"]
 strings = ["en", "pt-BR", "de", "ru"]
 licence = "licences/OFL-NNHExampleSansJP.txt"

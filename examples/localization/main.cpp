@@ -10,6 +10,7 @@
 //   (title | options | dialog | shop | gallery | ja | ru | qps | pages); NNH_SIM_LANGUAGE=ja starts in Japanese.
 // Console test (spec 013): nnh run localization --script examples/localization/tests/check.nnhs
 
+#include <cstdlib>
 #include <memory>
 #include <new>
 #include <nnh/app.hpp>
@@ -19,6 +20,7 @@
 #include "check_scene.hpp"
 #include "hud.hpp"
 #include "scenes.hpp"
+#include "settings.hpp"
 
 namespace {
 
@@ -35,7 +37,7 @@ struct Game {
     BenchScene bench{demo};
 
     bool create() {
-        demo = {&title, &options, &dialog, &shop, &gallery, &check, &bench, &hud, 0};
+        demo = {&title, &options, &dialog, &shop, &gallery, &check, &bench, &hud, 0, demo.following};
         return title.create() && options.create() && dialog.create() && shop.create() && gallery.create();
     }
     nnh::Scene& first() {
@@ -64,11 +66,17 @@ int main() {
     nnh::gfx::set_clear_color(nnh::Screen::Top, nnh::rgb(18, 20, 40));
     nnh::gfx::set_clear_color(nnh::Screen::Bottom, nnh::rgb(12, 14, 28));
     nnh::loc::use_fonts(); // the current language's role fonts, now and at every switch
-    auto started = nnh::loc::start({.language = shot_language(), .follow_system = shot_language() == nullptr});
+    // the player's saved choice (spec 027 saves), else the system language; screenshots and demos ignore the save
+    char saved[16] = {};
+    const bool scripted = std::getenv("LOC_SHOT") != nullptr || std::getenv("LOC_DEMO") != nullptr;
+    if (!scripted) load_language_choice(saved, sizeof saved);
+    const char* language = shot_language() != nullptr ? shot_language() : (saved[0] != 0 ? saved : nullptr);
+    auto started = nnh::loc::start({.language = language, .follow_system = language == nullptr});
     if (!started) {
         NNH_LOG_ERROR(example, "loc: no languages: %s", started.error().message);
     } else {
         std::unique_ptr<Game> game(new (std::nothrow) Game());
+        if (game != nullptr) game->demo.following = language == nullptr;
         if (game != nullptr && game->create()) nnh::run(game->first()); // until Quit or START
     } // the scenes and their UIs go before localization and the engine
     nnh::loc::stop();

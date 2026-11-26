@@ -63,16 +63,17 @@ wait 10
 # in the language the game was in).
 tap Y
 expect "loc: check started" 20
-expect "loc: en sum 888A15B1" 30
-expect "loc: pt-BR sum BA716B7C" 30
-expect "loc: de sum 03A28B3C" 30
-expect "loc: ru sum 4917046A" 30
-expect "loc: ja sum 4877A4A7" 30
-expect "loc: PASS 4877A4A7" 10
+expect "loc: en sum 92FEBB1D" 30
+expect "loc: pt-BR sum A166BC22" 30
+expect "loc: de sum 1DE842A2" 30
+expect "loc: ru sum 7E4FE058" 30
+expect "loc: ja sum 21809981" 30
+expect "loc: PASS 21809981" 10
 expect "loc: focus dialog" 90
 wait 10
 
-# Options: the language chosen by the player (Right: the next one in the list after ja).
+# Options: the game follows the system, so the choice shows "System language"; Right picks English (saved with spec
+# 027's saves).
 tap DOWN
 tap DOWN
 expect "loc: focus options" 20
@@ -80,9 +81,13 @@ wait 10
 tap A
 wait 20
 tap RIGHT
-expect "language" 20
+expect "loc: saved language en" 20
 wait 10
 screenshot options
+# Left goes back to "System language": the save says "follow the system" again, so the next run starts as this one
+tap LEFT
+expect "loc: saved language (system)" 20
+wait 10
 tap B
 expect "loc: focus options" 20
 wait 10

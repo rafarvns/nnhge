@@ -303,7 +303,7 @@ MODELS_DEMO=check NNH_EXIT_AFTER_FRAMES=70 build/pc-debug/examples/models/models
 UI_SHOT=options NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/ui.png build/pc-debug/examples/ui/ui.exe   # title|options|list|grid|dialog|modal|theme2
 build/pc-debug/tools/nnh/nnh run ui [--pc] --script examples/ui/tests/check.nnhs   # self-check 30400DA6, the showcase by buttons and touch, bench
 build/pc-debug/tools/nnh/nnh run models [--pc] --script examples/models/tests/stereo.nnhs  # stereo: slider 1, both eyes, golden B3550D40
-build/pc-debug/tools/nnh/nnh run localization [--pc] --script examples/localization/tests/check.nnhs  # languages, self-check 4877A4A7, bench
+build/pc-debug/tools/nnh/nnh run localization [--pc] --script examples/localization/tests/check.nnhs  # languages, self-check 21809981, bench
 LOC_SHOT=ja NNH_EXIT_AFTER_FRAMES=200 NNH_SCREENSHOT=build/ja.png build/pc-debug/examples/localization/localization.exe   # title|options|dialog|shop|gallery|ja|ru|qps|pages; LOC_DEMO=check|bench; NNH_SIM_LANGUAGE=ja
 NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/right.png build/pc-debug/examples/models/models.exe   # left|right|anaglyph
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)

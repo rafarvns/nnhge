@@ -1,4 +1,4 @@
-# Brazilian Portuguese. "menu.continue" is left out on purpose: it comes from the base (en).
+# Brazilian Portuguese.
 
 [language]
 name = "Português (Brasil)"
@@ -11,6 +11,7 @@ hint = "SELECT: idioma   START: sair"
 
 [menu]
 new_game = "Novo jogo"
+continue = "Continuar"
 shop = "Loja"
 dialog = "Diálogo"
 fonts = "Fontes"

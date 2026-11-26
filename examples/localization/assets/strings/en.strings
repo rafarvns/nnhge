@@ -1,5 +1,5 @@
-# The base language of examples/localization (spec 029). Every other language translates these keys; a key it
-# leaves out comes from its fallback chain (pt-BR → en).
+# The base language of examples/localization (spec 029). Every other language translates every key (the example builds
+# with STRICT_STRINGS); a key a language left out would come from its fallback chain, ending here.
 
 [language]
 name = "English"

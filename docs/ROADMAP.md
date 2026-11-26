@@ -315,7 +315,7 @@ spec; the order below is a proposal.
   the system language followed or the player's choice, switching at the next frame with `LanguageChanged`, role fonts
   per language, spec 028's widgets through `loc::apply` ([api/localization.md](api/localization.md), guide
   [localizing a game](guides/localizing-a-game.md)). `examples/localization`: en, pt-BR, de, ru, ja (a Noto Sans JP OFL
-  subset), self-check `4877A4A7` (pc-debug = pc-release), bench, `tests/check.nnhs` passes with `--pc`; `hello` unchanged
+  subset), self-check `21809981` (pc-debug = pc-release), bench, `tests/check.nnhs` passes with `--pc`; `hello` unchanged
 - [x] **Save data with versions** (Godot ConfigFile/Resource saving): structs saved and loaded through `nnh::save`
   with a version number and migration from older saves — [spec 027](../specs/027-save-versions/spec.md),
   **implemented 2026-11-24**, Linux checks passed; Old 3DS run 1 (2026-11-25): every golden equal to the PC's, the card

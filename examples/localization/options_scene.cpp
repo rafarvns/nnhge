@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include "scenes.hpp"
+#include "settings.hpp"
 
 using nnh::UiText;
 
@@ -37,18 +38,20 @@ void OptionsScene::on_enter() {
 
 void OptionsScene::language_changed() {
     // the choice shows "System language" while the game follows it, else the current language
-    ui_.set_value(choice_, nnh::loc::index() + 1);
+    ui_.set_value(choice_, demo_.following ? 0 : nnh::loc::index() + 1);
 }
 
 void OptionsScene::step() {
     if (ui_.changed(Key::Language)) {
         const int v = ui_.value(Key::Language);
+        demo_.following = v == 0;
         if (v == 0) {
             nnh::loc::follow_system(true);
             NNH_LOG_INFO(example, "loc: follow system");
         } else {
             (void)nnh::loc::set_language(nnh::loc::language_code(v - 1));
         }
+        store_language_choice(v == 0 ? "" : nnh::loc::language_code(v - 1)); // the choice survives a restart
     }
     if (ui_.activated(Key::Back)) nnh::scenes::pop();
 }

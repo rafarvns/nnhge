@@ -7,8 +7,8 @@
 namespace loc_check {
 
 // Recorded from pc-debug; pc-release, the build VM's compilers and the console must agree.
-const std::uint32_t kCheckpoints[kLanguages] = {0x888A15B1u, 0xBA716B7Cu, 0x03A28B3Cu, 0x4917046Au, 0x4877A4A7u};
-const std::uint32_t kLocCheckGolden = 0x4877A4A7u;
+const std::uint32_t kCheckpoints[kLanguages] = {0x92FEBB1Du, 0xA166BC22u, 0x1DE842A2u, 0x7E4FE058u, 0x21809981u};
+const std::uint32_t kLocCheckGolden = 0x21809981u;
 
 namespace {
 

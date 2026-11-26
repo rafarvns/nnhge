@@ -824,15 +824,21 @@ if(TARGET localization AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE S
     add_test(NAME loc_self_check_pc COMMAND localization)
     set_tests_properties(loc_self_check_pc PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;LOC_DEMO=check;NNH_EXIT_AFTER_FRAMES=60"
-        PASS_REGULAR_EXPRESSION "loc: PASS 4877A4A7" FAIL_REGULAR_EXPRESSION "loc: FAIL|\] E " TIMEOUT 120)
+        PASS_REGULAR_EXPRESSION "loc: PASS 21809981" FAIL_REGULAR_EXPRESSION "loc: FAIL|\] E " TIMEOUT 120)
     get_filename_component(_loc_preset ${CMAKE_BINARY_DIR} NAME)
+    # the script starts from "follow the system language": a saved choice left by an earlier, failed run is removed
+    add_test(NAME loc_reset_saved_language
+             COMMAND ${CMAKE_COMMAND} -E rm -f
+                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav
+                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav.bak)
+    set_tests_properties(loc_reset_saved_language PROPERTIES FIXTURES_SETUP loc_saved_language)
     add_test(NAME loc_check_script_pc
              COMMAND $<TARGET_FILE:nnh> run localization --pc --no-build --script examples/localization/tests/check.nnhs
              WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
     set_tests_properties(loc_check_script_pc PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_loc_preset}"
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
-        RESOURCE_LOCK nnh_remote_port)
+        RESOURCE_LOCK nnh_remote_port FIXTURES_REQUIRED loc_saved_language)
 endif()
 target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_font.cpp fuzz/fuzz_loc.cpp)
 if(NNH_BUILD_FUZZERS)

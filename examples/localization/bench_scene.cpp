@@ -59,11 +59,16 @@ void BenchScene::on_enter() {
     if (ja) ja_ = static_cast<nnh::Font&&>(ja.value());
     auto sprite = nnh::load_texture("art/spark");
     if (sprite) sprite_ = static_cast<nnh::Texture&&>(sprite.value());
-    for (int i = 0; i < 1000; ++i) { // the bench table's keys (strings/en/bench.strings), hashed once
-        char name[24];
-        std::snprintf(name, sizeof name, "bench.k%04d", i);
-        keys_[i] = nnh::loc::key(name).hash;
-    }
+    // 1 000 lookups over the game's own keys, in turn (the tables ship only the game's texts: a bench-only table would
+    // break STRICT_STRINGS; the cost is a bucket and one or two compares whatever the table's size)
+    const nnh::loc::Key keys[] = {"game.title",  "game.hint",    "menu.new_game",   "menu.continue",  "menu.shop",
+                                  "menu.dialog", "menu.fonts",   "menu.options",    "menu.quit",      "options.title",
+                                  "options.language", "options.system", "options.back", "dialog.speaker", "dialog.text",
+                                  "dialog.hint", "dialog.shown", "shop.title",      "shop.greeting",  "shop.items",
+                                  "shop.price",  "shop.buy",     "hud.score",       "hud.coins",      "gallery.title",
+                                  "gallery.sample", "gallery.metrics"};
+    constexpr int kKeys = static_cast<int>(sizeof keys / sizeof keys[0]);
+    for (int i = 0; i < 1000; ++i) keys_[i] = keys[i % kKeys].hash;
     for (Sum& s : sums_) s = {};
     phase_ = frame_ = missed_ = 0;
     worst_frame_ = 0;

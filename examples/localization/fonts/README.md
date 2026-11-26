@@ -14,7 +14,7 @@ licence, with the font's copyright notice, ships with the game: `assets/licences
 | Release | noto-cjk `Sans2.004` (commit `f8d157532fbfaeda587e826d4cd5b21a49186f7c`) |
 | Upstream SHA-256 | `dff723ba59d57d136764a04b9b2d03205544f7cd785a711442d6d2d085ac5073` (4 533 028 bytes) |
 | Upstream licence | `Sans/LICENSE` at the same commit, OFL 1.1, SHA-256 `6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2` |
-| Subset SHA-256 | `eb31dac6f012a4bcfade2f52ee1f988fba0e6a8bbbefab520097772da2b2ff7c` (269 036 bytes, 1 671 code points) |
+| Subset SHA-256 | `9159b504457730539cd4b63dbe0abf5203e02a328eeffa8b6c3c09d408ead590` (268 956 bytes, 1 670 code points) |
 | Made by | `python -I make_subset.py <NotoSansJP-Regular.otf> <repo root> <out.otf>` (fontTools 4.63; byte-identical on reruns) |
 
 Kept: printable ASCII and Latin-1, the ellipsis, basic Cyrillic, general punctuation, the euro sign, CJK punctuation,

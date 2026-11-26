@@ -21,6 +21,7 @@ struct Demo {
     nnh::Scene* bench = nullptr;
     Hud* hud = nullptr;
     int frames = 0;
+    bool following = true; ///< following the system language (Options shows "System language")
 };
 
 /// The UI's font slots and the roles they show (loc::apply).

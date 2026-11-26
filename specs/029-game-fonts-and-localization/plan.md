@@ -1071,8 +1071,8 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
   `https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf`,
   noto-cjk release `Sans2.004`, SHA-256 `dff723ba59d57d136764a04b9b2d03205544f7cd785a711442d6d2d085ac5073` (4 533 028 B);
   licence `Sans/LICENSE` at the same commit, OFL 1.1, SHA-256 `6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2`.
-  Subset `examples/localization/assets/fonts/src/NNHExampleSansJP.otf` ("NNHGE Example Sans JP"), **269 036 B**, 1 671 code
-  points, SHA-256 `eb31dac6f012a4bcfade2f52ee1f988fba0e6a8bbbefab520097772da2b2ff7c`, made by
+  Subset `examples/localization/assets/fonts/src/NNHExampleSansJP.otf` ("NNHGE Example Sans JP"), **268 956 B**, 1 671 code
+  points, SHA-256 `9159b504457730539cd4b63dbe0abf5203e02a328eeffa8b6c3c09d408ead590`, made by
   `examples/localization/fonts/make_subset.py` (fontTools 4.63; byte-identical on reruns; layout features `kern`/`palt`
   only: with every feature it was 401 KB). Licence packed as `assets/licences/OFL-NNHExampleSansJP.txt` with the font's
   copyright notice (`© 2014-2021 Adobe`) prepended. Provenance also in `examples/localization/fonts/README.md`.
@@ -1082,7 +1082,7 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
 - Build output: notes for characters the subset lacks (U+FFFD, part of Cyrillic) and one warning per language for the
   1 024 base-only bench keys (+ pt-BR's deliberate `menu.continue`); so the example is **not** `STRICT_STRINGS`-clean
   (deviation from T7.1's test: base-only keys can't be marked).
-- Self-check: checkpoints en `888A15B1`, pt-BR `BA716B7C`, de `03A28B3C`, ru `4917046A`, ja `4877A4A7` =
+- Self-check: checkpoints en `92FEBB1D`, pt-BR `A166BC22`, de `1DE842A2`, ru `7E4FE058`, ja `21809981` =
   `kLocCheckGolden`; pc-debug and pc-release agree (Release read from its screenshot: Release has no log).
   `tests/check.nnhs` passes twice with `--pc` (116 lines, frames 1–3 699). 3ds-release and 3ds-dev build the example
   without a warning (`.3dsx` 1 137 852 / 1 323 388 B).
@@ -1126,8 +1126,8 @@ On the Old 3DS: Homebrew Launcher → **Y**, nobody touching the console, then o
    Expected, in order (recorded from the `--pc` run): `loc: showcase`; `language pt-BR (system)`; `language de (system)`;
    `loc: focus shop`; `loc: shop 1 1 Laterne`; `loc: shop 21 ru 323120D184D0BED0BDD0B0D180D18C`;
    `loc: shop 21 ja E383A9E383B3E382BFE383B33231E5808B`; `loc: focus shop`; `loc: focus dialog`; `loc: dialog shown …`;
-   `loc: focus dialog`; `loc: check started`; `loc: en sum 888A15B1`; `loc: pt-BR sum BA716B7C`; `loc: de sum 03A28B3C`;
-   `loc: ru sum 4917046A`; `loc: ja sum 4877A4A7`; `loc: PASS 4877A4A7`; `loc: focus dialog`; `loc: focus options`;
+   `loc: focus dialog`; `loc: check started`; `loc: en sum 92FEBB1D`; `loc: pt-BR sum A166BC22`; `loc: de sum 1DE842A2`;
+   `loc: ru sum 7E4FE058`; `loc: ja sum 21809981`; `loc: PASS 21809981`; `loc: focus dialog`; `loc: focus options`;
    `language …` (Options → Right: the pseudo-language `qps` in Development); `loc: focus options`; `loc: focus fonts`;
    `loc: fonts hud …`; `loc bench: started`; `loc bench: base gfx submit …`; `loc bench: glyphs builtin … ratio …
    PASS|FAIL`; `loc bench: frame worst … missed … PASS|FAIL`; `loc bench: measure_latin …`; `loc bench: measure_ja …`;

@@ -8,6 +8,7 @@ namespace nnh {
 
 NNH_LOG_CHANNEL(text);
 
+#if !defined(NNH_FLAVOR_RELEASE) // Release keeps none of the texts (scripts/check_release_strings.sh)
 namespace {
 
 struct Missing {
@@ -37,5 +38,8 @@ void detail::text_missing_reset() {
     g_count = 0;
     g_full_logged = false;
 }
+#else
+void detail::text_missing_reset() {}
+#endif
 
 } // namespace nnh

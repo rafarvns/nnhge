@@ -1,6 +1,6 @@
 # Plan 031: Hot reload of assets
 
-Status: draft (2026-11-26; the spec was approved 2026-11-26 with every open question as recommended, and those answers
+Status: approved 2026-11-26 (the maintainer, the eleven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as recommended, and those answers
 are this plan's decisions; eleven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D53, D54 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -619,7 +619,7 @@ additively: D28 gains payload messages 12–17 and records 13–15 (D54); D31's 
 current block per library; D47 also retires raw platform handles replaced by a reload; D52's pause is used by script
 swaps; D50's chain is reloadable at the apply point. Flagged for the maintainer: questions 1–11 below and risks 1, 2 and 4.
 
-## Questions for the maintainer
+## Questions for the maintainer (answered 2026-11-26: each as recommended)
 
 1. **One delivery path: the simulator receives batches over its connection too, instead of reading the build folder
    (FR-5's wording for the simulator)?** Recommended: yes — the simulator then runs the console's exact code (FR-21 by

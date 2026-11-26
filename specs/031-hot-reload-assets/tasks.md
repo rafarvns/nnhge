@@ -1,6 +1,6 @@
 # Tasks 031: Hot reload of assets
 
-Status: draft (2026-11-26, with plan.md)
+Status: approved 2026-11-26 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the

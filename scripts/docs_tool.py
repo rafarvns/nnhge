@@ -35,6 +35,7 @@ SINGLE_PAGES = {
 }
 SKIP_DIRS = {"build", ".git", "_deps"}
 LINK_RE = re.compile(r"(!?)\[([^\]]*)\]\(([^)\s]+)\)")
+IMG_RE = re.compile(r'(<img\s[^>]*?\bsrc=")([^"]+)(")')  # HTML images (sized ones, e.g. in README.md)
 
 
 def words_title(stem: str) -> str:
@@ -80,8 +81,9 @@ def is_external(target: str) -> bool:
 def cmd_check() -> int:
     broken = 0
     for path in markdown_files():
-        for match in LINK_RE.finditer(path.read_text(encoding="utf-8")):
-            target = match.group(3)
+        text = path.read_text(encoding="utf-8")
+        targets = [m.group(3) for m in LINK_RE.finditer(text)] + [m.group(2) for m in IMG_RE.finditer(text)]
+        for target in targets:
             if is_external(target):
                 continue
             resolved, _ = resolve(path, target)
@@ -108,7 +110,18 @@ def rewrite_links(source: Path, text: str) -> str:
         kind = "tree" if resolved.is_dir() else ("raw" if bang else "blob")
         return f"{bang}[{label}]({REPO_URL}/{kind}/main/{rel}{'#' + anchor if anchor else ''})"
 
-    return LINK_RE.sub(replace, text)
+    def replace_img(match: re.Match) -> str:
+        before, target, after = match.groups()
+        if is_external(target):
+            return match.group(0)
+        resolved, _ = resolve(source, target)
+        try:
+            rel = resolved.relative_to(ROOT).as_posix()
+        except ValueError:
+            return match.group(0)
+        return f"{before}{REPO_URL}/raw/main/{rel}{after}"
+
+    return IMG_RE.sub(replace_img, LINK_RE.sub(replace, text))
 
 
 def heading(rel: str) -> str:

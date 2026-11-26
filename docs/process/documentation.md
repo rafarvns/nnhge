@@ -40,6 +40,9 @@ them too.
   it builds on outside sources.
 - Link with relative paths between repository files (`../tech/cmake.md`); the wiki generator rewrites
   them to wiki pages, and other repository files to GitHub URLs.
+- Images: `![alt](../images/x.png)`, or `<img src="docs/images/x.png" width="200" alt="...">` when the size matters
+  (the README's screenshots). Both kinds of path are checked and rewritten to the raw file on GitHub for the wiki.
+  Screenshots come from the simulator (`NNH_SCREENSHOT`) of an example whose art is original.
 - Don't duplicate: one page owns a topic, others link to it.
 - Mark the status of designs that aren't implemented yet (`> Status: design`).
 
@@ -59,7 +62,7 @@ a row, so it can't loop. Disable it locally with `"disableAllHooks": true` in
 ## Tools
 
 ```sh
-python3 scripts/docs_tool.py check                    # broken relative links (also runs in CI)
+python3 scripts/docs_tool.py check                    # broken relative links and <img src> paths (also in CI)
 python3 scripts/docs_tool.py wiki <wiki-checkout>     # regenerate wiki pages locally (preview)
 ```
 

@@ -24,6 +24,11 @@ bool ident(char c) { return ident_start(c) || (c >= '0' && c <= '9'); }
 
 std::string where(const Where& w) { return w.file + ":" + std::to_string(w.line) + ": "; }
 
+/// memcpy that accepts an empty source: an empty vector's data() may be null, and memcpy(…, nullptr, 0) is undefined.
+void copy_bytes(std::uint8_t* to, const void* from, std::size_t bytes) {
+    if (bytes != 0) std::memcpy(to, from, bytes);
+}
+
 std::vector<std::string> names_of(const std::string& text) {
     std::string stored;
     std::vector<Placeholder> ps;
@@ -275,16 +280,16 @@ std::vector<std::uint8_t> write_table(const StringsLanguage& lang, bool release)
         while (k < records.size() && lf::bucket_of(records[k].hash, bits) < b) ++k;
         put16(out, h.off_buckets + b * 2, k);
     }
-    std::memcpy(out.data() + h.off_keys, records.data(), records.size() * sizeof(lf::KeyRecord));
-    std::memcpy(out.data() + h.off_strings, strings.data(), strings.size() * sizeof(lf::StringRecord));
-    if (!placeholders.empty()) std::memcpy(out.data() + h.off_placeholders, placeholders.data(), placeholders.size() * 8);
-    std::memcpy(out.data() + h.off_text, text.data(), text.size());
+    copy_bytes(out.data() + h.off_keys, records.data(), records.size() * sizeof(lf::KeyRecord));
+    copy_bytes(out.data() + h.off_strings, strings.data(), strings.size() * sizeof(lf::StringRecord));
+    copy_bytes(out.data() + h.off_placeholders, placeholders.data(), placeholders.size() * 8);
+    copy_bytes(out.data() + h.off_text, text.data(), text.size());
     if (!release) {
         for (std::size_t i = 0; i < name_offsets.size(); ++i) {
             const std::uint32_t o = static_cast<std::uint32_t>(name_offsets.size() * 4) + name_offsets[i];
             std::memcpy(out.data() + h.off_names + i * 4, &o, 4);
         }
-        std::memcpy(out.data() + h.off_names + name_offsets.size() * 4, names.data(), names.size());
+        copy_bytes(out.data() + h.off_names + name_offsets.size() * 4, names.data(), names.size());
     }
     std::memcpy(out.data(), &h, sizeof h);
     const std::uint32_t crc = nnh::detail::crc32(out.data(), out.size());

@@ -67,6 +67,11 @@ NNH_TEST(assetc_bmfont_and_font_desc_targets_survive_mutations) {
     run(nnh::assetc::fuzz::font_desc_seed(), nnh::assetc::fuzz::font_desc_target, "=\"[],\n#.U+0123456789", 2902, 6000);
 }
 
+NNH_TEST(assetc_strings_target_takes_an_empty_file) {
+    // A language with no keys encodes empty arrays: no memcpy from a null pointer (libFuzzer + UBSan found it).
+    CHECK(nnh::assetc::fuzz::strings_target(nullptr, 0) == 0);
+}
+
 NNH_TEST(assetc_strings_target_survives_mutations) {
     run(nnh::assetc::fuzz::strings_seed(), nnh::assetc::fuzz::strings_target, "{}[]\"=.\n\\#", 2903, 600); // a clean file evaluates its rule over 10^6 integers
 }

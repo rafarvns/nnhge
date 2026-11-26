@@ -1,6 +1,6 @@
 # Tasks 029: Game fonts and localization
 
-Status: implemented 2026-11-26 except stage 10 (the console run) and the items marked pending; approved 2026-11-26 (with plan.md)
+Status: implemented 2026-11-26 including stage 10 (console runs passed, budgets set), except the items marked pending; approved 2026-11-26 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -334,8 +334,8 @@ values re-read from the tree at T0.3).
 - [x] **T10.1** (on the PC; again after T10.3) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target localization_3dsx ui_3dsx platformer_3dsx` without a warning; T7.7's table still
   true; 3ds-release `hello.elf` byte-identical to T0.1's. Covers AC-7, II.
-- [ ] **T10.2** (console run 1 2026-11-26: items 1 (correctness), 2, 3, 4 and 5 passed; item 1's bench missed four
-  targets and the glyph ratio → T10.3, then console run 2) Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** (console run 1 2026-11-26: items 1 (correctness), 2, 3, 4 and 5 passed; item 1's bench missed four
+  targets and the glyph ratio → T10.3; console run 3 after the budgets: `loc bench: PASS`, `nnh: PASS`) Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run localization --script examples/localization/tests/check.nnhs` → every checkpoint
      equal to the PC's and `loc: PASS <G>`, every showcase line, the bench lines and the verdict (numbers recorded);
      — run 1: correctness PASS (`loc: PASS 21809981`), bench FAIL (measure_latin, measure_ja, tr1000, format100, glyph
@@ -354,13 +354,13 @@ values re-read from the tree at T0.3).
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths, the screenshot comparison). Covers AC-4, AC-5,
   AC-6, FR-27. Every expected line of run 1 is in plan.md, "Stage 10: console run (prepared)" (recorded from the `--pc`
   run).
-- [ ] **T10.3** (round done 2026-11-26, plan.md "Optimisation round"; console run 2 and the budgets pending) (only if a
+- [x] **T10.3** (done 2026-11-26: plan.md "Optimisation round", "Console run 2 and budgets set") (only if a
   bench target is missed) Optimisation round: find the cost (3ds-dev disassembly, the bench's
   breakdown), apply risk 1's list without changing a glyph item, string, golden or draw hash (tests first for any
   rewrite); then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin and
   written in the spec's AC-6, `bench_scene.cpp` and `docs/api/fonts.md` / `localization.md`. Files: plan.md
   ("Optimisation round", "Console run 2 and budgets set"). Covers AC-6.
-- [ ] **T10.4** (contingency, only if the glyph ratio or the frame target is still missed after T10.3, and with the
+- [ ] **T10.4** (not needed: the frame target was met and the glyph ratio budget set from console run 2) (contingency, only if the glyph ratio or the frame target is still missed after T10.3, and with the
   maintainer's OK) A glyph batch through D39's mechanism (the spec's named fallback, spec 028 risk 2): the design written
   into plan.md and D39's row first (an amendment), then tests (items equal to the glyph sprites `draw_text` would make;
   budgets), then code; every reference screenshot unchanged. Covers AC-6, II.

@@ -1,6 +1,6 @@
 # Plan 029: Game fonts and localization
 
-Status: implemented 2026-11-26 (T9 Linux checks passed; T10.2 pending; see "Implementation notes"); approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
+Status: implemented 2026-11-26 (T9 Linux checks and T10.2 console runs passed, budgets set; see "Implementation notes"); approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
 recommended, and those recommendations are this plan's decisions; five plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D49, D50 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 005 (`gfx::draw_text`/`measure_text`, the built-in font, `detail::next_codepoint`, the hollow box, one sprite
@@ -1269,6 +1269,29 @@ Also in this round: libFuzzer entry points `tests/fuzz/libfuzzer_loc_table.cpp` 
 docs/tech/cmake.md); before, only the mini-fuzz ran those targets. The Linux pass on `a69ebbf` (lead): ASan/UBSan
 `nnh_tests` 3 801/3 801 and assetc 333/333, GCC 13 ctest (the known doors flake only), 32-bit 3 801/3 801, libFuzzer
 `font_validate` and `assetc_ttf` 10 min each: clean.
+
+### Console run 2 and budgets set (2026-11-26, Old 3DS, 3ds-dev of `48501a0`, then of the budget commit)
+
+Run 2 (after the optimisation round): correctness again `loc: PASS 21809981`; bench, run 1 → run 2:
+
+| Phase | Run 1 | Run 2 | Budget (run 2 + ≈ 25 %) |
+|-------|-------|-------|-------------------------|
+| glyph CPU, font | 2.855 µs | 1.867 µs | — |
+| glyph total, font / built-in | 7.11 / 5.29 µs, ratio 1.34 | 6.08 / 5.23 µs, ratio 1.16 | ratio ≤ 1.25 |
+| frame, 400 glyphs + 300 sprites | worst 17.7 ms, 0 missed | worst 17.2 ms, 0 missed | 0 missed (as specified) |
+| measure_latin | 0.947 ms | 0.711 ms | < 0.9 ms |
+| measure_ja | 0.809 ms | 0.733 ms | < 0.92 ms |
+| tr1000 | 0.479 ms | 0.451 ms | < 0.57 ms |
+| format100 | 0.458 ms | 0.393 ms | < 0.5 ms |
+| switch | 92.6 ms | 92.6 ms | < 100 ms (as specified) |
+| page1024 load + release | 228.7 ms | 228.4 ms | not judged |
+
+The first targets were PC-derived guesses: the console pays ≈ 4.2 µs of submit per glyph whatever the font, and the
+measure/`tr`/`format` paths an order of magnitude more than the PC. The budgets are in `bench_scene.cpp`
+(`kTargets`, `kGlyphRatio`) and the spec's AC-6. Run 3 with them (same tree plus the budgets): `loc: PASS 21809981`,
+ratio 1.16, Latin 0.693 ms, Japanese 0.708 ms, `tr` 0.451 ms, `format` 0.397 ms, switch 92.5 ms, frame worst 17.7 ms
+with 0 missed — `loc bench: PASS`, `nnh: PASS`. T10.4 (glyph batching) isn't needed. Logs: `E:\RANDOM\nnhge-console-
+loc2.log`, `loc3.log` (the maintainer's machine).
 
 ### Overnight round (2026-11-26, the lead's decisions on the five questions)
 

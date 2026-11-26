@@ -103,8 +103,8 @@ A table costs 12 bytes per key, 8 per string and the text, plus 4 bytes and the 
 example's English table (27 keys) takes 1.3 KB in Release. On the PC simulator (Development build): 1 000 `tr` 0.042 ms,
 100 `format` 0.018 ms. On an Old 3DS (Development build, first console run, before spec 029's optimisation round):
 1 000 `tr` 0.48 ms, 100 `format` 0.46 ms, a language switch ≈ 93 ms (tables and role fonts). The round (the state read
-inline, a table popcount, 32-bit digits and modulo below 2^32) cut the PC's times by a sixth and a quarter; the
-console's new numbers come with the second console run.
+inline, a table popcount, 32-bit digits and modulo below 2^32) brought the console to 1 000 `tr` 0.45 ms and 100
+`format` 0.39 ms; the example's bench budgets are < 0.57 ms and < 0.5 ms, and < 100 ms for a switch.
 
 ## Misuse
 

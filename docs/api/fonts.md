@@ -88,9 +88,11 @@ only): 400 glyphs cost 0.69 µs per glyph with a font against 0.73 µs built-in,
 (Latin) and 0.062 ms (Japanese); loading a full 1024 × 1024 page takes ≈ 15 ms. On an Old 3DS (Development build,
 first console run, before spec 029's optimisation round): a font glyph costs 7.11 µs against 5.29 µs built-in, CPU and
 submit together (submit is the same: ≈ 4.2 µs); a 400-character paragraph measures in 0.95 ms (Latin) and 0.81 ms
-(Japanese); loading and releasing a 1024 × 1024 page takes ≈ 230 ms. The optimisation round (inlined lookups and UTF-8
-decoding, one sprite command per text) cut the PC's font CPU per glyph by a fifth; the console's new numbers and the
-budgets come with the second console run (spec 029 T10.3).
+(Japanese); loading and releasing a 1024 × 1024 page takes ≈ 230 ms. After spec 029's optimisation round (inlined
+lookups and UTF-8 decoding, one sprite command per text): a font glyph costs 6.08 µs against 5.23 µs built-in (1.16×;
+its CPU part 1.87 µs), and a 400-character paragraph measures in 0.71 ms (Latin) and 0.73 ms (Japanese). The example's
+bench budgets: glyph ratio ≤ 1.25, measuring < 0.9 ms (Latin) and < 0.92 ms (Japanese), 400 glyphs + 300 sprites with
+no missed frame.
 
 ## Misuse
 

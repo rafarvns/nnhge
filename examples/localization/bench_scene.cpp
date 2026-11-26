@@ -13,10 +13,12 @@ namespace {
 const char* const kNames[BenchScene::kPhases] = {"base",          "builtin400", "font400", "frame",  "measure_latin",
                                                  "measure_ja",    "tr1000",     "format100", "switch", "page1024"};
 // AC-6's targets in ms (0: reported with its pair or not judged on its own); the glyph ratio and the frame are below.
-// measure_latin, measure_ja, tr1000 and format100 (and the glyph ratio): the plan's first guesses, missed by console
-// run 1 (0.947, 0.809, 0.479, 0.458 ms; ratio 1.34) — to be set from console run 2 (after T10.3's optimisation round)
-// plus ~25 %, per the bench policy. Until then a FAIL on those lines is expected.
-constexpr double kTargets[BenchScene::kPhases] = {0, 0, 0, 0, 0.1, 0.15, 0.1, 0.1, 100, 0};
+// measure_latin, measure_ja, tr1000 and format100 (and the glyph ratio): the plan's first guesses (0.1, 0.15, 0.1,
+// 0.1 ms; ratio 1.15) were missed by console run 1 (0.947, 0.809, 0.479, 0.458 ms; ratio 1.34); after T10.3's
+// optimisation round console run 2 measured 0.711, 0.733, 0.451, 0.393 ms and ratio 1.16 (Old 3DS, 3ds-dev), and the
+// budgets are those plus ~25 %, per the bench policy.
+constexpr double kTargets[BenchScene::kPhases] = {0, 0, 0, 0, 0.9, 0.92, 0.57, 0.5, 100, 0};
+constexpr double kGlyphRatio = 1.25; // console run 2: 1.16
 constexpr int kFrames = 300, kFrameTest = 600, kSwitchEvery = 30, kSwitches = 20;
 
 // 400 characters of Latin text and of Japanese (kana and kyoiku kanji), the measured paragraphs and the drawn glyphs
@@ -142,7 +144,7 @@ void BenchScene::finish() {
     } else if (p == kFont) {
         const double builtin = per_frame(kBuiltin) * 1000.0 / 400, font = per_frame(kFont) * 1000.0 / 400;
         const double ratio = builtin > 0 ? font / builtin : 0;
-        pass = ratio <= 1.15;
+        pass = ratio <= kGlyphRatio;
         const auto part = [&](Phase q, bool submit) {
             const double n = sums_[q].n > 0 ? sums_[q].n : 1, bn = sums_[kBase].n > 0 ? sums_[kBase].n : 1;
             return (submit ? sums_[q].submit / n - sums_[kBase].submit / bn : sums_[q].own / n - sums_[kBase].own / bn) *
@@ -150,8 +152,8 @@ void BenchScene::finish() {
         };
         NNH_LOG_INFO(example, "loc bench: glyphs cpu builtin %.3f font %.3f us, submit builtin %.3f font %.3f us",
                      part(kBuiltin, false), part(kFont, false), part(kBuiltin, true), part(kFont, true));
-        std::snprintf(line, sizeof line, "loc bench: glyphs builtin %.2f us font %.2f us per glyph ratio %.2f (target <= 1.15)%s %s",
-                      builtin, font, ratio, judge, judged() ? (pass ? "PASS" : "FAIL") : "");
+        std::snprintf(line, sizeof line, "loc bench: glyphs builtin %.2f us font %.2f us per glyph ratio %.2f (target <= %.2f)%s %s",
+                      builtin, font, ratio, kGlyphRatio, judge, judged() ? (pass ? "PASS" : "FAIL") : "");
     } else if (p == kFrame) {
         pass = missed_ == 0;
         std::snprintf(line, sizeof line, "loc bench: frame worst %.1f ms missed %d of %d%s %s", worst_frame_, missed_,

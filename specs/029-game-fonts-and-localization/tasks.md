@@ -294,7 +294,7 @@ values re-read from the tree at T0.3).
   before the next input, one `expect` per frame) and ctest `loc_check_script_pc` (`RESOURCE_LOCK nnh_remote_port`). Test:
   `nnh run localization --pc --no-build --script …` → PASS twice in a row. Files: plan.md ("Stage 10: console run
   (prepared)" with every expected line). Covers AC-4.
-- [ ] **T7.7** (partial: aeabi scan and the plural fix; VFP table and stack usage not done) ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
+- [x] **T7.7** (plan.md, overnight round: stack and VFP; the switch path ≈ 1.03 KiB, over 1 KiB, noted) ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects
   `src/text/*`, `src/font/*`, `src/loc/*` and the example's `bench.o`; per AC-6 path record instructions, calls,
   `__aeabi_*` (none in `tr`, the plural interpreter, digits or wrapping), VFP (only the final positions), `pld`;
   `-fstack-usage` along the deepest draw, format and switch paths (< 1 KiB); compare with plan.md's table and fix what
@@ -303,7 +303,7 @@ values re-read from the tree at T0.3).
 
 ## Stage 8: mutation testing, release strings, opt-in checks, build times
 
-- [ ] **T8.1** (partial: 19 loc mutants, all killed (3 via new tests); font/text and Release mutants not run) Mutation pass as in plans 019–028: plan.md's planned hand mutants (`build/ref-029/mutants.py`, applied one at
+- [x] **T8.1** (plan.md, overnight round: 40 mutants, survivors tested or argued equivalent); font/text and Release mutants not run) Mutation pass as in plans 019–028: plan.md's planned hand mutants (`build/ref-029/mutants.py`, applied one at
   a time, `nnh_tests text_ font_ loc_ ui_` and `nnh_assetc_tests` each) and Release-path mutants in pc-release; survivors
   become tests or are argued equivalent. Files: plan.md ("Mutation testing"). Covers VI.
 - [x] **T8.2** (overnight round: plan.md) [P] Release hygiene: `scripts/check_release_strings.sh` gains the dump, missing-key, missing-glyph and

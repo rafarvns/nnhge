@@ -1203,7 +1203,34 @@ Also in this round:
   run: Strings de, the two fonts listing de (body_16, title_32), Languages; clean `nnh_core` 16.2 s, clean `nnh-assetc`
   10.7 s (T0.1: 7.7 s; stb_truetype, stb_image and the converters added).
 - The switch bench phase reads the hook's profile scope one frame later (it read 0.0 before): pc-debug avg 14.6 ms,
-  worst 21.8 ms.
+  worst 21.8 ms; pc-dev avg 11.2 ms, worst 26.1 ms.
+- pc-dev bench after the round: measure_latin 0.050 ms, measure_ja 0.048 ms, tr1000 0.023 ms, format100 0.020 ms, frame
+  worst 17.2 ms with 0 of 600 missed, page1024 25 ms. The glyph ratio over five runs: 0.96, 1.08, 1.12, 1.25, 1.37 —
+  the font path's CPU is steady (0.106–0.129 µs per glyph against 0.035–0.041 built-in), the spread is the simulator's
+  submit, which varies ±0.1 µs per glyph between the two phases. The target is judged on the console (where a glyph's
+  submit is ≈ 12 µs, so the CPU difference is ≈ 1 %).
+- Mutation (T8.1), besides stage 6's 19 on localization (all killed): 16 font/text mutants in pc-debug
+  (`build/ref-029/mutants_font_text.py`): 14 killed at first, 2 survivors became tests (a font with no page; a PackBits
+  literal longer than the output), 1 equivalent on Windows (removing `load_font`'s `text_layout_link()`: the weak
+  reference exists only on ELF; the link probes cover it). 5 Release-path mutants in pc-release
+  (`mutants_release.py`): `??` for unknown keys and the missing placeholder killed; the stale-font re-init (`alive()`)
+  survived and became `load_font_after_an_engine_restart_loads_live_pages_again`, then killed; 2 equivalent (the face
+  reset after a failed resolve — the resolver never touches the face on failure; `set_show_keys` in Release — nothing
+  reads the flag there).
+- T7.7 stack usage (3ds-dev objects, `-fstack-usage`): draw path `draw_text_layout` 256 + `TextWrapper::next` 208 +
+  `emit` 104 + `sprite` 104 ≈ 0.67 KiB; format path `loc::format` 144 ≈ 0.2 KiB; **switch path** hook 48 +
+  `switch_fonts` 144 + `load_font` 120 + `load_entry` 656 + `make_page`/`texture_from_page` 64 ≈ 1.03 KiB plus the
+  platform's upload — over the plan's 1 KiB (the main thread has 32 KiB+; no risk, but noted): `load_entry`'s frame
+  holds several `Result<…>` temporaries, each with a 64-byte `Error` message; moving the error paths out of line
+  saved only 32 B (not kept). VFP instructions: `text_draw.o` 32, `layout.o` 3, `text_measure.o` 2 (positions,
+  colours and scales handed to gfx), none in loc; no `__aeabi_*` in text, font or loc.
+- Found by the full suite: a font still loaded at `nnh::shutdown()` left its pages' bytes on the font's tag (gfx takes
+  every live texture off the `textures` tag), and in Release a font loaded again after an engine restart leaked its old
+  block. The block now remembers each page's accounted bytes; the font module's shutdown hook (and, in Release, the
+  stale-entry path of `load_font`) moves them back and frees the block. Test:
+  `load_font_pages_alive_at_shutdown_leave_no_accounting_behind` (failed first).
+- `<nnh/localization.hpp>`: 8 055 preprocessed lines (gfx + result: 7 844 at T0.1), parse time equal within noise
+  (0.44–0.46 s for both, 10 runs each).
 
 ### Implementation refinements
 

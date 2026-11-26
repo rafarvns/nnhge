@@ -9,6 +9,7 @@
 #include "font_fixture.hpp"
 #include "font/font_internal.hpp"
 #include "font_load_fixture.hpp"
+#include "text/font_texture.hpp"
 #include "nnh/font.hpp"
 #include "nnh/memory.hpp"
 #include "test.hpp"
@@ -183,6 +184,10 @@ NNH_TEST(a_stale_font_is_invalid_and_measures_like_the_builtin) {
     (void)ref;
 }
 
+namespace nnh {
+NNH_MEM_TAG_EXTERN(textures);
+} // namespace nnh
+
 namespace {
 nnh::Font g_survivor; // a font whose owner outlives the engine run (a global in a game that restarts the engine)
 } // namespace
@@ -205,4 +210,27 @@ NNH_TEST(load_font_after_an_engine_restart_loads_live_pages_again) {
     CHECK(again.ok() && nnh::gfx::font_metrics(again.value()).pages == 1);
     g_survivor = nnh::Font{}; // its entry is stale: releasing it changes nothing
     CHECK(again.ok() && again.value().valid());
+}
+
+NNH_TEST(load_font_pages_alive_at_shutdown_leave_no_accounting_behind) {
+    // gfx destroys live pages at nnh::shutdown and takes them off the `textures` tag; the font module moves them back
+    // from its own tag (Debug/Development: its shutdown hook; Release: when the path is loaded again)
+    start_engine();
+    add_font("fonts/a", FontBuilder::latin());
+    const std::size_t textures_before = nnh::mem::tag_stats(nnh::NNH_MEM_TAG_REF(textures)).bytes;
+    {
+        auto f = nnh::load_font("fonts/a");
+        CHECK(f.ok());
+        if (f) g_survivor = static_cast<nnh::Font&&>(f.value());
+    }
+    remount();
+    {
+        auto again = nnh::load_font("fonts/a"); // Release settles the stale entry here
+        CHECK(again.ok());
+    }
+    CHECK(nnh::frame());
+    CHECK(nnh::frame());
+    g_survivor = nnh::Font{};
+    CHECK(nnh::mem::tag_stats(nnh::detail::font_memory_tag()).bytes == 128u * 128u * 4u); // the built-in font only
+    CHECK(nnh::mem::tag_stats(nnh::NNH_MEM_TAG_REF(textures)).bytes == textures_before);
 }

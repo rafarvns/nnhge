@@ -12,6 +12,7 @@
 #include "font/page_codec.hpp"
 #include "gfx/gfx_state.hpp"
 #include "gfx/texture_alpha.hpp"
+#include "memory/memory_internal.hpp"
 #include "nnh/assets.hpp"
 #include "nnh/detail/name_hash.hpp"
 #include "nnh/log.hpp"
@@ -70,22 +71,41 @@ const char* make_page(FontBlock& block, int i, const std::uint8_t* file, MemTag&
     }
     block.page_slot[i] = static_cast<std::int16_t>(slot);
     block.page_generation[i] = generation;
+    block.page_bytes[i] = static_cast<std::uint32_t>(detail::gfx_state().textures.get(slot, generation)->bytes);
     return nullptr;
 }
 
 Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks);
 
 /// An entry's pages are still gfx textures: false for an entry of an earlier engine run (Release skips the shutdown hook,
-/// so its table outlives nnh::shutdown; its block is then lost, not reused).
+/// so its table outlives nnh::shutdown; load_entry then frees its block and forgets it).
 bool alive(const FontBlock& block) {
     return block.header.page_count == 0 ||
            detail::gfx_state().textures.get(block.page_slot[0], block.page_generation[0]) != nullptr;
 }
 
+/// Pages gfx destroyed at nnh::shutdown were taken off the `textures` tag; they were accounted under the font's: move
+/// them back so both tags end at zero.
+void settle_dead_pages(const FontBlock& block, MemTag& tag) {
+    for (int i = 0; i < block.header.page_count; ++i) {
+        detail::mem_account(MemRegion::Linear, tag, block.page_bytes[i], false);
+        detail::mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(textures), block.page_bytes[i], true);
+    }
+}
+
+/// The tag a table entry was loaded under.
+MemTag& entry_tag(int slot) {
+    MemTag* tag = detail::font_table_extra(slot).tag;
+    return tag != nullptr ? *tag : detail::font_memory_tag();
+}
+
 /// nnh::shutdown (Debug/Development): gfx already destroyed the pages; the blocks are freed and the table emptied.
 void fonts_shutdown() {
     for (int slot = 0; slot < detail::kFontSlots; ++slot) {
-        if (FontBlock* block = detail::font_table_block(detail::font_table_id(slot))) mem::free(block);
+        if (FontBlock* block = detail::font_table_block(detail::font_table_id(slot))) {
+            settle_dead_pages(*block, entry_tag(slot));
+            mem::free(block);
+        }
     }
     detail::font_table_reset();
     detail::g_font_resolve = nullptr;
@@ -108,6 +128,9 @@ Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks) {
     const std::uint32_t hash = detail::fnv1a32(path);
     int found = detail::font_table_find(hash);
     if (found >= 0 && !alive(*detail::font_table_block(detail::font_table_id(found)))) {
+        FontBlock* stale = detail::font_table_block(detail::font_table_id(found));
+        settle_dead_pages(*stale, entry_tag(found));
+        mem::free(stale); // its memory, not leaked across runs
         detail::font_table_forget(found);
         found = -1;
     }

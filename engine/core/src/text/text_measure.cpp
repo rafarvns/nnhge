@@ -10,6 +10,7 @@
 namespace nnh {
 
 Vec2 gfx::measure_text(const char* utf8, const TextOptions& options) {
+    detail::text_layout_link(); // a game that measures with options draws with them: link the layout path
     if (utf8 == nullptr || *utf8 == 0) return {};
     if (!detail::uses_text_layout(options)) return detail::measure(utf8, options.scale);
     const detail::TextFace face = detail::face_for(options.font, options.scale);
@@ -24,6 +25,7 @@ Vec2 gfx::measure_text(const char* utf8, const TextOptions& options) {
 }
 
 int gfx::measure_chars(const char* utf8, const TextOptions& options, TextCaret* out, int capacity) {
+    detail::text_layout_link();
     if (utf8 == nullptr || out == nullptr || capacity <= 0) return 0;
     const detail::TextFace face = detail::face_for(options.font, options.scale);
     const int s = face.scale;

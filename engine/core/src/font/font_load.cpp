@@ -19,6 +19,7 @@
 #include "nnh/profile.hpp"
 #include "text/font_resolve.hpp"
 #include "text/font_texture.hpp"
+#include "text/text_draw.hpp"
 #include "text/text_missing.hpp"
 
 namespace nnh {
@@ -202,6 +203,7 @@ Result<Font> load_font(const char* path, MemTag* tag) {
     auto slot = load_entry(path, tag != nullptr ? *tag : detail::font_memory_tag(), true);
     if (!slot) return slot.error();
     detail::g_font_resolve = &detail::font_resolve_face;
+    detail::text_layout_link(); // a game with fonts draws through the layout path
     detail::add_shutdown_hook(&fonts_shutdown);
     return FontAccess::make(detail::font_table_id(slot.value()));
 }

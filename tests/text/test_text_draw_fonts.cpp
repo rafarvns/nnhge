@@ -208,3 +208,29 @@ NNH_TEST(text_draw_font_zero_width_characters_draw_nothing) {
     });
     CHECK(items.size() == 2 && items.size() == 2 && items[1].x == 7); // A, then V kerned as if nothing was between
 }
+
+NNH_TEST(text_draw_unwrapped_text_equals_the_wrapper_path_with_a_huge_width) {
+    // the no-wrap fast path (lines end only at '\n') draws exactly what the wrapper draws when nothing needs wrapping
+    start_engine();
+    nnh::Font f = load("fonts/k", kerned());
+    const char* texts[] = {"AV A", "AV\nA j\n", "\nAVAV ? j", "A\xE2\x82\xAC" "V", ""};
+    const nnh::TextAlign aligns[] = {nnh::TextAlign::Left, nnh::TextAlign::Center, nnh::TextAlign::Right};
+    int mismatches = 0;
+    for (const char* t : texts) {
+        for (const nnh::TextAlign a : aligns) {
+            for (int scale = 1; scale <= 2; ++scale) {
+                nnh::TextOptions plain{.scale = scale, .align = a, .shadow = scale == 2, .font = f};
+                nnh::TextOptions wide = plain;
+                wide.wrap_width = 30000;
+                const auto x = frame_items([&] { nnh::gfx::draw_text(nnh::Screen::Top, {100, 20}, t, plain); });
+                const auto y = frame_items([&] { nnh::gfx::draw_text(nnh::Screen::Top, {100, 20}, t, wide); });
+                bool same = x.size() == y.size();
+                for (std::size_t i = 0; same && i < x.size(); ++i)
+                    same = x[i].kind == y[i].kind && x[i].x == y[i].x && x[i].y == y[i].y && x[i].w == y[i].w &&
+                           x[i].h == y[i].h && x[i].region.x == y[i].region.x && same_color(x[i].color, y[i].color);
+                mismatches += same ? 0 : 1;
+            }
+        }
+    }
+    CHECK(mismatches == 0);
+}

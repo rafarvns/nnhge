@@ -95,12 +95,28 @@ void warn_no_outline([[maybe_unused]] const TextFace& face) {
 
 } // namespace
 
+void text_layout_link() {}
+
 void draw_text_layout(Screen screen, Vec2 position, const char* utf8, const TextOptions& options) {
     const TextFace face = face_for(options.font, options.scale);
     if (face.builtin() && !font_texture_ready()) return;
     if (options.outline_color.a > 0 && !face.builtin() && face.fonts[0]->outlines == nullptr) warn_no_outline(face);
     const Emit e{screen, position, options, face, static_cast<float>(face.scale)};
     const int line_height = face_line_height(face);
+    if (options.wrap_width <= 0 && options.max_lines <= 0) { // no wrapping: lines end at '\n'; one walk each (two aligned)
+        int index = 0;
+        for (const char* line = utf8;; ++index) {
+            const char* end = line;
+            while (*end != 0 && *end != '\n') ++end;
+            const int x0 = options.align == TextAlign::Left ? 0 : align_offset(options.align, run_width(face, line, end));
+            walk_run(face, line, end, [&](const RunItem& it) {
+                if (it.g.missing) text_missing(face.fonts[0]->self_slot, it.cp, face.fonts[0]->name);
+                if (it.draw) emit(e, it, x0 + it.pen, index * line_height);
+            });
+            if (*end == 0) return;
+            line = end + 1;
+        }
+    }
     for_each_text_line(face, utf8, options, [&](const WrapLine& line, int index) {
         const int x0 = align_offset(options.align, text_line_width(face, line));
         const int y0 = index * line_height;

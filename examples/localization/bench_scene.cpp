@@ -135,6 +135,13 @@ void BenchScene::finish() {
         const double builtin = per_frame(kBuiltin) * 1000.0 / 400, font = per_frame(kFont) * 1000.0 / 400;
         const double ratio = builtin > 0 ? font / builtin : 0;
         pass = ratio <= 1.15;
+        const auto part = [&](Phase q, bool submit) {
+            const double n = sums_[q].n > 0 ? sums_[q].n : 1, bn = sums_[kBase].n > 0 ? sums_[kBase].n : 1;
+            return (submit ? sums_[q].submit / n - sums_[kBase].submit / bn : sums_[q].own / n - sums_[kBase].own / bn) *
+                   1000.0 / 400;
+        };
+        NNH_LOG_INFO(example, "loc bench: glyphs cpu builtin %.3f font %.3f us, submit builtin %.3f font %.3f us",
+                     part(kBuiltin, false), part(kFont, false), part(kBuiltin, true), part(kFont, true));
         std::snprintf(line, sizeof line, "loc bench: glyphs builtin %.2f us font %.2f us per glyph ratio %.2f (target <= 1.15)%s %s",
                       builtin, font, ratio, judge, judged() ? (pass ? "PASS" : "FAIL") : "");
     } else if (p == kFrame) {

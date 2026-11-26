@@ -423,6 +423,7 @@ target_sources(nnh_tests PRIVATE
     ${_platformer}/frame_meter.cpp
     ${_platformer}/gate_run.cpp
     ${_platformer}/player.cpp
+    ${_platformer}/tuning.cpp
     ${_platformer}/player_sprite.cpp
     ${_platformer}/replay_run.cpp
     ${_platformer}/replay_script.cpp

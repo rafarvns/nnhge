@@ -10,26 +10,26 @@
 
 namespace nnh::detail {
 
+char32_t seam_next_slow(const char*& p) { return next_codepoint(p); }
+
 TextSize seam_measure(const char* utf8) {
     TextSize size;
     if (utf8 == nullptr || *utf8 == 0) return size;
     size.lines = 1;
     int cells = 0;
     const char* p = utf8;
-    for (char32_t c = next_codepoint(p); c != 0; c = next_codepoint(p)) {
+    for (char32_t c = seam_next(p); c != 0; c = seam_next(p)) {
         if (c == U'\n') {
             ++size.lines;
             cells = 0;
         } else if (c != U'\r') {
             ++cells;
+            ++size.total;
             if (cells > size.cells) size.cells = cells;
         }
     }
     return size;
 }
-
-int seam_cell(const UiTextLook& look) { return kFontCellSize * (look.scale < 1 ? 1 : (look.scale > 8 ? 8 : look.scale)); }
-int seam_line(const UiTextLook& look) { return kFontLineHeight * (look.scale < 1 ? 1 : (look.scale > 8 ? 8 : look.scale)); }
 
 int value_text(UiBlock& b, int s, int value, char* out, int capacity) {
     const bool progress = kind_of(b, s) == UiKind::Progress;

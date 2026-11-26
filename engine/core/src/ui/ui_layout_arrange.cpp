@@ -24,9 +24,23 @@ UiPlace place_of(const UiCold& c) {
 /// Main-axis sizes of a box's visible children (into w or h). @return the total (spacing included).
 int distribute(UiBlock& b, int s, bool horizontal, int available) {
     const int spacing = box_spacing(b, s);
-    int n = 0;
-    for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) ++n;
+    // one walk: every child at its minimum, which is the whole answer when none expands (the common case)
+    int n = 0, sum = 0;
+    bool any_expand = false;
+    for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) {
+        UiHot& h = b.hot[c];
+        const std::int16_t min = horizontal ? h.min_w : h.min_h;
+        (horizontal ? h.w : h.h) = min;
+        h.flags = static_cast<std::uint8_t>(h.flags & ~kUiScratch);
+        sum += min;
+        any_expand = any_expand || expands(h);
+        ++n;
+    }
     const int space = available - (n > 1 ? (n - 1) * spacing : 0);
+    if (!any_expand) {
+        if (sum > space) warn_overflow(b, s);
+        return sum;
+    }
     const int total = box_distribute_each(
         [&](auto&& fn) {
             for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) {
@@ -45,18 +59,6 @@ int distribute(UiBlock& b, int s, bool horizontal, int available) {
     return total;
 }
 
-/// Grid box tracks: per column widths or per row heights (max of the children's minimums).
-int grid_track(const UiBlock& b, int s, bool horizontal, int index) {
-    const int cols = grid_columns(b, s);
-    int i = 0, v = 0;
-    for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c), ++i) {
-        const int k = horizontal ? i % cols : i / cols;
-        const int m = horizontal ? b.hot[c].min_w : b.hot[c].min_h;
-        if (k == index && m > v) v = m;
-    }
-    return v;
-}
-
 /// One axis of the children of `s` (content start `start`, size `size`).
 void arrange_axis(UiBlock& b, int s, bool horizontal, int start, int size) {
     const int axis = box_axis(b, s);
@@ -72,35 +74,36 @@ void arrange_axis(UiBlock& b, int s, bool horizontal, int start, int size) {
         return;
     }
     if (axis == 3) {
-        // track starts and sizes (columns for x, rows for y); rows past kTracks are found by a scan
-        constexpr int kTracks = 64;
-        std::int16_t starts[kTracks], sizes[kTracks];
+        // track sizes in one walk (rows past the table are found by a walk), then each child by running counters:
+        // no division per child
+        std::int16_t sizes[kGridTable], starts[kGridTable];
         const int cols = grid_columns(b, s);
-        int count = 0;
-        for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) ++count;
-        const int needed = horizontal ? (count < cols ? count : cols) : (count + cols - 1) / cols;
+        const int needed = grid_tracks(b, s, horizontal, sizes);
         int at = start;
-        for (int k = 0; k < kTracks && k < needed; ++k) {
-            sizes[k] = i16(grid_track(b, s, horizontal, k));
+        for (int k = 0; k < kGridTable && k < needed; ++k) {
             starts[k] = i16(at);
             at += sizes[k] + spacing;
         }
-        int i = 0;
-        for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c), ++i) {
-            const int k = horizontal ? i % cols : i / cols;
+        int col = 0, row = 0;
+        for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) {
+            const int k = horizontal ? col : row;
             int pos = 0, track = 0;
-            if (k < kTracks) {
+            if (k < kGridTable) {
                 pos = starts[k];
                 track = sizes[k];
             } else {
                 pos = at;
-                for (int j = kTracks; j < k; ++j) pos += grid_track(b, s, horizontal, j) + spacing;
-                track = grid_track(b, s, horizontal, k);
+                for (int j = kGridTable; j < k; ++j) pos += grid_track_at(b, s, horizontal, j) + spacing;
+                track = grid_track_at(b, s, horizontal, k);
             }
             UiHot& h = b.hot[c];
             const AxisSpan span = box_align(align_of(h), track, horizontal ? h.min_w : h.min_h);
             (horizontal ? h.x : h.y) = i16(pos + span.pos);
             (horizontal ? h.w : h.h) = i16(span.size);
+            if (++col == cols) {
+                col = 0;
+                ++row;
+            }
         }
         return;
     }

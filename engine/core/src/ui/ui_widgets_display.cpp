@@ -44,6 +44,7 @@ UiWidget Ui::label(UiWidget parent, const UiLabelDesc& d) {
     l.max_lines = static_cast<std::uint8_t>(d.max_lines < 0 ? 0 : (d.max_lines > 255 ? 255 : d.max_lines));
     l.bits = static_cast<std::uint8_t>((d.wrap ? 1 : 0) | ((static_cast<unsigned>(d.align) & 3u) << 1) |
                                        ((static_cast<unsigned>(d.valign) & 3u) << 3));
+    if (d.wrap) ++b->wrap_labels[detail::root_index_of(*b, s)];
     if (d.reveal_rate >= 0) {
         l.rate = rate;
         l.visible = 0;

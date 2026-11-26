@@ -22,10 +22,12 @@ UiRect list_area(const UiBlock& b, int s);  // ui_list.cpp
 
 namespace {
 
-/// Bytes of the first `cells` characters of `text` (`length` bytes).
+/// Bytes of the first `cells` characters of `text` (`length` bytes); a '\r' takes no cell, as gfx and the wrapper count.
 int bytes_of_cells(const char* text, int length, int cells) {
     const char* p = text;
-    for (int i = 0; i < cells && p < text + length; ++i) next_codepoint(p);
+    for (int i = 0; i < cells && p < text + length;) {
+        if (seam_next(p) != U'\r') ++i;
+    }
     const int n = static_cast<int>(p - text);
     return n > length ? length : n;
 }
@@ -51,6 +53,13 @@ void draw_label(UiBlock& b, const DrawCtx& d, int s, const UiStyle& st, const Ui
     const auto valign = static_cast<UiAlign>((l.bits >> 3) & 3u);
     const int height = l.lines * line;
     int y = valign == UiAlign::Center ? c.y + ((c.h - height) >> 1) : (valign == UiAlign::End ? c.y + c.h - height : c.y);
+    if ((l.bits & 1) == 0 && l.max_lines == 0 && l.lines == 1 && l.visible == 0xFFFF) {
+        // one whole line (the common label): the run the wrapper would give, from pass 1's count, with no walk
+        const int full = l.cells * cell;
+        const int x = align == TextAlign::Center ? c.x + ((c.w - full) >> 1) : (align == TextAlign::Right ? c.x + c.w - full : c.x);
+        out_run(b, d, x, y, text, static_cast<int>(std::strlen(text)), st.text, look.text, false);
+        return;
+    }
     int left = l.visible == 0xFFFF ? 0x7FFFFFFF : l.visible;
     Wrapper w(text, static_cast<int>(std::strlen(text)), max_cells, l.max_lines);
     WrapLine ln;
@@ -166,14 +175,10 @@ void draw_list(UiBlock& b, const DrawCtx& d, int s, const UiStyle& st); // ui_dr
 
 void draw_widget(const UiBlock& cb, const DrawCtx& d, int s) {
     UiBlock& b = const_cast<UiBlock&>(cb); // draw only reads; keyed texts and pooled rows are caches
-    const UiStyle& st = style_of(b, s);
     const UiKind k = kind_of(b, s);
-    const UiState state = state_of(b, s);
-    const UiLook& look = st.states[static_cast<int>(state)];
-    if (k == UiKind::Root || k == UiKind::Spacer || k == UiKind::VBox || k == UiKind::HBox || k == UiKind::GridBox ||
-        k == UiKind::Stack) {
-        return; // no look of their own
-    }
+    if (!has_look(k)) return;
+    const UiStyle& st = style_of(b, s);
+    const UiLook& look = st.states[static_cast<int>(state_of(b, s))];
     out_background(b, d, rect_of(b.hot[s]), look.background);
     switch (k) {
     case UiKind::Label: draw_label(b, d, s, st, look); break;

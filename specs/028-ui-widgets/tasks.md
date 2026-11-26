@@ -276,7 +276,8 @@ replay ctest with the tree's lines — values re-read from the tree at T0.3).
   numbers), apply risk 1's list without changing a rectangle, the golden or the draw hash (tests first for any rewrite);
   then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin and written in the
   spec's AC-6, `bench_scene.cpp` and `docs/api/ui.md`. Files: plan.md ("Optimisation round", "Console run 2 and budgets
-  set"). Covers AC-6.
+  set"). Covers AC-6. *2026-11-25: the round is done on the PC (plan.md, "Optimisation round": list bench attribution,
+  relayout −59 %, the UI's draw work −62 %, a `'\r'` fix); console run 2 pending.*
 - [ ] **T10.4** (contingency, only if the frame target or the draw ratio is still missed after T10.3, and with the
   maintainer's OK) A UI glyph batch through D39's mechanism (plan.md risk 2): the design written into plan.md and D39's
   row first (an amendment), then tests (items equal to the glyph sprites `draw_text` would make; budgets), then code;

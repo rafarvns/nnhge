@@ -115,6 +115,7 @@ struct UiProgressData {
 struct UiButtonData {
     std::int8_t icon_texture = -1;
     std::int16_t ix = 0, iy = 0, iw = 0, ih = 0;
+    std::uint8_t lines = 0; ///< text lines at the last layout's pass 1
 };
 union UiKindData {
     UiLabelData label{};
@@ -224,6 +225,7 @@ struct UiBlock {
     std::uint8_t layers[2] = {kUiDefaultLayer, kUiDefaultLayer};
     bool root_visible[2] = {true, true};
     bool dirty[2] = {true, true};
+    std::uint16_t wrap_labels[2] = {0, 0}; ///< wrapping labels per root: none → heights measured with widths
     Screen first_focus = Screen::Bottom;
     // focus
     std::uint16_t focus = kUiNone;

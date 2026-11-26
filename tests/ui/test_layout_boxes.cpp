@@ -154,4 +154,33 @@ NNH_TEST(ui_hbox_children_over_the_width_overflow_without_shrinking) {
     const UiWidget a = ui.label(box, {.text = "abc"});
     const UiWidget b = ui.label(box, {.text = "def"});
     CHECK(ui.rect(a).w == 24 && ui.rect(b).x == 24 && ui.rect(b).w == 24);
+    // given less than its children's minimums by its parent (not by a fixed size), the box itself is warned
+    Ui nested = ui_test::make();
+    const UiWidget outer = nested.vbox(bottom(nested), {.layout = {.width = 20}});
+    const UiWidget row = nested.hbox(outer, {.spacing = 0});
+    nested.label(row, {.text = "abc"});
+    nested.label(row, {.text = "def"});
+    (void)nested.rect(row);
+    const nnh::detail::UiBlock& block = *nnh::UiAccess::block(nested);
+    CHECK(((block.hot[row.slot()].flags & nnh::detail::kUiWarned) != 0) == nnh::build::kAssertsEnabled);
+}
+
+NNH_TEST(ui_grid_box_with_fewer_children_than_columns_is_as_wide_as_they_are) {
+    Ui ui = ui_test::make();
+    const UiWidget g = ui.grid_box(bottom(ui), {.spacing = 2, .columns = 4});
+    ui.label(g, {.text = "ab"});
+    ui.label(g, {.text = "abc"});
+    CHECK((ui.rect(g) == UiRect{0, 0, 16 + 2 + 24, 10})); // two columns, not four
+}
+
+NNH_TEST(ui_grid_box_rows_past_the_track_table_are_placed_in_order) {
+    Ui ui = ui_test::make({.widgets = 80});
+    const UiWidget g = ui.grid_box(bottom(ui), {.spacing = 1, .columns = 1});
+    UiWidget rows[70];
+    for (int i = 0; i < 70; ++i) rows[i] = ui.label(g, {.text = i == 66 ? "a\nb" : "a"}); // row 66 two lines high
+    CHECK(ui.rect(rows[63]).y == 63 * 11);
+    CHECK(ui.rect(rows[64]).y == 64 * 11 && ui.rect(rows[65]).y == 65 * 11);
+    CHECK(ui.rect(rows[66]).y == 66 * 11 && ui.rect(rows[66]).h == 20);
+    CHECK(ui.rect(rows[67]).y == 66 * 11 + 21 && ui.rect(rows[69]).y == 66 * 11 + 21 + 2 * 11);
+    CHECK(ui.rect(g).h == 69 * 11 + 21 - 1);
 }

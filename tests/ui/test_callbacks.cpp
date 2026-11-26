@@ -3,6 +3,7 @@
 // or updating it from its own callback asserts.
 
 #include "ui/ui_block.hpp"
+#include "ui/ui_internal.hpp"
 #include "ui_fixture.hpp"
 
 using nnh::Screen;
@@ -107,7 +108,14 @@ NNH_TEST(ui_callbacks_destroying_the_ui_asserts_and_is_safe_in_release) {
     const UiWidget b = owned->button(owned->root(Screen::Bottom), {.text = "b"});
     owned->on_activate(b, [](const UiResult&) { delete g; });
     ui_test::settle(*owned);
+    nnh::detail::UiBlock* block = nnh::UiAccess::block(*owned);
     const bool crashed = ui_test::crashes([] { g->update(ui_test::press(ui_test::kConfirm)); });
     CHECK(crashed == nnh::build::kAssertsEnabled);
-    // Release: the block was freed when the update ended; Debug: the assert stopped the delete half way (leaked)
+    // Release: the block was freed when the update ended. Debug: the assert stopped `delete g` half way, after ~Ui
+    // dropped the block and before the storage was freed; free both here so leak checkers stay quiet
+    if (crashed) {
+        block->busy = 0;
+        nnh::detail::ui_free(*block);
+        delete g; // its block is already null: only the storage goes
+    }
 }

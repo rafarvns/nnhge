@@ -113,7 +113,8 @@ item count, children): at the end of `update()`, on a `rect()` query, and at the
 after `update()` (the maintainer's answer to plan question 1: a menu that switches panels after reading its results
 draws the new ones in the same frame). `draw()` still changes nothing else. A layout walks each visible node four times
 (`stats().layout_visits`), without recursion: minimum widths bottom-up, widths top-down, wrapping and minimum heights
-bottom-up, heights and positions top-down.
+bottom-up, heights and positions top-down. A root with no wrapping label needs no width to know its heights, so it
+takes three: the minimum heights come with the minimum widths.
 
 - **Minimum sizes** come from content plus the style's padding (labels: 8 px per character and 10 px per line at
   scale 1; a wrapping label: its longest word; buttons: text and icon; toggles: a 10-pixel box + 4 + text; sliders:

@@ -82,6 +82,14 @@ struct AxisSpan {
 
 /// A child of `size` on an axis of `available` pixels: Start 0; Center (available − size) >> 1 (rounded down); End
 /// available − size; Fill: the whole axis.
-AxisSpan box_align(UiAlign align, int available, int size);
+inline AxisSpan box_align(UiAlign align, int available, int size) {
+    switch (align) {
+    case UiAlign::Start: return {0, size};
+    case UiAlign::Center: return {(available - size) >> 1, size};
+    case UiAlign::End: return {available - size, size};
+    case UiAlign::Fill: break;
+    }
+    return {0, available};
+}
 
 } // namespace nnh::detail

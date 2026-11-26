@@ -36,7 +36,7 @@ void draw_subtree(const UiBlock& b, int top) {
             s = skip_subtree(b, top, s);
             continue;
         }
-        draw_widget(b, context_of(b, s), s);
+        if (has_look(kind_of(b, s))) draw_widget(b, context_of(b, s), s); // no context for a box
         s = preorder_next_visible(b, top, s);
     }
 }
@@ -70,7 +70,7 @@ DrawCtx context_of(const UiBlock& b, int s) {
         const UiCold& c = b.cold[n];
         d.dx += c.offset_x;
         d.dy += c.offset_y;
-        d.opacity = (d.opacity * c.opacity + 127) / 255;
+        if (c.opacity != 255) d.opacity = (d.opacity * c.opacity + 127) / 255; // (o × 255 + 127) / 255 = o
     }
     return d;
 }

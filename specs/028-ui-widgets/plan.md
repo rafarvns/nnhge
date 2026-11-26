@@ -994,6 +994,80 @@ logs and screenshots in `build/logs/`):
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (≈ 40 s). Expected:
    exactly the `replay: … sum` lines in the tree and `60 Hz PASS`; `nnh: PASS`.
 
+### Stage 9 results (Linux, run by the lead at 96d76a2)
+
+GCC 13: `nnh_tests` all pass, ctest 345/346 (only `platformer_doors_script_pc`, the known 60 Hz flake). GCC 14: 3572
+tests, 0 failures. 32-bit (`-m32 -msse2 -mfpmath=sse`): 3572, 0 failures. clang 18 ASan + UBSan: no runtime error;
+LeakSanitizer reported 8840 B in one allocation, the block of
+`ui_callbacks_destroying_the_ui_asserts_and_is_safe_in_release`: in Debug the assert stops `delete g` after `~Ui` has
+dropped the block, so nothing freed it. Fixed in the test (T10.3's commit): it keeps the block pointer before the
+update, and when the assert fired it clears `busy`, frees the block with `ui_free` and deletes the `Ui` (its block now
+null: only the storage goes). Release checks the same as before (no crash, the block freed when the update ends). ASan
+to be rerun by the lead.
+
+### Console run 1 (2026-11-25, Old 3DS XL, pre-optimisation build)
+
+`build/logs/ui-20261125-203213.txt` and a second run for variance (numbers within ≈ 1 %): functional lines and
+`ui: PASS 30400DA6` as on the PC. Bench (base gfx submit 0.1687 ms): idle128 0.027 ms PASS, move128 0.055 PASS, geo128
+0.106 PASS, **relayout128 avg 1.482 worst 1.744 (target < 0.6) FAIL**, **list10000 0.554 / list20 0.551, ratio 1.01
+(target < 0.2) FAIL**, **draw ui 7.96 µs vs hand 6.55 µs per draw, ratio 1.22 over 372 draws (target ≤ 1.15) FAIL**,
+frame worst 17.6 ms, 0 missed PASS; memory widget 88 B, row 72 B, options 4624 B for 17 widgets.
+
+### Optimisation round (T10.3)
+
+No rectangle, checkpoint or draw hash changed: `ui: PASS 30400DA6`, every UI test and the micro-benchmark's draw hash
+`7429F9EB` identical before and after; 3ds-release and 3ds-dev `hello.elf`/`.3dsx` byte-identical to T0.1's. Measured
+on the PC with a micro-benchmark (`build/ref-028/micro`, not committed: the bench's workloads in tight loops, pc-release
+`-O2`, the fake platform, so `draw()` times the UI's own work and not gfx's).
+
+1. **Lists: the bench measured the drawing, not the scroll.** The list phases time `update()` (one row of scroll), then
+   draw the list untimed; but `cost()` added the next frame's gfx submit, i.e. the ≈ 250 glyph sprites of 12 rows of
+   text — the same for 20 items or 10 000, hence the ratio 1.01 and the constant 0.55 ms. The scroll itself is
+   0.16–0.17 µs on the PC (no relayout: a list keeps whole rows and only moves its window; the rows coming into view are
+   filled at draw). `bench_scene.cpp` now judges the list phases on their own update time (their drawing is the draw
+   phases' business, which measure it per glyph). Expected on the console: ≈ 0.01–0.03 ms, ratio ≈ 1.0.
+2. **relayout128** (PC 26.7 → 11.0 µs, −59 %):
+   - grid boxes find track sizes in one walk with running column/row counters (`grid_tracks`, a 64-track table;
+     tracks past it by a walk): no division per child — on the ARM11 each was an `__aeabi_idiv` call;
+   - a non-wrapping label keeps the line count and cells pass 1 measured; a button its line count: pass 3 doesn't walk
+     their texts again;
+   - a root with no wrapping label (counted per root in `UiBlock::wrap_labels`) computes minimum heights in pass 1's
+     walk and skips pass 3: three walks instead of four (`layout_visits` = 3 × the visible nodes; a root with a
+     wrapping label still 4 ×; tests in `test_layout_dirty.cpp`);
+   - `distribute()` sets every child to its minimum in one walk and stops there when none expands (the common case);
+   - small helpers inlined (`seam_next` for ASCII, `seam_cell/line/scale`, `box_align`, `box_axis`, the post-order
+     walk), padding looked up once per node in the measuring passes.
+   Expected on the console ≈ 1.48 × 0.41 ≈ 0.6 ms, somewhat less since the removed divisions cost more there:
+   **0.5–0.65 ms, borderline** against < 0.6.
+3. **Draw** (the UI's own work per `draw()` of the options screen, PC 8.8 → 3.3 µs, −62 %):
+   - a one-line, fully shown, non-wrapping label (most labels) draws its text as one run with no wrapper walk;
+   - the run's hash folds its bytes directly (the same FNV-1a sequence as word by word, zero-padded) and counts glyphs
+     with an inline ASCII path;
+   - boxes, roots, stacks and spacers (no look of their own) are skipped before their context, style and state are
+     computed;
+   - a fully opaque ancestor skips the opacity division (exact: `(o × 255 + 127) / 255 = o`).
+   The console's extra cost was 1.41 µs per draw (7.96 vs 6.55); if it scales with the UI's own work, ≈ 0.55 µs:
+   **ratio ≈ 1.08–1.10** against ≤ 1.15.
+4. **A fix found on the way** (test first: `ui_drawn_label_with_a_carriage_return_keeps_every_character`): a revealed or
+   wrapped label counted a `'\r'` as a cell when cutting its run, so it dropped a character (`"ab\rc"` revealed to 3
+   drew `"ab\r"`); gfx and the wrapper give `'\r'` no cell. The golden session has no `'\r'`: no checkpoint moved.
+
+**Mutants** on the round's code (17, `build/ref-028/mut2.py`, judged by the `ui_` tests): 7 killed at once, 8 more
+after six new tests (`ui_drawn_label_of_several_lines_aligns_each_line`, `ui_draw_count_skips_both_kinds_of_space`,
+`ui_drawn_nearly_opaque_parent_still_fades`, `ui_min_label_max_lines_without_wrapping_is_that_many_lines_high`,
+`ui_grid_box_with_fewer_children_than_columns_is_as_wide_as_they_are`,
+`ui_grid_box_rows_past_the_track_table_are_placed_in_order`, and a parent-squeezed box's warning in
+`ui_hbox_children_over_the_width_overflow_without_shrinking`; the `'\r'` test also checks the draw count). Two are
+equivalent: pass 1's `max_lines == 0` guard (a `max_lines` label's count is always overwritten after it), and dropping
+the wrap bit from the one-line fast path (a wrapping label on one line gives the same items; only the hash's bytes
+could differ, by trailing spaces).
+
+PC bench after (pc-dev): every line PASS (relayout128 0.03 ms, lists 0.005 ms, draw ratio 0.99–1.06 over runs). If run 2
+still misses relayout128 (the likeliest), the next steps without the contingency are caching each label's measured
+width until its text or style changes (`text_changed()` re-resolves every key, so the bench would still measure every
+label), or setting the budget from the measurement with ≈ 25 % margin as T10.3 allows; neither the list nor the draw
+target should need T10.4.
+
 ## Constitution Check (after design)
 
 | Article | OK? | Note |

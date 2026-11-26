@@ -20,6 +20,12 @@ NNH_TEST(ui_min_label_is_its_text_without_padding) {
     CHECK((ui.rect(ui.label(top(ui), {.text = ""})) == UiRect{0, 0, 0, 0}));
 }
 
+NNH_TEST(ui_min_label_max_lines_without_wrapping_is_that_many_lines_high) {
+    Ui ui = ui_test::make(); // no wrapping label: the heights come with pass 1, max_lines must still count
+    CHECK(ui.rect(ui.label(top(ui), {.text = "a\nb\nc", .max_lines = 1})).h == 10);
+    CHECK(ui.rect(ui.label(top(ui), {.text = "a\nb\nc", .max_lines = 2})).h == 20);
+}
+
 NNH_TEST(ui_min_wrapping_label_is_its_longest_word_wide) {
     Ui ui = ui_test::make();
     const UiWidget w = ui.label(top(ui), {.text = "the quick brown fox", .wrap = true});

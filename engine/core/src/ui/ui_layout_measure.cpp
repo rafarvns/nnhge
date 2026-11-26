@@ -34,11 +34,18 @@ int labelled(int text_cells, int cell) { return text_cells > 0 ? text_cells * ce
 int leaf_width(UiBlock& b, int s) {
     const UiStyle& st = style_of(b, s);
     const int cell = seam_cell(st.text);
-    const UiCold& c = b.cold[s];
+    UiCold& c = b.cold[s];
     const TextSize t = seam_measure(text_of(b, s));
     switch (kind_of(b, s)) {
     case UiKind::Label: {
-        if ((c.data.label.bits & 1) == 0) return t.cells * cell;
+        UiLabelData& l = c.data.label;
+        if ((l.bits & 1) == 0) {
+            if (l.max_lines == 0) { // what pass 3's wrapper would find: kept, so it doesn't walk the text again
+                l.lines = static_cast<std::uint8_t>(t.lines > 255 ? 255 : t.lines);
+                l.cells = static_cast<std::uint16_t>(t.total > 65534 ? 65534 : t.total);
+            }
+            return t.cells * cell;
+        }
         const char* text = text_of(b, s);
         return longest_word_cells(text, static_cast<int>(std::strlen(text))) * cell;
     }
@@ -46,6 +53,7 @@ int leaf_width(UiBlock& b, int s) {
     case UiKind::Progress:
         return (c.data.progress.bits & 2) != 0 ? value_cells(b, s, c.data.progress.max) * cell : 0;
     case UiKind::Button: {
+        c.data.button.lines = static_cast<std::uint8_t>(t.lines > 255 ? 255 : t.lines); // for pass 3
         const int icon = c.data.button.icon_texture >= 0 ? c.data.button.iw : 0;
         return icon + (icon > 0 && t.cells > 0 ? kGap : 0) + t.cells * cell;
     }
@@ -86,7 +94,7 @@ int leaf_height(UiBlock& b, int s) {
     case UiKind::Image: return (c.data.image.rh > 0 ? c.data.image.rh : 0) * c.data.image.scale;
     case UiKind::Progress: return (c.data.progress.bits & 2) != 0 ? line : 0; // a bar alone: its fixed size
     case UiKind::Button: {
-        const int text = seam_measure(text_of(b, s)).lines * line;
+        const int text = c.data.button.lines * line; // measured by pass 1
         const int icon = c.data.button.icon_texture >= 0 ? c.data.button.ih : 0;
         return text > icon ? text : icon;
     }
@@ -104,19 +112,10 @@ int container_size(const UiBlock& b, int s, bool horizontal) {
     const int axis = box_axis(b, s);
     const int spacing = box_spacing(b, s);
     int sum = 0, max = 0, n = 0;
-    if (axis == 3) { // grid box: per column (width) or per row (height) maximums, one scan per track (no table)
-        const int cols = grid_columns(b, s);
-        int count = 0;
-        for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) ++count;
-        const int tracks = horizontal ? (count < cols ? count : cols) : (count + cols - 1) / cols;
-        for (int k = 0; k < tracks; ++k) {
-            int i = 0, track = 0;
-            for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c), ++i) {
-                const int v = horizontal ? b.hot[c].min_w : b.hot[c].min_h;
-                if ((horizontal ? i % cols : i / cols) == k && v > track) track = v;
-            }
-            sum += track;
-        }
+    if (axis == 3) { // grid box: per column (width) or per row (height) maximums
+        std::int16_t table[kGridTable];
+        const int tracks = grid_tracks(b, s, horizontal, table);
+        for (int k = 0; k < tracks; ++k) sum += k < kGridTable ? table[k] : grid_track_at(b, s, horizontal, k);
         return sum + (tracks > 1 ? (tracks - 1) * spacing : 0);
     }
     const bool stacked = axis == 0;
@@ -138,9 +137,17 @@ int container_size(const UiBlock& b, int s, bool horizontal) {
     return along ? sum + (n > 1 ? (n - 1) * spacing : 0) : max;
 }
 
-void finish(UiBlock& b, int s, int content, bool horizontal) {
+/// A label's wrapped lines and cells at content width `width`, kept in its data.
+void label_line_counts(UiBlock& b, int s, int width) {
+    int cells = 0;
+    const int lines = label_lines(b, s, width, cells);
+    UiLabelData& l = b.cold[s].data.label;
+    l.lines = static_cast<std::uint8_t>(lines > 255 ? 255 : lines);
+    l.cells = static_cast<std::uint16_t>(cells > 65534 ? 65534 : cells);
+}
+
+void finish(UiBlock& b, int s, const Pad& p, int content, bool horizontal) {
     UiHot& n = b.hot[s];
-    const Pad p = padding_of(b, s);
     const int needed = content + (horizontal ? p.l + p.r : p.t + p.b);
     const int fixed = horizontal ? b.cold[s].fixed_w : b.cold[s].fixed_h;
     int v = needed;
@@ -158,11 +165,15 @@ void finish(UiBlock& b, int s, int content, bool horizontal) {
 
 } // namespace
 
-void measure_widths(UiBlock& b, int root) {
+void measure_widths(UiBlock& b, int root, bool heights) {
     for (int s = postorder_first(b, root); s >= 0; s = postorder_next(b, root, s)) {
         ++b.layout_visits;
         const UiKind k = kind_of(b, s);
-        finish(b, s, is_container(k) ? container_size(b, s, true) : leaf_width(b, s), true);
+        const Pad p = padding_of(b, s);
+        finish(b, s, p, is_container(k) ? container_size(b, s, true) : leaf_width(b, s), true);
+        if (!heights) continue;
+        if (k == UiKind::Label && b.cold[s].data.label.max_lines != 0) label_line_counts(b, s, 0);
+        finish(b, s, p, is_container(k) ? container_size(b, s, false) : leaf_height(b, s), false);
     }
 }
 
@@ -170,15 +181,11 @@ void measure_heights(UiBlock& b, int root) {
     for (int s = postorder_first(b, root); s >= 0; s = postorder_next(b, root, s)) {
         ++b.layout_visits;
         const UiKind k = kind_of(b, s);
-        if (k == UiKind::Label) {
-            const Pad p = padding_of(b, s);
-            int cells = 0;
-            const int lines = label_lines(b, s, b.hot[s].w - p.l - p.r, cells);
-            UiLabelData& l = b.cold[s].data.label;
-            l.lines = static_cast<std::uint8_t>(lines > 255 ? 255 : lines);
-            l.cells = static_cast<std::uint16_t>(cells > 65534 ? 65534 : cells);
+        const Pad p = padding_of(b, s);
+        if (k == UiKind::Label && ((b.cold[s].data.label.bits & 1) != 0 || b.cold[s].data.label.max_lines != 0)) {
+            label_line_counts(b, s, b.hot[s].w - p.l - p.r);
         }
-        finish(b, s, is_container(k) ? container_size(b, s, false) : leaf_height(b, s), false);
+        finish(b, s, p, is_container(k) ? container_size(b, s, false) : leaf_height(b, s), false);
     }
 }
 

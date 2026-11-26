@@ -5,9 +5,9 @@
 
 #include "nnh/gfx.hpp"
 #include "nnh/texture.hpp"
-#include "text/utf8.hpp"
 #include "ui/ui_draw_out.hpp"
 #include "ui/ui_nine_slice.hpp"
+#include "ui/ui_text_seam.hpp"
 
 namespace nnh::detail {
 namespace {
@@ -91,15 +91,15 @@ void out_sprite(const UiBlock& b, const DrawCtx& d, int slot, const Region& src,
 
 void out_run(const UiBlock& b, const DrawCtx& d, int x, int y, const char* utf8, int length, const UiTextLook& look,
              Color color, bool ellipsis) {
-    char run[kUiRunBytes + 4];
+    char run[kUiRunBytes + 8];
     int n = length < 0 ? 0 : (length > kUiRunBytes ? kUiRunBytes : length);
     std::memcpy(run, utf8, static_cast<std::size_t>(n));
     if (ellipsis) {
         std::memcpy(run + n, "...", 3);
         n += 3;
     }
-    run[n] = 0;
     if (n == 0) return;
+    std::memset(run + n, 0, 4); // the NUL, and the zero bytes of the hash's last word
     const Color c = fade(color, d.opacity);
     const Color shadow = fade(look.shadow_color, d.opacity);
     fold_head(b, 4, d);
@@ -108,15 +108,24 @@ void out_run(const UiBlock& b, const DrawCtx& d, int x, int y, const char* utf8,
     fold(b, c);
     fold(b, static_cast<int>(look.scale) | (look.shadow ? 0x100 : 0));
     if (look.shadow) fold(b, shadow);
-    for (int i = 0; i < n; i += 4) {
-        std::uint32_t w = 0;
-        for (int k = 0; k < 4 && i + k < n; ++k) w |= static_cast<std::uint32_t>(static_cast<unsigned char>(run[i + k])) << (8 * k);
-        fold(b, w);
+    // the run's bytes in little-endian words, the last one zero-padded: byte by byte, the same FNV-1a sequence
+    std::uint32_t h = b.draw_hash;
+    const int padded = (n + 3) & ~3;
+    for (int i = 0; i < padded; ++i) {
+        h ^= static_cast<unsigned char>(run[i]);
+        h *= 16777619u;
     }
+    b.draw_hash = h;
+    // glyphs as gfx counts them (ASCII inline; other bytes decoded exactly as gfx does)
     int glyphs = 0;
-    const char* p = run;
-    for (char32_t ch = next_codepoint(p); ch != 0; ch = next_codepoint(p)) {
-        if (ch != U' ' && ch != 0xA0 && ch != U'\n' && ch != U'\r') ++glyphs;
+    for (const char* p = run; *p != 0;) {
+        const auto ch = static_cast<unsigned char>(*p);
+        if (ch < 0x80) {
+            glyphs += ch != ' ' && ch != '\n' && ch != '\r' ? 1 : 0;
+            ++p;
+        } else {
+            glyphs += seam_next_slow(p) != 0xA0 ? 1 : 0;
+        }
     }
     b.draws += look.shadow ? 2 * glyphs : glyphs;
     gfx::draw_text(d.screen, {static_cast<float>(x + d.dx), static_cast<float>(y + d.dy)}, run,

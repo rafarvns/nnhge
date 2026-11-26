@@ -1,5 +1,6 @@
 // The layout driver (spec 028 FR-13, D48): a root marked dirty is laid out by four linear walks — minimum widths
-// bottom-up, widths top-down, wrapped heights bottom-up, heights and positions top-down — at the end of update(), on a
+// bottom-up, widths top-down, wrapped heights bottom-up, heights and positions top-down (three when no label of the root
+// wraps: its minimum heights come with the widths) — at the end of update(), on a
 // rectangle query and at the start of draw() (the maintainer's answer to plan question 1). Never per frame otherwise.
 
 #include "nnh/log.hpp"
@@ -29,35 +30,35 @@ Pad padding_of(const UiBlock& b, int s) {
     }
 }
 
-int box_axis(const UiBlock& b, int s) {
-    switch (kind_of(b, s)) {
-    case UiKind::VBox:
-    case UiKind::ScrollBox: return 1;
-    case UiKind::HBox: return 2;
-    case UiKind::GridBox: return 3;
-    case UiKind::Panel: {
-        const int box = b.cold[s].data.box.extra;
-        return box == 1 ? 1 : (box == 2 ? 2 : 4);
+int grid_tracks(const UiBlock& b, int s, bool horizontal, std::int16_t* table) {
+    const int cols = grid_columns(b, s);
+    for (int k = 0; k < kGridTable; ++k) table[k] = 0;
+    int col = 0, row = 0, count = 0;
+    for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) {
+        const int k = horizontal ? col : row;
+        const int v = horizontal ? b.hot[c].min_w : b.hot[c].min_h;
+        if (k < kGridTable && v > table[k]) table[k] = static_cast<std::int16_t>(v);
+        ++count;
+        if (++col == cols) {
+            col = 0;
+            ++row;
+        }
     }
-    default: return 0;
-    }
+    return horizontal ? (count < cols ? count : cols) : row + (col > 0 ? 1 : 0);
 }
 
-namespace {
-
-int deepest_visible(const UiBlock& b, int s) {
-    for (int c = first_visible_child(b, s); c >= 0; c = first_visible_child(b, c)) s = c;
-    return s;
-}
-
-} // namespace
-
-int postorder_first(const UiBlock& b, int root) { return deepest_visible(b, root); }
-
-int postorder_next(const UiBlock& b, int root, int s) {
-    if (s == root) return -1;
-    const int sibling = next_visible_sibling(b, s);
-    return sibling >= 0 ? deepest_visible(b, sibling) : b.hot[s].parent;
+int grid_track_at(const UiBlock& b, int s, bool horizontal, int k) {
+    const int cols = grid_columns(b, s);
+    int col = 0, row = 0, v = 0;
+    for (int c = first_visible_child(b, s); c >= 0; c = next_visible_sibling(b, c)) {
+        const int m = horizontal ? b.hot[c].min_w : b.hot[c].min_h;
+        if ((horizontal ? col : row) == k && m > v) v = m;
+        if (++col == cols) {
+            col = 0;
+            ++row;
+        }
+    }
+    return v;
 }
 
 void warn_overflow(UiBlock& b, int s) {
@@ -78,9 +79,11 @@ void layout_root(UiBlock& b, int root_index) {
     b.dirty[root_index] = false;
     if (root == kUiNone) return;
     NNH_PROFILE_SCOPE("ui layout");
-    measure_widths(b, root);
+    // without a wrapping label no height depends on a width: heights are measured with the widths (3 walks, not 4)
+    const bool folded = b.wrap_labels[root_index] == 0;
+    measure_widths(b, root, folded);
     arrange_widths(b, root);
-    measure_heights(b, root);
+    if (!folded) measure_heights(b, root);
     arrange_heights(b, root);
     ++b.layouts;
 }

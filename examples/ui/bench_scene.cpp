@@ -61,6 +61,9 @@ double BenchScene::cost(Phase p) const {
     const Sum& s = sums_[p];
     const Sum& b = sums_[kBase];
     const double n = s.n > 0 ? s.n : 1, bn = b.n > 0 ? b.n : 1;
+    // the list phases time the scroll only: their submit is the untimed draw of the shown rows (the draw phases'
+    // business), the same for 20 rows or 10 000, so adding it would hide the scroll's cost under the drawing's
+    if (p == kList10000 || p == kList20) return s.own / n - b.own / bn;
     return (s.own / n - b.own / bn) + (s.submit / n - b.submit / bn);
 }
 

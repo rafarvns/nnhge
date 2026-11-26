@@ -778,6 +778,7 @@ target_sources(nnh_tests PRIVATE
     ui/test_scene_binding.cpp
     ui/test_scroll_box.cpp
     ui/test_style.cpp
+    ui/test_text_seam.cpp
     ui/test_text_sources.cpp
     ui/test_touch.cpp
     ui/test_tree.cpp

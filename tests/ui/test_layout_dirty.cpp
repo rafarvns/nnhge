@@ -1,6 +1,7 @@
 // When layout runs (spec 028 T2.4, FR-13, FR-7): only after a change that affects it — at the end of update(), on a
 // rectangle query, or at the start of draw() for changes made after update() (the maintainer's answer to plan question
-// 1) — never for render offsets or opacity; a layout visits each visible node four times.
+// 1) — never for render offsets or opacity; a layout visits each visible node four times (three without a wrapping
+// label in the root).
 
 #include "ui_fixture.hpp"
 
@@ -48,14 +49,25 @@ NNH_TEST(ui_dirty_each_change_lays_out_once) {
     CHECK(m.ui.stats().layouts == start + 3);
 }
 
-NNH_TEST(ui_dirty_layout_visits_four_times_the_visible_nodes) {
+NNH_TEST(ui_dirty_layout_visits_three_times_the_visible_nodes_without_wrapping) {
+    // no wrapping label: heights measured with widths (T10.3), three walks
     Menu m;
     m.ui.set_text(m.a, "x");
     (void)m.ui.rect(m.a);
-    CHECK(m.ui.stats().layout_visits == 4 * 4); // root, box, two buttons
+    CHECK(m.ui.stats().layout_visits == 3 * 4); // root, box, two buttons
     m.ui.set_visible(m.b, false);
     (void)m.ui.rect(m.a);
-    CHECK(m.ui.stats().layout_visits == 4 * 3);
+    CHECK(m.ui.stats().layout_visits == 3 * 3);
+}
+
+NNH_TEST(ui_dirty_a_wrapping_label_makes_four_walks) {
+    Menu m;
+    const UiWidget wrap = m.ui.label(m.box, {.text = "a long wrapped line", .wrap = true});
+    (void)m.ui.rect(m.a);
+    CHECK(m.ui.stats().layout_visits == 4 * 5);
+    m.ui.destroy(wrap); // the root has no wrapping label again
+    (void)m.ui.rect(m.a);
+    CHECK(m.ui.stats().layout_visits == 3 * 4);
 }
 
 NNH_TEST(ui_dirty_render_offset_and_opacity_never_lay_out) {
@@ -86,5 +98,5 @@ NNH_TEST(ui_dirty_the_other_root_isnt_laid_out) {
     (void)m.ui.rect(top);
     m.ui.set_text(top, "other");
     (void)m.ui.rect(top);
-    CHECK(m.ui.stats().layout_visits == 4 * 2); // the top root and its label only
+    CHECK(m.ui.stats().layout_visits == 3 * 2); // the top root and its label only
 }

@@ -197,3 +197,56 @@ NNH_TEST(ui_drawn_image_and_nine_slice) {
     }
     nnh::shutdown();
 }
+
+NNH_TEST(ui_drawn_label_with_a_carriage_return_keeps_every_character) {
+    ui_test::restart();
+    {
+        Ui ui = ui_test::make();
+        ui.label(ui.root(Screen::Top), {.text = "ab\rc"}); // '\r' takes no cell (as gfx and the wrapper count)
+        CHECK(draws_like(ui, [] { gfx::draw_text(Screen::Top, {0, 0}, "ab\rc", ink()); }));
+        CHECK(ui.stats().draws == 3); // nor a glyph
+        Ui revealed = ui_test::make();
+        const UiWidget l = revealed.label(revealed.root(Screen::Top), {.text = "ab\rcd", .reveal_rate = 0});
+        revealed.set_reveal(l, 3);
+        CHECK(draws_like(revealed, [] { gfx::draw_text(Screen::Top, {0, 0}, "ab\rc", ink()); }));
+    }
+    nnh::shutdown();
+}
+
+NNH_TEST(ui_drawn_label_of_several_lines_aligns_each_line) {
+    ui_test::restart();
+    {
+        Ui ui = ui_test::make();
+        ui.label(ui.root(Screen::Top), {.text = "a\nbcd", .layout = {.width = 40}, .align = nnh::TextAlign::Center});
+        CHECK(draws_like(ui, [] {
+            gfx::draw_text(Screen::Top, {16, 0}, "a", ink());    // 1 cell in 40: (40 - 8) / 2
+            gfx::draw_text(Screen::Top, {8, 10}, "bcd", ink());  // 3 cells: (40 - 24) / 2
+        }));
+    }
+    nnh::shutdown();
+}
+
+NNH_TEST(ui_draw_count_skips_both_kinds_of_space) {
+    ui_test::restart();
+    {
+        Ui ui = ui_test::make();
+        ui.label(ui.root(Screen::Top), {.text = "a\xC2\xA0" "b \xC3\xA9"}); // a, no-break space, b, space, e acute
+        CHECK(draws_like(ui, [] { gfx::draw_text(Screen::Top, {0, 0}, "a\xC2\xA0" "b \xC3\xA9", ink()); }));
+        CHECK(ui.stats().draws == 3);
+    }
+    nnh::shutdown();
+}
+
+NNH_TEST(ui_drawn_nearly_opaque_parent_still_fades) {
+    ui_test::restart();
+    {
+        Ui ui = ui_test::make();
+        const UiWidget box = ui.vbox(ui.root(Screen::Top));
+        ui.label(box, {.text = "a"});
+        ui.set_opacity(box, 254.0f / 255.0f);
+        Color faded = kInk;
+        faded.a = 254; // (255 × 254 + 127) / 255
+        CHECK(draws_like(ui, [&] { gfx::draw_text(Screen::Top, {0, 0}, "a", ink(faded)); }));
+    }
+    nnh::shutdown();
+}

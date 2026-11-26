@@ -8,6 +8,11 @@ namespace nnh::detail {
 
 /// The screen, layer, accumulated render offset and opacity of slot `s`.
 DrawCtx context_of(const UiBlock& b, int s);
+/// False for the kinds with no look of their own (roots, spacers, boxes, stacks): drawing them draws nothing.
+inline bool has_look(UiKind k) {
+    return k != UiKind::Root && k != UiKind::Spacer && k != UiKind::VBox && k != UiKind::HBox && k != UiKind::GridBox &&
+           k != UiKind::Stack;
+}
 /// One widget: its state's background, then its content (not its children).
 void draw_widget(const UiBlock& b, const DrawCtx& d, int s);
 void draw_root(const UiBlock& b, int root_index);

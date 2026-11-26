@@ -68,7 +68,10 @@ void release_node(UiBlock& b, int s) {
         break;
     case UiKind::Slider: fn_release(b, c.data.slider.format); break;
     case UiKind::Progress: fn_release(b, c.data.progress.format); break;
-    case UiKind::Label: reveal_forget(b, s); break;
+    case UiKind::Label:
+        reveal_forget(b, s);
+        if ((c.data.label.bits & 1) != 0) --b.wrap_labels[root_index_of(b, s)];
+        break;
     default: break;
     }
     if (b.focus == s) b.focus = kUiNone; // repaired by the caller

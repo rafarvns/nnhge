@@ -12,14 +12,5 @@ int box_distribute(BoxItem* items, int count, int available) {
         available);
 }
 
-AxisSpan box_align(UiAlign align, int available, int size) {
-    switch (align) {
-    case UiAlign::Start: return {0, size};
-    case UiAlign::Center: return {(available - size) >> 1, size};
-    case UiAlign::End: return {available - size, size};
-    case UiAlign::Fill: break;
-    }
-    return {0, available};
-}
 
 } // namespace nnh::detail

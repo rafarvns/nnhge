@@ -18,7 +18,7 @@ struct FakeAsset {
     const void* data = nullptr;
     std::size_t size = 0;
 };
-inline constexpr int kMaxFakeAssets = 32;
+inline constexpr int kMaxFakeAssets = 64;
 
 struct Controls {
     platform::InputSample input; // what read_input() reports

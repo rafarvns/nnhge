@@ -39,6 +39,7 @@ bool platform::texture_create_alpha(const void* coverage, int width, int height,
     platform_fake::State& s = platform_fake::detail::mutable_state();
     ++s.live_textures;
     ++s.alpha_textures_created;
+    s.last_alpha_texture = out.handle;
     return true;
 }
 

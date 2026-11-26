@@ -40,6 +40,8 @@ FontBlock* font_table_block(std::uint32_t id);
 /// The slot of a live `id`, or −1.
 int font_table_slot(std::uint32_t id);
 int font_table_count();
+/// Empties an entry without freeing its block (an entry of an earlier engine run, in Release: its textures are gone).
+void font_table_forget(int slot);
 FontEntryExtra& font_table_extra(int slot);
 
 } // namespace nnh::detail

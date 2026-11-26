@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "assets/asset_path.hpp"
+#include "core/shutdown_hooks.hpp"
 #include "font/font_internal.hpp"
 #include "font/font_table.hpp"
 #include "font/page_codec.hpp"
@@ -18,6 +19,7 @@
 #include "nnh/profile.hpp"
 #include "text/font_resolve.hpp"
 #include "text/font_texture.hpp"
+#include "text/text_missing.hpp"
 
 namespace nnh {
 
@@ -72,6 +74,23 @@ const char* make_page(FontBlock& block, int i, const std::uint8_t* file, MemTag&
 
 Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks);
 
+/// An entry's pages are still gfx textures: false for an entry of an earlier engine run (Release skips the shutdown hook,
+/// so its table outlives nnh::shutdown; its block is then lost, not reused).
+bool alive(const FontBlock& block) {
+    return block.header.page_count == 0 ||
+           detail::gfx_state().textures.get(block.page_slot[0], block.page_generation[0]) != nullptr;
+}
+
+/// nnh::shutdown (Debug/Development): gfx already destroyed the pages; the blocks are freed and the table emptied.
+void fonts_shutdown() {
+    for (int slot = 0; slot < detail::kFontSlots; ++slot) {
+        if (FontBlock* block = detail::font_table_block(detail::font_table_id(slot))) mem::free(block);
+    }
+    detail::font_table_reset();
+    detail::g_font_resolve = nullptr;
+    detail::text_missing_reset();
+}
+
 /// Loads the fallbacks of the entry in `slot` (one level). @return nullptr or the error.
 Result<int> load_fallbacks(int slot, const FontBlock& block, MemTag& tag) {
     detail::FontEntryExtra& extra = detail::font_table_extra(slot);
@@ -86,7 +105,11 @@ Result<int> load_fallbacks(int slot, const FontBlock& block, MemTag& tag) {
 /// The table slot of `path` with one more reference: found, or loaded.
 Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks) {
     const std::uint32_t hash = detail::fnv1a32(path);
-    const int found = detail::font_table_find(hash);
+    int found = detail::font_table_find(hash);
+    if (found >= 0 && !alive(*detail::font_table_block(detail::font_table_id(found)))) {
+        detail::font_table_forget(found);
+        found = -1;
+    }
     if (found >= 0) {
         detail::font_table_retain(found);
         return found;
@@ -151,7 +174,7 @@ void detail::font_release(std::uint32_t id) {
 
 bool detail::font_resolve_face(std::uint32_t id, TextFace& face) {
     const int slot = font_table_slot(id);
-    if (slot < 0) return false;
+    if (slot < 0 || !alive(*font_table_block(id))) return false;
     face.fonts[0] = font_table_block(id);
     face.count = 1;
     const FontEntryExtra& extra = font_table_extra(slot);
@@ -179,6 +202,7 @@ Result<Font> load_font(const char* path, MemTag* tag) {
     auto slot = load_entry(path, tag != nullptr ? *tag : detail::font_memory_tag(), true);
     if (!slot) return slot.error();
     detail::g_font_resolve = &detail::font_resolve_face;
+    detail::add_shutdown_hook(&fonts_shutdown);
     return FontAccess::make(detail::font_table_id(slot.value()));
 }
 

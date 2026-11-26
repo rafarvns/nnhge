@@ -2,6 +2,7 @@
 // fake platform, against positions computed by hand from the fixture's metrics — pen + offset, kerning, scale, layer,
 // camera and zoom, alignment, '\n', shadow and outline order, fallbacks, the replacement glyph, the hollow box.
 
+#include <cstdio>
 #include <vector>
 
 #include "../font/font_load_fixture.hpp"
@@ -29,6 +30,7 @@ nnh::Font load(const char* path, const FontBuilder& b) {
     add_font(path, b);
     auto f = nnh::load_font(path);
     CHECK(f.ok());
+    if (!f) std::printf("    load_font(%s): %s\n", path, f.error().message);
     return f ? static_cast<nnh::Font&&>(f.value()) : nnh::Font{};
 }
 
@@ -153,12 +155,12 @@ NNH_TEST(text_draw_font_fallback_glyph_uses_its_own_font_and_metrics) {
     start_engine();
     FontBuilder cjk;
     cjk.glyph(0x4E00, 0, 0, 12, 12, 1, 0, 14);
-    nnh::Font fb = load("fonts/cjk", cjk);
-    const auto cjk_page = last_alpha_handle();
     FontBuilder a = kerned();
     a.fallbacks = {"fonts/cjk"};
-    nnh::Font f = load("fonts/a", a);
-    const auto page = last_alpha_handle();
+    add_font("fonts/cjk", cjk);
+    nnh::Font f = load("fonts/a", a); // its page, then its fallback's
+    const auto cjk_page = last_alpha_handle();
+    const auto page = cjk_page - 1;
     const auto items = frame_items([&] { nnh::gfx::draw_text(nnh::Screen::Top, {0, 0}, "A\xE4\xB8\x80V\nA", {.font = f}); });
     CHECK(items.size() == 4);
     if (items.size() != 4) return;

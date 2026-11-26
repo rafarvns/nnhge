@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "font_fixture.hpp"
+#include "font/font_internal.hpp"
 #include "font_load_fixture.hpp"
 #include "nnh/font.hpp"
 #include "nnh/memory.hpp"
@@ -25,7 +26,7 @@ NNH_TEST(load_font_refuses_a_damaged_file_with_the_validators_reason) {
     start_engine();
     std::vector<std::uint8_t>& bytes = keep(FontBuilder::latin().build());
     bytes[bytes.size() - 1] ^= 1; // the CRC no longer matches
-    fake::add_asset("fonts/bad.nnhfont", bytes.data(), bytes.size());
+    add_asset_bytes("fonts/bad.nnhfont", bytes);
     LogLines warnings(nnh::LogLevel::Warn);
     auto f = nnh::load_font("fonts/bad");
     CHECK(!f && f.error().code == nnh::ErrorCode::Corrupted);
@@ -91,10 +92,13 @@ NNH_TEST(load_font_fails_whole_when_a_fallback_is_missing) {
     FontBuilder a = FontBuilder::latin();
     a.fallbacks = {"fonts/missing"};
     add_font("fonts/a", a);
+    const nnh::MemStats before = nnh::mem::tag_stats(nnh::font_block_tag()); // the built-in font's texture
     auto f = nnh::load_font("fonts/a");
     CHECK(!f && f.error().code == nnh::ErrorCode::NotFound);
+    CHECK(nnh::frame() && nnh::frame()); // a page released outside a frame is freed now; inside, after the GPU
     CHECK(fake::state().live_textures == builtin_textures()); // its page was released
-    CHECK(nnh::mem::tag_stats(nnh::font_block_tag()).count == 0);
+    const nnh::MemStats after = nnh::mem::tag_stats(nnh::font_block_tag());
+    CHECK(after.count == before.count && after.bytes == before.bytes);
 }
 
 NNH_TEST(load_font_colour_pages_go_through_rgba) {
@@ -111,7 +115,7 @@ NNH_TEST(load_font_colour_pages_go_through_rgba) {
 NNH_TEST(load_font_out_of_memory_is_returned) {
     start_engine();
     add_font("fonts/a", FontBuilder::latin());
-    fake::set_region_capacity(nnh::MemRegion::Heap, nnh::mem::region_stats(nnh::MemRegion::Heap).bytes + 64);
+    fake::set_region_capacity(nnh::MemRegion::Heap, 1); // no allocation succeeds: the file, the block or a page
     auto f = nnh::load_font("fonts/a");
     CHECK(!f && f.error().code == nnh::ErrorCode::OutOfMemory);
     fake::set_region_capacity(nnh::MemRegion::Heap, 64u << 20);

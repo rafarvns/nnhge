@@ -529,6 +529,11 @@ target_sources(nnh_core PRIVATE ${_nnh_language_sources})
 # drawing with game fonts. break_class.cpp is pure (also in nnh-assetc).
 set(_nnh_text_sources
     src/text/break_class.cpp
+    src/text/font_metrics.cpp
+    src/text/font_resolve.cpp
+    src/text/text_draw.cpp
+    src/text/text_measure.cpp
+    src/text/text_missing.cpp
     src/text/text_wrap.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_text_sources})
@@ -536,10 +541,14 @@ target_sources(nnh_core PRIVATE ${_nnh_text_sources})
 # table, loading, lookups. Reached only through load_font() (it sets gfx's resolver): a game that never loads a font
 # links none of it.
 set(_nnh_font_sources
+    src/font/font.cpp
     src/font/font_format.cpp
     src/font/font_index.cpp
+    src/font/font_load.cpp
+    src/font/font_table.cpp
     src/font/font_validate.cpp
     src/font/page_codec.cpp
+    src/gfx/texture_alpha.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_font_sources})
 add_library(nnh::core ALIAS nnh_core)

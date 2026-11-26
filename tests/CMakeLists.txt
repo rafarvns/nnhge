@@ -820,8 +820,11 @@ if(NNH_BUILD_FUZZERS)
     target_link_options(fuzz_font_validate PRIVATE -fsanitize=fuzzer,address)
 endif()
 target_sources(nnh_tests PRIVATE
+    font/test_font_cost.cpp
     font/test_font_format.cpp
+    font/test_font_load.cpp
     font/test_font_lookup.cpp
+    font/test_font_table.cpp
     font/test_font_validate.cpp
     font/test_page_codec.cpp
     fuzz/test_fuzz_font.cpp
@@ -833,7 +836,12 @@ target_sources(nnh_tests PRIVATE
     text/test_text_wrap.cpp
     ui/reference/ui_wrap_cells.cpp
     ui/test_ui_seam_equivalence.cpp
-    text/test_break_class.cpp)
+    text/test_break_class.cpp
+    text/test_measure_chars.cpp
+    text/test_text_builtin_unchanged.cpp
+    text/test_text_draw_fonts.cpp
+    text/test_text_measure_box.cpp
+    text/test_text_missing.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.

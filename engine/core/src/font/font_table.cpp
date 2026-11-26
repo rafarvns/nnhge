@@ -80,6 +80,13 @@ int font_table_count() {
     return n;
 }
 
+void font_table_forget(int slot) {
+    if (!live(slot)) return;
+    const std::uint32_t generation = g_entries[slot].generation + 1;
+    g_entries[slot] = Entry{};
+    g_entries[slot].generation = generation;
+}
+
 FontEntryExtra& font_table_extra(int slot) { return g_entries[slot >= 0 && slot < kFontSlots ? slot : 0].extra; }
 
 } // namespace nnh::detail

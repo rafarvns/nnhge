@@ -106,11 +106,13 @@ enum class TextAlign : std::uint8_t { Left, Center, Right };
 /// lines are kFontLineHeight apart. The same on every system.
 inline constexpr int kFontCellSize = 8;
 inline constexpr int kFontLineHeight = 10;
-
-/// How gfx::draw_text() draws. Every field is optional:
-/// @code
-/// nnh::gfx::draw_text(nnh::Screen::Top, {200, 8}, "PAUSED", {.scale = 2, .align = nnh::TextAlign::Center});
-/// @endcode
+/// A game font by handle (spec 029, D49): a font table slot and generation; 0 = the built-in font. See <nnh/font.hpp>.
+struct FontRef {
+    std::uint32_t id = 0;
+    constexpr FontRef() = default; constexpr bool builtin() const { return id == 0; }
+    FontRef(const class Font& font); // NOLINT: implicit on purpose ({.font = body}); defined in the font module
+};
+/// How gfx::draw_text() draws. Every field is optional, e.g. {.scale = 2, .align = nnh::TextAlign::Center}.
 struct TextOptions {
     Color color = colors::white;
     int scale = 1;                           ///< 1 to 8: whole pixels, so text stays sharp
@@ -119,13 +121,11 @@ struct TextOptions {
     Color shadow_color = rgba(0, 0, 0, 160);
     int layer = 0;                           ///< 0..15, like sprites
     bool ignore_camera = false;              ///< position in screen pixels (HUD)
+    FontRef font{};                          ///< a game font (<nnh/font.hpp>); default: the built-in font
+    int wrap_width = 0, max_lines = 0;       ///< > 0: break lines at this width (pixels) / at most this many lines (…)
+    Color outline_color{0, 0, 0, 0};         ///< alpha > 0: the font's baked outline drawn first in this colour
 };
-
-class Texture;           // <nnh/texture.hpp>
-struct WorldTransform2D; // <nnh/transform.hpp>
-
-namespace gfx {
-
+class Texture; struct WorldTransform2D; namespace gfx { // <nnh/texture.hpp>, <nnh/transform.hpp>
 /// Draws a texture (or a region of it) with its pivot at `position`, in world pixels (screen pixels
 /// minus the screen's camera). Records the draw: it appears when the frame ends, ordered by layer, then
 /// call. Only inside a frame; an empty texture draws nothing. No allocation.
@@ -182,6 +182,49 @@ struct Stats {
     int dropped_particles = 0;     ///< particle quads dropped since init() because the frame was over max_particles
 };
 Stats stats();
+
+} // namespace gfx
+
+// Spec 029 (D49), declared after everything else so the declarations above keep their lines.
+
+/// A font's integer metrics at scale 1 (spec 029 FR-6): the built-in font is {8, 10, 8, 0}. `line_height` = ascent −
+/// descent + line gap; `ascent`: the baseline below a line's top; `descent` ≤ 0.
+struct FontMetrics {
+    int size = 8;            ///< em size in pixels
+    int line_height = 10;
+    int ascent = 8;
+    int descent = 0;
+    int glyphs = 0;          ///< glyphs of the font itself (0: the built-in font)
+    int pages = 0;
+    std::size_t bytes = 0;   ///< its block and pages (as the console counts them)
+    bool outline = false;    ///< it has baked outline glyphs
+    bool colour = false;     ///< its pages are RGBA (a pre-coloured BMFont)
+};
+
+/// Per code point of a measured text (spec 029 FR-8): where its cell is, after alignment, in pixels (× scale) from the
+/// text's position; for cursors and typewriter effects.
+struct TextCaret {
+    std::int32_t byte = 0;    ///< offset of the code point in the text
+    std::int16_t x = 0;       ///< its pen position (left of its cell)
+    std::int16_t y = 0;       ///< its line's top
+    std::int16_t advance = 0; ///< the pen's move after it (0 for zero-width characters)
+    std::int16_t line = 0;    ///< 0-based line
+};
+
+namespace gfx {
+
+/// The box `utf8` takes when drawn with `options` (spec 029 FR-8): {widest line, lines × line height} × scale, with the
+/// font, wrap width, line limit and ellipsis as draw_text lays them out; every drawn glyph's pixels lie inside it (the
+/// shadow and the outline glyphs aside: docs/api/text.md#measuring). The same on every system; callable anytime.
+/// No allocation.
+Vec2 measure_text(const char* utf8, const TextOptions& options);
+
+/// Writes up to `capacity` carets of `utf8` laid out with `options` (one per code point but '\r' and '\n'; the
+/// ellipsis has none) and returns how many it wrote. No allocation.
+int measure_chars(const char* utf8, const TextOptions& options, TextCaret* out, int capacity);
+
+/// The metrics of `font` at scale 1 (FontRef{}: the built-in font's). A stale ref: the built-in font's.
+FontMetrics font_metrics(FontRef font = {});
 
 } // namespace gfx
 } // namespace nnh

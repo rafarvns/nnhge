@@ -11,10 +11,16 @@ namespace {
 
 FontBlock g_blocks[40];
 
+/// The table emptied when a test ends: its dummy blocks must never reach the engine's shutdown (which frees blocks).
+struct Clean {
+    Clean() { font_table_reset(); }
+    ~Clean() { font_table_reset(); }
+};
+
 } // namespace
 
 NNH_TEST(font_table_adds_finds_and_resolves_entries) {
-    font_table_reset();
+    const Clean clean;
     const int a = font_table_add(0x1111u, &g_blocks[0]);
     const int b = font_table_add(0x2222u, &g_blocks[1]);
     CHECK(a >= 0 && b >= 0 && a != b);
@@ -27,7 +33,7 @@ NNH_TEST(font_table_adds_finds_and_resolves_entries) {
 }
 
 NNH_TEST(font_table_shares_a_path_by_reference_count) {
-    font_table_reset();
+    const Clean clean;
     const int a = font_table_add(0x1111u, &g_blocks[0]);
     CHECK(font_table_retain(a) == 2);
     CHECK(font_table_release(a) == nullptr);        // one owner left
@@ -37,7 +43,7 @@ NNH_TEST(font_table_shares_a_path_by_reference_count) {
 }
 
 NNH_TEST(font_table_a_released_slot_makes_old_refs_stale) {
-    font_table_reset();
+    const Clean clean;
     const int a = font_table_add(0x1111u, &g_blocks[0]);
     const std::uint32_t old_id = font_table_id(a);
     font_table_release(a);
@@ -49,7 +55,7 @@ NNH_TEST(font_table_a_released_slot_makes_old_refs_stale) {
 }
 
 NNH_TEST(font_table_holds_32_fonts) {
-    font_table_reset();
+    const Clean clean;
     bool ok = true;
     for (int i = 0; i < 32; ++i) ok = ok && font_table_add(0x100u + static_cast<unsigned>(i), &g_blocks[i]) >= 0;
     CHECK(ok);
@@ -60,7 +66,7 @@ NNH_TEST(font_table_holds_32_fonts) {
 }
 
 NNH_TEST(font_table_ids_of_garbage_resolve_to_nothing) {
-    font_table_reset();
+    const Clean clean;
     font_table_add(0x1111u, &g_blocks[0]);
     CHECK(font_table_block(0xFFFFFFFFu) == nullptr);
     CHECK(font_table_block(63u) == nullptr); // slot 62: out of range

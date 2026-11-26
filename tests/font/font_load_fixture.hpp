@@ -29,23 +29,56 @@ inline std::vector<std::string>& keep_names() {
     return names;
 }
 
-/// A fresh engine on the fake platform (fonts and assets of earlier tests forgotten).
-inline void start_engine(nnh::GfxConfig gfx = {}) {
+inline nnh::GfxConfig& engine_gfx() {
+    static nnh::GfxConfig gfx;
+    return gfx;
+}
+
+/// The assets of the current test: (path, bytes), and the asset index listing them.
+struct TestAsset {
+    std::string path;
+    const std::vector<std::uint8_t>* bytes = nullptr;
+};
+inline std::deque<TestAsset>& test_assets() {
+    static std::deque<TestAsset> a;
+    return a;
+}
+inline std::string& asset_index() {
+    static std::string index;
+    return index;
+}
+
+/// The engine restarted on the fake platform with the current test's assets (the fake's asset index is read at init).
+inline void remount() {
     nnh::shutdown();
     nnh::platform_fake::reset();
-    kept().clear();
-    keep_names().clear();
-    keep_names().reserve(64);
+    asset_index().clear();
+    for (const TestAsset& a : test_assets()) asset_index() += a.path + "\n";
+    if (!test_assets().empty()) nnh::platform_fake::add_asset(".nnh_assets", asset_index().data(), asset_index().size());
+    for (const TestAsset& a : test_assets()) nnh::platform_fake::add_asset(a.path.c_str(), a.bytes->data(), a.bytes->size());
     nnh::AppConfig config;
-    config.gfx = gfx;
+    config.gfx = engine_gfx();
     CHECK(nnh::init(config));
 }
 
-/// Adds `<path>.nnhfont` made by `b` to the fake's assets.
+/// A fresh engine on the fake platform (fonts and assets of earlier tests forgotten).
+inline void start_engine(nnh::GfxConfig gfx = {}) {
+    test_assets().clear();
+    kept().clear();
+    keep_names().clear();
+    engine_gfx() = gfx;
+    remount();
+}
+
+/// Adds an asset and restarts the engine so it sees it: add every font a test needs before it loads any.
+inline void add_asset_bytes(const char* asset, const std::vector<std::uint8_t>& bytes) {
+    test_assets().push_back({asset, &bytes});
+    remount();
+}
+
+/// Adds `<path>.nnhfont` made by `b`.
 inline void add_font(const char* path, const FontBuilder& b) {
-    std::vector<std::uint8_t>& bytes = keep(b.build());
-    keep_names().push_back(std::string(path) + ".nnhfont");
-    nnh::platform_fake::add_asset(keep_names().back().c_str(), bytes.data(), bytes.size());
+    add_asset_bytes((std::string(path) + ".nnhfont").c_str(), keep(b.build()));
 }
 
 /// Textures the engine holds by itself (the built-in font's).

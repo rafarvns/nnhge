@@ -785,8 +785,7 @@ target_sources(nnh_tests PRIVATE
     ui/test_ui_cost.cpp
     ui/test_ui_misuse.cpp
     ui/test_ui_random_ops.cpp
-    ui/test_values.cpp
-    ui/test_wrap.cpp)
+    ui/test_values.cpp)
 # The UI example's self-check (spec 028 T7.1, AC-2): its golden checksums on every host compiler.
 target_sources(nnh_tests PRIVATE ui_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/ui/self_check.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/ui/self_check_script.cpp
@@ -830,6 +829,10 @@ target_sources(nnh_tests PRIVATE
     remote/test_remote_language.cpp
     system/test_language_tag.cpp
     system/test_system_language.cpp
+    text/test_text_runs.cpp
+    text/test_text_wrap.cpp
+    ui/reference/ui_wrap_cells.cpp
+    ui/test_ui_seam_equivalence.cpp
     text/test_break_class.cpp)
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)

@@ -1,10 +1,13 @@
-// Word wrapping (ui_wrap.hpp).
+// A frozen copy of spec 028's wrapper (engine/core/src/ui/ui_wrap.cpp before spec 029), the reference the shared
+// text wrapper is proven against (tests/ui/test_ui_seam_equivalence.cpp). Never change it.
 
-#include "ui/ui_wrap.hpp"
+#include "ui_wrap_cells.hpp"
 
 #include "text/utf8.hpp"
 
-namespace nnh::detail {
+namespace ui_reference {
+
+using nnh::detail::next_codepoint;
 namespace {
 
 bool is_break_space(char32_t c) { return c == U' '; }
@@ -151,4 +154,4 @@ int longest_word_cells(const char* text, int length) {
     return longest;
 }
 
-} // namespace nnh::detail
+} // namespace ui_reference

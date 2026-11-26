@@ -5,24 +5,26 @@
 
 #include "test.hpp"
 #include "ui/ui_text_seam.hpp"
-#include "ui/ui_wrap.hpp"
+#include "text/text_wrap.hpp"
 
 using nnh::detail::seam_measure;
 using nnh::detail::TextSize;
+using nnh::detail::TextFace;
+using nnh::detail::TextWrapper;
 using nnh::detail::WrapLine;
-using nnh::detail::Wrapper;
 
 namespace {
 
 /// Lines and total cells as the wrapper (no width, no line limit) counts them.
 TextSize by_wrapper(const char* text) {
-    Wrapper w(text, static_cast<int>(std::strlen(text)), 0, 0);
+    const TextFace builtin;
+    TextWrapper w(builtin, text, static_cast<int>(std::strlen(text)), 0, 0);
     WrapLine line;
     TextSize t;
     while (w.next(line)) {
         ++t.lines;
-        t.total += line.cells;
-        if (line.cells > t.cells) t.cells = line.cells;
+        t.total += line.chars;
+        if (line.chars > t.cells) t.cells = line.chars;
     }
     return t;
 }

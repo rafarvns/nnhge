@@ -4,7 +4,7 @@
 
 #include "ui/ui_layout.hpp"
 #include "ui/ui_text_seam.hpp"
-#include "ui/ui_wrap.hpp"
+#include "text/text_wrap.hpp"
 
 #include <cstring>
 
@@ -47,7 +47,9 @@ int leaf_width(UiBlock& b, int s) {
             return t.cells * cell;
         }
         const char* text = text_of(b, s);
-        return longest_word_cells(text, static_cast<int>(std::strlen(text))) * cell;
+        TextFace face; // the built-in font
+        face.scale = seam_scale(st.text);
+        return longest_word_width(face, text, static_cast<int>(std::strlen(text)));
     }
     case UiKind::Image: return (c.data.image.rw > 0 ? c.data.image.rw : 0) * c.data.image.scale;
     case UiKind::Progress:

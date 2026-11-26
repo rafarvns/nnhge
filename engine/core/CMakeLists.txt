@@ -512,7 +512,6 @@ set(_nnh_ui_sources
     src/ui/ui_widgets_boxes.cpp
     src/ui/ui_widgets_display.cpp
     src/ui/ui_widgets_input.cpp
-    src/ui/ui_wrap.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_ui_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -530,6 +529,7 @@ target_sources(nnh_core PRIVATE ${_nnh_language_sources})
 # drawing with game fonts. break_class.cpp is pure (also in nnh-assetc).
 set(_nnh_text_sources
     src/text/break_class.cpp
+    src/text/text_wrap.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_text_sources})
 # Game fonts (spec 029, D49): the .nnhfont format and validator (pure, shared with nnh-assetc), the page codec, the font

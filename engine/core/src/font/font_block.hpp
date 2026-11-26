@@ -30,6 +30,7 @@ struct FontBlock {
     // Set by the loader (font_load.cpp): the pages' textures in gfx's table.
     std::int16_t page_slot[font::kMaxPages] = {};
     std::uint32_t page_generation[font::kMaxPages] = {};
+    const char* name = nullptr;            ///< its asset path (logs), set by the loader
     std::uint8_t self_slot = 0;            ///< its font table slot (logs)
     std::uint8_t padding[7] = {};
 };

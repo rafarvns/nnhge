@@ -6,7 +6,7 @@
 #include "ui/ui_block.hpp"
 #include "ui/ui_number.hpp"
 #include "ui/ui_text_seam.hpp"
-#include "ui/ui_wrap.hpp"
+#include "text/text_wrap.hpp"
 
 namespace nnh::detail {
 
@@ -53,13 +53,15 @@ int label_lines(UiBlock& b, int s, int width, int& cells) {
     const int cell = seam_cell(style_of(b, s).text);
     const int max_cells = (l.bits & 1) != 0 ? (width > 0 ? width / cell : 0) : 0;
     const int wrap_cells = (l.bits & 1) != 0 && max_cells < 1 ? 1 : max_cells;
-    Wrapper w(text, static_cast<int>(std::strlen(text)), wrap_cells, l.max_lines);
+    TextFace face; // the built-in font: widths are cells × cell
+    face.scale = seam_scale(style_of(b, s).text);
+    TextWrapper w(face, text, static_cast<int>(std::strlen(text)), wrap_cells * cell, l.max_lines);
     WrapLine line;
     int lines = 0;
     cells = 0;
     while (w.next(line)) {
         ++lines;
-        cells += line.cells;
+        cells += line.chars;
     }
     return lines;
 }

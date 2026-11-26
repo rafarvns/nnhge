@@ -12,7 +12,7 @@
 #include "ui/ui_number.hpp"
 #include "ui/ui_parts.hpp"
 #include "ui/ui_text_seam.hpp"
-#include "ui/ui_wrap.hpp"
+#include "text/text_wrap.hpp"
 #include "text/utf8.hpp"
 
 namespace nnh::detail {
@@ -61,16 +61,18 @@ void draw_label(UiBlock& b, const DrawCtx& d, int s, const UiStyle& st, const Ui
         return;
     }
     int left = l.visible == 0xFFFF ? 0x7FFFFFFF : l.visible;
-    Wrapper w(text, static_cast<int>(std::strlen(text)), max_cells, l.max_lines);
+    TextFace face; // the built-in font: widths are cells × cell
+    face.scale = seam_scale(st.text);
+    TextWrapper w(face, text, static_cast<int>(std::strlen(text)), max_cells * cell, l.max_lines);
     WrapLine ln;
     while (w.next(ln) && left > 0) {
-        const int full = (ln.cells + (ln.ellipsis ? 3 : 0)) * cell;
+        const int full = (ln.chars + (ln.ellipsis ? 3 : 0)) * cell;
         const int x = align == TextAlign::Center ? c.x + ((c.w - full) >> 1) : (align == TextAlign::Right ? c.x + c.w - full : c.x);
-        const int shown = ln.cells < left ? ln.cells : left;
-        const bool all = shown == ln.cells;
+        const int shown = ln.chars < left ? ln.chars : left;
+        const bool all = shown == ln.chars;
         out_run(b, d, x, y, text + ln.start, bytes_of_cells(text + ln.start, ln.bytes, shown), st.text, look.text,
                 ln.ellipsis && all);
-        left -= ln.cells;
+        left -= ln.chars;
         y += line;
     }
 }

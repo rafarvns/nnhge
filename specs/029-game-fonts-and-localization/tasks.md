@@ -24,38 +24,38 @@ values re-read from the tree at T0.3).
 
 ## Stage 0: baseline
 
-- [ ] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-029/`, not committed): `hello.exe`
+- [x] **T0.1** Baseline numbers (Windows, 3 runs each; scripts in `build/ref-029/`, not committed): `hello.exe`
   (pc-release, pc-debug) and `hello.elf`/`.3dsx` (3ds-release, 3ds-dev) sizes (`size`: text/data/bss, file bytes), `nm -C`
   lists and (3DS) SHA-256; `.text` of the 3ds-release `text`, `sprites`, `ui`, `platformer` ELFs; edit
   `examples/ui/title_scene.cpp` → simulator and `.3dsx` times (the reference for the new example's edit); clean
   `nnh_core` and clean `nnh-assetc`; preprocessed lines and `-fsyntax-only` time of one-line TUs including `<nnh/gfx.hpp>`
   + `<nnh/result.hpp>`; the UI micro-benchmark (plan 028's `build/ref-028/micro`, copied as `build/ref-029/micro_ui`):
   draw hash `7429F9EB` and relayout time. Files: plan.md ("Stage 0 results"). Covers III, FR-36, AC-7.
-- [ ] **T0.2** [P] Reference screenshots for AC-7 in `build/ref-029/ref/`: `hello`, `text`, `sprites` (world and
+- [x] **T0.2** [P] Reference screenshots for AC-7 in `build/ref-029/ref/`: `hello`, `text`, `sprites` (world and
   `SPRITES_DEMO=bench` top), `ui` (`UI_SHOT=title|options|list|grid|dialog|modal|theme2`), platformer
   `PLATFORMER_DEMO=bench` (top), level 1 at 90, `PLATFORMER_DEMO=replay` at 64 and 312; `build/ref-029/compare.sh`
   retakes them into `now/` and compares bytes. Files: plan.md. Covers AC-7, FR-14.
-- [ ] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
+- [x] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
   `kMaxTests` (4096; this spec adds ≈ 550 tests: raise it to 8192 in `tests/framework/test_main.cpp`, one commit, if
   fewer than 600 are left). Files: plan.md, `tests/framework/test_main.cpp`. Covers VI.
 
 ## Stage 1: the contract, the platforms, the system language, the remote message
 
-- [ ] **T1.1** `texture_create_alpha` in the contract and the fake: `video.hpp` (declaration and comment of plan.md),
+- [x] **T1.1** `texture_create_alpha` in the contract and the fake: `video.hpp` (declaration and comment of plan.md),
   `engine/platforms/fake/src/texture_alpha_fake.cpp` (coverage copy per handle, `alpha_textures_created`, `bytes = w × h`),
   `platform_fake.hpp`. Test: `tests/platform_conformance/test_contract.cpp` (`texture_create_alpha_accepts_coverage`:
   sizes 8..1024, handle non-zero, bytes = w × h, destroy; a frame drawing a sprite of it), fake-only test of the stored
   bytes. Files: those, `engine/platforms/fake/CMakeLists.txt`. Covers FR-2, I.
-- [ ] **T1.2** [P] The PC: `engine/platforms/pc/src/texture_alpha_pc.cpp` (white RGBA32 + coverage, nearest, blend, bytes =
+- [x] **T1.2** [P] The PC: `engine/platforms/pc/src/texture_alpha_pc.cpp` (white RGBA32 + coverage, nearest, blend, bytes =
   w × h). Test: conformance on pc; `tests/platform_conformance/test_texture_alpha_pc.cpp` (a coverage texture tinted
   red over blue, read back through `remote_capture`, equals an RGBA white-alpha texture drawn the same way, byte for
   byte, for every 16th coverage value). Covers FR-2, FR-13.
-- [ ] **T1.3** [P] The 3DS: `texture_3ds.hpp` (the `Texture3ds` struct moved out of `texture_3ds.cpp`, nothing else
+- [x] **T1.3** [P] The 3DS: `texture_3ds.hpp` (the `Texture3ds` struct moved out of `texture_3ds.cpp`, nothing else
   changed), `texture_alpha_3ds.cpp` (`GPU_LA4`, `0xF0 | (a / 17)`, Morton by 8 × 8 tiles with a 64-entry offset table,
   `C3D_TexFlush`, nearest, clamp). Test: 3ds-release and 3ds-dev build without a warning; `texture_3ds.o` and `hello.elf`
   byte-identical to T0.1's; the LA4 nibble order and 4 → 8-bit expansion checked against 3dbrew's format table and
   written in a comment (verified on the console at T10.2, AC-5). Covers FR-2, I, XI.
-- [ ] **T1.4** The system language: `system.hpp` contract `system_language()`, `language_fake.cpp`
+- [x] **T1.4** The system language: `system.hpp` contract `system_language()`, `language_fake.cpp`
   (`fake::set_system_language`), `language_pc.cpp` (`NNH_SIM_LANGUAGE`, `language.ini` beside `window.ini`, `en`; bounded
   parse), `language_3ds.cpp` (CFGU language + region table of plan.md, cached, `en` on failure); core
   `system/system_language.cpp` (`system::language()`: override, else platform) and `system/language_override.cpp`; tag
@@ -63,51 +63,51 @@ values re-read from the tree at T0.3).
   `tests/system/test_system_language.cpp` (fake value, override and release, never null), conformance
   (`system_language_is_a_well_formed_tag`, stable across calls) on fake and pc, `test_language_tag.cpp` (every form of
   plan.md, refusals), a PC test of `language.ini` parsing (bounded, invalid lines ignored). Covers FR-27.
-- [ ] **T1.5** The remote message: `remote_wire.{hpp,cpp}` (`MessageType::Language = 8`; bytes 8–15 the code, NUL-padded;
+- [x] **T1.5** The remote message: `remote_wire.{hpp,cpp}` (`MessageType::Language = 8`; bytes 8–15 the code, NUL-padded;
   all zero = off; validation of plan.md; decoded into `press`/`release` with `pack_language`/`unpack_language`;
   `remote_schedule.hpp`'s 32-byte assert holds), `remote_session.cpp` (apply → `set_language_override`; off → the
   console's own (or `en` while a script is attached); an exclusive Hello → `en`; Bye/disconnect → cleared). Test:
   `tests/remote/test_remote_wire.cpp` (round trips, every refusal: bad characters, interior NUL, empty, leading `-`),
   `tests/remote/test_remote_session.cpp` (apply, off, exclusive, bye), the remote fuzz target's corpus gains a Language
   message. Covers FR-27, D28.
-- [ ] **T1.6** [P] The `nnh` tool: `tools/nnh/src/remote/script_parser.cpp` (`{"language", Command::Language, 1, 1,
+- [x] **T1.6** [P] The `nnh` tool: `tools/nnh/src/remote/script_parser.cpp` (`{"language", Command::Language, 1, 1,
   "language CODE|off"}`, the same validation), `script_timeline.*` (frame-stamped Language messages). Test:
   `tools/nnh/tests/test_script_parser.cpp` (arity, `off`, refusals with their messages),
   `tools/nnh/tests/test_script_timeline.cpp` (the encoded 16 bytes). Covers FR-27, AC-4.
-- [ ] **T1.7** Stage end: the stage-end guards; Debug/Development `hello` growth from T1.5 measured (3ds-dev, pc-debug)
+- [x] **T1.7** Stage end: the stage-end guards; Debug/Development `hello` growth from T1.5 measured (3ds-dev, pc-debug)
   and recorded; plan.md ("Stage 1 results"). Covers XI, AC-7.
 
 ## Stage 2: pure text code and the font format
 
-- [ ] **T2.1** [P] UTF-8 coverage: `tests/text/test_utf8.cpp` extended (every sequence length, U+10FFFF, U+110000,
+- [x] **T2.1** [P] UTF-8 coverage: `tests/text/test_utf8.cpp` extended (every sequence length, U+10FFFF, U+110000,
   overlongs of each length, surrogates, truncated sequences at the NUL, continuation bytes alone). Code changes only if a
   case fails. Covers FR-12.
-- [ ] **T2.2** Break classes: `src/text/break_class.{hpp,cpp}` (space, hyphen, ID ranges, Hangul, combining/zero-width,
+- [x] **T2.2** Break classes: `src/text/break_class.{hpp,cpp}` (space, hyphen, ID ranges, Hangul, combining/zero-width,
   no-start and no-end tables of plan.md; pure; compiled into `nnh-assetc` too). Test: `tests/text/test_break_class.cpp`
   (every range edge ±1, every table entry, every entry ≥ U+2000, Latin-1 classes equal spec 028's wrapper's). Covers
   FR-10, FR-12.
-- [ ] **T2.3** The font format and validator: `src/font/font_format.{hpp,cpp}` (v1 layout, writer helpers building a
+- [x] **T2.3** The font format and validator: `src/font/font_format.{hpp,cpp}` (v1 layout, writer helpers building a
   file from glyph tables), `src/font/font_validate.cpp`, `src/font/page_codec.{hpp,cpp}` (nibble pack/unpack, PackBits).
   Test: `tests/font/test_font_format.cpp` (a hand-built font written and read back), `test_font_validate.cpp` (each
   refusal reason on a corrupted copy), `test_page_codec.cpp` (round trips, runs of 1..128, malformed runs, exact
   output size); mini-fuzz `tests/fuzz/fuzz_font_validate.cpp`. Covers FR-2, FR-20 (fonts), X.
-- [ ] **T2.4** The font block and lookups: `src/font/font_block.hpp` (layout, inline Latin-1 and bucket lookups, kerning
+- [x] **T2.4** The font block and lookups: `src/font/font_block.hpp` (layout, inline Latin-1 and bucket lookups, kerning
   run search), `src/font/font_index.cpp` (derive the tables, beyond-BMP binary search). Test:
   `tests/font/test_font_lookup.cpp` (Latin-1 table, buckets with 0..32 glyphs, the first and last code point of each
   bucket, U+10000+, kerning runs of 0, 1, 255 pairs; a counter: ≤ 3 compares per lookup on the CJK fixture table). Covers
   FR-6, FR-34.
-- [ ] **T2.5** Faces and runs: `src/text/text_face.hpp` (built-in or font + fallbacks + scale), `src/text/text_runs.{hpp,cpp}`
+- [x] **T2.5** Faces and runs: `src/text/text_face.hpp` (built-in or font + fallbacks + scale), `src/text/text_runs.{hpp,cpp}`
   (pen walk, kerning within one font, ink extent, alignment `width / 2` rounded down, zero-advance characters). Test:
   `tests/text/test_text_runs.cpp` (hand-computed pens for kerning pairs, negative offsets, scale 1..8, centre/right on
   odd widths, combining marks and ZWJ). Covers FR-6, FR-7, FR-12.
-- [ ] **T2.6** The shared wrapper: `src/ui/ui_wrap.*` moved to `src/text/text_wrap.{hpp,cpp}` (pixels through a face; ID
+- [x] **T2.6** The shared wrapper: `src/ui/ui_wrap.*` moved to `src/text/text_wrap.{hpp,cpp}` (pixels through a face; ID
   breaks, U+2010, U+3000, Hangul at spaces, kinsoku with the back-off rule, the ellipsis `…`/`...`). Test:
   `tests/text/test_text_wrap.cpp` (spec 028's `test_wrap.cpp` cases moved with their expected lines unchanged and widths
   as cells × 8; the new rules case by case), `tests/ui/reference/ui_wrap_cells.{hpp,cpp}` (a frozen copy of the pre-029
   wrapper) + `tests/ui/test_ui_seam_equivalence.cpp` part 1 (100 000 seeded Latin-1 strings × widths 1..60 cells × max
   lines 0..4: identical lines, bytes, widths and ellipsis flags). Files: `engine/core/CMakeLists.txt` (the UI block loses
   `ui_wrap.cpp`, the text block gains the new files). Covers FR-10, FR-14.
-- [ ] **T2.7** Stage end: the stage-end guards (every `ui_` test still passes); plan.md ("Stage 2 results"). Covers AC-7.
+- [x] **T2.7** Stage end: the stage-end guards (every `ui_` test still passes); plan.md ("Stage 2 results"). Covers AC-7.
 
 ## Stage 3: fonts at run time, drawing, measuring, the UI seam
 

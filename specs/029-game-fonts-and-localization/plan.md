@@ -1008,6 +1008,21 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
   the console's path (see the refinements below), leaving the decoder's shape check, the 16-byte override and the
   session's apply/off/exclusive/detach calls. Reported to the maintainer.
 
+### Stage 2 results (2026-11-26)
+
+- Every stage-end guard holds: ctest pc-debug 346/346, pc-release 318/318; 3ds-release and 3ds-dev without a warning;
+  3ds-release `hello.elf`/`.3dsx` byte-identical to T0.1, pc-release `hello` size/`nm`/bytes identical; `compare.sh`:
+  every reference screenshot identical (the UI's included); `ui_self_check_pc` `30400DA6`.
+- `tests/ui/test_ui_seam_equivalence.cpp`: the shared wrapper through the built-in face equals the frozen pre-029 wrapper
+  on 100 000 seeded Latin-1 strings × widths 1..60 cells × max lines 0..4 × scales 1..3 (lines, bytes, widths, ellipsis
+  flags), and the longest word on 20 000 strings. Spec 028's `test_wrap.cpp` cases moved to `tests/text/test_text_wrap.cpp`
+  with their expected lines unchanged (widths cells × 8); `tests/ui/test_text_seam.cpp` calls the moved wrapper (the
+  only edit in `tests/ui/`).
+- UI micro-benchmark: draw hash `367085C2` unchanged; relayout128 side by side with T0.1's executable: 10.56–11.33 µs vs
+  10.59–11.39 µs (within noise).
+- 3ds-release `.text`: `ui` 301 116 → 304 916 B (+3.8 KB: the shared wrapper's ID breaks and kinsoku, the break table);
+  `text`, `sprites`, `platformer` unchanged.
+
 ### Implementation refinements
 
 - **Stage 1.** (1) `texture_3ds.cpp` is unchanged: `Texture3ds` keeps its anonymous-namespace definition there and
@@ -1024,3 +1039,12 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
   `language.ini` is read only when the simulator remembers its view (never in scripted runs: `NNH_EXIT_AFTER_FRAMES`,
   `nnh run`), so screenshots stay `en` unless `NNH_SIM_LANGUAGE` says otherwise. (6) The fake's `set_system_language`
   takes `nullptr` (the platform answers null) to prove core's "never null" guard.
+- **Stage 2.** (1) The `.nnhfont` header has one more flag, `kFlagBmp` (a glyph in U+0100..U+FFFF), set by `font_write`
+  and checked by the validator, so the loader sizes the block (BMP buckets or not) from the header before it reads the
+  code points. (2) The writer takes pages already in their decoded form (A4 packed by `a4_pack`, or RGBA8), so it needs
+  no buffer of its own (core never allocates in it). (3) Buckets: a full bucket (32 glyphs) is read directly; otherwise
+  a binary search (≤ 3 compares on a ≈ 3 000-kanji table: tested). (4) Kinsoku in the wrapper: only boundaries between
+  two ID characters are break opportunities; a forbidden one moves back one or two characters (never to the line's
+  start), else stays — so "あいぁぁぁう" at three characters wraps "あ|いぁぁ|ぁう". (5) `WrapLine` carries `width` (pixels
+  at scale 1) and `chars` (what spec 028 called cells: code points but ''); the wrapper takes a width in pixels at the
+  face's scale; a wrapping UI label with the built-in font passes `cells × cell`, so it wraps exactly as before.

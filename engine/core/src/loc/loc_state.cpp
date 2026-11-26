@@ -148,7 +148,7 @@ Result<void> loc::start(const StartOptions& options) {
         NNH_LOG_WARN(loc, "loc::start: %s", bad);
         mem::free(s.block);
         mem::free(s.manifest);
-        s = LocState{};
+        s = LocState(); // parentheses: GCC 13 ICEs on brace value-init of this struct (gimplify.cc:774)
         return Error::make(ErrorCode::Corrupted, "string tables: %s", bad);
     }
     s.started = true;
@@ -174,7 +174,7 @@ void loc::stop() {
     if (s.fonts_switch != nullptr && s.started) s.fonts_switch(-1);
     mem::free(s.block);
     mem::free(s.manifest);
-    s = LocState{};
+    s = LocState(); // parentheses: GCC 13 ICEs on brace value-init of this struct (gimplify.cc:774)
 }
 
 } // namespace nnh

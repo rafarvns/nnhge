@@ -23,7 +23,7 @@ const FontBlock* font_block_init(void* memory, std::size_t bytes, const std::uin
     const font::Header h = font::read_header(tables);
     if (memory == nullptr || bytes < font_block_bytes(h) || tables_size < h.off_page_data) return nullptr;
     auto* base = static_cast<std::uint8_t*>(memory);
-    auto* f = new (memory) FontBlock{};
+    auto* f = new (memory) FontBlock(); // parentheses: GCC 13 ICEs on brace value-init of structs with arrays
     std::uint8_t* file = base + align8(sizeof(FontBlock));
     std::memcpy(file, tables, h.off_page_data);
     f->header = h;

@@ -157,7 +157,7 @@ endif()
 # Fuzz target bodies (tests/fuzz_assetc.cpp): the mini-fuzz in the tests and the libFuzzer programs share them.
 if(NNH_BUILD_TESTS OR NNH_BUILD_FUZZERS)
     add_library(nnh_assetc_fuzz STATIC tests/fuzz_assetc.cpp tests/fuzz_assetc_data.cpp tests/fuzz_assetc_sprite.cpp
-                                       tests/fuzz_assetc_gltf.cpp
+                                       tests/fuzz_assetc_gltf.cpp tests/fuzz_assetc_font.cpp
                                        ${_core}/data/data_apply.cpp)
     target_include_directories(nnh_assetc_fuzz PUBLIC tests)
     target_link_libraries(nnh_assetc_fuzz PUBLIC nnh_assetc_lib)
@@ -194,6 +194,7 @@ if(NNH_BUILD_TESTS)
         tests/test_fuzz_assetc.cpp
         tests/test_fuzz_assetc_sprite.cpp
         tests/test_fuzz_assetc_gltf.cpp
+        tests/test_fuzz_assetc_font.cpp
         tests/test_json.cpp
         tests/test_json_fields.cpp
         tests/test_map_writer.cpp
@@ -237,12 +238,13 @@ endif()
 # libFuzzer programs (clang only, like tests/): fuzz_assetc_json (the JSON reader), fuzz_assetc_map (a whole
 # conversion of an in-memory map + tileset), fuzz_assetc_toml (the TOML-subset reader of data files) and
 # fuzz_assetc_data (a whole data conversion, and the schema description reader), fuzz_assetc_refs (the
-# references sidecar reader and the data index step) and fuzz_assetc_sprite (a whole Aseprite conversion, spec 016).
+# references sidecar reader and the data index step) and fuzz_assetc_sprite (a whole Aseprite conversion, spec 016);
+# spec 029: fuzz_assetc_bmfont, _ttf (the pre-validator and stb_truetype), _png_pages (stb_image), _font_desc, _strings.
 if(NNH_BUILD_FUZZERS)
     foreach(lib nnh_assetc_lib nnh_assetc_fuzz)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
-    foreach(name json map toml data refs sprite gltf)
+    foreach(name json map toml data refs sprite gltf bmfont ttf png_pages font_desc strings)
         add_executable(fuzz_assetc_${name} tests/libfuzzer_assetc_${name}.cpp)
         target_link_libraries(fuzz_assetc_${name} PRIVATE nnh_assetc_fuzz)
         target_compile_options(fuzz_assetc_${name} PRIVATE -fsanitize=fuzzer,address)

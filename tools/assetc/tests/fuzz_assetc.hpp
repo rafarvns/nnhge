@@ -53,4 +53,21 @@ const char* gltf_seed();
 /// For the mini-fuzz: whether `text` converts (aborting on a broken invariant, as gltf_target does).
 bool gltf_converts(const char* text, std::size_t size);
 
+/// Spec 029 (fuzz_assetc_font.cpp). The BMFont reader: an accepted font's characters are in range, a refusal names a
+/// line.
+int bmfont_target(const std::uint8_t* data, std::size_t size);
+/// The TrueType pre-validator, then — for an accepted file, faces 0 and 1 — stb_truetype rasterising a few code points
+/// at two sizes (the pre-validator's promise: nothing it accepts reads out of bounds).
+int ttf_target(const std::uint8_t* data, std::size_t size);
+/// The BMFont page decoder (stb_image, PNG only): an accepted image has width × height × 4 bytes.
+int png_target(const std::uint8_t* data, std::size_t size);
+/// Font descriptions: a refusal names a line.
+int font_desc_target(const std::uint8_t* data, std::size_t size);
+/// A language's string file checked against a fixed base and, when clean, written (Debug and Release forms): the
+/// tables must pass the engine's validator.
+int strings_target(const std::uint8_t* data, std::size_t size);
+const char* strings_seed();
+const char* bmfont_seed();
+const char* font_desc_seed();
+
 } // namespace nnh::assetc::fuzz

@@ -3,6 +3,7 @@
 // with widths as cells × 8 through the built-in face; then the new rules: U+2010, U+3000, ID breaks, Hangul at spaces
 // only, kinsoku with the back-off rule, the ellipsis "…" of a game font.
 
+#include <type_traits>
 #include <cstring>
 #include <vector>
 
@@ -238,7 +239,13 @@ NNH_TEST(text_wrap_kerning_and_ink_count_in_a_lines_width) {
     const Block b = make(k);
     CHECK(same(wrapped(b.face(), "AV AV", 14), "AV|AV")); // 8 − 2 + 8 = 14 fits; " AV" doesn't
     CHECK(same(wrapped(b.face(), "AV", 13), "A|V"));
-    TextWrapper w(b.face(), "AV", 2, 0, 0);
+    const TextFace face = b.face(); // the wrapper keeps a reference: the face must outlive it
+    TextWrapper w(face, "AV", 2, 0, 0);
     WrapLine line;
     CHECK(w.next(line) && line.width == 14 && line.chars == 2);
 }
+
+// A wrapper keeps a reference to its face, so a temporary face can't be passed (it dangled: ASan, Linux, 2026-11-26).
+static_assert(!std::is_constructible_v<TextWrapper, TextFace&&, const char*, int, int, int>,
+              "TextWrapper must refuse a temporary TextFace");
+static_assert(std::is_constructible_v<TextWrapper, const TextFace&, const char*, int, int, int>);

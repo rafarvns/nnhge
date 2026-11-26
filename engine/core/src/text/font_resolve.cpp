@@ -15,7 +15,7 @@ TextFace face_for(FontRef font, int scale) {
     if (font.id == 0 || g_font_resolve == nullptr) return face;
     if (!g_font_resolve(font.id, face)) {
         NNH_ASSERT(false, "text drawn with a font that was destroyed (stale FontRef)");
-        face = TextFace{};
+        face = TextFace(); // parentheses: GCC 13 ICEs on brace value-init of this struct (gimplify.cc:774)
         face.scale = clamp_text_scale(scale);
     }
     return face;

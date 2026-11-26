@@ -25,6 +25,8 @@ struct WrapLine {
 class TextWrapper {
 public:
     TextWrapper(const TextFace& face, const char* text, int length, int max_width, int max_lines);
+    /// The wrapper keeps a reference to `face`: a temporary would dangle.
+    TextWrapper(const TextFace&& face, const char* text, int length, int max_width, int max_lines) = delete;
     bool next(WrapLine& line);
 
 private:

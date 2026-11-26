@@ -22,7 +22,7 @@ bool live(int slot) { return slot >= 0 && slot < kFontSlots && g_entries[slot].r
 void font_table_reset() {
     for (Entry& e : g_entries) {
         const std::uint32_t generation = e.generation + 1;
-        e = Entry{};
+        e = Entry(); // parentheses: GCC 13 ICEs on brace value-init of this struct (gimplify.cc:774)
         e.generation = generation;
     }
 }
@@ -40,7 +40,7 @@ int font_table_add(std::uint32_t path_hash, FontBlock* block) {
         e.path_hash = path_hash;
         e.refs = 1;
         e.block = block;
-        e.extra = FontEntryExtra{};
+        e.extra = FontEntryExtra();
         return i;
     }
     return -1;
@@ -54,7 +54,7 @@ FontBlock* font_table_release(int slot) {
     if (--e.refs > 0) return nullptr;
     FontBlock* block = e.block;
     const std::uint32_t generation = e.generation + 1;
-    e = Entry{};
+    e = Entry();
     e.generation = generation;
     return block;
 }
@@ -83,7 +83,7 @@ int font_table_count() {
 void font_table_forget(int slot) {
     if (!live(slot)) return;
     const std::uint32_t generation = g_entries[slot].generation + 1;
-    g_entries[slot] = Entry{};
+    g_entries[slot] = Entry();
     g_entries[slot].generation = generation;
 }
 

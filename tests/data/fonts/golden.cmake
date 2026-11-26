@@ -3,6 +3,7 @@
 # build VM's GCC 13/14 and clang 18, the 32-bit host build). Usage:
 #   cmake -DASSETC=<nnh-assetc> -DFONTS=<this folder> -DOUT=<scratch folder> -P golden.cmake
 # A changed converter changes these on purpose: rerun with -DRECORD=1 and paste the printed lines here.
+cmake_minimum_required(VERSION 3.25) # -P scripts don't inherit the project's policies
 
 set(_expected
     body_8.font=90b58e819a24950b5471a4c8bb30fcee8a2eaeb97e93e4d53b21253750f34677

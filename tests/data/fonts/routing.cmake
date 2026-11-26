@@ -1,5 +1,6 @@
 # font_routing (spec 029 T4.9): the localization example's asset index (-DINDEX=<.nnh_assets>) lists the converted
 # fonts, the tables, the manifest and the licence, and none of the sources the font and string steps own.
+cmake_minimum_required(VERSION 3.25) # -P scripts don't inherit the project's policies (IN_LIST needs CMP0057)
 file(STRINGS "${INDEX}" _assets)
 set(_failed "")
 foreach(_want .nnh_loc fonts/body_16.nnhfont fonts/body_ja_13.nnhfont fonts/hud.nnhfont strings/en.nnhstr

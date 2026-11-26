@@ -6,6 +6,7 @@ set player/jump 7.5
 set spawn/count 12
 set colors/sky "#102030"
 expect-value player/jump == 7.5
+wait 10
 dump
 expect "dump: end" 30
 wait 10

@@ -5,6 +5,7 @@ fail-on "] E "
 wait 30
 expect-value player/state == "idle"
 # the overlay (SELECT + L), then the Tunables page (SELECT + R): the panel takes the controls
+wait 10
 press SELECT
 tap L
 tap R
@@ -16,6 +17,7 @@ tap A
 wait 10
 expect-value player/state == "idle"
 # player: open it, select jump
+wait 10
 tap DOWN
 tap DOWN
 tap DOWN
@@ -25,11 +27,13 @@ tap DOWN
 tap RIGHT
 wait 2
 expect-value player/jump == 5.75
+wait 10
 press R
 tap RIGHT
 release R
 wait 2
 expect-value player/jump == 8.25
+wait 10
 press L
 tap RIGHT
 tap RIGHT
@@ -37,6 +41,7 @@ tap RIGHT
 release L
 wait 2
 expect-value player/jump == 12
+wait 10
 screenshot tunables
 # respawn: an action on A
 tap DOWN
@@ -57,6 +62,7 @@ tap A
 tap RIGHT
 wait 2
 expect-value colors/sky == "#4679C8FF"
+wait 10
 screenshot colour
 # close colors (B: back on its row, the list scrolled to the top)
 tap B
@@ -72,18 +78,21 @@ untouch
 wait 2
 expect-value debug/hitboxes == true
 # a drag across jump's bar (row 6, its bar from x 16, 162 wide): the middle is 6
+wait 10
 touch 16 161
 drag 97 161 4
 untouch
 wait 2
 expect-value player/jump == 6
 # `+` on the jump row
+wait 10
 touch 296 150
 wait 1
 untouch
 wait 2
 expect-value player/jump == 6.25
 # the Watches page
+wait 10
 press SELECT
 tap R
 release SELECT
@@ -102,6 +111,7 @@ tap L
 release SELECT
 wait 10
 expect-value player/state == "idle"
+wait 10
 release A
 wait 2
 tap A

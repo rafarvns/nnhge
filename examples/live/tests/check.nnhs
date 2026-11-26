@@ -17,13 +17,16 @@ expect-value player/jump == 6.25
 expect-value spawn/alive == 9 within 60
 expect-value spawn/shape == diamond
 expect-value colors/sky == "#FFC040FF"
+wait 10
 reset player
 expect-value player/jump == 5.5
 expect-value player/gravity == 0.3
+wait 10
 set player/jump 6.25
 set player/gravity 0.25
 set player/run 2.5
 expect-value player/run == 2.5
+wait 10
 dump
 expect "dump: end" 30
 wait 10

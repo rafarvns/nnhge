@@ -1,6 +1,6 @@
 # Plan 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, console and Linux checks passed, budgets set (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D37 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 020 (worlds, kinds and remove hooks, handles, the destroy queue, quarantine, iteration guards, scene binding;
 D35), spec 021 (prefab libraries, the all-or-nothing reservation, placement, hooks, map objects; D36), spec 015 (the

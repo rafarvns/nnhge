@@ -179,6 +179,8 @@ never through `#ifdef` in game code.
   without a position and without an assert; the level error's text is also the assert's message; the variadic `add` and
   `spawn_with` take class types only (the array forms keep their overloads unambiguous). Goldens unchanged:
   `C8FB9A41`, `B2418A28`; the prefabs self-check's is `7BB7901E`.
+- 2026-11-24: D37's console check passed (spec 022 T10.2 runs 1 and 2 with the T10.3 round; budgets set in plan 022
+  "Console run 2 and budgets set").
 - 2026-11-24: D37 implemented (spec 022 stages 0–8; console T10.2 pending). Refinements in plan 022 "Stage results":
   the root rule writes 0 − s·sy (no −0: a default Node equals one made at the identity), `WorldTransform2D` is not an
   aggregate (braced positions keep picking `gfx::draw`'s Vec2 overload), spec 021's spawn body is unchanged behind a

@@ -1,6 +1,6 @@
 # Tasks 022: Scene tree and transforms
 
-Status: implemented 2026-11-24, Linux T9.1 passed, T10.3 optimisation done and measured on the Old 3DS, budgets set (approved 2026-11-23, overnight pre-approval)
+Status: implemented 2026-11-24, console and Linux checks passed, budgets set (approved 2026-11-23, overnight pre-approval)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -292,7 +292,7 @@ replay ctest with the lines of the moment (spec 021's until T6.3, the new ones a
   builds of `hierarchy`, `platformer`, `prefabs` and `entities` without a warning; T7.6's table still true; `hello.elf`
   sizes as in T0.1; plan.md's "Stage 10: console run (prepared)" completed with the recorded goldens, checkpoints and
   showcase lines. Covers AC-8, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Five runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** Old 3DS, nobody touching it after Y. Five runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run hierarchy --script examples/hierarchy/tests/check.nnhs` → every `hierarchy: <n>
      sum` line and `hierarchy: PASS` equal the PC's, the showcase lines as on the PC (`dropped:` at the `attached:`
      position), the bench lines and the verdict (numbers recorded); screenshots read back;

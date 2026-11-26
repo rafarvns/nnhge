@@ -129,7 +129,7 @@ map)` (a Tiled object's `prefab` property, else its type; unknown explicit names
 guide [levels.md](docs/guides/levels.md#placing-prefabs-in-tiled)). The platformer's coins, turrets and sparkles are
 prefabs (replay lines unchanged); the example's self-check (golden `7BB7901E`) compares prefab spawns with hand-written
 ones over 50 000 operations.
-Scene tree and transforms (spec 022, implemented, console T10.2 pending; D37; demo `examples/hierarchy`):
+Scene tree and transforms (spec 022, implemented, console and Linux checks passed, budgets set; D37; demo `examples/hierarchy`):
 `<nnh/transform.hpp>` (only `<nnh/math.hpp>`) — `Transform2D`, `WorldTransform2D` (affine map + drawing values),
 `compose`/`to_world`/`transform_point`/`inverse`/`relative`/`bounds`, `sin_cos` (libm-free, exact quarter turns
 `kQuarterTurn`…), the same bits everywhere ([api/transform.md](docs/api/transform.md)); `<nnh/hierarchy.hpp>` — the

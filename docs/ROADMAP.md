@@ -238,7 +238,7 @@ spec; the order below is a proposal.
   lines unchanged)
 - [x] **Scene tree and transforms** (Godot nodes): parent and child entities, local positions, rotation and scale
   that follow the parent (a gun on a ship, a hat on a head) — [spec 022](../specs/022-scene-tree-and-transforms/spec.md)
-  (implemented 2026-11-24; Linux checks passed; console check T10.2 pending). Named hierarchy, nodes and transforms in code (a "scene" is a
+  (implemented 2026-11-24; console and Linux checks passed, budgets set). Named hierarchy, nodes and transforms in code (a "scene" is a
   game mode): `<nnh/transform.hpp>` (deterministic values: composition, points, inverses, bounds, an exact-quarter-turn
   sine), `<nnh/hierarchy.hpp>` (the engine's `Node` component kind, attach/detach keeping world or local, one pass per
   frame, `world_now`, cascading destroys), prefabs with children, `gfx::draw` of a world transform; demo

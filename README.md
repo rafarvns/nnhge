@@ -61,3 +61,6 @@ see [docs/process/README.md](docs/process/README.md).
 
 [zlib](LICENSE). Use it for anything, including commercial games; credit is appreciated but not required.
 NNHGE uses only the open homebrew toolchain (devkitPro); it contains no Nintendo SDK code.
+
+NNHGE is an independent project, not affiliated with or endorsed by Nintendo. Nintendo 3DS is a trademark of
+Nintendo; it is named here only to say which consoles the engine runs on.

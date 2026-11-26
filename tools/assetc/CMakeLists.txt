@@ -26,6 +26,7 @@ add_library(nnh_assetc_lib STATIC
     src/cli_data.cpp
     src/cli_data_index.cpp
     src/cli_font.cpp
+    src/cli_strings.cpp
     src/convert.cpp
     src/convert_font.cpp
     src/convert_mesh.cpp
@@ -54,10 +55,15 @@ add_library(nnh_assetc_lib STATIC
     src/json_string.cpp
     src/map_writer.cpp
     src/paths.cpp
+    src/plural_compile.cpp
+    src/plural_rules_cldr.cpp
     src/png_pages.cpp
     src/png_size.cpp
     src/schema_read.cpp
     src/sprite_writer.cpp
+    src/strings_check.cpp
+    src/strings_index.cpp
+    src/strings_read.cpp
     src/suggest.cpp
     src/tiled_layer_data.cpp
     src/tiled_map.cpp
@@ -101,6 +107,8 @@ add_library(nnh_assetc_lib STATIC
     ${_core}/font/font_format.cpp
     ${_core}/font/font_validate.cpp
     ${_core}/font/page_codec.cpp
+    ${_core}/loc/loc_validate.cpp
+    ${_core}/loc/plural.cpp
     ${_core}/text/break_class.cpp
     ${_core}/text/utf8.cpp
 )
@@ -186,6 +194,7 @@ if(NNH_BUILD_TESTS)
         tests/test_map_writer.cpp
         tests/test_paths.cpp
         tests/test_schema_read.cpp
+        tests/test_strings.cpp
         tests/test_sprite_writer.cpp
         tests/test_suggest.cpp
         tests/test_tiled_map.cpp

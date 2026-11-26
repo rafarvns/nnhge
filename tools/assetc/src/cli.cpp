@@ -135,6 +135,14 @@ int run_cli(int argc, const char* const* argv, std::FILE* out, std::FILE* err) {
         const int code = run_font(argc, argv, out, err);
         if (code != 2) return code;
     }
+    if (argc >= 2 && std::strcmp(argv[1], "strings") == 0) {
+        const int code = run_strings(argc, argv, out, err);
+        if (code != 2) return code;
+    }
+    if (argc >= 2 && std::strcmp(argv[1], "strings-index") == 0) {
+        const int code = run_strings_index(argc, argv, out, err);
+        if (code != 2) return code;
+    }
     std::fputs(kUsage, err);
     return 2;
 }

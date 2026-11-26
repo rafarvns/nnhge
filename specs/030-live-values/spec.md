@@ -10,7 +10,7 @@ stream, `.nnhs` scripts, exclusive script input), [spec 003](../003-full-input/s
 input blocker that never blocks engine controls). Works with [spec 014](../014-data-assets/spec.md) (data asset text
 format; values loaded from data assets can be tuned) and [spec 001](../001-event-bus-and-scenes/spec.md)/D30 (scene
 lifetime) without needing either. Does not need [spec 028](../028-ui-widgets/spec.md) (UI widgets) or
-[spec 029](../029-game-fonts-and-localization/spec.md) (game fonts, on branch `spec-029`, not merged): the panel is
+[spec 029](../029-game-fonts-and-localization/spec.md) (game fonts, merged 2026-11-26): the panel is
 drawn in debug text (open question Q3). Implements the ROADMAP item "Live values in the simulator" (Features in the
 spirit of Godot and Unity), the third of the last four features before NNHGE 1.0. A development tool: Debug and
 Development builds only; optional for games (constitution XI).

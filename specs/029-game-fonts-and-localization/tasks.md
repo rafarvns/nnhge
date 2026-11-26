@@ -395,6 +395,6 @@ values re-read from the tree at T0.3).
 - [x] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
 - [x] **T11.R** Review round (plan.md "Review round"): B1, S1–S5 and N1–N8 fixed test first; S3 reverts the dispatch
   split; S5's build times recorded as a constitution exception approved by the maintainer 2026-11-26.
-- [ ] **T11.8** (the lead) Merge `spec-029` into `main` (rebased; insertions at plan.md's anchors); then the full ctest
+- [x] **T11.8** (done 2026-11-26: merge `dc60316`; main pc-debug ctest 359/359, 3ds-release without a warning; T10.2 ran on the same code) (the lead) Merge `spec-029` into `main` (rebased; insertions at plan.md's anchors); then the full ctest
   (pc-debug, pc-release), every example's `--pc` script, AC-2's golden and every earlier golden, one 3ds-release build;
   T10.2 runs 1 and 2 repeated if the merge happened after them.

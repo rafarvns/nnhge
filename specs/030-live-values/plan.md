@@ -386,7 +386,7 @@ nothing from `live::` has no `live_` symbol; a game that registers anything link
 
 ### Spec 029 overlap
 
-Spec 029 (branch `spec-029`, unmerged) and this spec touch the same files in five places; 030 starts after 029's merge, so
+Spec 029 (merged 2026-11-26) and this spec touch the same files in five places; 030 starts after 029's merge, so
 none of these is a merge conflict, but the numbering depends on it:
 
 | Shared file | 029 adds | 030 adds |

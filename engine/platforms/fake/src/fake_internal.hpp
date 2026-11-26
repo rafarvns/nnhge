@@ -30,6 +30,10 @@ struct Controls {
     int alloc_fill = -1; // set_alloc_fill(): the byte new Heap/Linear blocks get, or −1
     std::uint32_t capabilities = 1u << static_cast<unsigned>(Capability::SecondScreen);
     std::uint32_t dev_requests = 0;
+    std::uint32_t dev_queue[64] = {}; // queue_dev_requests(): one mask per poll_dev_requests() (spec 030)
+    int dev_queue_count = 0;
+    int dev_queue_next = 0;
+    int quit_after_polls = -1; // quit_after_polls(): poll_events() calls left before it returns false
     float stereo_slider = 0; // set_stereo_slider()
     FakeAsset assets[kMaxFakeAssets];
     int asset_count = 0;

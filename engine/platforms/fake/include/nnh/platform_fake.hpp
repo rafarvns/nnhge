@@ -196,6 +196,18 @@ void set_capabilities(std::initializer_list<Capability> capabilities);
 /// Makes the next poll_dev_requests() ask to toggle the debug overlay (like F1 on PC).
 void request_overlay_toggle();
 
+/// Makes the next poll_dev_requests() ask to pause or resume (the simulator's Pause key; spec 030), to step one frame
+/// (F10), or to start held (NNH_HOLD=1, the 3DS's --nnh-hold).
+void request_pause();
+void request_step();
+void request_hold();
+/// The masks successive poll_dev_requests() calls return (one each; 0 once used up; at most 64): drives a pause and
+/// the paused ticks inside one nnh::frame() (spec 030). Replaces an earlier queue.
+void queue_dev_requests(std::initializer_list<std::uint32_t> masks);
+
+/// poll_events() returns true `polls` more times, then false (like set_quit_requested(true) from then on).
+void quit_after_polls(int polls);
+
 /// The coverage bytes a texture_create_alpha() texture was made from (a copy; `width` × `height`), or nullptr for a
 /// handle that isn't a live coverage texture (spec 029).
 const std::uint8_t* alpha_texture_coverage(platform::TextureHandle handle, int& width, int& height);

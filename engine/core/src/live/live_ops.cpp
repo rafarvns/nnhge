@@ -7,6 +7,7 @@
 #include "debug/live_hook.hpp"
 #include "live/live_apply.hpp"
 #include "live/live_dump.hpp"
+#include "live/live_panel_model.hpp"
 #include "live/live_registry.hpp"
 #include "live/live_watch.hpp"
 #include "nnh/log.hpp"
@@ -17,10 +18,7 @@ NNH_LOG_CHANNEL(live);
 
 namespace detail::live {
 
-// Filled by the later parts of the module (panel, remote); null until then.
-void (*g_panel_input)(int, const DevInput&, bool) = nullptr;
-void (*g_panel_draw)(int, std::uint32_t, bool) = nullptr;
-void (*g_panel_select)(int, const char*) = nullptr;
+// Filled by the remote part of the module (live_remote.cpp); null until then.
 void (*g_remote_op)(std::uint8_t, std::uint8_t, std::uint16_t, std::uint16_t, std::uint32_t, std::uint32_t,
                     std::uint32_t, bool) = nullptr;
 void (*g_remote_detached)() = nullptr;
@@ -30,14 +28,16 @@ namespace {
 
 void log_line(void*, [[maybe_unused]] const char* text) { NNH_LOG_INFO(live, "%s", text); }
 
-void panel_input(int page, const DevInput& input, bool paused) {
-    if (g_panel_input != nullptr) g_panel_input(page, input, paused);
+void panel_input(int page, const DevInput& input, bool) {
+    if (g_registry == nullptr) return;
+    panel_buttons(*g_registry, page, input);
+    if (page == kPageTunables) panel_touch(*g_registry, input);
 }
 void panel_draw(int page, std::uint32_t frame, bool paused) {
-    if (g_panel_draw != nullptr) g_panel_draw(page, frame, paused);
+    if (g_registry != nullptr) panel_draw_page(*g_registry, page, frame, paused);
 }
 void panel_select(int page, const char* name) {
-    if (g_panel_select != nullptr) g_panel_select(page, name);
+    if (g_registry != nullptr) panel_select_name(*g_registry, page, name);
 }
 void remote_op(std::uint8_t op, std::uint8_t arg, std::uint16_t count, std::uint16_t seq, std::uint32_t hash,
                std::uint32_t bits, std::uint32_t frame, bool paused) {

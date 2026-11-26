@@ -97,6 +97,9 @@ struct PanelState {
     int channel = 0;  ///< a colour row's edited channel
     int watch_selected = 0;
     int watch_scroll = 0;
+    std::uint8_t touch_mode = 0; ///< live_panel_touch.cpp: none, ignored, drag, minus, plus
+    std::uint16_t touch_slot = 0;
+    int touch_ticks = 0;
 };
 
 struct Registry {

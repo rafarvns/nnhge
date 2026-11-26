@@ -115,62 +115,62 @@ the tree at T0.3).
 
 ## Stage 3: pause and step in core
 
-- [ ] **T3.1** Requests: the contract's three `DevRequest` bits; `devtools_pc.cpp` (`Pause`, `F10` → requests),
+- [x] **T3.1** Requests: the contract's three `DevRequest` bits; `devtools_pc.cpp` (`Pause`, `F10` → requests),
   `app_pc.cpp` (`NNH_HOLD=1` once), `system_3ds.cpp` (`--nnh-hold` once), `system_fake.cpp` + `platform_fake.hpp`
   (`request_pause/step/hold`) — all in Dev branches. Test: conformance (`poll_dev_requests` returns each bit once on the
   fake and the PC with the variable set), 3ds-release and pc-release `hello` identical (a stage-end check run early).
   Covers FR-16, I.
-- [ ] **T3.2** The state machine: `src/app/dev_pause.{hpp,cpp}` (`PauseState`: requests, when each takes effect, steps,
+- [x] **T3.2** The state machine: `src/app/dev_pause.{hpp,cpp}` (`PauseState`: requests, when each takes effect, steps,
   held start with its 600-tick timeout; pure part), `live::pause()`'s back end. Test: `tests/app/test_dev_pause_state.cpp`
   (every transition, a step while running pauses first, step N counts, hold with and without an attach, timeout). Covers
   FR-16.
-- [ ] **T3.3** Engine controls: `src/debug/dev_controls.{hpp,cpp}` (held/pressed/released per tick from the post-remote
+- [x] **T3.3** Engine controls: `src/debug/dev_controls.{hpp,cpp}` (held/pressed/released per tick from the post-remote
   sample, repeat 24/6, touch down/held/up). Test: `tests/debug/test_dev_controls.cpp` (edges, repeat timing, exclusive
   mode reads the script's sample only). Covers FR-8, FR-10.
-- [ ] **T3.4** The held frame: `src/gfx/gfx_replay.cpp`, `gfx_frame.cpp` and `gfx_internal.hpp` (Dev: the per-frame clears
+- [x] **T3.4** The held frame: `src/gfx/gfx_replay.cpp`, `gfx_frame.cpp` and `gfx_internal.hpp` (Dev: the per-frame clears
   of draws, tiles, particle batches and 3D records move to the start of the next game frame's recording; replay; textures
   re-resolved; validity), `src/debug/debug_held.cpp` + the debug list's mark (the held frame's game debug text), the
   scene stack's Dev-only "applied something" flag. Test: `tests/gfx/test_gfx_replay.cpp` (a paused tick's fake items
   equal the held frame's for sprites, text, shapes, tiles, particles and a 3D draw; a released texture is skipped; a
   scene change drops the replay; Release-path behaviour unchanged in pc-release), every existing gfx test in pc-debug and
   pc-release. Covers FR-16, FR-22.
-- [ ] **T3.5** [P] Audio and time: `src/audio/audio_hold.cpp` (hold and release every playing voice and stream at the
+- [x] **T3.5** [P] Audio and time: `src/audio/audio_hold.cpp` (hold and release every playing voice and stream at the
   platform, the game's pause flags untouched), the frame-clock restart in `time_internal.hpp`/`clock.cpp` (Dev accessor).
   Test: `tests/audio/test_audio_hold.cpp` (fake voices and streams paused on hold, released for one stepped frame, a
   voice the game paused stays paused), `tests/app/test_dev_pause.cpp` part 1 (`time::delta()` of the first frames after a
   pause and after steps). Covers FR-16, Q7.
-- [ ] **T3.6** The paused ticks in `nnh::frame()`: `app.cpp`'s Dev order of plan.md ("The frame in Debug/Development
+- [x] **T3.6** The paused ticks in `nnh::frame()`: `app.cpp`'s Dev order of plan.md ("The frame in Debug/Development
   builds"), `dev_pause.cpp`'s loop. Test: `tests/app/test_dev_pause.cpp` part 2 (no scene update and no input event while
   paused; plain loops wait; `frame_count()` and the frame clock stop; step N runs exactly N; quit while paused; the held
   start draws cleared screens and the message), `tests/app/test_frame_loop.cpp` unchanged cases pass in both flavours.
   Covers FR-16, FR-21.
-- [ ] **T3.7** Stage end: the stage-end guards (the first stage that edits Release-linked files: per-object diffs
+- [x] **T3.7** Stage end: the stage-end guards (the first stage that edits Release-linked files: per-object diffs
   recorded); Debug/Development `hello` growth so far; the simulator's `Pause`/`F10` by hand on `examples/platformer`
   (pause, step, resume; audio holds) and a screenshot of a paused frame equal to the frame before it. Files: plan.md
   ("Stage 3 results"). Covers AC-6, FR-16.
 
 ## Stage 4: the overlay pages and the panel
 
-- [ ] **T4.1** Pages and controls: `src/debug/overlay_pages.{hpp,cpp}` (Stats → Tunables → Watches, SELECT + R, the
+- [x] **T4.1** Pages and controls: `src/debug/overlay_pages.{hpp,cpp}` (Stats → Tunables → Watches, SELECT + R, the
   DevPanel blocker, chords SELECT + Y/X, empty pages without the module, `live::show_panel`), `overlay.cpp`'s Dev branch,
   `InputBlocker::DevPanel`. Test: `tests/debug/test_overlay_pages.cpp` (cycling, controls taken and given back, the game's
   queries idle while taken, a held button blocked until released after closing, independence from `input::set_blocked`
   and transitions, chords reach the pause), `tests/debug/test_overlay.cpp` unchanged cases pass. Covers FR-7, FR-10, FR-16.
-- [ ] **T4.2** The panel model: `live_panel_model.{hpp,cpp}` (rows from the sorted index, groups, selection, scroll,
+- [x] **T4.2** The panel model: `live_panel_model.{hpp,cpp}` (rows from the sorted index, groups, selection, scroll,
   repeat, buttons → edits, channels, enums, actions, resets, dump requests, pending marks). Test:
   `tests/live/test_live_panel_model.cpp` (navigation with wrap only on fresh presses, repeat, ×10 with L and with R,
   stopping at max, colour channel cycle, enum ends, bool, actions once per press, X on an entry and on a group, Y, B,
   selection kept when an entry is removed). Covers FR-5, FR-8, Q9.
-- [ ] **T4.3** [P] Layout and touch: `live_panel_layout.{hpp,cpp}`, `live_panel_touch.cpp`. Test:
+- [x] **T4.3** [P] Layout and touch: `live_panel_layout.{hpp,cpp}`, `live_panel_touch.cpp`. Test:
   `tests/live/test_live_panel_touch.cpp` (row hit boxes, taps on group rows, drags tick by tick through a bar with the
   rounding rule, `-`/`+` with repeat while held, bool and action hits, a touch starting outside does nothing). Covers
   FR-9.
-- [ ] **T4.4** Drawing: `live_panel_draw.cpp` (Tunables and Watches pages, header, footer, marks, bars, swatches, channel
+- [x] **T4.4** Drawing: `live_panel_draw.cpp` (Tunables and Watches pages, header, footer, marks, bars, swatches, channel
   line), the Stats line in `live_ops.cpp`. Test: `tests/live/test_live_panel_draw.cpp` (debug-list items of every row kind
   at exact positions and texts; a full page within 90 entries and 1.5 KB; paused `~` marks). Then PC screenshots by hand
   (a probe or the example skeleton) read back; exact pixels written into plan.md ("Stage 4 refinements"). Covers FR-7,
   FR-8, FR-22.
-- [ ] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical, the Stats page included); plan.md
+- [x] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical, the Stats page included); plan.md
   ("Stage 4 results"). Covers AC-1, AC-6.
 
 ## Stage 5: the game side of the remote

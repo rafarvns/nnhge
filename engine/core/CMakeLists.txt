@@ -25,6 +25,13 @@ add_library(nnh_core STATIC
     src/animation/sprite_validate.cpp
     src/app/app.cpp
     src/app/data_folder.cpp
+    src/app/dev_pause.cpp
+    src/app/pause_state.cpp
+    src/audio/audio_hold.cpp
+    src/debug/debug_held.cpp
+    src/debug/dev_controls.cpp
+    src/debug/overlay_pages.cpp
+    src/gfx/gfx_replay.cpp
     src/collision/aabb.cpp
     src/collision/grid.cpp
     src/collision/grid_move.cpp
@@ -589,6 +596,9 @@ set(_nnh_live_sources
     src/live/live_control.cpp
     src/live/live_dump.cpp
     src/live/live_ops.cpp
+    src/live/live_panel_draw.cpp
+    src/live/live_panel_model.cpp
+    src/live/live_panel_touch.cpp
     src/live/live_registry.cpp
     src/live/live_tune.cpp
     src/live/live_watch.cpp

@@ -3,6 +3,7 @@
 #include "nnh/app.hpp"
 
 #include "app/data_folder.hpp"
+#include "app/dev_pause.hpp"
 #include "assets/assets_internal.hpp"
 #include "audio/audio_internal.hpp"
 #include "core/engine_state.hpp"
@@ -17,6 +18,7 @@
 #include "nnh/platform/system.hpp"
 #include "nnh/time.hpp"
 #include "gfx/gfx_internal.hpp"
+#include "gfx/gfx_replay.hpp"
 #include "input/input_internal.hpp"
 #include "log/engine_channels.hpp"
 #include "log/file_sink.hpp"
@@ -47,6 +49,7 @@ void close_frame() {
         detail::gfx_submit();
         if constexpr (build::kDevToolsEnabled) { // live values (spec 030): follows, dumps, per-frame watches' sweep
             if (detail::g_live_ops != nullptr) detail::g_live_ops->frame_end(static_cast<std::uint32_t>(g_frame_count), false);
+            detail::g_debug_game_mark = detail::g_debug_recorded; // the game's debug entries, replayed while paused
         }
         detail::overlay_draw();     // recorded after the game's debug text, so it covers it
         detail::debug_text_flush(); // the debug pass
@@ -103,7 +106,10 @@ bool init(const AppConfig& config) {
     detail::overlay_reset();
     detail::debug_text_clear();
     detail::crash_install();
-    if constexpr (build::kDevToolsEnabled) detail::remote_reset();
+    if constexpr (build::kDevToolsEnabled) {
+        detail::remote_reset();
+        detail::dev_pause_reset();
+    }
     detail::log_file_start();
     NNH_LOG_INFO(app, "started \"%s\" (%s build), data in %s", config.title, build::flavor_name(),
                  platform::fs_root());
@@ -121,15 +127,24 @@ bool frame() {
     if constexpr (build::kDevToolsEnabled) {
         // The PC's input enters before the frame's input is read (spec 013): queries and events see it.
         if (!detail::remote_frame_start(g_frame_count + 1, input_sample)) return false;
+        // Spec 030 (D52): engine controls, the overlay's pages and the pause; paused ticks run inside.
+        detail::g_dev_frame_requests = platform::poll_dev_requests();
+        if (!detail::dev_frame_begin(g_frame_count + 1, input_sample, detail::g_dev_frame_requests)) return false;
     }
     detail::input_update(input_sample);
     detail::profile_frame_boundary();
     // Engine controls read the raw buttons: a game's or a transition's input block never blocks them (spec 023).
-    detail::overlay_update(time::delta(), detail::input_engine_held_mask(), detail::input_engine_pressed_mask(),
-                           platform::poll_dev_requests());
+    if constexpr (build::kDevToolsEnabled) {
+        detail::overlay_update(time::delta(), detail::input_engine_held_mask(), detail::input_engine_pressed_mask(),
+                               detail::g_dev_frame_requests);
+    } else {
+        detail::overlay_update(time::delta(), detail::input_engine_held_mask(), detail::input_engine_pressed_mask(),
+                               platform::poll_dev_requests());
+    }
     platform::begin_frame(detail::clear_color(Screen::Top), detail::clear_color(Screen::Bottom));
     g_gpu_busy = false;
     detail::gfx_gpu_idle(); // the GPU finished the previous frame: free what was retired when it was submitted
+    if constexpr (build::kDevToolsEnabled) detail::gfx_begin_recording(); // the held lists go (spec 030)
     g_frame_open = true;
     ++g_frame_count;
     if constexpr (build::kDevToolsEnabled) { // live values (spec 030 FR-3): the one point where edits apply

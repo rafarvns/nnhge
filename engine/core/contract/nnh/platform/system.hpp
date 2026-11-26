@@ -19,6 +19,9 @@ SystemInfo system_info();
 /// Called once per frame by core. Systems without such controls return 0.
 enum DevRequest : std::uint32_t {
     kDevToggleOverlay = 1u << 0,
+    kDevTogglePause = 1u << 1, ///< pause or resume the game (the simulator's Pause key; spec 030 D52)
+    kDevStepFrame = 1u << 2,   ///< run one game frame, then pause (the simulator's F10)
+    kDevHoldAtStart = 1u << 3, ///< returned once: start paused before frame 1 (NNH_HOLD=1, 3DS argv --nnh-hold)
 };
 std::uint32_t poll_dev_requests();
 

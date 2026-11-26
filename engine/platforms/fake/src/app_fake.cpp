@@ -34,6 +34,11 @@ void shutdown() {
 
 const char* last_error() { return g_last_error; }
 
-bool poll_events() { return !controls().quit_requested; }
+bool poll_events() {
+    platform_fake::detail::Controls& c = controls();
+    if (c.quit_after_polls == 0) c.quit_requested = true;
+    if (c.quit_after_polls > 0) --c.quit_after_polls;
+    return !c.quit_requested;
+}
 
 } // namespace nnh::platform

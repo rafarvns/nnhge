@@ -20,6 +20,7 @@
 #include "context_pc.hpp"
 #include "nnh/build.hpp"
 #include "nnh/platform/app.hpp"
+#include "nnh/platform/system.hpp"
 #include "remote_pc.hpp"
 #include "stdio_fs.hpp"
 
@@ -97,6 +98,10 @@ void read_dev_options() {
     const char* n = std::getenv("NNH_EXIT_AFTER_FRAMES");
     g_context.exit_after = n != nullptr ? std::strtoull(n, nullptr, 10) : 0;
     g_context.screenshot_path = std::getenv("NNH_SCREENSHOT");
+    if constexpr (build::kDevToolsEnabled) { // spec 030: `nnh run --pc --tunes/--hold` starts the game held
+        const char* hold = std::getenv("NNH_HOLD");
+        if (hold != nullptr && hold[0] == '1') g_context.dev_requests |= platform::kDevHoldAtStart;
+    }
 }
 
 } // namespace

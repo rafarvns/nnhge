@@ -823,3 +823,41 @@ the plan are listed under "Implementation refinements".
 - Stage-end guards: ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev 0 warnings (two Release-only
   unused warnings fixed after the run); `hello.3dsx` identical, `hello.elf` without debug info identical (R9);
   pc-release `hello` sections and symbols identical. Development `hello`: 3ds-dev text 221 456 (+536 B over T0.1).
+- **R13 (T3.1) The pause and the overlay's toggle read the engine controls in core.** `overlay_update()` keeps the
+  frame-time history only; SELECT + L, F1 and the pages' chords are taken by `overlay_pages_input()` from the dev
+  controls of each tick (so they work on paused ticks). A new engine starts with the overlay hidden on the Stats page
+  (`overlay_reset()`'s Development branch): an existing test (`visible_overlay_draws_fps_and_memory_before_the_frame_ends`)
+  left it shown for whichever test ran next, which the new test order exposed.
+- **R14 (T3.4) The held frame.** In Development `gfx_submit()` keeps the 2D, tile and particle lists (flag
+  `g_gfx_held`, defined in the Development-only `gfx_replay.cpp`); `gfx_begin_recording()` clears them right after the next
+  game frame's `begin_frame()`, before any game code. A frame that dropped draws or tiles is cleared at once as before
+  (its assert must not fire again when `shutdown()` submits the open frame). The debug text the game recorded is counted
+  in `debug.cpp`'s Development branch and replayed from `debug_list_last_frame()`. 3D draws are not replayed (the 3D
+  module's records end with its own submit); a paused 3D game shows its 2D layers and the overlay.
+- **R15 (T3.4, rule 2) Shared state** between Release-linked files and the new Development files goes through `extern`
+  variables the Development files define (`g_gfx_held`, `g_debug_recorded`, `g_debug_game_mark`, `g_time_keep_delta`,
+  `g_dev_scenes_changed`, `g_dev_frame_requests`), used only inside discarded branches in Release.
+- **R16 (T3.1) Fake platform.** `platform_fake::queue_dev_requests({...})` returns one mask per `poll_dev_requests()` (so a
+  test drives a pause and its ticks inside one `nnh::frame()`), and `quit_after_polls(n)`.
+- **R17 (T4.2) Rows on demand.** The panel's rows are generated from the sorted index when asked (`row_count`, `row_at`),
+  nothing stored; groups open by hash (16 at most).
+- **R18 (stages 3–4) One commit** for stages 3 and 4: they share `overlay.cpp`, `dev_pause.cpp`, `live_ops.cpp` and the
+  CMake lists, and one stage-end run covered both.
+
+### Stages 3 and 4 results
+
+- Pause and step in core (`app/dev_pause.*`, `app/pause_state.cpp`), engine controls (`debug/dev_controls.*`), the
+  held frame (`gfx/gfx_replay.*`, `debug/debug_held.cpp`), audio hold (`audio/audio_hold.cpp`), the frame clock restart
+  (`clock.cpp`'s Development branch); the simulator's Pause/F10 and `NNH_HOLD=1`, the 3DS's `--nnh-hold`, the fake's
+  requests. The overlay's pages (`debug/overlay_pages.*`), the DevPanel blocker, the panel's model, touch, layout and
+  drawing (`live/live_panel_*`).
+- Tests: `test_dev_pause_state` (11), `test_dev_pause` (7), `test_dev_controls` (5), `test_gfx_replay` (4),
+  `test_audio_hold` (2), `test_overlay_pages` (6), `test_live_panel_model` (10), `test_live_panel_touch` (5),
+  `test_live_panel_draw` (3). The whole `nnh_tests`: 3970 pass.
+- Stage-end guards (run `s34`): ctest pc-debug 368/368, pc-release 337/337; 3ds-release and 3ds-dev one warning each
+  (a `-Wformat-truncation` in `live_panel_draw.cpp`, fixed after the run: 0); `hello.3dsx` identical, `hello.elf` without
+  debug info identical, sections and symbols identical; pc-release `hello` sections and symbols identical.
+  Development `hello`: 3ds-dev text 225 976 (+5 056 B over T0.1: pause, controls, pages, replay, audio hold, remote
+  decoders — inside question 7's 3–6 KB), pc-debug text 223 988.
+- Not done in this pass: T3.7's by-hand simulator check (Pause/F10 by keyboard) and T4.5's screenshot comparison
+  script; the pages' look is checked by the example's screenshots (stage 7).

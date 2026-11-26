@@ -1581,9 +1581,18 @@ target_sources(nnh_tests PRIVATE
     live/test_live_format.cpp
     live/test_live_names.cpp
     live/test_live_steps.cpp
+    app/test_dev_pause.cpp
+    app/test_dev_pause_state.cpp
+    audio/test_audio_hold.cpp
+    debug/test_dev_controls.cpp
+    debug/test_overlay_pages.cpp
+    gfx/test_gfx_replay.cpp
     live/test_live_apply.cpp
     live/test_live_cost.cpp
     live/test_live_dump.cpp
+    live/test_live_panel_draw.cpp
+    live/test_live_panel_model.cpp
+    live/test_live_panel_touch.cpp
     live/test_live_random_ops.cpp
     live/test_live_registry.cpp
     live/test_live_release.cpp

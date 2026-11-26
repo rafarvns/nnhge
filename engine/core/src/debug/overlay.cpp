@@ -6,6 +6,8 @@
 #include <cstdio>
 
 #include "debug/dev_tools.hpp"
+#include "debug/live_hook.hpp"
+#include "debug/overlay_pages.hpp"
 #include "gfx/gfx3d_hook.hpp"
 #include "nnh/build.hpp"
 #include "nnh/debug.hpp"
@@ -126,8 +128,9 @@ void detail::overlay_update(Duration frame_delta, std::uint32_t held, std::uint3
     g_history[g_history_next] = frame_delta;
     g_history_next = (g_history_next + 1) % kHistory;
     if (g_history_count < kHistory) ++g_history_count;
-    const bool combo = (held & bit(Button::Select)) != 0 && (pressed & bit(Button::L)) != 0;
-    if (combo || (platform_dev_requests & platform::kDevToggleOverlay) != 0) g_visible = !g_visible;
+    // The toggle (SELECT + L, F1) moved to the overlay's pages (spec 030, overlay_pages.cpp): they read the engine
+    // controls on paused ticks too.
+    (void)held, (void)pressed, (void)platform_dev_requests;
 }
 
 void detail::overlay_draw() {
@@ -135,15 +138,28 @@ void detail::overlay_draw() {
     const int line = kFontLineHeight;
     detail::debug_record_rect(Screen::Bottom, 0, 0, screen_width(Screen::Bottom), screen_height(Screen::Bottom),
                         rgba(0, 0, 0, 170));
+    if constexpr (build::kDevToolsEnabled) {
+        if (detail::overlay_pages_draw()) return; // a live page (spec 030)
+    }
     int y = 4;
     draw_frame_stats(y, line);
     draw_graph(y);
     draw_memory(y, line);
     draw_scopes(y, line);
+    if constexpr (build::kDevToolsEnabled) { // the live registry's line (spec 030)
+        char text[96];
+        if (detail::g_live_ops != nullptr && detail::g_live_ops->stats_line(text, sizeof text)) {
+            detail::debug_record_text(Screen::Bottom, 4, y, text, colors::white);
+        }
+    }
 }
 
 void detail::overlay_reset() {
     g_history_next = g_history_count = 0;
+    if constexpr (build::kDevToolsEnabled) { // a new engine starts with the overlay hidden, on the Stats page (spec 030)
+        g_visible = false;
+        detail::overlay_pages_reset();
+    }
 }
 
 } // namespace nnh

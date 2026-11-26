@@ -1,6 +1,6 @@
 # Plan 030: Live values
 
-Status: draft 2026-11-26 (for the maintainer's review; the spec was approved 2026-11-26 with every open question as
+Status: approved 2026-11-26 (the maintainer, the seven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as
 recommended, and those answers are this plan's decisions; seven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D51, D52 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -699,7 +699,7 @@ and five record types (additive in version 1, sent only after a catalogue reques
 `DevPanel` blocker; D17's overlay gains pages; the PC's pause moves from the platform library into core (D52). Flagged
 for the maintainer: questions 1–7 below and the panel's frame cost at risk (risk 1).
 
-## Questions for the maintainer
+## Questions for the maintainer (answered 2026-11-26: each as recommended)
 
 1. **Capacities: `live::configure()` instead of an `AppConfig` field?** Recommended: yes. `AppConfig` is copied in
    `nnh::init()`, so a new field changes the Release `hello` bytes, which this spec must leave identical; `configure()`

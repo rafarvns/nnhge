@@ -84,13 +84,13 @@ void emit(const Emit& e, const RunItem& it, int px, int py) {
 }
 
 /// The outline colour on a font without outlines: ignored, said once per font slot (Debug/Development).
-void warn_no_outline(const TextFace& face) {
-    if constexpr (build::kDevToolsEnabled) {
-        static std::uint32_t warned = 0;
-        const std::uint32_t bit = 1u << (face.fonts[0]->self_slot & 31u);
-        if ((warned & bit) == 0) NNH_LOG_WARN(gfx, "outline_color ignored: the font has no outline glyphs");
-        warned |= bit;
-    }
+void warn_no_outline([[maybe_unused]] const TextFace& face) {
+#if !defined(NNH_FLAVOR_RELEASE)
+    static std::uint32_t warned = 0;
+    const std::uint32_t bit = 1u << (face.fonts[0]->self_slot & 31u);
+    if ((warned & bit) == 0) NNH_LOG_WARN(gfx, "outline_color ignored: the font has no outline glyphs");
+    warned |= bit;
+#endif
 }
 
 } // namespace

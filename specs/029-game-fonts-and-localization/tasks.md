@@ -111,83 +111,83 @@ values re-read from the tree at T0.3).
 
 ## Stage 3: fonts at run time, drawing, measuring, the UI seam
 
-- [ ] **T3.1** The font table, `Font` and `FontRef`: `<nnh/font.hpp>`, `gfx.hpp` additions (`FontRef`, `FontMetrics`,
+- [x] **T3.1** The font table, `Font` and `FontRef`: `<nnh/font.hpp>`, `gfx.hpp` additions (`FontRef`, `FontMetrics`,
   `TextCaret`, the four `TextOptions` fields, declarations), `src/font/font_table.{hpp,cpp}`, `src/font/font.cpp`. Test:
   `tests/font/test_font_table.cpp` (32 entries, refcount by path hash, generations, stale refs assert and resolve to the
   built-in, `g_font_resolve` null until the first load), `test_font_metrics.cpp`. Covers FR-5, FR-6, FR-35.
-- [ ] **T3.2** Loading: `src/font/font_load.cpp`, `src/gfx/texture_alpha.cpp` (`detail::texture_from_coverage`, tag,
+- [x] **T3.2** Loading: `src/font/font_load.cpp`, `src/gfx/texture_alpha.cpp` (`detail::texture_from_coverage`, tag,
   D47 release). Test: `tests/font/test_font_load.cpp` (fonts written in memory into the fake's assets: `NotFound`,
   `InvalidData` with the validator's reason logged, `OutOfMemory` via a failing tag, `Unsupported` at 33, sharing by
   path, fallbacks one level deep, colour pages through RGBA, staging freed, failure cleanup leaves no texture, D47
   counters on destroy), `test_font_cost.cpp`. Covers FR-2, FR-5, FR-11, FR-34.
-- [ ] **T3.3** Drawing: `src/text/text_draw.cpp`, `src/text/text_missing.{hpp,cpp}`, `src/gfx/draw_text.cpp` (the
+- [x] **T3.3** Drawing: `src/text/text_draw.cpp`, `src/text/text_missing.{hpp,cpp}`, `src/gfx/draw_text.cpp` (the
   dispatch only). Test: `tests/text/test_text_draw_fonts.cpp` (plan.md's FR-7/9/11/12 cases against hand-computed fake
   items), `test_text_missing.cpp`, `tests/text/test_text_builtin_unchanged.cpp` (the built-in path's items with every
   new option at its default identical to a recording made before the change; a huge `wrap_width` gives the same items).
   Covers FR-7, FR-9, FR-11, FR-12, FR-13.
-- [ ] **T3.4** Measuring: `src/text/text_measure.cpp` (`measure_text(utf8, options)`, `measure_chars`, `font_metrics`).
+- [x] **T3.4** Measuring: `src/text/text_measure.cpp` (`measure_text(utf8, options)`, `measure_chars`, `font_metrics`).
   Test: `tests/text/test_text_measure_box.cpp` (no drawn item outside the measured box over 10 000 seeded strings ×
   fonts × scales × wraps, shadow and outline extents as documented), `tests/text/test_measure_chars.cpp` (bytes, pens,
   lines, alignment, capacity). Covers FR-8, FR-10.
-- [ ] **T3.5** The UI seam in pixels: `ui_text_seam.*`, `ui_layout_measure.cpp`, `ui_draw_widgets.cpp`,
+- [x] **T3.5** The UI seam in pixels: `ui_text_seam.*`, `ui_layout_measure.cpp`, `ui_draw_widgets.cpp`,
   `ui_draw_list.cpp`, `ui_reveal.cpp`, `ui_list.cpp`, `ui_parts.cpp`, `ui_draw_out.*` (built-in arithmetic and hash
   unchanged), `ui_block.hpp` (font slots), `ui_create.cpp`. Test: every `ui_` test with no expected value edited except
   `test_create.cpp`'s block formula (+32 B; the reviewed diff recorded in plan.md); `test_ui_seam_equivalence.cpp` part 2
   (labels, buttons, choices, sliders, lists: rectangles and wrap lines equal to the reference cell code);
   `ui_self_check_pc` keeps `30400DA6` and its checkpoints; `build/ref-029/micro_ui` draw hash `7429F9EB`, relayout within
   ±5 % of T0.1's. Covers FR-14, AC-7.
-- [ ] **T3.6** UI font slots: `UiFont::Slot0..Slot7`, `kMaxUiFonts`, `Ui::set_font` in `src/ui/ui_fonts.cpp`. Test:
+- [x] **T3.6** UI font slots: `UiFont::Slot0..Slot7`, `kMaxUiFonts`, `Ui::set_font` in `src/ui/ui_fonts.cpp`. Test:
   `tests/ui/test_ui_fonts.cpp` (proportional label sizes, wrapping, `…`, reveal by characters, choice/slider/list/button
   sizes with a font; `set_font` relayouts; a stale font draws with the built-in; the draw hash folds a slot only when it
   isn't built-in). Covers FR-14, FR-35.
-- [ ] **T3.7** [P] Debugging and misuse: `src/font/font_debug.cpp` (`dump`, `debug_draw_pages`; Release empty). Test:
+- [x] **T3.7** [P] Debugging and misuse: `src/font/font_debug.cpp` (`dump`, `debug_draw_pages`; Release empty). Test:
   `tests/font/test_font_debug.cpp` (the dump's exact text, page view items, pc-release nothing),
   `tests/font/test_font_misuse.cpp` (plan.md's font cases assert and are harmless on the Release path). Covers FR-33,
   FR-35.
-- [ ] **T3.8** Stage end: the stage-end guards; `compare.sh` (every reference identical, `ui` included); include checks
+- [x] **T3.8** Stage end: the stage-end guards; `compare.sh` (every reference identical, `ui` included); include checks
   (`<nnh/font.hpp>` and the grown `<nnh/gfx.hpp>`: within +400 lines and +0.05 s of T0.1's); plan.md ("Stage 3 results":
   bytes per glyph and per font, header cost). Covers III, AC-7, FR-36.
 
 ## Stage 4: the font converter
 
-- [ ] **T4.1** Vendoring: `third_party/stb_truetype/` and (question 2) `third_party/stb_image/` — the upstream files at one
+- [x] **T4.1** Vendoring: `third_party/stb_truetype/` and (question 2) `third_party/stb_image/` — the upstream files at one
   pinned `nothings/stb` commit, unmodified, SHA-256 and licence in each `README.md` (as `stb_vorbis`), one `.c` per library
   defining the implementation (`STBI_ONLY_PNG`, `STBI_NO_STDIO`), host-only object libraries with warnings off and
   `-ffp-contract=off` (`/fp:precise` under MSVC), linked only into `nnh-assetc`. Test: `nnh-assetc` builds on pc presets and
   in the 3DS presets' host build; `nm` of a 3ds-release game shows no `stbtt_`/`stbi_` symbol. Files: those,
   `tools/assetc/CMakeLists.txt`. Covers IX, III.
-- [ ] **T4.2** [P] Test fonts: `scripts/make_test_fonts.py` (stdlib only, `python -I`) writes `tests/data/fonts/`:
+- [x] **T4.2** [P] Test fonts: `scripts/make_test_fonts.py` (stdlib only, `python -I`) writes `tests/data/fonts/`:
   `nnhtest.ttf` (≈ 60 glyphs of simple outlines: ASCII letters and digits, `…`, U+FFFD, a few kana and CJK code points as
   boxes, a `kern` table, a `GPOS` pair table), `nnhtest_cff.otf` (the same in CFF), BMFont `mono.fnt` + `mono_0.png`
   (text form), `mono_xml.fnt` (XML form), `colour.fnt` + `colour_0.png`, and their `.font` descriptions; outputs committed
   (building and testing need no Python); rerunning the script gives the same bytes (checked once by hand, noted).
   Covers IX, AC-1.
-- [ ] **T4.3** BMFont reading: `tools/assetc/src/bmfont_text.{hpp,cpp}` (text and XML through one attribute tokenizer,
+- [ ] **T4.3** (partial: reader done, covered end to end by test_cli_font; per-field suite pending) BMFont reading: `tools/assetc/src/bmfont_text.{hpp,cpp}` (text and XML through one attribute tokenizer,
   bounded lines; binary refused). Test: `tools/assetc/tests/test_bmfont_text.cpp`, `test_bmfont_xml.cpp` (every field,
   quoting, ids twice, values out of range, `file:line: reason` texts exactly). Covers FR-1, X.
-- [ ] **T4.4** BMFont conversion: `png_pages.{hpp,cpp}` (stb_image wrapper: RGBA8 out, size and texture rules),
+- [ ] **T4.4** (partial: conversion done, covered by test_cli_font; dedicated suite pending) BMFont conversion: `png_pages.{hpp,cpp}` (stb_image wrapper: RGBA8 out, size and texture rules),
   `bmfont_convert.{hpp,cpp}` (pages named `<font>_<n>.png`, mono vs colour, metrics, re-packing). Test:
   `test_bmfont_convert.cpp` (fixtures: glyph rects, offsets, advances, kerning, mono → A4, colour → RGBA8, a misnamed or
   missing page, a rect outside its page). Covers FR-1, FR-2.
-- [ ] **T4.5** [P] Descriptions and character sets: `font_desc.{hpp,cpp}`, `charsets.{hpp,cpp}` (every named set of
+- [x] **T4.5** [P] Descriptions and character sets: `font_desc.{hpp,cpp}`, `charsets.{hpp,cpp}` (every named set of
   plan.md; `kyoiku` and `jis-level1` as compact tables in `charsets_cjk.cpp`). Test: `test_font_desc.cpp` (every key,
   defaults, refusals), `test_charsets.cpp` (each set's size and first/last code point; ranges; `.chars` files; the
   `strings` and `language-names` sources through a stub). Covers FR-1, FR-3, FR-4.
-- [ ] **T4.6** The TrueType pre-validator: `ttf_check.{hpp,cpp}` (every offset stb_truetype follows; CFF2 and
+- [ ] **T4.6** (partial: pre-validator done; corruption suite pending) The TrueType pre-validator: `ttf_check.{hpp,cpp}` (every offset stb_truetype follows; CFF2 and
   variable-only refused). Test: `test_ttf_check.cpp` (each table's corruptions on copies of the fixtures: truncated
   directory, `loca` past `glyf`, `cmap` ranges past the end, CFF INDEX overflow, `GPOS` subtable outside). Covers X.
-- [ ] **T4.7** Rasterising: `ttf_raster.{hpp,cpp}` (stb_truetype on the padded copy; integer rounding of metrics;
+- [ ] **T4.7** (partial: raster done, covered by test_cli_font; hand-computed suite pending) Rasterising: `ttf_raster.{hpp,cpp}` (stb_truetype on the padded copy; integer rounding of metrics;
   4-bit coverage; anti-aliasing off with `threshold`), `outline_bake.{hpp,cpp}` (dilation 1..3). Test:
   `test_ttf_raster.cpp` (hand-computed advances/kerning/ascent for the fixtures at 8, 12, 16, 32 px; a box glyph's exact
   coverage; AA off; the same glyph bytes for the glyf and CFF fixtures where the outlines are equal), `test_outline_bake.cpp`.
   Covers FR-1, FR-4, FR-6, FR-9.
-- [ ] **T4.8** Packing and writing: `glyph_pack.{hpp,cpp}`, `font_writer.{hpp,cpp}` (the shared `font_format` +
+- [ ] **T4.8** (partial: done and tested end to end; test_glyph_pack pending) Packing and writing: `glyph_pack.{hpp,cpp}`, `font_writer.{hpp,cpp}` (the shared `font_format` +
   page codec; replacement and ellipsis glyphs; fallbacks and licence paths), `convert_font.{hpp,cpp}`, `cli_font.cpp`
   (`nnh-assetc font <in> <out> --assets <dir> --depfile <d> [--strings-sources <list>] [--languages <list>]`, the report
   line). Test: `test_glyph_pack.cpp` (determinism, sides, forced page, padding, the 8-page refusal message),
   `test_cli_font.cpp` (both sources end to end; the depfile; licence required/`own`; rewrites only on change; core's
   validator accepts every output). Covers FR-1, FR-2, FR-3, FR-9, FR-11.
-- [ ] **T4.9** The build: `cmake/nnh_assets.cmake` (routing of plan.md before the data rule; pipeline-owned pages and
+- [ ] **T4.9** (partial: routing done; font_routing/font_fixtures_golden ctests pending) The build: `cmake/nnh_assets.cmake` (routing of plan.md before the data rule; pipeline-owned pages and
   sources; `nnh-assetc` needed for `.font`/`.fnt`), the data routing's reserved keys. Test: ctests `font_routing`
   (a fixture game: outputs, unpacked sources, the packed licence, the asset index) and `font_fixtures_golden` (converted
   fixture checksums, recorded in pc-debug; equal in pc-release). Files: `tests/CMakeLists.txt` (029 block: converting
@@ -196,74 +196,74 @@ values re-read from the tree at T0.3).
   pre-validator and the rasteriser on a size and a few code points), `libfuzzer_assetc_png_pages.cpp`,
   `libfuzzer_assetc_font_desc.cpp`, mini-fuzz versions in `nnh_assetc_tests`; seed corpora from the fixtures. Test: each
   runs 60 s clean under ASan on the PC's host build (the VM's clang run at T9.1). Covers X, AC-1.
-- [ ] **T4.11** Stage end: the stage-end guards; `nnh-assetc` clean build time; plan.md ("Stage 4 results": fixture
+- [ ] **T4.11** (partial: see plan.md Stage 4 results) Stage end: the stage-end guards; `nnh-assetc` clean build time; plan.md ("Stage 4 results": fixture
   goldens, the stb commit). Covers III, AC-2.
 
 ## Stage 5: the string converter
 
-- [ ] **T5.1** The TOML strings mode: `tools/assetc/src/toml*.{hpp,cpp}` (an options value: dotted keys with TOML's
+- [ ] **T5.1** (replaced: own string reader (plan.md refinements, stage 5)) The TOML strings mode: `tools/assetc/src/toml*.{hpp,cpp}` (an options value: dotted keys with TOML's
   table semantics, multi-line basic strings with line-ending backslashes, 1 MiB files, 4 KiB lines; data mode unchanged).
   Test: `tools/assetc/tests/test_toml_strings_mode.cpp` (each feature, conflicts such as `a = "x"` then `a.b`, limits),
   every existing TOML test unchanged; `libfuzzer_assetc_toml.cpp` gains the mode. Covers FR-16, X.
-- [ ] **T5.2** Reading string files: `strings_model.hpp`, `strings_read.{hpp,cpp}` (keys from sections and dotted names,
+- [x] **T5.2** Reading string files: `strings_model.hpp`, `strings_read.{hpp,cpp}` (keys from sections and dotted names,
   the `[language]` tables, the folder form merged with duplicates across files refused, code from the path),
   `placeholders.{hpp,cpp}`. Test: `test_strings_read.cpp`, `test_placeholders.cpp` (plan.md's syntax, every malformed
   case with its column). Covers FR-15, FR-16, FR-17, FR-18.
-- [ ] **T5.3** Plural rules: `plural_rules_cldr.{hpp,cpp}` (the 36 shipped languages' CLDR 46 integer rules as text,
+- [x] **T5.3** Plural rules: `plural_rules_cldr.{hpp,cpp}` (the 36 shipped languages' CLDR 46 integer rules as text,
   with the source cited), `plural_compile.{hpp,cpp}` (parser, bytecode, required categories), core `src/loc/plural.{hpp,cpp}`
   (the interpreter, shared). Test: `test_plural_compile.cpp` (syntax, refusals, required categories incl. the
   1 000 000 `many` of fr/es/it/pt/ca), `tests/loc/test_plural_rules.cpp` (every shipped language's compiled rule against
   `tests/data/plurals/cldr46_integer_samples.txt`, transcribed from CLDR 46 with its notice). Covers FR-17.
-- [ ] **T5.4** Checks: `strings_check.{hpp,cpp}` (every FR-19 error and warning of plan.md; did-you-mean through
+- [x] **T5.4** Checks: `strings_check.{hpp,cpp}` (every FR-19 error and warning of plan.md; did-you-mean through
   `suggest`; `STRICT_STRINGS`). Test: `tools/assetc/tests/test_strings_check.cpp` (one fixture per message under
   `tests/data/strings/errors/`, the exact `file:line: reason` text). Covers FR-19.
-- [ ] **T5.5** Tables: core `src/loc/loc_file.{hpp,cpp}` (v1 layouts and writer helpers, shared), `strings_writer.{hpp,cpp}`,
+- [x] **T5.5** Tables: core `src/loc/loc_file.{hpp,cpp}` (v1 layouts and writer helpers, shared), `strings_writer.{hpp,cpp}`,
   `cli_strings.cpp` (`nnh-assetc strings <code> --files … --base-files … --out … [--release] --show …`). Test:
   `test_strings_writer.cpp` (sorted hashes, buckets, records, `{{` → `{`, the zero guard; Release: no name byte),
   `test_cli_strings.cpp` (end to end, rewrite only on change). Covers FR-20.
-- [ ] **T5.6** The index: `coverage.{hpp,cpp}`, `pseudo.{hpp,cpp}`, `manifest_writer.{hpp,cpp}`, `cli_strings_index.cpp`
+- [x] **T5.6** The index: `coverage.{hpp,cpp}`, `pseudo.{hpp,cpp}`, `manifest_writer.{hpp,cpp}`, `cli_strings_index.cpp`
   (hash collisions across languages, roles naming fonts, coverage through roles and fallbacks, chains, the manifest,
   `qps` in Debug/Development). Test: `test_coverage.cpp` (the `買` message exactly; fallbacks counted; chain roles),
   `test_pseudo.cpp`, `test_cli_strings_index.cpp` (manifest contents; no `qps` with `--release`). Covers FR-18, FR-19,
   FR-21, FR-29, FR-31.
-- [ ] **T5.7** The build: `cmake/nnh_strings.cmake` (per-language steps, the index step, the language list file),
+- [ ] **T5.7** (partial: cmake steps done; declaration/incremental ctests pending) The build: `cmake/nnh_strings.cmake` (per-language steps, the index step, the language list file),
   `cmake/nnh_game.cmake` (`LANGUAGES`, `BASE`, `STRICT_STRINGS`), font steps depending on the string files of their
   `strings` languages. Test: ctests `strings_declaration_*` (missing/unlisted files, bad codes, both forms of one
   language), `strings_incremental` (editing `de.strings` reruns only the `de` step, its fonts and the index — Ninja's
   `-n -d explain` list), Release outputs without names. Covers FR-15, FR-20, AC-7, III.
-- [ ] **T5.8** [P] Fuzzing: `libfuzzer_assetc_strings.cpp` (a string file + a base through the checks and the writer) and
+- [ ] **T5.8** (partial: core mini-fuzz of tables/manifests done (stage 6); assetc fuzzer pending) [P] Fuzzing: `libfuzzer_assetc_strings.cpp` (a string file + a base through the checks and the writer) and
   its mini-fuzz version; core mini-fuzz `tests/fuzz/fuzz_loc_table.cpp`, `fuzz_loc_manifest.cpp` over the validators
   (stage 6's `loc_validate.cpp`, written here test-first). Covers X, AC-1.
-- [ ] **T5.9** Stage end: the stage-end guards; the fixture goldens gain the string fixtures; plan.md ("Stage 5
+- [ ] **T5.9** (partial: see plan.md Stage 5 results) Stage end: the stage-end guards; the fixture goldens gain the string fixtures; plan.md ("Stage 5
   results"). Covers AC-2.
 
 ## Stage 6: localization at run time
 
-- [ ] **T6.1** Validators: `src/loc/loc_validate.cpp` (tables and manifest, every check of plan.md). Test:
+- [x] **T6.1** Validators: `src/loc/loc_validate.cpp` (tables and manifest, every check of plan.md). Test:
   `tests/loc/test_loc_validate.cpp` (each reason on corrupted copies of written fixtures). Covers FR-20, X.
-- [ ] **T6.2** State, start, matching: `<nnh/localization.hpp>`, `src/loc/loc_state.{hpp,cpp}`, `loc_match.{hpp,cpp}`,
+- [x] **T6.2** State, start, matching: `<nnh/localization.hpp>`, `src/loc/loc_state.{hpp,cpp}`, `loc_match.{hpp,cpp}`,
   `loc_queries.cpp`. Test: `tests/loc/test_loc_start.cpp` (manifest, block size, tag `strings`, queries, `find`,
   `NotFound`, player > system > base, the log line, `LanguageChanged` after start), `tests/loc/test_language_match.cpp`.
   Covers FR-21, FR-22.
-- [ ] **T6.3** Lookup: `src/loc/loc_lookup.cpp` (`tr`, `resolve`, `key()`, chains, markers). Test:
+- [x] **T6.3** Lookup: `src/loc/loc_lookup.cpp` (`tr`, `resolve`, `key()`, chains, markers). Test:
   `tests/loc/test_loc_lookup.cpp` (current, chain, base; the hash equals `UiText::name`'s; unknown keys: name once in
   Debug/Development, `??` in pc-release; before start `""`). Covers FR-16, FR-23.
-- [ ] **T6.4** Formatting: `src/loc/loc_number.{hpp,cpp}`, `src/loc/loc_format.cpp`. Test: `tests/loc/test_loc_number.cpp`
+- [x] **T6.4** Formatting: `src/loc/loc_number.{hpp,cpp}`, `src/loc/loc_format.cpp`. Test: `tests/loc/test_loc_number.cpp`
   (grouping styles, `grouping_min`, `INT64_MIN`/`MAX`, zero, negatives), `tests/loc/test_loc_format.cpp` (plan.md's
   FR-24 cases). Covers FR-17, FR-18, FR-24.
-- [ ] **T6.5** Switching: `src/loc/loc_switch.cpp` (pending, the D32 hook, block reload with failure restore, the guard,
+- [x] **T6.5** Switching: `src/loc/loc_switch.cpp` (pending, the D32 hook, block reload with failure restore, the guard,
   serial, `LanguageChanged`, following the system language). Test: `tests/loc/test_loc_switch.cpp` (plan.md's FR-25/28
   cases with `nnh::frame()` on the fake; an assets failure injected through the fake). Covers FR-25, FR-27, FR-28.
-- [ ] **T6.6** Role fonts and the UI hook: `src/loc/loc_fonts.cpp`, `src/loc/loc_ui.cpp`. Test:
+- [x] **T6.6** Role fonts and the UI hook: `src/loc/loc_fonts.cpp`, `src/loc/loc_ui.cpp`. Test:
   `tests/loc/test_loc_fonts.cpp` (roles, chain roles, sharing, release, unknown role, nothing loaded without opting in),
   `tests/loc/test_loc_ui.cpp` (`apply`; a scene's subscription re-applies on `LanguageChanged`; the UI shows the new
   texts and fonts the same frame). Covers FR-29, FR-30.
-- [ ] **T6.7** [P] Debugging, misuse, cost, random operations: `src/loc/loc_debug.cpp`. Test: `tests/loc/test_loc_debug.cpp`
+- [ ] **T6.7** (partial: debug, cost, random ops done; NNH_LOC_SHOW_KEYS and docs-snippet tests pending) [P] Debugging, misuse, cost, random operations: `src/loc/loc_debug.cpp`. Test: `tests/loc/test_loc_debug.cpp`
   (dump text exactly, show keys, `NNH_LOC_SHOW_KEYS`), `tests/loc/test_loc_misuse.cpp`, `tests/loc/test_loc_cost.cpp`
   (no allocation over 100 000 `tr`/`format`), `tests/loc/test_loc_random_ops.cpp` (100 000 seeded operations with
   invariants), `tests/loc/test_docs_snippets.cpp` (the API page's examples compile and run). Covers FR-26, FR-33, FR-34,
   FR-35.
-- [ ] **T6.8** Stage end: the stage-end guards; include check (`<nnh/localization.hpp>` within +400 lines and +0.05 s);
+- [ ] **T6.8** (done except the include-time measure (plan.md Stage 6 results)) Stage end: the stage-end guards; include check (`<nnh/localization.hpp>` within +400 lines and +0.05 s);
   plan.md ("Stage 6 results": bytes per key, the block of the fixtures). Covers III, FR-36.
 
 ## Stage 7: the golden session, `examples/localization`, the bench, the ARM pre-check

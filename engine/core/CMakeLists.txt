@@ -553,6 +553,23 @@ set(_nnh_font_sources
     src/gfx/texture_alpha.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_font_sources})
+# Localization (spec 029, D50): the converted formats' validator and the plural interpreter (pure, shared with
+# nnh-assetc), the module state, lookups, format, switching; fonts per language and the UI's adapter in their own files.
+# Reached only through loc:: calls: a game that never calls them links none of it.
+set(_nnh_loc_sources
+    src/loc/loc_debug.cpp
+    src/loc/loc_fonts.cpp
+    src/loc/loc_format.cpp
+    src/loc/loc_lookup.cpp
+    src/loc/loc_number.cpp
+    src/loc/loc_queries.cpp
+    src/loc/loc_state.cpp
+    src/loc/loc_switch.cpp
+    src/loc/loc_ui.cpp
+    src/loc/loc_validate.cpp
+    src/loc/plural.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_loc_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis)

@@ -126,6 +126,7 @@ const char* validate_manifest(const std::uint8_t* data, std::size_t size) {
                 if (r.chain[c] != kNoIndex) return "a bad chain";
                 continue;
             }
+            if (r.chain[c] == kNoIndex) return "a chain doesn't end at the base";
             if (r.chain[c] >= n) return "a bad chain";
             for (int d = 0; d < c; ++d)
                 if (r.chain[d] == r.chain[c]) return "a chain loops";

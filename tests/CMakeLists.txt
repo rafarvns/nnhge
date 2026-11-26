@@ -346,6 +346,12 @@ endif()
 # Sound fixtures (tests/data/sounds, made by make_sounds.py) are read from the source tree.
 target_compile_definitions(nnh_tests PRIVATE NNH_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(nnh_tests PRIVATE nnh_test_framework nnh_fuzz_targets nnh::core nnh::platform_fake)
+# MinGW: the C++ runtime linked in. Git Bash puts its own /mingw64/bin (a libstdc++-6.dll built against msvcrt.dll) first
+# on PATH; a string that DLL allocates and an inlined Release destructor frees through the UCRT corrupts the heap
+# (spec 029 stage 6, the localization fixtures). Tests only: games use no C++ runtime allocation.
+if(MINGW)
+    target_link_options(nnh_tests PRIVATE -static-libstdc++ -static-libgcc)
+endif()
 # The tests' data schema (spec 014), declared like a game's: compiled into nnh_tests and into its schema program
 # nnh_tests_data_schema (cmake/nnh_data.cmake), whose description converts the fixtures of data/data_assets/game
 # through the real asset pipeline (target nnh_test_data) for the code-vs-file test (T7.5, test_round_trip.cpp).
@@ -812,7 +818,7 @@ if(NOT MSVC)
                      -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
 endif()
 # Game fonts and localization (spec 029): every test of the spec in one block.
-target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_font.cpp)
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_font.cpp fuzz/fuzz_loc.cpp)
 if(NNH_BUILD_FUZZERS)
     add_executable(fuzz_font_validate fuzz/libfuzzer_font_validate.cpp)
     target_link_libraries(fuzz_font_validate PRIVATE nnh_fuzz_targets)
@@ -830,6 +836,18 @@ target_sources(nnh_tests PRIVATE
     font/test_font_validate.cpp
     font/test_page_codec.cpp
     fuzz/test_fuzz_font.cpp
+    fuzz/test_fuzz_loc.cpp
+    loc/test_loc_cost.cpp
+    loc/test_loc_fonts.cpp
+    loc/test_loc_format.cpp
+    loc/test_loc_lookup.cpp
+    loc/test_loc_number.cpp
+    loc/test_loc_random_ops.cpp
+    loc/test_loc_start.cpp
+    loc/test_loc_switch.cpp
+    loc/test_loc_ui.cpp
+    loc/test_loc_validate.cpp
+    loc/test_plural_rules.cpp
     platform_fake/test_texture_alpha_fake.cpp
     remote/test_remote_language.cpp
     system/test_language_tag.cpp

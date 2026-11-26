@@ -1023,6 +1023,48 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
 - 3ds-release `.text`: `ui` 301 116 → 304 916 B (+3.8 KB: the shared wrapper's ID breaks and kinsoku, the break table);
   `text`, `sprites`, `platformer` unchanged.
 
+### Stage 3 results (2026-11-26)
+
+- ctest pc-debug 346/346, pc-release 318/318; 3ds-release and 3ds-dev without a warning; `compare.sh` identical (the
+  UI's screenshots included); `ui_self_check_pc` `30400DA6`; micro-benchmark draw hash `367085C2`, relayout128 ≈ 10.4 µs.
+- **`hello`**: 3ds-release `.3dsx` and the stripped `.elf` byte-identical to T0.1; the unstripped `.elf` differs only
+  in the order of DWARF strings (`gfx.hpp` gained declarations; every edit above `draw` kept its line numbers, the new
+  ones are at the end). pc-release `hello` size, `nm` and bytes identical.
+- Headers: `<nnh/gfx.hpp>` + `<nnh/result.hpp>` 7 887 preprocessed lines (T0.1: 7 844), `<nnh/font.hpp>` 7 959; parse
+  time within noise of T0.1's 0.45 s.
+- 3ds-release `.text`: `text` 189 956 → 197 860, `sprites` 207 132 → 214 948, `platformer` 396 340 → 404 412 (+≈ 8 KB
+  each: `draw_text` dispatches to the layout path whenever an option asks for it, so a game that draws text links that
+  path even without a font); `ui` 304 916 → 310 276. To be weighed by the maintainer (a split dispatch would keep the
+  built-in-only games at their old size).
+
+### Stage 4 results (2026-11-26)
+
+- `stb_truetype.h` v1.28 and `stb_image.h` v2.32 from `nothings/stb` commit `9f755b604db3492df2cbeb39bf84b81e3e3932e3`,
+  unmodified (SHA-256 in each `README.md`), host-only object libraries linked into `nnh-assetc`.
+- Test fonts: `scripts/make_test_fonts.py` (fontTools' FontBuilder, the maintainer's pre-approved Python tool, instead of
+  a stdlib-only writer) writes `tests/data/fonts/`; reruns give the same bytes.
+- `nnh_assetc_tests`: `test_charsets`, `test_font_desc`, `test_cli_font` (both sources end to end, core's validator
+  accepts every output). Not yet written: the per-parser suites of T4.3/T4.6/T4.7/T4.8 (`test_bmfont_text`, `test_ttf_check`,
+  `test_ttf_raster`, `test_glyph_pack`), the `font_routing`/`font_fixtures_golden` ctests and the T4.10 fuzzers.
+
+### Stage 5 results (2026-11-26)
+
+- `nnh_assetc_tests` 298/298 (`test_strings`: placeholders, the 36 shipped rules against CLDR 46 samples, checks with
+  their exact messages, tables accepted by core's validator in Debug and Release forms, the index and `qps`).
+- Not yet written: T5.1's TOML strings mode (string files have their own reader, see the refinements), T5.7's
+  `strings_declaration_*`/`strings_incremental` ctests, T5.8's assetc fuzzer.
+
+### Stage 6 results (2026-11-26)
+
+- `nnh_tests` 3 776 (pc-debug) / 3 714 (pc-release) pass; 55 `loc_` tests and 4 `plural_` tests: validators (each
+  reason), start (player > system > base, the pseudo-language only by choice, `LanguageChanged` once, damaged files leave
+  nothing), lookup (chains, markers, show keys, 300 keys), format (grouping per language, en/ru/ja plurals, texts, keys,
+  `{{`, a missing argument, UTF-8 truncation), switching (next frame, last call wins, failure keeps the language, following
+  the system), role fonts and `apply` (chain roles, no leak over switches, unknown role), 100 000 random operations, no
+  allocation after start, and mini-fuzz of tables and manifests (20 000 mutations each, re-sealed).
+- 3ds-release/3ds-dev build without a warning; `hello` (3ds-release, 3ds-dev stripped/`.3dsx`, pc-release) identical to
+  stage 3's; `.text` of `text`, `sprites`, `ui`, `platformer` unchanged (localization is linked only when called).
+
 ### Implementation refinements
 
 - **Stage 1.** (1) `texture_3ds.cpp` is unchanged: `Texture3ds` keeps its anonymous-namespace definition there and
@@ -1048,3 +1090,31 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
   start), else stays — so "あいぁぁぁう" at three characters wraps "あ|いぁぁ|ぁう". (5) `WrapLine` carries `width` (pixels
   at scale 1) and `chars` (what spec 028 called cells: code points but ''); the wrapper takes a width in pixels at the
   face's scale; a wrapping UI label with the built-in font passes `cells × cell`, so it wraps exactly as before.
+- **Stage 3.** (1) `load_font` reads the whole `.nnhfont` once (`assets::load`), validates it, copies the tables into the
+  block and decodes each page into a temporary buffer — instead of streaming sections — because the files are small
+  next to their pages and one validated buffer keeps the loader simple. (2) Error codes: a damaged font is `Corrupted`,
+  the 33rd font `LimitReached` (the engine's existing codes; the plan said `InvalidData`/`Unsupported`). (3) `gfx.hpp`
+  edits keep every existing declaration on its line (one merged line, `FontRef` after `kFontLineHeight`), new
+  declarations at the end — the hello criterion became "`.3dsx` and stripped `.elf` identical" (the DWARF string order of
+  the unstripped `.elf` moves). (4) Release skips the shutdown hooks, so the font table checks that an entry's first
+  page is still a live texture (`alive()`) and forgets entries of an earlier engine run.
+- **Stage 4.** (1) The test fonts come from fontTools (see Stage 4 results). (2) BMFont pages and TrueType sources are
+  not packed; the `.font`/`.fnt` step owns them.
+- **Stage 5.** (1) String files have their own small reader (`strings_read.cpp`: sections, dotted keys, basic and
+  multi-line strings, the `[language]` tables) rather than a mode of the data TOML reader — it keeps the data pipeline
+  untouched; it accepts the plan's syntax. (2) Header sizes: `.nnhstr` 80 bytes, `.nnh_loc` 48 bytes (one more offset
+  each than sketched). (3) Coverage is checked with each language's first role font (its own or its chain's) and that
+  font's fallbacks.
+- **Stage 6.** (1) The after-input hook is registered by `start()` and stays registered until `stop()` (one branch per
+  frame when nothing is pending), so `set_language()` needs no registration. (2) Matching lives in `loc_state.cpp`
+  (`match_language`) — no `loc_match.*` files; `tests/loc/test_loc_start.cpp` covers it (exact, same language other
+  region, pseudo-language never by system). (3) Release skips shutdown hooks: a Release game that restarts the engine
+  calls `loc::stop()` first (documented on `stop()`); the module's role fonts live in a union so no static destructor
+  runs after the engine is gone. (4) Core tests build tables and manifests with a small writer in
+  `tests/loc/loc_fixture.hpp` (the layout of `strings_check.cpp`/`strings_index.cpp`), so each test states exactly its
+  languages, chains, rules and fonts and can corrupt them; `nnh_assetc_tests` checks that the real writer's output passes
+  the same validators. (5) `nnh_tests` links libstdc++/libgcc statically on MinGW: Git Bash puts its own msvcrt-based
+  `libstdc++-6.dll` first on PATH, and a string that DLL allocated, freed by an inlined Release destructor through the
+  UCRT, corrupted the heap (found by the localization fixtures; tests only, games use no C++ runtime allocation).
+  (6) `tr()`'s show-keys path and `format()`'s "{name}" marker are compiled only in Debug/Development (`#if`), so Release
+  keeps no key names.

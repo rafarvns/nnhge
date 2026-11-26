@@ -81,4 +81,12 @@ int font_validate_target(const std::uint8_t* data, std::size_t size);
 /// For the mini-fuzz: whether `data`, with its size and CRC fixed, is accepted.
 bool font_fixed_accepted(const std::uint8_t* data, std::size_t size);
 
+/// `.nnhstr` tables and the `.nnh_loc` manifest (spec 029, fuzz_loc.cpp): validated as given, then with the size and
+/// CRC fixed; an accepted file is walked (every key's strings and placeholders, every language's chain, rule and name).
+int loc_table_target(const std::uint8_t* data, std::size_t size);
+int loc_manifest_target(const std::uint8_t* data, std::size_t size);
+/// For the mini-fuzz: whether `data`, with its size and CRC fixed, is accepted.
+bool loc_table_fixed_accepted(const std::uint8_t* data, std::size_t size);
+bool loc_manifest_fixed_accepted(const std::uint8_t* data, std::size_t size);
+
 } // namespace nnh::fuzz

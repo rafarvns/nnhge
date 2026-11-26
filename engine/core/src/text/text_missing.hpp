@@ -16,8 +16,10 @@ void text_missing_log(int slot, char32_t cp, const char* path);
 /// Forgets what was logged (nnh::shutdown, tests).
 void text_missing_reset();
 
-inline void text_missing(int slot, char32_t cp, const char* path) {
-    if constexpr (build::kDevToolsEnabled) text_missing_log(slot, cp, path);
+inline void text_missing([[maybe_unused]] int slot, [[maybe_unused]] char32_t cp, [[maybe_unused]] const char* path) {
+#if !defined(NNH_FLAVOR_RELEASE)
+    text_missing_log(slot, cp, path);
+#endif
 }
 
 } // namespace nnh::detail

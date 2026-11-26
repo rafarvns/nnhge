@@ -19,6 +19,8 @@
 #       its `strings` languages (or the .fnt and its pages); *.ttf, *.otf, *.ttc, *.chars and a BMFont's pages
 #       <font>_<any>.png beside its .fnt are not packed (the converter reads them); the licence a description names is
 #       an ordinary asset;
+#   strings/<code>.strings, strings/<code>/*.strings (spec 029, D50) -> not packed: per language `nnh-assetc strings`
+#       writes strings/<code>.nnhstr and `nnh-assetc strings-index` the manifest .nnh_loc (nnh_strings.cmake);
 #   others -> copied unchanged, except in a game with a data schema (spec 014, nnh_data.cmake): there every other
 #       file goes through `nnh-assetc data`, which converts a file whose extension is a declared key
 #       (`enemies/goblin.enemy`, same output name) and copies any other, writing a references sidecar in
@@ -39,6 +41,7 @@
 # "no GLOB" rule, because assets are data, not sources — adding a file must not require editing CMake.
 
 set(_NNH_ASSETS_DIR "${CMAKE_CURRENT_LIST_DIR}")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_strings.cmake") # string files (spec 029)
 
 # nnh_asset_output_name(<name> <out_var>): the asset name a source file becomes ("" = not packed).
 function(nnh_asset_output_name name out_var)
@@ -244,9 +247,14 @@ function(nnh_add_assets target folder)
     elseif(files MATCHES "\\.(font|fnt)(;|$)")
         nnh_assetc_command(assetc assetc_depends "fonts (.font, .fnt)")
     endif()
+    _nnh_strings_files(${target} "${files}" "${source}" string_files) # spec 029: checked against LANGUAGES
+    if(string_files AND NOT assetc)
+        nnh_assetc_command(assetc assetc_depends "string files (.strings)")
+    endif()
     _nnh_model_buffers("${files}" model_buffers)
     _nnh_bmfont_pages("${files}" font_pages)
-    list(APPEND model_buffers ${font_pages}) # not packed either
+    list(APPEND model_buffers ${font_pages} ${string_files}) # not packed either
+    set(font_outputs "")
 
     set(outputs "")
     set(names "") # output names, for the index
@@ -273,6 +281,7 @@ function(nnh_add_assets target folder)
             _nnh_add_mesh_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
         elseif(name MATCHES "\\.(font|fnt)$")
             _nnh_add_font_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}" "${assetc_depends}")
+            list(APPEND font_outputs "${output}")
         elseif(name MATCHES "\\.ase\\.json$")
             _nnh_add_sprite_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}"
                                  "${assetc_depends}")
@@ -316,6 +325,9 @@ function(nnh_add_assets target folder)
         list(APPEND outputs "${output}")
     endforeach()
 
+    if(string_files)
+        _nnh_strings_steps(${target} "${source}" "${out}" "${assetc}" "${assetc_depends}" "${font_outputs}" outputs names)
+    endif()
     set(generated "")
     if(schema)
         list(APPEND names ".nnh_data")

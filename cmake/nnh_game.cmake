@@ -3,6 +3,7 @@
 #     [ASSETS <folder>]
 #     [IMAGES <png files...>]
 #     [DATA_SCHEMA <schema sources...>]
+#     [LANGUAGES <codes...> [BASE <code>] [STRICT_STRINGS]]
 #     [TITLE <text>] [DESCRIPTION <text>] [AUTHOR <text>] [VERSION <major.minor.micro>]
 #     [ICON <48x48 png>]
 #     [CIA UNIQUE_ID <0x00300-0xF7FFF> [PRODUCT_CODE <CTR-X-XXXX>] [BANNER <256x128 png>]
@@ -17,6 +18,9 @@
 # host program that describes the schema (nnh_data.cmake); then every ASSETS file whose extension the asset pipeline
 # doesn't own goes through `nnh-assetc data`, which converts the files whose extension is a declared key and checks
 # their references (nnh_assets.cmake).
+# LANGUAGES (spec 029): the languages the game ships, each with strings/<code>.strings or strings/<code>/*.strings in
+# ASSETS; BASE (default: the first) is the one every key must exist in; STRICT_STRINGS makes the build's warnings
+# (missing translations, length limits) errors (nnh_strings.cmake).
 # IMAGES are checked, converted and embedded (nnh_images.cmake); load them with nnh::load_texture("name").
 # Package (spec 009, nnh_package_rules.cmake): the metadata is checked at configure time; ICON (default:
 # the NNHGE icon) at build time, on every system. TITLE becomes the default AppConfig::title. CIA options
@@ -31,7 +35,8 @@ include("${CMAKE_CURRENT_LIST_DIR}/nnh_data.cmake")
 set(_NNH_GAME_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(nnh_add_game target)
-    cmake_parse_arguments(PARSE_ARGV 1 G "" "TITLE;DESCRIPTION;AUTHOR;VERSION;ICON;ASSETS" "SOURCES;IMAGES;CIA;DATA_SCHEMA")
+    cmake_parse_arguments(PARSE_ARGV 1 G "STRICT_STRINGS" "TITLE;DESCRIPTION;AUTHOR;VERSION;ICON;ASSETS;BASE"
+                          "SOURCES;IMAGES;CIA;DATA_SCHEMA;LANGUAGES")
     if(NOT G_SOURCES)
         message(FATAL_ERROR "nnh_add_game(${target}): SOURCES is required")
     endif()
@@ -98,6 +103,13 @@ function(nnh_add_game target)
         nnh_add_data_schema(${target} ${G_DATA_SCHEMA}) # before the assets: their data steps need the description
     endif()
     set(_romfs "")
+    if(G_LANGUAGES) # spec 029: read by the asset pipeline's string steps
+        if(NOT G_ASSETS)
+            message(FATAL_ERROR "nnh_add_game(${target}): LANGUAGES needs ASSETS (the string files live there)")
+        endif()
+        set_target_properties(${target} PROPERTIES NNH_LANGUAGES "${G_LANGUAGES}" NNH_BASE_LANGUAGE "${G_BASE}"
+                                                   NNH_STRICT_STRINGS "${G_STRICT_STRINGS}")
+    endif()
     if(G_ASSETS)
         nnh_add_assets(${target} "${G_ASSETS}")
         set(_romfs ROMFS ${target}_assets)

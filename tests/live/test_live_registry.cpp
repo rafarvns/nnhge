@@ -39,6 +39,7 @@ NNH_TEST(live_registry_block_size_follows_the_capacities) {
     CHECK(block_bytes(128, 64, 64) - base == ((sizeof(Entry) * 128 + 7) & ~std::size_t{7}) +
                                                  ((sizeof(WatchEntry) * 64 + 7) & ~std::size_t{7}) +
                                                  ((sizeof(ShownEntry) * 64 + 7) & ~std::size_t{7}) + 256 + 256 + 256);
+    CHECK(shown_buckets_for(64) == 128 && shown_buckets_for(3) == 8 && shown_buckets_for(0) == 0);
     if constexpr (sizeof(void*) == 4) { // the plan's 3DS sizes
         CHECK(sizeof(Entry) <= 84);
         CHECK(sizeof(WatchEntry) == 48);

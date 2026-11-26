@@ -110,7 +110,7 @@ std::size_t block_bytes(int t, int w, int s) {
     n += align8(sizeof(ShownEntry) * static_cast<std::size_t>(s));
     n += align8(sizeof(std::uint16_t) * static_cast<std::size_t>(t));
     n += align8(sizeof(std::uint16_t) * static_cast<std::size_t>(w + s));
-    n += align8(sizeof(std::uint16_t) * static_cast<std::size_t>(2 * s));
+    n += align8(sizeof(std::uint16_t) * static_cast<std::size_t>(shown_buckets_for(s)));
     return n;
 }
 
@@ -147,7 +147,8 @@ Registry& registry() {
     r->tunable_index = reinterpret_cast<std::uint16_t*>(take(sizeof(std::uint16_t) * static_cast<std::size_t>(r->max_tunables)));
     r->watch_index =
         reinterpret_cast<std::uint16_t*>(take(sizeof(std::uint16_t) * static_cast<std::size_t>(r->max_watches + r->max_shown)));
-    r->shown_table = reinterpret_cast<std::uint16_t*>(take(sizeof(std::uint16_t) * static_cast<std::size_t>(2 * r->max_shown)));
+    r->shown_buckets = shown_buckets_for(r->max_shown);
+    r->shown_table = reinterpret_cast<std::uint16_t*>(take(sizeof(std::uint16_t) * static_cast<std::size_t>(r->shown_buckets)));
     g_registry = r;
     add_shutdown_hook(shutdown_hook);
     install_ops();
@@ -232,9 +233,9 @@ int add_watch(Registry& r, const char* name, int length, std::uint32_t hash) {
 
 int find_or_add_shown(Registry& r, const char* name, int length, std::uint32_t hash, bool& added) {
     added = false;
-    const int buckets = 2 * r.max_shown;
+    const int buckets = r.shown_buckets;
     if (buckets == 0) return -1;
-    int b = static_cast<int>(hash % static_cast<std::uint32_t>(buckets));
+    int b = static_cast<int>(hash & static_cast<std::uint32_t>(buckets - 1));
     for (int probe = 0; probe < buckets; ++probe, b = b + 1 == buckets ? 0 : b + 1) {
         const std::uint16_t v = r.shown_table[b];
         if (v == 0) break;
@@ -287,13 +288,13 @@ void remove_shown(Registry& r, int slot) {
     sorted_erase(r.watch_index, r.watch_count + r.shown_count, static_cast<std::uint16_t>(kShownRef | slot));
     --r.shown_count;
     // Rebuild the hash table without the slot (open addressing: deleting in place would break later probes).
-    const int buckets = 2 * r.max_shown;
+    const int buckets = r.shown_buckets;
     for (int b = 0; b < buckets; ++b) r.shown_table[b] = 0;
     const std::uint32_t hash = s.hash;
     s = ShownEntry{};
     for (int i = 0; i < r.max_shown; ++i) {
         if ((r.shown[i].flags & kUsed) == 0) continue;
-        int b = static_cast<int>(r.shown[i].hash % static_cast<std::uint32_t>(buckets));
+        int b = static_cast<int>(r.shown[i].hash & static_cast<std::uint32_t>(buckets - 1));
         while (r.shown_table[b] != 0) b = b + 1 == buckets ? 0 : b + 1;
         r.shown_table[b] = static_cast<std::uint16_t>(i + 1);
     }

@@ -110,7 +110,8 @@ struct Registry {
     ShownEntry* shown = nullptr;
     std::uint16_t* tunable_index = nullptr; ///< used slots sorted by name
     std::uint16_t* watch_index = nullptr;   ///< watch slots and kShownRef | shown slots, sorted by name
-    std::uint16_t* shown_table = nullptr;   ///< open addressing, 2 × max_shown, slot + 1 (0: empty)
+    std::uint16_t* shown_table = nullptr;   ///< open addressing, shown_buckets, slot + 1 (0: empty)
+    int shown_buckets = 0;                  ///< a power of two >= 2 × max_shown (a mask, no division: T7.7)
     Follow follows[kMaxFollows];
     int follow_count = 0;
     RemoteOp ops[kMaxOps];
@@ -127,6 +128,13 @@ struct Registry {
 
 /// The registry, or null before the first registration (and after shutdown).
 extern Registry* g_registry;
+
+/// The shown table's size for `max_shown`: a power of two >= 2 × max_shown (0 for 0).
+constexpr int shown_buckets_for(int max_shown) {
+    int n = 1;
+    while (n < 2 * max_shown) n *= 2;
+    return max_shown == 0 ? 0 : n;
+}
 
 /// Bytes of the block for these capacities (header and every table).
 std::size_t block_bytes(int max_tunables, int max_watches, int max_shown);

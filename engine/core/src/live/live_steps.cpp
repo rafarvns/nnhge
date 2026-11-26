@@ -119,8 +119,11 @@ int bar_fill(const FloatGrid& g, float v, int w) {
 }
 
 int bar_fill(const IntGrid& g, std::int32_t v, int w) {
-    const float t = static_cast<float>(static_cast<std::int64_t>(v) - g.min) /
-                    static_cast<float>(static_cast<std::int64_t>(g.max) - g.min) * static_cast<float>(w);
+    if (v <= g.min) return 0;
+    // Both differences fit 32 unsigned bits: a VFP conversion, no __aeabi_l2f call (T7.7).
+    const auto num = static_cast<std::uint32_t>(static_cast<std::uint32_t>(v) - static_cast<std::uint32_t>(g.min));
+    const auto den = static_cast<std::uint32_t>(static_cast<std::uint32_t>(g.max) - static_cast<std::uint32_t>(g.min));
+    const float t = static_cast<float>(num) / static_cast<float>(den) * static_cast<float>(w);
     if (!(t > 0)) return 0;
     return t >= static_cast<float>(w) ? w : static_cast<int>(t);
 }

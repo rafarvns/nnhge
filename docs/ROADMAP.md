@@ -375,6 +375,26 @@ spec; the order below is a proposal.
   the simulator's CPU rasteriser (D41) and the citro3d backend; `examples/models` (showcase, check, bench, smoke).
   A 2D game links no 3D code (`hello` 3DS `.text` +272 B: the hook and the shared 2D slice function).
 
+## After 1.0 (planned 2026-11-26)
+
+1. **First release and a small sample game.** Cut a release right after 1.0, then build one simple, complete game with
+   it from scratch (`nnh new`, the docs, the release download), as a test of the whole path a newcomer takes; what
+   it finds becomes fixes and docs.
+2. **M9 — 3DS hardware features.** Interfaces that cover every 3DS feature a homebrew game can use. Each one follows
+   the usual path (spec → plan → tests → PC simulator stand-in → console check) and is exposed through
+   `nnh::system::has(Capability::...)` so games can test for it:
+   - [ ] Cameras: the two outer cameras (stereo pair) and the inner one, frames as textures, photo capture
+   - [ ] Motion sensors: accelerometer and gyroscope (tilt, shake, rotation), with calibration
+   - [ ] Microphone: input level and recording (blowing, voice); PC stand-in from the computer's microphone
+   - [ ] Networking: internet sockets and HTTP(S) requests (`nnh_link` already has the socket layer), local wireless
+     multiplayer between consoles (UDS) and Wi-Fi state
+   - [ ] NFC (amiibo) on New 3DS, and the NFC reader accessory on Old 3DS
+   - [ ] Circle Pad Pro (IR) on Old 3DS, read through the same input API as the New 3DS's C-Stick and ZL/ZR
+   - [ ] System state: battery level and charging, Wi-Fi switch, lid closed/sleep and HOME menu events, date and time
+     (RTC), step counter, play coins
+   - [ ] System applets: software keyboard, Mii selector, error and message dialogs
+   - [ ] StreetPass and notifications (only if homebrew support turns out reliable enough)
+
 ## Later
 - [ ] Hot reload of game code in the simulator
 - [ ] Profiler overlay, memory tracker

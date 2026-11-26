@@ -77,6 +77,17 @@ void ScriptRunner::typed_step(const Step& step) {
     case Command::FailOn:
         fail_ons_.push_back(Watch{.pattern = step.text, .from = last_frame_, .to = 0, .line = step.line});
         return;
+    case Command::ExpectValue: { // spec 030: a follow of the value from the next typed frame
+        if (!catalog_.complete) {
+            notes_.push_back("line " + std::to_string(step.line) + ": the catalogue isn't here yet: try again");
+            if (!waiting_catalogue_) request_catalogue();
+            return;
+        }
+        std::uint32_t from = last_frame_ + kTypedDelay;
+        if (last_sent_frame_ > from) from = last_sent_frame_;
+        start_expect_value(step, from);
+        return;
+    }
     default: break;
     }
     if (is_live_command(step.command) && !catalog_.complete && !waiting_catalogue_) request_catalogue(); // spec 030

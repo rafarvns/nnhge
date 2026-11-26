@@ -37,11 +37,11 @@ the tree at T0.3).
   `.text` of the 3ds-release `platformer` ELF; edit `examples/ui/title_scene.cpp` → simulator and `.3dsx` times; clean
   `nnh_core` and `nnh`; preprocessed lines and `-fsyntax-only` time of a one-line TU including `<nnh/math.hpp>`. Files:
   plan.md ("Stage 0 results"). Covers III, FR-20, FR-21, AC-6.
-- [x] **T0.2** [P] Reference screenshots in `build/ref-030/ref/`: `hello`, `sprites`, `ui` (`UI_SHOT=title`), the
+- [ ] **T0.2** [P] Reference screenshots in `build/ref-030/ref/`: `hello`, `sprites`, `ui` (`UI_SHOT=title`), the
   platformer (level 1 at 90, `PLATFORMER_DEMO=replay` at 64 and 312, `bench` top), `models` (check), one overlay shot
   (`hello` with `debug::set_overlay_visible(true)` through a tiny probe, the Stats page) — `build/ref-030/compare.sh`
   retakes and compares bytes. Files: plan.md. Covers AC-1, FR-7.
-- [x] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
+- [ ] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
   `kMaxTests` (this spec adds ≈ 400 tests; raise it in `tests/framework/test_main.cpp`, one commit, if fewer than 450 are
   left). Files: plan.md, `tests/framework/test_main.cpp`. Covers VI.
 
@@ -144,7 +144,7 @@ the tree at T0.3).
   paused; plain loops wait; `frame_count()` and the frame clock stop; step N runs exactly N; quit while paused; the held
   start draws cleared screens and the message), `tests/app/test_frame_loop.cpp` unchanged cases pass in both flavours.
   Covers FR-16, FR-21.
-- [x] **T3.7** Stage end: the stage-end guards (the first stage that edits Release-linked files: per-object diffs
+- [ ] **T3.7** Stage end: the stage-end guards (the first stage that edits Release-linked files: per-object diffs
   recorded); Debug/Development `hello` growth so far; the simulator's `Pause`/`F10` by hand on `examples/platformer`
   (pause, step, resume; audio holds) and a screenshot of a paused frame equal to the frame before it. Files: plan.md
   ("Stage 3 results"). Covers AC-6, FR-16.
@@ -170,7 +170,7 @@ the tree at T0.3).
   at exact positions and texts; a full page within 90 entries and 1.5 KB; paused `~` marks). Then PC screenshots by hand
   (a probe or the example skeleton) read back; exact pixels written into plan.md ("Stage 4 refinements"). Covers FR-7,
   FR-8, FR-22.
-- [x] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical, the Stats page included); plan.md
+- [ ] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical, the Stats page included); plan.md
   ("Stage 4 results"). Covers AC-1, AC-6.
 
 ## Stage 5: the game side of the remote
@@ -195,7 +195,7 @@ the tree at T0.3).
 
 ## Stage 6: the `nnh` side
 
-- [ ] **T6.1** The catalogue and value text: `tools/nnh/src/remote/live_catalog.{hpp,cpp}`, `live_text.{hpp,cpp}` (the
+- [x] **T6.1** The catalogue and value text: `tools/nnh/src/remote/live_catalog.{hpp,cpp}`, `live_text.{hpp,cpp}` (the
   shared `live_names`, `live_steps`, `live_format` and Ryu compiled into `nnh`), `game_records.*` (records 8–12). Test:
   `tools/nnh/tests/test_live_catalog.cpp` (records in, lookups, groups, removals), `test_live_text.cpp` (every kind:
   `5`, `-2.5`, `1e-3` for floats, ints, `true`/`false`, `#RRGGBB[AA]`, enum names and indexes, Vec2 and text for
@@ -211,17 +211,17 @@ the tree at T0.3).
   control, refusals failing with their line, an older game's `Reject::Type` message). Test:
   `tools/nnh/tests/test_script_runner_live.cpp` (a fake console: passes and failures of every new command; a name
   registered after the first segment; paused sections). Covers FR-12, FR-13, FR-16.
-- [ ] **T6.4** [P] Typed commands: `live_interactive.cpp`, `script_interactive.cpp` (help lines). Test:
+- [x] **T6.4** [P] Typed commands: `live_interactive.cpp`, `script_interactive.cpp` (help lines). Test:
   `tools/nnh/tests/test_live_interactive.cpp` (`tunes`, `get`, `set`, `reset`, `action`, `watches`, `watch … every N`,
   `unwatch`, `dump`, `pause`, `step`, `resume`: messages, refusals before sending, printed lines, stamping while paused).
   Covers FR-11, FR-16, FR-17.
-- [ ] **T6.5** [P] Dumps and `--tunes`: `dump_capture.{hpp,cpp}` (lines → `build/logs/<game>-<date>-<time>-tunes.toml`),
+- [x] **T6.5** [P] Dumps and `--tunes`: `dump_capture.{hpp,cpp}` (lines → `build/logs/<game>-<date>-<time>-tunes.toml`),
   `tunes_file.{hpp,cpp}` (reader), `cli.cpp` (`--tunes`, `--hold`), `netloader.cpp` (`--nnh-hold` in argv), the
   simulator's `NNH_HOLD=1`, a mini-fuzz of the reader. Test: `tools/nnh/tests/test_dump_capture.cpp`,
   `test_tunes_file.cpp` (format, quoted names, every error with `file:line`, limits), `test_netloader.cpp` (the argv
   block), `test_script_runner_live.cpp` (`--tunes`: unknown names skipped with their line, sends for the held frame,
   resume). Covers FR-14, FR-15, X.
-- [ ] **T6.6** Stage end: the stage-end guards; every example's `--pc` script still passes; plan.md ("Stage 6 results").
+- [x] **T6.6** Stage end: the stage-end guards; every example's `--pc` script still passes; plan.md ("Stage 6 results").
   Covers AC-6.
 
 ## Stage 7: `examples/live`, the platformer, the self-check, the bench, the ARM pre-check
@@ -239,7 +239,7 @@ the tree at T0.3).
 - [ ] **T7.4** [P] The bench: `examples/live/bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}` (plan.md's phases; each timing only
   its workload; lines and verdict; Debug `not judged (Debug)`). Test: a pc-dev run logs every line; the memory line matches
   plan.md's table within 10 % (else plan.md is corrected). Covers AC-7.
-- [ ] **T7.5** The scripts: `examples/live/tests/check.nnhs`, `panel.nnhs`, `keep.nnhs`, `keep_second.nnhs` (plan.md's
+- [x] **T7.5** The scripts: `examples/live/tests/check.nnhs`, `panel.nnhs`, `keep.nnhs`, `keep_second.nnhs` (plan.md's
   outlines; every expect followed by `wait 10` before the next input) and ctests `live_check_script_pc`,
   `live_panel_script_pc`, `live_keep_pc` (two runs through the saved dump; `RESOURCE_LOCK nnh_remote_port`). Test: each
   passes with `nnh run live --pc --no-build` twice in a row. Files: plan.md ("Stage 10: console run (prepared)" with every

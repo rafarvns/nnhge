@@ -7,6 +7,8 @@
 #include <string_view>
 #include <vector>
 
+#include "remote/script.hpp"
+
 namespace nnh::tool::remote {
 
 inline constexpr std::size_t kMaxTunesBytes = 1u << 20;
@@ -24,5 +26,10 @@ struct TunesFile {
 };
 
 TunesFile read_tunes(std::string_view text, const std::string& file);
+
+/// The steps a read file becomes, put before a script (or typed in interactive mode): `set NAME VALUE` for each value
+/// (origin "file:line": a name the game doesn't declare is skipped with a note), then `resume` (the game was started
+/// held: NNH_HOLD=1 on the PC, --nnh-hold on the console).
+std::vector<Step> tunes_steps(const TunesFile& tunes, const std::string& file);
 
 } // namespace nnh::tool::remote

@@ -1,0 +1,12 @@
+# Spec 030 AC-8, run 1: change three values and dump them (nnh saves build/logs/live-<date>-<time>-tunes.toml).
+#   nnh run live [--pc] --script examples/live/tests/keep.nnhs
+fail-on "] E "
+wait 30
+set player/jump 7.5
+set spawn/count 12
+set colors/sky "#102030"
+expect-value player/jump == 7.5
+dump
+expect "dump: end" 30
+wait 10
+end

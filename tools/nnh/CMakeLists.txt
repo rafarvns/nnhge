@@ -60,7 +60,7 @@ target_include_directories(nnh_tool_lib PUBLIC src ${PROJECT_SOURCE_DIR}/engine/
 nnh_engine_options(nnh_tool_lib)
 find_package(Threads REQUIRED) # the HTTP server runs on a thread
 target_link_libraries(nnh_tool_lib PUBLIC Threads::Threads nnh_link PRIVATE nnh_ryu)
-target_include_directories(nnh_tool_lib PRIVATE ${PROJECT_SOURCE_DIR}/engine/core/include)
+target_include_directories(nnh_tool_lib PUBLIC ${PROJECT_SOURCE_DIR}/engine/core/include)
 
 add_executable(nnh src/main.cpp)
 target_link_libraries(nnh PRIVATE nnh_tool_lib)
@@ -90,7 +90,9 @@ if(NNH_BUILD_TESTS)
         tests/test_png_writer.cpp
         tests/test_repo.cpp
         tests/test_screen_image.cpp
+        tests/test_live_tool.cpp
         tests/test_script_interactive.cpp
+        tests/test_script_live.cpp
         tests/test_script_parser.cpp
         tests/test_script_runner.cpp
         tests/test_script_stereo.cpp

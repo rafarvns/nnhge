@@ -938,3 +938,23 @@ ctest pc-debug 370/370 (with `live_self_check_pc` and `live_check_script_pc`), p
 info identical, sections and symbols identical; pc-release `hello` sections and symbols identical. Development `hello`:
 3ds-dev text 226 880 (+5 960 B over T0.1, question 7's 3–6 KB), pc-debug text 225 416. `nnh_tests` 3982,
 `nnh_tool_tests` 171. `docs_tool check`: 0 broken links.
+
+### Stage 6 completed (second pass)
+
+- Tests: `tools/nnh/tests/test_live_tool.cpp` (11: catalogue, value parsing with every refusal's exact text,
+  expected values and comparisons, the `--tunes` reader, its errors, a 20 000-mutant mini-fuzz, the steps it becomes,
+  `--tunes`/`--hold` on the command line, `--nnh-hold` in the netloader's argv) and `test_script_live.cpp` (12: parsing,
+  errors with lines, paused sections, the timeline's clock, the runner against a fake console — catalogue first, sets
+  resolved when sent, expect-value pass/fail/within, refusals, an older game, `--tunes` names skipped, dumps captured,
+  interactive tunes/get/expect-value). `nnh_tool_tests`: 193.
+- `nnh run --tunes FILE` (implies `--hold`) and `--hold`: the file is read and checked before anything is built; its
+  values become `set` steps (origin `file:line`, an undeclared name noted and skipped) and a `resume` before the script,
+  or typed lines in interactive mode; the simulator gets `NNH_HOLD=1`, the console `--nnh-hold` in its argv.
+- Interactive `expect-value`: reported (pass or the value seen), never ends the session.
+- Scripts: `keep.nnhs` / `keep_second.nnhs` (ctest `live_keep_pc`: run 1 dumps, run 2 with `--tunes` finds
+  `player/jump == 7.5` **at frame 1**), `panel.nnhs` (ctest `live_panel_script_pc`: buttons — open, step, ×10 with L and
+  R, the max stop, an action, a colour channel —, touch — a group row, a bool, a drag across a bar, `+` —, the Watches
+  page, A held while the overlay closes stays blocked until released): `nnh: PASS (110 lines, frames 1-192)`.
+- **R24 (T7.5) Script timing.** A `touch` and its `untouch` need a frame between them, and a button pressed in the same
+  frame as the SELECT + L that closes the overlay reaches the game (the blocker lifts before that frame's input is
+  read): `panel.nnhs` waits between them.

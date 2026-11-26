@@ -113,4 +113,23 @@ TunesFile read_tunes(std::string_view text, const std::string& file) {
     return out;
 }
 
+std::vector<Step> tunes_steps(const TunesFile& tunes, const std::string& file) {
+    std::vector<Step> steps;
+    for (const TuneValue& v : tunes.values) {
+        Step s;
+        s.command = Command::Set;
+        s.line = 1;
+        s.text = v.name;
+        s.value = v.value;
+        s.origin = file + ":" + std::to_string(v.line);
+        steps.push_back(std::move(s));
+    }
+    Step resume;
+    resume.command = Command::Resume;
+    resume.line = 1;
+    resume.origin = file;
+    steps.push_back(std::move(resume));
+    return steps;
+}
+
 } // namespace nnh::tool::remote

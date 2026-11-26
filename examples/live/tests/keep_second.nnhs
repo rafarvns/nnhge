@@ -1,0 +1,7 @@
+# Spec 030 AC-8, run 2: the values of run 1's dump are there from the first frame.
+#   nnh run live [--pc] --tunes build/logs/<the saved file> --script examples/live/tests/keep_second.nnhs
+fail-on "] E "
+expect-value player/jump == 7.5 # held start: answered for frame 1
+expect-value spawn/count == 12
+expect-value colors/sky == "#102030FF"
+end

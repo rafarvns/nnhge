@@ -20,13 +20,15 @@ namespace nnh::tool {
 
 namespace {
 
-void set_remote_env(const std::string& value) {
+void set_env(const char* name, const std::string& value) {
 #ifdef _WIN32
-    _putenv_s("NNH_REMOTE", value.c_str());
+    _putenv_s(name, value.c_str());
 #else
-    setenv("NNH_REMOTE", value.c_str(), 1);
+    setenv(name, value.c_str(), 1);
 #endif
 }
+
+void set_remote_env(const std::string& value) { set_env("NNH_REMOTE", value); }
 
 } // namespace
 
@@ -51,6 +53,7 @@ int run_on_pc(const Options& options, const GameRun& run) {
         return cannot_run;
     }
     set_remote_env("127.0.0.1:" + std::to_string(listener.local_port())); // inherited by the simulator
+    set_env("NNH_HOLD", options.hold ? "1" : "0"); // spec 030: --tunes/--hold start the game held
     std::atomic<bool> ended{false};
     int status = 0;
     std::thread simulator([&] {

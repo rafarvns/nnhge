@@ -46,6 +46,10 @@ bool ScriptRunner::prepare_live(const TimedEvent& e, wire::Message& m) {
     }
     if (e.live_command != Command::Set && e.live_command != Command::Action) return true;
     const LiveItem* item = catalog_.find(e.text);
+    if (item == nullptr && !e.origin.empty()) { // --tunes: reported and skipped
+        notes_.push_back(e.origin + ": unknown name \"" + e.text + "\": skipped");
+        return false;
+    }
     if (item == nullptr) {
         problem(e.line, e.text + " is not declared by the game (frame " + std::to_string(at) + "): " +
                             unknown_name(catalog_, e.text));
@@ -59,7 +63,7 @@ bool ScriptRunner::prepare_live(const TimedEvent& e, wire::Message& m) {
     std::uint32_t bits = 0;
     const std::string why = parse_set_value(*item, e.value, bits);
     if (!why.empty()) {
-        problem(e.line, why);
+        problem(e.line, e.origin.empty() ? why : e.origin + ": " + why);
         return false;
     }
     m.release = bits;
@@ -71,13 +75,13 @@ void ScriptRunner::start_expect_value(const Step& step, std::uint32_t from) {
     w = ValueWatch{};
     const LiveItem* item = catalog_.find(step.text);
     if (item == nullptr) {
-        finish(Verdict::Fail, step.line, step.text + " is not declared by the game (frame " + std::to_string(from) +
-                                             "): " + unknown_name(catalog_, step.text));
+        problem(step.line, step.text + " is not declared by the game (frame " + std::to_string(from) +
+                               "): " + unknown_name(catalog_, step.text));
         return;
     }
     const std::string why = parse_expected(*item, step.value, static_cast<CompareOp>(step.compare), w.expected);
     if (!why.empty()) {
-        finish(Verdict::Fail, step.line, why);
+        problem(step.line, why);
         return;
     }
     w.active = true;
@@ -98,13 +102,26 @@ void ScriptRunner::start_expect_value(const Step& step, std::uint32_t from) {
 void ScriptRunner::live_value(const Record& record) {
     wire::LiveValueRecord v;
     if (!wire::decode_live_value(record.payload.data(), static_cast<std::uint32_t>(record.payload.size()), v)) return;
+    ValueWatch& w = value_watch_;
+    if (options_.interactive && w.active && v.hash == w.hash) { // a typed expect-value: reported, never ends the run
+        const LiveItem* item = catalog_.find(v.hash);
+        if (value_passes(v, w.op, w.expected, w.tolerance)) {
+            notes_.push_back("line " + std::to_string(w.line) + ": " + w.text + " passed at frame " +
+                             std::to_string(v.frame) + " (" + value_text(v, item) + ")");
+            w.active = false;
+        } else if (!w.within || v.frame >= w.to) {
+            notes_.push_back("line " + std::to_string(w.line) + ": " + w.text + ": the value is " + value_text(v, item) +
+                             " at frame " + std::to_string(v.frame));
+            w.active = false;
+        }
+        return;
+    }
     if (options_.interactive) {
         const LiveItem* item = catalog_.find(v.hash);
         notes_.push_back("[" + std::to_string(v.frame) + "] " + (item != nullptr ? item->name : "?") + " = " +
                          value_text(v, item) + ((v.flags & wire::kValuePaused) != 0 ? " (paused)" : ""));
         return;
     }
-    ValueWatch& w = value_watch_;
     if (!w.active || v.hash != w.hash || verdict_ != Verdict::Running) return;
     const bool paused = (v.flags & wire::kValuePaused) != 0;
     if (w.within && !paused && v.frame < w.from) return;

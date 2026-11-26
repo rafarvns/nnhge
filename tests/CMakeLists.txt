@@ -821,9 +821,11 @@ if(NNH_BUILD_FUZZERS)
 endif()
 target_sources(nnh_tests PRIVATE
     font/test_font_cost.cpp
+    font/test_font_debug.cpp
     font/test_font_format.cpp
     font/test_font_load.cpp
     font/test_font_lookup.cpp
+    font/test_font_misuse.cpp
     font/test_font_table.cpp
     font/test_font_validate.cpp
     font/test_page_codec.cpp
@@ -835,6 +837,7 @@ target_sources(nnh_tests PRIVATE
     text/test_text_runs.cpp
     text/test_text_wrap.cpp
     ui/reference/ui_wrap_cells.cpp
+    ui/test_ui_fonts.cpp
     ui/test_ui_seam_equivalence.cpp
     text/test_break_class.cpp
     text/test_measure_chars.cpp

@@ -481,6 +481,7 @@ set(_nnh_ui_sources
     src/ui/ui_draw_widgets.cpp
     src/ui/ui_events.cpp
     src/ui/ui_focus.cpp
+    src/ui/ui_fonts.cpp
     src/ui/ui_geometric.cpp
     src/ui/ui_input_raw.cpp
     src/ui/ui_layout.cpp
@@ -542,6 +543,7 @@ target_sources(nnh_core PRIVATE ${_nnh_text_sources})
 # links none of it.
 set(_nnh_font_sources
     src/font/font.cpp
+    src/font/font_debug.cpp
     src/font/font_format.cpp
     src/font/font_index.cpp
     src/font/font_load.cpp

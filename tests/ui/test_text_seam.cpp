@@ -4,10 +4,10 @@
 #include <cstring>
 
 #include "test.hpp"
+#include "ui/ui_block.hpp"
 #include "ui/ui_text_seam.hpp"
 #include "text/text_wrap.hpp"
 
-using nnh::detail::seam_measure;
 using nnh::detail::TextSize;
 using nnh::detail::TextFace;
 using nnh::detail::TextWrapper;
@@ -24,18 +24,24 @@ TextSize by_wrapper(const char* text) {
     while (w.next(line)) {
         ++t.lines;
         t.total += line.chars;
-        if (line.chars > t.cells) t.cells = line.chars;
+        if (line.width > t.width) t.width = line.width; // the built-in face: chars × 8
     }
     return t;
 }
 
-bool same(const TextSize& a, const TextSize& b) { return a.cells == b.cells && a.lines == b.lines && a.total == b.total; }
+bool same(const TextSize& a, const TextSize& b) { return a.width == b.width && a.lines == b.lines && a.total == b.total; }
+
+/// A block whose looks use the built-in font (the seam reads only its font slots).
+const nnh::detail::UiBlock g_block{};
+const nnh::UiTextLook g_look{};
+
+TextSize seam_measure(const char* text) { return nnh::detail::seam_measure(g_block, g_look, text); }
 
 } // namespace
 
 NNH_TEST(ui_seam_measure_counts_widest_lines_and_total) {
     const TextSize t = seam_measure("ab\ncdef\r\nx");
-    CHECK(t.cells == 4 && t.lines == 3 && t.total == 7);
+    CHECK(t.width == 32 && t.lines == 3 && t.total == 7);
     CHECK(same(seam_measure(""), TextSize{}));
 }
 

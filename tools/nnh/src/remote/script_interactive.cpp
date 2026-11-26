@@ -3,6 +3,7 @@
 // kTypedDelay, but never before what was already sent (the console refuses frames out of order).
 
 #include "remote/log_match.hpp"
+#include "remote/script_live.hpp"
 #include "remote/script_runner.hpp"
 #include "remote/script_tokens.hpp"
 
@@ -16,6 +17,9 @@ const char* const kHelp[] = {
     "  slider V (the 3D slider, 0..1)   slider off (the console's own slider again)",
     "  language CODE (the system language: ja, pt-BR...)   language off (the console's own again)",
     "  expect \"TEXT\" N (report a matching log line within N frames)   fail-on \"TEXT\"",
+    "  live values (spec 030): tunes [GROUP]   watches [GROUP]   get NAME   set NAME VALUE   reset NAME|GROUP|all",
+    "  action NAME   watch NAME [every N]   unwatch NAME|all   dump   pause   step [N]   resume",
+    "  expect-value NAME OP VALUE [~ E] [within N]   (a colour is quoted: set colors/sky \"#FFC040\")",
     "  end (detach: the game gets its controls back)   help",
 };
 
@@ -36,6 +40,7 @@ void ScriptRunner::on_typed(const std::string& text) {
         for (const char* line : kHelp) notes_.push_back(line);
         return;
     }
+    if (typed_live(text)) return; // spec 030: tunes, watches, get, watch, unwatch
     Script typed;
     std::vector<std::string> errors;
     parse_script_line(parser_, text, typed_lines_, typed, errors);
@@ -74,6 +79,7 @@ void ScriptRunner::typed_step(const Step& step) {
         return;
     default: break;
     }
+    if (is_live_command(step.command) && !catalog_.complete && !waiting_catalogue_) request_catalogue(); // spec 030
     timeline_.add(step);
     Segment typed = timeline_.take_open();
     std::uint32_t base = last_frame_ + kTypedDelay;
@@ -122,9 +128,13 @@ void ScriptRunner::pump_typed() {
     while (!typed_.empty() && unapplied_.size() < kMaxUnapplied) {
         TimedEvent e = std::move(typed_.front());
         typed_.pop_front();
+        if (e.live && waiting_catalogue_) {
+            typed_.push_front(std::move(e)); // names resolve against the catalogue, still on its way
+            return;
+        }
         wire::Message m = e.message;
         m.frame = e.offset;
-        send(m, e.line, e.text);
+        if (prepare_live(e, m)) send(m, e.line, e.text);
     }
 }
 

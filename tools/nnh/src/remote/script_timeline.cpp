@@ -2,6 +2,9 @@
 
 #include "remote/script_timeline.hpp"
 
+#include "nnh/detail/name_hash.hpp"
+#include "remote/live_wire.hpp"
+
 namespace nnh::tool::remote {
 namespace {
 
@@ -92,7 +95,7 @@ void Timeline::add(const Step& step) {
         m.type = wire::MessageType::Screenshot;
         m.screens = wire::kScreenTop | wire::kScreenBottom | (step.eyes ? wire::kScreenTopRight : 0);
         send(m, now, line, step.text);
-        open_.length += 1; // what follows lands after the captured frame, so it isn't in the picture
+        if (!step.paused) open_.length += 1; // what follows lands after the captured frame (paused: no frame runs)
         break;
     }
     case Command::Slider:
@@ -115,6 +118,33 @@ void Timeline::add(const Step& step) {
         send(wire::Message{}, now, line, step.text);
         open_.events.back().kind = TimedEvent::Kind::FailOn;
         break;
+    case Command::Set:
+    case Command::Reset:
+    case Command::Action:
+    case Command::Dump: {
+        const std::uint32_t hash = step.text.empty() || step.text == "all" ? 0 : detail::fnv1a32(step.text.data(), step.text.size());
+        wire::Message m = step.command == Command::Set      ? wire::live_set_message(hash, 0)
+                          : step.command == Command::Action ? wire::live_message(wire::LiveOp::Action, 0, 0, hash)
+                          : step.command == Command::Dump   ? wire::live_message(wire::LiveOp::Dump, 0, 0, 0)
+                          : wire::live_message(wire::LiveOp::Reset,
+                                               static_cast<std::uint8_t>(hash == 0 ? wire::ResetScope::All
+                                                                                   : wire::ResetScope::One),
+                                               0, hash);
+        send(m, now, line, step.text);
+        TimedEvent& e = open_.events.back();
+        e.live = true;
+        e.live_command = step.command;
+        e.value = step.value;
+        e.origin = step.origin;
+        break;
+    }
+    case Command::Pause: send(wire::pause_message(wire::PauseOp::Pause, 0), now, line); break;
+    case Command::Resume: send(wire::pause_message(wire::PauseOp::Resume, 0), now, line); break;
+    case Command::StepFrames:
+        send(wire::pause_message(wire::PauseOp::Step, static_cast<std::uint16_t>(step.frames)), now, line);
+        open_.length += step.frames;
+        break;
+    case Command::ExpectValue:
     case Command::Expect:
     case Command::End:
         open_.until = step;

@@ -875,3 +875,66 @@ the plan are listed under "Implementation refinements".
 - Tests: `test_remote_live` (7 + `remote_pause_step_and_resume_by_messages`); `nnh_tests`: 3979 pass.
 - **R19 (T5.1) Stage-end run.** Stage 5 was committed with the whole `nnh_tests` green; its ctest/3DS/`hello` guards ran
   with stage 6's (see "Stage 6 results").
+
+### Stages 6 and 7 results (partial)
+
+- `nnh` side: the catalogue mirror (`live_catalog.*`), typed value parsing and comparison (`live_text.*`, exact bits,
+  the refusal texts of the plan, did-you-mean), the script lines (`script_live.*`: set, reset, action, dump, pause,
+  resume, step [N], expect-value NAME OP VALUE [~ E] [within N], the paused-section rules), the timeline's live events,
+  the runner (`script_runner_live.cpp`: the catalogue requested at the Hello answer when the script uses live values —
+  the script's clock starts after it —, names and values resolved when their message is sent, expect-value through a
+  follow, LiveState as progress while paused, refusals failing with their line, dumps captured from the log and saved
+  by the session as `build/logs/<game>-<date>-<time>-tunes.toml`), interactive `tunes`, `watches`, `get`, `watch`,
+  `unwatch` and the typed script commands; the `--tunes` reader (`tunes_file.*`).
+- `examples/live`: the showcase (`live_scene.*`, `sim.*`, `tuning_handles.*`), the self-check (defaults golden
+  **`29C765A7`**, check script golden **`7A849F13`**, also in `nnh_tests` as `live_example_*`), a reduced bench
+  (`show64`, `register150`), `tests/check.nnhs`. ctests `live_self_check_pc` and `live_check_script_pc` pass:
+  `nnh: PASS (41 lines, frames 1-88)` — every set, expect-value, the group reset, the dump (saved, 8 changed of 9), the
+  pause, `step 3`, the paused screenshot, the resume, the self-check's sum and the bench lines.
+- Screenshots read back (`LIVE_SHOT=tunables|watches|paused`): the Tunables page (groups, values right-aligned, bars,
+  ranges, the `*` mark, `-`/`+` and `run` buttons, the footer), the paused frame (the held world and debug text, header
+  `F 20 PAUSED`).
+- Bench on PC (pc-debug, not judged): `show64` avg 0.0415 ms (worst 6.79 ms, the first call's table setup),
+  `register150` avg 27.8 ms (Debug; registration is not a per-frame operation).
+- **R20 (T6.2) Colours in scripts are quoted** (`set colors/sky "#FFC040"`): `#` starts a comment in `.nnhs`.
+- **R21 (T6.2) A screenshot while paused takes no frame** (the parser marks steps written in a paused section; the
+  timeline doesn't move the clock for them), as the plan says; the runner treats a paused LiveState's frame as applied.
+- **R22 (T7.5) The 3-frame step** is checked by the unit tests (`dev_pause_step_runs_exactly_n_game_frames`,
+  `remote_pause_step_and_resume_by_messages`); `check.nnhs` checks the paused value with `expect-value frame/count > 0`
+  because absolute frame numbers differ between the simulator and the console (the catalogue's answer frame).
+- **R23 (T7.2) The example draws its balls with rectangles** and has no particle emitter (fx/dust's callback logs
+  `live: dust rebuilt <n>` instead of rebuilding a ParticleDesc).
+
+### Not done (open, for the lead)
+
+- T6.1–T6.5 unit tests on the `nnh` side (`test_live_catalog`, `test_live_text`, `test_script_live`,
+  `test_script_timeline_live`, `test_script_runner_live`, `test_tunes_file`, `test_dump_capture`): the code is exercised
+  end to end by `live_check_script_pc`, but has no unit tests yet. Interactive `expect-value` isn't supported.
+- `nnh run --tunes FILE` and `--hold` (cli.cpp, run_pc.cpp `NNH_HOLD=1`, netloader `--nnh-hold`): the reader exists
+  (`tunes_file.*`) and the game side (held start) is done; the options and `keep.nnhs`/`keep_second.nnhs` are not.
+- `panel.nnhs` (AC-3 by script), the platformer's tunables (T7.6), the full bench phases (hidden192, tunables page
+  frame cost: they need profile scopes), the ARM pre-check (T7.7), stage 8 (mutants, release strings, probes, build
+  times), stage 11 (docs: `docs/api/live.md`, the guide, ROADMAP, statuses).
+- Stage 9 (VM 120) and stage 10 (console) are the lead's.
+
+## Stage 10: console run (prepared)
+
+Old 3DS XL, Development builds (`scripts/dkp.sh cmake --build --preset 3ds-dev --target live_3dsx`). Each run: Homebrew
+Launcher, press **Y**, then on the PC:
+
+1. `build/pc-debug/tools/nnh/nnh run live --script examples/live/tests/check.nnhs` — expected (as in the simulator,
+   frame numbers may differ): the eight `expect-value ... passed` lines, `expect "live: dust rebuilt 20" matched`,
+   `dump saved: build/logs/live-<date>-<time>-tunes.toml` (8 changed of 9), `expect-value frame/count > 0 passed`, the
+   `paused` screenshots (top: the held world; bottom: `F <n> PAUSED`), **`live: sum 7A849F13`** (the PC's), the bench
+   lines (`live bench: show64 ...`, `register150 ...`, `live bench: PASS|FAIL`), `nnh: PASS`.
+2. (yes/no, by hand, ≈ 1 minute) `build/pc-debug/tools/nnh/nnh run live` (no script): SELECT + L, SELECT + R (Tunables),
+   open `player`, raise `jump` with the D-Pad Right, close the overlay (SELECT + L), press A: a higher jump? SELECT + L,
+   SELECT + R, SELECT + Y: the world stays on screen, `PAUSED`; SELECT + X steps one frame; SELECT + Y resumes — yes/no.
+
+### Stage-end guards after stages 5–7 (run `s67`)
+
+ctest pc-debug 370/370 (with `live_self_check_pc` and `live_check_script_pc`), pc-release 337/337; 3ds-release and
+3ds-dev 0 warnings (the whole tree, `examples/live` included); `hello.3dsx` identical to T0.1, `hello.elf` without debug
+info identical, sections and symbols identical; pc-release `hello` sections and symbols identical. Development `hello`:
+3ds-dev text 226 880 (+5 960 B over T0.1, question 7's 3–6 KB), pc-debug text 225 416. `nnh_tests` 3982,
+`nnh_tool_tests` 171. `docs_tool check`: 0 broken links.

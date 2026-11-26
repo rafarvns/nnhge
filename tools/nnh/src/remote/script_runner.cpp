@@ -78,9 +78,11 @@ void ScriptRunner::on_line(const std::string& line) {
     const std::uint32_t frame = info.has_frame ? info.frame : last_tick_;
     if (frame > last_frame_) last_frame_ = frame;
     if (options_.interactive) {
+        dump_line(line);
         typed_line(line, frame);
         return;
     }
+    dump_line(line);
     const std::string busy = control_not_at_rest(line, info);
     if (!busy.empty()) notes_.push_back("the console's own controls are ignored while the script runs: " + busy);
     script_line(line, frame, info.level);
@@ -118,6 +120,12 @@ void ScriptRunner::on_record(Record record) {
                                          " (late): give it more frames, e.g. a longer wait before it");
         return;
     case wire::RecordType::Rejected:
+        if (record.reason == wire::Reject::Type && waiting_catalogue_) { // spec 030's messages, to an older game
+            waiting_catalogue_ = false;
+            if (options_.interactive) notes_.push_back("the game has no live values (built before spec 030)");
+            else finish(Verdict::Error, 0, "the game has no live values (built before spec 030): rebuild it");
+            return;
+        }
         problem(line_of(record.seq),
                 std::string("the console rejected the message (") + reason_name(record.reason) + ")");
         return;
@@ -268,6 +276,10 @@ void ScriptRunner::hello_answered(const Record&) {
             return;
         }
     }
+    if (script_uses_live()) { // spec 030: the catalogue first; the script starts when it is complete
+        request_catalogue();
+        return;
+    }
     segment_ = 0;
     begin_segment(1);
 }
@@ -275,6 +287,7 @@ void ScriptRunner::hello_answered(const Record&) {
 void ScriptRunner::begin_segment(std::uint32_t base) {
     base_ = base;
     next_event_ = 0;
+    expect_value_sent_ = false;
     const Segment& seg = segments_[segment_];
     if (seg.until.command == Command::End) final_frame_ = base + seg.length;
     pump();
@@ -291,8 +304,17 @@ void ScriptRunner::pump(bool ignore_room) {
         } else {
             wire::Message m = e.message;
             m.frame = frame;
+            if (!prepare_live(e, m)) {
+                if (verdict_ != Verdict::Running) return;
+                continue; // a `--tunes` value the game doesn't declare: skipped
+            }
             send(m, e.line, e.text);
         }
+    }
+    if (next_event_ == seg.events.size() && seg.until.command == Command::ExpectValue && !expect_value_sent_ &&
+        verdict_ == Verdict::Running) {
+        expect_value_sent_ = true;
+        start_expect_value(seg.until, base_ + seg.length);
     }
 }
 
@@ -338,12 +360,17 @@ void ScriptRunner::script_line(const std::string& line, std::uint32_t frame, cha
 }
 
 void ScriptRunner::script_tick() {
-    if (!attached_ || verdict_ != Verdict::Running) return;
+    if (!attached_ || verdict_ != Verdict::Running || waiting_catalogue_) return; // spec 030: the script starts after it
     const Segment& seg = segments_[segment_];
     const std::uint32_t to = base_ + seg.length + seg.until.frames;
     if (seg.until.command == Command::Expect && last_tick_ > to) {
         finish(Verdict::Fail, seg.until.line,
                "expect " + quoted(seg.until.text) + ": no matching line in " + frames(base_, to));
+        return;
+    }
+    if (value_watch_.active && !paused_ && last_tick_ > value_watch_.to + 30) {
+        finish(Verdict::Fail, value_watch_.line,
+               value_watch_.text + ": no value in " + frames(value_watch_.from, value_watch_.to));
         return;
     }
     pump();

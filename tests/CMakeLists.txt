@@ -1639,3 +1639,26 @@ if(NOT MSVC)
         set_tests_properties(live_name_${_case}_explains PROPERTIES PASS_REGULAR_EXPRESSION "live_name_${_case}")
     endforeach()
 endif()
+# The live example's self-check (spec 030 T7.1, AC-2): its goldens on every host compiler.
+target_sources(nnh_tests PRIVATE live_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/live/self_check.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/live/sim.cpp)
+target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(${PROJECT_SOURCE_DIR}/examples/live/self_check.cpp ${PROJECT_SOURCE_DIR}/examples/live/sim.cpp
+                                PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+# The live example in the simulator (T7.2, T7.5): its self-check, and its console script played with --pc.
+if(TARGET live AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME live_self_check_pc COMMAND live)
+    set_tests_properties(live_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;LIVE_DEMO=check;NNH_EXIT_AFTER_FRAMES=30"
+        PASS_REGULAR_EXPRESSION "live: PASS defaults" FAIL_REGULAR_EXPRESSION "\] E " TIMEOUT 120)
+    get_filename_component(_live_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME live_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run live --pc --no-build --script examples/live/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(live_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+endif()

@@ -21,7 +21,11 @@ struct TimedEvent {
     std::uint32_t offset = 0; ///< frames after the segment's first frame
     int line = 0;             ///< the script line that made it
     wire::Message message;    ///< Send: type and arguments (frame, seq and Screenshot id are the runner's)
-    std::string text;         ///< FailOn: the pattern; Screenshot: NAME
+    std::string text;         ///< FailOn: the pattern; Screenshot: NAME; live commands: the NAME
+    bool live = false;        ///< spec 030: resolved against the game's catalogue when sent (script_runner_live.cpp)
+    Command live_command = Command::End;
+    std::string value;        ///< Set: the VALUE as written
+    std::string origin;       ///< from `--tunes`: "file:line"
 };
 
 struct Segment {

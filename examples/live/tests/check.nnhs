@@ -1,0 +1,41 @@
+# Spec 030 AC-2: live values by script, the same on the PC (--pc) and the console.
+#   nnh run live [--pc] --script examples/live/tests/check.nnhs
+fail-on "] E "
+fail-on "live: FAIL"
+wait 30
+set player/jump 6.25
+set player/gravity 0.25
+set player/run 2.5
+set spawn/count 9
+set spawn/shape diamond
+set colors/sky "#FFC040"
+set colors/ground "#206030FF"
+set fx/dust 20
+expect "live: dust rebuilt 20" 60
+expect-value player/jump == 6.25
+expect-value spawn/alive == 9 within 60
+expect-value spawn/shape == diamond
+expect-value colors/sky == "#FFC040FF"
+reset player
+expect-value player/jump == 5.5
+expect-value player/gravity == 0.3
+set player/jump 6.25
+set player/gravity 0.25
+set player/run 2.5
+expect-value player/run == 2.5
+dump
+expect "dump: end" 30
+wait 10
+pause
+step 3
+expect-value frame/count > 0
+screenshot paused
+resume
+wait 10
+tap Y
+expect "live: sum 7A849F13" 60
+wait 10
+tap X
+expect "live bench: " 600
+wait 10
+end

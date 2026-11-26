@@ -201,12 +201,12 @@ the tree at T0.3).
   `5`, `-2.5`, `1e-3` for floats, ints, `true`/`false`, `#RRGGBB[AA]`, enum names and indexes, Vec2 and text for
   expect-value; every refusal's exact text with did-you-mean), `test_game_stream.cpp` gains the new records. Covers FR-11,
   FR-13.
-- [ ] **T6.2** Script commands: `script.hpp`, `script_parser.cpp`, `script_live.cpp` (the new lines; paused-section
+- [x] **T6.2** Script commands: `script.hpp`, `script_parser.cpp`, `script_live.cpp` (the new lines; paused-section
   rules), `script_timeline.*` (clock rules: zero-frame commands, `step N`, `expect-value` as a segment closer, screenshots
   while paused). Test: `tools/nnh/tests/test_script_live.cpp` (syntax and errors with lines; `tap while paused` and the
   other refusals), `test_script_timeline_live.cpp` (events and offsets of plan.md's examples); every existing parser and
   timeline test unchanged. Covers FR-12, FR-16.
-- [ ] **T6.3** The runner: `script_runner_live.cpp`, `script_runner.*` (catalogue request when needed, resolution per
+- [x] **T6.3** The runner: `script_runner_live.cpp`, `script_runner.*` (catalogue request when needed, resolution per
   segment, `LiveSet`/`Live`/`Pause` encoding, `expect-value` windows and tolerance through follows, `LiveState` flow
   control, refusals failing with their line, an older game's `Reject::Type` message). Test:
   `tools/nnh/tests/test_script_runner_live.cpp` (a fake console: passes and failures of every new command; a name
@@ -226,14 +226,14 @@ the tree at T0.3).
 
 ## Stage 7: `examples/live`, the platformer, the self-check, the bench, the ARM pre-check
 
-- [ ] **T7.1** The self-check (AC-2): `examples/live/self_check.{hpp,cpp}` (plan.md's simulation from the current values,
+- [x] **T7.1** The self-check (AC-2): `examples/live/self_check.{hpp,cpp}` (plan.md's simulation from the current values,
   `kLiveDefaultsGolden`, `kLiveScriptGolden`). Test: `tests/live_example/test_self_check.cpp` (defaults golden; the
   scripted values' golden; a one-bit change of a tunable changes the sum — checked once by hand). Files:
   `tests/CMakeLists.txt`. Covers AC-2, FR-22.
-- [ ] **T7.2** The showcase: `examples/live/main.cpp`, `demos.hpp`, `tuning.{hpp,cpp}`, `player.{hpp,cpp}`,
+- [x] **T7.2** The showcase: `examples/live/main.cpp`, `demos.hpp`, `tuning.{hpp,cpp}`, `player.{hpp,cpp}`,
   `spawner.{hpp,cpp}`, `live_scene.{hpp,cpp}`, `check_scene.{hpp,cpp}`, `CMakeLists.txt`, `examples/CMakeLists.txt`.
   Test: the log lines of plan.md; ctest `live_self_check_pc`. Covers AC-1, FR-21, Q9, Q10.
-- [ ] **T7.3** Screenshots: `LIVE_SHOT=stats|tunables|watches|colour|paused` with `NNH_EXIT_AFTER_FRAMES` +
+- [x] **T7.3** Screenshots: `LIVE_SHOT=stats|tunables|watches|colour|paused` with `NNH_EXIT_AFTER_FRAMES` +
   `NNH_SCREENSHOT`, read back (the colour row open with its channel line, one value changed, the paused header). Covers
   AC-1, FR-7.
 - [ ] **T7.4** [P] The bench: `examples/live/bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}` (plan.md's phases; each timing only

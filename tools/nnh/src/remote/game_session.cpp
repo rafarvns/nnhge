@@ -130,8 +130,23 @@ private:
         for (const remote::MessageBytes& m : c_.runner->take_messages()) bytes.insert(bytes.end(), m.begin(), m.end());
         if (!bytes.empty() && !closed_) game_.send_all(bytes.data(), bytes.size()); // a failure shows as a close
         for (const remote::ScreenJob& job : c_.runner->take_screens()) save(job);
+        for (const std::string& dump : c_.runner->take_dumps()) save_dump(dump);
         for (const std::string& text : c_.runner->take_notes()) note(text);
     }
+
+    /// A dump (spec 030 FR-14) next to the log: <log name>-tunes.toml, then -tunes-2.toml, ...
+    void save_dump(const std::string& text) {
+        const std::string base = c_.shots_dir.empty() ? std::string("build/logs/live") : c_.shots_dir;
+        ++dumps_;
+        const std::string path = base + (dumps_ == 1 ? "-tunes.toml" : "-tunes-" + std::to_string(dumps_) + ".toml");
+        std::error_code ec;
+        std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+        std::FILE* f = std::fopen(path.c_str(), "wb");
+        const bool ok = f != nullptr && std::fwrite(text.data(), 1, text.size(), f) == text.size();
+        if (f != nullptr && std::fclose(f) != 0) f = nullptr;
+        note(ok && f != nullptr ? "dump saved: " + path : "dump: can't write " + path);
+    }
+    int dumps_ = 0;
 
     void save(const remote::ScreenJob& job) {
         std::error_code ec;

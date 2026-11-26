@@ -7,6 +7,8 @@
 //   untouch                screenshot NAME [eyes] expect "TEXT" N       fail-on "TEXT"        end
 //   slider V|off           (spec 026: the 3D slider 0…1, or back to the script's default 0)
 //   language CODE|off      (spec 029: the system language, e.g. ja or pt-BR, or back to the script's default en)
+//   set NAME VALUE         reset NAME|GROUP|all   action NAME   dump   pause   resume   step [N]
+//   expect-value NAME OP VALUE [~ E] [within N]   (spec 030: live values; a colour is quoted: "#FFC040")
 
 #include <cstdint>
 #include <string>
@@ -18,6 +20,7 @@ namespace nnh::tool::remote {
 enum class Command : std::uint8_t {
     Wait, Press, Release, ReleaseAll, Hold, Tap, Stick, Touch, Drag, Untouch, Screenshot, Expect, FailOn, End,
     Slider, SliderOff, Language, LanguageOff,
+    Set, Reset, Action, Dump, Pause, Resume, StepFrames, ExpectValue, // spec 030 (script_live.cpp)
 };
 
 /// One script line. Only the fields of its command are meaningful.
@@ -30,7 +33,13 @@ struct Step {
     std::int16_t x = 0;         ///< Stick: thousandths −1000…1000; Touch, Drag: 0…319; Slider: thousandths 0…1000
     std::int16_t y = 0;         ///< Stick: thousandths, up; Touch, Drag: 0…239
     bool eyes = false;          ///< Screenshot: the top screen's right eye too (`eyes`, spec 026)
-    std::string text;           ///< Screenshot: NAME; Expect, FailOn: the pattern (log_match.hpp); Language: the code
+    std::string text;           ///< Screenshot: NAME; Expect, FailOn: the pattern (log_match.hpp); Language: the code;
+                                ///< live commands: the NAME (Reset: or "all")
+    std::string value;          ///< Set, ExpectValue: the VALUE as written (resolved against the game's catalogue)
+    std::uint8_t compare = 0;   ///< ExpectValue: 0 == 1 != 2 < 3 <= 4 > 5 >=
+    double tolerance = 0;       ///< ExpectValue: `~ E`
+    std::string origin;         ///< steps from `--tunes FILE`: "file:line" (unknown names are skipped, not failed)
+    bool paused = false;        ///< written while the script has the game paused (a screenshot then takes no frame)
 };
 
 struct Script {
@@ -65,6 +74,7 @@ struct ScriptParser {
     int expect_line = 0;     ///< the last expect, 0 if none
     std::uint32_t since_expect = 0;
     bool warned = false;     ///< the warning for that expect was given
+    bool paused = false;     ///< spec 030: after `pause` or `step`, until `resume`
 };
 
 /// Parses one line (no '\n'), appending its step, if any, to `script.steps`, a warning to

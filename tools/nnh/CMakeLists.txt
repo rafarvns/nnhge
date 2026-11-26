@@ -19,17 +19,21 @@ add_library(nnh_tool_lib STATIC
     src/netloader.cpp
     src/remote/game_records.cpp
     src/remote/game_session.cpp
+    src/remote/live_catalog.cpp
+    src/remote/live_text.cpp
     src/remote/game_stream.cpp
     src/remote/log_match.cpp
     src/remote/png_writer.cpp
     src/remote/screen_image.cpp
     src/remote/script_interactive.cpp
+    src/remote/script_live.cpp
     src/remote/script_parser.cpp
     src/remote/script_runner.cpp
     src/remote/script_runner_live.cpp
     src/remote/script_timeline.cpp
     src/remote/script_tokens.cpp
     src/remote/stdin_lines.cpp
+    src/remote/tunes_file.cpp
     src/repo.cpp
     src/serve/discovery_responder.cpp
     src/serve/pairing_codes.cpp

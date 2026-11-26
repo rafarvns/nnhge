@@ -107,13 +107,22 @@ function(_nnh_strings_steps target source out assetc assetc_depends fonts output
         string(REGEX REPLACE "^[^=]+=" "" file "${entry}")
         list(APPEND all_files "${file}")
     endforeach()
+    get_target_property(base ${target} NNH_BASE_LANGUAGE)
     set(tables "")
     foreach(code IN LISTS languages)
         set(output "${out}/strings/${code}.nnhstr")
+        # a language's table reads its own files and the base's: editing de.strings reruns only de's step (and the index)
+        set(step_files "")
+        foreach(entry IN LISTS sources)
+            if(entry MATCHES "^${code}=" OR entry MATCHES "^${base}=")
+                string(REGEX REPLACE "^[^=]+=" "" file "${entry}")
+                list(APPEND step_files "${file}")
+            endif()
+        endforeach()
         add_custom_command(OUTPUT "${output}"
             COMMAND ${CMAKE_COMMAND} -E make_directory ${out}/strings
             COMMAND ${assetc} strings ${code} --languages ${list_file} --out ${output} ${flags}
-            DEPENDS ${all_files} "${list_file}" ${assetc_depends}
+            DEPENDS ${step_files} "${list_file}" ${assetc_depends}
             COMMENT "Strings ${code}"
             VERBATIM)
         list(APPEND tables "${output}")

@@ -818,6 +818,47 @@ if(NOT MSVC)
                      -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
 endif()
 # Game fonts and localization (spec 029): every test of the spec in one block.
+# The converted font fixtures: the same bytes on every compiler and host (T4.9, AC-2).
+add_test(NAME font_fixtures_golden
+         COMMAND ${CMAKE_COMMAND} -DASSETC=$<TARGET_FILE:nnh_assetc> -DFONTS=${CMAKE_CURRENT_SOURCE_DIR}/data/fonts
+                 -DOUT=${CMAKE_CURRENT_BINARY_DIR}/font_fixtures -P ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/golden.cmake)
+set_tests_properties(font_fixtures_golden PROPERTIES PASS_REGULAR_EXPRESSION "font fixtures golden: PASS")
+# Routing (T4.9): the example's asset index has the converted fonts, the tables, the manifest and the licence, and none
+# of the sources (.font, .fnt, BMFont pages, .otf) nor the string files; editing one language's strings reruns only its
+# own table step (T5.7: the per-language step depends on its files and the base's).
+if(TARGET localization_assets)
+    add_test(NAME font_routing
+             COMMAND ${CMAKE_COMMAND} -DINDEX=${CMAKE_BINARY_DIR}/examples/localization/assets/.nnh_assets
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts/routing.cmake)
+    set_tests_properties(font_routing PROPERTIES PASS_REGULAR_EXPRESSION "font routing: PASS")
+    if(CMAKE_GENERATOR MATCHES "Ninja")
+        add_test(NAME strings_incremental
+                 COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_BINARY_DIR} -t query
+                         examples/localization/assets/strings/en.nnhstr)
+        set_tests_properties(strings_incremental PROPERTIES
+            PASS_REGULAR_EXPRESSION "en[.]strings" FAIL_REGULAR_EXPRESSION "de[.]strings|ja[.]strings")
+    endif()
+endif()
+# Declarations of LANGUAGES (T5.7): a fixture project configured once per case; each refusal names the fix.
+foreach(_case "missing|language de has no strings/de.strings"
+              "unlisted|strings/fr.strings belongs to fr, which is not in"
+              "bad_code|\"PT_br\" is not a language code"
+              "both_forms|de has both strings/de.strings and strings/de/: keep"
+              "bad_base|BASE ja is not in LANGUAGES"
+              "no_languages|string files but no LANGUAGES")
+    string(REPLACE "|" ";" _case "${_case}")
+    list(GET _case 0 _name)
+    list(GET _case 1 _expected)
+    add_test(NAME strings_declaration_${_name}
+             COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/data/strings_decl
+                     -B ${CMAKE_CURRENT_BINARY_DIR}/strings_decl_${_name} -DCASE=${_name}
+                     -DNNH_ROOT=${PROJECT_SOURCE_DIR})
+    set_tests_properties(strings_declaration_${_name} PROPERTIES PASS_REGULAR_EXPRESSION "${_expected}")
+endforeach()
+add_test(NAME strings_declaration_good
+         COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/data/strings_decl
+                 -B ${CMAKE_CURRENT_BINARY_DIR}/strings_decl_good -DCASE=good -DNNH_ROOT=${PROJECT_SOURCE_DIR})
+set_tests_properties(strings_declaration_good PROPERTIES PASS_REGULAR_EXPRESSION "strings declaration: [^\n]*en=[^\n]*de=")
 # The localization example's self-check on the fake platform, over the example's own converted assets (T7.2).
 if(TARGET localization_assets)
     target_sources(nnh_tests PRIVATE loc_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/localization/self_check.cpp)

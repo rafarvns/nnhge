@@ -98,6 +98,10 @@ world's block. [Plan 020](../../specs/020-entities/plan.md#scene-binding-and-the
 can't call into a scene that has left, and its tests check it (exit, the hooks, then the next scene's `on_enter`).
 Because nodes run in attach order, bind a world **before** the tween sets its hooks use.
 
+UI widgets bind the same way ([api/ui.md](../api/ui.md#input), spec 028, D48): a `Ui` bound with `bind(scene)` is
+updated on `BeforeUpdate` (so the scene's `update()` reads this frame's results and a pause scene on top freezes it)
+and has its transient input state reset on `AfterExit`, keeping its focus memory; its node lives in the UI's block.
+
 Internal API: `engine/core/src/scene/scene_attachments.hpp` (`scene_attach`, `scene_detach`, `scene_notify`).
 Cost for a scene with nothing attached: one pointer and a null check per frame and per exit; a game with scenes but
 no bound set links only `scene_notify()` (+176 bytes of code on the 3DS, measured in

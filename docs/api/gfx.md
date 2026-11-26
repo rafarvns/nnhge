@@ -72,6 +72,8 @@ follow the same order, so a sprite can sit between a background and a foreground
 A scene transition's overlay ([transition.md](transition.md#where-the-overlay-draws)) is recorded on layer 15 with
 `ignore_camera` after every scene's `draw()`, so it covers everything the scenes drew; what a manual loop draws after
 `scenes::update_and_draw()` (same layer, later call) stays above it.
+UI widgets ([ui.md](ui.md#drawing-and-layers)) draw on layer 14 by default, with `ignore_camera`: above the game,
+below a transition's overlay, so a transition covers menus.
 Animated sprites: a `SpriteAnimator`'s `draw_options()` fills the region, pivot and flips of its current frame
 ([animation.md](animation.md#drawing-fr-10)).
 Calls outside a frame (before the first `frame()`, after the loop) are ignored.

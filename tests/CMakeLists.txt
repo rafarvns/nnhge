@@ -740,6 +740,78 @@ if(NOT MSVC)
         set_tests_properties(saves_declaration_explains_${name} PROPERTIES PASS_REGULAR_EXPRESSION "${expected}")
     endforeach()
 endif()
+# UI widgets (spec 028): every test of the spec in one block.
+target_sources(nnh_tests PRIVATE
+    ui/test_actions_adapter.cpp
+    ui/test_anchor.cpp
+    ui/test_box_math.cpp
+    ui/test_callbacks.cpp
+    ui/test_cancel.cpp
+    ui/test_create.cpp
+    ui/test_cursor.cpp
+    ui/test_debug.cpp
+    ui/test_draw.cpp
+    ui/test_draw_equivalence.cpp
+    ui/test_draw_widgets.cpp
+    ui/test_events.cpp
+    ui/test_focus.cpp
+    ui/test_geometric.cpp
+    ui/test_grid.cpp
+    ui/test_input_custom.cpp
+    ui/test_input_raw.cpp
+    ui/test_keys.cpp
+    ui/test_layout_anchors.cpp
+    ui/test_layout_boxes.cpp
+    ui/test_layout_dirty.cpp
+    ui/test_list.cpp
+    ui/test_min_size.cpp
+    ui/test_modal.cpp
+    ui/test_navigate.cpp
+    ui/test_nine_slice.cpp
+    ui/test_no_leak.cpp
+    ui/test_number.cpp
+    ui/test_prompt.cpp
+    ui/test_remembered_focus.cpp
+    ui/test_repeat.cpp
+    ui/test_results.cpp
+    ui/test_reveal.cpp
+    ui/test_scene_binding.cpp
+    ui/test_scroll_box.cpp
+    ui/test_style.cpp
+    ui/test_text_seam.cpp
+    ui/test_text_sources.cpp
+    ui/test_touch.cpp
+    ui/test_tree.cpp
+    ui/test_ui_cost.cpp
+    ui/test_ui_misuse.cpp
+    ui/test_ui_random_ops.cpp
+    ui/test_values.cpp
+    ui/test_wrap.cpp)
+# The UI example's self-check (spec 028 T7.1, AC-2): its golden checksums on every host compiler.
+target_sources(nnh_tests PRIVATE ui_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/ui/self_check.cpp
+                                 ${PROJECT_SOURCE_DIR}/examples/ui/self_check_script.cpp
+                                 ui_example/test_hand_options.cpp ${PROJECT_SOURCE_DIR}/examples/ui/hand_options.cpp)
+# The UI example in the simulator (spec 028 T7.4, T7.6): its self-check, and its console script played with --pc.
+if(TARGET ui AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_test(NAME ui_self_check_pc COMMAND ui)
+    set_tests_properties(ui_self_check_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;UI_DEMO=check;NNH_EXIT_AFTER_FRAMES=420"
+        PASS_REGULAR_EXPRESSION "ui: PASS 30400DA6" FAIL_REGULAR_EXPRESSION "ui: FAIL|\] E " TIMEOUT 120)
+    get_filename_component(_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME ui_check_script_pc
+             COMMAND $<TARGET_FILE:nnh> run ui --pc --no-build --script examples/ui/tests/check.nnhs
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    set_tests_properties(ui_check_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_preset}"
+        PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 400
+        RESOURCE_LOCK nnh_remote_port)
+endif()
+# Spec 028 T6.1: the style structs are data-loadable (compile only: linking them would add types to the registry).
+if(NOT MSVC)
+    add_test(NAME ui_style_structs_are_data_loadable
+             COMMAND ${CMAKE_CXX_COMPILER} -std=c++20 -fsyntax-only -Wall -Wextra -Werror
+                     -I${PROJECT_SOURCE_DIR}/engine/core/include ${CMAKE_CURRENT_SOURCE_DIR}/ui/data_check/style_types.cpp)
+endif()
 # The entities example's self-check (spec 020 T5.4, AC-2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE entities_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/entities/self_check.cpp)
 # Particles (spec 024): unit tests, the shared helpers' tests.

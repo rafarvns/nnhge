@@ -296,3 +296,13 @@ never through `#ifdef` in game code.
   UI input value, drawing through public gfx calls), from plan 028, for the maintainer's review. Three plan questions
   are open there (layout of changes made after `update()` completed at `draw()`, a null handle on a full UI, a
   three-cell ellipsis); the patterns page gains a "Retained widget tree" row (design).
+- 2026-11-25: D48 approved with the plan's answers (layout completed at the start of `draw()`, a null handle and an
+  assert on a full UI, `...`) and **implemented** (spec 028, on the PC; the Linux checks and the Old 3DS run are next):
+  stage refinements in [plan 028](../../specs/028-ui-widgets/plan.md#implementation-refinements) — a list's row pool
+  maps item *i* to row *i mod (rows × columns)* (no ring head), a progress bar without text needs no text line, the
+  self-check folds its draw hash every 10 script frames, the style structs' data declarations are a compile-only ctest.
+- 2026-11-25: D48's console and Linux checks passed (spec 028 T9.1, T10.2–T10.3). An optimisation round (grid tracks
+  without divisions, three layout walks when a root has no wrapping label, one-line labels drawn as one run) left every
+  rectangle and golden unchanged; on the Old 3DS the list and draw targets pass and the full relayout's budget is set
+  from the measurement (< 0.93 ms, plan 028 "Console run 2 and budgets set"). A drag whose list is destroyed now
+  scrolls nothing (found by ASan).

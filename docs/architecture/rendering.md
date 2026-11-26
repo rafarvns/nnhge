@@ -55,6 +55,13 @@ only mesh and 3D entry points link: a 2D-only game links no 3D code (its cost: t
   on the left and right outputs (the right one cleared at its first use in a frame); the PC swaps its top render target
   and composes the eye view (left, right or a red/cyan anaglyph, F8) into the window; the fake records `L`/`R` calls.
 
+## Layer conventions
+
+Games pick their layers; the engine's own users keep out of the way: UI widgets draw on layer 14 by default
+([api/ui.md](../api/ui.md#drawing-and-layers), D48) and a scene transition's overlay on 15
+([api/transition.md](../api/transition.md)), both with `ignore_camera`, so a transition covers menus and menus cover
+the game.
+
 ## Tile layers (batches)
 
 > Status: **implemented** on PC, 3DS and the fake platform (spec 012, decision D26). Measured on an Old 3DS XL

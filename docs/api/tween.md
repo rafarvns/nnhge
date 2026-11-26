@@ -165,6 +165,11 @@ An **unbound** set (`nnh::TweenSet set{{.tweens = 32}};`) is updated by your cod
 without scenes, in a HUD object that lives across scenes, in a transition layer. The engine keeps no global set.
 Destroy sets before `nnh::shutdown()` (a set alive after it shows in the leak report).
 
+## Animating UI widgets
+
+The UI never includes this header: tween a widget through a setter on `Ui::set_render_offset` or `Ui::set_opacity`,
+which move and fade it when drawn without a relayout ([ui.md](ui.md), [menus guide](../guides/menus.md#animating-with-tweens)).
+
 ## Costs and limits
 
 | | 3DS | PC (x64) |

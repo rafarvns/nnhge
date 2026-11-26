@@ -1,6 +1,6 @@
 # Plan 028: UI widgets
 
-Status: approved 2026-11-25 (the maintainer, the three questions at the end as recommended; the spec was approved 2026-11-25 with every open question as
+Status: implemented 2026-11-25 (stages 0–11; console and Linux checks passed, budgets set); approved 2026-11-25 (the maintainer, the three questions at the end as recommended; the spec was approved 2026-11-25 with every open question as
 recommended, and those recommendations are this plan's decisions)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D48 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 004/005 (public `gfx::draw`, `fill_rect`, `draw_rect`, `draw_text`, `measure_text`; the built-in font: a
@@ -857,6 +857,107 @@ The spec's open questions are decided as it recommends. Plan-level decisions:
 17. **Example**: one UI per scene bound by D30, a HUD UI on layer 13, the 9-slice theme in C++ (the data-file pattern
     in the guide, compile-tested by `test_style_data.cpp`), Y self-check, X bench, SELECT theme, START quit.
 
+## Implementation (2026-11-25, on the PC)
+
+Built test-first in the worktree `spec-028` from `9aac3be`; commits on `spec-028`, not merged.
+
+### Stage 0 results (baseline)
+
+- `nnh_tests`: 3257 tests, `kMaxTests` 4096 (839 left). After this spec 3571: 525 left, so `kMaxTests` stays (T0.3 raises it below 500).
+- `hello` (text / data / bss): pc-release 134 880 / 22 052 / 212 400 (file 285 885 B); pc-debug 206 276 / 26 820 /
+  215 152; 3ds-release 202 204 / 28 360 / 107 368 (`.3dsx` 247 628 B); 3ds-dev 220 488 / 32 872 / 109 976.
+- 3ds-release `.text`: sprites 222 668, text 204 584, actions 247 212, transitions 331 984, platformer 437 464.
+- `gfx.hpp + result.hpp`: 7 844 preprocessed lines, `-fsyntax-only` 0.43–0.54 s.
+- Edit `examples/transitions/hud.cpp`: simulator 2.1–2.8 s (`cmake --build` included), `.3dsx` 3.7–3.9 s; clean
+  `nnh_core` (pc-debug) 13.5 s.
+- 11 reference screenshots (`build/ref-028/ref`, not committed); `compare.sh` compares the two bench shots on their top
+  screen only (their bottom screens show live timings).
+
+### Stage results
+
+- **Header cost** (T1.8): `<nnh/ui.hpp>` 8 784 lines (+940; budget +1 500), 0.45–0.54 s (within +0.05 s). It pulls only
+  `math`, `gfx`, `input`, `result`, `ease`, `handle`, `name_hash`, `small_function` and `ui_style`.
+- **Sizes** (T6.8): hot node 32 B, cold record 56 B on the 3DS / 64 B on 64-bit PCs (`static_assert`ed): **88 B per
+  widget on the 3DS** (96 on the PC); pooled row 72 B / 88 B; function slot 24 B / 32 B; result 20 B; a custom style
+  about 600 B. The bench's options screen: 5 024 B for 17 widgets (PC).
+- **Tests**: 314 UI tests in `nnh_tests` (`ui_*`, `ui_example_*`) and the ctests `ui_style_structs_are_data_loadable`,
+  `ui_self_check_pc` and `ui_check_script_pc`.
+- **Self-check** (T7.1): goldens `89D4068F D85440B0 7C85E5EA 907D59A4 49E1D0E0 30400DA6` (pc-debug; equal in pc-release
+  and in the example's check mode, which draws inside frames). Its test also checks that the script reaches every
+  screen, the prompt and its Yes, a refused entry, a blocked move, a page, a cancel and a touch-made value change.
+- **PC bench** (pc-dev, WinLibs GCC): idle128 0.002 ms, move128 0.012 ms, geo128 0.006 ms, relayout128 0.048 ms,
+  list10000 0.047 ms vs list20 0.048 ms (ratio 0.99), draw 0.83 µs vs 0.91 µs per draw by hand (ratio 0.91, 372
+  draws), frame worst 17.1 ms with 0 missed of 600: `ui bench: PASS`.
+- **Opt-in** (T8.3): 3ds-release and 3ds-dev `hello.elf`/`.3dsx` byte-identical to stage 0's; PC `hello.exe` sizes,
+  file length and `nm` identical (its hash changes on any relink: the PE timestamp). The 3ds-release `ui.elf` has no
+  `use_actions`, `ActionSet` or `set_events` code; a probe UI game (`build/ref-028/probe`: a button, update, draw) links
+  no prompt, actions or events code. sprites, text, actions, transitions and platformer: `.text` and screenshots
+  unchanged.
+- **Release strings** (T8.2): `scripts/check_release_strings.sh` gains the UI's dump, overflow and misuse texts; the
+  3ds-release `ui.3dsx` and the pc-release `ui.exe` have none of them. (Every pc-release `.exe`, `hello.exe` included,
+  already contains `NNH_REMOTE`, which the script reports: not from this spec.)
+- **Build times** (T8.4): edit `examples/ui/title_scene.cpp`: simulator 2.0–2.9 s (the reference example measures
+  2.1–2.8 s the same way), `.3dsx` 4.0–4.8 s (budget 5 s); clean `nnh_core` 16.0–16.3 s (+45 sources; budget 30 s).
+- **Warnings**: 0 on pc-debug, pc-dev, pc-release, 3ds-dev and 3ds-release.
+
+### ARM pre-check (T7.7)
+
+3ds-dev objects, `arm-none-eabi-nm -u` and `objdump -d`:
+
+| Path | Runtime helpers | VFP |
+|---|---|---|
+| idle update (`ui_update`, `ui_repeat`, `ui_input_raw`, `ui_reveal`, `ui_cursor`) | none on the idle path (`ui_repeat`'s `idivmod` only while a control is held; the cursor's pulse wraps by a compare since this stage) | the Circle Pad compares, the cursor's one `ease()` while it glides |
+| focus and navigation (`ui_navigate`, `ui_focus`, `ui_geometric`, `ui_list`) | `__aeabi_idiv(mod)` for grid columns and list rows | none |
+| layout (`ui_layout_*`, `ui_box_math`, `ui_text_seam`) | `__aeabi_idiv(mod)`: stretch shares, centring, grid tracks, cells per line | none |
+| touch (`ui_touch`, `ui_parts`) | `__aeabi_idiv`, `__aeabi_ldivmod` (the slider's rounding) | none |
+| drawing (`ui_draw*`, `ui_nine_slice`) | `__aeabi_idiv(mod)`, `__aeabi_ldivmod` (progress fill) | float positions and 9-slice scales handed to gfx |
+
+No libm call anywhere. `-fstack-usage` (3DS, -O2): deepest frames `out_run` 368 B, `arrange_axis` 368 B,
+`out_background` 288 B (440 B before its 9-slice parts became 16-bit), `draw_widget` 272 B; the deepest draw path
+(walk → `draw_widget` → `draw_list` → `out_run`) is about 0.85 KiB, the update path about 0.5 KiB (`container_size` no
+longer keeps a 1 KB track table). No rectangle, golden or draw hash changed with these fixes.
+
+### Mutation testing (T8.1)
+
+24 hand mutants (`build/ref-028/mutate.py`), each applied alone, `nnh_tests ui_` run in pc-debug: **24 killed, 0
+survived** — remainder pixels dropped, centre rounded up, minimums never fixed, the anchor offset's sign, no hyphen
+break, an ellipsis on an exact fit, the reveal dropping its fraction, wrap on repeat allowed, the geometric overlap
+group dropped, repeat one frame early, the oldest direction winning, no suppression after a modal opens, the Circle Pad
+without its release threshold, the slider's touch rounding down, the list margin ignored, the drag threshold `>=`, an
+unstable results sort, fills following the camera, opacity truncated, a 5-frame pressed look, a scroll box relaid out
+instead of moved, tap-to-select ignored, 9-slice insets not clamped, focus repair skipping the next siblings. (The plan
+listed about 60; this pass covered 24 across every pure helper and the main rules.)
+
+### Implementation refinements
+
+- **The row pool** maps item *i* to pooled row *i mod (rows × columns)*: the window always covers whole consecutive
+  rows, so no ring head is stored (plan: "ring head u8"). A one-row scroll still fills one row.
+- **A progress bar without text** needs no text line of height (its minimum is its padding): give HUD bars a size.
+- **The self-check folds the draw hash every 10 script frames** (one `draw()` per display frame in the example, so the
+  check scene records one UI's draws a frame); every frame's results are folded as planned.
+- **The style structs' data declarations** are checked by a compile-only ctest (`tests/ui/data_check/style_types.cpp`,
+  `-fsyntax-only -Werror`): linking them into `nnh_tests` would add types to spec 014's registry tests. Nested parts
+  were named from the start (`UiSliderParts`, `UiToggleParts`, `UiChoiceParts`, `UiListParts`, `UiProgressParts`).
+- **API additions** (queries and helpers): `Ui::key(w)`, `Ui::revealed(label)`, `Ui::text_cells(label)`,
+  `ui_bit(UiControl)`, `UiKey::none()`, `UiText::kind()/text()/key_value()`, `UiStats::layouts` and `block_bytes`,
+  `UiSliderParts::track_height`. `UiAnchor` lives in `<nnh/detail/ui_style.hpp>` (the cursor style uses it).
+- **`UiBackground::color` defaults to white** (a 9-slice's tint must not default to black).
+- **Focus changes made by the game report nothing** (`focus()`, repairs), like `set_value`; navigation and touch do.
+- **Stale handles in queries assert** too (Debug/Development), as "Misuse" says; `alive(w)` is the silent check.
+- **A choice's confirm wraps** to the first option even when the choice doesn't wrap on Left/Right.
+- **`UiDesc::functions`** counts callbacks, row fills and formatters; the resolver and the input source live in the
+  block's header.
+- **Module files**: besides the plan's list, `ui_internal.hpp` (the module's internal function declarations, included at
+  the end of `ui_block.hpp`), `ui_layout.{hpp,cpp}` (the layout driver and the walks' helpers), `ui_widget_new.{hpp,cpp}`
+  (the generic part of creating a widget), `ui_release.cpp` (resources freed with a widget, slices compacted),
+  `ui_parts.{hpp,cpp}` (part rectangles shared by drawing and touch), `ui_focus.hpp`, `ui_cursor.hpp`, `ui_draw.hpp`,
+  `ui_draw_list.cpp` (lists split from per-kind drawing). 45 sources in all, the largest 236 lines.
+- **The example** keeps its HUD and background in `hud.{hpp,cpp}` and shares the scenes' plumbing in
+  `menu_scene.{hpp,cpp}`; only the top scene draws (the options slide in over the background, not over the title).
+- **Tests written in batches**: stages 1–2 saw every test fail first (stub helpers, then a layout bug the tests caught);
+  for stages 3–6 the module code was written ahead of its tests in larger steps, then each test run and fixed; the
+  24-mutant pass is the evidence that those tests bite.
+
 ## Stage 10: console run (prepared)
 
 Prepared at stage 7 (the expected lines are pc-debug's, recorded at T7.6). T10.1 on the PC first:
@@ -866,22 +967,131 @@ byte-identical to T0.1's. Then on an Old 3DS, nobody touching it after Y. Three 
 press **Y**, then on the PC (`nnh` builds the Development `.3dsx`, sends it, plays the script and brings the console back;
 logs and screenshots in `build/logs/`):
 
-1. `build/pc-debug/tools/nnh/nnh run ui --script examples/ui/tests/check.nnhs` (≈ 3 min). Expected, as on the PC:
-   `ui: showcase`; `ui: check started`, `ui: 600 sum <S1>` … `ui: 3600 sum <S6>`, **`ui: PASS <G>`**; every showcase
-   line of the script (focus, values, refused, cancelled, pages, the list at 250, the dialog shown, the prompt's No, the
-   theme); `ui bench: started`, `base gfx submit avg …`, `idle128 … (target < 0.05 ms)`, `move128 … (target < 0.15 ms)`,
-   `geo128 …`, `relayout128 … (target < 0.6 ms)`, `list10000 … list20 … ratio … (target <= 1.10)`, `draw ui … hand …
-   ratio … (target <= 1.15)`, `frame worst … missed … of 600`, `memory widget 88 B row 72 B …`, and the verdict.
+1. `build/pc-debug/tools/nnh/nnh run ui --script examples/ui/tests/check.nnhs` (about 75 s of frames, plus the build).
+   Expected, as with `--pc` (recorded 2026-11-25: `nnh: PASS (154 lines, frames 1-4292)`): `ui: showcase`;
+   `ui: check started`, `ui: 600 sum 89D4068F`, `ui: 1200 sum D85440B0`, `ui: 1800 sum 7C85E5EA`,
+   `ui: 2400 sum 907D59A4`, `ui: 3000 sum 49E1D0E0`, `ui: 3600 sum 30400DA6`, **`ui: PASS 30400DA6`**,
+   `ui: focus title.new`; the showcase's `ui: focus title.options`, `ui: activated title.options`,
+   `ui: value music 3`, `ui: value music 8` (a touch at 234,25), `ui: focus online`, `ui: refused online`,
+   `ui: activated options.back`, `ui: focus title.options` (remembered), `ui: focus title.inventory`,
+   `ui: activated title.inventory`, `ui: focus list 17`, `ui: page list 20`, `ui: focus title.inventory`,
+   `ui: focus title.gallery`, `ui: activated title.gallery`, `ui: focus grid 1`, `ui: focus grid 6`,
+   `ui: focus title.gallery`, `ui: focus title.new`, `ui: activated title.new`, `ui: dialog shown 103/103`,
+   `ui: focus title.new`, `ui: focus title.quit` (a touch at 160,183), `ui: activated title.quit`,
+   `ui: activated quit.no` (a touch at 183,129), `ui: theme default`; then `ui bench: started`,
+   `ui bench: base gfx submit avg …`, `idle128 … (target < 0.05 ms)`, `move128 … (target < 0.15 ms)`,
+   `geo128 … (target < 0.15 ms)`, `relayout128 … (target < 0.6 ms)`, `list10000 … list20 … ratio … (target < 0.2 ms,
+   <= 1.10)`, `draw ui … hand … per draw ratio … (target <= 1.15)`, `frame worst … missed … of 600`,
+   `memory widget 88 B row 72 B …`, then `ui bench: PASS` (or `FAIL (<names>)`). Screenshots in `build/logs/ui-*`:
+   title, options, list, grid, dialog, modal, theme2 — compare them with the `--pc` run's (AC-5).
    **Expected from T7.7**: logic lines equal to the PC's; idle ≈ 0.01 ms, move ≈ 0.03, geo ≈ 0.06, relayout 0.35–0.55
    (**tight**), lists ≈ 0.02 with ratio ≈ 1.0, draw ratio ≈ 1.02, frame worst ≈ 10–11 ms with 0 missed. A FAIL fails
-   the run after every number is logged: record them in "Console run 1"; T10.3 applies risk 1's list, or the budgets are
-   set from the measurement with ≈ 25 % margin. Read the screenshots (options, list, grid, dialog, modal, theme2) against
-   the `--pc` run's: text and solid colours identical, 9-slice texels identical (AC-5).
+   the run after every number is logged: record them in "Console run 1"; T10.3 applies risk 1's list, or the budgets
+   are set from the measurement with ≈ 25 % margin.
 2. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` (≈ 2.5 min). Expected,
    unchanged (no shared code changed): `bench: PASS 4 layers + 300 sprites, …`; `nnh: PASS` (the "sprites bench still
    passes" check, as plan 024 read it).
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` (≈ 40 s). Expected:
    exactly the `replay: … sum` lines in the tree and `60 Hz PASS`; `nnh: PASS`.
+
+### Stage 9 results (Linux, run by the lead at 96d76a2)
+
+GCC 13: `nnh_tests` all pass, ctest 345/346 (only `platformer_doors_script_pc`, the known 60 Hz flake). GCC 14: 3572
+tests, 0 failures. 32-bit (`-m32 -msse2 -mfpmath=sse`): 3572, 0 failures. clang 18 ASan + UBSan: no runtime error;
+LeakSanitizer reported 8840 B in one allocation, the block of
+`ui_callbacks_destroying_the_ui_asserts_and_is_safe_in_release`: in Debug the assert stops `delete g` after `~Ui` has
+dropped the block, so nothing freed it. Fixed in the test (T10.3's commit): it keeps the block pointer before the
+update, and when the assert fired it clears `busy`, frees the block with `ui_free` and deletes the `Ui` (its block now
+null: only the storage goes). Release checks the same as before (no crash, the block freed when the update ends).
+
+Before that, the first stage 9 run (at 99e493e) had found two more things, fixed in 96d76a2: GCC 13/14 refused two
+test initialisers (`{.name = "down"}` as an `ActionDesc`, `add_style({})`; MinGW's newer GCC accepts them; replaced by
+named values), and ASan a heap overflow — destroying the list being dragged cleared `touch.scroller` but left
+`touch.scrolling` set, so the next held touch indexed the block with `kUiNone` (fixed in `held()`, regression test
+`ui_touch_drag_survives_the_list_being_destroyed`, red under ASan first).
+
+**Rerun at 1e02202 (after the optimisation round):** GCC 13 ctest 345/346 (only `platformer_doors_script_pc`: worst
+frame 36.1 ms, average 16.8 ms in the VM, the known PC timing flake; the platformer doesn't link the UI); GCC 14 3 582
+tests, 0 failures; clang 18 ASan + UBSan (`detect_leaks=1`) 3 582, 0 failures, no report; 32-bit 3 582, 0 failures.
+The self-check test (golden `30400DA6`) passes on all four.
+
+### Console run 1 (2026-11-25, Old 3DS XL, pre-optimisation build)
+
+`build/logs/ui-20261125-203213.txt` and a second run for variance (numbers within ≈ 1 %): functional lines and
+`ui: PASS 30400DA6` as on the PC. Bench (base gfx submit 0.1687 ms): idle128 0.027 ms PASS, move128 0.055 PASS, geo128
+0.106 PASS, **relayout128 avg 1.482 worst 1.744 (target < 0.6) FAIL**, **list10000 0.554 / list20 0.551, ratio 1.01
+(target < 0.2) FAIL**, **draw ui 7.96 µs vs hand 6.55 µs per draw, ratio 1.22 over 372 draws (target ≤ 1.15) FAIL**,
+frame worst 17.6 ms, 0 missed PASS; memory widget 88 B, row 72 B, options 4624 B for 17 widgets.
+
+### Optimisation round (T10.3)
+
+No rectangle, checkpoint or draw hash changed: `ui: PASS 30400DA6`, every UI test and the micro-benchmark's draw hash
+`7429F9EB` identical before and after; 3ds-release and 3ds-dev `hello.elf`/`.3dsx` byte-identical to T0.1's. Measured
+on the PC with a micro-benchmark (`build/ref-028/micro`, not committed: the bench's workloads in tight loops, pc-release
+`-O2`, the fake platform, so `draw()` times the UI's own work and not gfx's).
+
+1. **Lists: the bench measured the drawing, not the scroll.** The list phases time `update()` (one row of scroll), then
+   draw the list untimed; but `cost()` added the next frame's gfx submit, i.e. the ≈ 250 glyph sprites of 12 rows of
+   text — the same for 20 items or 10 000, hence the ratio 1.01 and the constant 0.55 ms. The scroll itself is
+   0.16–0.17 µs on the PC (no relayout: a list keeps whole rows and only moves its window; the rows coming into view are
+   filled at draw). `bench_scene.cpp` now judges the list phases on their own update time (their drawing is the draw
+   phases' business, which measure it per glyph). Expected on the console: ≈ 0.01–0.03 ms, ratio ≈ 1.0.
+2. **relayout128** (PC 26.7 → 11.0 µs, −59 %):
+   - grid boxes find track sizes in one walk with running column/row counters (`grid_tracks`, a 64-track table;
+     tracks past it by a walk): no division per child — on the ARM11 each was an `__aeabi_idiv` call;
+   - a non-wrapping label keeps the line count and cells pass 1 measured; a button its line count: pass 3 doesn't walk
+     their texts again;
+   - a root with no wrapping label (counted per root in `UiBlock::wrap_labels`) computes minimum heights in pass 1's
+     walk and skips pass 3: three walks instead of four (`layout_visits` = 3 × the visible nodes; a root with a
+     wrapping label still 4 ×; tests in `test_layout_dirty.cpp`);
+   - `distribute()` sets every child to its minimum in one walk and stops there when none expands (the common case);
+   - small helpers inlined (`seam_next` for ASCII, `seam_cell/line/scale`, `box_align`, `box_axis`, the post-order
+     walk), padding looked up once per node in the measuring passes.
+   Expected on the console ≈ 1.48 × 0.41 ≈ 0.6 ms, somewhat less since the removed divisions cost more there:
+   **0.5–0.65 ms, borderline** against < 0.6.
+3. **Draw** (the UI's own work per `draw()` of the options screen, PC 8.8 → 3.3 µs, −62 %):
+   - a one-line, fully shown, non-wrapping label (most labels) draws its text as one run with no wrapper walk;
+   - the run's hash folds its bytes directly (the same FNV-1a sequence as word by word, zero-padded) and counts glyphs
+     with an inline ASCII path;
+   - boxes, roots, stacks and spacers (no look of their own) are skipped before their context, style and state are
+     computed;
+   - a fully opaque ancestor skips the opacity division (exact: `(o × 255 + 127) / 255 = o`).
+   The console's extra cost was 1.41 µs per draw (7.96 vs 6.55); if it scales with the UI's own work, ≈ 0.55 µs:
+   **ratio ≈ 1.08–1.10** against ≤ 1.15.
+4. **A fix found on the way** (test first: `ui_drawn_label_with_a_carriage_return_keeps_every_character`): a revealed or
+   wrapped label counted a `'\r'` as a cell when cutting its run, so it dropped a character (`"ab\rc"` revealed to 3
+   drew `"ab\r"`); gfx and the wrapper give `'\r'` no cell. The golden session has no `'\r'`: no checkpoint moved.
+
+**Mutants** on the round's code (17, `build/ref-028/mut2.py`, judged by the `ui_` tests): 7 killed at once, 8 more
+after six new tests (`ui_drawn_label_of_several_lines_aligns_each_line`, `ui_draw_count_skips_both_kinds_of_space`,
+`ui_drawn_nearly_opaque_parent_still_fades`, `ui_min_label_max_lines_without_wrapping_is_that_many_lines_high`,
+`ui_grid_box_with_fewer_children_than_columns_is_as_wide_as_they_are`,
+`ui_grid_box_rows_past_the_track_table_are_placed_in_order`, and a parent-squeezed box's warning in
+`ui_hbox_children_over_the_width_overflow_without_shrinking`; the `'\r'` test also checks the draw count). Two are
+equivalent: pass 1's `max_lines == 0` guard (a `max_lines` label's count is always overwritten after it), and dropping
+the wrap bit from the one-line fast path (a wrapping label on one line gives the same items; only the hash's bytes
+could differ, by trailing spaces).
+
+PC bench after (pc-dev): every line PASS (relayout128 0.03 ms, lists 0.005 ms, draw ratio 0.99–1.06 over runs). If run 2
+still misses relayout128 (the likeliest), the next steps without the contingency are caching each label's measured
+width until its text or style changes (`text_changed()` re-resolves every key, so the bench would still measure every
+label), or setting the budget from the measurement with ≈ 25 % margin as T10.3 allows; neither the list nor the draw
+target should need T10.4.
+
+### Console run 2 and budgets set (2026-11-25, Old 3DS XL, at 1e02202)
+
+`ui.3dsx` 408 KB (3ds-dev). Functional: the six checkpoints and `ui: PASS 30400DA6` as on the PC, every showcase line.
+Bench: idle128 avg 0.025 ms (worst 0.104) PASS, move128 0.051 (0.140) PASS, geo128 0.099 (0.187) PASS, **relayout128
+avg 0.744 ms, worst 0.889 (target < 0.6) — missed**, list10000 0.051 / list20 0.051 ms, ratio 1.00 PASS, draw ui 7.52 µs
+vs hand 6.66 µs per draw, **ratio 1.13** over 372 draws PASS, frame worst 18.0 ms, 0 missed of 600 PASS; memory widget
+88 B, row 72 B, options 4640 B for 17 widgets. The optimisation halved the relayout (1.48 → 0.744 ms), below the
+round's projection; by the maintainer's bench policy (optimise first, then the measurement with ≈ 25 % margin) its
+budget is **< 0.93 ms**, written in the spec's AC-6, `bench_scene.cpp` and `docs/api/ui.md`. A full relayout with 64
+texts changed at once is a rare event (a language switch), under 5 % of a frame. The frame target and the draw ratio
+pass, so the T10.4 contingency doesn't run. Spec 012's tile gate (`bench: PASS 4 layers + 300 sprites`, avg 16.7 ms,
+worst 17.4, 0 missed; limits 6 layers and 600 sprites as before) and the platformer's replay (every checksum line, `60
+Hz PASS`, level1 worst 19.6 ms, bonus 18.3 ms, 0 missed) passed in run 1 on this branch (the UI isn't in the
+platformer).
 
 ## Constitution Check (after design)
 

@@ -46,7 +46,7 @@ See [docs/guides/getting-started.md](docs/guides/getting-started.md).
 - Guides: [getting started](docs/guides/getting-started.md), [the nnh tool](docs/guides/nnh-tool.md),
   [testing on the console](docs/guides/testing-on-the-console.md), [debugging on the 3DS](docs/guides/debugging-on-3ds.md),
   [NNH Link](docs/guides/nnh-link.md), [distributing your game](docs/guides/packaging.md),
-  [levels in Tiled](docs/guides/levels.md)
+  [levels in Tiled](docs/guides/levels.md), [menus with UI widgets](docs/guides/menus.md)
 - API reference: [docs/api/](docs/api/)
 - Architecture (event bus + scenes, patterns, structure, decisions): [docs/architecture/](docs/architecture/)
 - How we work (Spec-Driven Development, TDD, SOLID, constitution): [docs/process/](docs/process/)

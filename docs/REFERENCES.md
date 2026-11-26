@@ -248,3 +248,23 @@ Written from published documentation only; nothing copied.
 - [raylib](https://www.raylib.com/cheatsheet/raylib_cheatsheet_v4.0.pdf) (`Camera3D`, `GenMesh*`, `GetWorldToScreen`),
   [Godot's 3D transparency limits](https://docs.godotengine.org/en/stable/tutorials/3d/3d_rendering_limitations.html) and
   [Unity's Camera.WorldToScreenPoint](https://docs.unity3d.com/ScriptReference/Camera.WorldToScreenPoint.html): API shapes.
+
+## UI widgets (spec 028)
+
+Written from the published designs, no code copied:
+
+- **Godot** `Control` nodes — anchors and offsets, size flags with stretch ratios, containers, `NinePatchRect`, themes
+  with per-state styleboxes, focus neighbours —
+  [Control](https://docs.godotengine.org/en/stable/classes/class_control.html),
+  [Using containers](https://docs.godotengine.org/en/stable/tutorials/ui/gui_containers.html),
+  [Keyboard/Controller navigation and focus](https://docs.godotengine.org/en/stable/tutorials/ui/gui_navigation.html),
+  [NinePatchRect](https://docs.godotengine.org/en/stable/classes/class_ninepatchrect.html).
+- **Unity** uGUI — `Selectable` navigation (automatic, explicit, wrap), layout groups, 9-sliced sprites —
+  [Navigation options](https://docs.unity3d.com/Packages/com.unity.ugui@1.0/manual/script-SelectableNavigation.html),
+  [Auto layout](https://docs.unity3d.com/Packages/com.unity.ugui@1.0/manual/comp-UIAutoLayout.html),
+  [9-slicing](https://docs.unity3d.com/Manual/9SliceSprites.html).
+- **Clay** (Nic Barker): layout in a fixed arena without allocation — https://github.com/nicbarker/clay
+- **microui** and **Dear ImGui**: immediate-mode UIs, considered and not chosen —
+  https://github.com/rxi/microui, https://github.com/ocornut/imgui
+- Console menu conventions (DS/3DS games): held-direction repeat, wrap on a fresh press only, L/R pages, A confirm /
+  B back, touch and D-Pad parity on the lower screen.

@@ -202,6 +202,19 @@ at the world layer (default 8), opaque then blended back to front, culling, `to_
 ([api/gfx3d.md](docs/api/gfx3d.md)); on by `AppConfig::gfx.max_draws_3d` (default 0: a 2D game links no 3D code); the
 simulator draws 3D with the engine's CPU rasteriser (`engine/platforms/shared/raster3d/`), the 3DS with citro3d
 (`engine/platforms/3ds/shaders/mesh3d.v.pica`).
+UI widgets (spec 028, implemented, console and Linux checks passed, budgets set; D48; demo `examples/ui`, guide
+[menus](docs/guides/menus.md)): `<nnh/ui.hpp>` — `Ui::create(desc)` (one block, 88 B per widget on the 3DS, roots per
+screen), widgets built in code under a parent (`label` with wrap/`...`/typewriter reveal, `image`, `progress`, `panel`
+(solid or 9-slice), `spacer`, `button`, `toggle`, `slider`, `choice`, `list` (a row pool filled by the game's `fill`
+only for rows coming into view; `columns > 1`: a grid), `vbox`/`hbox`/`grid_box`/`stack`/`scroll_box`), `UiWidget`
+generational handles, game `UiKey`s; integer layout only when dirty (stretch ratios, nine-point anchors, completed at
+`draw()` for changes after `update()`); focus by D-Pad/Circle Pad (repeat 24/6, wrap on a fresh press, neighbours, a
+geometric fallback, disabled skipped or inert → `Refused`, default and remembered focus), modals and `prompt`; touch on
+the bottom screen; `update()` (or `bind(scene)`, D30) → `results()`/`activated(key)`/callbacks/opt-in bus events;
+controls held when a UI becomes active are ignored; text sources (copy, `borrow`, `key` + resolver, `text_changed()`:
+the localization seam); `UiStyle`/`UiTheme` per state (`ui::default_theme()` art-free); `draw()` = public gfx calls on
+layer 14 with `ignore_camera`; `use_actions` adapter linked only when called. Self-check `30400DA6`
+([api/ui.md](docs/api/ui.md)).
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
@@ -272,6 +285,8 @@ build/pc-debug/tools/nnh/nnh run prefabs [--pc] --script examples/prefabs/tests/
 build/pc-debug/tools/nnh/nnh run hierarchy [--pc] --script examples/hierarchy/tests/check.nnhs  # yard, self-check 23DB5C36, bench
 build/pc-debug/tools/nnh/nnh run models [--pc] --script examples/models/tests/check.nnhs   # 3D: self-check A3BF4EDF, probe pixels, to_screen
 MODELS_DEMO=check NNH_EXIT_AFTER_FRAMES=70 build/pc-debug/examples/models/models.exe     # showcase (default)|check|bench|smoke
+UI_SHOT=options NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/ui.png build/pc-debug/examples/ui/ui.exe   # title|options|list|grid|dialog|modal|theme2
+build/pc-debug/tools/nnh/nnh run ui [--pc] --script examples/ui/tests/check.nnhs   # self-check 30400DA6, the showcase by buttons and touch, bench
 build/pc-debug/tools/nnh/nnh run models [--pc] --script examples/models/tests/stereo.nnhs  # stereo: slider 1, both eyes, golden B3550D40
 NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/right.png build/pc-debug/examples/models/models.exe   # left|right|anaglyph
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)

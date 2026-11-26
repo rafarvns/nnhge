@@ -213,6 +213,12 @@ names it. The PC simulator has every control: check the Old 3DS path with the fa
 
 Not thread-safe (the game's thread only). Destroy sets before `nnh::shutdown()` or they appear in the leak report.
 
+## UI widgets
+
+`Ui::use_actions(set, map)` makes a UI read its directions, confirm, cancel and pages from your actions (a vector action
+as four directions), so remapped buttons work in menus; the UI keeps its own repeat. It lives in its own object, linked
+only by games that call it: [ui.md](ui.md#input).
+
 ## Not included
 
 Remapping PC keys to 3DS controls (the simulator's concern), chords and double-taps, context priorities, several

@@ -45,6 +45,9 @@ NNH_TEST(plural_moduli_of_numbers_beyond_32_bits) {
     CHECK(of(ru, 1000000000000000011ull) == lf::Many);  // …11
     CHECK(of(ru, 4294967298ull) == lf::Many);           // 2^32 + 2 ends in 98
     CHECK(of(ru, 4294967302ull) == lf::Few);            // 2^32 + 6 ends in 02
+    CHECK(of(ru, 4294967295ull) == lf::Many);           // 2^32 - 1 ends in 95 (T10.3: the 32-bit modulo)
+    CHECK(of(ru, 4294967291ull) == lf::One);            // ends in 91
+    CHECK(of(ru, 4294967293ull) == lf::Few);            // ends in 93
     CHECK(of(ru, 18446744073709551615ull) == lf::Many); // 2^64 − 1 ends in 15
     CHECK(of(ru, 9223372036854775808ull) == lf::Many);  // 2^63 ends in 08
 }

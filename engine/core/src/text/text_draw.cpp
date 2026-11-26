@@ -20,20 +20,29 @@ struct Emit {
     Vec2 origin;
     const TextOptions& o;
     const TextFace& face;
-    float s; // scale
+    float s;             // scale
+    // every glyph sprite of the text: what they share (kind, screen, layer, camera, scale) set once, the rest per glyph
+    mutable DrawCommand glyph{};
+    bool plain = false; // a game font's glyphs without shadow or outline: emit_fast() draws them inline
 };
 
-void sprite(const Emit& e, int slot, std::uint32_t generation, Region region, float x, float y, Color color) {
+/// The sprite command shared by every glyph of a text.
+DrawCommand glyph_template(Screen screen, const TextOptions& o, float s) {
     DrawCommand c;
     c.kind = Kind::Sprite;
-    c.screen = e.screen;
-    c.layer = gfx_clamp_layer(e.o.layer);
-    c.ignore_camera = e.o.ignore_camera;
+    c.screen = screen;
+    c.layer = gfx_clamp_layer(o.layer);
+    c.ignore_camera = o.ignore_camera;
+    c.scale = {s, s};
+    return c;
+}
+
+void sprite(const Emit& e, int slot, std::uint32_t generation, Region region, float x, float y, Color color) {
+    DrawCommand& c = e.glyph;
     c.texture_slot = slot;
     c.texture_generation = generation;
     c.region = region;
     c.position = {x, y};
-    c.scale = {e.s, e.s};
     c.color = color;
     gfx_record(c);
 }
@@ -83,6 +92,19 @@ void emit(const Emit& e, const RunItem& it, int px, int py) {
     sprite(e, f.page_slot[g.page], f.page_generation[g.page], r, p.x, p.y, e.o.color);
 }
 
+/// emit(), with a game font's plain glyph (the common case) drawn inline (T10.3: one call less per glyph on the ARM11).
+[[gnu::always_inline]] inline void emit_fast(const Emit& e, const RunItem& it, int px, int py) {
+    if (!e.plain || it.g.glyph < 0) {
+        emit(e, it, px, py);
+        return;
+    }
+    const FontBlock& f = *e.face.fonts[it.g.font];
+    const font::GlyphRecord& g = f.glyphs[it.g.glyph];
+    const float s = e.s;
+    sprite(e, f.page_slot[g.page], f.page_generation[g.page], Region{g.x, g.y, g.w, g.h},
+           e.origin.x + static_cast<float>(px + g.ox) * s, e.origin.y + static_cast<float>(py + g.oy) * s, e.o.color);
+}
+
 /// The outline colour on a font without outlines: ignored, said once per font slot (Debug/Development).
 void warn_no_outline([[maybe_unused]] const TextFace& face) {
 #if !defined(NNH_FLAVOR_RELEASE)
@@ -99,7 +121,9 @@ void draw_text_layout(Screen screen, Vec2 position, const char* utf8, const Text
     const TextFace face = face_for(options.font, options.scale);
     if (face.builtin() && !font_texture_ready()) return;
     if (options.outline_color.a > 0 && !face.builtin() && face.fonts[0]->outlines == nullptr) warn_no_outline(face);
-    const Emit e{screen, position, options, face, static_cast<float>(face.scale)};
+    const float s = static_cast<float>(face.scale);
+    const Emit e{screen, position, options, face, s, glyph_template(screen, options, s),
+                 !face.builtin() && !options.shadow && options.outline_color.a == 0};
     const int line_height = face_line_height(face);
     if (options.wrap_width <= 0 && options.max_lines <= 0) { // no wrapping: lines end at '\n'; one walk each (two aligned)
         int index = 0;
@@ -109,7 +133,7 @@ void draw_text_layout(Screen screen, Vec2 position, const char* utf8, const Text
             const int x0 = options.align == TextAlign::Left ? 0 : align_offset(options.align, run_width(face, line, end));
             walk_run(face, line, end, [&](const RunItem& it) {
                 if (it.g.missing) text_missing(face.fonts[0]->self_slot, it.cp, face.fonts[0]->name);
-                if (it.draw) emit(e, it, x0 + it.pen, index * line_height);
+                if (it.draw) emit_fast(e, it, x0 + it.pen, index * line_height);
             });
             if (*end == 0) return;
             line = end + 1;
@@ -120,7 +144,7 @@ void draw_text_layout(Screen screen, Vec2 position, const char* utf8, const Text
         const int y0 = index * line_height;
         walk_run(face, utf8 + line.start, utf8 + line.start + line.bytes, [&](const RunItem& it) {
             if (it.g.missing) text_missing(face.fonts[0]->self_slot, it.cp, face.fonts[0]->name);
-            if (it.draw) emit(e, it, x0 + it.pen, y0);
+            if (it.draw) emit_fast(e, it, x0 + it.pen, y0);
         });
         if (line.ellipsis) {
             const char* dots = ellipsis_text(face);

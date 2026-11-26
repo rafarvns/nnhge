@@ -21,15 +21,16 @@ NNH_LOG_CHANNEL(loc);
 NNH_MEM_TAG(strings);
 
 namespace detail::loc {
-namespace {
 
-LocState g_state;
+LocState g_loc_state; // loc_state.hpp: read inline by tr() and format()
+
+namespace {
 
 void shutdown_hook() { nnh::loc::stop(); }
 
 /// The table of `language` read into the block at `at`. @return nullptr or the reason.
 const char* read_table(int language, std::size_t& at, LoadedTable& t) {
-    LocState& s = g_state;
+    LocState& s = g_loc_state;
     char path[40];
     const char* code = s.languages[language].code;
     std::size_t n = std::strlen(code);
@@ -54,10 +55,8 @@ const char* read_table(int language, std::size_t& at, LoadedTable& t) {
 
 } // namespace
 
-LocState& loc_state() { return g_state; }
-
 const char* load_chain(int language) {
-    LocState& s = g_state;
+    LocState& s = g_loc_state;
     std::size_t at = 0;
     s.table_count = 0;
     for (int c = 0; c < kMaxChain && s.languages[language].chain[c] != kNoIndex; ++c) {
@@ -69,7 +68,7 @@ const char* load_chain(int language) {
 }
 
 int match_language(const char* code) {
-    const LocState& s = g_state;
+    const LocState& s = g_loc_state;
     const int n = s.header.language_count;
     for (int i = 0; i < n; ++i)
         if (same_language_tag(code, s.languages[i].code)) return i;
@@ -90,7 +89,7 @@ int match_language(const char* code) {
 }
 
 void announce(int previous, int current, [[maybe_unused]] const char* why) {
-    LocState& s = g_state;
+    LocState& s = g_loc_state;
     s.current = current;
     ++s.serial;
     NNH_LOG_INFO(loc, "language %s (%s)", s.languages[current].code, why);
@@ -105,7 +104,7 @@ void announce(int previous, int current, [[maybe_unused]] const char* why) {
 
 Result<void> loc::start(const StartOptions& options) {
     using namespace detail::loc;
-    LocState& s = g_state;
+    LocState& s = g_loc_state;
     if (s.started) {
         NNH_ASSERT(false, "loc::start() called twice");
         return Result<void>{};
@@ -170,7 +169,7 @@ Result<void> loc::start(const StartOptions& options) {
 
 void loc::stop() {
     using namespace detail::loc;
-    LocState& s = g_state;
+    LocState& s = g_loc_state;
     if (s.hook_added) detail::remove_input_hook(s.hook);
     if (s.fonts_switch != nullptr && s.started) s.fonts_switch(-1);
     mem::free(s.block);

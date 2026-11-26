@@ -16,7 +16,7 @@ char32_t peek(const char* text, int length, int pos, int& next) {
         return 0;
     }
     const char* p = text + pos;
-    const char32_t c = next_codepoint(p);
+    const char32_t c = next_codepoint_fast(p);
     next = static_cast<int>(p - text);
     if (next > length) next = length;
     return c;
@@ -27,7 +27,7 @@ int kind_of(std::uint8_t breaks) { return breaks & kBreakKindMask; }
 /// Skips the break spaces from `pos`.
 int skip_spaces(const char* text, int length, int pos) {
     int next = pos;
-    while (pos < length && kind_of(break_class(peek(text, length, pos, next))) == kBreakSpace) pos = next;
+    while (pos < length && kind_of(break_class_fast(peek(text, length, pos, next))) == kBreakSpace) pos = next;
     return pos;
 }
 
@@ -110,8 +110,8 @@ bool TextWrapper::next(WrapLine& line) {
     int break_end = -1, break_width = 0, break_chars = 0, break_next = -1; // the last break opportunity
     int end = -1, end_width = 0, end_chars = 0, next_start = length_;
     bool newline = false, prev_space = false;
-    Seen seen[3];
-    int seen_count = 0;
+    Seen ring[3]; // the last three code points, newest at ring[head] (a ring: no copies per character; T10.3)
+    int head = 0, seen_count = 0;
     while (pos < length_) {
         int after = pos;
         const char32_t c = peek(text_, length_, pos, after);
@@ -126,7 +126,8 @@ bool TextWrapper::next(WrapLine& line) {
         const Step s = measure(face_, pen, c);
         const std::uint8_t breaks = c == U'\r' ? 0 : s.g.breaks;
         const int kind = kind_of(breaks);
-        if (kind == kBreakIdeographic && seen_count > 0 && kind_of(seen[0].breaks) == kBreakIdeographic) {
+        if (kind == kBreakIdeographic && seen_count > 0 && kind_of(ring[head].breaks) == kBreakIdeographic) {
+            const Seen seen[3] = {ring[head], ring[(head + 2) % 3], ring[(head + 1) % 3]}; // newest first
             const Seen at = id_break(seen, seen_count, start, pos, pen.width, chars, breaks);
             break_end = at.pos;
             break_width = at.width;
@@ -175,9 +176,8 @@ bool TextWrapper::next(WrapLine& line) {
             }
         }
         if (c != U'\r') {
-            seen[2] = seen[1];
-            seen[1] = seen[0];
-            seen[0] = Seen{pos, pen.width, chars, breaks};
+            head = head == 2 ? 0 : head + 1;
+            ring[head] = Seen{pos, pen.width, chars, breaks};
             seen_count = seen_count < 3 ? seen_count + 1 : 3;
             ++chars;
         }
@@ -222,7 +222,7 @@ void TextWrapper::cut_for_ellipsis(WrapLine& line, int end) const {
         commit(pen, s);
         chars += c == U'\r' ? 0 : 1;
         p = after;
-        if (kind_of(break_class(c)) != kBreakSpace) {
+        if (kind_of(break_class_fast(c)) != kBreakSpace) {
             last_end = p;
             last_width = pen.width;
             last_chars = chars;
@@ -242,7 +242,7 @@ int longest_word_width(const TextFace& face, const char* text, int length) {
         int after = pos;
         const char32_t c = peek(text, length, pos, after);
         pos = after;
-        const std::uint8_t breaks = c == U'\r' ? 0 : break_class(c);
+        const std::uint8_t breaks = c == U'\r' ? 0 : break_class_fast(c);
         if (kind_of(breaks) == kBreakSpace || c == U'\n') {
             pen = Pen{};
             prev = 0;

@@ -24,13 +24,14 @@ struct Out {
     int at = 0;
     bool cut = false;
     void put(const char* s, int n) {
-        for (int i = 0; i < n; ++i) {
-            if (at >= capacity - 1) {
-                cut = true;
-                return;
-            }
-            p[at++] = s[i];
+        if (n <= 0) return;
+        const int room = capacity - 1 - at;
+        if (n > room) {
+            n = room > 0 ? room : 0;
+            cut = true;
         }
+        std::memcpy(p + at, s, static_cast<std::size_t>(n));
+        at += n;
     }
     /// Drops a code point the cut left incomplete.
     void finish() {

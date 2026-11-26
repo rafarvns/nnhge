@@ -1174,6 +1174,102 @@ On the Old 3DS: Homebrew Launcher → **Y**, nobody touching the console, then o
    (no script): the log shows `language pt-BR (system)` (or `de`; the 3DS reports Portuguese as `pt-BR` or `pt-PT` by
    region: either starts in pt-BR) and the title is in that language. Then the setting goes back.
 
+### Console run 1 (2026-11-26, Old 3DS, 3ds-dev build of `a69ebbf`, run by the maintainer and the lead)
+
+1. **localization `check.nnhs`** (log `E:\RANDOM\nnhge-console-loc.log`, screenshots
+   `build/logs/localization-20261126-094808/`): correctness **PASS** — every checkpoint equal to the PC's, `loc: PASS
+   21809981`, ru/ja plurals, the system-language switches, saved language en → (system), dialog 69/69, the fonts
+   gallery. AC-5, screenshots against the `--pc` run's (same frames, `build/logs/localization-20261126-102503/`,
+   compared pixel by pixel with `build/ref-029/compare_png.py`): no position differs and no pixel differs by more than
+   **3/255** in a channel (the blended edges of glyphs and panels: 246–9 520 pixels per screen; title top 3 676, shop
+   top 5 051, ru top 5 860, dialog top 3 906, options top 1 380, gallery top 9 520, bottoms 246–1 789). The bench
+   missed five targets:
+
+   | Phase | Console | Target |
+   |---|---|---|
+   | base gfx submit | avg 0.156 ms | — |
+   | glyphs CPU | built-in 1.066 µs, font 2.855 µs | — |
+   | glyphs submit | built-in 4.228 µs, font 4.259 µs | — |
+   | glyph ratio (total) | built-in 5.29 µs, font 7.11 µs → **1.34** | ≤ 1.15, FAIL |
+   | frame worst | 17.7 ms, 0/600 missed | PASS |
+   | measure_latin | avg **0.947 ms**, worst 1.154 | < 0.1 ms, FAIL |
+   | measure_ja | avg **0.809 ms**, worst 0.946 | < 0.15 ms, FAIL |
+   | tr1000 | avg **0.479 ms**, worst 0.562 | < 0.1 ms, FAIL |
+   | format100 | avg **0.458 ms**, worst 0.607 | < 0.1 ms, FAIL |
+   | switch | avg 92.6 ms, worst 94.5 over 20 | < 100 ms, PASS |
+   | page1024 load + release | avg 228.7 ms | — |
+   | memory | body 279 glyphs 82 128 B, ja 1 358 glyphs 294 984 B | — |
+
+   Every phase is 24–38× the PC's (pc-dev bench the same day: glyph CPU 0.031/0.082 µs, measure_latin 0.032 ms,
+   measure_ja 0.034, tr1000 0.013, format100 0.012): the targets were first guesses that the ARM11 can't reach (1 000
+   `tr` in 0.1 ms is 27 cycles each). The submit side is equal for both fonts; the gap is the font path's CPU
+   (≈ 1.8 µs ≈ 480 cycles more per glyph) → T10.3 below.
+2. **ui `check.nnhs`** (`E:\RANDOM\nnhge-console-ui.log`): `ui: PASS 30400DA6`, `ui bench: PASS` — base gfx submit
+   0.1671 ms; idle128 0.028 ms (< 0.05); move128 0.053 (< 0.15); geo128 0.103 (< 0.15); relayout128 avg 0.638, worst
+   0.777 ms (< 0.93; spec 028 measured 0.744); list10000 0.053 ms, ratio 1.01; draw ratio 1.13 (ui 7.41 µs, hand
+   6.57 µs, 372 draws); frame worst 17.5 ms, 0/600 missed; 88 B per widget. The shared wrapper costs the UI nothing.
+3. **platformer `gate.nnhs`** (`E:\RANDOM\nnhge-console-gate.log`): PASS, 4 layers + 300 sprites, avg 16.7 ms, worst
+   17.4 ms, 0/600; limits 6 layers with 300 sprites, 600 sprites with 4 layers (unchanged).
+4. **platformer `level.nnhs`** (`E:\RANDOM\nnhge-console-level.log`): `replay: done 900 frames sum E445E8B2: 60 Hz PASS`
+   (level1 worst 19.0 ms, 0/599; bonus worst 18.5 ms, 0/299).
+5. **System language** (yes/no, `E:\RANDOM\nnhge-console-lang.log`): with the console set to Português the log showed
+   `language pt-BR (system)` and the maintainer confirmed the title in pt-BR: **YES**.
+
+### Optimisation round (T10.3, 2026-11-26)
+
+Found on the 3ds-dev objects (`arm-none-eabi-objdump -dr`, calls per object) and measured on the PC with a temporary
+harness (`build/ref-029/zz_perf_029.cpp`, not committed: the bench's phases with the example's real fonts and tables,
+pc-release, best of 15 batches; ±5 % between runs). Every change keeps the output: no glyph item, string, golden or
+draw hash moved: after the round `nnh_tests` 3 807 tests, 0 failures; ctest pc-debug 359/359 (every example's `--pc`
+script and golden, `loc: PASS 21809981` included) and pc-release 328/328; `nnh_assetc_tests` 333/0; `hello` identical.
+
+- **Per glyph, game fonts** (draw, measure, the wrapper): `face_glyph` was a call per code point on the ARM11 (GCC -O2
+  didn't inline it), and it called `break_class` (a binary search above U+02FF) for every glyph only to overwrite the
+  result with the font's own break bits. Now: Latin-1 in the first font is answered inline (one table read) and
+  `face_glyph` is always inlined; the rest is `face_glyph_slow` (`text_face.cpp`), which checks zero-width code points
+  with `is_zero_width` (twelve ranges, no search) and calls `break_class` only for a code point no font has. UTF-8:
+  `next_codepoint_fast` decodes ASCII and the well-formed 3-byte sequences (kana, CJK) inline; `break_class_fast`
+  answers below U+0300 inline. Tests: `break_class_inline_helpers_agree_with_the_table_for_every_code_point` (all
+  1 114 112), `utf8_fast_decoding_equals_next_codepoint` (every lead with every second and third byte).
+- **Per drawn glyph**: the sprite command was rebuilt from scratch per glyph (with a `gfx_clamp_layer` call); now one
+  command per text holds what glyphs share and each glyph sets slot, region, position and colour; a game font's plain
+  glyph (no shadow or outline) is emitted inline (`emit_fast`), one call less.
+- **Wrapper**: the kinsoku look-back (`Seen[3]`) was shifted on every character; now a ring.
+- **`tr`**: `loc_state()` was a call (twice per `tr`): the state is now an inline-visible global; a plural key's form
+  index used `std::popcount` → `__popcountsi2` (a libgcc loop on the ARM11): now a 64-entry table.
+- **`format`**: integers are written with 32-bit divisions once below 2^32 (64-bit division by 10 is a multi-word
+  sequence on the ARM11); the plural operand's `n mod 10^6` is one 32-bit modulo below 2^32; spans are copied with
+  `memcpy` instead of a checked byte loop. Tests: `loc_number_around_the_32_bit_boundary`, ru plurals at 2^32 − 1,
+  2^32 − 3 and 2^32 − 5.
+- Mutation (`build/ref-029/mutants_opt.py`, not committed): 18 mutants on the round's code, 15 killed at first; 3
+  survivors became tests and were killed: `text_face_spaces_draw_nothing_even_with_pixels_in_the_font` (the inline
+  Latin-1 path keeps "spaces never draw"), `loc_format_never_writes_past_its_capacity` (a span one byte longer than the
+  room: with the bug, one byte past the buffer) and `loc_lookup_forms_before_counts_like_popcount` (the table, now
+  `forms_before()`; its upper half was unreachable — a category is at most Other — so it has 32 entries).
+- After the round no hot object calls a libgcc helper (`__aeabi_*`, `__popcountsi2`, soft-float): checked on
+  `text_draw`, `text_measure`, `text_wrap`, `text_face`, `loc_lookup`, `loc_format`, `loc_number`, `plural`.
+
+PC (pc-release, µs; before → after): glyph built-in 0.062 → 0.062, font 0.097 → **0.077** (the font path's extra CPU
+0.035 → 0.015 per glyph); measure_latin 15.6 → **14.3**; measure_ja 13.4 → **10.9**; tr1000 9.1 → **7.6**; format100
+7.7 → **5.8**. The ARM11-specific parts (calls removed per glyph, the libgcc popcount, 64-bit divisions) should gain
+more on the console than on the PC. Scaling run 1 by the PC's ratios alone gives glyph ratio ≈ 1.15, measure_latin
+≈ 0.87 ms, measure_ja ≈ 0.66, tr1000 ≈ 0.40, format100 ≈ 0.34 — not a prediction to set budgets from (the PC hides
+call costs the ARM11 pays), so the four targets stay as they are in `bench_scene.cpp`, marked **"to be set from
+console run 2"** (+ ~25 %, the bench policy); run 2 will FAIL those lines until then.
+
+Cost: 3ds-release `.text` text 199 212 → 203 180, sprites 216 300 → 220 268, ui 311 636 → 317 548, platformer
+405 772 → 409 732 (the inlined lookup and decoder in each per-glyph loop: ≈ 4 KB; the wrapper's `measure` was left a
+call, inlining it cost 0.8 KB more for ≈ 5 %). `hello` (Release and Development) byte-identical. Stack (T7.7,
+3ds-dev `-fstack-usage`): `draw_text_layout` 256 → 344 B, `TextWrapper::next` 208 → 256 B, `emit` 104 (the sprite
+inlined): the draw path ≈ 0.7 KiB (was 0.67); `tr` 80 B, `loc::format` 144 B, `format_integer` 72 B. Both 3DS presets
+build without a warning.
+
+Also in this round: libFuzzer entry points `tests/fuzz/libfuzzer_loc_table.cpp` and `libfuzzer_loc_manifest.cpp`
+(`fuzz_loc_table`, `fuzz_loc_manifest` with `NNH_BUILD_FUZZERS`, next to `fuzz_font_validate`; documented in
+docs/tech/cmake.md); before, only the mini-fuzz ran those targets. The Linux pass on `a69ebbf` (lead): ASan/UBSan
+`nnh_tests` 3 801/3 801 and assetc 333/333, GCC 13 ctest (the known doors flake only), 32-bit 3 801/3 801, libFuzzer
+`font_validate` and `assetc_ttf` 10 min each: clean.
+
 ### Overnight round (2026-11-26, the lead's decisions on the five questions)
 
 Each **lead decision, confirmed by the maintainer 2026-11-26** (with item 2 as reversed after the review round below):

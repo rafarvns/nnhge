@@ -331,27 +331,31 @@ values re-read from the tree at T0.3).
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
+- [x] **T10.1** (on the PC; again after T10.3) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target localization_3dsx ui_3dsx platformer_3dsx` without a warning; T7.7's table still
   true; 3ds-release `hello.elf` byte-identical to T0.1's. Covers AC-7, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [ ] **T10.2** (console run 1 2026-11-26: items 1 (correctness), 2, 3, 4 and 5 passed; item 1's bench missed four
+  targets and the glyph ratio → T10.3, then console run 2) Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run localization --script examples/localization/tests/check.nnhs` → every checkpoint
      equal to the PC's and `loc: PASS <G>`, every showcase line, the bench lines and the verdict (numbers recorded);
+     — run 1: correctness PASS (`loc: PASS 21809981`), bench FAIL (measure_latin, measure_ja, tr1000, format100, glyph
+     ratio);
      screenshots compared with the `--pc` run's (AC-5: positions, empty and full texels identical; partial texels' largest
      difference recorded);
   2. `build/pc-debug/tools/nnh/nnh run ui --script examples/ui/tests/check.nnhs` → `ui: PASS 30400DA6` and the UI bench
-     within its budgets (relayout < 0.93 ms, draw ratio ≤ 1.15): the seam change costs nothing on the console;
+     within its budgets (relayout < 0.93 ms, draw ratio ≤ 1.15): the seam change costs nothing on the console; — PASS;
   3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS 4 layers +
-     300 sprites, …`;
+     300 sprites, …`; — PASS;
   4. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` → the tree's replay lines
-     and `60 Hz PASS`;
+     and `60 Hz PASS`; — PASS;
   5. (yes/no) the maintainer sets the console's language to Português (or Deutsch) in System Settings, then HBL → Y and
      `build/pc-debug/tools/nnh/nnh run localization` (no script): the log shows `loc: language pt-BR (system)` (or `de`)
-     and the title is in that language — yes/no; then the setting goes back.
+     and the title is in that language — yes/no; then the setting goes back. — YES.
   Files: plan.md ("Console run 1": verdicts, bench numbers, log paths, the screenshot comparison). Covers AC-4, AC-5,
   AC-6, FR-27. Every expected line of run 1 is in plan.md, "Stage 10: console run (prepared)" (recorded from the `--pc`
   run).
-- [ ] **T10.3** (only if a bench target is missed) Optimisation round: find the cost (3ds-dev disassembly, the bench's
+- [ ] **T10.3** (round done 2026-11-26, plan.md "Optimisation round"; console run 2 and the budgets pending) (only if a
+  bench target is missed) Optimisation round: find the cost (3ds-dev disassembly, the bench's
   breakdown), apply risk 1's list without changing a glyph item, string, golden or draw hash (tests first for any
   rewrite); then T10.2 run 1 again; if still missed, the budget is set from the measurement with ≈ 25 % margin and
   written in the spec's AC-6, `bench_scene.cpp` and `docs/api/fonts.md` / `localization.md`. Files: plan.md

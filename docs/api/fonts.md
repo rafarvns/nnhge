@@ -85,8 +85,12 @@ at most 32 glyphs, so a kanji costs two or three compares. Measuring and wrappin
 file once, decodes each page into a temporary buffer and uploads it. On the PC simulator (Development build, PC numbers
 only): 400 glyphs cost 0.69 µs per glyph with a font against 0.73 µs built-in, CPU and submit together (the CPU part:
 0.10 µs against 0.04 µs; text without wrapping walks each line once); a 400-character paragraph wraps in 0.056 ms
-(Latin) and 0.062 ms (Japanese); loading a full 1024 × 1024 page takes ≈ 15 ms. The console's numbers come with
-the console run (spec 029 T10.2).
+(Latin) and 0.062 ms (Japanese); loading a full 1024 × 1024 page takes ≈ 15 ms. On an Old 3DS (Development build,
+first console run, before spec 029's optimisation round): a font glyph costs 7.11 µs against 5.29 µs built-in, CPU and
+submit together (submit is the same: ≈ 4.2 µs); a 400-character paragraph measures in 0.95 ms (Latin) and 0.81 ms
+(Japanese); loading and releasing a 1024 × 1024 page takes ≈ 230 ms. The optimisation round (inlined lookups and UTF-8
+decoding, one sprite command per text) cut the PC's font CPU per glyph by a fifth; the console's new numbers and the
+budgets come with the second console run (spec 029 T10.3).
 
 ## Misuse
 

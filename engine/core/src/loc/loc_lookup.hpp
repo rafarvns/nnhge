@@ -2,8 +2,6 @@
 // Finding a key in the current chain (spec 029 FR-23): for each table of the chain, the bucket of the hash's top bits,
 // then the records of that bucket compared. Inline: tr() and format() share it.
 
-#include <bit>
-
 #include "loc/loc_state.hpp"
 
 namespace nnh::detail::loc {
@@ -27,13 +25,20 @@ inline bool find_key(std::uint32_t hash, Found& out) {
     return false;
 }
 
+/// How many of `forms` (a key's category bits) come before `category` (≤ Other, so at most 5 bits): a popcount by table
+/// (the ARM11 has no popcount instruction: std::popcount is libgcc's loop there; T10.3).
+inline int forms_before(std::uint8_t forms, int category) {
+    constexpr std::uint8_t kBits[32] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
+                                        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5};
+    return kBits[forms & ((1u << category) - 1u) & 31u];
+}
+
 /// The string record of a key's form `category` (a plural key without it: its "other"); a plain key: its string.
 inline const StringRecord& form_of(const Found& f, int category) {
     const KeyRecord& k = *f.key;
     if (k.flags == 0) return f.table->strings[k.first];
     if (((k.forms >> category) & 1u) == 0) category = Other;
-    const int before = std::popcount(static_cast<unsigned>(k.forms & ((1u << category) - 1u)));
-    return f.table->strings[k.first + before];
+    return f.table->strings[k.first + forms_before(k.forms, category)];
 }
 
 inline const char* text_of(const Found& f, const StringRecord& r) { return f.table->text + r.text; }

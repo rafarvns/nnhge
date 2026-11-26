@@ -1,6 +1,7 @@
 // loc::format (spec 029 FR-24, FR-17): placeholders by name (integers grouped as the language says, texts, other keys),
 // the plural form the language's rule chooses, "{{" kept literal, truncation at a UTF-8 boundary, a missing argument.
 
+#include <cstring>
 #include <string>
 
 #include "crash/crash_internal.hpp"
@@ -160,4 +161,21 @@ NNH_TEST(loc_format_clamps_unsigned_arguments_above_the_long_long_range) {
     CHECK(nnh::loc::arg("n", 9223372036854775807ull).number == 9223372036854775807ll);
     CHECK(nnh::loc::arg("n", 4294967295u).number == 4294967295ll);
     CHECK(nnh::loc::arg("n", -5).number == -5);
+}
+
+NNH_TEST(loc_format_never_writes_past_its_capacity) {
+    // T10.3: spans are copied whole; a span one byte longer than the room left is cut too (8 bytes into 8: 7 + NUL)
+    const StopAtEnd stop_at_end;
+    started("en");
+    struct {
+        char out[8];
+        char canary[4];
+    } b;
+    std::memset(&b, 'X', sizeof b);
+    CHECK(nnh::loc::format(b.out, sizeof b.out, "menu.new_game") == 7); // "New game"
+    CHECK(std::string(b.out) == "New gam");
+    CHECK(b.canary[0] == 'X' && b.canary[1] == 'X');
+    std::memset(&b, 'X', sizeof b);
+    CHECK(nnh::loc::format(b.out, 7, "menu.new_game") == 6);
+    CHECK(b.out[6] == 0 && b.out[7] == 'X');
 }

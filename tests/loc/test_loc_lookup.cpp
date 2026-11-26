@@ -1,11 +1,13 @@
 // tr() (spec 029 FR-23, FR-33): the current language, else its chain, else the base; a key no table has shows its name
 // (logged once) in Debug/Development and "??" in Release; key names on demand; run-time keys; resolve() for the UI.
 
+#include <bit>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
 
 #include "crash/crash_internal.hpp"
+#include "loc/loc_lookup.hpp"
 #include "loc_fixture.hpp"
 #include "nnh/build.hpp"
 #include "nnh/localization.hpp"
@@ -148,4 +150,16 @@ NNH_TEST(loc_show_keys_from_the_environment_at_start) {
     nnh::loc::stop();
     started("pt-BR"); // without the variable: texts again
     CHECK(text("menu.new_game") == "Novo jogo");
+}
+
+NNH_TEST(loc_lookup_forms_before_counts_like_popcount) {
+    // T10.3: the table popcount, against std::popcount for every forms byte and category
+    int wrong = 0;
+    for (int forms = 0; forms < 64; ++forms) {
+        for (int c = 0; c < nnh::detail::loc::kCategoryCount; ++c) {
+            const int want = std::popcount(static_cast<unsigned>(forms & ((1 << c) - 1)));
+            wrong += nnh::detail::loc::forms_before(static_cast<std::uint8_t>(forms), c) != want ? 1 : 0;
+        }
+    }
+    CHECK(wrong == 0);
 }

@@ -103,3 +103,14 @@ NNH_TEST(break_class_beyond_the_table) {
     CHECK(break_class(0x110000) == kBreakOther);
     CHECK(break_class(0xFFFD) == kBreakOther);
 }
+
+NNH_TEST(break_class_inline_helpers_agree_with_the_table_for_every_code_point) {
+    // T10.3: is_zero_width() and break_class_fast() answer without the search; every code point checked
+    int wrong = 0;
+    for (char32_t c = 0; c <= 0x10FFFF; ++c) {
+        const std::uint8_t bits = nnh::detail::break_class(c);
+        wrong += nnh::detail::is_zero_width(c) != ((bits & nnh::detail::kBreakZeroWidth) != 0) ? 1 : 0;
+        wrong += nnh::detail::break_class_fast(c) != bits ? 1 : 0;
+    }
+    CHECK(wrong == 0);
+}

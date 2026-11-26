@@ -36,7 +36,7 @@ int walk_run(const TextFace& face, const char* text, const char* end, Fn&& fn) {
     FaceGlyph prev;
     for (const char* p = text; p < end;) {
         const char* at = p;
-        const char32_t c = next_codepoint(p);
+        const char32_t c = next_codepoint_fast(p);
         if (c == 0) break;
         if (c == U'\r') continue;
         RunItem it;

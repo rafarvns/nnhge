@@ -126,3 +126,16 @@ NNH_TEST(text_runs_face_metrics_of_the_builtin_and_a_font) {
     const Block b = make(kerned());
     CHECK(face_line_height(face_of(b)) == 20 && face_ascent(face_of(b)) == 15 && face_size(face_of(b)) == 16);
 }
+
+NNH_TEST(text_face_spaces_draw_nothing_even_with_pixels_in_the_font) {
+    // T10.3: the inline Latin-1 path keeps the rule that U+0020, U+00A0 and U+3000 never draw (a font may give them ink)
+    FontBuilder b;
+    b.glyph(U'A', 0, 0, 6, 8, 0, 0, 8).glyph(U' ', 8, 0, 3, 3, 0, 0, 4).glyph(0xA0, 12, 0, 3, 3, 0, 0, 4);
+    b.glyph(0x3000, 16, 0, 3, 3, 0, 0, 10);
+    const Block blk = make(b);
+    const TextFace f = face_of(blk);
+    CHECK(face_glyph(f, U'A').draws);
+    CHECK(!face_glyph(f, U' ').draws && face_glyph(f, U' ').advance == 4);
+    CHECK(!face_glyph(f, 0xA0).draws && face_glyph(f, 0xA0).advance == 4);
+    CHECK(!face_glyph(f, 0x3000).draws && face_glyph(f, 0x3000).advance == 10);
+}

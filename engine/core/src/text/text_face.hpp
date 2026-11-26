@@ -41,17 +41,41 @@ inline int face_box_advance(const TextFace& f) { return face_size(f) / 2 > 4 ? f
 /// Spaces advance without drawing (U+0020, U+00A0, U+3000).
 constexpr bool draws_nothing(char32_t c) { return c == U' ' || c == 0xA0 || c == 0x3000; }
 
-inline FaceGlyph face_glyph(const TextFace& f, char32_t cp) {
+/// face_glyph() past its inline cases (text_face.cpp): fallbacks, code points above U+00FF, spaces and missing ones.
+FaceGlyph face_glyph_slow(const TextFace& f, char32_t cp);
+
+// Inlined into every per-glyph loop (T10.3: on the ARM11 GCC -O2 kept it a call per glyph).
+[[gnu::always_inline]] inline FaceGlyph face_glyph(const TextFace& f, char32_t cp) {
     FaceGlyph g;
     if (f.builtin()) {
         g.glyph = glyph_index(cp);
         g.advance = kFontCellSize;
-        g.breaks = break_class(cp);
+        g.breaks = break_class_fast(cp);
         g.draws = !is_space(cp);
         return g;
     }
-    g.breaks = break_class(cp);
-    if ((g.breaks & kBreakZeroWidth) != 0) return g; // advances and draws nothing
+    if (cp < 256) { // Latin-1 in the first font: one table read (no Latin-1 character is zero-width)
+        const std::uint16_t index = f.fonts[0]->latin1[cp];
+        if (index != kNoGlyph16) {
+            const font::GlyphRecord& r = f.fonts[0]->glyphs[index];
+            g.font = 0;
+            g.glyph = index;
+            g.advance = r.advance;
+            g.breaks = static_cast<std::uint8_t>(r.flags & font::kGlyphBreakMask);
+            g.draws = !draws_nothing(cp) && r.w > 0 && r.h > 0;
+            return g;
+        }
+    }
+    return face_glyph_slow(f, cp);
+}
+
+/// The whole lookup (face_glyph_slow's body): the font, its fallbacks, a space it lacks, the replacement glyph, the box.
+inline FaceGlyph face_glyph_full(const TextFace& f, char32_t cp) {
+    FaceGlyph g;
+    if (is_zero_width(cp)) { // advances and draws nothing
+        g.breaks = break_class(cp);
+        return g;
+    }
     for (int i = 0; i < f.count; ++i) {
         const int index = find_glyph(*f.fonts[i], cp);
         if (index < 0) continue;
@@ -63,8 +87,9 @@ inline FaceGlyph face_glyph(const TextFace& f, char32_t cp) {
         g.draws = !draws_nothing(cp) && r.w > 0 && r.h > 0;
         return g;
     }
+    g.breaks = break_class(cp); // not in any font: the code point's own class
     if (draws_nothing(cp)) { // a space the fonts lack: the font's space, else half its size
-        const FaceGlyph space = cp == U' ' ? FaceGlyph{} : face_glyph(f, U' ');
+        const FaceGlyph space = cp == U' ' ? FaceGlyph{} : face_glyph_full(f, U' ');
         g.advance = space.font >= 0 ? space.advance : face_size(f) / 2;
         if (cp == 0x3000) g.advance = face_size(f);
         return g;

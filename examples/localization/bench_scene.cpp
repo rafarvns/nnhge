@@ -13,6 +13,9 @@ namespace {
 const char* const kNames[BenchScene::kPhases] = {"base",          "builtin400", "font400", "frame",  "measure_latin",
                                                  "measure_ja",    "tr1000",     "format100", "switch", "page1024"};
 // AC-6's targets in ms (0: reported with its pair or not judged on its own); the glyph ratio and the frame are below.
+// measure_latin, measure_ja, tr1000 and format100 (and the glyph ratio): the plan's first guesses, missed by console
+// run 1 (0.947, 0.809, 0.479, 0.458 ms; ratio 1.34) — to be set from console run 2 (after T10.3's optimisation round)
+// plus ~25 %, per the bench policy. Until then a FAIL on those lines is expected.
 constexpr double kTargets[BenchScene::kPhases] = {0, 0, 0, 0, 0.1, 0.15, 0.1, 0.1, 100, 0};
 constexpr int kFrames = 300, kFrameTest = 600, kSwitchEvery = 30, kSwitches = 20;
 

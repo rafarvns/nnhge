@@ -14,6 +14,7 @@ std::uint32_t u32(const std::uint8_t* p) {
 /// library call on the ARM11 (__aeabi_uldivmod) where a 32-bit one is a multiply. Byte by byte from the top: the running
 /// remainder × 256 + 255 stays below 2^32.
 std::uint32_t mod_million(std::uint64_t n) {
+    if (n <= 0xFFFFFFFFull) return static_cast<std::uint32_t>(n) % 1000000u; // the usual case: one 32-bit modulo
     std::uint32_t r = 0;
     for (int shift = 56; shift >= 0; shift -= 8) r = (r * 256u + static_cast<std::uint32_t>((n >> shift) & 0xFFu)) % 1000000u;
     return r;

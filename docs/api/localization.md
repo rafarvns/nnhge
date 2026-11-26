@@ -100,8 +100,11 @@ and a test script's `language` command ([testing on the console](../guides/testi
 divisions (no `__aeabi_*` calls on the ARM11, no float). A switch reads the new chain's tables into the same block and
 loads the new role fonts before releasing the old ones. Nothing allocates after `start()` but the role fonts at a switch.
 A table costs 12 bytes per key, 8 per string and the text, plus 4 bytes and the name per key in Debug/Development; the
-example's English table (27 keys) takes 1.3 KB in Release. On the PC simulator (Development build): 1 000 `tr` 0.042 ms, 100 `format` 0.018 ms. Console numbers come
-with spec 029's console run.
+example's English table (27 keys) takes 1.3 KB in Release. On the PC simulator (Development build): 1 000 `tr` 0.042 ms,
+100 `format` 0.018 ms. On an Old 3DS (Development build, first console run, before spec 029's optimisation round):
+1 000 `tr` 0.48 ms, 100 `format` 0.46 ms, a language switch ≈ 93 ms (tables and role fonts). The round (the state read
+inline, a table popcount, 32-bit digits and modulo below 2^32) cut the PC's times by a sixth and a quarter; the
+console's new numbers come with the second console run.
 
 ## Misuse
 

@@ -162,3 +162,23 @@ NNH_TEST(utf8_continuation_bytes_alone_are_one_replacement_each) {
     CHECK(c[0] == kReplacementChar && c[1] == kReplacementChar && c[2] == kReplacementChar && c[3] == U'a');
     CHECK(decode_all("\xE2\x82\xAC\xAC", c, 8) == 2 && c[0] == 0x20AC && c[1] == kReplacementChar);
 }
+
+NNH_TEST(utf8_fast_decoding_equals_next_codepoint) {
+    // T10.3: next_codepoint_fast() decodes ASCII and common 3-byte sequences inline; every lead byte with every second
+    // and third byte (and a terminator after each), decoded to the end by both
+    int wrong = 0;
+    for (int a = 0; a < 256; ++a) {
+        for (int b = 0; b < 256; ++b) {
+            for (int c = 0; c < 256; c += (a >= 0xE0 && a <= 0xF4) ? 1 : 51) {
+                const char s[5] = {static_cast<char>(a), static_cast<char>(b), static_cast<char>(c), static_cast<char>(0x80), 0};
+                const char* p = s;
+                const char* q = s;
+                for (int i = 0; i < 5; ++i) {
+                    const char32_t x = next_codepoint(p), y = nnh::detail::next_codepoint_fast(q);
+                    wrong += x != y || p != q ? 1 : 0;
+                }
+            }
+        }
+    }
+    CHECK(wrong == 0);
+}

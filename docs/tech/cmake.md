@@ -161,7 +161,10 @@ map reconverted on every build. Converter fixtures are in `tests/data/maps/` (PN
 `map_convert_rejects_*` / `map_convert_explains_*` ctests run it on each bad map, and `nnh_tests` loads
 `good.tmj` converted at build time (`tests/CMakeLists.txt`). With `-DNNH_BUILD_FUZZERS=ON` and clang,
 `fuzz_assetc_json`, `fuzz_assetc_map`, `fuzz_assetc_toml`, `fuzz_assetc_data` and `fuzz_assetc_refs` are built in
-`build/<preset>/tools/assetc/`.
+`build/<preset>/tools/assetc/`. The engine's run-time readers get theirs in `build/<preset>/tests/` (each
+`tests/fuzz/libfuzzer_<name>.cpp` calling a target of `fuzz_targets.hpp` that `nnh_tests` also runs as a mini-fuzz);
+spec 029 adds `fuzz_font_validate` (`.nnhfont`), `fuzz_loc_table` (`.nnhstr`) and `fuzz_loc_manifest` (`.nnh_loc`),
+and `nnh-assetc`'s font and string converters `fuzz_assetc_{bmfont,ttf,png_pages,font_desc,strings}`.
 
 `NNH_HOST_CXX` (cache variable) defaults to the environment variable of the same name, else `c++`/`g++`/`clang++`
 on the PATH (Linux: the system compiler). With none, 3DS presets still configure and build; only `nnh_assetc` (and

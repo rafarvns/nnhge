@@ -894,6 +894,12 @@ if(NNH_BUILD_FUZZERS)
     target_link_libraries(fuzz_font_validate PRIVATE nnh_fuzz_targets)
     target_compile_options(fuzz_font_validate PRIVATE -fsanitize=fuzzer,address)
     target_link_options(fuzz_font_validate PRIVATE -fsanitize=fuzzer,address)
+    foreach(_loc_fuzz loc_table loc_manifest)
+        add_executable(fuzz_${_loc_fuzz} fuzz/libfuzzer_${_loc_fuzz}.cpp)
+        target_link_libraries(fuzz_${_loc_fuzz} PRIVATE nnh_fuzz_targets)
+        target_compile_options(fuzz_${_loc_fuzz} PRIVATE -fsanitize=fuzzer,address)
+        target_link_options(fuzz_${_loc_fuzz} PRIVATE -fsanitize=fuzzer,address)
+    endforeach()
 endif()
 target_sources(nnh_tests PRIVATE
     font/test_font_cost.cpp

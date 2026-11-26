@@ -40,3 +40,12 @@ NNH_TEST(loc_number_multi_byte_and_absent_separators) {
     CHECK(number(12345, "", 1) == "12345");
     CHECK(number(12345, nullptr, 1) == "12345");
 }
+
+NNH_TEST(loc_number_around_the_32_bit_boundary) {
+    // T10.3: the digits below 2^32 come from a 32-bit loop, the ones above from the 64-bit one
+    CHECK(number(4294967295LL, ",", 4) == "4,294,967,295");
+    CHECK(number(4294967296LL, ",", 4) == "4,294,967,296");
+    CHECK(number(-4294967297LL, "", 1) == "-4294967297");
+    CHECK(number(10000000000LL, ",", 4) == "10,000,000,000");
+    CHECK(number(42949672950LL, ".", 4) == "42.949.672.950");
+}

@@ -535,6 +535,7 @@ set(_nnh_text_sources
     src/text/text_draw.cpp
     src/text/text_measure.cpp
     src/text/text_missing.cpp
+    src/text/text_face.cpp
     src/text/text_wrap.cpp
 )
 target_sources(nnh_core PRIVATE ${_nnh_text_sources})

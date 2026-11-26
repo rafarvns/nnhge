@@ -23,4 +23,21 @@ inline constexpr std::uint8_t kBreakBits = 31;
 /// The break bits of `c` (a kind and flags). Constant time below U+0300, a binary search of 129 ranges above.
 std::uint8_t break_class(char32_t c);
 
+/// (break_class(c) & kBreakZeroWidth) != 0, without the search (twelve ranges; tests/text/test_break_class.cpp checks
+/// every code point against break_class()).
+constexpr bool is_zero_width(char32_t c) {
+    if (c < 0x300) return false;
+    if (c < 0x2000)
+        return (c <= 0x36F) || (c >= 0x483 && c <= 0x489) || (c >= 0x1AB0 && c <= 0x1AFF) || (c >= 0x1DC0 && c <= 0x1DFF);
+    if (c < 0x3000) return (c >= 0x200B && c <= 0x200D) || c == 0x2060 || (c >= 0x20D0 && c <= 0x20FF);
+    if (c < 0xFE00) return c == 0x3099 || c == 0x309A;
+    return (c <= 0xFE0F) || (c >= 0xFE20 && c <= 0xFE2F) || c == 0xFEFF || (c >= 0xE0100 && c <= 0xE01EF);
+}
+
+/// break_class() with the code points below U+0300 answered inline (the per-glyph loops; T10.3).
+inline std::uint8_t break_class_fast(char32_t c) {
+    if (c >= 0x300) return break_class(c);
+    return c == U' ' ? kBreakSpace : (c == U'-' ? kBreakHyphen : kBreakOther);
+}
+
 } // namespace nnh::detail

@@ -44,7 +44,9 @@ struct LocState {
     void (*fonts_switch)(int language) = nullptr;
 };
 
-LocState& loc_state();
+/// The one state (loc_state.cpp); inline so tr() and format() reach it without a call (T10.3).
+extern LocState g_loc_state;
+inline LocState& loc_state() { return g_loc_state; }
 
 /// Loads `language`'s chain into the block. @return nullptr or the reason (the block then holds garbage: reload).
 const char* load_chain(int language);

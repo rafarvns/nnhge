@@ -183,5 +183,17 @@ On PC the 3D pass needs no GPU device (decision D41, amending D20): headless run
 - Text, game and debug alike, is engine sprites of the built-in font ([text.md](../api/text.md)); a
   platform has no text functions, only `texture_create_rgba` and `draw_2d` (and `draw_tiles` for tilemaps).
 
+## Game fonts (D49)
+
+> Status: design (spec 029, [plan](../../specs/029-game-fonts-and-localization/plan.md)), for the maintainer's review.
+
+Game fonts stay engine sprites: `draw_text` with a `FontRef` records one sprite command per visible glyph of the
+font's pages, exactly like the built-in font (layers, cameras, zoom, `max_draws`). Glyph bitmaps are baked by the build
+(`nnh-assetc font`), so the console never rasterises. Mono pages are **coverage in 16 levels** created through one new
+contract function, `texture_create_alpha`: the platform stores white texels of that alpha (3DS `GPU_LA4`, 1 byte per
+pixel; PC RGBA8 accounted as 1 byte) and `draw_2d` tints them with its unchanged multiply path, so no platform gains a
+text function and the built-in font's path is untouched. Colour pages use `texture_create_rgba`. Pages count against
+`AppConfig::gfx.max_textures` and are accounted under the `font` tag.
+
 See also: [decisions D5, D19, D20](decisions.md), [platforms.md](platforms.md),
 [devkitpro-3ds.md](../tech/devkitpro-3ds.md), [sdl3.md](../tech/sdl3.md).

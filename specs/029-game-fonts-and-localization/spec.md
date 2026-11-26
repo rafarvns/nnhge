@@ -472,7 +472,7 @@ doesn't use any of this links nothing new.
 
 ## Open questions
 
-Answered 2026-11-25: the maintainer approved the spec with every question as recommended (the bold option in each; the example's Japanese font is the approved OFL subset with its licence).
+Answered 2026-11-25: the maintainer approved the spec with every question as recommended (the bold option in each; the example's Japanese font is the approved OFL subset with its licence). **Amended 2026-11-26 by the plan's question 1 (approved): glyph pages store 4-bit coverage (LA4 on the 3DS, same memory as A8) instead of A8; wherever this spec says A8, read 4-bit coverage. A8 may be added later on the 3DS side only.**
 
 - [x] **One spec or two?** (a) **fonts and localization in one spec (029) with two optional modules**; (b) two specs
       (029 fonts, 030 localization). — **Recommended: (a)**. They meet in glyph coverage (FR-19), per-language fonts

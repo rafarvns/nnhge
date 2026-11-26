@@ -39,6 +39,12 @@ the linker ([patterns.md](patterns.md)).
 
 Games link one target, `nnh::engine`, which is `nnh::core` + the selected platform.
 
+> Design (spec 029, D49/D50, [plan](../../specs/029-game-fonts-and-localization/plan.md), for review): video gains
+> `texture_create_alpha` (8-bit coverage in multiples of 17, drawn as white texels of that alpha) and system gains
+> `system_language()` (a BCP 47-style code). Each is implemented in its own source file per platform
+> (`texture_alpha_<system>.cpp`, `language_<system>.cpp`), so a game that never uses fonts or localization links
+> neither, and conformance tests cover both.
+
 ## Contract rules
 
 - **One-way dependency**: platform libraries never call `nnh::core` (not even to log). They report

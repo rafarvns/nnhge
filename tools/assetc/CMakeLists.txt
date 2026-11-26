@@ -175,6 +175,7 @@ if(NNH_BUILD_TESTS)
         tests/test_cli.cpp
         tests/test_cli_data.cpp
         tests/test_cli_data_index.cpp
+        tests/test_bmfont_text.cpp
         tests/test_cli_font.cpp
         tests/test_cli_strings.cpp
         tests/test_cli_mesh.cpp
@@ -187,6 +188,9 @@ if(NNH_BUILD_TESTS)
         tests/test_depfile.cpp
         tests/test_diagnostics.cpp
         tests/test_font_desc.cpp
+        tests/test_glyph_pack.cpp
+        tests/test_ttf_check.cpp
+        tests/test_ttf_raster.cpp
         tests/test_fuzz_assetc.cpp
         tests/test_fuzz_assetc_sprite.cpp
         tests/test_fuzz_assetc_gltf.cpp

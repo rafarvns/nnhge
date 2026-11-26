@@ -197,6 +197,8 @@ std::string check_ttf(const unsigned char* data, std::size_t size, int face) {
         if (face < 0 || static_cast<std::uint32_t>(face) >= file.u32(8) || !file.has(12, std::uint64_t(face + 1) * 4))
             return "the collection has no face " + std::to_string(face);
         at = file.u32(12 + std::uint64_t(face) * 4);
+    } else if (face != 0) { // a single font has face 0 only (stb_truetype would answer -1 for the offset)
+        return "not a collection: face is 0";
     }
     Tables t;
     std::string why = directory(file, at, t);

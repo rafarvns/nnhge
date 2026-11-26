@@ -8,6 +8,7 @@ add_library(nnh_tool_lib STATIC
     src/commands/install.cpp
     src/commands/run.cpp
     src/commands/run_pc.cpp
+    src/commands/run_reload.cpp
     src/commands/serve.cpp
     src/console_link.cpp
     src/fbi.cpp
@@ -17,6 +18,12 @@ add_library(nnh_tool_lib STATIC
     src/log_view.cpp
     src/manifest.cpp
     src/netloader.cpp
+    src/reload/asset_build.cpp
+    src/reload/batch_sender.cpp
+    src/reload/output_snapshot.cpp
+    src/reload/reload_controller.cpp
+    src/reload/reload_setup.cpp
+    src/reload/source_watcher.cpp
     src/remote/game_records.cpp
     src/remote/game_session.cpp
     src/remote/live_catalog.cpp
@@ -29,6 +36,7 @@ add_library(nnh_tool_lib STATIC
     src/remote/script_live.cpp
     src/remote/script_parser.cpp
     src/remote/script_runner.cpp
+    src/remote/script_runner_reload.cpp
     src/remote/script_runner_live.cpp
     src/remote/script_timeline.cpp
     src/remote/script_tokens.cpp
@@ -54,6 +62,7 @@ add_library(nnh_tool_lib STATIC
     # hot reload (spec 031): the reload messages and records, the same code as the game's
     ${PROJECT_SOURCE_DIR}/engine/core/src/core/crc32_update.cpp
     ${PROJECT_SOURCE_DIR}/engine/core/src/reload/reload_names.cpp
+    ${PROJECT_SOURCE_DIR}/engine/core/src/reload/reload_overlay.cpp
     ${PROJECT_SOURCE_DIR}/engine/core/src/reload/reload_wire.cpp
 )
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -92,6 +101,8 @@ if(NNH_BUILD_TESTS)
         tests/test_manifest.cpp
         tests/test_netloader.cpp
         tests/test_png_writer.cpp
+        tests/test_reload_controller.cpp
+        tests/test_reload_tool.cpp
         tests/test_repo.cpp
         tests/test_screen_image.cpp
         tests/test_live_tool.cpp

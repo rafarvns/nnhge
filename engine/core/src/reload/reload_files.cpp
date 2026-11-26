@@ -87,11 +87,9 @@ bool ReloadFiles::sink_begin(void* c, std::uint16_t, const char* path, remote::R
     f.file = self->next_file_++;
     char name[32];
     reload_file_name(f.file, name);
-    // A leftover of the same name (a crashed run past the wipe's gap) must not be appended to; an empty put still
-    // needs its file.
-    if (!platform::fs_remove(name)) return false;
-    static const std::uint8_t kNothing = 0;
-    return size > 0 || platform::fs_append(name, &kNothing, 0);
+    // An empty file to append to: replaces a leftover of the same name (a crashed run past the wipe's gap) and makes
+    // the folder the first time (fs_write creates parent folders; fs_append doesn't).
+    return platform::fs_write(name, nullptr, 0);
 }
 
 bool ReloadFiles::sink_append(void* c, const std::uint8_t* data, std::size_t size) {

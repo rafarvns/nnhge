@@ -68,7 +68,7 @@ void make_list(std::uint32_t frame) {
 void log_applied([[maybe_unused]] std::uint32_t frame, [[maybe_unused]] int n) { // no INFO lines in Release
     char list[kListLimit + 1];
     format_list(g_list, g_list_count, list, sizeof list);
-    NNH_LOG_INFO(assets, "assets reloaded %d (frame %u): %s", n, static_cast<unsigned>(frame), list);
+    NNH_LOG_INFO(assets, "reloaded %d (frame %u): %s", n, static_cast<unsigned>(frame), list);
     for (int i = 0; i < g_files.count(); ++i) {
         if (g_files.files()[i].op == remote::ReloadOp::Remove) {
             NNH_LOG_WARN(assets, "\"%s\" was removed: what was loaded from it keeps its content", g_files.files()[i].path);

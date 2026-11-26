@@ -40,6 +40,10 @@ struct GameRun;
 /// simulator's without a script.
 int run_on_pc(const Options& options, const GameRun& run);
 
+/// Hot reload (spec 031, commands/run_reload.cpp): once `built` is built and connected, sets up `run.reload` (reads
+/// <binary dir>/nnh_reload_<game>.txt, scans the outputs) and gives it to the runner; notes why when it can't.
+void start_reload(const GameRun& run, const BuiltGame& built, bool pc);
+
 int command_serve(const Options& options);
 int command_unpair();
 

@@ -95,8 +95,8 @@ NNH_TEST(reload_files_bytes_are_appended_a_buffer_at_a_time) {
     files.begin_batch(1, 5 + sizeof data);
     fake::clear_fs_log();
     CHECK(put(r, files, 0, "a.bin", data, sizeof data) == ReceiverEvent::Staged);
-    // a remove of a leftover name, then three appends of 16 KB (one per full buffer; the last at the file's end)
-    CHECK(std::strcmp(fake::fs_log(), "XAAA") == 0);
+    // an empty file (folder made, leftover replaced), then three appends of 16 KB (one per full buffer)
+    CHECK(std::strcmp(fake::fs_log(), "WAAA") == 0);
     files.release();
     nnh::shutdown();
 }

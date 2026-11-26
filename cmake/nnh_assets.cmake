@@ -353,6 +353,10 @@ function(nnh_add_assets target folder)
         VERBATIM)
 
     add_custom_target(${target}_assets DEPENDS ${outputs} "${index}")
+    # Hot reload (spec 031): where `nnh run` finds the source assets, the game's folder and the converted outputs.
+    set(reload_file "${CMAKE_CURRENT_BINARY_DIR}/nnh_reload_${target}.txt")
+    file(WRITE "${reload_file}.new" "assets=${source}\ngame=${CMAKE_CURRENT_SOURCE_DIR}\nout=${out}\n")
+    file(COPY_FILE "${reload_file}.new" "${reload_file}" ONLY_IF_DIFFERENT)
     # A devkitPro asset target: ctr_create_3dsx(ROMFS) packs this folder and depends on these files.
     set_target_properties(${target}_assets PROPERTIES DKP_ASSET_FOLDER "${out}" DKP_ASSET_FILES "${outputs};${index}")
     add_dependencies(${target} ${target}_assets)

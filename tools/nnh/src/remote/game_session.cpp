@@ -36,6 +36,7 @@ public:
         }
         while (!closed_ && !script_done()) {
             take_typed();
+            if (c_.runner != nullptr) c_.runner->poll_reload(); // spec 031: watching, typed reloads
             check_hello();
             flush();
             if (!script_done()) receive(kPollMs);
@@ -128,6 +129,8 @@ private:
         if (c_.runner == nullptr) return;
         std::vector<std::uint8_t> bytes;
         for (const remote::MessageBytes& m : c_.runner->take_messages()) bytes.insert(bytes.end(), m.begin(), m.end());
+        const std::vector<std::uint8_t> batch = c_.runner->take_bytes(); // spec 031: a reload batch, paced
+        bytes.insert(bytes.end(), batch.begin(), batch.end());
         if (!bytes.empty() && !closed_) game_.send_all(bytes.data(), bytes.size()); // a failure shows as a close
         for (const remote::ScreenJob& job : c_.runner->take_screens()) save(job);
         for (const std::string& dump : c_.runner->take_dumps()) save_dump(dump);

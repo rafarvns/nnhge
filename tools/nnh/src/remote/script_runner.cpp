@@ -113,7 +113,10 @@ void ScriptRunner::on_record(Record record) {
             hello_answered(record);
         }
         return;
-    case wire::RecordType::Tick: tick(record.frame); return;
+    case wire::RecordType::Tick:
+        reload_record(record); // spec 031: the batch's pacing
+        tick(record.frame);
+        return;
     case wire::RecordType::Late:
         problem(line_of(record.seq), "the input for frame " + std::to_string(record.wanted) +
                                          " reached the console on frame " + std::to_string(record.applied) +
@@ -141,7 +144,7 @@ void ScriptRunner::on_record(Record record) {
     case wire::RecordType::LiveState: on_live_record(record); return;
     case wire::RecordType::ReloadStaged:
     case wire::RecordType::ReloadApplied:
-    case wire::RecordType::ReloadRefused: return; // spec 031: the reload controller's (stage 3)
+    case wire::RecordType::ReloadRefused: reload_record(record); return; // spec 031: the reload controller's
     }
 }
 

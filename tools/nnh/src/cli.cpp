@@ -54,6 +54,12 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
                 }
                 out.tunes = args[++i];
             }
+        } else if (a == "--no-reload") {
+            if (out.command != Command::Run) {
+                error = a + " is for nnh run";
+                return false;
+            }
+            out.no_reload = true;
         } else if (a == "--script" || a == "--no-build" || a == "--keep-open") {
             if (out.command != Command::Run) {
                 error = a + " is for nnh run";
@@ -105,7 +111,7 @@ const char* help_text() {
            "\n"
            "  nnh build <game> [--release] [--pc]   build a game for the 3DS (Development) or the PC\n"
            "  nnh run <game> [--release] [--console <ip>] [--pc] [--script <file.nnhs>] [--keep-open]\n"
-           "                [--no-build] [--tunes <file>] [--hold]\n"
+           "                [--no-build] [--tunes <file>] [--hold] [--no-reload]\n"
            "                                        build, send to the Homebrew Launcher (press Y on the\n"
            "                                        console) and show the game's log; --pc runs the simulator.\n"
            "                                        While it runs, type script commands to drive the game\n"
@@ -116,7 +122,10 @@ const char* help_text() {
            "                                        Launcher); --keep-open leaves it running. --no-build\n"
            "                                        runs what is already built. --tunes <file> starts the game\n"
            "                                        held and sends a dump's values before frame 1; --hold only\n"
-           "                                        starts it held (live values, Debug/Development builds)\n"
+           "                                        starts it held (live values, Debug/Development builds).\n"
+           "                                        Saving a file in the game's assets folder reloads it in\n"
+           "                                        the running game (hot reload, Debug/Development builds;\n"
+           "                                        type reload to force one); --no-reload turns it off\n"
            "  nnh install <game> [--console <ip>]   build the .cia and install it with FBI (Remote Install ->\n"
            "                                        Receive URLs over the network)\n"
            "  nnh serve [--release]                 wait for NNH Link on the console: it lists the games,\n"

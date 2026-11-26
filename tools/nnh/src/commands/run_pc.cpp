@@ -66,6 +66,7 @@ int run_on_pc(const Options& options, const GameRun& run) {
     const bool connected = game.valid();
     int code = 2;
     if (connected) {
+        start_reload(run, built, true);
         GameRun pc_run = run;
         pc_run.linger_ms = 10000; // Bye{quit} closes the simulator: show its last lines
         code = follow_game(game, built.root, options.game, pc_run);

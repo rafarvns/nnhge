@@ -15,6 +15,7 @@
 #include "remote/script_runner.hpp"
 #include "remote/stdin_lines.hpp"
 #include "remote/tunes_file.hpp"
+#include "reload/reload_setup.hpp"
 #include "repo.hpp"
 #include "user_config.hpp"
 
@@ -110,6 +111,7 @@ int run_on_console(const Options& options, const GameRun& run, bool scripted) {
         return scripted ? 2 : 0;
     }
     net::Socket game = logs.take_game();
+    start_reload(run, built, false);
     return follow_game(game, built.root, options.game, run); // on the console the game keeps running
 }
 
@@ -142,10 +144,13 @@ int command_run(const Options& options) {
     }
     remote::RunnerOptions runner_options{.interactive = !scripted, .quit_at_end = closes_game_at_end(options)};
     remote::ScriptRunner runner(scripted ? std::move(*script) : remote::Script{}, runner_options);
+    reload::ReloadSession reload_session; // spec 031: watching the assets folder (started once the game is built)
     StdinLines typed;
     if (!scripted) typed.start(stdin); // interactive mode: every typed line is a command (spec 013 FR-5)
     if (!scripted) runner.on_typed_steps(tunes); // origin kept: undeclared names are noted and skipped
-    const GameRun run{.runner = &runner, .typed = scripted ? nullptr : &typed, .linger_ms = 1000};
+    const bool reloads = !options.release && !options.no_reload && !scripted; // interactive runs watch the assets
+    const GameRun run{.runner = &runner, .typed = scripted ? nullptr : &typed, .linger_ms = 1000,
+                      .reload = reloads ? &reload_session : nullptr};
     return options.pc ? run_on_pc(options, run) : run_on_console(options, run, scripted);
 }
 

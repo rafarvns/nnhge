@@ -20,6 +20,7 @@ struct Options {
     bool keep_open = false; ///< run --keep-open: a script's end leaves the game running
     std::string tunes;      ///< run --tunes <file>: values of a dump sent before frame 1 (spec 030); implies hold
     bool hold = false;      ///< run --hold: the game starts paused before frame 1 until nnh resumes it (spec 030)
+    bool no_reload = false; ///< run --no-reload: don't watch the assets folder (spec 031)
 };
 
 /// Parses argv[1..]. @return false with `error` set for an unknown command/option or a missing value.

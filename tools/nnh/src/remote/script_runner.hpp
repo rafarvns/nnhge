@@ -32,6 +32,10 @@
 #include "remote/script.hpp"
 #include "remote/script_timeline.hpp"
 
+namespace nnh::tool::reload {
+class ReloadController;
+}
+
 namespace nnh::tool::remote {
 
 /// Messages sent but not yet applied (frame after the last tick); the console's queue holds 64.
@@ -82,6 +86,14 @@ public:
     /// Dumps the game wrote (spec 030 FR-14): each a TOML file's text, for the session to save next to the log.
     std::vector<std::string> take_dumps();
 
+    // Hot reload (spec 031, script_runner_reload.cpp)
+    /// The reload controller of this run (null: no reloads — Release, --no-reload).
+    void set_reload(reload::ReloadController* controller);
+    /// The session loop: the controller polls (watching); interactive mode attaches at once while watching.
+    void poll_reload();
+    /// The controller's paced batch bytes, sent after take_messages()'s in the same write.
+    std::vector<std::uint8_t> take_bytes();
+
     Verdict verdict() const { return verdict_; }
     /// Script mode: a verdict was reached. Interactive mode: the game closed.
     bool finished() const { return finished_; }
@@ -121,6 +133,9 @@ private:
     void live_state(const Record& record);
     void dump_line(const std::string& line);
     bool typed_live(const std::string& text);
+    // hot reload (script_runner_reload.cpp, spec 031)
+    bool typed_reload(const std::string& text);
+    void reload_record(const Record& record);
     void finish(Verdict verdict, int line, const std::string& why);
     void problem(int line, const std::string& why);
     std::string where(int line) const;
@@ -188,6 +203,8 @@ private:
     bool in_dump_ = false;
     std::vector<std::string> dump_lines_;
     std::vector<std::string> dumps_;
+
+    reload::ReloadController* reload_ = nullptr;
 
     std::vector<MessageBytes> messages_;
     std::vector<std::string> notes_;

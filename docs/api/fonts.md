@@ -74,6 +74,11 @@ byte (LA4) on the 3DS; the Japanese body font of the example (1 358 glyphs at 13
 | `max_lines` | > 0: at most this many lines; the last ends with `…` (or `...` when the font lacks it) |
 | `outline_color` | alpha > 0: the font's baked outline drawn under each glyph (a font without outlines ignores it, said once) |
 
+**Linking**: a game that draws only with the built-in font links no layout code (on the 3DS and Linux, `draw_text`
+refers to it weakly). `load_font()` links it, and so does `gfx::measure_text(utf8, options)` or `measure_chars`. A game
+that wraps text in the built-in font without loading any font must call one of those two somewhere (measuring the box
+it wraps into is the usual place); otherwise Debug/Development assert and Release draws the text unwrapped.
+
 Kerning applies between two characters of the same font. A character no font of the face has draws the font's
 replacement glyph (U+FFFD or `?`), else a hollow box of the font's size; Debug/Development logs it once per font
 (`text: U+4E00 not in fonts/body_16`).
@@ -83,8 +88,9 @@ replacement glyph (U+FFFD or `?`), else a hollow box of the font's size; Debug/D
 Drawing a game glyph is one sprite like a built-in one, plus the lookup: Latin-1 is a direct table, the BMP a bucket of
 at most 32 glyphs, so a kanji costs two or three compares. Measuring and wrapping allocate nothing. Loading reads the
 file once, decodes each page into a temporary buffer and uploads it. On the PC simulator (Development build, PC numbers
-only): 400 glyphs measure 0.82 µs per glyph with a font against 0.57 µs built-in; a 400-character paragraph wraps in
-0.056 ms (Latin) and 0.062 ms (Japanese); loading a full 1024 × 1024 page takes ≈ 15 ms. The console's numbers come with
+only): 400 glyphs cost 0.69 µs per glyph with a font against 0.73 µs built-in, CPU and submit together (the CPU part:
+0.10 µs against 0.04 µs; text without wrapping walks each line once); a 400-character paragraph wraps in 0.056 ms
+(Latin) and 0.062 ms (Japanese); loading a full 1024 × 1024 page takes ≈ 15 ms. The console's numbers come with
 the console run (spec 029 T10.2).
 
 ## Misuse

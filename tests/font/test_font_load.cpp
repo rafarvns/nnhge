@@ -182,3 +182,27 @@ NNH_TEST(a_stale_font_is_invalid_and_measures_like_the_builtin) {
     CHECK(m.size == 8 && m.line_height == 10 && m.ascent == 8 && m.descent == 0 && m.glyphs == 0);
     (void)ref;
 }
+
+namespace {
+nnh::Font g_survivor; // a font whose owner outlives the engine run (a global in a game that restarts the engine)
+} // namespace
+
+NNH_TEST(load_font_after_an_engine_restart_loads_live_pages_again) {
+    // Release skips the shutdown hooks, so the font table can hold an entry of the previous run whose pages are gone:
+    // loading the same path again must make new pages, not share the dead ones (Debug/Development: the table was reset)
+    start_engine();
+    add_font("fonts/a", FontBuilder::latin());
+    {
+        auto f = nnh::load_font("fonts/a");
+        CHECK(f.ok());
+        if (f) g_survivor = static_cast<nnh::Font&&>(f.value());
+    }
+    remount(); // nnh::shutdown() + init: the pages are destroyed with gfx
+    const int created = fake::state().alpha_textures_created;
+    auto again = nnh::load_font("fonts/a");
+    CHECK(again.ok());
+    CHECK(fake::state().alpha_textures_created == created + 1); // a new page, not the dead one
+    CHECK(again.ok() && nnh::gfx::font_metrics(again.value()).pages == 1);
+    g_survivor = nnh::Font{}; // its entry is stale: releasing it changes nothing
+    CHECK(again.ok() && again.value().valid());
+}

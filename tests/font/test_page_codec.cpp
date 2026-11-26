@@ -74,13 +74,16 @@ NNH_TEST(packbits_pairs_stay_in_literals_and_triples_become_runs) {
 }
 
 NNH_TEST(packbits_refuses_malformed_streams) {
-    std::uint8_t out[8];
+    std::uint8_t out[8] = {0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5};
     const std::uint8_t noop[] = {128, 1};
     CHECK(!packbits_decode(noop, 2, out, 1));
     const std::uint8_t short_literal[] = {3, 1, 2};
     CHECK(!packbits_decode(short_literal, 3, out, 4));
     const std::uint8_t no_byte[] = {255};
     CHECK(!packbits_decode(no_byte, 1, out, 2));
+    const std::uint8_t long_literal[] = {3, 1, 2, 3, 4}; // a literal of 4 bytes into 2
+    CHECK(!packbits_decode(long_literal, 5, out, 2));
+    CHECK(out[2] == 0xA5 && out[3] == 0xA5);            // nothing written past the expected bytes
     const std::uint8_t too_long[] = {251, 9}; // 6 bytes into 4
     CHECK(!packbits_decode(too_long, 2, out, 4));
     const std::uint8_t too_short[] = {253, 9}; // 4 bytes, 5 expected

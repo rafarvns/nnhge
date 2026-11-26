@@ -99,8 +99,8 @@ and a test script's `language` command ([testing on the console](../guides/testi
 `tr` is a bucket and one or two compares per table of the chain; `format` copies spans and writes digits with constant
 divisions (no `__aeabi_*` calls on the ARM11, no float). A switch reads the new chain's tables into the same block and
 loads the new role fonts before releasing the old ones. Nothing allocates after `start()` but the role fonts at a switch.
-A table costs 12 bytes per key, 8 per string and the text; the example's English table (1 051 keys, ≈ 64 KiB of text)
-takes 78 KB in Release (95 KB in Debug/Development, with the key names). On the PC simulator (Development build): 1 000 `tr` 0.042 ms, 100 `format` 0.018 ms. Console numbers come
+A table costs 12 bytes per key, 8 per string and the text, plus 4 bytes and the name per key in Debug/Development; the
+example's English table (27 keys) takes 1.3 KB in Release. On the PC simulator (Development build): 1 000 `tr` 0.042 ms, 100 `format` 0.018 ms. Console numbers come
 with spec 029's console run.
 
 ## Misuse

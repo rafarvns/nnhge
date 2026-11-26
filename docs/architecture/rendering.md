@@ -185,7 +185,7 @@ On PC the 3D pass needs no GPU device (decision D41, amending D20): headless run
 
 ## Game fonts (D49)
 
-> Status: design (spec 029, [plan](../../specs/029-game-fonts-and-localization/plan.md)), for the maintainer's review.
+Spec 029, implemented ([plan](../../specs/029-game-fonts-and-localization/plan.md), [fonts.md](../api/fonts.md)).
 
 Game fonts stay engine sprites: `draw_text` with a `FontRef` records one sprite command per visible glyph of the
 font's pages, exactly like the built-in font (layers, cameras, zoom, `max_draws`). Glyph bitmaps are baked by the build
@@ -194,6 +194,15 @@ contract function, `texture_create_alpha`: the platform stores white texels of t
 pixel; PC RGBA8 accounted as 1 byte) and `draw_2d` tints them with its unchanged multiply path, so no platform gains a
 text function and the built-in font's path is untouched. Colour pages use `texture_create_rgba`. Pages count against
 `AppConfig::gfx.max_textures` and are accounted under the `font` tag.
+
+`draw_text` keeps spec 005's built-in path; a font, a wrap width, a line limit or an outline colour sends the call to
+the shared run layout (`src/text/text_draw.cpp`): lines from the wrapper (or split at `'
+'` only when nothing wraps,
+one walk per line), then per glyph its shadow, its outline glyph and the glyph as sprite commands at integer pen
+offsets × scale. On ELF targets `draw_text` refers to that path weakly: a game that draws only with the built-in font
+and never calls `load_font` or `measure_text(utf8, options)` links none of it (3DS `.text` of the text example: 190 156
+bytes against 189 956 before spec 029). Wrapping with the built-in font in such a game needs one of those calls; without
+it Debug/Development assert and Release draws the text unwrapped.
 
 See also: [decisions D5, D19, D20](decisions.md), [platforms.md](platforms.md),
 [devkitpro-3ds.md](../tech/devkitpro-3ds.md), [sdl3.md](../tech/sdl3.md).

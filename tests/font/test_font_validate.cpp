@@ -100,6 +100,9 @@ NNH_TEST(font_validate_refuses_bad_metrics_and_counts) {
     f[24] = 9; // pages
     CHECK(refused_for(check(f), "pages"));
     f = good();
+    f[24] = 0; // no page at all (mutation testing found this unchecked by the tests)
+    CHECK(refused_for(check(f), "pages: count"));
+    f = good();
     f[25] = 4; // fallbacks
     CHECK(refused_for(check(f), "fallback"));
 }

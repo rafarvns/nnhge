@@ -1128,13 +1128,16 @@ On the Old 3DS: Homebrew Launcher → **Y**, nobody touching the console, then o
    `loc: shop 21 ja E383A9E383B3E382BFE383B33231E5808B`; `loc: focus shop`; `loc: focus dialog`; `loc: dialog shown …`;
    `loc: focus dialog`; `loc: check started`; `loc: en sum 92FEBB1D`; `loc: pt-BR sum A166BC22`; `loc: de sum 1DE842A2`;
    `loc: ru sum 7E4FE058`; `loc: ja sum 21809981`; `loc: PASS 21809981`; `loc: focus dialog`; `loc: focus options`;
-   `language …` (Options → Right: the pseudo-language `qps` in Development); `loc: focus options`; `loc: focus fonts`;
+   `loc: saved language en` (Options → Right from "System language"); `loc: saved language (system)` (Left: back to
+   following, so the next run starts as this one); `loc: focus options`; `loc: focus fonts`;
    `loc: fonts hud …`; `loc bench: started`; `loc bench: base gfx submit …`; `loc bench: glyphs builtin … ratio …
    PASS|FAIL`; `loc bench: frame worst … missed … PASS|FAIL`; `loc bench: measure_latin …`; `loc bench: measure_ja …`;
    `loc bench: tr1000 …`; `loc bench: format100 …`; `loc bench: switch avg … worst …`; `loc bench: page1024 …`;
-   `loc bench: memory body 280 glyphs 82168 B ja 1358 glyphs 295000 B`; `loc bench: PASS`. Screenshots in
+   `loc bench: memory body 279 glyphs 82144 B ja 1358 glyphs 295000 B`; `loc bench: PASS`. Screenshots in
    `build/logs/localization-<date>/` (title, shop, ru, dialog, options, gallery), to compare with the `--pc` run's.
-   The script's last line fails if a bench target is missed (`loc bench: FAIL (…)`): then T10.3.
+   The script's last line fails if a bench target is missed (`loc bench: FAIL (…)`): then T10.3. If an earlier run
+   failed after choosing a language, its save makes the game start in that language: delete
+   `sdmc:/3ds/nnhge-localization/localization.sav` (or pick "System language" in Options) first.
 2. `build/pc-debug/tools/nnh/nnh run ui --script examples/ui/tests/check.nnhs` → `ui: PASS 30400DA6`, relayout < 0.93 ms,
    draw ratio ≤ 1.15.
 3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS …`.
@@ -1142,6 +1145,65 @@ On the Old 3DS: Homebrew Launcher → **Y**, nobody touching the console, then o
 5. Yes/no: System Settings → language Português (or Deutsch), HBL → Y, `build/pc-debug/tools/nnh/nnh run localization`
    (no script): the log shows `language pt-BR (system)` (or `de`; the 3DS reports Portuguese as `pt-BR` or `pt-PT` by
    region: either starts in pt-BR) and the title is in that language. Then the setting goes back.
+
+### Overnight round (2026-11-26, the lead's decisions on the five questions)
+
+Each **lead decision, overnight, to be confirmed by the maintainer**:
+
+1. **Glyph cost**: the T10.3 round done on the PC. The per-glyph CPU of the font path was 5× the built-in's (0.197 µs
+   against 0.040): text without wrapping walked every line twice (the wrapper, then the run). Lines without a wrap
+   width or a line limit now split at `'
+'` only and are walked once (twice when aligned). PC pc-dev: CPU 0.102 µs per
+   glyph; with submit, built-in 0.73 µs, font 0.69 µs — **ratio 1.23 → 0.96** (target ≤ 1.15). No item changed (test
+   `text_draw_unwrapped_text_equals_the_wrapper_path_with_a_huge_width`; the self-check and screenshots unchanged).
+   T10.4 not needed on the PC; the console decides.
+2. **Dispatch split**: on ELF targets `draw_text` refers to `draw_text_layout` weakly (`NNH_TEXT_LAYOUT_WEAK`);
+   `load_font` and `measure_text(utf8, options)`/`measure_chars` call `text_layout_link()`, which links it. 3ds-release
+   `.text`: text 197 860 → **190 156** (T0.1 189 956), sprites 214 948 → **207 244** (207 132), platformer 404 412 →
+   **396 708** (396 340), ui 310 276 → 307 388 (spec 028's wrapper since stage 2: 304 916). The ≈ 200–370 bytes left
+   are the dispatch test and the not-linked assert. `hello` unchanged. Trade-off, documented in fonts.md and
+   rendering.md: wrapping with the built-in font in a game that never loads a font needs a `measure_text(utf8,
+   options)` or `measure_chars` call somewhere (Debug/Development assert, Release draws unwrapped). Windows (PE) keeps
+   the ordinary reference.
+3. **STRICT_STRINGS**: the example builds with it. pt-BR translates `menu.continue` (the fallback is shown by core
+   tests and the `qps` path instead); the 1 024 bench keys are gone (no API added: `tr1000` cycles the game's 27 keys —
+   the lookup cost is a bucket and one or two compares whatever the table's size); `make_bench_strings.py` removed. New
+   self-check: en `92FEBB1D`, pt-BR `A166BC22`, de `1DE842A2`, ru `7E4FE058`, ja `21809981` (golden). The subset was
+   regenerated from the new strings: **268 956 B**, 1 670 code points, SHA-256
+   `9159b504457730539cd4b63dbe0abf5203e02a328eeffa8b6c3c09d408ead590` (upstream unchanged).
+4. **Saved language**: `examples/localization/settings.{hpp,cpp}` keep the choice in `localization.sav` (spec 027,
+   `data::String<15>`, empty = follow the system); `main.cpp` starts in it (screenshots and demos ignore it); Options
+   saves on change. The script ends on "System language"; the ctest fixture `loc_reset_saved_language` deletes a
+   stale save before `loc_check_script_pc`.
+5. **`-static-libstdc++` on `nnh_tests` under MinGW**: accepted; documented in docs/tech/cmake.md.
+
+Also in this round:
+- Linux findings fixed: GCC 13.3 ICE (`gimplify.cc:774`) on `s = LocState{}` → value-init with parentheses there and on
+  `Entry`, `FontEntryExtra`, `TextFace`, the placement-new `FontBlock` (comments say why); the ASan stack-use-after-scope
+  in `text_wrap_kerning_and_ink_count_in_a_lines_width` (a temporary face) fixed, and `TextWrapper(const TextFace&&)`
+  deleted (static_assert in the test).
+- Stage 4/5 leftovers: `test_bmfont_text` (6), `test_ttf_check` (6; found a single font accepting face 1 → refused now),
+  `test_ttf_raster` (7), `test_glyph_pack` (6), `test_cli_strings`; ctests `font_fixtures_golden` (11 fixtures, SHA-256
+  in `tests/data/fonts/golden.cmake`, pc-debug = pc-release), `font_routing`, `strings_declaration_*` (7),
+  `strings_incremental` (which failed first: every table step depended on every language's files; now its own and the
+  base's); fuzz bodies `fuzz_assetc_{bmfont,ttf,png_pages,font_desc,strings}` (libFuzzer) with their mini-fuzz.
+- Stage 6/7 leftovers: `loc_show_keys_from_the_environment_at_start`, `test_loc_docs_snippets.cpp` (the API page's
+  example and scene pattern), `tests/loc_example/test_self_check.cpp` (the example's sums over its converted assets on
+  the fake).
+- T8.2: `check_release_strings.sh` gains the font/localization texts and the example's key names; 3ds-release
+  `localization.3dsx` passes (after `text_missing.cpp` was made Release-empty: its "log full" text was linked through
+  `text_missing_reset`). pc-release `.exe`s of every example contain `NNH_REMOTE` (hello's too, unchanged since T0.1):
+  pre-existing, not spec 029's — reported.
+- T8.3 link probes (3ds-release, `build/ref-029/probes`, not committed): a font-only game has no `nnh::loc::`, no
+  `stbtt_`/`stbi_`; a `tr`-only game has no `loc::format`, no plural code, no font table, no wrapper, and
+  `draw_text_layout` only as a weak undefined symbol; a `format` game adds `plural_category` and `loc::format` only; the
+  UI example has no `Ui::set_font`.
+- T8.4 build times (pc-debug, this machine): edit `title_scene.cpp` → simulator 2.46 s (budget < 2 s: over, like the UI
+  example's 2.1 s), `.3dsx` 6.8 s (budget < 5 s: over; the romfs holds 1.1 MB of fonts); edit `de.strings` → 1.47 s, steps
+  run: Strings de, the two fonts listing de (body_16, title_32), Languages; clean `nnh_core` 16.2 s, clean `nnh-assetc`
+  10.7 s (T0.1: 7.7 s; stb_truetype, stb_image and the converters added).
+- The switch bench phase reads the hook's profile scope one frame later (it read 0.0 before): pc-debug avg 14.6 ms,
+  worst 21.8 ms.
 
 ### Implementation refinements
 

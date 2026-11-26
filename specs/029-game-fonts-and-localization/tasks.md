@@ -162,10 +162,10 @@ values re-read from the tree at T0.3).
   (text form), `mono_xml.fnt` (XML form), `colour.fnt` + `colour_0.png`, and their `.font` descriptions; outputs committed
   (building and testing need no Python); rerunning the script gives the same bytes (checked once by hand, noted).
   Covers IX, AC-1.
-- [ ] **T4.3** (partial: reader done, covered end to end by test_cli_font; per-field suite pending) BMFont reading: `tools/assetc/src/bmfont_text.{hpp,cpp}` (text and XML through one attribute tokenizer,
+- [x] **T4.3** (overnight round: plan.md) BMFont reading: `tools/assetc/src/bmfont_text.{hpp,cpp}` (text and XML through one attribute tokenizer,
   bounded lines; binary refused). Test: `tools/assetc/tests/test_bmfont_text.cpp`, `test_bmfont_xml.cpp` (every field,
   quoting, ids twice, values out of range, `file:line: reason` texts exactly). Covers FR-1, X.
-- [ ] **T4.4** (partial: conversion done, covered by test_cli_font; dedicated suite pending) BMFont conversion: `png_pages.{hpp,cpp}` (stb_image wrapper: RGBA8 out, size and texture rules),
+- [x] **T4.4** (overnight round: plan.md) BMFont conversion: `png_pages.{hpp,cpp}` (stb_image wrapper: RGBA8 out, size and texture rules),
   `bmfont_convert.{hpp,cpp}` (pages named `<font>_<n>.png`, mono vs colour, metrics, re-packing). Test:
   `test_bmfont_convert.cpp` (fixtures: glyph rects, offsets, advances, kerning, mono → A4, colour → RGBA8, a misnamed or
   missing page, a rect outside its page). Covers FR-1, FR-2.
@@ -173,30 +173,30 @@ values re-read from the tree at T0.3).
   plan.md; `kyoiku` and `jis-level1` as compact tables in `charsets_cjk.cpp`). Test: `test_font_desc.cpp` (every key,
   defaults, refusals), `test_charsets.cpp` (each set's size and first/last code point; ranges; `.chars` files; the
   `strings` and `language-names` sources through a stub). Covers FR-1, FR-3, FR-4.
-- [ ] **T4.6** (partial: pre-validator done; corruption suite pending) The TrueType pre-validator: `ttf_check.{hpp,cpp}` (every offset stb_truetype follows; CFF2 and
+- [x] **T4.6** (overnight round: plan.md) The TrueType pre-validator: `ttf_check.{hpp,cpp}` (every offset stb_truetype follows; CFF2 and
   variable-only refused). Test: `test_ttf_check.cpp` (each table's corruptions on copies of the fixtures: truncated
   directory, `loca` past `glyf`, `cmap` ranges past the end, CFF INDEX overflow, `GPOS` subtable outside). Covers X.
-- [ ] **T4.7** (partial: raster done, covered by test_cli_font; hand-computed suite pending) Rasterising: `ttf_raster.{hpp,cpp}` (stb_truetype on the padded copy; integer rounding of metrics;
+- [x] **T4.7** (overnight round: plan.md) Rasterising: `ttf_raster.{hpp,cpp}` (stb_truetype on the padded copy; integer rounding of metrics;
   4-bit coverage; anti-aliasing off with `threshold`), `outline_bake.{hpp,cpp}` (dilation 1..3). Test:
   `test_ttf_raster.cpp` (hand-computed advances/kerning/ascent for the fixtures at 8, 12, 16, 32 px; a box glyph's exact
   coverage; AA off; the same glyph bytes for the glyf and CFF fixtures where the outlines are equal), `test_outline_bake.cpp`.
   Covers FR-1, FR-4, FR-6, FR-9.
-- [ ] **T4.8** (partial: done and tested end to end; test_glyph_pack pending) Packing and writing: `glyph_pack.{hpp,cpp}`, `font_writer.{hpp,cpp}` (the shared `font_format` +
+- [x] **T4.8** (overnight round: plan.md) Packing and writing: `glyph_pack.{hpp,cpp}`, `font_writer.{hpp,cpp}` (the shared `font_format` +
   page codec; replacement and ellipsis glyphs; fallbacks and licence paths), `convert_font.{hpp,cpp}`, `cli_font.cpp`
   (`nnh-assetc font <in> <out> --assets <dir> --depfile <d> [--strings-sources <list>] [--languages <list>]`, the report
   line). Test: `test_glyph_pack.cpp` (determinism, sides, forced page, padding, the 8-page refusal message),
   `test_cli_font.cpp` (both sources end to end; the depfile; licence required/`own`; rewrites only on change; core's
   validator accepts every output). Covers FR-1, FR-2, FR-3, FR-9, FR-11.
-- [ ] **T4.9** (partial: routing done; font_routing/font_fixtures_golden ctests pending) The build: `cmake/nnh_assets.cmake` (routing of plan.md before the data rule; pipeline-owned pages and
+- [x] **T4.9** (overnight round: plan.md) The build: `cmake/nnh_assets.cmake` (routing of plan.md before the data rule; pipeline-owned pages and
   sources; `nnh-assetc` needed for `.font`/`.fnt`), the data routing's reserved keys. Test: ctests `font_routing`
   (a fixture game: outputs, unpacked sources, the packed licence, the asset index) and `font_fixtures_golden` (converted
   fixture checksums, recorded in pc-debug; equal in pc-release). Files: `tests/CMakeLists.txt` (029 block: converting
   `tests/data/fonts` at build for the core tests). Covers FR-1, FR-20, AC-2, III.
-- [ ] **T4.10** [P] Fuzzing: `tools/assetc/tests/libfuzzer_assetc_bmfont.cpp`, `libfuzzer_assetc_ttf.cpp` (through the
+- [x] **T4.10** [P] Fuzzing: `tools/assetc/tests/libfuzzer_assetc_bmfont.cpp`, `libfuzzer_assetc_ttf.cpp` (through the
   pre-validator and the rasteriser on a size and a few code points), `libfuzzer_assetc_png_pages.cpp`,
   `libfuzzer_assetc_font_desc.cpp`, mini-fuzz versions in `nnh_assetc_tests`; seed corpora from the fixtures. Test: each
   runs 60 s clean under ASan on the PC's host build (the VM's clang run at T9.1). Covers X, AC-1.
-- [ ] **T4.11** (partial: see plan.md Stage 4 results) Stage end: the stage-end guards; `nnh-assetc` clean build time; plan.md ("Stage 4 results": fixture
+- [x] **T4.11** (overnight round: plan.md) Stage end: the stage-end guards; `nnh-assetc` clean build time; plan.md ("Stage 4 results": fixture
   goldens, the stb commit). Covers III, AC-2.
 
 ## Stage 5: the string converter
@@ -226,15 +226,15 @@ values re-read from the tree at T0.3).
   `qps` in Debug/Development). Test: `test_coverage.cpp` (the `買` message exactly; fallbacks counted; chain roles),
   `test_pseudo.cpp`, `test_cli_strings_index.cpp` (manifest contents; no `qps` with `--release`). Covers FR-18, FR-19,
   FR-21, FR-29, FR-31.
-- [ ] **T5.7** (partial: cmake steps done; declaration/incremental ctests pending) The build: `cmake/nnh_strings.cmake` (per-language steps, the index step, the language list file),
+- [x] **T5.7** (overnight round: plan.md) The build: `cmake/nnh_strings.cmake` (per-language steps, the index step, the language list file),
   `cmake/nnh_game.cmake` (`LANGUAGES`, `BASE`, `STRICT_STRINGS`), font steps depending on the string files of their
   `strings` languages. Test: ctests `strings_declaration_*` (missing/unlisted files, bad codes, both forms of one
   language), `strings_incremental` (editing `de.strings` reruns only the `de` step, its fonts and the index — Ninja's
   `-n -d explain` list), Release outputs without names. Covers FR-15, FR-20, AC-7, III.
-- [ ] **T5.8** (partial: core mini-fuzz of tables/manifests done (stage 6); assetc fuzzer pending) [P] Fuzzing: `libfuzzer_assetc_strings.cpp` (a string file + a base through the checks and the writer) and
+- [x] **T5.8** (overnight round: plan.md); assetc fuzzer pending) [P] Fuzzing: `libfuzzer_assetc_strings.cpp` (a string file + a base through the checks and the writer) and
   its mini-fuzz version; core mini-fuzz `tests/fuzz/fuzz_loc_table.cpp`, `fuzz_loc_manifest.cpp` over the validators
   (stage 6's `loc_validate.cpp`, written here test-first). Covers X, AC-1.
-- [ ] **T5.9** (partial: see plan.md Stage 5 results) Stage end: the stage-end guards; the fixture goldens gain the string fixtures; plan.md ("Stage 5
+- [x] **T5.9** (overnight round: plan.md) Stage end: the stage-end guards; the fixture goldens gain the string fixtures; plan.md ("Stage 5
   results"). Covers AC-2.
 
 ## Stage 6: localization at run time
@@ -258,36 +258,36 @@ values re-read from the tree at T0.3).
   `tests/loc/test_loc_fonts.cpp` (roles, chain roles, sharing, release, unknown role, nothing loaded without opting in),
   `tests/loc/test_loc_ui.cpp` (`apply`; a scene's subscription re-applies on `LanguageChanged`; the UI shows the new
   texts and fonts the same frame). Covers FR-29, FR-30.
-- [ ] **T6.7** (partial: debug, cost, random ops done; NNH_LOC_SHOW_KEYS and docs-snippet tests pending) [P] Debugging, misuse, cost, random operations: `src/loc/loc_debug.cpp`. Test: `tests/loc/test_loc_debug.cpp`
+- [x] **T6.7** (overnight round: plan.md) [P] Debugging, misuse, cost, random operations: `src/loc/loc_debug.cpp`. Test: `tests/loc/test_loc_debug.cpp`
   (dump text exactly, show keys, `NNH_LOC_SHOW_KEYS`), `tests/loc/test_loc_misuse.cpp`, `tests/loc/test_loc_cost.cpp`
   (no allocation over 100 000 `tr`/`format`), `tests/loc/test_loc_random_ops.cpp` (100 000 seeded operations with
   invariants), `tests/loc/test_docs_snippets.cpp` (the API page's examples compile and run). Covers FR-26, FR-33, FR-34,
   FR-35.
-- [ ] **T6.8** (done except the include-time measure (plan.md Stage 6 results)) Stage end: the stage-end guards; include check (`<nnh/localization.hpp>` within +400 lines and +0.05 s);
+- [x] **T6.8** (overnight round: plan.md)) Stage end: the stage-end guards; include check (`<nnh/localization.hpp>` within +400 lines and +0.05 s);
   plan.md ("Stage 6 results": bytes per key, the block of the fixtures). Covers III, FR-36.
 
 ## Stage 7: the golden session, `examples/localization`, the bench, the ARM pre-check
 
-- [ ] **T7.1** (done: fonts, strings, the subset (plan.md Stage 7 results); not STRICT_STRINGS-clean (base-only bench keys)) Example assets (needs the answers to questions 2 and 3): `examples/localization/art/make_hud_font.py`
+- [x] **T7.1** (overnight round: plan.md); not STRICT_STRINGS-clean (base-only bench keys)) Example assets (needs the answers to questions 2 and 3): `examples/localization/art/make_hud_font.py`
   (original pixel BMFont → `assets/fonts/hud.fnt`, `hud_0.png`, committed), `fonts/make_subset.py` + `fonts/src/README.md`
   (outside the assets) and the committed subset `assets/fonts/src/NNHExampleSansJP.otf` with
   `assets/licences/OFL-NNHExampleSansJP.txt` (the upstream file approved by the maintainer; nothing downloaded without
   it), `assets/fonts/src/kyoiku_1006.chars`, the `.font` descriptions, `tools/make_bench_strings.py` →
   `assets/strings/en/bench.strings`, the five languages' strings. Test: the example's assets convert without a warning
   (Release: `STRICT_STRINGS` clean); the build's report lines recorded; the subset ≤ 300 KB. Covers AC-3, AC-6, IX.
-- [ ] **T7.2** (partial: self-check and goldens done; the nnh_tests copy not written (ctest loc_self_check_pc instead)) The self-check (AC-2): `examples/localization/self_check.{hpp,cpp}` (plan.md's session, checkpoints per
+- [x] **T7.2** (overnight round: plan.md)) The self-check (AC-2): `examples/localization/self_check.{hpp,cpp}` (plan.md's session, checkpoints per
   language, `kLocCheckGolden`); goldens from pc-debug, equal in pc-release. Test:
   `tests/loc_example/test_self_check.cpp` (on the fake with the example's converted assets; the fake's items equal the
   pure layout's; a one-byte change of a string or a glyph fails it — checked once by hand). Files: `tests/CMakeLists.txt`.
   Covers AC-2, FR-13, FR-32.
-- [ ] **T7.3** (partial: scenes, HUD, screenshots done; the saved language choice (settings) not in the example) The showcase: `main.cpp`, `demos.hpp`, `roles.hpp`, `title_scene`, `options_scene`, `dialog_scene`,
+- [x] **T7.3** (overnight round: plan.md) not in the example) The showcase: `main.cpp`, `demos.hpp`, `roles.hpp`, `title_scene`, `options_scene`, `dialog_scene`,
   `shop_scene`, `gallery_scene`, `hud.{hpp,cpp}`, `settings.{hpp,cpp}` (the player's language in a spec 027 settings
   type), `CMakeLists.txt` (`LANGUAGES en pt-BR de ru ja BASE en`), `examples/CMakeLists.txt` (after `ui`). Test: PC
   screenshots `LOC_SHOT=title|options|dialog|shop|gallery|ja|ru|qps|pages` read back; the log lines of plan.md;
   `NNH_SIM_LANGUAGE=ja` starts in Japanese. Covers AC-3, FR-22, FR-26, FR-29, FR-30, FR-31.
 - [x] **T7.4** The check scene: `check_scene.{hpp,cpp}` (Y or `LOC_DEMO=check`: `loc: check started`, `loc: <code> sum
   <S>`, `loc: PASS <G>` / `loc: FAIL …`); ctest `loc_self_check_pc`. Covers AC-4.
-- [ ] **T7.5** (partial: every phase and line; PC glyph ratio 1.43; memory line simpler than planned) [P] The bench: `bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}` (X or `LOC_DEMO=bench`: plan.md's phases, each
+- [x] **T7.5** (overnight round: plan.md) [P] The bench: `bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}` (X or `LOC_DEMO=bench`: plan.md's phases, each
   timing only its workload; lines and verdict; Debug `not judged (Debug)`), `fonts/bench_1024.font`. Test: a pc-dev run
   logs every line; the memory line matches plan.md's estimates within 20 % (else plan.md is corrected). Covers AC-6.
 - [x] **T7.6** The script `examples/localization/tests/check.nnhs` (plan.md's outline; every expect followed by `wait 10`
@@ -306,16 +306,16 @@ values re-read from the tree at T0.3).
 - [ ] **T8.1** (partial: 19 loc mutants, all killed (3 via new tests); font/text and Release mutants not run) Mutation pass as in plans 019–028: plan.md's planned hand mutants (`build/ref-029/mutants.py`, applied one at
   a time, `nnh_tests text_ font_ loc_ ui_` and `nnh_assetc_tests` each) and Release-path mutants in pc-release; survivors
   become tests or are argued equivalent. Files: plan.md ("Mutation testing"). Covers VI.
-- [ ] **T8.2** (not done) [P] Release hygiene: `scripts/check_release_strings.sh` gains the dump, missing-key, missing-glyph and
+- [x] **T8.2** (overnight round: plan.md) [P] Release hygiene: `scripts/check_release_strings.sh` gains the dump, missing-key, missing-glyph and
   misuse texts and the example's key names (one `forbidden=` line, read from the Debug manifest); run on the 3ds-release
   and pc-release `localization` executables and packages (no `.nnh_loc` names, no `strings/qps.nnhstr`). Covers AC-8,
   FR-20, FR-31.
-- [ ] **T8.3** (not done) [P] Opt-in by linking: probes (`build/ref-029/probe_*`, not committed) linked against the 3ds-release
+- [x] **T8.3** (overnight round: plan.md) [P] Opt-in by linking: probes (`build/ref-029/probe_*`, not committed) linked against the 3ds-release
   libraries: a font-only game (no `loc::` symbol), a strings-only game with the built-in font (no `load_font`, `font_`,
   `stb` symbol), a UI game without `set_font` (no `ui_fonts.o`), `loc::tr` only (no `loc_format.o`, no plural code);
   `hello` sizes, `nm` and 3DS bytes identical to T0.1's (Release); Debug/Development growth recorded. Files: plan.md
   ("Stage 8 results"). Covers FR-36, AC-7, XI.
-- [ ] **T8.4** (partial: hello identical; build times not measured) Build times and regressions: every example's console script passes with `--pc`; `compare.sh` (text,
+- [x] **T8.4** (overnight round: plan.md) Build times and regressions: every example's console script passes with `--pc`; `compare.sh` (text,
   sprites, ui, platformer pixel-identical); edit `examples/localization/title_scene.cpp` → simulator and `.3dsx` times
   against T0.1's reference; edit `strings/de.strings` → reconversion time (< 2 s) and steps run; clean `nnh_core` and
   `nnh-assetc` times. Files: plan.md ("Stage 8 results"). Covers AC-7, III.
@@ -363,17 +363,17 @@ values re-read from the tree at T0.3).
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** (done: docs/api/fonts.md, docs/api/localization.md) `docs/api/fonts.md` (font assets, descriptions, BMFont, character sets, metrics, drawing, outline,
+- [x] **T11.1** (overnight round: plan.md) `docs/api/fonts.md` (font assets, descriptions, BMFont, character sets, metrics, drawing, outline,
   fallback, missing characters, measuring, `measure_chars`, costs measured at T10.2, memory, misuse) and
   `docs/api/localization.md` (languages, string files, placeholders and plurals with the shipped rule list, build checks
   with their messages, `tr`/`format`, switching, `LanguageChanged`, the system language, following it, font roles,
   widgets, pseudo-localization, saving the choice with spec 027, costs, misuse); header comments (allocates? per-frame
   safe? misuse?). Covers VIII, AC-9.
-- [ ] **T11.2** (done) `docs/guides/localizing-a-game.md`: from one language to three; handing files to translators; plurals and
+- [x] **T11.2** (overnight round: plan.md) `docs/guides/localizing-a-game.md`: from one language to three; handing files to translators; plurals and
   placeholders; adding a CJK language within Old 3DS memory (strings-driven character sets, one page); font licences;
   the language option and the saved choice; localized images by `loc::code()`; testing with `language` and `qps`.
   Covers AC-9.
-- [ ] **T11.3** (partial: text, gfx, ui, assets, system, simulator, testing-on-the-console, cmake, CLAUDE.md; menus, saves, rendering, platforms, patterns, project-structure, REFERENCES, third-party not updated) Other pages: `docs/api/text.md` (game fonts, wrapping, the shared wrapper), `gfx.md` (the new
+- [x] **T11.3** (overnight round: plan.md) Other pages: `docs/api/text.md` (game fonts, wrapping, the shared wrapper), `gfx.md` (the new
   `TextOptions` fields, `measure_text` overload), `ui.md` (font slots, `loc::apply`, the seam in pixels), `assets.md`
   (routing of `.font`, `.fnt`, pages, sources, `strings/`, `.nnh_loc`), `system.md` (`language()`), `simulator.md`
   (`NNH_SIM_LANGUAGE`, `language.ini`), `saves.md` (storing the language), `docs/guides/testing-on-the-console.md`
@@ -385,7 +385,7 @@ values re-read from the tree at T0.3).
   and the `localization` commands); `python -I scripts/docs_tool.py check` → 0 broken links. Covers AC-9.
 - [x] **T11.4** `docs/architecture/decisions.md`: D49 and D50 change-log notes "approved"/"implemented" with the stage
   refinements and the maintainer's answers; D28's `Language` message and D32's new user noted. Covers AC-9.
-- [ ] **T11.5** (partial: plan.md stage results) Final measurements (header costs, build times, `hello` sizes, the modules' `.text`, the example's memory)
+- [x] **T11.5** (overnight round: plan.md) Final measurements (header costs, build times, `hello` sizes, the modules' `.text`, the example's memory)
   in plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
 - [x] **T11.6** `docs/ROADMAP.md`: the "Game fonts" and "Localization" checkboxes, with the implemented summary.
 - [x] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").

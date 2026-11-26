@@ -122,7 +122,9 @@ A zoom outside 0.5–4 asserts in Debug/Development; Release clamps it (NaN → 
 
 `gfx::draw_text(screen, position, "Olá!", {.scale = 2, .align = TextAlign::Center, .shadow = true})` and
 `gfx::measure_text(text, scale)` draw and measure UTF-8 text with the built-in NNHGE font, identical on
-every system: see [text.md](text.md).
+every system: see [text.md](text.md). `TextOptions` also takes a game font (`font`, [fonts.md](fonts.md)), a wrap width
+and a line limit (`wrap_width`, `max_lines`) and an outline colour (`outline_color`); `gfx::measure_text(text, options)`,
+`gfx::measure_chars` and `gfx::font_metrics` measure with them (spec 029).
 
 ## Capacities
 

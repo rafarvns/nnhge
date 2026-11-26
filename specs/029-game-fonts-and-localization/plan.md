@@ -1,6 +1,6 @@
 # Plan 029: Game fonts and localization
 
-Status: approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
+Status: implemented 2026-11-26 (T9 and T10.2 pending; see "Implementation notes"); approved 2026-11-26 (the maintainer, the five questions at the end as recommended); drafted 2026-11-25 (the spec was approved 2026-11-25 with every open question as
 recommended, and those recommendations are this plan's decisions; five plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D49, D50 ([decisions.md](../../docs/architecture/decisions.md))
 Uses spec 005 (`gfx::draw_text`/`measure_text`, the built-in font, `detail::next_codepoint`, the hollow box, one sprite
@@ -1065,6 +1065,84 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
 - 3ds-release/3ds-dev build without a warning; `hello` (3ds-release, 3ds-dev stripped/`.3dsx`, pc-release) identical to
   stage 3's; `.text` of `text`, `sprites`, `ui`, `platformer` unchanged (localization is linked only when called).
 
+### Stage 7 results (2026-11-26)
+
+- **T7.1, the Japanese font** (pre-approved by the maintainer 2026-11-26): upstream
+  `https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf`,
+  noto-cjk release `Sans2.004`, SHA-256 `dff723ba59d57d136764a04b9b2d03205544f7cd785a711442d6d2d085ac5073` (4 533 028 B);
+  licence `Sans/LICENSE` at the same commit, OFL 1.1, SHA-256 `6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2`.
+  Subset `examples/localization/assets/fonts/src/NNHExampleSansJP.otf` ("NNHGE Example Sans JP"), **269 036 B**, 1 671 code
+  points, SHA-256 `eb31dac6f012a4bcfade2f52ee1f988fba0e6a8bbbefab520097772da2b2ff7c`, made by
+  `examples/localization/fonts/make_subset.py` (fontTools 4.63; byte-identical on reruns; layout features `kern`/`palt`
+  only: with every feature it was 401 KB). Licence packed as `assets/licences/OFL-NNHExampleSansJP.txt` with the font's
+  copyright notice (`© 2014-2021 Adobe`) prepended. Provenance also in `examples/localization/fonts/README.md`.
+- Converted fonts (pc-debug): `body_16` 280 glyphs 82 KB, `body_ja_13` 1 358 glyphs one 1024 × 512 page 295 KB,
+  `title_32` 238 glyphs and `title_ja_32` 161 glyphs one 512 × 512 page each (outline 2), `bench_1024` one 1024 × 1024
+  page, `hud` (BMFont, 22 glyphs). Tables: en 78 KB in Release (95 KB Debug, with names), the others 1.4–1.8 KB.
+- Build output: notes for characters the subset lacks (U+FFFD, part of Cyrillic) and one warning per language for the
+  1 024 base-only bench keys (+ pt-BR's deliberate `menu.continue`); so the example is **not** `STRICT_STRINGS`-clean
+  (deviation from T7.1's test: base-only keys can't be marked).
+- Self-check: checkpoints en `888A15B1`, pt-BR `BA716B7C`, de `03A28B3C`, ru `4917046A`, ja `4877A4A7` =
+  `kLocCheckGolden`; pc-debug and pc-release agree (Release read from its screenshot: Release has no log).
+  `tests/check.nnhs` passes twice with `--pc` (116 lines, frames 1–3 699). 3ds-release and 3ds-dev build the example
+  without a warning (`.3dsx` 1 137 852 / 1 323 388 B).
+- Bench on the PC (pc-dev, PC numbers): base submit 0.017 ms; **glyphs builtin 0.57 µs, font 0.82 µs per glyph, ratio
+  1.43 (target ≤ 1.15: FAIL on the PC)**; frame worst 17.5 ms, 0 missed; measure_latin 0.056 ms; measure_ja 0.062 ms;
+  tr1000 0.042 ms; format100 0.018 ms; page1024 load + release ≈ 15 ms; memory body 82 KB, ja 295 KB. The switch phase
+  reads the hook's profile scope (`loc switch`); its read was fixed after the run above (it read a frame too early).
+- Deviations: one showcase scene per screen sharing a `LocScene` base (no separate `roles.hpp`/`settings.*`: the
+  player's choice is not saved in the example — `set_language` only); the self-check folds `measure_text` and
+  `measure_chars` (pure, the same items' positions) instead of the internal layout items, and the `nnh_tests` copy of
+  the self-check (T7.2's `tests/loc_example/`) is not written: the example's ctest `loc_self_check_pc` covers it.
+
+### Stage 7 ARM pre-check (3ds-dev objects, 2026-11-26)
+
+- `__aeabi_*` calls: none in `src/loc/*` after the fix below, none in `src/text/*` or `src/font/*`. The plural
+  interpreter called `__aeabi_uldivmod` (64-bit `n % 10^k`); it now reduces `n` to `n mod 10^6` byte by byte with
+  32-bit constant divisions (tests: `plural_moduli_of_numbers_beyond_32_bits`, the CLDR samples).
+- VFP instructions: `text_draw.o` 32, `layout.o` 3, `text_measure.o` 2, `font_debug.o` 8 (Debug only) — the final
+  positions and colours handed to gfx; not yet compared one by one with the plan's table, nor `-fstack-usage` measured
+  (left for T10.1 with the console numbers).
+- Expected console numbers: the plan's table stands (glyph ratio and `tr1000` at risk; the PC's 1.43 glyph ratio is a
+  warning sign for T10.2).
+
+### Stage 8 results (2026-11-26)
+
+- Mutation: 19 hand mutants on the localization runtime (`build/ref-029/mutants.py`: number grouping, plural operands
+  and negation, form fallback, chain walk, UTF-8 truncation, placeholder spans, the language of a key's table, switch
+  no-op and failure restore, `set_language` ending following, region-less matching, pseudo-language by system,
+  validator checks, role fonts from the chain): 16 killed at first; the 3 survivors became tests
+  (`loc_format_uses_the_rule_of_the_language_whose_text_it_is`, `loc_format_a_form_the_key_lacks_is_its_other_form`,
+  `loc_start_prefers_the_language_without_a_region`) and are killed. Font/text mutants, T8.2 (release strings script),
+  T8.3 (link probes) and T8.4 (build times) were not run.
+- `hello`: 3ds-release/3ds-dev stripped `.elf` and `.3dsx`, pc-release `size`/`nm`/bytes identical to stage 3's after
+  stages 6 and 7.
+
+### Stage 10: console run (prepared)
+
+On the Old 3DS: Homebrew Launcher → **Y**, nobody touching the console, then on the PC:
+
+1. `build/pc-debug/tools/nnh/nnh run localization --script examples/localization/tests/check.nnhs` (3ds-dev build).
+   Expected, in order (recorded from the `--pc` run): `loc: showcase`; `language pt-BR (system)`; `language de (system)`;
+   `loc: focus shop`; `loc: shop 1 1 Laterne`; `loc: shop 21 ru 323120D184D0BED0BDD0B0D180D18C`;
+   `loc: shop 21 ja E383A9E383B3E382BFE383B33231E5808B`; `loc: focus shop`; `loc: focus dialog`; `loc: dialog shown …`;
+   `loc: focus dialog`; `loc: check started`; `loc: en sum 888A15B1`; `loc: pt-BR sum BA716B7C`; `loc: de sum 03A28B3C`;
+   `loc: ru sum 4917046A`; `loc: ja sum 4877A4A7`; `loc: PASS 4877A4A7`; `loc: focus dialog`; `loc: focus options`;
+   `language …` (Options → Right: the pseudo-language `qps` in Development); `loc: focus options`; `loc: focus fonts`;
+   `loc: fonts hud …`; `loc bench: started`; `loc bench: base gfx submit …`; `loc bench: glyphs builtin … ratio …
+   PASS|FAIL`; `loc bench: frame worst … missed … PASS|FAIL`; `loc bench: measure_latin …`; `loc bench: measure_ja …`;
+   `loc bench: tr1000 …`; `loc bench: format100 …`; `loc bench: switch avg … worst …`; `loc bench: page1024 …`;
+   `loc bench: memory body 280 glyphs 82168 B ja 1358 glyphs 295000 B`; `loc bench: PASS`. Screenshots in
+   `build/logs/localization-<date>/` (title, shop, ru, dialog, options, gallery), to compare with the `--pc` run's.
+   The script's last line fails if a bench target is missed (`loc bench: FAIL (…)`): then T10.3.
+2. `build/pc-debug/tools/nnh/nnh run ui --script examples/ui/tests/check.nnhs` → `ui: PASS 30400DA6`, relayout < 0.93 ms,
+   draw ratio ≤ 1.15.
+3. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/gate.nnhs` → `bench: PASS …`.
+4. `build/pc-debug/tools/nnh/nnh run platformer --script examples/platformer/tests/level.nnhs` → the replay lines, `60 Hz PASS`.
+5. Yes/no: System Settings → language Português (or Deutsch), HBL → Y, `build/pc-debug/tools/nnh/nnh run localization`
+   (no script): the log shows `language pt-BR (system)` (or `de`; the 3DS reports Portuguese as `pt-BR` or `pt-PT` by
+   region: either starts in pt-BR) and the title is in that language. Then the setting goes back.
+
 ### Implementation refinements
 
 - **Stage 1.** (1) `texture_3ds.cpp` is unchanged: `Texture3ds` keeps its anonymous-namespace definition there and
@@ -1088,7 +1166,8 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
   a binary search (≤ 3 compares on a ≈ 3 000-kanji table: tested). (4) Kinsoku in the wrapper: only boundaries between
   two ID characters are break opportunities; a forbidden one moves back one or two characters (never to the line's
   start), else stays — so "あいぁぁぁう" at three characters wraps "あ|いぁぁ|ぁう". (5) `WrapLine` carries `width` (pixels
-  at scale 1) and `chars` (what spec 028 called cells: code points but ''); the wrapper takes a width in pixels at the
+  at scale 1) and `chars` (what spec 028 called cells: code points but '
+'); the wrapper takes a width in pixels at the
   face's scale; a wrapping UI label with the built-in font passes `cells × cell`, so it wraps exactly as before.
 - **Stage 3.** (1) `load_font` reads the whole `.nnhfont` once (`assets::load`), validates it, copies the tables into the
   block and decodes each page into a temporary buffer — instead of streaming sections — because the files are small

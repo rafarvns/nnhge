@@ -120,3 +120,35 @@ NNH_TEST(loc_format_refuses_a_missing_buffer) {
     const bool crashed = fake::run_expecting_crash([] { (void)nnh::loc::format(nullptr, 4, "menu.quit"); });
     CHECK(crashed == nnh::build::kAssertsEnabled);
 }
+
+NNH_TEST(loc_format_uses_the_rule_of_the_language_whose_text_it_is) {
+    // ru is current but "items.en_only" exists only in en: 21 is "other" under en's rule (under ru's it would be "one")
+    const StopAtEnd stop_at_end;
+    fresh_engine();
+    LocBuilder b = four_languages();
+    b.languages[0].plural("items.en_only", "count", "{count} thing", "{count} things");
+    b.install();
+    fake::set_system_language("en");
+    CHECK(nnh::loc::start({.language = "ru"}).ok());
+    CHECK(fmt("items.en_only", nnh::loc::arg("count", 21)) == "21 things");
+    CHECK(fmt("items.en_only", nnh::loc::arg("count", 1)) == "1 thing");
+}
+
+NNH_TEST(loc_format_a_form_the_key_lacks_is_its_other_form) {
+    // a table the build would refuse (ru needs few and many), read safely: the missing forms fall back to "other"
+    const StopAtEnd stop_at_end;
+    fresh_engine();
+    LocBuilder b = four_languages();
+    b.languages[2].plural("items.short", "count", "{count} one", "{count} other");
+    b.languages[2].plural("items.gap", "count", "{count} one", "{count} other", "", "{count} many");
+    b.languages[0].plural("items.gap", "count", "{count} en-one", "{count} en-other");
+    b.languages[0].plural("items.short", "count", "{count} en-one", "{count} en-other");
+    b.install();
+    fake::set_system_language("en");
+    CHECK(nnh::loc::start({.language = "ru"}).ok());
+    CHECK(fmt("items.short", nnh::loc::arg("count", 3)) == "3 other");  // few: absent
+    CHECK(fmt("items.short", nnh::loc::arg("count", 5)) == "5 other");  // many: absent
+    CHECK(fmt("items.short", nnh::loc::arg("count", 21)) == "21 one");
+    CHECK(fmt("items.gap", nnh::loc::arg("count", 3)) == "3 other"); // few absent: "other", not the next form (many)
+    CHECK(fmt("items.gap", nnh::loc::arg("count", 5)) == "5 many");
+}

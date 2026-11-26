@@ -236,7 +236,10 @@ Its tests `nnh_link_tests` (ctest `nnh_link`, also static on MinGW) include a mi
 `URL_HASH SHA256=...`, linked `PRIVATE`, and the build-time impact measured (constitution III). A
 single-file library may instead be vendored, unmodified, in `third_party/<name>/` with a `README.md`
 (upstream, commit, SHA-256, license) and its own `CMakeLists.txt` building an object library with
-warnings off — like `third_party/stb_vorbis` (spec 008), linked into `nnh_core`.
+warnings off — like `third_party/stb_vorbis` (spec 008), linked into `nnh_core`. `third_party/stb_truetype` and
+`third_party/stb_image` (spec 029, `nothings/stb` commit `9f755b6`, PNG only) are host-only: linked into `nnh-assetc`
+for the font converter, never into a game; `nnh_add_game(... LANGUAGES en pt-BR ja [BASE en] [STRICT_STRINGS])`
+adds the string steps (`cmake/nnh_strings.cmake`).
 
 ## Rules (Modern CMake)
 

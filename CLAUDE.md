@@ -175,6 +175,21 @@ and a complete step chain checked at compile time), `NNH_SAVE_STRUCT`, `NNH_SAVE
 `NNHS` container (same bytes on PC and 3DS), the whole file validated first, exact conversions, a `Report`
 (unknown/dropped/adjusted, backup), the backup on any damage, `OldFields` for steps, a Debug dump and `NNH_SAVE_DUMP`;
 golden files in `tests/data/saves/`, fuzz target `fuzz_saves` ([api/saves.md](docs/api/saves.md)).
+Game fonts and localization (spec 029, implemented, console and Linux checks pending; D49, D50; demo
+`examples/localization`): `<nnh/font.hpp>` — `load_font("fonts/body_16")` of a `.nnhfont` the build baked from a
+`<name>.font` description (TTF/OTF via vendored host-only `third_party/stb_truetype`; size, named character sets, the
+characters of chosen languages' strings, outline, ≤ 3 fallbacks, a packed licence) or a BMFont `.fnt` (pages via
+`third_party/stb_image`, PNG only) — `nnh-assetc font`; 4-bit coverage pages through the contract's `texture_create_alpha`;
+a 32-entry refcounted table reached through `g_font_resolve` (no font code linked without `load_font`); `TextOptions::font`,
+`wrap_width`, `max_lines` (`…`), `outline_color`, `gfx::measure_text(utf8, options)`, `measure_chars`, `font_metrics`;
+one shared wrapper (`src/text/text_wrap.*`: spaces, CJK, kinsoku) used by gfx and the UI's pixel seam (`Ui::set_font`,
+`UiFont::Slot0..7`) ([api/fonts.md](docs/api/fonts.md)). `<nnh/localization.hpp>` — `nnh_add_game(... LANGUAGES en pt-BR ja
+BASE en [STRICT_STRINGS])` with `strings/<code>.strings` (or `strings/<code>/*.strings`) checked by `nnh-assetc strings` /
+`strings-index` (keys, placeholders, CLDR 46 plural forms, glyph coverage by the language's font roles, `qps` in Debug) into
+`strings/<code>.nnhstr` + `.nnh_loc`; `loc::start/stop`, `tr`, `format` + `arg`/`arg_key`, `set_language` (next frame, D32
+hook), `follow_system`, `LanguageChanged`, `use_fonts`/`font(role)`, `apply(ui, roles)`, `dump`/`set_show_keys`;
+`system::language()` (3DS CFGU, `NNH_SIM_LANGUAGE`, script command `language CODE|off`) ([api/localization.md](docs/api/localization.md),
+guide [localizing-a-game.md](docs/guides/localizing-a-game.md)). Tests build tables with `tests/loc/loc_fixture.hpp`.
 Camera helpers (spec 018, implemented; D33; demo `examples/camera`): `<nnh/camera.hpp>` —
 `nnh::CameraRig`, a 128-byte value per view: `update(target)` once per frame after moving the target (one 60 Hz
 frame, bit-identical on PC and 3DS), `apply()` writes `Camera2D`; dead zone in screen pixels, per-frame smoothing,
@@ -288,6 +303,8 @@ MODELS_DEMO=check NNH_EXIT_AFTER_FRAMES=70 build/pc-debug/examples/models/models
 UI_SHOT=options NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/ui.png build/pc-debug/examples/ui/ui.exe   # title|options|list|grid|dialog|modal|theme2
 build/pc-debug/tools/nnh/nnh run ui [--pc] --script examples/ui/tests/check.nnhs   # self-check 30400DA6, the showcase by buttons and touch, bench
 build/pc-debug/tools/nnh/nnh run models [--pc] --script examples/models/tests/stereo.nnhs  # stereo: slider 1, both eyes, golden B3550D40
+build/pc-debug/tools/nnh/nnh run localization [--pc] --script examples/localization/tests/check.nnhs  # languages, self-check 4877A4A7, bench
+LOC_SHOT=ja NNH_EXIT_AFTER_FRAMES=200 NNH_SCREENSHOT=build/ja.png build/pc-debug/examples/localization/localization.exe   # title|options|dialog|shop|gallery|ja|ru|qps|pages; LOC_DEMO=check|bench; NNH_SIM_LANGUAGE=ja
 NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/right.png build/pc-debug/examples/models/models.exe   # left|right|anaglyph
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings

@@ -241,6 +241,14 @@ slider off
 
 A game built before the slider existed rejects the command (`the console rejected the message (unknown type)`).
 
+## The system language
+
+`language CODE` (a well-formed tag: `ja`, `pt-BR`, `zh-Hant`) sets what `nnh::system::language()` returns from that
+frame on (spec 029), on the console and in the simulator; `language off` gives the system's back. Like the slider, a
+script owns it: **`en` from its start** until its first `language` command, so results don't depend on the console's
+settings. A game that follows the system language ([localization](../api/localization.md)) switches at the next frame
+and logs `language ja (system)`. The localization example's `tests/check.nnhs` walks pt-BR, de, ru and ja this way.
+
 On the console, a screenshot pair takes about **0.6–0.8 s** over Wi-Fi (Old 3DS XL): the game stops for
 that time, and its log says `remote: frame <n> sent a screenshot in <ms> ms; its time is not
 representative`. Take screenshots outside anything you measure; in the simulator they cost a few

@@ -36,15 +36,25 @@ bool parse(int argc, const char* const* argv, int first, Args& a) {
     return !a.languages.empty() && !a.out.empty();
 }
 
-/// Reads every language of the list (or only `only` and the base). @return false on a read problem (printed).
-bool read_all(FileSource& files, const LanguageList& list, const std::string& only, std::vector<StringsLanguage>& out,
-              std::FILE* err) {
+/// `file` from the list at `list_path`: a relative path is relative to the list's folder (the build writes them so: in
+/// cross presets a native program can't open the MSYS paths devkitPro's CMake would write).
+std::string beside(const std::string& list_path, const std::string& file) {
+    const bool absolute = (!file.empty() && (file[0] == '/' || file[0] == '\\')) || (file.size() > 1 && file[1] == ':');
+    const std::size_t slash = list_path.find_last_of("/\\");
+    return absolute || slash == std::string::npos ? file : list_path.substr(0, slash + 1) + file;
+}
+
+/// Reads every language of the list at `list_path` (or only `only` and the base). @return false on a read problem
+/// (printed).
+bool read_all(FileSource& files, const std::string& list_path, const LanguageList& list, const std::string& only,
+              std::vector<StringsLanguage>& out, std::FILE* err) {
     bool ok = true;
     for (std::size_t i = 0; i < list.codes.size(); ++i) {
         StringsLanguage l;
         l.code = list.codes[i];
         if (only.empty() || l.code == only || static_cast<int>(i) == list.base) {
-            for (const std::string& f : list.files[i]) {
+            for (const std::string& listed : list.files[i]) {
+                const std::string f = beside(list_path, listed);
                 std::string text;
                 std::vector<std::string> problems;
                 if (!files.read(f, kMaxStringsFileBytes + 1, text)) problems.push_back(f + ": can't be read");
@@ -78,7 +88,7 @@ int run_strings(int argc, const char* const* argv, std::FILE* out, std::FILE* er
         return 1;
     }
     std::vector<StringsLanguage> langs;
-    if (!read_all(files, list, a.code, langs, err)) return 1;
+    if (!read_all(files, a.languages, list, a.code, langs, err)) return 1;
     int me = -1;
     for (std::size_t i = 0; i < langs.size(); ++i)
         if (langs[i].code == a.code) me = static_cast<int>(i);
@@ -108,7 +118,7 @@ int run_strings_index(int argc, const char* const* argv, std::FILE* out, std::FI
     in.base = list.base;
     in.release = a.release;
     in.fonts_dir = a.fonts;
-    if (!read_all(files, list, "", in.languages, err)) return 1;
+    if (!read_all(files, a.languages, list, "", in.languages, err)) return 1;
     if (!a.release && !a.pseudo_out.empty()) in.languages.push_back(make_pseudo(in.languages[static_cast<std::size_t>(list.base)]));
     std::vector<std::uint8_t> manifest;
     CheckResult r;

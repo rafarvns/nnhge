@@ -39,6 +39,16 @@ NNH_TEST(plural_russian_one_few_many) {
     for (std::uint64_t n : many) CHECK(of(ru, n) == lf::Many);
 }
 
+NNH_TEST(plural_moduli_of_numbers_beyond_32_bits) {
+    const auto ru = Rules::russian();
+    CHECK(of(ru, 1000000000000000001ull) == lf::One);   // …01
+    CHECK(of(ru, 1000000000000000011ull) == lf::Many);  // …11
+    CHECK(of(ru, 4294967298ull) == lf::Many);           // 2^32 + 2 ends in 98
+    CHECK(of(ru, 4294967302ull) == lf::Few);            // 2^32 + 6 ends in 02
+    CHECK(of(ru, 18446744073709551615ull) == lf::Many); // 2^64 − 1 ends in 15
+    CHECK(of(ru, 9223372036854775808ull) == lf::Many);  // 2^63 ends in 08
+}
+
 NNH_TEST(plural_no_rule_is_always_other) {
     CHECK(lf::plural_category(nullptr, 0, 1) == lf::Other);
     CHECK(lf::plural_valid(nullptr, 0));

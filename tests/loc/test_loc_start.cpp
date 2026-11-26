@@ -168,3 +168,15 @@ NNH_TEST(loc_stop_frees_everything_and_tr_is_empty_again) {
     CHECK(nnh::loc::start().ok()); // and again
     CHECK(nnh::frame());
 }
+
+NNH_TEST(loc_start_prefers_the_language_without_a_region) {
+    // shipped pt and pt-BR, system pt-PT: the plain pt, not the other region
+    const StopAtEnd stop_at_end;
+    fresh_engine();
+    LocBuilder b = four_languages();
+    b.add("pt", "Português").key("menu.new_game", "Novo jogo (pt)");
+    b.install();
+    fake::set_system_language("pt-PT");
+    CHECK(nnh::loc::start().ok());
+    CHECK(std::string(nnh::loc::code()) == "pt");
+}

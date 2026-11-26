@@ -321,3 +321,11 @@ never through `#ifdef` in game code.
   Debug/Development `hello` growth from the remote message).
 - 2026-11-26: D49 and D50 approved with plan 029's answers (4-bit coverage pages, `stb_image` vendored host-only, a Noto
   Sans JP OFL subset in the example, one size per font description, the Debug/Development `hello` growth accepted).
+- 2026-11-26: D49 and D50 implemented (spec 029, console run pending). Refinements (plan 029 "Implementation
+  refinements"): a font is read whole once and its pages decoded one at a time; a damaged font is `Corrupted` and the
+  33rd `LimitReached`; string files have their own small reader instead of a mode of the data TOML reader; table and
+  manifest headers are 80 and 48 bytes; the after-input hook stays registered from `start()` to `stop()`; Release skips
+  shutdown hooks, so a Release game that restarts the engine calls `loc::stop()` first; the plural interpreter reduces
+  the number to n mod 10^6 with 32-bit operations (no `__aeabi_uldivmod` on the ARM11). The `hello` criterion became
+  "`.3dsx` and stripped `.elf` identical" (the DWARF string order of the unstripped `.elf` moves with `gfx.hpp`);
+  Debug/Development `hello` grew 440 B on the 3DS for the remote `Language` message (D28).

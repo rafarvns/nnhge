@@ -28,9 +28,37 @@ std::vector<std::uint8_t> sealed(const std::uint8_t* data, std::size_t size, std
 }
 
 /// Every lookup of an accepted table stays inside it (tr, format's records and placeholders).
+/// find_key()'s walk over one bucket: every index read stays inside the key records (review B1).
+bool lookup(const std::uint8_t* data, const lf::TableHeader& h, std::uint32_t hash) {
+    const std::uint32_t b = lf::bucket_of(hash, h.bucket_bits);
+    std::uint16_t lo = 0, hi = 0;
+    std::memcpy(&lo, data + h.off_buckets + b * 2, 2);
+    std::memcpy(&hi, data + h.off_buckets + (b + 1) * 2, 2);
+    for (std::uint32_t k = lo; k < hi; ++k) {
+        if (k >= h.key_count) std::abort();
+        lf::KeyRecord key;
+        std::memcpy(&key, data + h.off_keys + k * sizeof key, sizeof key);
+        if (key.hash == hash) return true;
+    }
+    return false;
+}
+
 void walk_table(const std::uint8_t* data, std::size_t size) {
     lf::TableHeader h;
     std::memcpy(&h, data, sizeof h);
+    // every key is found through its bucket; random hashes walk their buckets without leaving the keys
+    std::uint32_t random = 0x9E3779B9u ^ static_cast<std::uint32_t>(size);
+    for (std::uint32_t k = 0; k < h.key_count; ++k) {
+        lf::KeyRecord key;
+        std::memcpy(&key, data + h.off_keys + k * sizeof key, sizeof key);
+        if (!lookup(data, h, key.hash)) std::abort();
+        random = random * 1664525u + 1013904223u;
+        (void)lookup(data, h, random ^ key.hash);
+    }
+    for (int i = 0; i < 64; ++i) {
+        random = random * 1664525u + 1013904223u;
+        (void)lookup(data, h, random);
+    }
     for (std::uint32_t k = 0; k < h.key_count; ++k) {
         lf::KeyRecord key;
         std::memcpy(&key, data + h.off_keys + k * sizeof key, sizeof key);

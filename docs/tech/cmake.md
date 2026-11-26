@@ -242,7 +242,7 @@ for the font converter, never into a game; `nnh_add_game(... LANGUAGES en pt-BR 
 adds the string steps (`cmake/nnh_strings.cmake`); see [third-party.md](third-party.md).
 
 **`nnh_tests` on MinGW links libstdc++ and libgcc statically** (`-static-libstdc++ -static-libgcc`, tests only; lead
-decision during spec 029, to be confirmed by the maintainer): Git Bash puts its own `/mingw64/bin` (a `libstdc++-6.dll`
+decision during spec 029, confirmed by the maintainer 2026-11-26): Git Bash puts its own `/mingw64/bin` (a `libstdc++-6.dll`
 built against `msvcrt.dll`) before the compiler's on `PATH`, and a string that DLL allocated, freed by an inlined Release
 destructor through the UCRT, corrupted the heap. Games use no C++ runtime allocation and keep the default linking.
 

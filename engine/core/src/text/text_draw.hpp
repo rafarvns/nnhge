@@ -14,22 +14,7 @@ constexpr bool uses_text_layout(const TextOptions& o) {
     return o.font.id != 0 || o.wrap_width > 0 || o.max_lines > 0 || o.outline_color.a > 0;
 }
 
-// The layout path is linked only by games that need it (lead decision 2026-11-26, plan 029): gfx/draw_text.cpp refers
-// to draw_text_layout weakly where the object format allows it (ELF: the 3DS, Linux), so a game that only draws with
-// the built-in font links none of this; load_font() and gfx::measure_text(utf8, options) / measure_chars refer to
-// text_layout_link() strongly, which pulls the layout in. Elsewhere (PE: Windows) the reference is an ordinary one.
-#if defined(__ELF__) && (defined(__GNUC__) || defined(__clang__))
-#define NNH_TEXT_LAYOUT_WEAK __attribute__((weak))
-#define NNH_TEXT_LAYOUT_LINKED() (&::nnh::detail::draw_text_layout != nullptr)
-#else
-#define NNH_TEXT_LAYOUT_WEAK
-#define NNH_TEXT_LAYOUT_LINKED() true
-#endif
-
-NNH_TEXT_LAYOUT_WEAK void draw_text_layout(Screen screen, Vec2 position, const char* utf8, const TextOptions& options);
-
-/// Does nothing; a strong reference to it links the layout path (text_draw.cpp).
-void text_layout_link();
+void draw_text_layout(Screen screen, Vec2 position, const char* utf8, const TextOptions& options);
 
 /// Calls fn(const WrapLine&, int index) for each line of `utf8` as draw_text lays it out with `options` and `face`.
 template <typename Fn>

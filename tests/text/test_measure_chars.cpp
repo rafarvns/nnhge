@@ -41,3 +41,20 @@ NNH_TEST(measure_chars_stops_at_the_capacity) {
     CHECK(nnh::gfx::measure_chars("abcdef", {}, c, 0) == 0);
     CHECK(nnh::gfx::measure_chars(nullptr, {}, c, 2) == 0);
 }
+
+NNH_TEST(measure_chars_clamps_positions_past_the_int16_range) {
+    // review N5: a 600-character line at scale 8 ends at x = 38 336, past int16: clamped, never wrapped negative
+    start_engine();
+    static char line[601];
+    for (int i = 0; i < 600; ++i) line[i] = 'W';
+    static nnh::TextCaret c[600];
+    CHECK(nnh::gfx::measure_chars(line, {.scale = 8}, c, 600) == 600);
+    CHECK(c[400].x == 400 * 64 && c[599].x == 32767 && c[599].advance == 64);
+    CHECK(nnh::gfx::measure_chars(line, {.scale = 8, .align = nnh::TextAlign::Right}, c, 600) == 600);
+    CHECK(c[0].x == -32768 && c[599].x == -64);
+    // 500 lines at scale 8: the last line's top is 39 920
+    static char lines[1001];
+    for (int i = 0; i < 1000; ++i) lines[i] = i % 2 == 0 ? 'a' : '\n';
+    CHECK(nnh::gfx::measure_chars(lines, {.scale = 8}, c, 600) == 500);
+    CHECK(c[100].y == 8000 && c[499].y == 32767 && c[499].line == 499);
+}

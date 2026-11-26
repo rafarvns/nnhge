@@ -20,6 +20,7 @@ inline constexpr int kFontSlots = 32;
 struct FontEntryExtra {
     int fallbacks[font::kMaxFallbacks] = {-1, -1, -1}; ///< table slots this entry holds a reference to
     int fallback_count = 0;
+    bool fallbacks_loaded = false;  ///< its own fallbacks were loaded (false for an entry loaded only as a fallback)
     MemTag* tag = nullptr;          ///< the block's tag
     char path[font::kPathBytes] = {}; ///< the asset path (logs, Font::path in Debug/Development)
 };

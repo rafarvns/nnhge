@@ -74,7 +74,7 @@ used). `STRICT_STRINGS` turns warnings into errors. Debug/Development builds als
 | `loc::code()`, `name()`, `index()`, `serial()`, `language_count()`, `language_code(i)`, `language_name(i)`, `find(code)` | queries |
 | `loc::key(name)` | a key from a run-time name (data-driven text); literal keys hash at compile time |
 | `loc::resolve(hash)` | `tr` by hash: `ui.set_resolver(&nnh::loc::resolve)` |
-| `loc::use_fonts()`, `loc::font(role)` | the current language's role fonts, loaded at start and at every switch |
+| `loc::use_fonts()`, `loc::font(role)` | the current language's role fonts, loaded at start and at every switch (the first `font()` turns `use_fonts()` on if the game hasn't) |
 | `loc::apply(ui, roles)` | spec 028's widgets in the current language: the resolver, each slot's font, `text_changed()` |
 | `loc::dump()`, `loc::set_show_keys(on)` | Debug/Development: the current language; key names instead of texts (also `NNH_LOC_SHOW_KEYS=1`) |
 

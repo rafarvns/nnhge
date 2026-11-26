@@ -52,21 +52,6 @@ bool parse_map_args(int argc, const char* const* argv, MapArgs& a) {
     return !a.assets.empty();
 }
 
-/// Depfile paths are relative to the working directory, where CMake reads them from: devkitPro's MSYS CMake
-/// would take this native program's absolute "E:/..." paths for relative ones. Unchanged if it can't be known.
-std::string from_working_dir(const std::string& path) {
-    std::error_code error;
-    const std::filesystem::path cwd = std::filesystem::current_path(error);
-    if (error || !std::filesystem::path(path).is_absolute()) return path;
-    return relative_path(cwd.generic_string(), path);
-}
-
-std::vector<std::string> from_working_dir(const std::vector<std::string>& paths) {
-    std::vector<std::string> out;
-    for (const std::string& p : paths) out.push_back(from_working_dir(p));
-    return out;
-}
-
 using ConvertFn = bool (*)(FileSource&, const std::string&, const std::string&, Converted&, Problem&);
 
 /// `map` (Tiled) and `sprite` (Aseprite, spec 016): convert, write the output and the depfile.

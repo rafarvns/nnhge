@@ -95,8 +95,6 @@ void warn_no_outline([[maybe_unused]] const TextFace& face) {
 
 } // namespace
 
-void text_layout_link() {}
-
 void draw_text_layout(Screen screen, Vec2 position, const char* utf8, const TextOptions& options) {
     const TextFace face = face_for(options.font, options.scale);
     if (face.builtin() && !font_texture_ready()) return;

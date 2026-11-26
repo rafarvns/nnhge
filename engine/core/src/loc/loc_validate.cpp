@@ -6,12 +6,13 @@
 #include "core/crc32.hpp"
 #include "loc/loc_file.hpp"
 #include "loc/plural.hpp"
+#include "system/language_tag.hpp"
 #include "text/utf8.hpp"
 
 namespace nnh::detail::loc {
 namespace {
 
-bool in(std::size_t at, std::size_t n, std::size_t size) { return at <= size && n <= size - at; }
+bool in(std::uint64_t at, std::uint64_t n, std::uint64_t size) { return at <= size && n <= size - at; }
 
 std::uint32_t crc_without(const std::uint8_t* data, std::size_t size, std::size_t field) {
     const std::uint8_t zero[4] = {};
@@ -21,8 +22,8 @@ std::uint32_t crc_without(const std::uint8_t* data, std::size_t size, std::size_
 }
 
 /// A NUL-terminated string at `at` inside [0, end).
-bool c_string(const std::uint8_t* data, std::size_t at, std::size_t end) {
-    return at < end && std::memchr(data + at, 0, end - at) != nullptr;
+bool c_string(const std::uint8_t* data, std::uint64_t at, std::uint64_t end) {
+    return at < end && std::memchr(data + at, 0, static_cast<std::size_t>(end - at)) != nullptr;
 }
 
 } // namespace
@@ -38,6 +39,9 @@ const char* validate_table(const std::uint8_t* data, std::size_t size) {
     if (h.key_count > 65535 || h.string_count > 65535 || h.placeholder_count > 65535) return "too many keys or strings";
     const std::size_t buckets = (std::size_t{1} << h.bucket_bits) + 1;
     const std::size_t body = size - kGuardBytes;
+    // the loader reads the sections through typed pointers: misaligned ones fault on the ARM11 (review S1)
+    if (h.off_buckets % 2 != 0 || h.off_keys % 4 != 0 || h.off_strings % 4 != 0 || h.off_placeholders % 4 != 0)
+        return "a section isn't aligned";
     if (!in(h.off_buckets, buckets * 2, body) || !in(h.off_keys, std::size_t{h.key_count} * sizeof(KeyRecord), body) ||
         !in(h.off_strings, (std::size_t{h.string_count} + 1) * sizeof(StringRecord), body) ||
         !in(h.off_placeholders, std::size_t{h.placeholder_count} * sizeof(PlaceholderRecord), body) ||
@@ -47,6 +51,13 @@ const char* validate_table(const std::uint8_t* data, std::size_t size) {
     for (std::size_t i = 0; i < kGuardBytes; ++i)
         if (data[body + i] != 0) return "no zero guard";
     if (crc_without(data, size, kTableCrcOffset) != h.crc) return "bad CRC";
+    // buckets never decrease and never pass the key count: tr() walks [buckets[b], buckets[b + 1]) (review B1)
+    for (std::size_t b = 0; b + 1 < buckets; ++b) {
+        std::uint16_t lo = 0, hi = 0;
+        std::memcpy(&lo, data + h.off_buckets + b * 2, 2);
+        std::memcpy(&hi, data + h.off_buckets + (b + 1) * 2, 2);
+        if (lo > hi || hi > h.key_count) return "buckets don't match the keys";
+    }
     std::uint32_t prev = 0;
     std::uint32_t next_string = 0;
     for (std::uint32_t i = 0; i < h.key_count; ++i) {
@@ -90,7 +101,7 @@ const char* validate_table(const std::uint8_t* data, std::size_t size) {
         for (std::uint32_t i = 0; i < h.key_count; ++i) {
             std::uint32_t o = 0;
             std::memcpy(&o, data + h.off_names + i * 4, 4);
-            if (!c_string(data, std::size_t{h.off_names} + o, body)) return "a name lies outside the table";
+            if (!c_string(data, std::uint64_t{h.off_names} + o, body)) return "a name lies outside the table";
         }
     }
     return nullptr;
@@ -106,19 +117,22 @@ const char* validate_manifest(const std::uint8_t* data, std::size_t size) {
         h.role_count > kMaxRoles || (h.pseudo != kNoIndex && h.pseudo >= h.language_count)) {
         return "bad header";
     }
+    if (h.block_bytes > kMaxBlockBytes) return "a bad block size"; // review N1: no wrap when rounded up
+    if (h.off_languages % 4 != 0 || h.off_roles % 4 != 0 || h.off_role_fonts % 4 != 0) return "a section isn't aligned";
     const std::size_t n = h.language_count, roles = h.role_count;
     if (!in(h.off_languages, n * sizeof(LanguageRecord), size) || !in(h.off_roles, roles * 4, size) ||
         !in(h.off_role_fonts, n * roles * 4, size) || !in(h.off_blob, h.blob_bytes, size) || h.off_rules > h.off_blob) {
         return "a section lies outside the manifest";
     }
     if (crc_without(data, size, kManifestCrcOffset) != h.crc) return "bad CRC";
-    const std::size_t blob_end = std::size_t{h.off_blob} + h.blob_bytes;
+    const std::uint64_t blob_end = std::uint64_t{h.off_blob} + h.blob_bytes;
     for (std::size_t i = 0; i < n; ++i) {
         LanguageRecord r;
         std::memcpy(&r, data + h.off_languages + i * sizeof r, sizeof r);
         if (std::memchr(r.code, 0, sizeof r.code) == nullptr || std::memchr(r.grouping, 0, sizeof r.grouping) == nullptr)
             return "a bad language record";
-        if (!c_string(data, std::size_t{h.off_blob} + r.name, blob_end)) return "a name lies outside the manifest";
+        if (!language_tag_well_formed(r.code)) return "a bad language code"; // review N7
+        if (!c_string(data, std::uint64_t{h.off_blob} + r.name, blob_end)) return "a name lies outside the manifest";
         if (r.chain[0] != i) return "a chain doesn't start at its language";
         bool ended = false;
         for (int c = 0; c < kMaxChain; ++c) {
@@ -133,14 +147,14 @@ const char* validate_manifest(const std::uint8_t* data, std::size_t size) {
             ended = r.chain[c] == h.base;
         }
         if (!ended) return "a chain doesn't end at the base";
-        if (!in(std::size_t{h.off_rules} + r.rule, r.rule_bytes, h.off_blob) ||
+        if (!in(std::uint64_t{h.off_rules} + r.rule, r.rule_bytes, h.off_blob) ||
             !plural_valid(data + h.off_rules + r.rule, r.rule_bytes))
             return "a bad plural rule";
         if (r.grouping_min < 1 || r.grouping_min > 9) return "a bad grouping";
         for (std::size_t k = 0; k < roles; ++k) {
             std::uint32_t o = 0;
             std::memcpy(&o, data + h.off_role_fonts + (i * roles + k) * 4, 4);
-            if (o != 0 && !c_string(data, std::size_t{h.off_blob} + o, blob_end)) return "a font path lies outside the manifest";
+            if (o != 0 && !c_string(data, std::uint64_t{h.off_blob} + o, blob_end)) return "a font path lies outside the manifest";
         }
     }
     return nullptr;

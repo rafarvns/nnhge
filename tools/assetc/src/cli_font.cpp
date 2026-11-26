@@ -44,7 +44,7 @@ int run_font(int argc, const char* const* argv, std::FILE* out, std::FILE* err) 
         return 1;
     }
     if (!depfile.empty()) {
-        const std::string text = depfile_text(output, result.inputs);
+        const std::string text = depfile_text(from_working_dir(output), from_working_dir(result.inputs));
         write_file_if_changed(depfile, text.data(), text.size());
     }
     for (const std::string& note : result.notes) std::fprintf(out, "%s\n", note.c_str());

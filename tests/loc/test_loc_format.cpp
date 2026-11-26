@@ -152,3 +152,12 @@ NNH_TEST(loc_format_a_form_the_key_lacks_is_its_other_form) {
     CHECK(fmt("items.gap", nnh::loc::arg("count", 3)) == "3 other"); // few absent: "other", not the next form (many)
     CHECK(fmt("items.gap", nnh::loc::arg("count", 5)) == "5 many");
 }
+
+NNH_TEST(loc_format_clamps_unsigned_arguments_above_the_long_long_range) {
+    // review N8: an unsigned long long above LLONG_MAX wrapped to a negative number
+    CHECK(nnh::loc::arg("n", 18446744073709551615ull).number == 9223372036854775807ll);
+    CHECK(nnh::loc::arg("n", 9223372036854775808ull).number == 9223372036854775807ll);
+    CHECK(nnh::loc::arg("n", 9223372036854775807ull).number == 9223372036854775807ll);
+    CHECK(nnh::loc::arg("n", 4294967295u).number == 4294967295ll);
+    CHECK(nnh::loc::arg("n", -5).number == -5);
+}

@@ -23,7 +23,7 @@ void detail::loc::loc_frame_hook(InputHook&) {
         if (std::strncmp(system, s.system_code, sizeof s.system_code - 1) != 0) {
             std::strncpy(s.system_code, system, sizeof s.system_code - 1);
             int match = match_language(system);
-            if (match < 0) match = s.header.base;
+            if (match < 0 || match == s.header.pseudo) match = s.header.base; // the pseudo-language only when chosen
             if (match != s.current) {
                 s.pending = match;
                 s.pending_why = "system";

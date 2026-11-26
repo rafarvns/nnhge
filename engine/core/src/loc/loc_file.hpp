@@ -22,6 +22,7 @@ inline constexpr std::uint16_t kVersion = 1;
 inline constexpr std::uint16_t kFlagNames = 1;
 inline constexpr int kMaxLanguages = 32;
 inline constexpr int kMaxRoles = 8;
+inline constexpr std::uint32_t kMaxBlockBytes = 1u << 28; ///< a string block larger than this is a damaged manifest
 inline constexpr int kMaxChain = 4;
 inline constexpr std::size_t kGuardBytes = 16;
 inline constexpr std::uint8_t kNoIndex = 0xFF;

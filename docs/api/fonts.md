@@ -56,14 +56,14 @@ byte (LA4) on the 3DS; the Japanese body font of the example (1 358 glyphs at 13
 
 | API | |
 |-----|-|
-| `load_font(path, tag = nullptr)` | loads `<path>.nnhfont` and its fallbacks; `Result<Font>`. Errors: `NotFound`, `Corrupted` (the validator's reason logged), `OutOfMemory`, `LimitReached` (32 fonts or no texture slot) |
+| `load_font(path, tag = nullptr)` | loads `<path>.nnhfont` and its fallbacks (a font loaded earlier only as another's fallback gets its own now; a fallback that already falls back to this font is skipped); `Result<Font>`. Errors: `NotFound`, `Corrupted` (the validator's reason logged, or the font names itself as a fallback), `OutOfMemory`, `LimitReached` (32 fonts or no texture slot), `InvalidArgument` (a path whose name hash is another loaded font's) |
 | `Font` | the owner (movable). A path loaded twice shares one entry; the last owner frees it (pages released after the GPU, D47) |
 | `font.ref()` / `FontRef` | what `TextOptions::font` and the UI hold; `FontRef{}` is the built-in font |
 | `metrics()`, `has(cp)`, `covers(cp)`, `advance(cp)`, `kerning(a, b)`, `path()`, `dump()` | queries (integers at scale 1) |
 | `gfx::font_metrics(ref)` | `{size, line_height, ascent, descent, glyphs, pages, bytes, outline, colour}` |
 | `gfx::measure_text(utf8, options)` | the box `draw_text` fills with these options (font, wrap, line limit, ellipsis) |
-| `gfx::measure_chars(utf8, options, out, capacity)` | per code point: byte offset, pen x, line y, advance, line — cursors, typewriters |
-| `font::debug_draw_pages(screen, ref, at, page = -1)` | Debug/Development: the pages and glyph rectangles |
+| `gfx::measure_chars(utf8, options, out, capacity)` | per code point: byte offset, pen x, line y, advance, line (each clamped to −32768..32767) — cursors, typewriters |
+| `font::debug_draw_pages(screen, ref, at, page = -1)` | Debug/Development: the pages side by side, scaled down to fit the screen, with page outlines and glyph rectangles |
 
 `TextOptions` fields for fonts (all default to the built-in behaviour):
 
@@ -73,11 +73,6 @@ byte (LA4) on the 3DS; the Japanese body font of the example (1 358 glyphs at 13
 | `wrap_width` | > 0: lines break at this width in pixels (× scale): spaces and breaking punctuation, between CJK characters (no line starts with `、。」` or ends with `「`, moving back at most two characters), long words split |
 | `max_lines` | > 0: at most this many lines; the last ends with `…` (or `...` when the font lacks it) |
 | `outline_color` | alpha > 0: the font's baked outline drawn under each glyph (a font without outlines ignores it, said once) |
-
-**Linking**: a game that draws only with the built-in font links no layout code (on the 3DS and Linux, `draw_text`
-refers to it weakly). `load_font()` links it, and so does `gfx::measure_text(utf8, options)` or `measure_chars`. A game
-that wraps text in the built-in font without loading any font must call one of those two somewhere (measuring the box
-it wraps into is the usual place); otherwise Debug/Development assert and Release draws the text unwrapped.
 
 Kerning applies between two characters of the same font. A character no font of the face has draws the font's
 replacement glyph (U+FFFD or `?`), else a hollow box of the font's size; Debug/Development logs it once per font

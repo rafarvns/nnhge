@@ -66,11 +66,10 @@ void loc::use_fonts() {
 
 FontRef loc::font(Key role) {
     const LocState& s = loc_state();
-    if (s.fonts_switch == nullptr) use_fonts();
-    const auto* hashes = reinterpret_cast<const std::uint32_t*>(s.manifest + s.header.off_roles);
+    if (s.fonts_switch == nullptr) use_fonts(); // documented: the first font() turns the role fonts on (review N4)
     for (int r = 0; s.started && r < s.header.role_count; ++r) {
         std::uint32_t h = 0;
-        std::memcpy(&h, hashes + r, 4);
+        std::memcpy(&h, s.manifest + s.header.off_roles + r * 4, 4);
         if (h == role.hash) return g_fonts[r].ref();
     }
 #if !defined(NNH_FLAVOR_RELEASE)

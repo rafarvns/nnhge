@@ -3,12 +3,17 @@
 // (em 1000, ascender 800, descender −200; 'A' advances 560 units, 'a' 440; kern A V −80), BMFont text and XML forms,
 // colour pages, outlines, refusals.
 
+#include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <string>
 #include <vector>
 
 #include "cli.hpp"
+#include "cli_fixture.hpp"
 #include "convert_font.hpp"
+#include "files.hpp"
+#include "paths.hpp"
 #include "font/font_format.hpp"
 #include "test.hpp"
 
@@ -142,4 +147,21 @@ NNH_TEST(cli_font_refuses_with_file_and_reason) {
     CHECK(convert_font(mem, in, out).find("a/y.font: y.ttf: not a TrueType or OpenType font") == 0);
     in.path = "a/z.fnt";
     CHECK(convert_font(mem, in, out) == "a/z.fnt:1: binary BMFont files aren't read: export the text or XML form\n");
+}
+
+NNH_TEST(cli_font_depfile_paths_are_relative_to_the_working_directory) {
+    // review S5: absolute "E:/..." paths made devkitPro's MSYS CMake/Ninja read every font input as a missing relative
+    // file, so each font reconverted on every 3DS build (a scene edit took 6.8 s)
+    const std::string out = std::string(NNH_ASSETC_TEST_TMP) + "/font_dep.nnhfont";
+    const std::string dep = out + ".d";
+    std::remove(dep.c_str());
+    const std::string in = kDir + "/body_16.font";
+    const cli_test::Run r =
+        cli_test::run({"font", in, out, "--assets", kDir, "--show", "fonts/body_16", "--depfile", dep});
+    CHECK(r.code == 0);
+    std::string text;
+    CHECK(DiskFiles{}.read(dep, 1 << 16, text));
+    const std::string cwd = std::filesystem::current_path().generic_string();
+    CHECK(text.rfind(relative_path(cwd, out) + ": " + relative_path(cwd, in) + " ", 0) == 0);
+    CHECK(text.find(':') == text.find(": ")); // no drive letter left
 }

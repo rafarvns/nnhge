@@ -8,9 +8,11 @@
 
 #include "font_fixture.hpp"
 #include "font/font_internal.hpp"
+#include "font/font_table.hpp"
 #include "font_load_fixture.hpp"
 #include "text/font_texture.hpp"
 #include "nnh/font.hpp"
+#include "nnh/detail/name_hash.hpp"
 #include "nnh/memory.hpp"
 #include "test.hpp"
 
@@ -233,4 +235,102 @@ NNH_TEST(load_font_pages_alive_at_shutdown_leave_no_accounting_behind) {
     g_survivor = nnh::Font{};
     CHECK(nnh::mem::tag_stats(nnh::detail::font_memory_tag()).bytes == 128u * 128u * 4u); // the built-in font only
     CHECK(nnh::mem::tag_stats(nnh::NNH_MEM_TAG_REF(textures)).bytes == textures_before);
+}
+
+NNH_TEST(load_font_a_fallback_loaded_later_on_its_own_gets_its_fallbacks) {
+    // review S2: b first loaded as a's fallback (one level, without c); load_font("b") then must reach c
+    start_engine();
+    FontBuilder a = FontBuilder::latin();
+    a.fallbacks = {"fonts/b"};
+    FontBuilder b;
+    b.glyph(0x4E00, 0, 0, 8, 8, 0, 0, 9);
+    b.fallbacks = {"fonts/c"};
+    FontBuilder c;
+    c.glyph(0x3042, 0, 0, 8, 8, 0, 0, 9);
+    add_font("fonts/a", a);
+    add_font("fonts/b", b);
+    add_font("fonts/c", c);
+    {
+        auto fa = nnh::load_font("fonts/a");
+        CHECK(fa.ok() && !fa.value().covers(0x3042));
+        auto fb = nnh::load_font("fonts/b");
+        CHECK(fb.ok() && fb.value().covers(0x3042) && fb.value().covers(0x4E00));
+        CHECK(fake::state().alpha_textures_created == 3);
+        auto again = nnh::load_font("fonts/b"); // already has them: loaded once
+        CHECK(again.ok() && again.value().covers(0x3042) && fake::state().alpha_textures_created == 3);
+        const int slot = nnh::detail::font_table_slot(again.value().ref().id);
+        CHECK(slot >= 0 && nnh::detail::font_table_extra(slot).fallback_count == 1); // c held once, not per load
+    }
+    CHECK(nnh::frame() && nnh::frame());
+    CHECK(fake::state().live_textures == builtin_textures()); // every owner gone: a, b and c released
+}
+
+NNH_TEST(load_font_fallbacks_that_loop_are_skipped_not_leaked) {
+    // a -> b and b -> a, both loaded on their own: b's fallback a would close a loop (each keeping the other alive)
+    start_engine();
+    FontBuilder a = FontBuilder::latin();
+    a.fallbacks = {"fonts/b"};
+    FontBuilder b;
+    b.glyph(0x4E00, 0, 0, 8, 8, 0, 0, 9);
+    b.fallbacks = {"fonts/a"};
+    add_font("fonts/a", a);
+    add_font("fonts/b", b);
+    {
+        auto fa = nnh::load_font("fonts/a");
+        auto fb = nnh::load_font("fonts/b");
+        CHECK(fa.ok() && fb.ok() && fa.value().covers(0x4E00) && !fb.value().covers(U'A'));
+    }
+    CHECK(nnh::frame() && nnh::frame());
+    CHECK(fake::state().live_textures == builtin_textures());
+}
+
+NNH_TEST(load_font_refuses_a_font_that_falls_back_to_itself) {
+    // review N2
+    start_engine();
+    FontBuilder a = FontBuilder::latin();
+    a.fallbacks = {"fonts/a"};
+    add_font("fonts/a", a);
+    {
+        auto f = nnh::load_font("fonts/a");
+        CHECK(!f && f.error().code == nnh::ErrorCode::Corrupted);
+    }
+    CHECK(nnh::frame() && nnh::frame());
+    CHECK(fake::state().live_textures == builtin_textures());
+}
+
+NNH_TEST(load_font_two_paths_with_one_hash_are_not_shared) {
+    // review N2: "fonts/f13979" and "fonts/f342604" share an FNV-1a hash; the second isn't the first's entry
+    static_assert(nnh::detail::fnv1a32("fonts/f13979") == nnh::detail::fnv1a32("fonts/f342604"));
+    start_engine();
+    add_font("fonts/f13979", FontBuilder::latin());
+    add_font("fonts/f342604", FontBuilder::latin());
+    auto one = nnh::load_font("fonts/f13979");
+    auto two = nnh::load_font("fonts/f342604");
+    CHECK(one.ok() && !two);
+    if (!two) CHECK(two.error().code == nnh::ErrorCode::InvalidArgument);
+}
+
+NNH_TEST(load_font_a_late_fallback_load_that_fails_holds_nothing) {
+    // b first loaded as a's fallback; load_font("b") then fails on its second fallback: c, loaded first, is let go
+    start_engine();
+    FontBuilder a = FontBuilder::latin();
+    a.fallbacks = {"fonts/b"};
+    FontBuilder b;
+    b.glyph(0x4E00, 0, 0, 8, 8, 0, 0, 9);
+    b.fallbacks = {"fonts/c", "fonts/missing"};
+    FontBuilder c;
+    c.glyph(0x3042, 0, 0, 8, 8, 0, 0, 9);
+    add_font("fonts/a", a);
+    add_font("fonts/b", b);
+    add_font("fonts/c", c);
+    auto fa = nnh::load_font("fonts/a");
+    CHECK(fa.ok() && nnh::frame());
+    const int with_a_and_b = fake::state().live_textures;
+    {
+        auto fb = nnh::load_font("fonts/b");
+        CHECK(!fb && fb.error().code == nnh::ErrorCode::NotFound);
+    }
+    CHECK(nnh::frame() && nnh::frame());
+    CHECK(fake::state().live_textures == with_a_and_b); // c released
+    CHECK(fa.value().covers(0x4E00) && !fa.value().covers(0x3042));
 }

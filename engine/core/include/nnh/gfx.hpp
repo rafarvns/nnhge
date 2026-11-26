@@ -105,7 +105,7 @@ enum class TextAlign : std::uint8_t { Left, Center, Right };
 /// The built-in font: every character is a cell of kFontCellSize x kFontCellSize pixels (at scale 1),
 /// lines are kFontLineHeight apart. The same on every system.
 inline constexpr int kFontCellSize = 8;
-inline constexpr int kFontLineHeight = 10;
+inline constexpr int kFontLineHeight = 10; // clang-format off: lines kept so hello builds byte-identical (spec 029)
 /// A game font by handle (spec 029, D49): a font table slot and generation; 0 = the built-in font. See <nnh/font.hpp>.
 struct FontRef {
     std::uint32_t id = 0;
@@ -125,7 +125,7 @@ struct TextOptions {
     int wrap_width = 0, max_lines = 0;       ///< > 0: break lines at this width (pixels) / at most this many lines (…)
     Color outline_color{0, 0, 0, 0};         ///< alpha > 0: the font's baked outline drawn first in this colour
 };
-class Texture; struct WorldTransform2D; namespace gfx { // <nnh/texture.hpp>, <nnh/transform.hpp>
+class Texture; struct WorldTransform2D; namespace gfx { // clang-format on: <nnh/texture.hpp>, <nnh/transform.hpp>
 /// Draws a texture (or a region of it) with its pivot at `position`, in world pixels (screen pixels
 /// minus the screen's camera). Records the draw: it appears when the frame ends, ordered by layer, then
 /// call. Only inside a frame; an empty texture draws nothing. No allocation.
@@ -202,7 +202,7 @@ struct FontMetrics {
 };
 
 /// Per code point of a measured text (spec 029 FR-8): where its cell is, after alignment, in pixels (× scale) from the
-/// text's position; for cursors and typewriter effects.
+/// text's position, each value clamped to −32768..32767; for cursors and typewriter effects.
 struct TextCaret {
     std::int32_t byte = 0;    ///< offset of the code point in the text
     std::int16_t x = 0;       ///< its pen position (left of its cell)

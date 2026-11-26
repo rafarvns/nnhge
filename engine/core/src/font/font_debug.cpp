@@ -38,26 +38,48 @@ void font::debug_draw_pages(Screen screen, FontRef font, Vec2 at, int page) {
 #if !defined(NNH_FLAVOR_RELEASE)
     const detail::FontBlock* f = detail::font_table_block(font.id);
     if (f == nullptr || !detail::gfx_drawing()) return;
+    constexpr float kGap = 4;
+    // one scale for every page drawn: their row fits the room right of and below `at` (never enlarged)
+    float widths = 0, tallest = 0;
+    int shown = 0;
+    for (int i = 0; i < f->header.page_count; ++i) {
+        if (page >= 0 && i != page) continue;
+        widths += f->pages[i].width;
+        tallest = f->pages[i].height > tallest ? f->pages[i].height : tallest;
+        ++shown;
+    }
+    const float room_w = static_cast<float>(screen_width(screen)) - at.x - kGap * static_cast<float>(shown - 1);
+    const float room_h = static_cast<float>(screen_height(screen)) - at.y;
+    if (shown == 0 || room_w <= 0 || room_h <= 0) return;
+    float k = 1;
+    if (widths * k > room_w) k = room_w / widths;
+    if (tallest * k > room_h) k = room_h / tallest;
+    const ShapeOptions shape{.layer = 15, .ignore_camera = true};
     float x = at.x;
     for (int i = 0; i < f->header.page_count; ++i) {
         if (page >= 0 && i != page) continue;
         const detail::font::PageRecord& p = f->pages[i];
-        const detail::TextureData* t = detail::gfx_state().textures.get(f->page_slot[i], f->page_generation[i]);
-        if (t == nullptr) continue;
-        detail::DrawCommand c;
-        c.kind = platform::DrawItem2D::Kind::Sprite;
-        c.screen = screen;
-        c.layer = 15;
-        c.ignore_camera = true;
-        c.texture_slot = f->page_slot[i];
-        c.texture_generation = f->page_generation[i];
-        c.region = {0, 0, p.width, p.height};
-        c.position = {x, at.y};
-        c.color = colors::white;
-        detail::gfx_record(c);
-        gfx::draw_rect(screen, {x, at.y, static_cast<float>(p.width), static_cast<float>(p.height)}, colors::yellow,
-                       {.layer = 15, .ignore_camera = true});
-        x += static_cast<float>(p.width) + 4;
+        if (detail::gfx_state().textures.get(f->page_slot[i], f->page_generation[i]) != nullptr) {
+            detail::DrawCommand c;
+            c.kind = platform::DrawItem2D::Kind::Sprite;
+            c.screen = screen;
+            c.layer = 15;
+            c.ignore_camera = true;
+            c.texture_slot = f->page_slot[i];
+            c.texture_generation = f->page_generation[i];
+            c.region = {0, 0, p.width, p.height};
+            c.position = {x, at.y};
+            c.scale = {k, k};
+            c.color = colors::white;
+            detail::gfx_record(c);
+            gfx::draw_rect(screen, {x, at.y, p.width * k, p.height * k}, colors::yellow, shape);
+            for (std::uint32_t g = 0; g < f->header.glyph_count; ++g) { // each glyph with pixels on this page
+                const detail::font::GlyphRecord& r = f->glyphs[g];
+                if (r.page != i || r.w == 0 || r.h == 0) continue;
+                gfx::draw_rect(screen, {x + r.x * k, at.y + r.y * k, r.w * k, r.h * k}, rgba(0, 220, 255, 255), shape);
+            }
+        }
+        x += static_cast<float>(p.width) * k + kGap;
     }
 #else
     (void)screen, (void)font, (void)at, (void)page;

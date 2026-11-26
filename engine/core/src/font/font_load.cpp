@@ -1,6 +1,7 @@
 // load_font (nnh/font.hpp; spec 029 FR-5, D49): `<path>.nnhfont` read whole, validated, its tables copied into one block
-// (tag `font`), each page decoded into a temporary buffer and made a texture, then its fallback fonts (one level). A
-// path loaded twice shares one entry. Any failure releases what was made. Also the release of the last owner.
+// (tag `font`), each page decoded into a temporary buffer and made a texture, then its fallback fonts (one level; loaded
+// later for an entry first loaded as a fallback; never in a loop). A path loaded twice shares one entry (its hash and its
+// path both match). Any failure releases what was made. Also the release of the last owner.
 
 #include <cstdio>
 #include <cstring>
@@ -20,7 +21,6 @@
 #include "nnh/profile.hpp"
 #include "text/font_resolve.hpp"
 #include "text/font_texture.hpp"
-#include "text/text_draw.hpp"
 #include "text/text_missing.hpp"
 
 namespace nnh {
@@ -112,14 +112,44 @@ void fonts_shutdown() {
     detail::text_missing_reset();
 }
 
-/// Loads the fallbacks of the entry in `slot` (one level). @return nullptr or the error.
-Result<int> load_fallbacks(int slot, const FontBlock& block, MemTag& tag) {
+/// `from` reaches `target` through fallback references (the table stays without loops, so this ends).
+bool reaches(int from, int target, int depth = 0) {
+    if (from == target) return true;
+    if (depth >= detail::kFontSlots) return false;
+    const detail::FontEntryExtra& e = detail::font_table_extra(from);
+    for (int i = 0; i < e.fallback_count; ++i)
+        if (e.fallbacks[i] >= 0 && reaches(e.fallbacks[i], target, depth + 1)) return true;
+    return false;
+}
+
+/// Drops the fallbacks the entry in `slot` holds (a failed load_fallbacks).
+void drop_fallbacks(int slot) {
+    detail::FontEntryExtra& extra = detail::font_table_extra(slot);
+    const int n = extra.fallback_count;
+    int held[ff::kMaxFallbacks];
+    for (int i = 0; i < n; ++i) held[i] = extra.fallbacks[i];
+    extra.fallback_count = 0;
+    for (int i = 0; i < ff::kMaxFallbacks; ++i) extra.fallbacks[i] = -1;
+    for (int i = 0; i < n; ++i) detail::font_release(detail::font_table_id(held[i]));
+}
+
+/// Loads the fallbacks of the entry in `slot` (one level): one naming the font itself is refused (review N2); one that
+/// already falls back to it, directly or not, is skipped, so no two entries keep each other alive. @return the error.
+Result<int> load_fallbacks(int slot, std::uint32_t own_hash, const char* path, const FontBlock& block, MemTag& tag) {
     detail::FontEntryExtra& extra = detail::font_table_extra(slot);
     for (int i = 0; i < block.header.fallback_count; ++i) {
+        const std::uint32_t hash = detail::fnv1a32(block.fallbacks[i]);
+        if (hash == own_hash) return refuse(ErrorCode::Corrupted, path, "it names itself as a fallback");
+        const int existing = detail::font_table_find(hash);
+        if (existing >= 0 && reaches(existing, slot)) {
+            NNH_LOG_INFO(font, "%s: fallback %s skipped: it falls back to this font", path, block.fallbacks[i]);
+            continue;
+        }
         auto loaded = load_entry(block.fallbacks[i], tag, false);
         if (!loaded) return loaded.error();
         extra.fallbacks[extra.fallback_count++] = loaded.value();
     }
+    extra.fallbacks_loaded = true;
     return slot;
 }
 
@@ -135,7 +165,21 @@ Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks) {
         found = -1;
     }
     if (found >= 0) {
+        // the table matches by hash: a different path with the same hash is refused, not shared (review N2)
+        if (std::strncmp(detail::font_table_extra(found).path, path, ff::kPathBytes - 1) != 0) {
+            return refuse(ErrorCode::InvalidArgument, path, "its path has the hash of another loaded font's: rename one");
+        }
         detail::font_table_retain(found);
+        const FontBlock& block = *detail::font_table_block(detail::font_table_id(found));
+        // first loaded as another font's fallback (without its own): load_font() of it now loads them (review S2)
+        if (with_fallbacks && !detail::font_table_extra(found).fallbacks_loaded && block.header.fallback_count > 0) {
+            auto done = load_fallbacks(found, hash, path, block, tag);
+            if (!done) {
+                drop_fallbacks(found);
+                detail::font_release(detail::font_table_id(found));
+                return done.error();
+            }
+        }
         return found;
     }
     char asset[detail::kMaxAssetPath + 1];
@@ -173,7 +217,7 @@ Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks) {
         NNH_LOG_INFO(font, "%s: its own fallback fonts are ignored (one level)", path);
     }
     if (with_fallbacks) {
-        auto done = load_fallbacks(slot, *block, tag);
+        auto done = load_fallbacks(slot, hash, path, *block, tag);
         if (!done) {
             detail::font_release(detail::font_table_id(slot));
             return done.error();
@@ -226,7 +270,6 @@ Result<Font> load_font(const char* path, MemTag* tag) {
     auto slot = load_entry(path, tag != nullptr ? *tag : detail::font_memory_tag(), true);
     if (!slot) return slot.error();
     detail::g_font_resolve = &detail::font_resolve_face;
-    detail::text_layout_link(); // a game with fonts draws through the layout path
     detail::add_shutdown_hook(&fonts_shutdown);
     return FontAccess::make(detail::font_table_id(slot.value()));
 }

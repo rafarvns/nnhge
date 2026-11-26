@@ -63,7 +63,9 @@ private:
 /// Loads `<path>.nnhfont` from the game's assets (and its fallback fonts, one level): one block (tag `font` by default,
 /// or `tag`) and its pages as textures (AppConfig::gfx.max_textures slots, accounted under `font`). Load time only
 /// (allocates; a page is decoded into a temporary buffer freed at once). Errors: NotFound, Corrupted (the validator's
-/// reason logged), OutOfMemory, LimitReached (32 fonts, or no texture slot left).
+/// reason logged, or the font names itself as a fallback), OutOfMemory, LimitReached (32 fonts, or no texture slot
+/// left), InvalidArgument (a path whose name hash is another loaded font's). A font loaded earlier only as another's
+/// fallback gets its own fallbacks now; a fallback that already falls back to this font is skipped (no loops).
 Result<Font> load_font(const char* path, MemTag* tag = nullptr);
 
 namespace font {

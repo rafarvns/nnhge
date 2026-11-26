@@ -109,8 +109,13 @@ struct Arg {
     const char* text = nullptr;
     std::uint32_t key = 0;
 };
+/// An integer argument; an unsigned value above the long long range is clamped to its largest value.
 template <std::integral T>
 constexpr Arg arg(Key name, T value) {
+    if constexpr (std::unsigned_integral<T> && sizeof(T) >= sizeof(long long)) {
+        constexpr unsigned long long kMax = ~0ull >> 1;
+        if (value > kMax) return Arg{name.hash, 1, static_cast<long long>(kMax), nullptr, 0};
+    }
     return Arg{name.hash, 1, static_cast<long long>(value), nullptr, 0};
 }
 inline Arg arg(Key name, const char* utf8) { return Arg{name.hash, 2, 0, utf8, 0}; }
@@ -131,7 +136,8 @@ int format(char* out, int capacity, Key key, const A&... args) {
 /// Loads the current language's role fonts now and at every switch ([language.fonts] in the string files).
 void use_fonts();
 /// The current language's font for `role` ("body", "title"…; a role a language lacks comes from its chain); FontRef{}
-/// (the built-in font) for an unknown role (logged once in Debug/Development).
+/// (the built-in font) for an unknown role (logged once in Debug/Development). The first call turns use_fonts() on, so
+/// it loads the role fonts then (call use_fonts() at start-up to load them before the first frame instead).
 FontRef font(Key role);
 
 /// A UI font slot and the role it shows (apply()).

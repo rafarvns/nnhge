@@ -125,7 +125,8 @@ Result<void> loc::start(const StartOptions& options) {
     }
     std::memcpy(&s.header, s.manifest, sizeof s.header);
     s.languages = reinterpret_cast<const LanguageRecord*>(s.manifest + s.header.off_languages);
-    s.block_bytes = ((s.header.block_bytes + 7) & ~std::size_t{7}) + 8 * kMaxChain + kGuardBytes;
+    s.block_bytes = static_cast<std::size_t>(((std::uint64_t{s.header.block_bytes} + 7) & ~std::uint64_t{7}) + 8 * kMaxChain +
+                                            kGuardBytes); // block_bytes <= kMaxBlockBytes: fits a size_t
     s.block = static_cast<std::uint8_t*>(mem::alloc(MemRegion::Heap, tag, s.block_bytes, 8));
     if (s.block == nullptr) {
         mem::free(s.manifest);

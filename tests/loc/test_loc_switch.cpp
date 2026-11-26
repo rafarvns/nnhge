@@ -140,6 +140,23 @@ NNH_TEST(loc_switch_follows_the_system_language) {
     CHECK(std::string(nnh::loc::code()) == "pt-BR");
 }
 
+NNH_TEST(loc_switch_following_the_system_never_picks_the_pseudo_language) {
+    // review N3: the same guard as start()'s: the pseudo-language only when chosen
+    const StopAtEnd stop_at_end;
+    fresh_engine();
+    LocBuilder b = four_languages();
+    b.add("qps", "Pseudo").key("menu.new_game", "[Ñéŵ ĝåɱé~~]");
+    b.pseudo = 4;
+    b.install();
+    fake::set_system_language("ja");
+    CHECK(nnh::loc::start({.follow_system = true}).ok());
+    CHECK(nnh::frame());
+    CHECK(std::string(nnh::loc::code()) == "ja");
+    fake::set_system_language("qps");
+    CHECK(nnh::frame());
+    CHECK(std::string(nnh::loc::code()) == "en");
+}
+
 NNH_TEST(loc_switch_does_not_follow_unless_asked) {
     const StopAtEnd stop_at_end;
     started("en");

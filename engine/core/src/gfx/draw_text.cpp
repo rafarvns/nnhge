@@ -2,7 +2,6 @@
 // texture in the frame's draw list, so text layers, cameras and batching work like any sprite.
 
 #include "gfx/gfx_state.hpp"
-#include "nnh/assert.hpp"
 #include "nnh/gfx.hpp"
 #include "text/font_atlas.hpp"
 #include "text/font_texture.hpp"
@@ -14,12 +13,8 @@ namespace nnh {
 void gfx::draw_text(Screen screen, Vec2 position, const char* utf8, const TextOptions& options) {
     if (utf8 == nullptr || !detail::gfx_drawing()) return;
     if (detail::uses_text_layout(options)) { // a game font, wrapping, a line limit or an outline (spec 029)
-        if (NNH_TEXT_LAYOUT_LINKED()) {
-            detail::draw_text_layout(screen, position, utf8, options);
-            return;
-        }
-        // not linked (no load_font, no measure_text(utf8, options) in the game): plain built-in text
-        NNH_ASSERT(false, "draw_text: wrap_width/max_lines need the text layout: call gfx::measure_text(text, options)");
+        detail::draw_text_layout(screen, position, utf8, options);
+        return;
     }
     if (!detail::font_texture_ready()) return;
     const int scale = detail::clamp_text_scale(options.scale);

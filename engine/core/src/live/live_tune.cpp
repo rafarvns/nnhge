@@ -37,8 +37,12 @@ Entry* add(Registry& r, const nnh::live::Name& name, Kind kind, void* target, nn
     return &e;
 }
 
+/// The entry's id, the PC told about it when attached (LiveEntry).
 std::uint32_t id_of(const Registry& r, const Entry* e) {
-    return e == nullptr ? 0 : make_id(0, static_cast<int>(e - r.entries), e->generation);
+    if (e == nullptr) return 0;
+    const int slot = static_cast<int>(e - r.entries);
+    if (g_on_added != nullptr) g_on_added(slot, false);
+    return make_id(0, slot, e->generation);
 }
 
 [[maybe_unused]] const char* range_text(RangeError e) {

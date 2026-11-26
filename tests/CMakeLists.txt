@@ -1599,7 +1599,17 @@ target_sources(nnh_tests PRIVATE
     live/test_live_tune.cpp
     live/test_live_watch.cpp
     fuzz/test_fuzz_live_wire.cpp
-    remote/test_live_wire.cpp)
+    remote/test_live_wire.cpp
+    remote/test_remote_live.cpp
+    fuzz/test_fuzz_live_remote.cpp)
+# The live values' remote fuzz target (T5.3, AC-5): mini-fuzz above, libFuzzer on the build VM.
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_live_remote.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_live_remote fuzz/libfuzzer_live_remote.cpp)
+    target_link_libraries(fuzz_live_remote PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_live_remote PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_live_remote PRIVATE -fsanitize=fuzzer,address)
+endif()
 # Every float's text read back (T1.4): minutes long, so label "slow" and off unless NNH_SLOW_TESTS (the build VM, T9.1).
 option(NNH_SLOW_TESTS "Run the slow exhaustive tests (spec 030's all-floats text check)" OFF)
 add_executable(live_float_text_exhaustive live/exhaustive_float_text.cpp)

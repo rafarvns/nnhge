@@ -175,23 +175,23 @@ the tree at T0.3).
 
 ## Stage 5: the game side of the remote
 
-- [ ] **T5.1** Session glue: `src/remote/remote_live.cpp` (dispatch of `LiveSet`/`Live`/`Pause`, the `live_records` flag,
+- [x] **T5.1** Session glue: `src/remote/remote_live.cpp` (dispatch of `LiveSet`/`Live`/`Pause`, the `live_records` flag,
   answers without the module, `LiveState`, refusals counted and warned without the shutoff), `remote_session.cpp`,
   `remote_internal.hpp` (usable on paused ticks: messages due at the next game frame). Test:
   `tests/remote/test_remote_live.cpp` (every message applied at its frame; refusals; older-nnh case: no live record
   before a catalogue request; game without the module), `tests/remote/test_remote_pause.cpp` (pause at a named frame,
   step N, resume, messages and screenshots on paused ticks, `LiveState` on each applying tick). Covers FR-11, FR-16,
   FR-18.
-- [ ] **T5.2** Live records: `live_remote.cpp` (catalogue in sorted order and its end, `LiveEntry`/`LiveRemoved` while
+- [x] **T5.2** Live records: `live_remote.cpp` (catalogue in sorted order and its end, `LiveEntry`/`LiveRemoved` while
   attached, Get and Follow → `LiveValue` at the frame end, paused answers, the follow table, dump requests). Test:
   `tests/live/test_live_remote.cpp` (record bytes against hand-built expectations; follows every N frames for count frames;
   16 + 1 follows; values while paused flagged), the session sends records in pieces (no buffer beyond the 64-byte fixed
   part). Covers FR-11, FR-14, FR-17, FR-18.
-- [ ] **T5.3** [P] Fuzzing: `tests/fuzz/fuzz_live_remote.cpp` (mini-fuzz in `nnh_tests`: random message streams into the
+- [x] **T5.3** [P] Fuzzing: `tests/fuzz/fuzz_live_remote.cpp` (mini-fuzz in `nnh_tests`: random message streams into the
   session with a registry of every kind and pauses; invariants: values in range, guard bytes intact, no crash) and
   `tests/fuzz/libfuzzer_live_remote.cpp` (`NNH_BUILD_FUZZERS`). Test: 60 s clean under the host's ASan where available (the
   VM's clang run at T9.1). Covers FR-18, X, AC-5.
-- [ ] **T5.4** Stage end: the stage-end guards; plan.md ("Stage 5 results"). Covers AC-6.
+- [x] **T5.4** Stage end: the stage-end guards; plan.md ("Stage 5 results"). Covers AC-6.
 
 ## Stage 6: the `nnh` side
 

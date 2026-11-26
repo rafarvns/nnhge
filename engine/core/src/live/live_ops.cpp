@@ -52,8 +52,17 @@ const LiveOps kOps = {frame_start, frame_end, stats_line, panel_input, panel_dra
 
 } // namespace
 
-void install_ops() { g_live_ops = &kOps; }
-void uninstall_ops() { g_live_ops = nullptr; }
+void install_remote();   // live_remote.cpp
+void uninstall_remote();
+
+void install_ops() {
+    g_live_ops = &kOps;
+    install_remote();
+}
+void uninstall_ops() {
+    g_live_ops = nullptr;
+    uninstall_remote();
+}
 
 void frame_end(std::uint32_t frame, bool paused) {
     Registry* r = g_registry;

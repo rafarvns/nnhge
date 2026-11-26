@@ -109,6 +109,7 @@ std::uint32_t watch(const nnh::live::Name& name, const void* value, std::uint8_t
         if (text_bytes < 0) w.flags |= kTextPointer;
         else w.text_bytes = static_cast<std::int16_t>(text_bytes);
     }
+    if (g_on_added != nullptr) g_on_added(slot, true);
     return make_id(kWatchTable, slot, w.generation);
 }
 

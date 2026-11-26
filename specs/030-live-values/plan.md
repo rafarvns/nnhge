@@ -861,3 +861,17 @@ the plan are listed under "Implementation refinements".
   decoders — inside question 7's 3–6 KB), pc-debug text 223 988.
 - Not done in this pass: T3.7's by-hand simulator check (Pause/F10 by keyboard) and T4.5's screenshot comparison
   script; the pages' look is checked by the example's screenshots (stage 7).
+
+### Stage 5 results
+
+- Session glue `remote/remote_live.cpp` (LiveSet/Live to the module or refused with reason 7 and an empty catalogue
+  without it; Pause to core's pause; LiveState on each pause change, after a catalogue, and on each paused tick that
+  applied messages), `remote_session.cpp` (dispatch, detach). The module's side `live/live_remote.cpp` (catalogue in
+  name order in pieces from the registry, LiveEntry/LiveRemoved while the PC listens, Get/Follow answered by LiveValue at
+  the frame end — at once on paused ticks, flagged paused —, refusals as LiveRefused).
+- Fuzzing: `tests/fuzz/fuzz_live_remote.cpp` (the target: a registry of every kind with guard bytes, pauses bounded by
+  the fake's `quit_after_polls`), the mini-fuzz `live_remote_target_survives_mutated_sessions` (1 500 mutants) and
+  `libfuzzer_live_remote.cpp` for the build VM (T9.1).
+- Tests: `test_remote_live` (7 + `remote_pause_step_and_resume_by_messages`); `nnh_tests`: 3979 pass.
+- **R19 (T5.1) Stage-end run.** Stage 5 was committed with the whole `nnh_tests` green; its ctest/3DS/`hello` guards ran
+  with stage 6's (see "Stage 6 results").

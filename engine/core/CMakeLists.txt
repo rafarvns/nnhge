@@ -105,6 +105,7 @@ add_library(nnh_core STATIC
     src/scene/scene_stack.cpp
     src/scene/scenes.cpp
     src/remote/remote_input.cpp
+    src/remote/remote_live.cpp
     src/remote/remote_reader.cpp
     src/remote/remote_schedule.cpp
     src/remote/remote_screenshot.cpp
@@ -599,6 +600,7 @@ set(_nnh_live_sources
     src/live/live_panel_draw.cpp
     src/live/live_panel_model.cpp
     src/live/live_panel_touch.cpp
+    src/live/live_remote.cpp
     src/live/live_registry.cpp
     src/live/live_tune.cpp
     src/live/live_watch.cpp

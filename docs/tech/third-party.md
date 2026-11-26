@@ -10,6 +10,7 @@ no new dependencies without it).
 | [stb_vorbis](../../third_party/stb_vorbis/README.md) | v1.24 (`nothings/stb` `9f755b6`) | Ogg music and sounds (spec 008), linked into `nnh::core` | every game that plays Ogg | `fuzz_audio_*` (tests/fuzz) |
 | [stb_truetype](../../third_party/stb_truetype/README.md) | v1.28 (`9f755b6`) | `nnh-assetc font`: rasterising TTF/OTF (spec 029) | the developer's machine only | `fuzz_assetc_ttf`, behind `ttf_check.cpp` |
 | [stb_image](../../third_party/stb_image/README.md) | v2.32 (`9f755b6`), PNG only, no stdio | `nnh-assetc font`: BMFont pages (spec 029) | the developer's machine only | `fuzz_assetc_png_pages` |
+| [Ryu](../../third_party/ryu/README.md) | `f2s` only, `ulfjack/ryu` `4c0618b` (BSL-1.0) | shortest round-trip float text for live values (spec 030), in `nnh::core` and the `nnh` tool | Debug/Development games that call `live::`, and the developer's machine | `live_float_text_exhaustive` (all 2^32 floats), `fuzz_live_remote` |
 
 ## Rules
 

@@ -230,6 +230,17 @@ controls held when a UI becomes active are ignored; text sources (copy, `borrow`
 the localization seam); `UiStyle`/`UiTheme` per state (`ui::default_theme()` art-free); `draw()` = public gfx calls on
 layer 14 with `ignore_camera`; `use_actions` adapter linked only when called. Self-check `30400DA6`
 ([api/ui.md](docs/api/ui.md)).
+Live values (spec 030, implemented, Linux and console checks pending; D51, D52; demo `examples/live`, guide
+[tuning your game](docs/guides/tuning-your-game.md)): `<nnh/live.hpp>` — `live::tune(name, &value, {.min, .max, .step}[,
+OnChange])` for float/int/bool/Color/enum by pointer (the value then is the default), `live::action`, `live::watch`
+(read only when shown or followed) and `live::show` (per frame); RAII `Handle` (`changed()` on the one frame a change
+landed, `reset()`); one block (tag `live`) at the first registration, `live::configure()`; changes from the panel and `nnh`
+apply at the start of the next frame; the overlay's Tunables and Watches pages (SELECT + R) take the controls (DevPanel
+blocker), edited by buttons and touch; pause and step in core (SELECT + Y / SELECT + X, the simulator's Pause/F10,
+`live::pause()`), the held frame drawn again while paused; `nnh` typed commands and `.nnhs` `set`/`reset`/`action`/`dump`/
+`pause`/`resume`/`step`/`expect-value`, dumps saved as `build/logs/<game>-<date>-<time>-tunes.toml`, `nnh run --tunes FILE`
+/ `--hold` (a held start); Ryu's `f2s` (`third_party/ryu`) prints floats; Release: every call an empty inline
+([api/live.md](docs/api/live.md)). The platformer's movement and camera numbers are tunables.
 Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc] --script <file.nnhs>` drives a
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
@@ -306,6 +317,9 @@ build/pc-debug/tools/nnh/nnh run models [--pc] --script examples/models/tests/st
 build/pc-debug/tools/nnh/nnh run localization [--pc] --script examples/localization/tests/check.nnhs  # languages, self-check 21809981, bench
 LOC_SHOT=ja NNH_EXIT_AFTER_FRAMES=200 NNH_SCREENSHOT=build/ja.png build/pc-debug/examples/localization/localization.exe   # title|options|dialog|shop|gallery|ja|ru|qps|pages; LOC_DEMO=check|bench; NNH_SIM_LANGUAGE=ja
 NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/right.png build/pc-debug/examples/models/models.exe   # left|right|anaglyph
+build/pc-debug/tools/nnh/nnh run live [--pc] --script examples/live/tests/check.nnhs   # live values: sets, expect-value, pause/step, self-check 7A849F13, bench
+LIVE_SHOT=tunables NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/live.png build/pc-debug/examples/live/live.exe   # stats|tunables|watches|colour|paused; LIVE_DEMO=check|bench
+build/pc-debug/tools/nnh/nnh run live [--pc] --tunes build/logs/<game>-<date>-<time>-tunes.toml   # start held with a dump's values
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

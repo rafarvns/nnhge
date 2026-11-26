@@ -1,6 +1,6 @@
 # Spec 030: Live values
 
-Status: approved 2026-11-26 (the maintainer, every open question as recommended)
+Status: implemented, Linux and console pending (stages 9 and 10); approved 2026-11-26 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-26
 Depends on: [spec 002](../002-core-foundation/spec.md) (build flavors and `kDevToolsEnabled`, the debug overlay and its
 SELECT + L / `F1` toggle, the simulator's `Pause` / `F10` / `F11` keys, logs, asserts, tagged memory),

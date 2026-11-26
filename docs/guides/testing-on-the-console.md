@@ -284,3 +284,12 @@ stamped with a frame, and the game answers inside its log stream (decision D28,
 [debugging](../architecture/debugging.md#driving-a-game-from-the-pc)). Only the PC the game connected to
 can drive it, and only Debug/Development builds have the code
 ([security](../architecture/security.md)).
+
+## Live values in scripts (spec 030)
+
+`set NAME VALUE` (a colour quoted: `"#FFC040"`), `reset NAME|GROUP|all`, `action NAME`, `dump`, `pause`, `resume`,
+`step [N]` and `expect-value NAME OP VALUE [~ E] [within N]` ([api/live.md](../api/live.md#nnh-and-scripts)). A script
+that uses them asks for the game's catalogue first and starts its clock when it arrives; a name is checked when its
+part of the script is sent. Between `pause` (or `step`) and `resume`, commands that move the clock are errors and a
+screenshot takes no frame. Examples: `examples/live/tests/check.nnhs`, `panel.nnhs`, `keep.nnhs` + `keep_second.nnhs`
+(run with `--tunes`).

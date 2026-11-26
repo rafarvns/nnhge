@@ -102,3 +102,10 @@ NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=shot.png build/pc-debug/examples/hello/h
 NNH_SIM_LAYOUT=side NNH_SIM_SCALE=2 NNH_EXIT_AFTER_FRAMES=60 NNH_SCREENSHOT=side.png \
   build/pc-debug/examples/sprites/sprites.exe
 ```
+
+## Pause, step and the held start (spec 030)
+
+Pause and F10 now ask core to pause or step one frame (D52), the same machinery as SELECT + Y / SELECT + X on the
+console: while paused the last frame stays on screen under a live overlay, audio holds, and `nnh` still talks to the game.
+`NNH_HOLD=1` (set by `nnh run --pc --tunes/--hold`) starts the game paused before frame 1 until `nnh` resumes it (10 s
+without a PC, then it runs).

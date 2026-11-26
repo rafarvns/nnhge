@@ -1,6 +1,6 @@
 # Tasks 030: Live values
 
-Status: approved 2026-11-26 (with plan.md)
+Status: implemented, Linux and console pending (stages 9 and 10); approved 2026-11-26 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -37,11 +37,11 @@ the tree at T0.3).
   `.text` of the 3ds-release `platformer` ELF; edit `examples/ui/title_scene.cpp` → simulator and `.3dsx` times; clean
   `nnh_core` and `nnh`; preprocessed lines and `-fsyntax-only` time of a one-line TU including `<nnh/math.hpp>`. Files:
   plan.md ("Stage 0 results"). Covers III, FR-20, FR-21, AC-6.
-- [ ] **T0.2** [P] Reference screenshots in `build/ref-030/ref/`: `hello`, `sprites`, `ui` (`UI_SHOT=title`), the
+- [x] **T0.2** [P] Reference screenshots in `build/ref-030/ref/`: `hello`, `sprites`, `ui` (`UI_SHOT=title`), the
   platformer (level 1 at 90, `PLATFORMER_DEMO=replay` at 64 and 312, `bench` top), `models` (check), one overlay shot
   (`hello` with `debug::set_overlay_visible(true)` through a tiny probe, the Stats page) — `build/ref-030/compare.sh`
   retakes and compares bytes. Files: plan.md. Covers AC-1, FR-7.
-- [ ] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
+- [x] **T0.3** [P] Goldens and counts today: the stage-end guards' values as in the tree; `nnh_tests` count against
   `kMaxTests` (this spec adds ≈ 400 tests; raise it in `tests/framework/test_main.cpp`, one commit, if fewer than 450 are
   left). Files: plan.md, `tests/framework/test_main.cpp`. Covers VI.
 
@@ -170,7 +170,7 @@ the tree at T0.3).
   at exact positions and texts; a full page within 90 entries and 1.5 KB; paused `~` marks). Then PC screenshots by hand
   (a probe or the example skeleton) read back; exact pixels written into plan.md ("Stage 4 refinements"). Covers FR-7,
   FR-8, FR-22.
-- [ ] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical, the Stats page included); plan.md
+- [x] **T4.5** Stage end: the stage-end guards; `compare.sh` (every reference identical, the Stats page included); plan.md
   ("Stage 4 results"). Covers AC-1, AC-6.
 
 ## Stage 5: the game side of the remote
@@ -236,7 +236,7 @@ the tree at T0.3).
 - [x] **T7.3** Screenshots: `LIVE_SHOT=stats|tunables|watches|colour|paused` with `NNH_EXIT_AFTER_FRAMES` +
   `NNH_SCREENSHOT`, read back (the colour row open with its channel line, one value changed, the paused header). Covers
   AC-1, FR-7.
-- [ ] **T7.4** [P] The bench: `examples/live/bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}` (plan.md's phases; each timing only
+- [x] **T7.4** [P] The bench: `examples/live/bench.{hpp,cpp}`, `bench_scene.{hpp,cpp}` (plan.md's phases; each timing only
   its workload; lines and verdict; Debug `not judged (Debug)`). Test: a pc-dev run logs every line; the memory line matches
   plan.md's table within 10 % (else plan.md is corrected). Covers AC-7.
 - [x] **T7.5** The scripts: `examples/live/tests/check.nnhs`, `panel.nnhs`, `keep.nnhs`, `keep_second.nnhs` (plan.md's
@@ -244,11 +244,11 @@ the tree at T0.3).
   `live_panel_script_pc`, `live_keep_pc` (two runs through the saved dump; `RESOURCE_LOCK nnh_remote_port`). Test: each
   passes with `nnh run live --pc --no-build` twice in a row. Files: plan.md ("Stage 10: console run (prepared)" with every
   expected line). Covers AC-2, AC-3, AC-8.
-- [ ] **T7.6** The platformer: `examples/platformer/tuning.{hpp,cpp}` (run speed, gravity, jump speed, max fall, camera
+- [x] **T7.6** The platformer: `examples/platformer/tuning.{hpp,cpp}` (run speed, gravity, jump speed, max fall, camera
   look-ahead constants as tunables with the same defaults), `player.cpp`, `level_camera.*`, `level_scene.cpp`,
   `CMakeLists.txt`; `tests/platformer/` builds. Test: the replay ctest's lines unchanged (the tree's), `level.nnhs` and
   `gate.nnhs` pass with `--pc`, a by-hand session tuning the jump on the Tunables page. Covers Q10, FR-21.
-- [ ] **T7.7** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of `src/live/*`,
+- [x] **T7.7** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of `src/live/*`,
   `dev_pause.o`, `dev_controls.o`, `overlay_pages.o`, `gfx_replay.o` and the example's `bench.o`; per plan.md's cost table
   record instructions, calls, `__aeabi_*` (none in stepping, drawing or `show()`), VFP use, `-fstack-usage` along the page
   drawing and the paused tick (< 1 KiB); fix what differs without changing a pixel, a value or a golden. Files: plan.md
@@ -256,20 +256,20 @@ the tree at T0.3).
 
 ## Stage 8: mutation testing, release hygiene, opt-in checks, build times
 
-- [ ] **T8.1** Mutation pass as in plans 019–029: plan.md's planned hand mutants (`build/ref-030/mutants.py`, applied one
+- [x] **T8.1** Mutation pass as in plans 019–029: plan.md's planned hand mutants (`build/ref-030/mutants.py`, applied one
   at a time with the module filters) and Release-path mutants in pc-release; survivors become tests or are argued
   equivalent. Files: plan.md ("Mutation testing"). Covers VI.
-- [ ] **T8.2** [P] Release hygiene: `scripts/check_release_strings.sh` gains the live texts (`dump: begin`, `refused`,
+- [x] **T8.2** [P] Release hygiene: `scripts/check_release_strings.sh` gains the live texts (`dump: begin`, `refused`,
   `not declared`, `waiting for nnh`, `frame not held`, the panel's hints, the misuse messages) and the example's names
   (`player/jump`, `colors/sky`, `spawn/alive`); run on the 3ds-release and pc-release `live` and `platformer`; `nm` of both
   shows no `live`, `f2s`, `dev_pause`, `overlay_pages` symbol; the Release example prints `live: sum
   <kLiveDefaultsGolden>`. Covers FR-20, AC-6.
-- [ ] **T8.3** [P] Opt-in by linking: probes (`build/ref-030/probe_*`, not committed) linked against the 3ds-dev and
+- [x] **T8.3** [P] Opt-in by linking: probes (`build/ref-030/probe_*`, not committed) linked against the 3ds-dev and
   3ds-release libraries: a Development game without `live::` (no `live_` symbol; pages show "no live values"), a game with
   one tunable (the module's size recorded); `hello` 3ds-release bytes and pc-release size/`nm` identical to T0.1's;
   Debug/Development `hello` growth recorded against question 7's estimate. Files: plan.md ("Stage 8 results"). Covers
   FR-20, FR-21, XI.
-- [ ] **T8.4** Build times and regressions: every example's console script passes with `--pc`; `compare.sh`; edit
+- [x] **T8.4** Build times and regressions: every example's console script passes with `--pc`; `compare.sh`; edit
   `examples/live/live_scene.cpp` → simulator and `.3dsx` times; clean `nnh_core` and `nnh`. Files: plan.md ("Stage 8
   results"). Covers III, AC-6.
 
@@ -308,14 +308,14 @@ the tree at T0.3).
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** `docs/api/live.md` (declaring tunables, kinds, ranges and stepping, enums, actions, watches both ways,
+- [x] **T11.1** `docs/api/live.md` (declaring tunables, kinds, ranges and stepping, enums, actions, watches both ways,
   handles and lifetime, `changed()` and callbacks, the panel and its controls, pause and step, `nnh` commands, the dump and
   `--tunes`, Release behaviour, capacities and memory, costs measured at T10.2, misuse); header comments (allocates?
   per-frame safe? misuse?). Covers VIII, AC-9.
-- [ ] **T11.2** `docs/guides/tuning-your-game.md`: from constants to tunables, tuning a jump on the console, watching
+- [x] **T11.2** `docs/guides/tuning-your-game.md`: from constants to tunables, tuning a jump on the console, watching
   state, pausing and stepping, scripts with `set`/`expect-value`, keeping a session (dump, paste into a data asset,
   `--tunes`), what Release does. Covers AC-9.
-- [ ] **T11.3** Other pages: `docs/api/debug.md` (overlay pages, chords), `docs/api/simulator.md` (`Pause`/`F10` now in
+- [x] **T11.3** Other pages: `docs/api/debug.md` (overlay pages, chords), `docs/api/simulator.md` (`Pause`/`F10` now in
   core, `NNH_HOLD`), `docs/architecture/debugging.md` (pause and step on the console, the panel, the new messages and
   records), `docs/guides/nnh-tool.md` (commands, script commands, `--tunes`, `--hold`), `docs/guides/testing-on-the-console.md`,
   `docs/guides/debugging-on-3ds.md`, `docs/architecture/foundation.md` and `project-structure.md` (`src/live/`,
@@ -323,13 +323,13 @@ the tree at T0.3).
   Hargreaves' tweakables, the debug menu article, tweakable constants, Corrade, tunable-cpp, AntTweakBar, Ryu),
   `CLAUDE.md` (layout paragraph and the `live` commands); `python -I scripts/docs_tool.py check` → 0 broken links. Covers
   AC-9.
-- [ ] **T11.4** `docs/architecture/decisions.md`: D51 and D52 change-log notes "approved"/"implemented" with the stage
+- [x] **T11.4** `docs/architecture/decisions.md`: D51 and D52 change-log notes "approved"/"implemented" with the stage
   refinements and the maintainer's answers; D28's new messages and records, D38's DevPanel blocker and D17's overlay pages
   noted. Covers AC-9.
-- [ ] **T11.5** Final measurements (header cost, build times, `hello` sizes, the module's `.text`, the block's bytes) in
+- [x] **T11.5** Final measurements (header cost, build times, `hello` sizes, the module's `.text`, the block's bytes) in
   plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III.
-- [ ] **T11.6** `docs/ROADMAP.md`: the "Live values in the simulator" checkbox, with the implemented summary.
-- [ ] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.6** `docs/ROADMAP.md`: the "Live values in the simulator" checkbox, with the implemented summary.
+- [x] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
 - [ ] **T11.8** (the lead) Merge `spec-030` into `main` (rebased; insertions after 029's blocks); then the full ctest
   (pc-debug, pc-release), every example's `--pc` script, AC-2's golden and every earlier golden, one 3ds-release build;
   T10.2 runs repeated if the merge happened after them.

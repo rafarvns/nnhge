@@ -2,7 +2,9 @@
 
 #include "remote/remote_wire.hpp"
 
-#include "system/language_tag.hpp"
+#include <cstring>
+
+#include "system/language_tag.hpp" // pack_language (the `nnh` tool's side)
 
 namespace nnh::detail::remote {
 namespace {
@@ -33,18 +35,21 @@ bool zero_from(const std::uint8_t* in, std::size_t from) {
 
 bool stick_axis_ok(std::int16_t v) { return v >= -kStickMax && v <= kStickMax; }
 
-/// A Language message's bytes 8–15: all zero, or a well-formed code then zeros (no interior NUL).
+/// A Language message's bytes 8–15: all zero, or a code then zeros (no interior NUL) of 2 lowercase letters followed by
+/// letters, digits and '-' only. The full tag rules (system/language_tag.hpp) are checked by the `nnh` tool before it
+/// sends and by system::language() before it uses the code, so a Debug/Development game links nothing more here.
 bool language_ok(const std::uint8_t* a) {
-    char code[kLanguageCodeBytes + 1] = {};
     int n = 0;
     while (n < kLanguageCodeBytes && a[n] != 0) {
-        code[n] = static_cast<char>(a[n]);
+        const std::uint8_t c = a[n];
+        const bool lower = c >= 'a' && c <= 'z';
+        if (!(lower || (n >= 2 && ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-')))) return false;
         ++n;
     }
     for (int i = n; i < kLanguageCodeBytes; ++i) {
         if (a[i] != 0) return false;
     }
-    return n == 0 || language_tag_well_formed(code);
+    return n == 0 || n >= 2;
 }
 
 /// Validates the argument bytes (8–15) of a message whose type is known, filling `out`.
@@ -164,7 +169,7 @@ bool pack_language(const char* code, Message& message) {
     if (!off) {
         int n = 0;
         while (n <= kLanguageCodeBytes && code[n] != 0) ++n;
-        if (n > kLanguageCodeBytes || !language_tag_well_formed(code)) return false;
+        if (n > kLanguageCodeBytes || !language_tag_valid(code)) return false;
         for (int i = 0; i < n; ++i) bytes[i] = static_cast<std::uint8_t>(code[i]);
     }
     message.press = get32(bytes);
@@ -173,10 +178,11 @@ bool pack_language(const char* code, Message& message) {
 }
 
 bool unpack_language(const Message& message, char out[kLanguageCodeBytes + 1]) {
-    std::uint8_t bytes[kLanguageCodeBytes];
-    put32(bytes, message.press);
-    put32(bytes + 4, message.release);
-    for (int i = 0; i < kLanguageCodeBytes; ++i) out[i] = static_cast<char>(bytes[i]);
+    // The words hold the bytes little-endian (decode_message's get32), the byte order of every system NNHGE runs on:
+    // copied as they are (a few instructions in every Debug/Development game).
+    static_assert(sizeof message.press == 4 && sizeof message.release == 4, "two words of 4 bytes");
+    std::memcpy(out, &message.press, 4);
+    std::memcpy(out + 4, &message.release, 4);
     out[kLanguageCodeBytes] = 0;
     return out[0] != 0;
 }

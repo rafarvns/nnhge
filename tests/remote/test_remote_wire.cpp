@@ -344,12 +344,14 @@ NNH_TEST(remote_wire_a_language_message_built_in_code_encodes_its_bytes) {
     CHECK(!pack_language("Japanese", m));
 }
 
-NNH_TEST(remote_wire_rejects_ill_formed_language_codes) {
+NNH_TEST(remote_wire_rejects_language_codes_of_the_wrong_shape) {
+    // the decoder checks the shape; the full tag rules are pack_language's and system::language()'s
     CHECK(decode(language("j@")) == Reject::Range);
     CHECK(decode(language("-ja")) == Reject::Range);
     CHECK(decode(language("JA")) == Reject::Range);
-    CHECK(decode(language("pt-br")) == Reject::Range);
+    CHECK(decode(language("j")) == Reject::Range);
     CHECK(decode(language("ja ")) == Reject::Range);
+    CHECK(decode(language("ja_JP")) == Reject::Range);
     Bytes interior = language("ja");
     interior.b[11] = 'x'; // "ja", NUL, then a byte: an interior NUL
     CHECK(decode(interior) == Reject::Range);

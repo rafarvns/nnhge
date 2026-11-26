@@ -42,12 +42,14 @@ NNH_TEST(a_script_override_wins_until_it_is_released) {
 
 NNH_TEST(an_override_is_copied_and_an_ill_formed_one_is_ignored) {
     fake::reset();
+    fake::set_system_language("de");
     char code[8] = "ko";
     nnh::detail::set_language_override(code);
     code[0] = 'x';
     CHECK(is(nnh::system::language(), "ko"));
-    nnh::detail::set_language_override("not a tag");
-    CHECK(is(nnh::system::language(), "ko"));
+    nnh::detail::set_language_override("pt-br"); // not well-formed: the platform's language shows
+    CHECK(is(nnh::system::language(), "de"));
+    fake::set_system_language("en");
     nnh::detail::set_language_override(nullptr);
     CHECK(is(nnh::system::language(), "en"));
 }

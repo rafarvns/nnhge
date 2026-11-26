@@ -13,10 +13,10 @@ namespace tag_chars {
 constexpr bool lower(char c) { return c >= 'a' && c <= 'z'; }
 constexpr bool upper(char c) { return c >= 'A' && c <= 'Z'; }
 constexpr bool digit(char c) { return c >= '0' && c <= '9'; }
-/// Length of the subtag at `s` (up to '-' or the end).
-constexpr int subtag(const char* s) {
+/// Length of the subtag at s[at] (up to '-' or `end`).
+constexpr int subtag(const char* s, int at, int end) {
     int n = 0;
-    while (s[n] != 0 && s[n] != '-' && n <= kMaxLanguageTag) ++n;
+    while (at + n < end && s[at + n] != '-') ++n;
     return n;
 }
 constexpr bool script(const char* s, int n) {
@@ -27,20 +27,29 @@ constexpr bool region(const char* s, int n) {
 }
 } // namespace tag_chars
 
+/// The length of `s` if it is at most kMaxLanguageTag bytes, else −1. Reads at most kMaxLanguageTag + 1 bytes.
+constexpr int language_tag_length(const char* s) {
+    if (s == nullptr) return -1;
+    int n = 0;
+    while (n <= kMaxLanguageTag && s[n] != 0) ++n;
+    return n <= kMaxLanguageTag ? n : -1;
+}
+
 /// True for a well-formed code ("en", "pt-BR", "zh-Hant", "es-419", "zh-Hans-CN"); false for nullptr. Reads at most 16
-/// bytes.
+/// bytes. Inline for the PC platform library and the `nnh` tool; core calls language_tag_valid() (one copy).
 constexpr bool language_tag_well_formed(const char* s) {
     using namespace tag_chars;
-    if (s == nullptr) return false;
-    int n = subtag(s);
+    const int end = language_tag_length(s);
+    if (end < 2) return false;
+    const int n = subtag(s, 0, end);
     if (n < 2 || n > 3) return false;
     for (int i = 0; i < n; ++i)
         if (!lower(s[i])) return false;
     int at = n;
     bool had_script = false, had_region = false;
-    while (s[at] == '-') {
+    while (at < end) { // s[at] == '-'
+        const int m = subtag(s, at + 1, end);
         const char* part = s + at + 1;
-        const int m = subtag(part);
         if (!had_script && !had_region && script(part, m)) {
             had_script = true;
         } else if (!had_region && region(part, m)) {
@@ -49,10 +58,12 @@ constexpr bool language_tag_well_formed(const char* s) {
             return false;
         }
         at += 1 + m;
-        if (at > kMaxLanguageTag) return false;
     }
-    return s[at] == 0;
+    return true;
 }
+
+/// language_tag_well_formed(), out of line (core's callers share one copy: Debug/Development hello's size).
+bool language_tag_valid(const char* s);
 
 /// The parts of a well-formed tag, NUL-terminated (empty when absent).
 struct LanguageTagParts {

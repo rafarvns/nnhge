@@ -3,13 +3,13 @@
 // linked by the remote session (Debug/Development) and system_language.cpp.
 
 #include "system/language_override.hpp"
-#include "system/language_tag.hpp"
 #include "system/system_internal.hpp"
 
 namespace nnh::detail {
 namespace {
 
-char g_code[kMaxLanguageTag + 1] = {}; // empty: none
+constexpr int kMaxCode = 15;
+char g_code[kMaxCode + 1] = {}; // empty: none
 
 } // namespace
 
@@ -18,9 +18,8 @@ void set_language_override(const char* code) {
         g_code[0] = 0;
         return;
     }
-    if (!language_tag_well_formed(code)) return;
-    int i = 0;
-    for (; i < kMaxLanguageTag && code[i] != 0; ++i) g_code[i] = code[i];
+    int i = 0; // copied as it is: system::language() checks it (a Debug/Development game links no tag rules here)
+    for (; i < kMaxCode && code[i] != 0; ++i) g_code[i] = code[i];
     g_code[i] = 0;
 }
 

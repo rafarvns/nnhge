@@ -996,3 +996,31 @@ screenshots), `times.sh` (edit/clean/header times), `micro_ui.cpp` + `build_micr
   `sprites_bench` and `platformer_bench`, which differ run to run already at `8d9c5c5` (timing-driven) and are only
   compared by eye.
 - **Tests** (T0.3): `nnh_tests` 3 582 tests, 0 failures; 514 left under `kMaxTests` (4096) → raised to 8192.
+
+### Stage 1 results (2026-11-26)
+
+- ctest pc-debug 346/346 and pc-release 318/318 pass; 3ds-release and 3ds-dev build without a warning.
+- **Release `hello`**: 3ds-release `hello.elf` and `.3dsx` byte-identical to T0.1 (SHA-256 above), `size` and `nm -C`
+  identical; pc-release `size`, `nm` and bytes identical.
+- **Debug/Development `hello`** (the remote `language` message, question 5): 3ds-dev text +432 B (220 488 → 220 920),
+  bss +16 B, `.3dsx` +440 B (270 652 → 271 092); pc-debug (unoptimised) text ≈ +3.4 KB. Over the plan's ≈ 150–250 B:
+  the first version (decoder and override checking the full tag rules) added 952 B; the full rules then moved out of
+  the console's path (see the refinements below), leaving the decoder's shape check, the 16-byte override and the
+  session's apply/off/exclusive/detach calls. Reported to the maintainer.
+
+### Implementation refinements
+
+- **Stage 1.** (1) `texture_3ds.cpp` is unchanged: `Texture3ds` keeps its anonymous-namespace definition there and
+  `texture_3ds.hpp` holds a copy of the same layout (static_assert) for `texture_alpha_3ds.cpp`, because moving the
+  struct changed the debug information of every game's `.elf` (hello's included; its `.3dsx` stayed identical).
+  (2) New contract declarations go at the end of `video.hpp`/`system.hpp`, after the existing ones, so their lines (in
+  every game's DWARF) don't move — inserted in the middle, they changed `hello.elf`'s bytes. (3) The tag rules
+  (`system/language_tag.hpp`) are a header-only `constexpr` check for the PC platform library (which includes the header
+  through a private include path and links nothing of core) and the `nnh` tool, plus one out-of-line copy for core
+  (`language_tag_valid`). (4) The remote decoder checks a Language code's *shape* (2 lowercase letters, then letters,
+  digits, `-`; NUL padding, no interior NUL); `pack_language` (the tool) and `system::language()` check the full rules,
+  and `set_language_override` copies what it is given — an ill-formed override is ignored by `system::language()`
+  (the platform's language shows). This keeps the tag rules out of every Debug/Development game. (5) The PC's
+  `language.ini` is read only when the simulator remembers its view (never in scripted runs: `NNH_EXIT_AFTER_FRAMES`,
+  `nnh run`), so screenshots stay `en` unless `NNH_SIM_LANGUAGE` says otherwise. (6) The fake's `set_system_language`
+  takes `nullptr` (the platform answers null) to prove core's "never null" guard.

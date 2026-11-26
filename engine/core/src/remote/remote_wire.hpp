@@ -42,8 +42,9 @@ enum class MessageType : std::uint8_t {
     Hello = 1, Buttons = 2, Stick = 3, Touch = 4, Screenshot = 5, Bye = 6, Slider = 7, Language = 8,
 };
 
-/// The system language (spec 029 FR-27): bytes 8–15 hold a well-formed code (system/language_tag.hpp) NUL-padded, or are
-/// all zero for `language off`. Decoded, the 8 bytes sit in Message::press (bytes 8–11) and Message::release (12–15),
+/// The system language (spec 029 FR-27): bytes 8–15 hold a code NUL-padded, or are all zero for `language off`. The
+/// decoder checks its shape (2 lowercase letters, then letters, digits, '-'; no interior NUL); pack_language() and
+/// system::language() check the full tag rules (system/language_tag.hpp). Decoded, the 8 bytes sit in Message::press (bytes 8–11) and Message::release (12–15),
 /// little-endian, so the message stays 32 bytes: pack_language() / unpack_language().
 inline constexpr int kLanguageCodeBytes = 8;
 

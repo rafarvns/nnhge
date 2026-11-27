@@ -1101,10 +1101,8 @@ Every item fixed test first:
   the Apply ends the cycle, and 10 s without an answer (`kAnswerTimeoutMs`) too (tests
   `reload_controller_a_rejected_batch_message_ends_the_cycle`, `reload_controller_no_answer_times_out`).
 - **S2** 16 shutdown hooks (a full Debug game registers 10 now) and `require_shutdown_hook` (asserts) at every module
-  that would leak without its hook. Test `shutdown_hooks_have_room_for_every_optional_module`. **This changes Release
-  `hello`**: the hook table's BSS grows by 32 bytes (8 more pointers), so the 3ds-release `hello.3dsx`/`.elf` and
-  pc-release `hello` are no longer byte-identical to T0.1 (numbers in the guards below) — a deliberate change, for the
-  maintainer to see.
+  that would leak without its hook. Test `shutdown_hooks_have_room_for_every_optional_module`. Release `hello` stays
+  byte-identical (it links no module with a hook, so the table is dropped).
 - **S3** The data index block a batch replaced is kept until the next batch (Debug/Development), so names and paths
   borrowed from it stay readable; documented in `data.hpp`, `data.md` and `assets.md`. Test
   `data_reload_a_borrowed_name_survives_one_reload`.
@@ -1141,6 +1139,12 @@ Every item fixed test first:
   `pc_data_root_never_is_the_programs_own_name`, `pc_received_files_can_be_created_next_to_a_program_named_like_its_data_folder`
   (both red on Windows too before the fix). The other reload ctests use games whose program name differs from `data`,
   so they shouldn't have failed on Linux for this reason; the lead's rerun will tell.
+
+Guards after the review round: ctest pc-debug **378/378**, pc-release **337/337**; `nnh_tool_tests` 247; 0 warnings on
+pc-debug, pc-release, 3ds-release and 3ds-dev; 3ds-release `hello.3dsx` `8c687f3dec3df9fa…` and `hello.elf`
+(`--strip-debug`) `5cd5d9505dd67b73…`, identical to T0.1; pc-release `hello.exe` 134 880 / 22 052 / 212 400; 3ds-dev
+`hello` text 229 488 B (unchanged); `check_release_strings.sh` passes on the 3ds-release `reload.3dsx`. The `ui` example
+still links the reload core in Development, through its textures (the texture kind), not through the UI.
 
 ### Not done (open, for the lead or a next session)
 

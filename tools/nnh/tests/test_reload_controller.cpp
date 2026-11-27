@@ -56,7 +56,7 @@ ControllerSetup setup(Fake& f) {
                                b.ms = 210;
                                return b;
                            },
-                           [&f] { return f.now; }};
+                           [&f] { return f.now; }, std::string()};
 }
 
 Record applied(std::uint16_t batch, std::uint32_t frame) {
@@ -169,6 +169,18 @@ NNH_TEST(reload_controller_a_refused_batch_keeps_the_mirror) {
     CHECK(has(c.take_notes(), "refused by the game: a.txt: corrupted"));
     CHECK(c.run_cycle(0)); // the same change again: the mirror didn't move
     CHECK(c.outcome().paths.size() == 1);
+}
+
+NNH_TEST(reload_controller_an_applied_batch_moves_the_mirror) {
+    Fake f = make("moved");
+    ReloadController c(setup(f));
+    c.start();
+    CHECK(c.run_cycle(0));
+    c.take_bytes();
+    c.on_record(applied(1, 50));
+    CHECK(c.outcome().applied);
+    CHECK(!c.run_cycle(0)); // the same output again: already on the console
+    CHECK(has(c.take_notes(), "nothing changed"));
 }
 
 NNH_TEST(reload_controller_nothing_changed_sends_nothing) {

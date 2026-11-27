@@ -84,3 +84,10 @@ export from Blender: [models.md](../guides/models.md).
 | submeshes / textures per mesh | 32 / 8 |
 | meshes loaded at once | 256 |
 | coordinates | \|x\| ≤ 2²⁰ |
+
+## Hot reload (spec 031)
+
+In a Debug/Development game under `nnh run`, a mesh loaded with `load_mesh` reloads when its model is saved (the build
+reconverts the glTF into the same `.nnhmesh`): the same `Mesh` handle shows the new model — another vertex count, other
+submeshes and textures — from the frame the batch is applied; a damaged file refuses the whole batch and the old model
+stays. Meshes made with `create_mesh` don't reload. See [assets.md](assets.md#hot-reload).

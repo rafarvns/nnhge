@@ -435,6 +435,7 @@ endif()
 set(_nnh_mesh_sources
     src/mesh/create_mesh.cpp
     src/mesh/load_mesh.cpp
+    src/mesh/mesh_reload.cpp
     src/mesh/mesh.cpp
     src/mesh/mesh_build.cpp
     src/mesh/mesh_layout.cpp

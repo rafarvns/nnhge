@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include "mesh/mesh_validate.hpp"
+#include "nnh/assets.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/mesh.hpp"
 #include "nnh/platform/video3d.hpp"
@@ -83,6 +84,12 @@ MeshRecord* mesh_record_create(const mesh::MeshView& view, const char* what, Err
 void mesh_record_destroy(MeshRecord* record);
 /// The Material3D a file's material record describes (texture left empty).
 Material3D material_from_record(const mesh::MaterialRecord& r);
+/// A record from a `.nnhmesh` file's bytes: validated, uploaded, its textures loaded (load_mesh.cpp). nullptr and `error`.
+MeshRecord* mesh_record_from_file(const AssetData& file, const char* what, Error& error);
+/// Puts `record` in a live slot (spec 031: a hot reload; the handle stays). @return the old record (the caller frees it).
+MeshRecord* mesh_replace(int slot, std::uint32_t generation, MeshRecord* record);
+/// Hot reload (spec 031, mesh_reload.cpp; Debug/Development): load_mesh() made slot `slot` from `asset_path`.
+void mesh_reload_loaded(int slot, std::uint32_t generation, const char* asset_path);
 /// Adds a built record to the table (or destroys it when full) and returns its handle (create_mesh.cpp).
 Result<Mesh> mesh_publish(MeshRecord* record, const char* what);
 /// The `Unsupported` error (and log line) of a mesh call with 3D off.

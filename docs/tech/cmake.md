@@ -304,7 +304,8 @@ FetchContent names `nnh_sdl3_prebuilt` (MinGW and MSVC: the official development
 `SDL_uclibc` and its other internal ones), and `cmake/nnh_sdl3.cmake` sets `SDL_SHARED=OFF`, `SDL_STATIC=ON`,
 `SDL_TEST_LIBRARY=OFF` and `SDL_EXAMPLES=OFF` as cache entries **with FORCE: they override the game project's own
 values** of those four (a game that builds SDL3 itself must not rely on them). Cache entries: `NNH_BUILD_EXAMPLES`, `NNH_BUILD_TESTS`, `NNH_BUILD_APPS`, `NNH_BUILD_TOOLS`,
-`NNH_CCACHE`, `NNH_ASSETC`, `NNH_HOST_CXX` (3DS), `NNH_MAKEROM`, `NNH_BANNERTOOL` (3DS), `NNHGE_VERSION*`. Global
+`NNH_CCACHE`, `NNH_ASSETC`, `NNH_HOST_CXX` (3DS), `NNH_MAKEROM`, `NNH_BANNERTOOL` (3DS), `NNHGE_VERSION*`, and with
+the tools `NNH_RELEASE_ENGINE_URL`, `NNH_RELEASE_ENGINE_SHA256`. Global
 properties: `NNH_PLATFORM`, `NNH_ASSETC_PROGRAM`, `NNH_ASSETC_MISSING`.
 
 ### The command-line limit (Windows, 3DS)
@@ -343,6 +344,28 @@ The driver is `tests/consumer_tools/run_consumer.cmake`; builds go to `build/<pr
 `consumer-full` ones are deleted once they pass) and reuse the parent's compiler cache (`CCACHE_NOHASHDIR=1`) and SDL3
 download. `ctest -LE consumer` skips them while developing; `scripts/vm_check.sh final` runs `consumer-full`.
 
+### `nnh`'s template and its ctests (spec 033)
+
+`tools/nnh/CMakeLists.txt` embeds the `nnh new` template: `NNH_TEMPLATE_FILES` lists the files of
+`tools/nnh/template/` in the order they are written, and a custom command runs `tools/nnh/embed_template.cmake` on them
+(`DEPENDS` on each) into the generated `template_files.cpp` of `nnh` (text with LF line endings, `.png`/`.wav` byte for
+byte; the normalisation is done in hex because `file(WRITE)` is a text write on Windows). Two cache entries,
+`NNH_RELEASE_ENGINE_URL` and `NNH_RELEASE_ENGINE_SHA256`, are the release pin a release `nnh` writes into new projects
+(spec 034 sets them; both or neither, `https://` or `file://`, 64 hex digits, checked by
+`tools/nnh/nnh_release_pin.cmake` at configure); they and `NNHGE_VERSION` reach `build_info.cpp` only, so a new pin
+recompiles one file. With tests, in PC presets:
+
+| ctest | Label | What |
+|-------|-------|------|
+| `nnh_pin_check` | — | the pin check on good and bad values (`cmake -P`, 2 s) |
+| `nnh_new_files` | — | the built `nnh`: `--version`, `help`, `nnh new` in a scratch folder (the files, refusals, exit codes, same bytes for the same inputs) |
+| `nnh_template_smoke` | — | the template's `tests/smoke.nnhs` against `nnh_template_check`, headless (not in Release builds) |
+| `nnh_new_smoke` | `consumer-full` | a project made by `nnh new` outside the engine, built with `nnh` and its smoke script run, with the local engine and with the engine packed as a pinned `file://` archive (≈ 4 min on Windows) |
+
+`nnh_template_check` is the template's sources and assets as a game of the engine's own build, compiled with the engine's
+warning flags and `-Werror`: a template that no longer compiles fails every PC build with tests. It is in the
+repository's games manifest (so `nnh serve` lists it there).
+
 ## Rules (Modern CMake)
 
 - Targets and properties only: `target_include_directories`, `target_link_libraries`,
@@ -362,7 +385,8 @@ download. `ctest -LE consumer` skips them while developing; `scripts/vm_check.sh
 
 `cmake/nnh_sdl3.cmake`: system SDL3 if found → official prebuilt package for MinGW or MSVC (no compile)
 → static build from source (Linux/macOS, needs SDL's [Linux build dependencies](https://wiki.libsdl.org/SDL3/README-linux)).
-Downloads are pinned with SHA-256. If HTTPS fails with "certificate signer not trusted" (WinLibs/MSYS2
+Downloads are pinned with SHA-256 in `cmake/nnh_sdl3_pin.cmake` (the version, URLs and hashes; `nnh doctor --online`
+fetches exactly those URLs, and a unit test keeps its copy equal). If HTTPS fails with "certificate signer not trusted" (WinLibs/MSYS2
 CMake builds with GnuTLS and no CA store), the script reuses Git for Windows' CA bundle; otherwise set
 `CMAKE_TLS_CAINFO`.
 
@@ -410,7 +434,7 @@ ssh nnhge-build 'cd ~/wt/nnhge && F="-m32 -msse2 -mfpmath=sse" && cmake --preset
 |---------|--------------|-----|
 | `scripts/vm_check.sh sync` | Sends the working tree with each file's own time and deletes files removed locally; the VM's build folders stay, so Ninja and ccache rebuild only what changed | before any manual command |
 | `scripts/vm_check.sh fast` | Sync, then unit tests (`nnh_tests`, `nnh_tool_tests`, `nnh_assetc_tests`) on GCC 13 and under clang ASan/UBSan, and the `FUZZ` targets for 2 min each | while fixing findings |
-| `scripts/vm_check.sh final` | Sync, then the full ctest on GCC 13 (end-to-end `*_script_pc` tests included), the consumer tests' `consumer-full` ways, the consumer project's 3DS builds through `nnh` from a copy under `/tmp` and a fresh `3ds-dev` `nnh build animation` (spec 032), unit tests on GCC 14 and the 32-bit host, ASan/UBSan, and the `FUZZ` targets for 10 min each | once, when the implementation is complete, before the merge |
+| `scripts/vm_check.sh final` | Sync, then the full ctest on GCC 13 (end-to-end `*_script_pc` tests included), the consumer tests' `consumer-full` ways, the consumer project's 3DS builds through `nnh` from a copy under `/tmp` and a fresh `3ds-dev` `nnh build animation` (spec 032), a project made by `nnh new` under `/tmp` (`nnh doctor` without and with `DEVKITPRO`, its 3DS builds and `.cia` through `nnh`, its smoke script; spec 033), unit tests on GCC 14 and the 32-bit host, ASan/UBSan, and the `FUZZ` targets for 10 min each | once, when the implementation is complete, before the merge |
 
 `FUZZ="tests/fuzz_remote tools/assetc/fuzz_assetc_ttf"` names the targets (paths inside `build/asan`); `CLEAN=1`
 wipes the VM's tree and builds first. The end-to-end `*_script_pc` tests already run in the Windows suite, so the

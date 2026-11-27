@@ -145,25 +145,25 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 8: mutants, docs and the verbatim walk (FR-24)
 
-- [ ] **T8.1** Mutation pass (plan "Planned hand mutants"), one mutant at a time, judged by the named tests; survivors
+- [x] **T8.1** Mutation pass (plan "Planned hand mutants"), one mutant at a time, judged by the named tests; survivors
   fixed or argued in plan.md.
-- [ ] **T8.2** `docs/guides/your-first-game.md` (new): tools, `nnh doctor`, `nnh new`, simulator, console, smoke script,
+- [x] **T8.2** `docs/guides/your-first-game.md` (new): tools, `nnh doctor`, `nnh new`, simulator, console, smoke script,
   change the scene (budgets), add an asset, `.cia`, next steps; until spec 034, building `nnh` from a checkout and
   `NNHGE_ENGINE_DIR` — covers FR-24
-- [ ] **T8.3** [P] `getting-started.md` rewritten around `doctor` and `new` (tools per system, then the guide; working
+- [x] **T8.3** [P] `getting-started.md` rewritten around `doctor` and `new` (tools per system, then the guide; working
   inside the engine repository moves to a contributor section); `nnh-tool.md` (`new`, `doctor`, `--version`, options,
   report, exit codes, the limits table); `README.md` quick start; `game-projects.md` (`nnh new` generates it, the root
   layout); `docs/tech/cmake.md` (the check game, the ctests, the pin cache entries, `nnh_sdl3_pin.cmake`);
   `docs/architecture/project-structure.md`; `CLAUDE.md` (summary, layout, build lines); `decisions.md` (D56 change-log
   line) — covers FR-24
-- [ ] **T8.4** Follow "Your first game" verbatim in an empty folder on Windows (reaches the simulator window and a
+- [x] **T8.4** Follow "Your first game" verbatim in an empty folder on Windows (reaches the simulator window and a
   passing smoke script); fix the page where it differs; `python -I scripts/docs_tool.py check` 0 broken links — covers
   FR-24 (AC-10)
-- [ ] **T8.5** `scripts/vm_check.sh final` gains: a generated project under `/tmp` built for `3ds-dev` and `3ds-release`
+- [x] **T8.5** `scripts/vm_check.sh final` gains: a generated project under `/tmp` built for `3ds-dev` and `3ds-release`
   through `nnh` with `/opt/devkitpro` (+ `dist`), `nnh doctor` with `DEVKITPRO` unset (exit 1, the `FAIL` and fix) and
   set (exit 0), and the guide's Linux steps — files: `scripts/vm_check.sh` — covers FR-15, FR-19, FR-23, FR-24 (code
   only; run at stage 9)
-- [ ] **T8.6** Final Windows guards: full `ctest -LE consumer-full` in `pc-debug` and `pc-release`, `ctest -L
+- [x] **T8.6** Final Windows guards: full `ctest -LE consumer-full` in `pc-debug` and `pc-release`, `ctest -L
   consumer-full -R nnh_new_smoke`, 0 warnings in the four presets, `hello.3dsx` SHA-256 unchanged, longest 3DS command,
   plan.md "Implementation results".
 

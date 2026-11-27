@@ -17,6 +17,8 @@ nnh build audio --release     # just build (Release)
 nnh install audio             # build the .cia and install it with FBI
 nnh serve                     # wait for NNH Link on the console (it picks, builds and starts games)
 nnh unpair                    # forget the consoles paired with nnh serve
+nnh new my-game               # a new game project in ./my-game (spec 033)
+nnh doctor                    # check the tools, one fix line per problem
 nnh --version                 # nnh 0.1.0 (protocol 1, link 1, windows-x64, from a source checkout)
 nnh help
 ```
@@ -28,6 +30,103 @@ reads nothing from the network or the current folder.
 
 `<game>` is the name given to `nnh_add_game()` (`hello`, `audio`, …). If you mistype it, `nnh` lists the
 games it knows.
+
+## A new project: `nnh new`
+
+```text
+nnh new <name> [--title <text>] [--author <text>] [--engine <path>] [--unique-id <hex>]
+```
+
+Creates the folder `<name>` in the current folder and writes a game project into it (spec
+[033](../../specs/033-nnh-new-and-doctor/spec.md), decision D56): a scene with a sprite moved by the Circle Pad or the
+D-Pad, a sound on A, text on both screens, START to quit, a test script and a `.cia` set up. It needs no network, runs
+no other program, and the same `nnh` always writes the same files apart from the name, title, author, unique ID and
+engine pin. The files (the list is stable from release to release; the code in them is an example to change):
+
+| File | What |
+|---|---|
+| `CMakeLists.txt` | CMake ≥ 3.25, the engine pinned by URL and SHA-256 ([Game projects](game-projects.md)), one `nnh_add_game(<name> ...)` with `SOURCES`, `ASSETS assets`, `TITLE`, `AUTHOR` (a commented line when `--author` was not given), `VERSION 0.1.0`, `CIA UNIQUE_ID` and a commented line for each optional keyword |
+| `CMakePresets.json` | the six presets (`pc-debug`, `pc-dev`, `pc-release`, `3ds-debug`, `3ds-dev`, `3ds-release`), compile commands exported, `NNHGE_ENGINE_DIR` mapped to the local engine |
+| `nnh.toml` | `name` and `engine` (this `nnh`'s version) |
+| `src/main.cpp`, `src/scenes/play_scene.hpp`, `src/scenes/play_scene.cpp` | the game: one scene, every block commented with the API page it uses |
+| `assets/art/player.png`, `assets/sfx/blip.wav` | a 32×32 sprite and a short sound, made for the engine (zlib) |
+| `tests/smoke.nnhs` | the test script: `nnh run <name> --pc --script tests/smoke.nnhs` (or on the console) passes |
+| `.gitignore`, `.gitattributes` | the build folders and 3DS outputs ignored, assets binary |
+| `README.md` | building and running, the test script, the `.cia` and its unique ID, the engine (pin, upgrade, local engine), licences |
+
+- **The name** is the game's CMake target, folder and file names: 1–32 lowercase letters, digits, `_` and `-`,
+  starting with a letter; not a Windows device name (`con`, `nul`, `aux`, `prn`, `com1`–`com9`, `lpt1`–`lpt9`), not a
+  target name CMake or the engine uses (`dist`, `all`, `clean`, `install`, `test`, `help`, `package`, ..., `nnh`,
+  `nnh_*`, `nnh-*`). A refusal names the rule and suggests a spelling when one is obvious:
+  `nnh: "My Game" can't be a game name: only lowercase letters, digits, '_' and '-' (try my-game)`.
+- **`--title`** (default: the name) and **`--author`** (default: none): at most 64 characters of UTF-8, no control
+  characters and none of `"`, `\`, `$`, `;`, `@` or a backtick. **`--unique-id`**: `0x00300`–`0xF7FFF` (default: a
+  random one from the operating system's random source; keep it for the life of the game,
+  [packaging](packaging.md#choosing-a-unique-id)).
+- **Never overwrites**: `<name>` must not exist, or be an empty folder (not a link). Every file is created new; on any
+  failure (disk full, permissions) everything `nnh new` created is removed and it says which file failed. Nothing is
+  written outside the new folder.
+- **The engine**: an `nnh` built with an engine release pin (spec 034's release builds) writes that pin. An `nnh` built
+  from a checkout (every `nnh` today) writes an empty pin and a guard that stops a configure without a local engine
+  (never an unverified download), checks its own checkout (or `--engine <path>`, an engine folder; MSYS forms like
+  `/e/src/nnhge` work) and prints the lines that set `NNHGE_ENGINE_DIR` in Git Bash, PowerShell, cmd and for every new
+  shell (`setx`), unless the variable already names that folder. The path is written into no file.
+- Exit codes: 0 created; 1 refused (a name, a value, a folder in the way, an engine folder that isn't one) or failed;
+  2 a bad command line (an unknown option, no name).
+
+## Checking your machine: `nnh doctor`
+
+```text
+nnh doctor [--online] [--console <ip>] [--pc]
+```
+
+Checks the tools a build needs, and the project you are in, and prints one line per check. It only reads: it installs,
+downloads, configures and writes nothing (not even `nnh.ini`), and without `--online` or `--console` it opens no
+network connection. Each program it runs is killed after 10 s; an offline run takes about two seconds.
+
+```text
+Simulator
+  ok    cmake            4.4.2 (C:/.../cmake.exe)
+  FAIL  ninja            not found on PATH
+        fix: winget install Ninja-build.Ninja
+...
+Simulator: not ready (1 problem)
+3DS: ready
+Optional: 1 warning
+Console: not checked (--console <ip> or --online)
+Downloads: not checked (--online)
+This project: ready
+```
+
+`ok`, `warn` (it works with a limit or a risk) or `FAIL` (a build or run that needs it will fail); under every `warn`
+and `FAIL` one `fix:` line, a command to paste (on Windows it works alike in PowerShell, cmd and Git Bash) or a link
+when installing needs an official installer. Colours follow `nnh run`'s rules (`NO_COLOR` turns them off).
+
+| Group | Checks |
+|---|---|
+| About | this `nnh`'s version line; the system (macOS: `warn`, best effort) |
+| Simulator | CMake ≥ 3.25; Ninja; the C++ compiler CMake would pick (`CXX`, else `c++`, `g++`, `clang++`, `cl`) against the table below; SDL3 (Windows: the pinned download; Linux: a system SDL3, else `pkg-config` and the X11/Wayland and audio development files the source build needs) |
+| 3DS | devkitPro (`DEVKITPRO`, else `C:/devkitPro`; on Linux `DEVKITPRO` must be set); devkitARM, libctru, citro2d, citro3d with their versions from pacman's database; on Windows devkitPro's MSYS2 (`DEVKITPRO_MSYS2`, else `<devkitPro>/msys2`) with CMake ≥ 3.25 and Ninja inside; the host compiler 3DS builds need (`NNH_HOST_CXX`, else `g++`, `c++`, `clang++`) |
+| Optional | ccache, git, the Azahar emulator: `warn` when missing, never `FAIL` |
+| Console | with `--console <ip>` (a local-network address, else exit 2) or `--online`: a console answers the way `nnh run` finds it, else `FAIL` "open the Homebrew Launcher on the 3DS and press Y, then try again" |
+| Downloads | with `--online`: one byte of each pinned download a first build makes (this system's SDL3 package, and inside a game project its engine archive), fetched through the CMake the build uses with the CA bundle the build would give it, from a temporary script in the system's temporary folder (removed after); a certificate failure gets the `CMAKE_TLS_CAINFO` fix. Only those URLs are contacted, and they are listed |
+| This project | inside a game project or the engine repository: `nnh.toml` parses (unknown keys `warn`); the engine version the project builds with (a configure's `CMakeCache.txt`, else `nnh.toml`'s `engine`, else the repository's own) equals this `nnh`'s, else `warn` (the game↔tool protocol must match); the presets `nnh` uses (and `NNH_PRESET`); `NNHGE_ENGINE_DIR` (`FAIL` when it names no engine folder, `warn` when it replaces the project's pinned release); free disk space |
+
+Minimums and thresholds (`tools/nnh/src/doctor/doctor_limits.hpp`):
+
+| Item | `FAIL` below | `warn` below |
+|---|---|---|
+| CMake (and devkitPro's MSYS2 CMake) | 3.25 | — |
+| GCC | 12 (the oldest that built the engine and `nnh` with 0 warnings, plan 033 T0.3) | 13 (checked: GCC 13 and 14 on Linux, WinLibs GCC 16 on Windows) |
+| clang | 16 (clang 16 and 17 built them with 0 warnings) | 18 (checked on Linux) |
+| Apple clang | — | always: best effort |
+| MSVC `cl` | 19.30 (provisional: no MSVC build is checked) | always: best effort |
+| Free space in the project folder | 100 MB (one PC and one 3DS build of a new project: about 81 MB) | 350 MB |
+| Each program's run | killed after 10 s | — |
+
+Exit codes: 0 when no check of a required group failed (Simulator, 3DS, This project, and Console and Downloads when
+asked for); 1 when one did; 2 for a bad command line. `--pc` shows the 3DS group but doesn't count its problems.
+A `warn` never changes the exit code.
 
 ## Game projects
 
@@ -245,6 +344,13 @@ no matching line in frames 1-42`. After the verdict, `nnh` still shows the log f
 
 Without `--script`, `nnh run` exits as before: 0 when the game ran (on the console) or the simulator's own
 exit code (`--pc`), 1 when it couldn't build or send the game, 2 for a bad command line.
+
+A game that speaks another game↔tool protocol version (built from another engine release than this `nnh`) answers
+or refuses the `Hello`, and `nnh` names both versions, the project's engine and the fix (spec 033 FR-22), e.g.
+`nnh: the game speaks remote protocol version 2, nnh 0.1.0 speaks 1 (this project's engine: 0.2.0): use the nnh of
+NNHGE 0.2.0, or change the project's engine pin to 0.1.0`. `nnh serve` does the same for NNH Link's protocol:
+`NNH Link speaks link protocol version 2, nnh 0.1.0 speaks 1: use the NNH Link and the nnh of the same NNHGE release`.
+`nnh doctor` warns about a project whose engine version differs from `nnh`'s before you get there.
 
 ### Screenshots
 

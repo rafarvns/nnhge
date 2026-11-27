@@ -145,8 +145,12 @@ platform; `tools/nnh/src/reload/` (the output mirror, the source watcher, the as
 controller, the paths file, `asset_swap.*`: a script's swaps with their journal) and `tools/nnh/src/remote/script_reload.*`,
 `script_runner_reload.cpp`, `script_runner_swap.cpp`, `commands/run_reload.cpp`.
 
-> Status: design (spec 033, D56 proposed). `nnh new` and `nnh doctor` add `tools/nnh/template/` (the game-project
-> template as real files, embedded into `nnh` by `tools/nnh/embed_template.cmake` and compiled by the engine's tests as
-> `nnh_template_check`), `tools/nnh/src/new/` (name rules, engine location, rendering, writing) and
-> `tools/nnh/src/doctor/` (probes, version parsers, one check group per file, the report); see
-> [plan 033](../../specs/033-nnh-new-and-doctor/plan.md).
+`nnh new`, `nnh doctor` and `nnh --version` (spec 033, D56): `tools/nnh/template/` (the game-project template as real
+files, embedded into `nnh` by `tools/nnh/embed_template.cmake` in the order of `NNH_TEMPLATE_FILES`, and compiled by the
+engine's PC builds with tests as `nnh_template_check`; `tools/nnh/make_template_player.py` draws its sprite),
+`tools/nnh/src/new/` (name rules, the random unique ID, engine location, the embedded file table, rendering, writing and
+its real file system), `tools/nnh/src/doctor/` (the probe seam and its real probes, version parsers, the project
+readers, one check group per file, the fix lines, the limits, the report), `tools/nnh/src/process_run.*` (programs with a
+time limit), `build_info.*` (the version line and the release pin), `protocol_mismatch.*` (FR-22's message),
+`commands/new.cpp`, `commands/doctor.cpp`, `remote/script_runner_hello.cpp`; the release pin's check
+`tools/nnh/nnh_release_pin.cmake`; the SDL3 pins `cmake/nnh_sdl3_pin.cmake`.

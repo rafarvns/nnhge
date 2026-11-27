@@ -127,6 +127,14 @@ median 1.77 s over 7 warm runs (the repository's `hello` 1.82 s in the same seri
 with less than 0.25 s to spare on this machine.
 Details: plan 032, "Stage 0 results" to "Stage 6 results".
 
+Spec 033 (`nnh new`, `nnh doctor`), 2026-11-27, same machine, 7 warm runs interleaved: a project made by `nnh new`
+outside the repository, edit `src/scenes/play_scene.cpp` → simulator (`pc-dev`) 2.34–2.37 s, median 2.36 s, against
+the repository's `hello` (`pc-debug`) 2.03–2.14 s, median 2.06 s, in the same series: **over the < 2 s budget, like
+`hello` on this machine since spec 032 (2.02–2.09 s)**; the template's compile is 0.25 s longer than `hello`'s (more
+headers at `-O2 -g`), the link (1.2–1.4 s) dominates both; → `.3dsx` (`3ds-dev`) 3.54–3.69 s (median 3.61 s, `hello`
+3.56 s). A new project's builds: `pc-dev` 38 MB, `3ds-dev` 43 MB, `3ds-release` 36 MB. `hello.3dsx` byte-identical.
+`nnh doctor` offline 2.1 s. Details: plan 033, "Stage 0 results" to "Stage 8 results".
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`

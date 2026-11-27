@@ -398,3 +398,8 @@ never through `#ifdef` in game code.
   033's FR-10 (a `CMakeUserPresets.json` for the local engine) is amended to D55 item 8: `nnh new` writes no path and
   prints the lines that set `NNHGE_ENGINE_DIR` (plan 033's question 1 asks the maintainer to confirm).
 - 2026-11-27: D56 **approved** (plan 033 approved by the maintainer, every question as recommended).
+- 2026-11-27: D56 built (spec 033, stages 0–8; review, Linux pass and console run still to come). Refinements, each in
+  plan 033: the compiler minimums found on VM 120 (GCC 12, clang 16); on Windows an unset `DEVKITPRO` is `ok` (nnh's
+  devkitPro shell sets it); the template logs its start on its first frame (a test script attaches after `on_enter`);
+  the protocol versions reach the script runner through `ScriptRunner::set_versions`; `nnh serve`'s link refusal now
+  carries the console's version (`link/src/server_session.cpp`); the SDL3 pins moved to `cmake/nnh_sdl3_pin.cmake`.

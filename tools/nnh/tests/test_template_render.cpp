@@ -224,6 +224,9 @@ NNH_TEST(the_template_cmakelists_carries_name_title_id_and_the_guard) {
     CHECK(t.find("set(nnhge_url \"\")") != std::string::npos &&
           t.find("set(nnhge_sha256 \"\")") != std::string::npos);
     CHECK(t.find("no engine release is pinned") != std::string::npos);
+    // The guard: no pin and no local engine stops the configure (FR-9: never an unverified download)
+    CHECK(t.find("if(nnhge_url STREQUAL \"\" AND NOT FETCHCONTENT_SOURCE_DIR_NNHGE)\n    message(FATAL_ERROR") !=
+          std::string::npos);
     CHECK(t.find("NNHGE_VERSION VERSION_LESS 0.1)") != std::string::npos);
     CHECK(t.find("# AUTHOR \"Your name\"") != std::string::npos);
     CHECK(t.find("blob/main/docs/guides/packaging.md") != std::string::npos);

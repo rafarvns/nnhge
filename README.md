@@ -17,9 +17,9 @@ both screens, takes keyboard, mouse and gamepad input, runs at 60 Hz and keeps t
 <code>ui</code> and <code>particles</code>. Every one of them also runs on a 3DS.</sub></p>
 
 > **Status: approaching 1.0.** Everything listed below works on the simulator and on an Old 3DS, and is checked by
-> unit tests, Linux builds and scripted runs on the console. Before 1.0: game fonts and localization, live values in
-> the simulator, hot reload of assets, then a `nnh new` / `nnh doctor` CLI to start a project in a few commands.
-> See the [roadmap](docs/ROADMAP.md).
+> unit tests, Linux builds and scripted runs on the console. `nnh doctor` checks your tools and `nnh new` starts a
+> game project in one command; before 1.0, versioned releases with prebuilt `nnh` binaries. See the
+> [roadmap](docs/ROADMAP.md).
 
 ## A taste
 
@@ -101,8 +101,9 @@ same file builds for the PC and the 3DS.
   PC and 3DS
 
 **Tools**
-- [`nnh`](docs/guides/nnh-tool.md): `nnh run <game>` builds, finds the console on the network, sends the game and
-  shows its coloured log; `nnh install` sends a `.cia`
+- [`nnh`](docs/guides/nnh-tool.md): `nnh doctor` checks your tools (one fix line per problem), `nnh new` writes a
+  working game project, `nnh run <game>` builds, finds the console on the network, sends the game and shows its
+  coloured log; `nnh install` sends a `.cia`
 - [Test scripts](docs/guides/testing-on-the-console.md): press buttons, touch, take screenshots and check the log —
   the same script in the simulator and on a real 3DS, with a pass/fail exit code
 - [NNH Link](docs/guides/nnh-link.md): a console app that asks your PC to build a game, then runs it
@@ -122,22 +123,23 @@ same file builds for the PC and the 3DS.
 
 ## Getting started
 
-You need a C++20 compiler with CMake and Ninja, and [devkitPro](https://devkitpro.org/) for the 3DS. On Windows:
+You need a C++20 compiler with CMake and Ninja, and [devkitPro](https://devkitpro.org/) for the 3DS. Build `nnh` from
+this repository once (prebuilt releases come with 1.0), then let it check your tools and make your game:
 
 ```sh
-cmake --preset pc-debug && cmake --build --preset pc-debug      # the simulator, examples and the nnh tool
-build/pc-debug/examples/platformer/platformer.exe               # play an example on the PC
-
-scripts/dkp.sh cmake --preset 3ds-release                       # the 3DS build (once)
-scripts/dkp.sh cmake --build --preset 3ds-release               # → build/3ds-release/examples/**/*.3dsx
-
-build/pc-debug/tools/nnh/nnh run platformer                     # Homebrew Launcher → Y on the console first
+cmake --preset pc-release && cmake --build --preset pc-release --target nnh   # add build/pc-release/tools/nnh to PATH
+nnh doctor                                  # what is missing, and the command that fixes it
+nnh new my-game                             # a game project: a scene, a sprite, a sound, a test script, a .cia
+cd my-game
+nnh run my-game --pc                        # the simulator
+nnh run my-game                             # the 3DS: Homebrew Launcher open, press Y
+nnh run my-game --pc --script tests/smoke.nnhs   # its test script: nnh: PASS
 ```
 
-The full setup (Windows; steps for Linux and macOS too, less tried), running on a console and making your own
-game:
-[docs/guides/getting-started.md](docs/guides/getting-started.md). The [examples](examples/) folder has one small
-program per feature.
+[Your first game](docs/guides/your-first-game.md) walks the whole path; [getting started](docs/guides/getting-started.md)
+has the tools per system (Windows first; Linux checked on every spec; macOS best effort) and how to work inside this
+repository, where `cmake --preset pc-debug && cmake --build --preset pc-debug` builds the simulator, every example and
+`nnh`. The [examples](examples/) folder has one small program per feature.
 
 Running on a 3DS needs a console with custom firmware and the Homebrew Launcher. The `.3dsx` also opens in the
 [Azahar](https://azahar-emu.org/) emulator.
@@ -146,7 +148,7 @@ Running on a 3DS needs a console with custom firmware and the Homebrew Launcher.
 
 | | |
 |---|---|
-| Guides | [getting started](docs/guides/getting-started.md), [the nnh tool](docs/guides/nnh-tool.md), [testing on the console](docs/guides/testing-on-the-console.md), [debugging on the 3DS](docs/guides/debugging-on-3ds.md), [NNH Link](docs/guides/nnh-link.md), [levels in Tiled](docs/guides/levels.md), [menus](docs/guides/menus.md), [3D models](docs/guides/models.md), [distributing your game](docs/guides/packaging.md) |
+| Guides | [getting started](docs/guides/getting-started.md), [your first game](docs/guides/your-first-game.md), [the nnh tool](docs/guides/nnh-tool.md), [testing on the console](docs/guides/testing-on-the-console.md), [debugging on the 3DS](docs/guides/debugging-on-3ds.md), [NNH Link](docs/guides/nnh-link.md), [levels in Tiled](docs/guides/levels.md), [menus](docs/guides/menus.md), [3D models](docs/guides/models.md), [distributing your game](docs/guides/packaging.md) |
 | API reference | [docs/api/](docs/api/) — one page per header, with costs and limits |
 | Architecture | [docs/architecture/](docs/architecture/) — event bus and scenes, patterns, structure, every design decision and why |
 | Technology | [docs/tech/](docs/tech/) — devkitPro and the 3DS, CMake, the C++ subset, SDL 3 |

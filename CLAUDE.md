@@ -255,6 +255,17 @@ behind their handles, data assets and maps are announced, tunables on reloaded d
 `nnh restore-assets <game>` ([api/assets.md](docs/api/assets.md#hot-reload), guide
 [editing assets live](docs/guides/editing-assets-live.md); demo `examples/reload`, scripts `tests/check.nnhs` (sums)
 `tests/errors.nnhs` (refusals) and `tests/timing.nnhs` (save → frame, bench)).
+New projects and the doctor (spec 033, built 2026-11-27; review, Linux pass and console run pending; D56; no game API):
+`nnh new <name> [--title] [--author] [--engine <path>] [--unique-id <hex>]` writes a 12-file game project (a scene, a
+sprite, a sound, text on both screens, `tests/smoke.nnhs`, a `.cia` set up, README) from the template embedded in `nnh`
+(`tools/nnh/template/`, compiled by every PC build with tests as `nnh_template_check`, its script run by the ctest
+`nnh_template_smoke`); names checked, exclusive creates, all or nothing; a checkout `nnh` writes an empty pin + guard and
+prints the `NNHGE_ENGINE_DIR` lines, a release `nnh` (cache entries `NNH_RELEASE_ENGINE_URL`/`_SHA256`, spec 034) its pin.
+`nnh doctor [--online] [--console <ip>] [--pc]` checks About, Simulator, 3DS, Optional, Console, Downloads and This
+project through a probe seam (`tools/nnh/src/doctor/`), one `fix:` line per problem, exit 0/1/2, read-only, no network
+without the options. `nnh --version` prints the version line (`build_info.*`); a protocol mismatch names both versions
+and the fix (`protocol_mismatch.*`). Guides: [your first game](docs/guides/your-first-game.md),
+[the nnh tool](docs/guides/nnh-tool.md#a-new-project-nnh-new).
 Game projects outside the repository (spec 032, D55; guide [game projects](docs/guides/game-projects.md)): a game's own
 `CMakeLists.txt` adds the engine by `FetchContent` (a hash-pinned archive; `NNHGE_ENGINE_DIR` → `FETCHCONTENT_SOURCE_DIR_NNHGE`
 through the project's presets for a local engine) or `add_subdirectory` (submodule, copy), then `nnh_add_game()` works from any
@@ -279,7 +290,8 @@ tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_
 tests/consumer/  tests/consumer_tools/           a game project built against the engine by ctest (spec 032) and its driver
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
 apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
-tools/nnh/                                       the nnh command (spec 010): build, run on the console, install; test scripts (013)
+tools/nnh/                                       the nnh command (spec 010): build, run on the console, install; test scripts (013); new, doctor (033)
+tools/nnh/template/                              the nnh new template (spec 033): real files, embedded into nnh, built as nnh_template_check
 tools/assetc/                                    nnh-assetc (specs 012, 014): Tiled .tmj → .nnhmap, data files → NNHD, .nnh_data; host-built in 3DS presets (NNH_HOST_CXX)
 tools/data_schema/                               main() of each game's data schema program (spec 014, cmake/nnh_data.cmake)
 examples/<name>/                                 one small program per feature (tests/*.nnhs: its test scripts)
@@ -345,6 +357,9 @@ tests/consumer_tools/copy_project.sh /e/games/consumer pin     # a copy of it ou
 scripts/check_command_length.sh build/3ds-dev                  # longest 3DS command vs. Windows' 32,767 (limit 50 %)
 build/pc-debug/tools/nnh/nnh run reload [--pc] --script examples/reload/tests/check.nnhs   # hot reload: every kind swapped, sums = PC's
 build/pc-debug/tools/nnh/nnh run reload [--pc]                 # then save a file in examples/reload/assets/: it reloads (RELOAD_DEMO=bench)
+build/pc-debug/tools/nnh/nnh doctor [--pc] [--online]          # tools check: one fix line per problem, exit 0 ready / 1 not
+build/pc-debug/tools/nnh/nnh new my-game                       # a game project in ./my-game (outside the repository); then nnh run my-game --pc
+ctest --preset pc-debug -L consumer-full -R nnh_new_smoke      # nnh new end to end: local and pinned engine (~4 min)
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

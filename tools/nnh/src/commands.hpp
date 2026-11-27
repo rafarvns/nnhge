@@ -69,6 +69,9 @@ int command_restore_assets(const Options& options);
 void finish_reload(const GameRun& run);
 
 int command_serve(const Options& options);
+
+/// nnh new <name> (commands/new.cpp, spec 033 FR-3): writes a game project into ./<name>. 0 created, 1 refused or failed.
+int command_new(const Options& options);
 int command_unpair();
 
 } // namespace nnh::tool

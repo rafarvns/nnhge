@@ -81,19 +81,19 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 4: `nnh new` end to end (FR-3, FR-15, FR-17)
 
-- [ ] **T4.1** `commands/new.cpp`: validate → choose engine → render → write → print (folder, file count, unique ID,
+- [x] **T4.1** `commands/new.cpp`: validate → choose engine → render → write → print (folder, file count, unique ID,
   set-lines, next commands) — files: `commands/new.cpp`, `commands.hpp`, `main.cpp` — test: ctest `nnh_new_files`
   (`tools/nnh/tests/new_files.cmake`) — covers FR-3, FR-1, FR-2
-- [ ] **T4.2** `nnh_new_smoke` (label `consumer-full`, `RESOURCE_LOCK consumer`): local way and pinned way (plan "Test
+- [x] **T4.2** `nnh_new_smoke` (label `consumer-full`, `RESOURCE_LOCK consumer`): local way and pinned way (plan "Test
   strategy") — files: `tools/nnh/tests/new_smoke.cmake`, `tools/nnh/CMakeLists.txt` — test: the ctest on Windows
   `pc-debug` — covers FR-8, FR-9, FR-10, FR-13 to FR-16
-- [ ] **T4.3** Windows 3DS from a generated project outside the repository (no `scripts/dkp.sh`): `nnh build demo`,
+- [x] **T4.3** Windows 3DS from a generated project outside the repository (no `scripts/dkp.sh`): `nnh build demo`,
   `nnh build demo --release`, `cmake --build build/3ds-dev --target dist` (the `.cia`), `check_command_length.sh` on
   both folders; 0 warnings — covers FR-15 (AC-3, Windows)
-- [ ] **T4.4** Budgets (AC-5): one edit of `play_scene.cpp`, 7 warm runs each, interleaved with the repository's `hello`,
+- [x] **T4.4** Budgets (AC-5): one edit of `play_scene.cpp`, 7 warm runs each, interleaved with the repository's `hello`,
   simulator and `.3dsx`; disk of the four build folders (the `doctor` thresholds re-set from it) — files:
   `docs/ROADMAP.md` (baseline table), `doctor/doctor_limits.hpp` — covers FR-17, FR-19
-- [ ] **T4.5** Stage end: guards; generated projects deleted (disk).
+- [x] **T4.5** Stage end: guards; generated projects deleted (disk).
 
 ## Stage 5: `nnh doctor`'s core (FR-18, FR-20, FR-21)
 

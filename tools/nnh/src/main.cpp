@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
     }
     switch (options.command) { // spec 033: no network library needed
     case Command::Version: std::printf("%s\n", version_line(build_info()).c_str()); return 0;
-    case Command::New:
-    case Command::Doctor: std::fprintf(stderr, "nnh: not built yet (spec 033, stages 4 and 6)\n"); return 1;
+    case Command::New: return command_new(options);
+    case Command::Doctor: std::fprintf(stderr, "nnh: not built yet (spec 033, stage 6)\n"); return 1;
     default: break;
     }
     if (!net::startup()) {

@@ -730,3 +730,45 @@ installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16
   `licenses/` folder (`C:/devkitPro/licenses/`) holds only its tools' `COPYING` files (3dslink, 3dstools, gdb, ...): no
   newlib, libctru, citro2d or citro3d licence is installed, so the README names the licences and links newlib's
   `COPYING.NEWLIB` upstream rather than a local file.
+
+### Stage 4 results (`nnh new` end to end)
+
+- `commands/new.cpp` (≈ 100 lines): name → title/author → unique ID → engine → render → write → print. It runs before
+  `net::startup()`. Output on Windows (checkout `nnh`, variable unset):
+  `nnh: created my-game/ (12 files; CIA UNIQUE_ID 0x28259)`, the local-engine line, the four set-lines, `next:` with
+  `cd`, `nnh run my-game --pc`, `nnh run my-game`. Refusals go to stderr, exit 1 (`nnh: "My Game" can't be a game
+  name: only lowercase letters, digits, '_' and '-' (try my-game)`); an engine refusal ends with ": nothing was
+  created".
+- ctest `nnh_new_files` (1.1 s; `NNHGE_ENGINE_DIR` unset through `ENVIRONMENT_MODIFICATION`): `--version`'s line,
+  `help`, exit 2 for an unknown option and no name, exit 1 for "My Game" (with the suggestion), `../escape`, an ID
+  outside the range and a folder that is not an engine, with nothing created by any refusal; the twelve files; no
+  checkout path in `CMakeLists.txt`; a second `new demo` refused; two runs with the same inputs byte-identical (the
+  name aside); two random IDs differ (a third draw before failing). Seen red before `command_new` was wired.
+- ctest `nnh_new_smoke` (label `consumer-full`, `RESOURCE_LOCK consumer`, folders under `build/<preset>/consumer/
+  new_smoke/`, deleted on success): Windows `pc-debug` 234 s. Local way: `nnh new` 0 s, configure `pc-dev` 16 s,
+  `nnh build demo --pc` 72 s (no warning), smoke script 3 s, PASS. Pinned way (archive packed with spec 032's
+  `consumer_pack_engine`, URL and SHA-256 pasted, variable unset, the archive really unpacked in `_deps/nnhge-src`):
+  configure 23 s, build 72 s, script 3 s, PASS.
+- T4.3, Windows, a project made by `nnh new demo` in `E:/RANDOM/n033/demo` (outside the repository), `NNHGE_ENGINE_DIR`
+  set, `DEVKITPRO` unset in the shell, no `scripts/dkp.sh`: `nnh build demo` (3ds-dev) 61 s, `nnh build demo
+  --release` 60 s (`demo.3dsx` 348,720 bytes), `cmake --build build/3ds-dev --target dist` 9 s (`dist/demo/demo.cia`
+  and `.3dsx`), 0 warnings each; `scripts/check_command_length.sh` PASS on both folders.
+- T4.4 budgets (AC-5), 7 warm runs interleaved with the repository's `hello` in the same series:
+
+  | Edit | Runs 1–5 | Median (7) |
+  |---|---|---|
+  | `src/scenes/play_scene.cpp` → simulator (`pc-dev`, the preset `nnh run --pc` uses) | 2.34–2.37 s | 2.36 s |
+  | `examples/hello/main.cpp` → simulator (`pc-debug`) | 2.03–2.14 s | 2.06 s |
+  | `play_scene.cpp` → `.3dsx` (`3ds-dev`) | 3.54–3.69 s | 3.61 s |
+  | `hello` → `.3dsx` (`3ds-dev`) | 3.51–3.60 s | 3.56 s |
+
+  Runs 6 and 7 had outliers (19.1 s, 13.2 s, 5.97 s: another process on the machine) and are left out of the ranges.
+  **The simulator budget (< 2 s) is not met on this machine today, by the template nor by `hello`**: `hello` measured
+  2.07–2.15 s before any change of this spec (stage 0) and 2.02–2.09 s at spec 032's end. Broken down with
+  `NINJA_STATUS=%e` in `pc-dev`: the template's compile 0.79 s (hello's 0.54 s: more headers at `-O2 -g`), the link
+  1.2–1.3 s (hello's 1.4 s); the rest is CMake and Ninja start-up. The template adds ≈ 0.25 s of compile over `hello`
+  and nothing to the link; the link of a static `-O2 -g` program dominates. Not fixed here (an engine build-speed
+  question, not this spec's code): flagged for the maintainer. The `.3dsx` budget (< 5 s) is met.
+- Disk of the generated project after the four builds: `pc-dev` 38 MB, `3ds-dev` 43 MB, `3ds-release` 36 MB (116 MB
+  in all, the compiler cache warm). `doctor`'s thresholds re-set from it: `FAIL` below 0.1 GB (one PC and one 3DS
+  build), `warn` below 0.35 GB (≈ 3× the three folders).

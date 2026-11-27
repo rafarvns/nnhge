@@ -46,6 +46,7 @@ add_library(nnh_tool_lib STATIC
     src/cli_new_doctor.cpp
     src/commands/build.cpp
     src/commands/install.cpp
+    src/commands/new.cpp
     src/commands/project.cpp
     src/commands/run.cpp
     src/commands/run_pc.cpp
@@ -209,6 +210,11 @@ if(NNH_BUILD_TESTS)
     add_test(NAME nnh_tool COMMAND nnh_tool_tests)
     # The release pin's configure-time check on good and bad values (spec 033 FR-9).
     add_test(NAME nnh_pin_check COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/pin_check/check.cmake)
+    # nnh --version, help and nnh new as a user runs them, in a scratch folder (spec 033 FR-1 to FR-5, FR-11).
+    add_test(NAME nnh_new_files
+             COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DWORK=${CMAKE_CURRENT_BINARY_DIR}/new_files
+                     -DENGINE=${PROJECT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/new_files.cmake)
+    set_tests_properties(nnh_new_files PROPERTIES ENVIRONMENT_MODIFICATION "NNHGE_ENGINE_DIR=unset:" TIMEOUT 120)
 
     # The console remote end to end in the simulator (spec 013 FR-4): nnh runs examples/input's test script
     # against this preset's build (NNH_PRESET = this build folder's name), headless. Release builds have no
@@ -245,4 +251,19 @@ if(NNH_BUILD_TESTS)
             ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_nnh_preset}"
             TIMEOUT 180)
     endif()
+
+    # nnh new end to end (spec 033 AC-2; label consumer-full, like spec 032's full ways: one engine build per way):
+    # a generated project outside the engine, built with nnh, its smoke script run; the local way and the pinned way.
+    set(_nnh_new_smoke_args -DNNH=$<TARGET_FILE:nnh> -DENGINE=${PROJECT_SOURCE_DIR}
+                            -DWORK=${PROJECT_BINARY_DIR}/consumer/new_smoke)
+    include(FetchContent)
+    foreach(_sdl nnh_sdl3_prebuilt nnh_sdl3) # the parent's SDL3 download: no network in the test
+        FetchContent_GetProperties(${_sdl})
+        if(${_sdl}_SOURCE_DIR)
+            list(APPEND _nnh_new_smoke_args "-DSDL3_SOURCE=${${_sdl}_SOURCE_DIR}")
+        endif()
+    endforeach()
+    add_test(NAME nnh_new_smoke
+             COMMAND ${CMAKE_COMMAND} ${_nnh_new_smoke_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/new_smoke.cmake)
+    set_tests_properties(nnh_new_smoke PROPERTIES LABELS consumer-full TIMEOUT 1800 RESOURCE_LOCK consumer)
 endif()

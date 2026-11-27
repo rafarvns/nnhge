@@ -2,8 +2,18 @@
 # serve for NNH Link (spec 011).
 # A host program built with the PC presets; never a dependency of games. Explicit source lists.
 
+# The release pin (spec 033 FR-9, spec 034): an engine archive's URL and SHA-256 that `nnh new` writes as a new
+# project's pinned engine. Empty in every build but a release one; checked here (both or neither, https:// or file://,
+# 64 hex digits).
+set(NNH_RELEASE_ENGINE_URL "" CACHE STRING "The engine archive a release nnh pins in new projects (spec 034)")
+set(NNH_RELEASE_ENGINE_SHA256 "" CACHE STRING "The SHA-256 of NNH_RELEASE_ENGINE_URL (spec 034)")
+include(${CMAKE_CURRENT_SOURCE_DIR}/nnh_release_pin.cmake)
+nnh_check_release_pin("${NNH_RELEASE_ENGINE_URL}" "${NNH_RELEASE_ENGINE_SHA256}")
+
 add_library(nnh_tool_lib STATIC
+    src/build_info.cpp
     src/cli.cpp
+    src/cli_new_doctor.cpp
     src/commands/build.cpp
     src/commands/install.cpp
     src/commands/project.cpp
@@ -80,6 +90,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${PROJECT_SOURCE_DIR}/engine/core/src/live/live_steps.cpp
                                 TARGET_DIRECTORY nnh_tool_lib PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# What nnh was built from (build_info.cpp only, so a new pin or version recompiles one file): the engine version, the
+# release pin, and, without a pin, the checkout it was built from (`nnh new`'s default local engine).
+set(_nnh_build_info_defs "NNH_TOOL_VERSION=\"${NNHGE_VERSION}\""
+                         "NNH_RELEASE_ENGINE_URL=\"${NNH_RELEASE_ENGINE_URL}\""
+                         "NNH_RELEASE_ENGINE_SHA256=\"${NNH_RELEASE_ENGINE_SHA256}\"")
+if(NNH_RELEASE_ENGINE_URL STREQUAL "")
+    list(APPEND _nnh_build_info_defs "NNH_TOOL_ENGINE_DIR=\"${PROJECT_SOURCE_DIR}\"")
+endif()
+set_source_files_properties(src/build_info.cpp TARGET_DIRECTORY nnh_tool_lib
+                            PROPERTIES COMPILE_DEFINITIONS "${_nnh_build_info_defs}")
 target_include_directories(nnh_tool_lib PUBLIC src ${PROJECT_SOURCE_DIR}/engine/core/src)
 nnh_engine_options(nnh_tool_lib)
 find_package(Threads REQUIRED) # the HTTP server runs on a thread
@@ -101,6 +121,7 @@ _nnh_tool_static_runtime(nnh)
 
 if(NNH_BUILD_TESTS)
     add_executable(nnh_tool_tests
+        tests/test_build_info.cpp
         tests/test_cli.cpp
         tests/test_configure_command.cpp
         tests/test_console_link.cpp
@@ -140,6 +161,8 @@ if(NNH_BUILD_TESTS)
     nnh_engine_options(nnh_tool_tests)
     _nnh_tool_static_runtime(nnh_tool_tests)
     add_test(NAME nnh_tool COMMAND nnh_tool_tests)
+    # The release pin's configure-time check on good and bad values (spec 033 FR-9).
+    add_test(NAME nnh_pin_check COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/pin_check/check.cmake)
 
     # The console remote end to end in the simulator (spec 013 FR-4): nnh runs examples/input's test script
     # against this preset's build (NNH_PRESET = this build folder's name), headless. Release builds have no

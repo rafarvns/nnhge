@@ -1,10 +1,12 @@
 // nnh — the NNHGE command-line tool: build, run on the console with readable logs, install (spec 010); serve
-// NNH Link (spec 011); drive a Development game with test scripts or typed commands (spec 013).
+// NNH Link (spec 011); drive a Development game with test scripts or typed commands (spec 013); new projects, the
+// doctor and the version line (spec 033).
 
 #include <cstdio>
 #include <string>
 #include <vector>
 
+#include "build_info.hpp"
 #include "cli.hpp"
 #include "commands.hpp"
 #include "link_types.hpp"
@@ -18,6 +20,12 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "nnh: %s\n", error.c_str());
         return 2;
     }
+    switch (options.command) { // spec 033: no network library needed
+    case Command::Version: std::printf("%s\n", version_line(build_info()).c_str()); return 0;
+    case Command::New:
+    case Command::Doctor: std::fprintf(stderr, "nnh: not built yet (spec 033, stages 4 and 6)\n"); return 1;
+    default: break;
+    }
     if (!net::startup()) {
         std::fprintf(stderr, "nnh: the network library didn't start\n");
         return 1;
@@ -29,7 +37,10 @@ int main(int argc, char** argv) {
     case Command::Serve: return command_serve(options);
     case Command::Unpair: return command_unpair();
     case Command::RestoreAssets: return command_restore_assets(options);
-    case Command::Help: break;
+    case Command::Help:
+    case Command::Version:
+    case Command::New:
+    case Command::Doctor: break;
     }
     std::fputs(help_text(), stdout);
     return 0;

@@ -9,33 +9,33 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 0: baseline and design measurements
 
-- [ ] **T0.1** Start: `main` with spec 032 merged; worktree `spec-033`; `df -h /e` ≥ 10 GB; fresh `pc-debug` build;
+- [x] **T0.1** Start: `main` with spec 032 merged; worktree `spec-033`; `df -h /e` ≥ 10 GB; fresh `pc-debug` build;
   `nnh_tool_tests` count and time, `nnh` binary size, `hello` one-file edit times (3 runs, simulator and `.3dsx`) kept in
   `build/ref-033/` (not committed).
-- [ ] **T0.2** [P] Measurements in a temporary folder outside the repository (deleted afterwards), recorded in plan.md
+- [x] **T0.2** [P] Measurements in a temporary folder outside the repository (deleted afterwards), recorded in plan.md
   "Stage 0 results": the no-pin `CMakeLists.txt` shape (empty `URL`/`URL_HASH` with the override; the guard without it)
   on VM 120's CMake (3.28) and, if obtainable without a system change, CMake 3.25; `AUTHOR ""` and CMP0174 on 3.25/3.28;
   `file(DOWNLOAD <url> RANGE_START 0 RANGE_END 0)` with no output file in native CMake 4.4.2, devkitPro's 4.0.2 and the
   VM's (GitHub release URL, redirect, one byte); exclusive create on MinGW (`_wopen` `_O_EXCL`) and Linux; one
   `bash -lc "command -v cmake ninja; cmake --version; ninja --version"` in devkitPro's MSYS2 (time); pacman database
   folders on Windows and on VM 120 (`/opt/devkitpro/...`); `cl` banner (if an MSVC is reachable, else a recorded sample).
-- [ ] **T0.3** Compiler minimums (question 4; only with the maintainer's OK for `apt`): on VM 120 build the engine's
+- [x] **T0.3** Compiler minimums (question 4; only with the maintainer's OK for `apt`): on VM 120 build the engine's
   `pc-debug` core and the template check with GCC 12 and clang 16/17; record the oldest that pass in
   `doctor/doctor_limits.hpp` and `nnh-tool.md`. Without the OK: keep the provisional values, marked "not verified".
 
 ## Stage 1: `nnh --version` and the command line (FR-1, FR-2)
 
-- [ ] **T1.1** `build_info`: version, remote and link protocol versions, host OS and architecture, build kind (pin
+- [x] **T1.1** `build_info`: version, remote and link protocol versions, host OS and architecture, build kind (pin
   present), pin, checkout folder; `version_line()` — files: `tools/nnh/src/build_info.{hpp,cpp}`, `tools/nnh/CMakeLists.txt`
   (definitions on `build_info.cpp` only: `NNHGE_VERSION`, `NNH_RELEASE_ENGINE_URL/_SHA256` cache entries, the checkout
   folder only without a pin) — test: `test_build_info.cpp` — covers FR-1
-- [ ] **T1.2** [P] The pin's configure-time check (both or neither, `https://` or `file://`, 64 hex digits) — files:
+- [x] **T1.2** [P] The pin's configure-time check (both or neither, `https://` or `file://`, 64 hex digits) — files:
   `tools/nnh/CMakeLists.txt`, `tools/nnh/tests/pin_check/` — test: ctest `nnh_pin_check` — covers FR-9
-- [ ] **T1.3** CLI: `Command::{New, Doctor, Version}`, `--version`, `new` options (`--title`, `--author`, `--engine`,
+- [x] **T1.3** CLI: `Command::{New, Doctor, Version}`, `--version`, `new` options (`--title`, `--author`, `--engine`,
   `--unique-id`), `doctor` options (`--online`, `--console <LAN ip>`, `--pc`), unknown options and a non-LAN console →
   error (exit 2), help text — files: `cli.{hpp,cpp}`, `cli_new_doctor.cpp`, `main.cpp` — test: `test_cli.cpp` — covers
   FR-2, FR-1
-- [ ] **T1.4** Stage end: `nnh --version` on Windows by hand; guards.
+- [x] **T1.4** Stage end: `nnh --version` on Windows by hand; guards.
 
 ## Stage 2: `nnh new`'s core (FR-3 to FR-12)
 

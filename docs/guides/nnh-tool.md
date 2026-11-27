@@ -17,8 +17,14 @@ nnh build audio --release     # just build (Release)
 nnh install audio             # build the .cia and install it with FBI
 nnh serve                     # wait for NNH Link on the console (it picks, builds and starts games)
 nnh unpair                    # forget the consoles paired with nnh serve
+nnh --version                 # nnh 0.1.0 (protocol 1, link 1, windows-x64, from a source checkout)
 nnh help
 ```
+
+`nnh --version` prints one line and exits 0 (spec [033](../../specs/033-nnh-new-and-doctor/spec.md) FR-1): the engine
+version `nnh` was built from, the game↔tool protocol and NNH Link protocol versions it speaks, the system it was built
+for, and how it was built (`release build` when it carries an engine release pin, else `from a source checkout`). It
+reads nothing from the network or the current folder.
 
 `<game>` is the name given to `nnh_add_game()` (`hello`, `audio`, …). If you mistype it, `nnh` lists the
 games it knows.

@@ -577,3 +577,82 @@ amended to it). Flagged: questions 1, 3 and 4; risks 1, 3 and 4.
 10. **FR-22 in `nnh serve`**: the PC prints the versions when NNH Link's handshake fails for the link protocol version;
     the console's message stays NNH Link's? *Recommendation: yes* — the console side belongs to spec 011's app and would
     need a new NNH Link build for a message only.
+
+## Implementation results
+
+### Stage 0 results (2026-11-27; worktree `spec-033` at `c30c22c`)
+
+T0.1, Windows (WinLibs GCC 16.2.0, CMake 4.4.2, Ninja, ccache; devkitARM r68 / devkitPro CMake 4.0.2), in the worktree:
+- free on `E:` before the builds 12 GB, after the four preset folders 10 GB (`pc-debug` 798 MB, `3ds-dev` 208 MB,
+  `3ds-release` 188 MB);
+- fresh `pc-debug` configure 13.9 s (SDL3 from the main checkout's download through
+  `FETCHCONTENT_SOURCE_DIR_NNH_SDL3_PREBUILT`), build 5 min 31 s cold, 0 warnings; `3ds-release` and `3ds-dev` configure +
+  build 2 min 19 s / 2 min 12 s, 0 warnings;
+- `nnh_tool_tests`: 279 tests, 14.1 s; `nnh.exe` (Debug) 22,238,914 bytes;
+- `3ds-release` `hello.3dsx` SHA-256 `92e8dbd27aa0d256be55726e9d0d5dbae6de232d34a9783d72647505bdd2408f` (the baseline
+  for every later comparison in this worktree; the binary embeds the folder, so only same-folder values compare);
+- edit `examples/hello/main.cpp`, three runs: simulator (`pc-debug`) 2.15 / 2.10 / 2.07 s, `.3dsx` (`3ds-dev`) 3.65 /
+  3.46 / 3.67 s. The simulator number is already above the 2 s budget before any change of this spec (spec 032 measured
+  2.02–2.09 s in `pc-debug` on the same machine): pre-existing, recorded, not caused here.
+
+T0.2:
+- **The no-pin `CMakeLists.txt` shape** (empty `nnhge_url`/`nnhge_sha256`, the guard, `FetchContent_Declare` with an empty
+  `URL` and `URL_HASH SHA256=`), with a stub engine folder (`project(nnhge VERSION 0.1.0)`, a `cmake_parse_arguments`
+  `nnh_add_game`): Ubuntu's CMake 3.28.3 on VM 120 configures with `FETCHCONTENT_SOURCE_DIR_NNHGE` set (no download step,
+  no warning; `AUTHOR ""` parsed silently, CMP0174 does not exist before 3.31) and without it stops at the guard before
+  any `_deps` folder exists. CMake 3.25 itself was **not measured**: fetching a CMake 3.25 binary onto the VM was not
+  allowed in this session (no system change was wanted either); 3.25 stays the documented minimum (spec 032 measured its
+  presets schema).
+- **`file(DOWNLOAD <url> RANGE_START 0 RANGE_END 0)` without an output file**, the SDL3 release URL (a GitHub redirect):
+  devkitPro's MSYS2 CMake 4.0.2 `0;"No error"` in 1.1 s; VM 120's CMake 3.28.3 `0;"No error"` in 0.46 s; nothing written
+  in the folder. **WinLibs' native CMake 4.4.2: status 60 ("SSL peer certificate … was not OK")**: it ships without CA
+  certificates, exactly the failure the Downloads group must catch; with `-DCMAKE_TLS_CAINFO=<Git for Windows'
+  ca-bundle.crt>` (what `cmake/nnh_sdl3.cmake` already does) `0;"No error"` in 0.78 s. So `doctor --online` passes the
+  same CA bundle the build would (FR-19: "through the same CMake the build uses").
+- **devkitPro's MSYS2 probe** `bash -lc "command -v cmake ninja; cmake --version; ninja --version"`: 1.14 s
+  (`/usr/bin/cmake`, `/usr/bin/ninja`, 4.0.2, 1.13.2). Note: `bash -lc` starts in the MSYS2 home folder.
+- **pacman database folders**: Windows `C:/devkitPro/msys2/var/lib/pacman/local/` holds `devkitARM-r68-1`,
+  `libctru-2.7.1-1`, `citro2d-1.7.0-1`, `citro3d-1.7.1-2`, `devkitarm-gcc-16.1.0-1`, `devkitarm-newlib-4.6.0.20260123-5`,
+  `cmake-4.0.2-1`, `ninja-1.13.2-2`; VM 120 (devkitPro extracted from the Docker image) has
+  `/opt/devkitpro/pacman/var/lib/pacman/local/` with `devkitARM-r68-1`, `libctru-2.7.0-1`, `citro2d-1.7.0-1`,
+  `citro3d-1.7.1-2`. devkitARM's version is `r68` (not dotted): the parser keeps it as text.
+- **Exclusive create**: covered by `test_project_writer.cpp` (MinGW `_wopen` here; Linux at the stage 9 pass).
+- **MSVC `cl`**: none on this machine; the parser is tested on a recorded banner sample.
+
+T0.3 (question 4, `sudo apt install g++-12 clang-16 clang-17` on VM 120): each compiler built, from the synced
+worktree, `nnh_core`, `nnh_platform_pc`, the examples whose APIs the template uses (`hello`, `scenes`, `input`,
+`sprites`, `text`, `audio`) and `nnh` itself (Debug, `-Wall -Wextra`), SDL3 from source:
+
+| Compiler | Result |
+|---|---|
+| GCC 12.4.0 | 0 errors, 0 warnings (132 s) |
+| clang 16.0.6 | 0 errors, 0 warnings (161 s) |
+| clang 17.0.6 | 0 errors, 0 warnings (152 s) |
+
+The minimums are therefore GCC 12 and clang 16 (the oldest tried; older ones were not installed, so below them `doctor`
+says `FAIL` as "older than any compiler the project has built with"). The template's own sources were not built with
+them (they did not exist yet); the stage 9 pass builds them with GCC 13/14 and clang 18. The three compilers stay
+installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16 clang-17`).
+
+### Stage 1 results (`nnh --version` and the command line)
+
+- `build_info.{hpp,cpp}`: the only source with the definitions (`NNH_TOOL_VERSION`, `NNH_RELEASE_ENGINE_URL`,
+  `NNH_RELEASE_ENGINE_SHA256`, and `NNH_TOOL_ENGINE_DIR` only without a pin), set with `set_source_files_properties`
+  on that one file. `nnh --version` on Windows: `nnh 0.1.0 (protocol 1, link 1, windows-x64, from a source checkout)`,
+  exit 0; it runs before `net::startup()`.
+- Refinement (T1.2): the pin check is a function in `tools/nnh/nnh_release_pin.cmake` (`nnh_check_release_pin`), called
+  by `tools/nnh/CMakeLists.txt` on the two cache entries; the ctest `nnh_pin_check` runs it in `cmake -P` children
+  (10 cases: none, `https://`, `file://`, half a pin each way, `http://`, a space, 65 and 4 digits, non-hex), which
+  needs no scratch configure (1.8 s). Seen red with the function emptied (7 of 10 cases failed).
+- CLI: `parse_new`/`parse_doctor` live in `cli_new_doctor.cpp` in the namespace `nnh::tool::cli_parts` (a nested
+  `detail` would hide `nnh::detail` from every file that includes `cli.hpp`). The name of `nnh new` is `Options::game`.
+  `nnh doctor --console` must parse as IPv4 and be on the LAN, else exit 2 before anything runs (question 8);
+  `nnh new` without a name, a second name or an unknown option exits 2; `--title ""` is accepted by the parser and
+  refused by `nnh new` itself (exit 1).
+- Tests: 279 → 287 (`test_build_info.cpp` 3, `test_cli.cpp` +5), all seen red first (a stubbed `version_line`, stub
+  parsers).
+- Stage end: `nnh_tool_tests` green, ctests `nnh_tool`, `nnh_pin_check`, `nnh_script_pc_smoke` green, `pc-debug` 0
+  warnings, `docs_tool.py check` 0 broken links. No 3DS check: `tools/nnh/` is not part of 3DS presets.
+- The default `ctest -LE consumer-full -j4` took 627 s here; its four `reload_*` failures were caused by editing
+  `tools/nnh/CMakeLists.txt` while it ran (those tests rebuild in the same build folder, which re-ran CMake on a
+  half-edited file) and passed when re-run (stage 2 end). Lesson kept: no CMake edits during a ctest run.

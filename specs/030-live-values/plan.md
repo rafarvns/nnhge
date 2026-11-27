@@ -1152,3 +1152,12 @@ batched record sends, names built outside the measurement, one pass per page):
 | register (100 + 50) | 693.2 ms | 13.28 ms | < 17 ms |
 
 The budgets are in `examples/live/bench.cpp`, the spec's AC-7 and `docs/api/live.md`.
+
+### Last manual checks (2026-11-26, the maintainer)
+
+- Console: the platformer paused from the Tunables page (SELECT + Y) shows the whole level, ground, hills and water
+  included — YES.
+- PC (T3.7): in the platformer, Pause holds the level with `PAUSED f<N>` on the overlay, F10 adds one frame each press,
+  Pause resumes — YES.
+
+Spec 030 is complete.

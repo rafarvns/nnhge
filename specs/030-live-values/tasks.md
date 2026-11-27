@@ -144,7 +144,7 @@ the tree at T0.3).
   paused; plain loops wait; `frame_count()` and the frame clock stop; step N runs exactly N; quit while paused; the held
   start draws cleared screens and the message), `tests/app/test_frame_loop.cpp` unchanged cases pass in both flavours.
   Covers FR-16, FR-21.
-- [ ] **T3.7** Stage end: the stage-end guards (the first stage that edits Release-linked files: per-object diffs
+- [x] **T3.7** (the PC Pause/F10 yes/no passed 2026-11-26, after the held tile layers fix) Stage end: the stage-end guards (the first stage that edits Release-linked files: per-object diffs
   recorded); Debug/Development `hello` growth so far; the simulator's `Pause`/`F10` by hand on `examples/platformer`
   (pause, step, resume; audio holds) and a screenshot of a paused frame equal to the frame before it. Files: plan.md
   ("Stage 3 results"). Covers AC-6, FR-16.

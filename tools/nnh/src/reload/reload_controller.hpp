@@ -40,6 +40,8 @@ struct ControllerSetup {
 /// every 4 frames).
 inline constexpr std::size_t kInitialAllowance = 64 * 1024;
 inline constexpr std::size_t kAllowancePerTick = 48 * 1024;
+/// A batch all sent and not answered for this long ends its cycle ("no answer from the game").
+inline constexpr long long kAnswerTimeoutMs = 10000;
 
 class ReloadController {
 public:
@@ -108,6 +110,8 @@ private:
     std::vector<OutputChange> changes_;
     void set_pending(const std::vector<std::uint8_t>& batch, const std::vector<std::uint8_t>& tail);
     PacedUnits pending_; ///< whole units (review B1)
+    long long waiting_since_ = 0;
+    std::uint16_t apply_seq_ = 0; ///< the last ReloadApply's seq (its Rejected record names it)
     std::size_t allowance_ = 0;
     Outcome outcome_;
     std::vector<std::string> notes_;

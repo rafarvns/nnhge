@@ -312,6 +312,41 @@ NNH_TEST(script_reload_input_sent_during_a_large_batch_keeps_the_stream_aligned)
     swaps.restore_all();
 }
 
+NNH_TEST(script_reload_a_swap_while_the_last_batch_is_unanswered_fails) {
+    Game g("busy");
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    write(g.script + "/fixtures/other.txt", "other bytes");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt unheld\n"
+                           "swap-asset assets/a.txt fixtures/other.txt unheld\nend\n");
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    CHECK(r.finished() && r.verdict() == Verdict::Fail);
+    const std::vector<wire::Message> sent = messages_in(controller.take_bytes());
+    CHECK(!sent.empty() && sent.front().type == wire::MessageType::ReloadBegin &&
+          wire::reload_batch(sent.front()) == 1); // the first batch, not overwritten
+    bool said = false;
+    for (const std::string& n : r.take_notes()) said = said || n.find("t.nnhs:2: the last reload isn't answered") != std::string::npos;
+    CHECK(said);
+    swaps.restore_all();
+}
+
+NNH_TEST(reload_controller_run_cycle_while_busy_sends_nothing_new) {
+    Game g("busy2");
+    ReloadController controller(g.setup());
+    controller.start();
+    write(g.game + "/assets/a.txt", "changed once");
+    CHECK(controller.run_cycle(0));
+    write(g.game + "/assets/a.txt", "changed twice");
+    CHECK(!controller.run_cycle(0)); // still Sending: refused
+    const std::vector<wire::Message> sent = messages_in(controller.take_bytes());
+    CHECK(sent.size() >= 2 && sent.front().type == wire::MessageType::ReloadBegin && wire::reload_batch(sent.front()) == 1);
+}
+
 NNH_TEST(script_reload_an_unheld_swap_is_waited_for_within_n) {
     Game g("unheld");
     ReloadController controller(g.setup());

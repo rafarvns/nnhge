@@ -327,6 +327,34 @@ NNH_TEST(reload_controller_a_refusal_mid_send_keeps_the_resume) {
     CHECK(!c.sending());
 }
 
+NNH_TEST(reload_controller_a_rejected_batch_message_ends_the_cycle) {
+    Fake f = make("rejected");
+    ReloadController c(setup(f));
+    c.start();
+    CHECK(c.run_cycle(0));
+    c.take_bytes();
+    Record r;
+    r.type = wire::RecordType::Rejected;
+    r.reason = wire::Reject::Range;
+    r.seq = 0; // a transfer message
+    c.on_record(r);
+    CHECK(c.state() == ReloadController::State::Idle && c.outcome().done && !c.outcome().applied);
+    CHECK(c.enabled());
+}
+
+NNH_TEST(reload_controller_no_answer_times_out) {
+    Fake f = make("timeout");
+    ReloadController c(setup(f));
+    c.start();
+    CHECK(c.run_cycle(0));
+    c.take_bytes();
+    CHECK(c.state() == ReloadController::State::Waiting);
+    f.now += kAnswerTimeoutMs + 1;
+    c.poll();
+    CHECK(c.state() == ReloadController::State::Idle && c.outcome().done);
+    CHECK(has(c.take_notes(), "no answer from the game"));
+}
+
 NNH_TEST(reload_controller_typed_reload_of_one_path) {
     Fake f = make("typed");
     f.next_out_text = "v1"; // the build changes nothing

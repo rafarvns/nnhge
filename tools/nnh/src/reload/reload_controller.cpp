@@ -58,8 +58,13 @@ void ReloadController::start() {
 }
 
 void ReloadController::poll() {
-    if (!enabled_ || state_ != State::Idle) return;
     const long long now = setup_.now_ms();
+    if (state_ == State::Waiting && now - waiting_since_ > kAnswerTimeoutMs) {
+        note("reload " + std::to_string(batch_) + ": no answer from the game: given up");
+        outcome_.why = "no answer from the game";
+        finish_cycle();
+    }
+    if (!enabled_ || state_ != State::Idle) return;
     if (requested_) {
         requested_ = false;
         saved_at_ = now;
@@ -87,6 +92,10 @@ bool ReloadController::inside_assets(const std::string& game_path) const {
 
 bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail,
                                  const std::string& script_source) {
+    if (state_ != State::Idle) { // a batch is still being sent or answered: never overwrite it (review S1)
+        note("reload: the last batch isn't answered yet: this change waits for the next cycle");
+        return false;
+    }
     outcome_ = Outcome{};
     const bool inside = script_source.empty() || inside_assets(script_source);
     const std::string outside_source = inside ? std::string() : setup_.game_dir + "/" + script_source;
@@ -146,7 +155,8 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
         return false;
     }
     std::vector<std::uint8_t> batch = e.bytes;
-    const std::vector<std::uint8_t> apply = encode_apply(batch_, e.files, apply_frame, seq_++);
+    apply_seq_ = seq_++;
+    const std::vector<std::uint8_t> apply = encode_apply(batch_, e.files, apply_frame, apply_seq_);
     batch.insert(batch.end(), apply.begin(), apply.end());
     set_pending(batch, tail);
     for (const OutputChange& c : changes_) outcome_.paths.push_back(c.path);
@@ -168,7 +178,10 @@ void ReloadController::set_pending(const std::vector<std::uint8_t>& batch, const
 std::vector<std::uint8_t> ReloadController::take_bytes() {
     if (pending_.empty()) return {};
     std::vector<std::uint8_t> out = pending_.take(allowance_);
-    if (pending_.empty() && state_ == State::Sending) state_ = State::Waiting;
+    if (pending_.empty() && state_ == State::Sending) {
+        state_ = State::Waiting;
+        waiting_since_ = setup_.now_ms();
+    }
     return out;
 }
 
@@ -184,11 +197,17 @@ void ReloadController::on_record(const remote::Record& r) {
         if (!pending_.empty()) allowance_ += kAllowancePerTick;
         return;
     case wire::RecordType::Rejected:
-        if (state_ != State::Idle && r.reason == wire::Reject::Type) {
+        if (state_ == State::Idle) return;
+        if (r.reason == wire::Reject::Type) {
             enabled_ = false;
             pending_.drop_batch(); // a script's Resume still goes out
             note("the game has no hot reload (built before spec 031): watching off");
             outcome_.why = "the game has no hot reload";
+            finish_cycle();
+        } else if (r.seq == 0 || r.seq == apply_seq_) { // a transfer message (seq 0) or the Apply: the batch is lost
+            pending_.drop_batch();
+            outcome_.why = "the game rejected a message of the batch (reason " + std::to_string(static_cast<int>(r.reason)) + ")";
+            note("reload " + std::to_string(batch_) + " refused: " + outcome_.why);
             finish_cycle();
         }
         return;

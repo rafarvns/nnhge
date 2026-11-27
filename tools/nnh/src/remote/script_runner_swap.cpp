@@ -42,6 +42,11 @@ void ScriptRunner::start_reload_step(const Step& step, std::uint32_t frame) {
         finish(Verdict::Error, step.line, "hot reload isn't available: a Release build, or a game built before spec 031");
         return;
     }
+    if (reload_->state() != reload::ReloadController::State::Idle) { // review S1
+        finish(Verdict::Fail, step.line,
+               "the last reload isn't answered yet (put `expect-reload ... within N` after an unheld swap)");
+        return;
+    }
     const std::string error = step.command == Command::SwapAsset
                                   ? swaps_->swap(step.text, fixture_path(script_dir_, step.value))
                                   : swaps_->restore(step.text);

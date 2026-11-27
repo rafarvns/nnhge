@@ -968,31 +968,58 @@ bss 110 456.
   `nnh_conformance_pc`: a received file opened with `reload_stream_open` stays readable while the atomic save renames a
   new file over it and while it is removed; a missing file fails with a null stream).
 
+### Stage 8 results and stage-end guards (third session)
+
+- Guards after stage 7: `nnh_tests` reload/mesh/self-check filters green; ctest pc-debug **377/377** (with
+  `reload_check_script_pc` and `reload_errors_script_pc`), pc-release **337/337**; 0 warnings on pc-debug, pc-release,
+  3ds-release and 3ds-dev (one `-Wmissing-field-initializers` in `test_reload_controller.cpp`, seen only by pc-release,
+  fixed); 3ds-release `hello.3dsx` SHA-256 `8c687f3dec3df9fa…` and `hello.elf` after `strip --strip-debug`
+  `5cd5d9505dd67b73…` (T0.1's method: `--strip-debug`), identical to T0.1; pc-release `hello.exe` 134 880 / 22 052 /
+  212 400, identical. `docs_tool check`: 0 broken links.
+- T8.2: `check_release_strings.sh` passes on the 3ds-release `reload`, `sprites`, `data` and `hello` `.3dsx` (the `.elf`
+  files keep symbol names such as `dev_pause`, as before this spec: the check is for the `.3dsx`); `nm -C` of the
+  pc-release `reload.exe` has no reload symbol. The Release example logs nothing (logging is compiled out), so its start
+  sum isn't observable there.
+- T8.3 (partial): 3ds-dev `hello` links none of the reload core (`nm`: no `apply_batch`, no `ReloadReceiver`), 3ds-dev
+  `reload` links it; **3ds-dev `hello` text 229 416 B** (227 088 at T0.1: +2 328 B, R23), unchanged since stage 5 — for
+  the maintainer to confirm (a game that only reads plain files doesn't reload). Sizes: 3ds-dev `reload.elf` text 445 792,
+  3ds-release 385 684. The texture-only probe is not built.
+- T8.4 (partial): every example's `--pc` script ran in the full ctest. Edit `examples/reload/reload_scene.cpp` → pc-debug
+  2.41–2.56 s, 3ds-release `.3dsx` 5.64–5.73 s; the same edit of `examples/hierarchy/showcase_scene.cpp` took 2.55 s on
+  the same machine state, so the example costs what the others cost; both are over CLAUDE.md's 2 s / 5 s budgets in this
+  run (`compare.sh` against T0.1 not run: no reference tree, the disk is tight).
+- Asset build latency (coordinator's point): 0.88 s build, 1.03 s save → frame for a data asset (R22); in the example's
+  script 1.0–1.3 s builds and 1.07–1.38 s save → frame per swap (a held swap includes the pause round trip). Under 1 s
+  for the build alone but not save → frame: what is left is CMake's glob re-check (0.28 s, it runs because
+  `nnh_add_game` globs the assets folder) and Ninja's start-up; removing the glob check needs the asset list written by
+  `nnh` instead of globbed (a CMake change, not cheap): left for the lead.
+
 ### Not done (open, for the lead or a next session)
 
-- Stage 0: T0.1's per-object disassembly, edit-one-`.cpp` timings and header measurements; T0.2 (the edit loop's pieces,
-  the MSYS start-up, the dry-run cases, Windows file sharing); T0.3 (goldens and reference screenshots).
-- Stage 1: T1.6's 60 s libFuzzer run (needs clang; T9.1 on the VM).
-- Stage 2: T2.2's conformance test of the PC platform's shared open; T2.8's guard bytes around the buffers (the random
-  run has 10 000 batches; ASan on the VM checks the bounds).
+- Stage 0: T0.1's per-object disassembly, edit-one-`.cpp` timings and header measurements against `cf15822`; T0.2's
+  MSYS start-up and Windows file-sharing cases; T0.3's goldens and reference screenshots (no reference tree was kept:
+  the disk is tight; the hello checks and the full ctest stand in for them).
+- Stage 1: T1.6's 60 s libFuzzer run (clang; the lead on VM 120).
+- Stage 2: T2.8's guard bytes around the buffers (ASan on the VM checks the bounds).
 - Stage 3: T3.4's loopback stress test (a game logging heavily during a 4 MB transfer).
 - Stage 4: T4.1's tests of tileset and mesh textures following and of a Linear-memory refusal with its bytes; T4.2's
   tests of the pseudo-language and of a font rebaked in the same batch.
-- Stage 5: **T5.1 sprite libraries** (identity/current blocks, the animator rebind: the largest piece left), **T5.3
-  music**; T5.2's test of a refusal without memory; T5.4's tests of a full texture table and of fallbacks.
+- Stage 5: **T5.1 sprite libraries** (identity/current blocks, the animator rebind), **T5.3 music**; T5.2's no-memory
+  refusal test; T5.4's full-texture-table and fallback tests.
 - Stage 6: **T6.2 FR-23** (live values); T6.1's tests of more submeshes/textures and of draws recorded after the swap.
-- Stage 7: `examples/reload` (assets, fixtures, scenes, self-check, screenshots, bench, scripts), the ARM pre-check;
-  `examples/sprites/tests/reload.nnhs`.
-- Stage 8: mutation testing, release-string hygiene (`scripts/check_release_strings.sh` gains the reload texts), opt-in
-  probes, build times.
+- Stage 7: the example's sprite library, music and font assets (with their kinds), `RELOAD_SHOT`, the `tight` scene,
+  `timing.nnhs`, `reload_open_file_pc`; the two findings above (the dry run missing a schema change; the notice naming
+  `assets` in scripts).
+- Stage 8: T8.3's texture-only probe; T8.4's `compare.sh` against T0.1.
 - Stage 9 (the lead, VM 120) and stage 10 (the console): see below.
-- Stage 11: the remaining docs (the kinds' pages, the guide "editing assets while the game runs", the console-testing
-  guide, `devkitpro-3ds.md`, `REFERENCES.md`, ROADMAP).
+- Stage 11: the kinds' API pages still to touch for this run's changes (`animation.md`, `live.md` wait for their kinds);
+  final statuses once stages 5–6 and the console run are done.
 
 ## Stage 10: console run (prepared)
 
-Stage 7's `examples/reload` isn't built yet, so T10.2's runs 1–3 aren't possible. What can run on the Old 3DS now (build
-first: `scripts/dkp.sh cmake --build --preset 3ds-dev --target data_3dsx sprites_3dsx`, 0 warnings expected):
+What can run on the Old 3DS now (build first: `scripts/dkp.sh cmake --build --preset 3ds-dev --target data_3dsx
+sprites_3dsx reload_3dsx`, 0 warnings expected). D and E use `examples/reload` (T10.2's runs 1–2 without the sprite
+library, music and font kinds):
 
 A. `build/pc-debug/tools/nnh/nnh run data --script examples/data/tests/reload.nnhs` (Homebrew Launcher, **Y**) → expected
    lines: `nnh: reload 1: 1 files, 0.1 KB (build …)`, the game's `I assets reloaded 1 (frame 31): enemies/goblin`,
@@ -1002,6 +1029,15 @@ A. `build/pc-debug/tools/nnh/nnh run data --script examples/data/tests/reload.nn
 B. `build/pc-debug/tools/nnh/nnh run sprites --script examples/sprites/tests/reload.nnhs` → `expect-reload applied at
    frame 31`, `PASS`; compare `build/logs/sprites-<date>-<time>/frame-000033-after-top.png` with the `--pc` one (the hero
    drawn from the tile atlas).
+D. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/check.nnhs` → the same sums as the PC:
+   `reload: sum 2B7C6114 after 0`, then `1E0979A5`, `B431FED6`, `2C7F4726`, `9EBF4F3F`, `454252F5`, `5FA80812`,
+   `1C2468A3`, `70C46B1C` after 1–8, `nnh: PASS (45 lines, …)`, `nnh: put back 4 swapped assets`; compare the
+   screenshots `hero_big`, `room_moved`, `strings`, `gem` in `build/logs/reload-<date>-<time>/` with the `--pc` ones.
+   Note each `applied at frame …, X s after the save` (AC-8). Risk: the start line is logged at frame 60; if the console
+   attaches later than that the first `expect` fails (then raise R30's frame).
+E. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/errors.nnhs` → `line 7: expect-reload refused`
+   (the broken map), `line 11: expect-reload applied`, `reload 2 refused by the game: enemies/bat.enemy: made for another
+   struct: rebuild and restart`, `PASS (17 lines, …)`.
 C. The interactive yes/no loop below (about 2 minutes; the lead edits a file on the PC):
 
 1. PC: `scripts/dkp.sh cmake --build --preset 3ds-dev --target sprites_3dsx`. Console: Homebrew Launcher, press **Y**.

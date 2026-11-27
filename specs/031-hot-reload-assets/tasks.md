@@ -1,6 +1,6 @@
 # Tasks 031: Hot reload of assets
 
-Status: approved 2026-11-26 (with plan.md); in progress (stages 1–3 done; stages 4–5 partly; see plan "Not done")
+Status: approved 2026-11-26 (with plan.md); in progress (stages 1–4 and 7 mostly done; 5–6 partly (no sprite libraries, music, FR-23); 8 partly; see plan "Not done")
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -257,7 +257,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 - [x] **T8.1** Mutation pass as in plans 019–030: plan.md's planned hand mutants (`build/ref-031/mutants.py`, one at a time
   with the module filters) and Release-path mutants in pc-release; survivors become tests or are argued equivalent.
   Files: plan.md ("Mutation testing"). Covers VI.
-- [ ] **T8.2** [P] Release hygiene: `scripts/check_release_strings.sh` gains the reload texts (`assets reloaded`,
+- [x] **T8.2** [P] Release hygiene: `scripts/check_release_strings.sh` gains the reload texts (`assets reloaded`,
   `reload refused`, `was removed`, `rebuild and restart`, `.nnh_reload`, the rebind warnings) and the example's names;
   run on the 3ds-release and pc-release `reload` and `sprites`; `nm` shows no `reload` symbol; the Release example prints
   its start sum. Covers FR-19, AC-7.

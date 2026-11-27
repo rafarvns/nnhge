@@ -11,8 +11,10 @@
 #   FUZZ="tests/fuzz_remote tools/assetc/fuzz_assetc_ttf" scripts/vm_check.sh fast   # fuzz targets, relative to build/asan
 #   CLEAN=1 scripts/vm_check.sh final     wipe the VM's tree and build folders first
 #
-# The tree is sent with each file's own modification time, so Ninja and ccache rebuild only what changed; files
-# deleted locally are deleted on the VM too (build/ is never touched by the sync).
+# The tree is sent with each file's own modification time, so Ninja and ccache rebuild only what changed; a file
+# whose content changed since the last sync is touched on the VM, so an object built there after the file's local
+# edit (a build that ran while the edit was being made) is still rebuilt. Files deleted locally are deleted on the
+# VM too (build/ is never touched by the sync).
 set -eu
 mode="${1:-fast}"
 host=nnhge-build
@@ -22,7 +24,10 @@ sync_tree() {
     if [ "${CLEAN:-0}" = 1 ]; then ssh "$host" 'rm -rf ~/wt/nnhge'; fi
     git ls-files -co --exclude-standard > .vm_files
     tr '\n' '\0' < .vm_files | tar --null -T - -cf - .vm_files | ssh "$host" '
-        set -e; mkdir -p ~/wt/nnhge; cd ~/wt/nnhge; tar -xf -
+        set -e; mkdir -p ~/wt/nnhge; cd ~/wt/nnhge
+        find . -path ./build -prune -o -type f -print0 | xargs -0 -r md5sum > /tmp/vm_sums 2>/dev/null || true
+        tar -xf -
+        md5sum --quiet -c /tmp/vm_sums 2>/dev/null | sed -n "s/: FAILED\$//p" | while IFS= read -r f; do touch -- "$f"; done
         find . -path ./build -prune -o -type f -print | sed "s|^\./||" | grep -v "^\.vm_files$" | sort > /tmp/vm_have
         sort .vm_files > /tmp/vm_want
         comm -23 /tmp/vm_have /tmp/vm_want | while IFS= read -r f; do rm -f -- "$f"; done'

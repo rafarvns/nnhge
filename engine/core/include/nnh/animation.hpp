@@ -331,6 +331,7 @@ private:
     std::uint8_t flags_ = 0;
     std::uint8_t changes_ = 0;    ///< counts commands that change the clip (re-entrancy)
     std::uint8_t queue_[kSpriteMaxQueue] = {};
+    std::uint16_t reload_epoch_ = 0; ///< Debug/Development: the library's hot reload epoch it is bound to (spec 031)
     SpriteCallback callback_{};
 };
 

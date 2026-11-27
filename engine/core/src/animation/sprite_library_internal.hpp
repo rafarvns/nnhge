@@ -55,7 +55,7 @@ struct SpriteReloadEntry {
     SpriteBlock* previous = nullptr;
     std::uint32_t hash = 0;     ///< reload::path_hash of the asset path
     std::uint16_t serial = 0;   ///< the library's lifetime serial
-    std::uint8_t epoch = 0;     ///< reloads applied (animators keep its 2 low bits: a reused address is told apart)
+    std::uint16_t epoch = 0;    ///< reloads applied (animators keep it: a reused address is told apart)
     std::uint16_t extras[6] = {}; ///< LoadSpriteLibraryOptions, for the reloaded blocks
     char name[32] = {};         ///< the load path, for warnings
 };

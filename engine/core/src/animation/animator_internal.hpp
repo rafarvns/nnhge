@@ -17,7 +17,6 @@ inline constexpr std::uint8_t kAnimEntryPending = 4; ///< the current frame was 
 inline constexpr std::uint8_t kAnimStatePending = 8; ///< ... and by a state change (StateChanged first)
 inline constexpr std::uint8_t kAnimFlipX = 16;
 inline constexpr std::uint8_t kAnimFlipY = 32;
-inline constexpr int kAnimEpochShift = 6; ///< bits 6-7: the library's reload epoch the animator is bound to (spec 031)
 inline constexpr std::uint16_t kNoClip = 0xFFFF;
 
 /// Silent steps (after the crossing bound) one update may take before it drops the rest of its time.

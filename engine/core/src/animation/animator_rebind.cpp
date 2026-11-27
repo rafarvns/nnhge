@@ -51,15 +51,18 @@ void clamp_into(const SpriteView& n, std::uint16_t clip, std::uint16_t& step, st
 void Access::rebind_if_reloaded(SpriteAnimator& a) {
     SpriteReloadEntry* e = sprite_reload_entry_of_serial(a.serial_);
     if (e == nullptr) return;
-    const int epoch = (a.flags_ >> kAnimEpochShift) & 3;
-    if (e->current == a.block_ && epoch == (e->epoch & 3)) return;
+    const bool bound = e->current == a.block_ && a.reload_epoch_ == e->epoch;
+    // Bound to the current block: nothing to do, unless its clip is outside the block (never expected; review S4: the
+    // animator must not read past the clips whatever happened).
+    if (bound && (a.clip_ == kNoClip || a.clip_ < SpriteView{e->current}.count(kClips))) return;
     // Never dereference anything but the identity block or the previous one bound in the previous epoch (a freed
-    // block's address may come back as a later block: the epoch tells them apart).
-    const bool readable = a.block_ == e->identity || (a.block_ == e->previous && epoch == ((e->epoch - 1) & 3));
+    // block's address may come back as a later block: the full 16-bit epoch tells them apart).
+    const bool readable = !bound && (a.block_ == e->identity ||
+                                     (a.block_ == e->previous && a.reload_epoch_ == static_cast<std::uint16_t>(e->epoch - 1)));
     const SpriteView o{readable ? const_cast<SpriteBlock*>(a.block_) : nullptr};
     const SpriteView n{e->current};
     a.block_ = e->current;
-    a.flags_ = static_cast<std::uint8_t>((a.flags_ & ((1 << kAnimEpochShift) - 1)) | ((e->epoch & 3) << kAnimEpochShift));
+    a.reload_epoch_ = e->epoch;
     if (a.state_ != kNoState) {
         if (o.block != nullptr && same_machine(o, n)) {
             // the states' clips are the same records: the playing clip is remapped by name below

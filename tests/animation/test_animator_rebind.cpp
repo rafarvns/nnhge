@@ -82,6 +82,28 @@ NNH_TEST(animator_rebind_a_changed_state_machine_restarts_at_state_0) {
     nnh::shutdown();
 }
 
+NNH_TEST(animator_rebind_survives_address_reuse_over_many_reloads) {
+    RELOAD_DEV_ONLY();
+    srt::start(srt::version1());
+    {
+        nnh::SpriteLibrary lib = std::move(nnh::load_sprite_library("art/hero").value());
+        const srt::File v2 = srt::version2(), small = srt::without_walk();
+        srt::reload(v2, 1);
+        nnh::SpriteAnimator a{lib};
+        a.play("walk"); // clip 2 of v2
+        CHECK(a.clip().value == 2);
+        // 13 more reloads the animator doesn't see: same-size blocks come and go, addresses come back (review S4).
+        for (std::uint16_t id = 2; id <= 14; ++id) srt::reload(id % 2 == 0 ? small : v2, id);
+        CHECK(nnh::assets::reload_count() == 14);
+        // The last one is v2 (3 clips): whatever the address, the animator is in a valid clip of the current block.
+        CHECK(a.clip().value < lib.clip_count());
+        CHECK(a.clip_name()[0] != '\0');
+        srt::reload(small, 15); // 1 clip now
+        CHECK(a.clip().value == 0 && std::strcmp(a.clip_name(), "idle") == 0);
+    }
+    nnh::shutdown();
+}
+
 NNH_TEST(animator_rebind_after_two_reloads_never_reads_the_freed_block) {
     RELOAD_DEV_ONLY();
     srt::start(srt::version1());

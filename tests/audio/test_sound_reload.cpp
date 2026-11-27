@@ -77,3 +77,21 @@ NNH_TEST(sound_reload_a_broken_file_keeps_the_old_sound) {
     }
     nnh::shutdown();
 }
+
+NNH_TEST(sound_reload_without_linear_memory_refuses_and_keeps_the_old_sound) {
+    RELOAD_DEV_ONLY();
+    char index[64];
+    start_sounds(index, sizeof index);
+    {
+        nnh::Sound blip = std::move(nnh::load_sound("sfx/blip").value());
+        nnh::platform_fake::set_sample_create_fails(true); // no linear memory for the new samples
+        const Put batch[] = {Put{"sfx/blip.wav", g_long, g_long_size}};
+        reload_test::send_batch(1, batch, 1);
+        for (int i = 0; i < 5 && reload_test::records().refused == 0; ++i) CHECK(nnh::frame());
+        CHECK(nnh::assets::reload_count() == 0);
+        CHECK(reload_test::records().refused == 1);
+        CHECK(reload_test::records().last_refused.stage == nnh::detail::remote::ReloadStage::Memory);
+        CHECK(blip.duration() == 1.0f);
+    }
+    nnh::shutdown();
+}

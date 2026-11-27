@@ -145,6 +145,8 @@ void replace_asset(const char* path, const void* data, std::size_t size);
 
 /// When false, audio_init() fails like a system without audio output (default true).
 void set_audio_available(bool available);
+/// When true, sample_create() fails (out of linear memory; reset() clears it).
+void set_sample_create_fails(bool fails);
 
 /// A non-looping voice reached its end: voice_playing() returns false from now on.
 void finish_voice(int voice);

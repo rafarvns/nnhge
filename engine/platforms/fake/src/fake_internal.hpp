@@ -38,6 +38,7 @@ struct Controls {
     FakeAsset assets[kMaxFakeAssets];
     int asset_count = 0;
     bool audio_unavailable = false;
+    bool sample_create_fails = false; ///< set_sample_create_fails (spec 031: a reload without linear memory)
 };
 
 State& mutable_state();

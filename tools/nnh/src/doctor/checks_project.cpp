@@ -72,13 +72,16 @@ DoctorCheck presets_check(const Probes& p, const DoctorContext& c) {
 
 DoctorCheck engine_dir_check(const Probes& p, const DoctorContext& c) {
     const std::string dir = p.env("NNHGE_ENGINE_DIR");
-    if (dir.empty()) return ok("NNHGE_ENGINE_DIR", "not set (the project's pinned engine)");
+    if (dir.empty()) {
+        return ok("NNHGE_ENGINE_DIR", c.game_project ? "not set (the project's pinned engine)" : "not set");
+    }
     const std::string version =
         p.is_file(dir + "/cmake/nnh_game.cmake")
             ? engine_version_from_cmakelists(p.read_file(dir + "/CMakeLists.txt", 64u * 1024u))
             : "";
     if (version.empty()) {
-        return {CheckState::Fail, "NNHGE_ENGINE_DIR", dir + ": not an NNHGE engine folder",
+        return {CheckState::Fail, "NNHGE_ENGINE_DIR",
+                dir + ": not an NNHGE engine folder" + drive_form_hint(dir, c.host),
                 fix_for(Problem::EngineDirNotEngine, c.host)};
     }
     const std::string found = dir + " (NNHGE " + version + ")";

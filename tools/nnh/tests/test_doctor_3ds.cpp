@@ -129,3 +129,27 @@ NNH_TEST(optional_tools_never_fail) {
     CHECK(check(ok, "Optional", "git").state == CheckState::Ok);
     CHECK(doctor_exit_code(ok, false) == 0);
 }
+
+NNH_TEST(the_msys2_folder_is_normalised_and_a_space_gets_the_docs_link) { // review 033
+    FakeMachine m = windows_machine();
+    m.env["DEVKITPRO_MSYS2"] = "C:\\devkitPro\\msys2\\";
+    DoctorCheck s = check(tds(m, Host::Windows), "3DS", "devkitPro shell");
+    CHECK(s.state == CheckState::Ok && s.found == "C:/devkitPro/msys2 (cmake 4.0.2, ninja 1.13.2)");
+    m.files.erase("C:/devkitPro/libctru/lib/libctru.a");
+    CHECK(check(tds(m, Host::Windows), "3DS", "libctru").fix ==
+          "C:/devkitPro/msys2/usr/bin/bash.exe -lc \"pacman -S --needed 3ds-dev\"");
+    m.env["DEVKITPRO_MSYS2"] = "D:/my tools/msys2";
+    m.files.insert("D:/my tools/msys2/usr/bin/bash.exe");
+    m.outputs["D:/my tools/msys2/usr/bin/bash.exe -lc " + std::string(kDevkitProShellProbe)] =
+        RunResult{true, 0, false, "nnh-cmake=/usr/bin/cmake\nnnh-ninja=\ncmake version 4.0.2\nnnh-ninja-version=\n"};
+    s = check(tds(m, Host::Windows), "3DS", "devkitPro shell");
+    CHECK(s.state == CheckState::Fail && s.fix == "https://devkitpro.org/wiki/devkitPro_pacman"); // no quoted program
+    CHECK(check(tds(m, Host::Windows), "3DS", "libctru").fix == "https://devkitpro.org/wiki/devkitPro_pacman");
+}
+
+NNH_TEST(an_msys_form_path_outside_msys_gets_the_drive_form_hint) {
+    FakeMachine m = windows_machine();
+    m.env["DEVKITPRO"] = "/d/devkitPro";
+    const DoctorCheck d = check(tds(m, Host::Windows), "3DS", "devkitPro");
+    CHECK(d.state == CheckState::Fail && has(d.found, "write it in drive form: D:/devkitPro"));
+}

@@ -137,3 +137,13 @@ NNH_TEST(the_cache_reader_finds_the_engine_version) {
     CHECK(project_pin_url("FetchContent_Declare(nnhge URL https://x)\n")
               .empty()); // only nnh new's form is read
 }
+
+NNH_TEST(the_engine_variable_in_msys_form_and_in_the_repository) { // review 033
+    FakeMachine m = project_machine();
+    m.env["NNHGE_ENGINE_DIR"] = "/e/src/nnhge";
+    const DoctorCheck v = check(project(m), "This project", "NNHGE_ENGINE_DIR");
+    CHECK(v.state == CheckState::Fail && has(v.found, "write it in drive form: E:/src/nnhge"));
+    m.env.erase("NNHGE_ENGINE_DIR");
+    m.file_text["E:/games/demo/CMakeLists.txt"] = "project(nnhge VERSION 0.1.0 LANGUAGES C CXX)\n";
+    CHECK(check(project(m, false), "This project", "NNHGE_ENGINE_DIR").found == "not set");
+}

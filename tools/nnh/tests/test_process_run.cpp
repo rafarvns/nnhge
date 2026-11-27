@@ -69,3 +69,14 @@ NNH_TEST(the_real_probes_find_and_run_cmake) { // the one real-machine case of n
     CHECK(p.free_bytes(NNH_TOOL_TEST_TMP) > 0 && !p.os_name().empty());
     CHECK(!p.list_dir(NNH_TOOL_SOURCE_DIR).empty() && p.env("NNH_DOCTOR_SURELY_UNSET_9F").empty());
 }
+
+NNH_TEST(a_program_that_never_stops_writing_is_still_killed_at_its_limit) { // review 033
+    const std::string script = std::string(NNH_TOOL_TEST_TMP) + "/process_run_endless.cmake";
+    // A 64 KiB line written over and over: the pipe hardly runs dry, so only the deadline can end the read loop.
+    std::ofstream(script) << "string(REPEAT x 65536 line)\nwhile(TRUE)\n  message(\"${line}\")\nendwhile()\n";
+    const auto start = std::chrono::steady_clock::now();
+    const RunResult r = run_program(NNH_TOOL_TEST_CMAKE, {"-P", script}, 300, 1000);
+    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+    CHECK(r.started && r.timed_out && r.output.size() == 1000);
+    CHECK(ms.count() < 5000);
+}

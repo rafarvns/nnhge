@@ -31,13 +31,14 @@ std::string marked(const std::string& text, const std::string& marker) {
 
 std::string msys2_dir(const Probes& p, const std::string& devkitpro) {
     const std::string env = p.env("DEVKITPRO_MSYS2");
-    return env.empty() ? devkitpro + "/msys2" : env;
+    return env.empty() ? devkitpro + "/msys2" : clean_folder(env);
 }
 
 DoctorCheck shell_check(const Probes& p, Host host, const std::string& msys2) {
     const std::string bash = msys2 + "/usr/bin/bash.exe";
     if (!p.is_file(bash))
-        return fail("devkitPro shell", "no " + bash, fix_for(Problem::InstallDevkitPro, host));
+        return fail("devkitPro shell", "no " + bash + drive_form_hint(msys2, host),
+                    fix_for(Problem::InstallDevkitPro, host));
     const RunResult r = p.run(bash, {"-lc", kDevkitProShellProbe});
     const std::string fix = fix_for(Problem::DevkitProShellTools, host, msys2);
     if (!r.started || r.timed_out) return fail("devkitPro shell", bash + " did not answer in 10 s", fix);
@@ -82,11 +83,7 @@ std::string devkitpro_dir(const Probes& p, const DoctorContext& c, bool& from_en
     if (c.host == Host::Windows && (dir.empty() || dir == "/opt/devkitpro" || dir == "/opt/devkitpro/"))
         return "C:/devkitPro";
     if (dir.empty()) return "/opt/devkitpro";
-    while (dir.size() > 1 && (dir.back() == '/' || dir.back() == '\\'))
-        dir.pop_back();
-    for (char& ch : dir)
-        ch = ch == '\\' ? '/' : ch;
-    return dir;
+    return clean_folder(dir);
 }
 
 void check_3ds(const Probes& p, const DoctorContext& c, DoctorReport& r) {
@@ -97,7 +94,8 @@ void check_3ds(const Probes& p, const DoctorContext& c, DoctorReport& r) {
     if (!p.is_file(dkp + "/cmake/3DS.cmake")) {
         g.checks.push_back(fail("devkitPro",
                                 (from_env ? "DEVKITPRO=" + p.env("DEVKITPRO") + ": " : std::string()) +
-                                    "no " + dkp + "/cmake/3DS.cmake (devkitPro's 3DS toolchain)",
+                                    "no " + dkp + "/cmake/3DS.cmake (devkitPro's 3DS toolchain)" +
+                                    drive_form_hint(dkp, c.host),
                                 fix_for(Problem::InstallDevkitPro, c.host)));
         if (windows) g.checks.push_back(host_cxx_check(p, c.host));
         r.groups.push_back(g);

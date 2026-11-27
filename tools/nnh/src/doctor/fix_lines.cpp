@@ -28,6 +28,8 @@ constexpr const char* kSdlLinux = "https://wiki.libsdl.org/SDL3/README-linux";
 
 /// devkitPro's pacman: through its MSYS2 bash on Windows (`msys2` = its folder), dkp-pacman elsewhere.
 std::string pacman(Host host, const std::string& msys2, const char* packages) {
+    // A program path with a space would need quoting that PowerShell, cmd and Git Bash read differently: the page.
+    if (host == Host::Windows && msys2.find(' ') != std::string::npos) return kDevkitProPacman;
     if (host == Host::Windows) return msys2 + "/usr/bin/bash.exe -lc \"pacman -S --needed " + packages + "\"";
     return std::string("sudo dkp-pacman -S --needed ") + packages;
 }

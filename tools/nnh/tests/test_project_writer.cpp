@@ -174,3 +174,33 @@ NNH_TEST(a_non_ascii_parent_folder_works) {
     CHECK(r.ok);
     CHECK(read(u8(base) / "demo" / "src" / "main.cpp") == "int main() {}\n");
 }
+
+NNH_TEST(a_real_write_failure_after_the_open_leaves_no_file) { // review 033: the partial file is removed too
+    const std::string base = fresh("partial");
+    CHECK(!create_file_exclusive(base + "/a.txt", "hello world", 3)); // the write fails after 3 bytes
+    CHECK(!fs::exists(fs::path(base) / "a.txt"));
+    CHECK(create_file_exclusive(base + "/b.txt", "hello", static_cast<std::size_t>(-1)));
+    CHECK(read(fs::path(base) / "b.txt") == "hello");
+}
+
+NNH_TEST(a_write_failing_mid_file_leaves_nothing_behind) {
+    const std::string base = fresh("partial_project");
+    NewFs f = system_new_fs();
+    auto calls = std::make_shared<int>(0);
+    f.create_file = [calls](const std::string& p, const std::string& b) {
+        return create_file_exclusive(p, b, (*calls)++ == 2 ? 2 : static_cast<std::size_t>(-1)); // the 3rd file
+    };
+    const WriteResult r = write_project(base + "/demo", project(), f);
+    CHECK(!r.ok && has(r.error, "src/scenes/play_scene.cpp"));
+    CHECK(!fs::exists(fs::path(base) / "demo"));
+}
+
+NNH_TEST(what_the_rollback_cannot_remove_is_named) {
+    const std::string base = fresh("stuck");
+    NewFs f = failing_fs(3); // the 4th file fails
+    f.remove_file = [](const std::string& p) { return p.find("main.cpp") == std::string::npos && system_new_fs().remove_file(p); };
+    const WriteResult r = write_project(base + "/demo", project(), f);
+    CHECK(!r.ok && has(r.error, "could not remove") && has(r.error, "demo/src/main.cpp"));
+    CHECK(has(r.error, "demo/src")); // its folder couldn't go either
+    CHECK(!has(r.error, "everything nnh new created was removed"));
+}

@@ -40,6 +40,11 @@ std::string host_compiler_path(const Probes& p, const DoctorContext& c);
 /// The devkitPro folder: DEVKITPRO (on Windows "/opt/devkitpro" is the MSYS2 mount of C:/devkitPro), else the
 /// system's default (C:/devkitPro, /opt/devkitpro). `from_env` says whether DEVKITPRO named it.
 std::string devkitpro_dir(const Probes& p, const DoctorContext& c, bool& from_env);
+/// A folder as written in the environment: '\' -> '/', no trailing '/'.
+std::string clean_folder(std::string path);
+/// On Windows, for a value in MSYS form ("/d/x") read outside an MSYS shell: "; write it in drive form: D:/x"
+/// (else "").
+std::string drive_form_hint(const std::string& value, Host host);
 /// The SDL3 version and package URLs the engine pins (cmake/nnh_sdl3_pin.cmake; a test checks they are
 /// equal).
 extern const char* const kSdl3Version;

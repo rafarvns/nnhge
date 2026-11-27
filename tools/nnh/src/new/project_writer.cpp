@@ -9,14 +9,15 @@ namespace {
 struct Created {
     std::vector<std::pair<std::string, bool>> items; ///< path, is a folder
 
-    void undo(const NewFs& fs) {
+    /// Removes everything, newest first. @return what could not be removed, ", "-separated ("" = all gone).
+    std::string undo(const NewFs& fs) {
+        std::string stuck;
         for (auto it = items.rbegin(); it != items.rend(); ++it) {
-            if (it->second)
-                fs.remove_folder(it->first);
-            else
-                fs.remove_file(it->first);
+            const bool removed = it->second ? fs.remove_folder(it->first) : fs.remove_file(it->first);
+            if (!removed) stuck += (stuck.empty() ? "" : ", ") + it->first;
         }
         items.clear();
+        return stuck;
     }
 };
 
@@ -53,8 +54,9 @@ WriteResult write_project(const std::string& folder, const std::vector<OutputFil
     }
     Created created;
     const auto fail = [&](const std::string& what) {
-        created.undo(fs);
-        r.error = "could not " + what + ": everything nnh new created was removed";
+        const std::string stuck = created.undo(fs);
+        r.error = "could not " + what + (stuck.empty() ? ": everything nnh new created was removed"
+                                                       : ": could not remove " + stuck + " (remove them by hand)");
         return r;
     };
     if (kind == PathKind::Missing) {

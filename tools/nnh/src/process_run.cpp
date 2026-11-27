@@ -2,6 +2,7 @@
 
 #include "process_run.hpp"
 
+#include <algorithm>
 #include <chrono>
 
 #ifdef _WIN32
@@ -49,12 +50,23 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
     SetHandleInformation(read_end, HANDLE_FLAG_INHERIT, 0);
     HANDLE nul =
         CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, nullptr);
-    STARTUPINFOW si{};
-    si.cb = sizeof si;
-    si.dwFlags = STARTF_USESTDHANDLES;
-    si.hStdInput = nul;
-    si.hStdOutput = write_end;
-    si.hStdError = write_end;
+    STARTUPINFOEXW si{};
+    si.StartupInfo.cb = sizeof si;
+    si.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+    si.StartupInfo.hStdInput = nul;
+    si.StartupInfo.hStdOutput = write_end;
+    si.StartupInfo.hStdError = write_end;
+    // Only these two handles are inherited (not every inheritable handle nnh happens to hold).
+    HANDLE inherited[2] = {write_end, nul};
+    SIZE_T list_size = 0;
+    InitializeProcThreadAttributeList(nullptr, 1, 0, &list_size);
+    std::vector<unsigned char> list_bytes(list_size);
+    auto* list = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(list_bytes.data());
+    const bool listed = list_size > 0 && InitializeProcThreadAttributeList(list, 1, 0, &list_size) &&
+                        UpdateProcThreadAttribute(list, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, inherited,
+                                                  nul != INVALID_HANDLE_VALUE ? sizeof inherited : sizeof(HANDLE),
+                                                  nullptr, nullptr);
+    if (listed) si.lpAttributeList = list;
     PROCESS_INFORMATION pi{};
     std::wstring command = widen(windows_command_line(program, args));
     // A job kills the program and anything it started (bash -lc's children) at the time limit.
@@ -62,8 +74,10 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
     JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits{};
     limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
     if (job) SetInformationJobObject(job, JobObjectExtendedLimitInformation, &limits, sizeof limits);
-    const BOOL created = CreateProcessW(nullptr, command.data(), nullptr, nullptr, TRUE,
-                                        CREATE_NO_WINDOW | CREATE_SUSPENDED, nullptr, nullptr, &si, &pi);
+    const DWORD flags = CREATE_NO_WINDOW | CREATE_SUSPENDED | (listed ? EXTENDED_STARTUPINFO_PRESENT : 0);
+    const BOOL created = CreateProcessW(nullptr, command.data(), nullptr, nullptr, TRUE, flags, nullptr, nullptr,
+                                        &si.StartupInfo, &pi);
+    if (listed) DeleteProcThreadAttributeList(list);
     CloseHandle(write_end);
     if (nul != INVALID_HANDLE_VALUE) CloseHandle(nul);
     if (!created) {
@@ -78,6 +92,14 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
     char buffer[4096];
     bool exited = false;
     for (;;) {
+        if (ms_left(deadline) == 0) { // checked first: a program that never stops writing is still stopped
+            if (WaitForSingleObject(pi.hProcess, 0) != WAIT_OBJECT_0) {
+                r.timed_out = true;
+                TerminateProcess(pi.hProcess, 1);
+            }
+            if (job) TerminateJobObject(job, 1);
+            break;
+        }
         DWORD available = 0;
         if (!PeekNamedPipe(read_end, nullptr, 0, nullptr, &available, nullptr)) break; // every writer closed
         if (available > 0) {
@@ -89,12 +111,6 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
             continue;
         }
         if (exited) break; // exited and nothing left to read (a grandchild may still hold the pipe)
-        if (ms_left(deadline) == 0) {
-            r.timed_out = true;
-            TerminateJobObject(job, 1);
-            TerminateProcess(pi.hProcess, 1);
-            break;
-        }
         exited = WaitForSingleObject(pi.hProcess, 5) == WAIT_OBJECT_0;
     }
     WaitForSingleObject(pi.hProcess, 2000);
@@ -138,6 +154,15 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
     int status = 0;
     bool exited = false;
     for (;;) {
+        if (ms_left(deadline) == 0) { // checked first: a program that never stops writing is still stopped
+            if (!exited && waitpid(pid, &status, WNOHANG) != pid) {
+                r.timed_out = true;
+                kill(pid, SIGKILL);
+            } else {
+                exited = true;
+            }
+            break;
+        }
         pollfd p{fds[0], POLLIN, 0};
         const int ready = poll(&p, 1, exited ? 0 : (ms_left(deadline) < 5 ? ms_left(deadline) : 5));
         if (ready > 0) {
@@ -148,15 +173,7 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
         }
         if (ready < 0 && errno == EINTR) continue;
         if (exited) break;
-        if (waitpid(pid, &status, WNOHANG) == pid) {
-            exited = true;
-            continue;
-        }
-        if (ms_left(deadline) == 0) {
-            r.timed_out = true;
-            kill(pid, SIGKILL);
-            break;
-        }
+        if (waitpid(pid, &status, WNOHANG) == pid) exited = true;
     }
     if (!exited) waitpid(pid, &status, 0);
     close(fds[0]);

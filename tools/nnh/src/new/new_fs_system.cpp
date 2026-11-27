@@ -4,6 +4,7 @@
 
 #include "new/project_writer.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 
@@ -59,7 +60,9 @@ bool create_folder(const std::string& path) {
 #endif
 }
 
-bool create_file(const std::string& path, const std::string& bytes) {
+} // namespace
+
+bool create_file_exclusive(const std::string& path, const std::string& bytes, std::size_t fail_after) {
 #ifdef _WIN32
     const int fd =
         _wopen(u8path(path).c_str(), _O_CREAT | _O_EXCL | _O_WRONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
@@ -70,7 +73,12 @@ bool create_file(const std::string& path, const std::string& bytes) {
     std::size_t done = 0;
     bool ok = true;
     while (ok && done < bytes.size()) {
-        const unsigned chunk = static_cast<unsigned>(std::min<std::size_t>(bytes.size() - done, 1u << 20));
+        if (done >= fail_after) {
+            ok = false;
+            break;
+        }
+        const unsigned chunk = static_cast<unsigned>(
+            std::min<std::size_t>({bytes.size() - done, std::size_t{1} << 20, fail_after - done}));
 #ifdef _WIN32
         const int n = _write(fd, bytes.data() + done, chunk);
 #else
@@ -81,11 +89,15 @@ bool create_file(const std::string& path, const std::string& bytes) {
     }
 #ifdef _WIN32
     ok = _close(fd) == 0 && ok;
+    if (!ok) DeleteFileW(u8path(path).c_str()); // a half-written file goes too: nothing is left behind (FR-6)
 #else
     ok = close(fd) == 0 && ok;
+    if (!ok) unlink(path.c_str());
 #endif
     return ok;
 }
+
+namespace {
 
 bool remove_file(const std::string& path) {
 #ifdef _WIN32
@@ -109,7 +121,9 @@ NewFs system_new_fs() {
     NewFs f;
     f.kind = kind_of;
     f.create_folder = create_folder;
-    f.create_file = create_file;
+    f.create_file = [](const std::string& path, const std::string& bytes) {
+        return create_file_exclusive(path, bytes, static_cast<std::size_t>(-1));
+    };
     f.remove_file = remove_file;
     f.remove_folder = remove_folder;
     return f;

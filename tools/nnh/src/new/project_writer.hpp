@@ -19,7 +19,9 @@ enum class PathKind { Missing, EmptyFolder, Folder, File, Link, Other };
 struct NewFs {
     std::function<PathKind(const std::string&)> kind;      ///< what is at a path (a link is never followed)
     std::function<bool(const std::string&)> create_folder; ///< false if anything is there already
-    /// Creates a file with the bytes, exclusively: false if anything is there already.
+    /// Creates a file with the bytes, exclusively: false if anything is there already. When the write or the close
+    /// fails after the file was created, the file is removed before returning false, so a failed create leaves
+    /// nothing (write_project records only the files that were created whole).
     std::function<bool(const std::string&, const std::string&)> create_file;
     std::function<bool(const std::string&)> remove_file;
     std::function<bool(const std::string&)> remove_folder; ///< an empty folder
@@ -27,6 +29,10 @@ struct NewFs {
 
 /// The real file system: UTF-8 paths (wide APIs on Windows), O_CREAT|O_EXCL creates.
 NewFs system_new_fs();
+
+/// The real exclusive create (NewFs::create_file). `fail_after`: for tests, the write fails once that many bytes are
+/// written (SIZE_MAX: never), so the clean-up of a half-written file is exercised on the real file system.
+bool create_file_exclusive(const std::string& path, const std::string& bytes, std::size_t fail_after);
 
 struct WriteResult {
     bool ok = false;

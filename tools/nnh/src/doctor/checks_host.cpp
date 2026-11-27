@@ -3,6 +3,9 @@
 #include "doctor/checks.hpp"
 #include "doctor/doctor_limits.hpp"
 #include "doctor/tool_versions.hpp"
+#include "repo.hpp"
+
+#include <cctype>
 
 namespace nnh::tool {
 
@@ -136,6 +139,21 @@ DoctorCheck sdl3_check(const Probes& p, Host host) {
 }
 
 } // namespace
+
+std::string clean_folder(std::string path) {
+    for (char& ch : path)
+        ch = ch == '\\' ? '/' : ch;
+    while (path.size() > 1 && path.back() == '/' && !(path.size() == 3 && path[1] == ':'))
+        path.pop_back();
+    return path;
+}
+
+std::string drive_form_hint(const std::string& value, Host host) {
+    const bool msys = value.size() >= 2 && value[0] == '/' && std::isalpha(static_cast<unsigned char>(value[1])) &&
+                      (value.size() == 2 || value[2] == '/');
+    if (host != Host::Windows || !msys) return "";
+    return "; write it in drive form: " + native_path(value);
+}
 
 std::string host_compiler_path(const Probes& p, const DoctorContext& c) {
     const std::string cxx = p.env("CXX");

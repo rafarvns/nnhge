@@ -216,6 +216,7 @@ if(NNH_BUILD_TESTS)
         tests/test_script_parser.cpp
         tests/test_script_reload.cpp
         tests/test_script_runner.cpp
+        tests/test_script_runner_hello.cpp
         tests/test_script_stereo.cpp
         tests/test_script_timeline.cpp
         tests/test_serve.cpp

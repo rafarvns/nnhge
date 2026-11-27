@@ -67,8 +67,21 @@ int new_slots(const BatchFile* files, int count) {
     return n;
 }
 
+// Received files a commit replaced or removed: deleted only after every kind committed, so that a kind closing a stream
+// still reading one (music) closes it first (review S8: the 3DS can't remove a file that is open).
+constexpr int kMaxDead = 512;
+std::uint16_t g_dead[kMaxDead];
+int g_dead_count = 0;
+
 void remove_received(void*, std::uint16_t file) {
-    if (file != 0) ReloadFiles::remove_file(file);
+    if (file == 0) return;
+    if (g_dead_count < kMaxDead) g_dead[g_dead_count++] = file;
+    else ReloadFiles::remove_file(file); // never: a batch has at most 256 files and the overlay 256 paths
+}
+
+void remove_dead() {
+    for (int i = 0; i < g_dead_count; ++i) ReloadFiles::remove_file(g_dead[i]);
+    g_dead_count = 0;
 }
 
 void abandon_all(const BatchFile* files, Done* done, int count) {
@@ -198,6 +211,7 @@ BatchResult apply_batch(const BatchFile* files, int count) {
         ++g_kind_calls;
         done[i].kind->commit(item_of(files[done[i].file], done[i].file), done[i].state);
     }
+    remove_dead();
     mem::free(done);
     for (int i = 0; i < count; ++i) {
         if (is_index(files[i])) continue;

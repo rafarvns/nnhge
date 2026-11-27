@@ -45,7 +45,11 @@ Prepared png_prepare(const ReloadItem& item) {
     static int token;
     return prepared_ok(&token);
 }
-void png_commit(const ReloadItem& item, void*) { add("commit", item); }
+bool g_first_file_at_commit = false; // `.nnh_reload/1.bin` existed when the last commit ran
+void png_commit(const ReloadItem& item, void*) {
+    add("commit", item);
+    g_first_file_at_commit = nnh::platform::fs_size(".nnh_reload/1.bin") >= 0;
+}
 void png_abandon(const ReloadItem& item, void*) { add("abandon", item); }
 
 bool all_claims(const ReloadItem& item) { return ends_with(item.path, ".png"); }
@@ -237,4 +241,22 @@ NNH_TEST(reload_batch_an_allocation_failure_at_every_size_changes_nothing) {
     const std::size_t from = lo > 4000 ? lo - 4000 : 0;
     for (std::size_t room = from; room < hi + 4000; room += 97) (batch_with_room(room) ? applied : refused) += 1;
     CHECK(refused > 0 && applied > 0);
+}
+
+NNH_TEST(reload_batch_a_replaced_file_is_removed_after_the_kinds_committed) {
+    RELOAD_DEV_ONLY();
+    char index[256];
+    start_game(index, sizeof index);
+    const Put first[] = {text("art/a.png", "A1")}; // received as .nnh_reload/1.bin
+    send_batch(1, first, 1);
+    frames(2);
+    CHECK(nnh::platform::fs_size(".nnh_reload/1.bin") >= 0);
+    const Put second[] = {text("art/a.png", "A2")}; // replaces it
+    send_batch(2, second, 1);
+    frames(2);
+    CHECK(nnh::assets::reload_count() == 2);
+    // A kind's commit may still close a stream reading the old file (music): it goes only after (review S8).
+    CHECK(g_first_file_at_commit);
+    CHECK(nnh::platform::fs_size(".nnh_reload/1.bin") == -1);
+    nnh::shutdown();
 }

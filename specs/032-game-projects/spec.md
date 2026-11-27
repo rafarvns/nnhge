@@ -1,7 +1,7 @@
 # Spec 032: Game projects outside the engine repository
 
 Status: draft
-Author: NNHGE maintainers · Date: 2026-11-26
+Author: NNHGE maintainers · Date: 2026-11-26 · Updated: 2026-11-27 (the study's step 1 spike results)
 Depends on: [spec 010](../010-nnh-cli-run/spec.md) (`nnh build`/`run`/`install`, the games manifest, the presets
 `nnh` picks), [spec 011](../011-nnh-link/spec.md) (`nnh serve`), [spec 007](../007-assets-and-romfs/spec.md),
 [spec 009](../009-packaging/spec.md), [spec 012](../012-tilemaps-and-collision/spec.md),
@@ -70,8 +70,13 @@ build does not change.
     `ctest`;
   - the host programs a game's build steps need (`nnh-assetc`, the data schema support and programs) are still
     provided, as they are today in PC and 3DS presets;
-  - the engine's options that select these parts (`NNH_BUILD_EXAMPLES`, `NNH_BUILD_TESTS` and any new one this spec
-    adds) default to whether the engine is the top-level project and can still be set explicitly by the game.
+  - every one of these parts has an engine option that selects it: the existing `NNH_BUILD_EXAMPLES` (examples) and
+    `NNH_BUILD_TESTS` (unit, conformance and fuzz tests), plus new options for the apps (NNH Link) and for the
+    developer tools (the `nnh` tool and its tests), which today are always added with no option. All of them default to
+    `PROJECT_IS_TOP_LEVEL` of the engine's project (ON in the engine repository, OFF as a subproject) and can still be
+    set explicitly by the game, for example to build NNH Link from a game project for testing;
+  - none of these options turns off the host programs of the second point: a game with maps, sprites, data or fonts
+    builds with all of them OFF.
 - **FR-5 Works without the parts it skips.** The engine configures and builds as a subproject when its examples, tests,
   apps, specs and docs folders are absent (a pruned copy), so the content of the release archive (spec 034) and of a
   vendored copy is not constrained by this spec.
@@ -85,6 +90,11 @@ build does not change.
   from the game project's top-level folder, from a nested folder of it, and from inside the engine repository. Which
   system the preset targets (PC or 3DS) and where the engine's own files are come from the engine, never from
   variables of the caller's directory.
+  **Unknown platform is an error.** If `nnh_add_game()` (or a helper it calls) cannot tell which system it builds for,
+  or the value is not one of the systems the engine supports, the configure fails with an error that names the game,
+  the value found (or "empty") and the supported systems. It never takes another system's branch silently: no game
+  target without its system's packaging (on 3DS the SMDH, `.3dsx` and `dist`), no asset copied unconverted, no
+  cross-preset host-tool path on a system that builds the program directly.
 - **FR-7 Same game build settings.** A game's targets in a game project compile with the same language standard,
   warnings, flags, definitions and compiler cache (when one is installed) as the same game inside the engine
   repository, so build times and behaviour do not depend on where the game lives.
@@ -120,15 +130,23 @@ build does not change.
   as in the engine repository: the same six preset names, `build/<preset>/` under the project root, the games manifest
   there, logs and screenshots in `<project>/build/logs/`. A project without a `CMakePresets.json` that defines the
   preset `nnh` needs gets a message naming the missing preset and exit 1, without running CMake.
-- **FR-14 Host compiler for 3DS configures.** When `nnh` configures a 3DS preset (in a game project or the engine
-  repository), it passes the host C++ compiler to CMake as `NNH_HOST_CXX`, chosen like `scripts/dkp.sh` does: the
-  user's `NNH_HOST_CXX` if set, else `g++`, `c++` or `clang++` found on `nnh`'s own `PATH`, in the path form
-  devkitPro's MSYS2 CMake reads on Windows. The first `nnh build` of a 3DS game with Tiled maps, Aseprite exports, data
-  assets or fonts then succeeds without `scripts/dkp.sh` having run first. With no host compiler, the configure goes on
-  and the build fails with today's message (set `NNH_HOST_CXX` or `NNH_ASSETC`).
-- **FR-15 Paths on Windows.** Every path `nnh` hands to CMake in a 3DS preset on Windows (source and build folders,
-  `NNH_HOST_CXX`) is in the form devkitPro's MSYS2 CMake reads, and the documented way of writing the local engine
-  override (FR-1.2) works in all six presets on Windows, including the 3DS ones configured through devkitPro's MSYS2.
+- **FR-14 Host compiler for 3DS configures.** When `nnh` configures a 3DS preset — in a game project **and in the
+  engine repository**, where a fresh `nnh build` of any 3DS preset fails today (the examples' Aseprite exports need
+  `nnh-assetc`) — it passes the host C++ compiler to CMake as `NNH_HOST_CXX`, chosen like `scripts/dkp.sh` does: the
+  user's `NNH_HOST_CXX` if set, else `g++`, `c++` or `clang++` found on `nnh`'s own `PATH` (devkitPro's MSYS2 shell
+  has none on its own). On Windows the value is in MSYS form (`/c/...`): a drive form (`C:/...`) configures but the
+  `nnh-assetc` sub-build then fails. The first `nnh build` of a 3DS preset, with a fresh build folder and without
+  `scripts/dkp.sh` having run first, then configures and builds, for a game with Tiled maps, Aseprite exports, data
+  assets or fonts and for the engine repository with its examples. With no host compiler found, `nnh` passes nothing
+  and the **configure** fails with today's message (set `NNH_HOST_CXX` or `NNH_ASSETC`) for a project that needs
+  `nnh-assetc`; a project that doesn't configures and builds as today.
+- **FR-15 Paths on Windows.** Every path `nnh` hands to CMake in a 3DS preset on Windows is in MSYS form (`/e/...`),
+  because devkitPro's MSYS2 CMake reads a drive path (`E:/...`) as relative to the working or build folder: the source
+  and build folders, `NNH_HOST_CXX` (FR-14), and the local engine override `FETCHCONTENT_SOURCE_DIR_NNHGE` (FR-1.2),
+  which `nnh` converts when it configures a 3DS preset. The developer writes the override once, in one form, in the
+  place the docs give (open question Q11), and it works in all six presets on Windows when configured through `nnh`;
+  the docs give the `/e/...` form for configuring a 3DS preset by hand through `scripts/dkp.sh`. No path to the engine
+  is written in the game's `CMakeLists.txt`.
 
 ### Proof and documentation
 
@@ -147,19 +165,43 @@ build does not change.
   outputs go, how to use a local engine checkout, how to upgrade the pin, the reserved target names, and what changes
   on Windows for 3DS builds. The getting-started guide's "Make your own game" section points to it.
 
+### Command-line length on Windows
+
+- **FR-19 3DS builds stay under the Windows command-line limit, with margin.** On Windows, every command a 3DS preset
+  runs to build the engine's libraries and a game's targets (compile, archive, link, packaging) is shorter than the
+  Windows limit of 32,767 characters by a set margin (open question Q12), both in the engine repository and in a game
+  project where the engine's build folder is nested under the game's (`_deps/nnhge-build/`), with project and build
+  folder paths of a stated length (Q12). Today the archive step of the core library already fails out of the tree
+  (`Argument list too long`: 35,454 characters for 450 objects) and uses about 80% of the limit inside the repository
+  (25,834 characters), so it would fail there too as the core grows. Response files are acceptable only where every path
+  in them is readable by the tool that reads them (a general Ninja response file breaks every compile, because it holds
+  `/e/...` include paths the native compiler cannot read). The fix does not change PC or Linux builds, nor the
+  `3ds-release` `hello` `.3dsx` (FR-17), and the margin is checked so a growing core fails a check, not a developer's
+  build.
+
+  *Notes for the plan, not requirements:* candidate approaches seen in the spike are a response file for the archive
+  step only (with paths the archiver reads), splitting the core library into a few libraries, and archiving in chunks
+  in 3DS presets. A shorter engine binary folder (`FetchContent_Declare(... BINARY_DIR ...)`) builds but only moves the
+  limit. The choice is measured (longest command before and after, in and out of the tree) and recorded.
+
 ## Acceptance criteria
 
 - **AC-1** `ctest --preset pc-debug -R consumer` (Windows and Linux on VM 120): the consumer project configures and
   builds against the engine sources and its headless run prints its self-check line; the configure log and the
   project's target list contain no example, engine test, `nnh-link` or `nnh` target; its `ctest -N` lists no engine
-  test. (FR-1, FR-4, FR-6, FR-16)
+  test even though the consumer project calls `enable_testing()`; its `nnh_games.txt` lists only its own game(s).
+  (FR-1, FR-4, FR-6, FR-16)
 - **AC-2** The consumer project built in each way of FR-1 — a `file://` URL to a `git archive` tarball with its
   SHA-256, the same with `FETCHCONTENT_SOURCE_DIR_NNHGE`, `add_subdirectory` of a git submodule checkout, and of a
   pruned copy without examples/tests/apps/specs/docs — gives the same self-check line; with a wrong SHA-256 the
   configure fails naming the URL and nothing is built. (FR-1, FR-2, FR-3, FR-5)
 - **AC-3** From the consumer project's folder on Windows: `nnh build <game>` and `nnh build <game> --release` (3DS,
   configured by `nnh`, no prior `dkp.sh` run, a fresh build folder) produce the `.3dsx`; `nnh run <game> --pc --script
-  <its .nnhs>` exits 0. The same `nnh build` on VM 120 with `/opt/devkitpro`. (FR-11, FR-13, FR-14, FR-15)
+  <its .nnhs>` exits 0; the same with the local engine override set as the docs say (Q11), in a drive-form path, for
+  `pc-debug` and `3ds-dev`. In the engine repository, a fresh `build/3ds-dev` (folder deleted, no prior `dkp.sh` run)
+  configured and built by `nnh build animation` succeeds. With no host compiler on `nnh`'s `PATH` and no
+  `NNH_HOST_CXX`, the consumer project's 3DS configure fails with the `NNH_HOST_CXX`/`NNH_ASSETC` message. The same
+  `nnh build` on VM 120 with `/opt/devkitpro`. (FR-11, FR-13, FR-14, FR-15)
 - **AC-4** `nnh run <game>` from the consumer project on the maintainer's Old 3DS XL: built, sent, the log shown and
   saved under the project's `build/logs/`; its script's verdict PASS (maintainer presses Y). `nnh install <game>`
   installs its `.cia` through FBI. (FR-13, FR-9)
@@ -167,8 +209,10 @@ build does not change.
   changed file (checked by a file listing with sizes and times, or `git status` on a checkout). (FR-9)
 - **AC-6** `nnh_tool_tests` cases: root detection (engine repository; game project; a game project inside the engine
   repository; nested folders below each; nothing found), `nnh.toml` parsing (empty, valid, malformed with its line),
-  missing preset message, preset choice in a game project, the `NNH_HOST_CXX` argument and path forms of the 3DS
-  configure command on Windows and Linux. (FR-11 to FR-15)
+  missing preset message, preset choice in a game project, the `NNH_HOST_CXX` argument (from the environment, found on
+  `PATH`, absent) and the MSYS path forms of the 3DS configure command on Windows (source and build folders,
+  `NNH_HOST_CXX`, `FETCHCONTENT_SOURCE_DIR_NNHGE`; drive letters upper and lower case, spaces) against the unchanged
+  forms on Linux and in PC presets. (FR-11 to FR-15)
 - **AC-7** A CMake check in the consumer project: `NNHGE_VERSION` and its three parts equal the engine's project
   version; a project-own plain library target compiles with the flags it had before the engine was added; the game's
   compile commands match an in-repository game's apart from paths. (FR-7, FR-8, FR-10)
@@ -178,11 +222,25 @@ build does not change.
   passes; build budgets measured before and after (one-file edit in `hello`: simulator < 2 s, `.3dsx` < 5 s; clean
   engine < 30 s) and recorded in the ROADMAP table. (FR-17)
 - **AC-9** The same one-file edit in the consumer project's game source rebuilds under the same budgets (simulator
-  < 2 s, `.3dsx` < 5 s); configure time of a fresh consumer build recorded for each way of FR-1. (FR-7, constitution III)
+  < 2 s, `.3dsx` < 5 s), measured on a game of `hello`'s size, with `ninja -v` showing the compiler cache launcher on
+  the game's compile when one is installed; configure time of a fresh consumer build recorded for each way of FR-1
+  (spike baseline: fresh 20 s, reconfigure 1.9 s on PC; fresh 20 s on 3DS). (FR-7, constitution III)
 - **AC-10** Docs: the hand-written game project page and getting-started §5 updated; `docs/tech/cmake.md` (the
   subproject contract, gated parts, reserved target names, Windows path forms); `docs/guides/nnh-tool.md` (game
   projects, `nnh.toml`, `NNH_HOST_CXX`); a decision row D55; `python -I scripts/docs_tool.py check` reports 0 broken
   links. Following the page verbatim in an empty folder builds and runs a game on PC. (FR-18)
+- **AC-11** Command-line margin (Windows, 3DS): a check run in `3ds-dev` and `3ds-release` reads the commands of the
+  build (for example from Ninja's command list) and prints the longest one's length and its share of 32,767; it fails
+  above the margin of Q12. It passes for the engine repository and for the consumer project built through
+  `FetchContent` under a project path of the length Q12 states; the before/after lengths of the archive step are
+  recorded (today 25,834 in the repository, 35,454 out of the tree). The consumer `3ds-dev` and `3ds-release` builds of
+  AC-3 finish with no `Argument list too long`. (FR-19, FR-17)
+- **AC-12** Unknown platform: a CMake check configures a scratch project whose engine platform value is empty or
+  unsupported (a test-only override) and expects the configure to fail with the message of FR-6 naming the game and the
+  value, before any game target is generated. (FR-6)
+- **AC-13** Explicit options: the consumer project configured with the examples, tests, apps and tools options set ON
+  has those targets (and the engine's tests in its `ctest -N`); configured with all of them OFF and maps, sprites, data
+  and fonts in its assets, it still builds (the host programs stay). (FR-4)
 
 ## Non-goals
 
@@ -205,7 +263,11 @@ build does not change.
   in-repository build are measured before and after (AC-8, AC-9). The consumer test adds one engine build per PC
   preset to `ctest`; its cost is open question Q4.
 - **I Same game code everywhere.** A game's sources and `nnh_add_game()` call are the same inside and outside the
-  engine repository, on PC and on 3DS (FR-6, FR-7); no platform switch is asked of the game.
+  engine repository, on PC and on 3DS (FR-6, FR-7); no platform switch is asked of the game, and no Windows-only path
+  form is written in the game's `CMakeLists.txt` (FR-15).
+- **Windows as a 3DS build host.** devkitPro's toolchain runs from its MSYS2 on Windows: MSYS paths for its CMake
+  (FR-14, FR-15) and the native 32,767-character command-line limit for its tools (FR-19) are constraints of the
+  maintainer's main host, checked by AC-3 and AC-11.
 - **VI Spec first, test first.** The CMake contract is proven by the consumer test (FR-16), `nnh`'s new behaviour by
   `nnh_tool_tests` written first (AC-6); the console behaviour by AC-4.
 - **VII Small, organized files** and the Modern CMake rules in `docs/tech/cmake.md` (targets and properties, explicit
@@ -224,24 +286,64 @@ build does not change.
 - One implementation at a time: after spec 031 is merged (both change `nnh`); ≥ 10 GB free on the maintainer's `E:`
   drive before the consumer builds.
 
-## Context (from the study; the spike of the study's step 1 has not been run yet)
+## Context (the study's step 1 spike, 2026-11-27)
 
-What the [release study](../../docs/plans/2026-11-26-release-1.0.md) found in the code, to be confirmed by its step 1
-spike (an out-of-tree game built against `main` on Windows PC, Windows 3DS through devkitPro's MSYS2, and VM 120) before
-the plan is written; its findings are added here then.
+The [release study](../../docs/plans/2026-11-26-release-1.0.md#spike-results-2026-11-27) built a scratch game outside
+the repository against `main` (`3f4b4c8`), on Windows only (native CMake 4.4.2 + WinLibs GCC 16.2; devkitPro's MSYS2
+CMake 4.0.2): `FetchContent_Declare(nnhge SOURCE_DIR <engine>)` + `FetchContent_MakeAvailable`, a scene drawing text,
+a PNG sprite and a data asset value, a copy of the engine's `CMakePresets.json`; `pc-debug` and `3ds-dev`, through
+`scripts/dkp.sh` and through devkitPro's bash as `nnh` does. Workarounds lived only in the scratch project; the engine
+checkout's `git status` stayed clean after every build (FR-9 holds for the engine source today). Results:
 
-- The helpers read variables set in the engine's directory when its files were included (the paths of the engine's
-  CMake scripts, art and data sources) and the platform variable set in the engine's top-level directory; a game
-  calling `nnh_add_game()` from its own directory would see them empty.
-- The engine's top-level directory also sets the C++ standard defaults and the compiler cache launcher for its own
-  directory; the language standard reaches games through the engine target, the compiler cache would not (FR-7).
-- Examples and tests default to ON; NNH Link and, in PC presets, the `nnh` tool are always added.
-- `nnh` requires `CMakePresets.json` and `engine/core` to find its root, and does not pass `NNH_HOST_CXX`
-  (`scripts/dkp.sh` does), so a first 3DS configure by `nnh` of a game with maps or data may lack a host compiler.
-- The manifest, `dist/` and fetched tools already go to the top build folder, which in a game project is the game's
-  (FR-9 keeps it so).
-- devkitPro's MSYS2 CMake misreads `C:/...` paths in some places (`docs/tech/cmake.md`, host tools), which matters for
-  the local override in 3DS presets on Windows (FR-15).
+- **Helpers read directory variables that are empty in the game's scope (confirmed; FR-6).** PC and 3DS configures
+  fail with `No download info given for 'mygame_data_schema' and its source directory: /tools/data_schema`; without
+  `DATA_SCHEMA`, the PC build fails on `'/nnh_check_image.cmake' ... missing`, and `build.ninja` holds
+  `/nnh_check_icon.cmake` and `/default_icon.png`. Nine values are involved: `NNH_PLATFORM`, `_NNH_GAME_CMAKE_DIR`,
+  `_NNH_ASSETS_DIR`, `_NNH_CIA_DIR`, `_NNH_CTR_TOOLS_DIR`, `_NNH_IMAGES_DIR`, `_NNH_PACKAGE_ART`, `_NNH_DATA_ROOT` and
+  `_NNH_DATA_HOST_SOURCES` (the last one missing from the study's list). Setting the nine in the game's scope was enough
+  for both systems to build and run (PC screenshot with text, sprite and data string; `mygame.3dsx` made).
+- **An empty platform silently takes wrong branches (FR-6's error).** On PC the data schema program took the
+  cross-preset ExternalProject path instead of a plain target; on 3DS without `DATA_SCHEMA` the configure succeeded but
+  produced only `mygame.elf` (no SMDH, no `.3dsx`, no `dist`) and copied PNGs unconverted.
+- **Examples, tests and tools are built with the game (confirmed; FR-4).** The game's `pc-debug` had 46 executables
+  (26 examples, the engine's tests, NNH Link and its tests, `nnh` and its tests, `nnh-assetc` and its tests, 6 data
+  schema programs, the game). Building only the game: 606 steps, 87 s; a plain `cmake --build`: 734 more steps, 224 s
+  more, 818 MB in all. `nnh_games.txt` listed 27 games, so `nnh serve` would offer the examples. `ctest -N` showed the
+  engine's 381 tests once the game called `enable_testing()`. On 3DS the examples and NNH Link added 55 s.
+  `-DNNH_BUILD_EXAMPLES=OFF` already works; NNH Link and `nnh` have no option.
+- **`nnh` doesn't find a game project (confirmed; FR-11).** `nnh run mygame --pc` exits 1 with "run it inside the
+  NNHGE repository (no CMakePresets.json above here)" although the project has one: the missing marker is
+  `engine/core`, so the message is misleading too. With a stand-in marker, `nnh run mygame --pc` built, ran with hot
+  reload, attached the remote and saved its log under `<project>/build/logs/`; `nnh build` in `3ds-dev` built the
+  `.3dsx`. The root is the only blocker on PC.
+- **No `NNH_HOST_CXX` from `nnh` breaks 3DS configures, in the engine repository too (FR-14).** devkitPro's bash has no
+  host compiler on its `PATH`; a fresh `3ds-dev` configure run as `nnh` runs it fails **at configure time** ("This game
+  has Aseprite exports (.ase.json), which need nnh-assetc: no host C++ compiler", raised by `examples/animation`; with
+  examples off, by the game's own data assets). `-DNNH_HOST_CXX=/c/.../g++.exe` builds; `C:/.../g++.exe` configures,
+  then the `nnh-assetc` sub-build fails.
+- **Drive paths don't work in MSYS CMake (FR-15, Q9).** `FETCHCONTENT_SOURCE_DIR_NNHGE=E:/...` and
+  `FetchContent_Declare(SOURCE_DIR E:/...)` are read as relative paths (`<cwd>/E:/...` or `<build>/E:/...`); `/e/...`
+  works. The `/e/...` form is untested in native PC CMake, so no single spelling is known to work in all six presets.
+- **3DS out-of-tree builds exceed the Windows command-line limit (new blocker; FR-19).** Archiving the core library
+  failed with `arm-none-eabi-gcc-ar.exe: Argument list too long`: 35,454 characters for 450 objects, against 32,767;
+  the `_deps/nnhge-build/` prefix adds 17 characters per object. Inside the repository that list is 25,834 characters
+  (about 80%). MSYS CMake doesn't switch to a response file (it assumes the POSIX limit);
+  `CMAKE_NINJA_FORCE_RESPONSE_FILE=ON` breaks every compile (the `.rsp` files hold `/e/...` include paths the native
+  compiler can't read); a shorter engine binary folder builds but only moves the limit.
+- **Game targets get no compiler cache and are absent from `compile_commands.json` (FR-7, Q7).** The launcher is set
+  only in the engine's scope. PC one-file edit of the game: 2.56–2.68 s without the cache, 2.05–2.16 s with the
+  launcher set in the game's scope (of which a 1.26 s Debug link and a 0.16 s check of the globbed asset folder),
+  against the < 2 s budget (`hello` in the repository: 1.63–1.77 s). 3DS: 4.29–4.44 s, within < 5 s (devkitPro's MSYS2
+  has no ccache either way).
+- **Configure and clean times (baseline for AC-9).** PC: fresh 20 s (mostly compiler detection), reconfigure 1.9 s.
+  3DS through `dkp.sh`: fresh 20 s. The game alone from clean: PC 87 s, 3DS 65 s (450–600 engine steps). Peak disk of
+  the spike 1.1 GB.
+- The manifest, `dist/` and fetched tools already go to the top build folder (FR-9 keeps it so).
+
+**Not covered by the spike** (left to the consumer fixture, FR-16, AC-2 and AC-3): the `URL file://` + `URL_HASH`
+form, `add_subdirectory` of a `git archive` or a submodule, an `https://` download from MSYS CMake, Linux on VM 120,
+the `/e/...` override form in native PC CMake, and the keywords and asset kinds `IMAGES`, `CIA`, `LANGUAGES`, `ICON`,
+Tiled maps, Aseprite sprites, fonts and meshes.
 
 Prior art: CMake's own guidance for dependencies is `FetchContent` with `FETCHCONTENT_SOURCE_DIR_<NAME>` as the local
 override and `PROJECT_IS_TOP_LEVEL` (3.21+) to keep a dependency's tests and examples out
@@ -255,7 +357,7 @@ at an uploaded release asset (spec 034), not at an automatic archive.
 ## Open questions
 
 The first three are the release study's decisions 1–3 (pending the maintainer's review of the study); the rest came up
-while writing this spec.
+while writing this spec. Q7 and Q9 were closed by the spike (2026-11-27); Q11 and Q12 came from it.
 
 - [ ] **Q1 Default way of bringing the engine in** (study decision 1). Options: A `FetchContent` of a release source
   archive by URL + SHA-256 with the `FETCHCONTENT_SOURCE_DIR_NNHGE` override; B git submodule; C vendored copy;
@@ -287,19 +389,40 @@ while writing this spec.
 - [ ] **Q6 Must the engine configure without its examples/tests/apps folders (FR-5)?** — *Recommendation: yes. It costs
   little (the same gates as FR-4) and leaves spec 034 free to ship a slim engine archive, and vendored copies free to
   drop those folders; the full source archive still contains everything.*
-- [ ] **Q7 Compiler cache and compile commands for game targets (FR-7).** Options: the engine applies its detected
-  compiler cache to the targets `nnh_add_game()` creates; or the game project sets it itself. — *Recommendation: the
-  engine applies it to game targets only (not to the project's other targets, FR-8), with `NNH_CCACHE` empty to turn
-  it off; `CMAKE_EXPORT_COMPILE_COMMANDS` is left to the game project (the presets of Q2 turn it on).*
+- [x] **Q7 Compiler cache and compile commands for game targets (FR-7).** Options: the engine applies its detected
+  compiler cache to the targets `nnh_add_game()` creates; or the game project sets it itself. — **Closed by the spike
+  (2026-11-27), as recommended:** the engine applies it to the targets `nnh_add_game()` creates only (not to the
+  project's other targets, FR-8), with `NNH_CCACHE` empty to turn it off; `CMAKE_EXPORT_COMPILE_COMMANDS` is left to the
+  game project (the presets of Q2 turn it on). Evidence: the game's PC one-file edit took 2.56–2.68 s without the cache
+  and 2.05–2.16 s with the launcher, against `hello`'s 1.63–1.77 s in the repository; without it a game project misses
+  the < 2 s budget by more. AC-9 measures it on a game of `hello`'s size.
 - [ ] **Q8 One download per preset.** `FetchContent` downloads into each preset's build folder, so six presets fetch
   the archive six times (a few MB each). — *Recommendation: accept it for this spec; document `FETCHCONTENT_SOURCE_DIR_NNHGE`
   pointing at one unpacked copy for offline or slow connections; revisit a shared download folder only if the newcomer
   test (study step 7) shows it hurts.*
-- [ ] **Q9 Path form of the local override in 3DS presets on Windows (FR-15).** devkitPro's MSYS2 CMake may misread
+- [x] **Q9 Path form of the local override in 3DS presets on Windows (FR-15).** devkitPro's MSYS2 CMake may misread
   `E:/...`. Options: document an MSYS form for 3DS presets; have the engine normalise the override path; have `nnh`
-  pass it in the right form. — *Recommendation: decide from the study's step 1 spike; prefer one form that works in all
-  six presets (forward-slash drive paths if the spike shows MSYS CMake accepts them for `FETCHCONTENT_SOURCE_DIR_*`),
-  else `nnh` converts it when it configures a 3DS preset, as it already does for the source folder.*
+  pass it in the right form. — **Closed by the spike (2026-11-27):** MSYS CMake reads `E:/...` as a relative path in
+  both `FETCHCONTENT_SOURCE_DIR_NNHGE` and `FetchContent_Declare(SOURCE_DIR ...)`; `/e/...` works. So `nnh` converts the
+  override, like the source and build folders and `NNH_HOST_CXX`, to MSYS form (`/e/...`) when it configures a 3DS
+  preset on Windows; the docs give the `/e/...` form for configuring by hand through `scripts/dkp.sh` and keep engine
+  paths out of the game's `CMakeLists.txt` (a hard-coded `E:/` there breaks the 3DS configure). Where the developer
+  writes the override so `nnh` can convert it is Q11.
 - [ ] **Q10 Three release specs (study pending decision 4).** — *Recommendation (study): three specs, 032 → 033 → 034,
   implemented in that order after 031; drafted together. The study's other pending decisions (7b experimental modules,
   9 release candidate) belong to spec 034 and are not decided here.*
+- [ ] **Q11 Where the local engine override is written (FR-1.2, FR-15).** Since no single spelling works in both
+  native and MSYS CMake, `nnh` must see the value to convert it. Options: A in the git-ignored `CMakeUserPresets.json`
+  (a cache variable in drive form); `nnh` reads it from the chosen preset and, for a 3DS configure on Windows, passes
+  `-DFETCHCONTENT_SOURCE_DIR_NNHGE=/e/...` (a command-line `-D` overrides the preset's value); B a per-preset value, the
+  developer writing `/e/...` in the 3DS presets and `E:/...` in the PC ones; C an environment variable `nnh` reads and
+  turns into `-D` for every preset; D a key in a git-ignored local file next to `nnh.toml`. — *Recommendation: A. It is
+  CMake's own place for the override (Q2), works for a developer who runs `cmake --preset` by hand on PC, and needs one
+  spelling; B is error-prone, C is invisible to plain `cmake`, D adds a file. Confirm in the plan that `/e/...` is
+  never needed in native PC CMake (not tested by the spike).*
+- [ ] **Q12 Margin and test paths for the command-line limit (FR-19, AC-11).** — *Recommendation: the longest 3DS
+  command must stay at or below 50% of 32,767 (16,383 characters) in the engine repository and in the consumer project
+  built through `FetchContent`, measured with the consumer project at a path of at least 64 characters (the maintainer's
+  scratch path was about 30); 50% leaves room for the core to roughly double before the check fails, and the check
+  fails at that point rather than a developer's build at 100%. If the chosen approach makes the length independent of
+  the object count (an archive-step response file), the check still runs and the margin is met trivially.*

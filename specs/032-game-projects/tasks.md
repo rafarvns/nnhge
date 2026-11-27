@@ -21,22 +21,22 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 0: baseline
 
-- [ ] **T0.0** Start: `main` with spec 031 merged; worktree `spec-032`; `df -h /e` (≥ 10 GB) recorded; the spike's
+- [x] **T0.0** Start: `main` with spec 031 merged; worktree `spec-032`; `df -h /e` (≥ 10 GB) recorded; the spike's
   findings re-checked against the tree (the nine directory values and the `NNH_PLATFORM` reads in `cmake/`; the four
   `find_repo_root` callers). Files: plan.md ("Stage 0 results"). Covers FR-6, FR-11.
-- [ ] **T0.1** Repository baseline (Windows; scripts in `build/ref-032/`, not committed): fresh `pc-debug`, `pc-release`,
+- [x] **T0.1** Repository baseline (Windows; scripts in `build/ref-032/`, not committed): fresh `pc-debug`, `pc-release`,
   `3ds-dev`, `3ds-release`; for each: the sorted target list (`ninja -t targets all`), the `NNH_*` cache entries and
   their values, `nnh_games.txt`; `hello`: 3ds-release `.3dsx` and stripped `.elf` SHA-256 and sizes, `nm -C` lists,
   pc-release `.text` size; the link commands of `hello` and `nnh_tests` (`ninja -t commands`), kept for T1.2's
   comparison; every example golden as in the tree (`--pc` check scripts). Pre-measured on 2026-11-27 from the existing
   folders: 3ds-release `hello.3dsx` 241.7 KB, SHA-256 `db7d888f…` (T0.1 replaces it with the base commit's). Files:
   plan.md. Covers FR-17, AC-8.
-- [ ] **T0.2** [P] Command lengths and times (3 runs each): `ninja -t commands` longest per 3DS preset (pre-measured:
+- [x] **T0.2** [P] Command lengths and times (3 runs each): `ninja -t commands` longest per 3DS preset (pre-measured:
   27,354 = 83.5 %, the `libnnh_core.a` archive of 447 objects; then 2,533, 1,914, 1,245); edit `examples/hello/main.cpp`
   → simulator and `.3dsx` times; clean engine build (`nnh_core` + platform, pc-dev and 3ds-release); fresh configure
   times of pc-debug and 3ds-dev. Files: plan.md; `docs/ROADMAP.md` baseline table untouched until T6.3. Covers III,
   FR-19, AC-8, AC-11.
-- [ ] **T0.3** [P] Design measurements in a temporary folder outside the repository (deleted afterwards): which `file://`
+- [x] **T0.3** [P] Design measurements in a temporary folder outside the repository (deleted afterwards): which `file://`
   URL forms native CMake and devkitPro's MSYS CMake each download (`file:///E:/…`, `file://E:/…`, `file:///e/…`;
   plan question 12); `cmake --preset X -D…` overriding a preset's `$env{}` mapping in MSYS CMake as in native (measured
   native on 2026-11-27); `arm-none-eabi-gcc-ar qc lib.a @list` with relative paths from MSYS bash. Files: plan.md.

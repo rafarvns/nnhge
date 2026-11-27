@@ -460,3 +460,39 @@ Flagged for the maintainer: questions 1, 2 and 8, and risks 1, 3 and 5.
 12. **The pinned-download way on Windows 3DS**: checked by `file://` only if T0.3 finds a form devkitPro's MSYS CMake
     reads, else through the override (and by URL on Linux, VM); `https://` from MSYS CMake left to spec 034's release
     candidate? Recommended: yes — no local web server in the tests.
+
+## Implementation results
+
+### Stage 0 results (2026-11-27, Windows; worktree `spec-032` at `7e08303`)
+
+- **T0.0** `df -h /e`: 12 GB free at the start, 10 GB after the four baseline builds. The spike's findings hold in the
+  tree: the eight directory values (`_NNH_GAME_CMAKE_DIR`, `_NNH_ASSETS_DIR`, `_NNH_CIA_DIR`, `_NNH_CTR_TOOLS_DIR`,
+  `_NNH_IMAGES_DIR`, `_NNH_PACKAGE_ART`, `_NNH_DATA_ROOT`, `_NNH_DATA_HOST_SOURCES`) are set at file scope in `cmake/`,
+  `NNH_PLATFORM` is read as a variable by `nnh_game`, `nnh_assets`, `nnh_images`, `nnh_data` and `nnh_host_tools`; the
+  `find_repo_root` callers are `build.cpp`, `run.cpp`, `run_reload.cpp` and `serve.cpp`.
+- **T0.1** Fresh `pc-debug`, `pc-release`, `3ds-dev`, `3ds-release` (0 warnings each; full builds 5 m 30 s, 5 m 50 s,
+  2 m 05 s, 2 m 01 s). Target lists 183 (PC) / 182 (3DS) names, `NNH_*` cache entries and the 27 games of
+  `nnh_games.txt` kept in `build/ref-032/base/` (not committed). **`hello` reference:** 3ds-release `hello.3dsx`
+  247,628 bytes, SHA-256 `b0b243ddfe6f94cc932c771f32c2d7a9ac14945561ad996eae4bc2b6873670c3`; stripped `hello.elf`
+  SHA-256 `91680297f5395b6b32d41a5bb6ec21ae5869fc61f8062ef5bba1d4f260a73531` (`size`: text 202,204, data 28,360,
+  bss 107,368); pc-release `hello.exe` `.text` 0x189a0. `libnnh_core.a`: 447 members. The `hello` link commands
+  (both 3DS presets, pc-debug, pc-release) and `nnh_tests`' kept for T1.2.
+  **Pre-existing failure found:** `ctest --preset pc-debug` at the base commit fails `unit` and `unit_reverse` on
+  three `test_door_run.cpp` cases: commit `fd688f3` made the door run judge 60 Hz only in Development builds
+  ("not judged (Debug)") without changing its tests. Fixed in stage 0 as a test-only change (the expected verdict
+  follows `nnh::build::flavor()`); every other test passed (380 tests, 9 m 21 s with `-j8`).
+- **T0.2** Longest 3DS commands (`scripts/check_command_length.sh`, written at T1.1): 27,354 characters (83.5 %) in
+  `3ds-dev` and `3ds-release`, the `libnnh_core.a` archive. `hello` one-file edit: pc-debug simulator 2.22 / 1.91 /
+  1.95 s; 3ds-dev `.3dsx` 3.81 / 3.57 / 3.66 s. Clean engine (`nnh_core` + platform, `ninja -t clean`): pc-release
+  19.4 s (ccache), 3ds-release 48.1 s (devkitPro's MSYS2 has no ccache; the 447-object core). Fresh configures:
+  pc-debug 25.6 s, 3ds-dev 24.4 s. pc-release stands in for pc-dev (one PC build folder less on a tight disk).
+- **T0.3** (temporary folder outside the repository, deleted): `file://` URL forms for `FetchContent` with
+  `URL_HASH`: native CMake 4.4.2 reads `file://E:/x/y.tar.gz` and fails `file:///E:/...` and `file:///e/...`
+  ("File not found: /E:/..."); devkitPro's MSYS2 CMake 4.0.2 reads `file://E:/...`, `file:///e/...`, `/e/...` and
+  `E:/...`, and fails `file:///E:/...`. So the tests use `file://` + the path as CMake writes it (`file://E:/...` on
+  Windows, `file:///tmp/...` on Linux), which both CMakes read (question 12: the pinned way is checked by `file://` on
+  Windows 3DS too). In MSYS2 CMake, a preset's `"FETCHCONTENT_SOURCE_DIR_DEP": "$env{X}"` uses the folder when `X` is
+  set, and `cmake --preset x -DFETCHCONTENT_SOURCE_DIR_DEP=<other>` overrides it, as in native CMake.
+  `arm-none-eabi-gcc-ar qc lib.a @list.rsp` from MSYS2 bash reads a response file of relative paths (members `a.o b.o`)
+  and refuses MSYS absolute paths (`/e/.../a.o: No such file or directory`): the archive's response file must hold
+  paths relative to the build folder, which CMake's Ninja generator writes.

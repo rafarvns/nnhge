@@ -3,6 +3,7 @@
 
 #include <cstring>
 
+#include "nnh/build.hpp"
 #include "nnh/log.hpp"
 #include "platformer/door_run.hpp"
 #include "platformer/door_transition.hpp"
@@ -11,6 +12,15 @@
 NNH_LOG_CHANNEL(platformer);
 
 namespace tr = nnh::transition;
+
+namespace {
+
+/// The door run judges 60 Hz only in Development builds; other flavours report their times (fd688f3).
+const char* verdict(const char* judged) {
+    return nnh::build::flavor() == nnh::build::Flavor::Development ? judged : ": 60 Hz not judged (Debug)";
+}
+
+} // namespace
 
 NNH_TEST(the_door_transition_is_a_tall_iris_on_the_player) {
     const tr::Options o = door_transition({123, 45});
@@ -41,7 +51,7 @@ NNH_TEST(the_door_run_runs_right_and_counts_ten_doors) {
     }
     CHECK(!run.running() && run.doors() == 10 && run.frames() == 300);
     CHECK(std::strstr(run.last_line(), "doors: done 10 irises frames 300") != nullptr);
-    CHECK(std::strstr(run.last_line(), ": 60 Hz PASS") != nullptr);
+    CHECK(std::strstr(run.last_line(), verdict(": 60 Hz PASS")) != nullptr);
 }
 
 NNH_TEST(the_door_runs_first_frame_is_not_measured) {
@@ -50,7 +60,7 @@ NNH_TEST(the_door_runs_first_frame_is_not_measured) {
     run.frame(80.0); // includes whatever came before the run (the level's load, the Y press's frame)
     run.frame(16.7);
     for (int i = 0; i < DoorRun::kDoors; ++i) run.door_done();
-    CHECK(run.meter().frames() == 1 && std::strstr(run.last_line(), ": 60 Hz PASS") != nullptr);
+    CHECK(run.meter().frames() == 1 && std::strstr(run.last_line(), verdict(": 60 Hz PASS")) != nullptr);
 }
 
 NNH_TEST(a_slow_frame_fails_the_door_runs_60_hz_verdict) {
@@ -59,5 +69,5 @@ NNH_TEST(a_slow_frame_fails_the_door_runs_60_hz_verdict) {
     run.frame(16.7);
     run.frame(40.0);
     for (int i = 0; i < DoorRun::kDoors; ++i) run.door_done();
-    CHECK(std::strstr(run.last_line(), ": 60 Hz FAIL") != nullptr);
+    CHECK(std::strstr(run.last_line(), verdict(": 60 Hz FAIL")) != nullptr);
 }

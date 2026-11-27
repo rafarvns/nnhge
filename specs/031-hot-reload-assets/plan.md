@@ -1140,7 +1140,7 @@ Every item fixed test first:
   (both red on Windows too before the fix). The other reload ctests use games whose program name differs from `data`,
   so they shouldn't have failed on Linux for this reason; the lead's rerun will tell.
 
-Guards after the review round: ctest pc-debug **378/378**, pc-release **337/337**; `nnh_tool_tests` 247; 0 warnings on
+Guards after the review round: ctest pc-debug **378/378**, pc-release **337/337**; `nnh_tool_tests` 242; 0 warnings on
 pc-debug, pc-release, 3ds-release and 3ds-dev; 3ds-release `hello.3dsx` `8c687f3dec3df9fa…` and `hello.elf`
 (`--strip-debug`) `5cd5d9505dd67b73…`, identical to T0.1; pc-release `hello.exe` 134 880 / 22 052 / 212 400; 3ds-dev
 `hello` text 229 488 B (unchanged); `check_release_strings.sh` passes on the 3ds-release `reload.3dsx`. The `ui` example

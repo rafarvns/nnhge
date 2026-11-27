@@ -7,6 +7,7 @@
 #include <cstring>
 #include <new>
 
+#include "core/shutdown_hooks.hpp"
 #include "data/data_apply.hpp"
 #include "data/data_index.hpp"
 #include "data/data_index_state.hpp"
@@ -73,10 +74,20 @@ Prepared prepare(const ReloadItem& item) {
     return reload::prepared_ok(fresh);
 }
 
+/// The index block a batch replaced: kept until the next one, so that names and paths borrowed from it (data::name,
+/// data::path) stay readable through the batch's frame and the game's reload of its structs (review S3).
+void* g_previous_block = nullptr;
+
+void free_previous() {
+    mem::free(g_previous_block);
+    g_previous_block = nullptr;
+}
+
 void commit(const ReloadItem&, void* state) {
     auto* fresh = static_cast<DataIndexState*>(state);
     if (fresh == nullptr) return;
-    mem::free(g_data_index_state.block);
+    free_previous();
+    g_previous_block = g_data_index_state.block;
     g_data_index_state.block = fresh->block;
     g_data_index_state.index_size = fresh->index_size;
     g_data_index_state.scratch_size = fresh->scratch_size;
@@ -96,6 +107,9 @@ reload::ReloadKind g_kind{"data", claims, prepare, commit, abandon};
 
 } // namespace
 
-void data_reload_register() { reload::register_kind(g_kind); }
+void data_reload_register() {
+    reload::register_kind(g_kind);
+    require_shutdown_hook(free_previous);
+}
 
 } // namespace nnh::detail

@@ -220,7 +220,8 @@ template <class T> int count() {
     return detail::data_count(detail::type_id<T>());
 }
 
-/// The path of the i-th data asset of type T ("items/potion"), or "" out of range. Valid until release().
+/// The path of the i-th data asset of type T ("items/potion"), or "" out of range. Valid until release() (Debug and
+/// Development: or until the batch after a hot reload that brought a new index, spec 031).
 template <class T> const char* name(int index) {
     return detail::data_name(detail::type_id<T>(), index);
 }
@@ -236,7 +237,8 @@ template <class T> Ref<T> find(const char* path) {
 }
 
 /// The path a reference names ("items/potion", "art/goblin"), or "" when it is empty or unknown. For media,
-/// it is what load_texture() / load_sound() / music::play() take. Valid until release().
+/// it is what load_texture() / load_sound() / music::play() take. Valid until release() (Debug and Development: or
+/// until the batch after a hot reload that brought a new index).
 /// @code
 /// auto sprite = nnh::load_texture(nnh::data::path(enemy.sprite));
 /// @endcode

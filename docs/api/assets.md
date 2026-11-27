@@ -155,7 +155,8 @@ with the build's own steps and reloads it in the running game at the start of a 
   after a language switch; a manifest with another language list is refused: rebuild and restart). A UI updated in the
   batch's frame resolves and measures its texts again.
 - **Announced** (your copies are yours): structs filled by `data::load`, a `Tilemap`, bytes from `assets::load`/`read`.
-  Later reads get the new content; reload your copy when told:
+  Later reads get the new content; reload your copy when told. Names and paths borrowed from the data index
+  (`data::name<T>(i)`, `data::path(ref)`) stay readable until the next batch after one that brought a new index:
 
 ```cpp
 // In a scene's update(), or a subscription to nnh::AssetsReloaded:

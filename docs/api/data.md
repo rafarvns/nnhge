@@ -175,7 +175,7 @@ for (int i = 0; i < nnh::data::count<Item>(); ++i) shop.add(nnh::data::name<Item
 | `data::load(ref, out)` | follows a `Ref<T>` the same way (`NotFound` when it is empty) |
 | `data::count<T>()`, `name<T>(i)`, `ref<T>(i)` | the data assets of type T, in path order (no hand-written lists) |
 | `data::find<T>(path)` | a `Ref<T>` to that asset if it is a T, else an empty one |
-| `data::path(ref)` | the path a reference names ("" when empty or unknown); valid until `release()` |
+| `data::path(ref)` | the path a reference names ("" when empty or unknown); valid until `release()` (Debug/Development: or until the batch after a [hot reload](assets.md#hot-reload) brought a new index) |
 | `data::preload()`, `release()`, `memory_used()` | the data index, on purpose (a loading scene) |
 
 Errors are returned as a `Result` (and logged), never a crash, and leave `out` unchanged: `NotFound` (no data asset

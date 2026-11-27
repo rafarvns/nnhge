@@ -6,7 +6,9 @@
 #include <cstring>
 
 #include "../reload/reload_fixture.hpp"
+#include "data/data_index.hpp"
 #include "data_fixture.hpp"
+#include "nnh/memory.hpp"
 #include "nnh/data.hpp"
 #include "test_types.hpp"
 
@@ -56,6 +58,25 @@ NNH_TEST(data_reload_an_added_asset_is_counted_found_and_loaded) {
     test_data::Enemy e;
     CHECK(nnh::data::load("enemies/orc", e).ok());
     CHECK(std::strcmp(e.name.c_str(), "Orc") == 0);
+    data_test::stop();
+}
+
+NNH_TEST(data_reload_a_borrowed_name_survives_one_reload) {
+    RELOAD_DEV_ONLY();
+    start_data();
+    nnh::platform_fake::set_alloc_fill(0xAA); // a freed and reused block would show garbage
+    const char* bat = nnh::data::name<test_data::Enemy>(0); // borrowed from the index block
+    CHECK(std::strcmp(bat, "enemies/bat") == 0);
+    const data_file::Bytes orc = enemy("Orc");
+    const data_file::Bytes index = index_with({"enemies/bat", "enemies/goblin", "enemies/orc"}, 512);
+    const Put batch[] = {Put{"enemies/orc.enemy", orc.data(), orc.size()}, Put{".nnh_data", index.data(), index.size()},
+                         Put{".nnh_assets", kAssets, sizeof kAssets - 1}};
+    send_batch(1, batch, 3);
+    CHECK(nnh::frame());
+    CHECK(nnh::assets::reload_count() == 1);
+    CHECK(nnh::mem::tag_stats(nnh::detail::data_memory_tag()).count >= 2); // the previous block is still there
+    CHECK(std::strcmp(bat, "enemies/bat") == 0); // still readable until the next batch (review S3)
+    nnh::platform_fake::set_alloc_fill(-1);
     data_test::stop();
 }
 

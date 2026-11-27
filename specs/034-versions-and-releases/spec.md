@@ -1,6 +1,6 @@
 # Spec 034: Versions, API stability and releases
 
-Status: draft
+Status: approved 2026-11-27 (the maintainer, every open question as recommended; Q13: immutable releases turned on before rc.1 (a repository setting, done then with the maintainer told); Q14: constitution article XII added with this spec)
 Author: NNHGE maintainers · Date: 2026-11-26
 Depends on: [spec 032](../032-game-projects/spec.md) (draft: the engine as a subproject, `NNHGE_VERSION`, a source
 archive pinned by URL and SHA-256), [spec 033](../033-nnh-new-and-doctor/spec.md) (draft: `nnh --version`, `nnh new`
@@ -339,76 +339,78 @@ and then becomes `v1.0.0`.
 
 ## Open questions
 
+Answered 2026-11-27: the maintainer approved every recommendation below; Q13: immutable releases turned on before rc.1 (a repository setting, done then with the maintainer told); Q14: constitution article XII added with this spec.
+
 Q1–Q3 are the [release study](../../docs/plans/2026-11-26-release-1.0.md)'s decisions 7, 7b and 9 (pending the
 maintainer's review); the rest came up while writing this spec.
 
-- [ ] **Q1 SemVer and the stable/not-stable lists** (study decision 7; FR-5, FR-7, FR-8). — *Recommendation (study):
+- [x] **Q1 SemVer and the stable/not-stable lists** (study decision 7; FR-5, FR-7, FR-8). — *Recommendation (study):
   yes, as FR-7 and FR-8 list them; `nnh` commands, options and exit codes stable, their output text not (except lines a
   page documents).*
-- [ ] **Q2 What is experimental in 1.x** (study decision 7b; FR-9). The study: `<nnh/mesh.hpp>` and `<nnh/gfx3d.hpp>`
+- [x] **Q2 What is experimental in 1.x** (study decision 7b; FR-9). The study: `<nnh/mesh.hpp>` and `<nnh/gfx3d.hpp>`
   (3D) and spec 031's hot-reload queries, the modules no real game has used. Also to decide: `<nnh/math3d.hpp>` (pure,
   golden-tested math), `<nnh/live.hpp>` (spec 030, Development-only), and the 3DS extension headers. —
   *Recommendation: as the study, plus `<nnh/live.hpp>` (Development tooling, young, and nothing in a shipped game
   depends on it); `math3d` stable (plain value types with the same bits everywhere, little to get wrong); `<nnh/3ds/*>`
   stable. UI, fonts/localization and particles stay stable because the first game (FR-28) exercises them before
   `v1.0.0`.*
-- [ ] **Q3 Release candidate before 1.0.0** (study decision 9; FR-27). — *Recommendation (study): yes, `v1.0.0-rc.1`
+- [x] **Q3 Release candidate before 1.0.0** (study decision 9; FR-27). — *Recommendation (study): yes, `v1.0.0-rc.1`
   → newcomer test and first game → fixes → `v1.0.0`. This changes the ROADMAP's "After 1.0" item 1 (the first game
   moves before the final tag).*
-- [ ] **Q4 Pre-release label and the version on `main`.** CMake's `project(VERSION)` takes numbers only. Options: a)
+- [x] **Q4 Pre-release label and the version on `main`.** CMake's `project(VERSION)` takes numbers only. Options: a)
   numbers in `project()` plus a separate label (`rc.1`, `dev` or empty) used for the strings; b) only numbers, no
   labels anywhere but the tag. — *Recommendation: a. `NNHGE_VERSION` stays numeric (so `VERSION_LESS` works), a
   `NNHGE_VERSION_LABEL` and a full-string variable carry the label; after each release `main` moves to the next minor
   with the label `dev` (`1.1.0-dev`), so a checkout `nnh` never claims to be a release and `nnh doctor` can tell them
   apart.*
-- [ ] **Q5 What a minor may still do to stable parts.** — *Recommendation: allowed: new headers, functions, overloads
+- [x] **Q5 What a minor may still do to stable parts.** — *Recommendation: allowed: new headers, functions, overloads
   that don't make existing calls ambiguous, new members at the end of `*Desc`/options structs with default values, new
   enumerators (games should not `switch` exhaustively without a `default`), new events, new keywords and options, new
   `.nnhs` commands, new optional `nnh.toml` keys. Not covered: code in `nnh::detail`, forward declarations of engine
   types, taking the address of engine functions, `sizeof`/layout of engine types, specialising engine templates,
   relying on undocumented behaviour, log text, goldens and exact pixels.*
-- [ ] **Q6 Deprecation window** (FR-11). — *Recommendation (study): `[[deprecated]]` through `NNH_DEPRECATED` for at
+- [x] **Q6 Deprecation window** (FR-11). — *Recommendation (study): `[[deprecated]]` through `NNH_DEPRECATED` for at
   least one minor release before removal, and removal only in a major. No engine switch to silence the warnings: the
   compiler's own flag does it.*
-- [ ] **Q7 Save files across major versions** (FR-7.4). — *Recommendation: the save promise outlives 1.x: every later
+- [x] **Q7 Save files across major versions** (FR-7.4). — *Recommendation: the save promise outlives 1.x: every later
   engine version, 2.x included, reads every save format an earlier release wrote (spec 027 already migrates the game's
   own fields; this covers the engine's container and encoding). Players' progress is the one thing a game update must
   never lose.*
-- [ ] **Q8 Source archive content** (FR-16; spec 032 Q6). Options: full (every tracked file) or slim (engine, cmake,
+- [x] **Q8 Source archive content** (FR-16; spec 032 Q6). Options: full (every tracked file) or slim (engine, cmake,
   third_party, tools, link, apps; no examples, tests, specs, docs). — *Recommendation: one full archive for 1.0: it is a
   few MB, it is what the checklist tests, and examples are learning material; FetchContent fetching it once per preset
   is acceptable (spec 032 Q8). Reconsider a slim archive if the newcomer test shows configure or download time hurts.*
-- [ ] **Q9 Docs snapshot format** (FR-20). — *Recommendation: a zip of the repository's Markdown (`docs/`, `README.md`,
+- [x] **Q9 Docs snapshot format** (FR-20). — *Recommendation: a zip of the repository's Markdown (`docs/`, `README.md`,
   `CHANGELOG.md`, `CONTRIBUTING.md`, `LICENSE`) as of the tag, no HTML build; links in projects and notes go to
   `https://github.com/<repo>/tree/vX.Y.Z/docs`. Alternative: drop the zip, since the source archive already has the
   docs.*
-- [ ] **Q10 Which `.cia` files ship** (FR-19). Today only `audio` declares `CIA`. — *Recommendation: `audio` and the NNH
+- [x] **Q10 Which `.cia` files ship** (FR-19). Today only `audio` declares `CIA`. — *Recommendation: `audio` and the NNH
   Link app (a `.cia` is how a console user keeps NNH Link on the HOME Menu); NNH Link gets a `CIA` declaration in this
   spec if it lacks one. Other examples stay `.3dsx` only.*
-- [ ] **Q11 Fuzz time in the checklist** (FR-24). — *Recommendation: every libFuzzer target 5 minutes on the build VM,
+- [x] **Q11 Fuzz time in the checklist** (FR-24). — *Recommendation: every libFuzzer target 5 minutes on the build VM,
   30 minutes for targets whose parser changed since the last release; any crash blocks the release.*
-- [ ] **Q12 Pin the CI container too** (FR-26). — *Recommendation: yes, one digest shared by both workflows, updated
+- [x] **Q12 Pin the CI container too** (FR-26). — *Recommendation: yes, one digest shared by both workflows, updated
   only by a deliberate change that records the new devkitARM/libctru/citro versions.*
-- [ ] **Q13 GitHub immutable releases and attestations.** — *Recommendation: turn immutable releases on in the
+- [x] **Q13 GitHub immutable releases and attestations.** — *Recommendation: turn immutable releases on in the
   repository settings before `v1.0.0-rc.1` (maintainer's action): it enforces FR-25 (assets and tag locked once
   published) and gives free signed attestations checkable with `gh release verify-asset`, documented next to
   `SHA256SUMS`. Consequence to accept: a published release's tag name can never be reused, even after deleting it.*
-- [ ] **Q14 A constitution article for the promise?** The stability page is a rule every plan must respect. —
+- [x] **Q14 A constitution article for the promise?** The stability page is a rule every plan must respect. —
   *Recommendation: add a short article XII "Keep the promise" (no breaking change to the stable surface within a
   major; deprecate first; experimental parts marked) pointing to the stability page, so the Constitution Check of every
   plan asks it. Maintainer's call, since the constitution changes only with approval.*
-- [ ] **Q15 Patch releases and support.** — *Recommendation: only the latest minor receives patch releases; no LTS
+- [x] **Q15 Patch releases and support.** — *Recommendation: only the latest minor receives patch releases; no LTS
   branches; security fixes the same way.*
-- [ ] **Q16 macOS job in the release workflow** (FR-23). — *Recommendation (study): yes, build `nnh` and run its tests
+- [x] **Q16 macOS job in the release workflow** (FR-23). — *Recommendation (study): yes, build `nnh` and run its tests
   only (free on a public repository), nothing shipped; failures are reported in the notes, not blocking.*
-- [ ] **Q17 Where the ticked checklist lives** (FR-24). Options: a GitHub issue per release from an issue template; a
+- [x] **Q17 Where the ticked checklist lives** (FR-24). Options: a GitHub issue per release from an issue template; a
   file committed after the release; the release notes. — *Recommendation: one issue per release (created from a
   "Release vX.Y.Z" template that copies the checklist), linked from the notes; it can be ticked after the tag without a
   commit.*
-- [ ] **Q18 Scope of the compatibility check** (FR-12). — *Recommendation: one compile-only game source per stable
+- [x] **Q18 Scope of the compatibility check** (FR-12). — *Recommendation: one compile-only game source per stable
   header group, written against `v1.0.0`'s API pages, plus a CMake fixture with every `nnh_add_game()` keyword (spec
   032's consumer project can serve); built in `ctest` on PC and in the 3DS checklist build. It catches removals and
   signature breaks, not behaviour changes (those stay with each module's tests).*
-- [ ] **Q19 Version log line** (FR-4). — *Recommendation: yes, Debug/Development only, one line at start (`NNHGE
+- [x] **Q19 Version log line** (FR-4). — *Recommendation: yes, Debug/Development only, one line at start (`NNHGE
   1.0.0 (Development)`), so console logs and bug reports carry it; Release unchanged (no text added).*
-- [ ] **Q20 Decision row.** — *Recommendation: D57 as FR-29 lists.*
+- [x] **Q20 Decision row.** — *Recommendation: D57 as FR-29 lists.*

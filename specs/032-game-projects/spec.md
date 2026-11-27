@@ -1,6 +1,6 @@
 # Spec 032: Game projects outside the engine repository
 
-Status: draft
+Status: approved 2026-11-27 (the maintainer, every open question as recommended; if FR-19 needs the core split, `hello` may change once, sizes and symbols checked, and FR-17's byte identity holds again from then on)
 Author: NNHGE maintainers · Date: 2026-11-26 · Updated: 2026-11-27 (the study's step 1 spike results)
 Depends on: [spec 010](../010-nnh-cli-run/spec.md) (`nnh build`/`run`/`install`, the games manifest, the presets
 `nnh` picks), [spec 011](../011-nnh-link/spec.md) (`nnh serve`), [spec 007](../007-assets-and-romfs/spec.md),
@@ -356,37 +356,39 @@ at an uploaded release asset (spec 034), not at an automatic archive.
 
 ## Open questions
 
+Answered 2026-11-27: the maintainer approved every recommendation below; if FR-19 needs the core split, `hello` may change once, sizes and symbols checked, and FR-17's byte identity holds again from then on.
+
 The first three are the release study's decisions 1–3 (pending the maintainer's review of the study); the rest came up
 while writing this spec. Q7 and Q9 were closed by the spike (2026-11-27); Q11 and Q12 came from it.
 
-- [ ] **Q1 Default way of bringing the engine in** (study decision 1). Options: A `FetchContent` of a release source
+- [x] **Q1 Default way of bringing the engine in** (study decision 1). Options: A `FetchContent` of a release source
   archive by URL + SHA-256 with the `FETCHCONTENT_SOURCE_DIR_NNHGE` override; B git submodule; C vendored copy;
   D installed package (`find_package`). — *Recommendation (study): A as the documented default (and what `nnh new`
   generates in spec 033), on one contract, "the engine works as an `add_subdirectory()`/FetchContent subproject", so B
   and C work too and get a paragraph each; D stays a non-goal. Until spec 034 publishes a release asset, the docs show
   the URL form with a placeholder and the tests use a locally made archive; never pin GitHub's automatic archives.*
-- [ ] **Q2 Presets in a game project** (study decision 2). Options: A a full `CMakePresets.json` in the project with the
+- [x] **Q2 Presets in a game project** (study decision 2). Options: A a full `CMakePresets.json` in the project with the
   same six names and `build/<preset>` layout; B `include` a presets file shipped by the engine; C only `pc-dev` and
   `3ds-dev`. — *Recommendation (study): A, with the local engine override kept in the git-ignored
   `CMakeUserPresets.json`. B cannot work with a fetched engine (presets are read before the fetch); C would make
   `--release` and `NNH_PRESET` behave differently from the engine repository. In this spec the file is documented to
   copy; spec 033 generates it.*
-- [ ] **Q3 What marks a game project, and what `nnh.toml` holds** (study decision 3). Options: A an `nnh.toml` at the
+- [x] **Q3 What marks a game project, and what `nnh.toml` holds** (study decision 3). Options: A an `nnh.toml` at the
   root; B recognise a `CMakePresets.json` with the preset names; C a CMake cache entry read after configure. —
   *Recommendation (study): A, nearest marker wins (FR-11). For this spec: optional keys `name` (text) and `engine`
   (the engine version the project was made for, text), unknown keys ignored with a one-line warning so later specs can
   add keys without breaking older `nnh` builds; `engine` is only stored and shown in this spec, compared by
   `nnh doctor` in spec 033.*
-- [ ] **Q4 Cost of the consumer test in `ctest`.** Building the consumer project four ways (AC-2) means four more
+- [x] **Q4 Cost of the consumer test in `ctest`.** Building the consumer project four ways (AC-2) means four more
   engine builds per run. — *Recommendation: the default `ctest` builds it one way (the local source folder, which is
   also what a contributor uses), reusing the compiler cache; the other ways of AC-2 run under a ctest label
   (`consumer-full`) that the release checklist and VM 120 runs use. 3DS builds of it stay out of `ctest` (3DS presets
   have no tests) and are run by `nnh build` (AC-3).*
-- [ ] **Q5 "hello byte-identical" on PC.** Windows executables carry a link timestamp and Debug builds carry source
+- [x] **Q5 "hello byte-identical" on PC.** Windows executables carry a link timestamp and Debug builds carry source
   paths, so byte identity may fail for reasons unrelated to this spec. — *Recommendation: byte-identical `.3dsx` for
   `3ds-release` `hello` (and its `.elf` `.text` section); on PC, the same `.text` size for `pc-release` `hello` plus
   every self-check golden unchanged.*
-- [ ] **Q6 Must the engine configure without its examples/tests/apps folders (FR-5)?** — *Recommendation: yes. It costs
+- [x] **Q6 Must the engine configure without its examples/tests/apps folders (FR-5)?** — *Recommendation: yes. It costs
   little (the same gates as FR-4) and leaves spec 034 free to ship a slim engine archive, and vendored copies free to
   drop those folders; the full source archive still contains everything.*
 - [x] **Q7 Compiler cache and compile commands for game targets (FR-7).** Options: the engine applies its detected
@@ -396,7 +398,7 @@ while writing this spec. Q7 and Q9 were closed by the spike (2026-11-27); Q11 an
   game project (the presets of Q2 turn it on). Evidence: the game's PC one-file edit took 2.56–2.68 s without the cache
   and 2.05–2.16 s with the launcher, against `hello`'s 1.63–1.77 s in the repository; without it a game project misses
   the < 2 s budget by more. AC-9 measures it on a game of `hello`'s size.
-- [ ] **Q8 One download per preset.** `FetchContent` downloads into each preset's build folder, so six presets fetch
+- [x] **Q8 One download per preset.** `FetchContent` downloads into each preset's build folder, so six presets fetch
   the archive six times (a few MB each). — *Recommendation: accept it for this spec; document `FETCHCONTENT_SOURCE_DIR_NNHGE`
   pointing at one unpacked copy for offline or slow connections; revisit a shared download folder only if the newcomer
   test (study step 7) shows it hurts.*
@@ -408,10 +410,10 @@ while writing this spec. Q7 and Q9 were closed by the spike (2026-11-27); Q11 an
   preset on Windows; the docs give the `/e/...` form for configuring by hand through `scripts/dkp.sh` and keep engine
   paths out of the game's `CMakeLists.txt` (a hard-coded `E:/` there breaks the 3DS configure). Where the developer
   writes the override so `nnh` can convert it is Q11.
-- [ ] **Q10 Three release specs (study pending decision 4).** — *Recommendation (study): three specs, 032 → 033 → 034,
+- [x] **Q10 Three release specs (study pending decision 4).** — *Recommendation (study): three specs, 032 → 033 → 034,
   implemented in that order after 031; drafted together. The study's other pending decisions (7b experimental modules,
   9 release candidate) belong to spec 034 and are not decided here.*
-- [ ] **Q11 Where the local engine override is written (FR-1.2, FR-15).** Since no single spelling works in both
+- [x] **Q11 Where the local engine override is written (FR-1.2, FR-15).** Since no single spelling works in both
   native and MSYS CMake, `nnh` must see the value to convert it. Options: A in the git-ignored `CMakeUserPresets.json`
   (a cache variable in drive form); `nnh` reads it from the chosen preset and, for a 3DS configure on Windows, passes
   `-DFETCHCONTENT_SOURCE_DIR_NNHGE=/e/...` (a command-line `-D` overrides the preset's value); B a per-preset value, the
@@ -420,7 +422,7 @@ while writing this spec. Q7 and Q9 were closed by the spike (2026-11-27); Q11 an
   CMake's own place for the override (Q2), works for a developer who runs `cmake --preset` by hand on PC, and needs one
   spelling; B is error-prone, C is invisible to plain `cmake`, D adds a file. Confirm in the plan that `/e/...` is
   never needed in native PC CMake (not tested by the spike).*
-- [ ] **Q12 Margin and test paths for the command-line limit (FR-19, AC-11).** — *Recommendation: the longest 3DS
+- [x] **Q12 Margin and test paths for the command-line limit (FR-19, AC-11).** — *Recommendation: the longest 3DS
   command must stay at or below 50% of 32,767 (16,383 characters) in the engine repository and in the consumer project
   built through `FetchContent`, measured with the consumer project at a path of at least 64 characters (the maintainer's
   scratch path was about 30); 50% leaves room for the core to roughly double before the check fails, and the check

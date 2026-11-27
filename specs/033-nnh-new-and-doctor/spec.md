@@ -1,6 +1,6 @@
 # Spec 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: draft
+Status: approved 2026-11-27 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-26
 Depends on: [spec 032](../032-game-projects/spec.md) (draft: the game-project contract this spec generates: the engine as
 a subproject, `nnh.toml`, the six presets in a game project, `NNHGE_VERSION`, `nnh` working from a game project),
@@ -284,31 +284,33 @@ and a rewritten getting-started page walk the whole path.
 
 ## Open questions
 
+Answered 2026-11-27: the maintainer approved every recommendation below.
+
 The first four come from the [release study](../../docs/plans/2026-11-26-release-1.0.md) (pending the maintainer's
 review); the rest came up while writing this spec.
 
-- [ ] **Q1 How the generated project consumes the engine** (study decision 1; spec 032 Q1). — *Recommendation (study):
+- [x] **Q1 How the generated project consumes the engine** (study decision 1; spec 032 Q1). — *Recommendation (study):
   `FetchContent` of the release source archive by URL + SHA-256, with the local override in `CMakeUserPresets.json`.
   Submodule and vendored copy stay documented by hand (spec 032), not as `nnh new` options.*
-- [ ] **Q2 Presets and marker in the generated project** (study decisions 2 and 3; spec 032 Q2, Q3). —
+- [x] **Q2 Presets and marker in the generated project** (study decisions 2 and 3; spec 032 Q2, Q3). —
   *Recommendation (study): a full `CMakePresets.json` with the six names; `nnh.toml` with `name` and `engine`.*
-- [ ] **Q3 `doctor` only, no `nnh setup` in 1.0** (study decision 4). — *Recommendation (study): yes, for the reasons in
+- [x] **Q3 `doctor` only, no `nnh setup` in 1.0** (study decision 4). — *Recommendation (study): yes, for the reasons in
   Non-goals; revisit only the Ninja-in-MSYS2 step after the newcomer test.*
-- [ ] **Q4 Name or path argument.** `nnh new <name>` (folder = name, in the current folder) or `nnh new <path>` like
+- [x] **Q4 Name or path argument.** `nnh new <name>` (folder = name, in the current folder) or `nnh new <path>` like
   Cargo. — *Recommendation: name only for 1.0. It makes FR-4's traversal rule trivial to state and test; `cd` first to
   choose the parent folder.*
-- [ ] **Q5 `git init`.** — *Recommendation: no. `nnh` stays free of git (spec 032 FR-3), and the README's first lines
+- [x] **Q5 `git init`.** — *Recommendation: no. `nnh` stays free of git (spec 032 FR-3), and the README's first lines
   show `git init` for those who want it. The `.gitignore` is written either way.*
-- [ ] **Q6 An `nnh` built from a checkout, without `--engine`** (FR-9). Options: a) use that checkout as the local engine
+- [x] **Q6 An `nnh` built from a checkout, without `--engine`** (FR-9). Options: a) use that checkout as the local engine
   (the source path is known at build time) and write the pinned download with a "no pin known" guard that stops a
   configure without the override; b) refuse without `--engine`; c) write the URL of the release matching its version and
   leave the hash empty. — *Recommendation: a. It is what an engine contributor wants, and the guard never lets an
   unverified download happen; c would trust an unpinned download (constitution X); b adds a step for no gain.*
-- [ ] **Q7 Cost of `nnh_new_smoke` in `ctest`.** The end-to-end test configures one more engine build. —
+- [x] **Q7 Cost of `nnh_new_smoke` in `ctest`.** The end-to-end test configures one more engine build. —
   *Recommendation: as spec 032 Q4: the default `ctest` compiles the template's sources and assets inside the engine's own
   build (cheap, catches a template that no longer compiles) and runs `nnh new` + checks the file list; the full
   end-to-end runs under spec 032's `consumer-full` label, used by VM 120 runs and the release checklist.*
-- [ ] **Q8 Licence note for shipped games** (FR-12). The study says NNHGE and its vendored code need no notice in a
+- [x] **Q8 Licence note for shipped games** (FR-12). The study says NNHGE and its vendored code need no notice in a
   shipped game, "to confirm per library". Facts to settle in the plan: NNHGE, SDL3, libctru, citro2d and citro3d are
   zlib (no notice in binaries); the stb libraries are dual MIT / public domain (the public-domain option needs no
   notice); Ryu (BSL-1.0, only in Debug/Development games that use live values) needs none for object code; the 3DS
@@ -316,18 +318,18 @@ review); the rest came up while writing this spec.
   some newlib files carry BSD-style licences that may ask for a notice in binary distributions. —
   *Recommendation: the README states the clear cases, says that a credits line for devkitPro/newlib is a good habit,
   and links to the licences; it does not claim "no notice needed" for the toolchain runtime until checked per file.*
-- [ ] **Q9 Best-effort hosts in `doctor`.** — *Recommendation (study decision 10): macOS and MSVC give `warn`, never
+- [x] **Q9 Best-effort hosts in `doctor`.** — *Recommendation (study decision 10): macOS and MSVC give `warn`, never
   `FAIL`, with "best effort, not checked by the project".*
-- [ ] **Q10 Compiler minimums.** — *Recommendation: `FAIL` below the oldest GCC/clang/MSVC that compile the engine's
+- [x] **Q10 Compiler minimums.** — *Recommendation: `FAIL` below the oldest GCC/clang/MSVC that compile the engine's
   C++20 subset (found in the plan by trying), `warn` between that and the checked versions (GCC 13/14, clang 18,
   WinLibs GCC 16); the numbers live in one table in `nnh-tool.md`.*
-- [ ] **Q11 Disk space thresholds.** — *Recommendation: measure a fresh project's PC + 3DS builds in the plan; `warn`
+- [x] **Q11 Disk space thresholds.** — *Recommendation: measure a fresh project's PC + 3DS builds in the plan; `warn`
   below about three times that, `FAIL` below one build's worth.*
-- [ ] **Q12 Does a missing devkitPro fail `doctor`?** A simulator-only developer would get exit 1. —
+- [x] **Q12 Does a missing devkitPro fail `doctor`?** A simulator-only developer would get exit 1. —
   *Recommendation: yes by default (the engine's promise is PC **and** 3DS), with `--pc` to check only what the simulator
   needs (FR-21); the verdict lines make the split visible either way.*
-- [ ] **Q13 Smoke script and the generated scene's log lines.** Should the template's log lines and screenshots be part
+- [x] **Q13 Smoke script and the generated scene's log lines.** Should the template's log lines and screenshots be part
   of the stable `nnh new` output (so docs can quote them)? — *Recommendation: no; they are example code the developer is
   expected to change. Only the file list, the `nnh.toml` keys and the commands are documented as stable.*
-- [ ] **Q14 Decision row.** — *Recommendation: D56 records the embedded template, the name rules, the engine-location
+- [x] **Q14 Decision row.** — *Recommendation: D56 records the embedded template, the name rules, the engine-location
   rule of FR-9/Q6, the `doctor` groups, report format and exit codes, and "no `nnh setup`".*

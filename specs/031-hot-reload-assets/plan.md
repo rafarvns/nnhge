@@ -1171,7 +1171,7 @@ still links the reload core in Development, through its textures (the texture ki
   this, not the clash, is what made the data smoke say "nothing changed" on Windows.)
 
 Guards (sixth session): ctest pc-debug 378 (377 + the flaky sprites ctest, fixed and rerun 6 times), pc-release 337/337;
-`nnh_tests` 4142 forward, `--reverse` 2 failures outside spec 031 (above); 0 warnings on all four presets; 3ds-release
+`nnh_tests` 4143 forward, `--reverse` 2 failures outside spec 031 (above); 0 warnings on all four presets; 3ds-release
 `hello` `8c687f3d…` / `5cd5d950…`, pc-release 134 880 / 22 052 / 212 400, identical to T0.1.
 
 ### Not done (open, for the lead or a next session)

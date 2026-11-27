@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "reload/asset_swap.hpp"
+#include "reload/interrupt.hpp"
 #include "reload/reload_controller.hpp"
 #include "reload/reload_wire.hpp"
 #include "remote/live_wire.hpp"
@@ -239,6 +240,28 @@ NNH_TEST(script_reload_backup_names_never_collide) {
     CHECK(swaps.swap("a__b", g.script + "/fixtures/a_new.txt").empty());
     CHECK(swaps.restore_all() == 2);
     CHECK(read(g.game + "/a/b") == "slash" && read(g.game + "/a__b") == "underscores");
+}
+
+NNH_TEST(script_reload_ctrl_c_ends_the_script_on_the_main_loop) {
+    Game g("interrupt");
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt unheld\nwait 600\nend\n");
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    CHECK(read(g.game + "/assets/a.txt") == "fixture bytes");
+    nnh::tool::reload::install_interrupt();
+    nnh::tool::reload::simulate_interrupt(); // what Ctrl+C's handler does: a flag only (review S6)
+    r.poll_reload();
+    CHECK(r.finished() && r.verdict() == Verdict::Error);
+    CHECK(swaps.restore_all() == 1); // finish_reload's work, on the main thread
+    nnh::tool::reload::interrupt_handled();
+    nnh::tool::reload::uninstall_interrupt();
+    CHECK(read(g.game + "/assets/a.txt") == "original");
 }
 
 NNH_TEST(script_reload_a_held_swap_lands_on_its_frame) {

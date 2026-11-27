@@ -5,7 +5,6 @@
 // after an interrupted script.
 
 #include <chrono>
-#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -14,6 +13,7 @@
 #include "game_log.hpp"
 #include "reload/asset_build.hpp"
 #include "reload/asset_swap.hpp"
+#include "reload/interrupt.hpp"
 #include "reload/reload_setup.hpp"
 #include "remote/script_runner.hpp"
 #include "repo.hpp"
@@ -21,12 +21,6 @@
 namespace nnh::tool {
 namespace {
 
-reload::AssetSwaps* g_swaps_on_interrupt = nullptr;
-
-void on_interrupt(int) {
-    if (g_swaps_on_interrupt != nullptr) g_swaps_on_interrupt->restore_all(); // Ctrl+C mid-script: originals back
-    std::_Exit(130);
-}
 
 reload::ControllerSetup controller_setup(const reload::ReloadPaths& paths, const BuiltGame& built, bool pc) {
     const Shell shell = host_shell(!pc);
@@ -81,8 +75,7 @@ void start_reload(const GameRun& run, const BuiltGame& built, bool pc) {
         s.backup_dir = reload::swap_backup_dir(built.root, built.game.name);
         s.swaps = std::make_unique<reload::AssetSwaps>(paths->game, s.backup_dir);
         run.runner->set_reload_script(s.swaps.get(), s.script_dir);
-        g_swaps_on_interrupt = s.swaps.get();
-        std::signal(SIGINT, on_interrupt);
+        reload::install_interrupt(); // Ctrl+C ends the script; finish_reload() puts the sources back (review S6)
         return;
     }
     std::printf("nnh: hot reload on: saving a file in %s reloads it (type reload to force one)\n",
@@ -92,8 +85,9 @@ void start_reload(const GameRun& run, const BuiltGame& built, bool pc) {
 void finish_reload(const GameRun& run) {
     if (run.reload == nullptr || run.reload->swaps == nullptr) return;
     reload::ReloadSession& s = *run.reload;
-    g_swaps_on_interrupt = nullptr;
     const int restored = s.swaps->restore_all();
+    reload::interrupt_handled();
+    reload::uninstall_interrupt();
     if (restored == 0) return;
     std::printf("nnh: put back %d swapped asset%s\n", restored, restored == 1 ? "" : "s");
     if (s.controller != nullptr) s.controller->rebuild(); // the outputs match the sources again

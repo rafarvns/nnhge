@@ -6,6 +6,7 @@
 
 #include "reload/reload_controller.hpp"
 #include "reload/reload_wire.hpp"
+#include "reload/interrupt.hpp"
 #include "remote/script_runner.hpp"
 
 namespace nnh::tool::remote {
@@ -14,6 +15,10 @@ void ScriptRunner::set_reload(reload::ReloadController* controller) { reload_ = 
 
 void ScriptRunner::poll_reload() {
     if (reload_ == nullptr || closed_) return;
+    if (swaps_ != nullptr && verdict_ == Verdict::Running && reload::interrupt_requested()) { // review S6
+        finish(Verdict::Error, 0, "interrupted: the swapped sources are put back");
+        return;
+    }
     if (options_.interactive && reload_->watching() && !hello_sent_) send_hello(); // attach now: a save may come
     if (attached_) reload_->poll();
     for (std::string& n : reload_->take_notes()) notes_.push_back(std::move(n));

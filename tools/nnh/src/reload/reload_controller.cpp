@@ -93,8 +93,7 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
     if (!enabled_) {
         outcome_.done = true;
         outcome_.why = "the game has no hot reload";
-        pending_ = tail;
-        allowance_ = kInitialAllowance;
+        set_pending({}, tail);
         return false;
     }
     if (saved_at_ == 0) saved_at_ = setup_.now_ms();
@@ -109,9 +108,7 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
         const std::string why = restart ? "reload refused: " + built.restart + ": rebuild and restart (nnh run)"
                                         : "reload refused: conversion failed (see the lines above)";
         note(why);
-        pending_ = encode_notice(restart, first_source, 0);
-        pending_.insert(pending_.end(), tail.begin(), tail.end());
-        allowance_ = kInitialAllowance;
+        set_pending(encode_notice(restart, first_source, 0), tail);
         outcome_ = Outcome{true, false, false, 0, {}, restart ? "needs a restart" : "conversion failed"};
         state_ = State::Idle;
         saved_at_ = 0;
@@ -122,8 +119,7 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
     watcher_.reset(list_sources(setup_.src_dir));
     if (changes_.empty()) {
         note("reload: nothing changed in the converted assets");
-        pending_ = tail;
-        allowance_ = kInitialAllowance;
+        set_pending({}, tail);
         outcome_.done = true;
         saved_at_ = 0;
         return false;
@@ -136,8 +132,7 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
         if (!ok) {
             note("reload: can't read " + c.path + ": try again");
             outcome_.done = true;
-            pending_ = tail;
-            allowance_ = kInitialAllowance;
+            set_pending({}, tail);
             return false;
         }
         files.push_back(std::move(f));
@@ -147,15 +142,13 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
     if (!e.error.empty()) {
         note("reload refused: " + e.error);
         outcome_ = Outcome{true, false, false, 0, {}, e.error};
-        pending_ = tail;
-        allowance_ = kInitialAllowance;
+        set_pending({}, tail);
         return false;
     }
-    pending_ = e.bytes;
+    std::vector<std::uint8_t> batch = e.bytes;
     const std::vector<std::uint8_t> apply = encode_apply(batch_, e.files, apply_frame, seq_++);
-    pending_.insert(pending_.end(), apply.begin(), apply.end());
-    pending_.insert(pending_.end(), tail.begin(), tail.end());
-    allowance_ = kInitialAllowance;
+    batch.insert(batch.end(), apply.begin(), apply.end());
+    set_pending(batch, tail);
     for (const OutputChange& c : changes_) outcome_.paths.push_back(c.path);
     outcome_.sent = true;
     note("reload " + std::to_string(batch_) + ": " + std::to_string(e.files) + " files, " + kb(e.total) + " (build " +
@@ -164,13 +157,17 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
     return true;
 }
 
+void ReloadController::set_pending(const std::vector<std::uint8_t>& batch, const std::vector<std::uint8_t>& tail) {
+    pending_.clear();
+    pending_.append(batch);
+    pending_.mark_tail();
+    pending_.append(tail);
+    allowance_ = kInitialAllowance;
+}
+
 std::vector<std::uint8_t> ReloadController::take_bytes() {
-    std::vector<std::uint8_t> out;
-    if (pending_.empty()) return out;
-    const std::size_t n = pending_.size() < allowance_ ? pending_.size() : allowance_;
-    out.assign(pending_.begin(), pending_.begin() + static_cast<long>(n));
-    pending_.erase(pending_.begin(), pending_.begin() + static_cast<long>(n));
-    allowance_ -= n;
+    if (pending_.empty()) return {};
+    std::vector<std::uint8_t> out = pending_.take(allowance_);
     if (pending_.empty() && state_ == State::Sending) state_ = State::Waiting;
     return out;
 }
@@ -189,7 +186,7 @@ void ReloadController::on_record(const remote::Record& r) {
     case wire::RecordType::Rejected:
         if (state_ != State::Idle && r.reason == wire::Reject::Type) {
             enabled_ = false;
-            pending_.clear();
+            pending_.drop_batch(); // a script's Resume still goes out
             note("the game has no hot reload (built before spec 031): watching off");
             outcome_.why = "the game has no hot reload";
             finish_cycle();
@@ -215,7 +212,7 @@ void ReloadController::on_record(const remote::Record& r) {
         if (f.batch != batch_ || state_ == State::Idle) return;
         std::string what = f.file < changes_.size() ? changes_[f.file].path + ": " : std::string();
         outcome_.why = what + wire::reload_reason_text(f.reason);
-        pending_.clear();
+        pending_.drop_batch(); // the rest of the batch, never half a unit; a script's Resume still goes out
         note("reload " + std::to_string(f.batch) + " refused by the game: " + outcome_.why);
         finish_cycle();
         return;

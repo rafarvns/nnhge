@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "reload/output_snapshot.hpp"
+#include "reload/paced_units.hpp"
 #include "reload/source_watcher.hpp"
 #include "remote/game_records.hpp"
 
@@ -68,8 +69,8 @@ public:
     void on_record(const remote::Record& record);
     /// Builds the asset target once more, sending nothing (after a script put its swapped sources back).
     void rebuild() { setup_.build(""); }
-    /// What may go to the game now (paced). Messages of other kinds may be sent around it: a batch is never split
-    /// inside a message.
+    /// What may go to the game now (paced): whole units only (a message with its payload), so that messages of other
+    /// kinds sent around it land on a unit boundary.
     std::vector<std::uint8_t> take_bytes();
     /// Bytes are still waiting for take_bytes().
     bool sending() const { return !pending_.empty(); }
@@ -105,7 +106,8 @@ private:
     std::uint16_t batch_ = 0;
     std::uint16_t seq_ = 0xC000;
     std::vector<OutputChange> changes_;
-    std::vector<std::uint8_t> pending_;
+    void set_pending(const std::vector<std::uint8_t>& batch, const std::vector<std::uint8_t>& tail);
+    PacedUnits pending_; ///< whole units (review B1)
     std::size_t allowance_ = 0;
     Outcome outcome_;
     std::vector<std::string> notes_;

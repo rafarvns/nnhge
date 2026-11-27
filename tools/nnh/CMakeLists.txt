@@ -22,6 +22,7 @@ add_library(nnh_tool_lib STATIC
     src/reload/asset_swap.cpp
     src/reload/batch_sender.cpp
     src/reload/output_snapshot.cpp
+    src/reload/paced_units.cpp
     src/reload/reload_controller.cpp
     src/reload/reload_setup.cpp
     src/reload/source_watcher.cpp

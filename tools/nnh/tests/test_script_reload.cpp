@@ -276,6 +276,42 @@ NNH_TEST(script_reload_a_held_swap_refused_by_the_build_resumes_before_the_next_
     swaps.restore_all();
 }
 
+NNH_TEST(script_reload_input_sent_during_a_large_batch_keeps_the_stream_aligned) {
+    Game g("aligned");
+    write(g.script + "/fixtures/big.txt", std::string(200 * 1024, 'b'));
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/big.txt unheld\ntap A\nwait 2\ntap B\n"
+                           "expect-reload a within 600\nend\n");
+    CHECK(p.errors.empty());
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    std::vector<std::uint8_t> stream; // what the game would read, in the order game_session writes it
+    for (std::uint32_t frame = 2; frame < 40 && controller.sending(); frame += 4) {
+        for (const MessageBytes& b : r.take_messages()) stream.insert(stream.end(), b.begin(), b.end());
+        const std::vector<std::uint8_t> slice = r.take_bytes();
+        stream.insert(stream.end(), slice.begin(), slice.end());
+        r.on_record(tick(frame));
+    }
+    for (const MessageBytes& b : r.take_messages()) stream.insert(stream.end(), b.begin(), b.end());
+    std::size_t at = 0;
+    int buttons = 0;
+    while (at < stream.size()) { // every header decodes where the previous unit ended
+        wire::Message m;
+        CHECK(wire::decode_message(stream.data() + at, m) == wire::Reject::None);
+        if (wire::decode_message(stream.data() + at, m) != wire::Reject::None) break;
+        buttons += m.type == wire::MessageType::Buttons ? 1 : 0;
+        at += wire::kMessageSize + wire::payload_length(m);
+    }
+    CHECK(at == stream.size());
+    CHECK(buttons >= 2); // the taps went out between the batch's units
+    swaps.restore_all();
+}
+
 NNH_TEST(script_reload_an_unheld_swap_is_waited_for_within_n) {
     Game g("unheld");
     ReloadController controller(g.setup());

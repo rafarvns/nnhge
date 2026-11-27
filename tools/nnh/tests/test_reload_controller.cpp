@@ -255,15 +255,76 @@ NNH_TEST(reload_controller_pacing_follows_the_ticks) {
     ReloadController c(setup(f));
     c.start();
     CHECK(c.run_cycle(0));
-    CHECK(c.take_bytes().size() == kInitialAllowance);
+    const std::size_t first = c.take_bytes().size();
+    CHECK(first > 0 && first <= kInitialAllowance);
     CHECK(c.take_bytes().empty()); // no tick yet
     Record tick;
     tick.type = wire::RecordType::Tick;
     c.on_record(tick);
-    CHECK(c.take_bytes().size() == kAllowancePerTick);
+    const std::size_t second = c.take_bytes().size();
+    CHECK(second > 0 && first + second <= kInitialAllowance + kAllowancePerTick);
     for (int i = 0; i < 4; ++i) c.on_record(tick);
     c.take_bytes();
     CHECK(c.state() == ReloadController::State::Waiting);
+}
+
+namespace {
+
+/// The messages of `bytes` if it is whole units (each message followed by its whole payload), else -1.
+int whole_units(const std::vector<std::uint8_t>& bytes) {
+    int count = 0;
+    std::size_t at = 0;
+    while (at < bytes.size()) {
+        wire::Message m;
+        if (bytes.size() - at < wire::kMessageSize || wire::decode_message(bytes.data() + at, m) != wire::Reject::None) {
+            return -1;
+        }
+        at += wire::kMessageSize + wire::payload_length(m);
+        ++count;
+    }
+    return at == bytes.size() ? count : -1;
+}
+
+} // namespace
+
+NNH_TEST(reload_controller_slices_are_whole_units) {
+    Fake f = make("units");
+    f.next_out_text = std::string(200 * 1024 + 7, 'u');
+    ReloadController c(setup(f));
+    c.start();
+    CHECK(c.run_cycle(0));
+    Record tick;
+    tick.type = wire::RecordType::Tick;
+    int slices = 0;
+    std::size_t sent = 0;
+    for (int i = 0; i < 10 && c.sending(); ++i) {
+        const std::vector<std::uint8_t> slice = c.take_bytes();
+        sent += slice.size();
+        CHECK(sent <= kInitialAllowance + static_cast<std::size_t>(i) * kAllowancePerTick); // never ahead of the game
+        CHECK(whole_units(slice) > 0); // another message sent between two slices lands on a boundary
+        ++slices;
+        c.on_record(tick);
+    }
+    CHECK(slices >= 4 && !c.sending());
+}
+
+NNH_TEST(reload_controller_a_refusal_mid_send_keeps_the_resume) {
+    Fake f = make("midsend");
+    f.next_out_text = std::string(200 * 1024, 'm');
+    ReloadController c(setup(f));
+    c.start();
+    wire::Message resume;
+    resume.type = wire::MessageType::Pause;
+    resume.frame = 9;
+    std::vector<std::uint8_t> tail(wire::kMessageSize);
+    wire::encode_message(resume, tail.data());
+    CHECK(c.run_cycle(9, tail));
+    CHECK(whole_units(c.take_bytes()) > 0); // part of the batch went out
+    c.on_record(refused(1));                // the game refused it meanwhile
+    CHECK(c.state() == ReloadController::State::Idle);
+    const std::vector<std::uint8_t> rest = c.take_bytes();
+    CHECK(rest == tail); // only the held swap's Resume is left, and it still goes out
+    CHECK(!c.sending());
 }
 
 NNH_TEST(reload_controller_typed_reload_of_one_path) {

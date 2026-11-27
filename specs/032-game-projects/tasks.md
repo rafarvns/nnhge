@@ -1,6 +1,6 @@
 # Tasks 032: Game projects outside the engine repository
 
-Status: approved 2026-11-27 (with plan.md)
+Status: **implemented 2026-11-27** (worktree `spec-032`; the review, the Linux pass and the console run are pending); approved 2026-11-27 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -225,8 +225,8 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 10: status
 
-- [ ] **T10.1** `docs/ROADMAP.md`: an entry for game projects outside the repository (spec 032) in the 1.0 release
+- [x] **T10.1** `docs/ROADMAP.md`: an entry for game projects outside the repository (spec 032) in the 1.0 release
   section (created here if 033/034 have not), with the implemented summary. Covers FR-18.
-- [ ] **T10.2** spec, plan, tasks and `specs/README.md` status → implemented; D55 → implemented in `decisions.md`.
+- [x] **T10.2** spec, plan, tasks and `specs/README.md` status → implemented; D55 → implemented in `decisions.md`.
 - [ ] **T10.3** (the lead) Merge `spec-032` into `main`; then `ctest --preset pc-debug` (with `consumer`), every example's
   `--pc` script, one 3ds-release build with `hello`'s hash; the worktree's build folders and copies deleted (disk).

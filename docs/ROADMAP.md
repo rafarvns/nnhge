@@ -388,6 +388,20 @@ spec; the order below is a proposal.
   the simulator's CPU rasteriser (D41) and the citro3d backend; `examples/models` (showcase, check, bench, smoke).
   A 2D game links no 3D code (`hello` 3DS `.text` +272 B: the hook and the shared 2D slice function).
 
+## Release 1.0 (specs 032–034, study [2026-11-26](plans/2026-11-26-release-1.0.md))
+
+- [x] **Game projects outside the engine repository** — [spec 032](../specs/032-game-projects/spec.md) (D55):
+  the engine is a CMake subproject of a game's own project — a hash-pinned source archive through `FetchContent`
+  (`NNHGE_ENGINE_DIR` for a local engine), a git submodule or a copied folder; `nnh_add_game()` with every keyword from
+  any folder; examples, tests, NNH Link and `nnh` stay out (`NNH_BUILD_*` default to `PROJECT_IS_TOP_LEVEL`); game
+  targets get C++20 and the compiler cache; `NNHGE_VERSION*`; `nnh` works in a folder marked by `nnh.toml`, checks the
+  presets and passes the host compiler and paths in MSYS form to 3DS configures (a fresh `nnh build` of a 3DS preset now
+  works in the repository too); the core is archived from a response file in 3DS presets (longest command 27,354 →
+  2,533 characters, `hello` byte-identical). Proof: `tests/consumer/` and the `consumer`/`consumer-full` ctests; guide
+  [game projects](guides/game-projects.md). Implemented 2026-11-27; review, Linux pass and console run pending.
+- [ ] `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs — [spec 033](../specs/033-nnh-new-and-doctor/spec.md)
+- [ ] Versions, API stability and releases — [spec 034](../specs/034-versions-and-releases/spec.md)
+
 ## After 1.0 (planned 2026-11-26)
 
 1. **First release and a small sample game.** Cut a release right after 1.0, then build one simple, complete game with

@@ -1,6 +1,6 @@
 # Plan 032: Game projects outside the engine repository
 
-Status: approved 2026-11-27 (the maintainer, the twelve questions at the end as recommended, `NNHGE_ENGINE_DIR` included)
+Status: **implemented 2026-11-27** (worktree `spec-032`; the review, the Linux pass and the console run are pending); approved 2026-11-27 (the maintainer, the twelve questions at the end as recommended, `NNHGE_ENGINE_DIR` included)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D55 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
 Uses spec 010 and D23 (`nnh build`/`run`/`install`, the games manifest, the MSYS shell for 3DS on Windows), spec 011
@@ -748,3 +748,41 @@ Stage 4 refinements:
 - **T8.1** (code only) `scripts/vm_check.sh final` runs `ctest -L consumer-full`, the consumer copy's 3DS builds through
   `nnh` under `/tmp` with `/opt/devkitpro`, and a fresh `3ds-dev` `nnh build animation`; the main ctest there runs
   `-LE consumer-full`. Not run: the VM pass is the lead's.
+
+### Console run (stage 9, prepared; not run: the maintainer runs it after the review and the Linux pass)
+
+T9.1 on the PC (Git Bash, from the engine checkout that will be tested: this worktree, or `main` after the merge;
+`E` below is its folder in drive form, `$N` its `nnh`):
+
+```sh
+E=E:/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-032
+N=/e/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-032/build/pc-debug/tools/nnh/nnh.exe
+cd /e/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-032
+tests/consumer_tools/copy_project.sh /e/RANDOM/nnhge-032-console local
+cd /e/RANDOM/nnhge-032-console && export NNHGE_ENGINE_DIR=$E
+$N build nnh_consumer && $N build nnh_consumer --release        # 3ds-dev and 3ds-release, no warning expected
+```
+
+T9.2 on the Old 3DS XL (nobody touches it after Y):
+
+1. Homebrew Launcher open, press **Y**; on the PC: `$N run nnh_consumer --script game/tests/check.nnhs`. Expected:
+   `nnh: PASS`, exit 0, the line `consumer: PASS D99E1764` (the PC's), the log and screenshots under
+   `/e/RANDOM/nnhge-032-console/build/logs/`.
+2. FBI → Remote Install → Receive URLs over the network; on the PC: `$N install nnh_consumer`. Then from the HOME
+   Menu: is "NNHGE Consumer" there with the fixture's icon (the 48×48 test icon) and banner, and does it start to the
+   green PASS screen? (yes/no)
+3. Afterwards: `rm -rf /e/RANDOM/nnhge-032-console` (disk).
+
+### Final guards (2026-11-27, Windows) and what is open
+
+- ctest pc-release 341/341 and pc-debug 382/382 (`-LE consumer-full`; the first pc-debug run reported `nnh_tool`
+  failing on the mutant `path_order_changed`: the mutation harness had rebuilt `nnh_tool_tests` with the mutant and
+  restoring the source doesn't rebuild it; after `cmake --build build/pc-debug`, `nnh_tool` and `nnh_script_pc_smoke`
+  pass). The four presets build with 0 warnings (stage 6; no engine or helper change since); `hello.3dsx` and the
+  stripped `.elf` equal to T0.1's; `check_command_length.sh` 2,533 (7.7 %) in both 3DS presets; `docs_tool.py check`
+  0 broken links. The `consumer-full` ways passed at stage 3 on this engine (only the driver's local way and the docs
+  changed since).
+- **Open** (the new check order, docs/process/README.md): T8.1's script step and T8.2 (one review together with one
+  `scripts/vm_check.sh final` on VM 120: Linux `ctest` with `consumer` and `consumer-full`, the consumer's 3DS builds
+  with `/opt/devkitpro`, GCC 14, 32-bit, ASan/UBSan), stage 9 (the console run above) and T10.3 (merge, then the
+  post-merge checks). Not started by this implementation, as instructed.

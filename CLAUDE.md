@@ -315,7 +315,7 @@ build/pc-debug/tools/nnh/nnh run particles [--pc] --script examples/particles/te
 QUERIES_DEMO=all NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/queries.png build/pc-debug/examples/queries/queries.exe   # first|all|cast|water|touch|check|bench
 build/pc-debug/tools/nnh/nnh run queries [--pc] --script examples/queries/tests/check.nnhs  # rays, touches, self-check 4ACAA177, bench
 build/pc-debug/tools/nnh/nnh run transitions [--pc] --script examples/transitions/tests/check.nnhs  # self-check BFE1D810, showcase, bench
-build/pc-debug/tools/nnh/nnh run platformer [--pc] --script examples/platformer/tests/doors.nnhs   # ten door irises, 60 Hz PASS/FAIL
+build/pc-debug/tools/nnh/nnh run platformer [--pc] --script examples/platformer/tests/doors.nnhs   # ten door irises, 60 Hz PASS/FAIL (judged in Development builds; pc-debug only reports)
 TRANSITIONS_SHOT=iris NNH_EXIT_AFTER_FRAMES=40 NNH_SCREENSHOT=build/iris.png build/pc-debug/examples/transitions/transitions.exe   # fade|wipe|split|blinds|iris|diamond|curtain|tall|loading
 build/pc-debug/tools/nnh/nnh run prefabs [--pc] --script examples/prefabs/tests/check.nnhs  # room, touch spawns, self-check 7BB7901E, bench
 build/pc-debug/tools/nnh/nnh run hierarchy [--pc] --script examples/hierarchy/tests/check.nnhs  # yard, self-check 23DB5C36, bench

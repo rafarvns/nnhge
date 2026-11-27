@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "doctor/tool_versions.hpp"
 #include "preset_names.hpp"
 #include "project_file.hpp"
 #include "remote/game_stream.hpp"
@@ -174,4 +175,28 @@ NNH_TEST(presets_target_survives_mutated_inputs) {
         found += nnh::tool::presets_define(text, "", "pc-dev") ? 1 : 0; // never crashes or loops
     }
     CHECK(found > 0 && found < 6000);
+}
+
+NNH_TEST(tool_version_parsers_survive_mutated_outputs) { // spec 033 FR-19: doctor reads what any program prints
+    const std::string seeds[] = {
+        "cmake version 3.25.1\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+        "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\n",
+        "Apple clang version 15.0.0 (clang-1500.3.9.4)\nTarget: arm64-apple-darwin23.4.0\n",
+        "Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35211 for x64\r\n", "1.11.1\n"};
+    Rng rng{71};
+    int valid = 0;
+    for (int i = 0; i < 6000; ++i) {
+        std::string text = seeds[i % 5];
+        mutate(text, rng);
+        const nnh::tool::Version c = nnh::tool::cmake_version(text), n = nnh::tool::ninja_version(text);
+        const nnh::tool::CompilerVersion v = nnh::tool::compiler_version(text);
+        for (const nnh::tool::Version& x : {c, n, v.version}) {
+            CHECK(!x.valid() || (x.major <= 999999 && x.minor >= 0 && x.minor <= 999999 && x.patch >= 0));
+        }
+        CHECK(v.version.valid() == (v.kind != nnh::tool::CompilerKind::Unknown));
+        valid += v.version.valid() ? 1 : 0;
+        const std::vector<std::string> folders = {text, text + "-1", "libctru-" + text + "-1"};
+        CHECK(nnh::tool::pacman_version(folders, "libctru").size() <= text.size() + 2);
+    }
+    CHECK(valid > 0 && valid < 6000);
 }

@@ -97,14 +97,14 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 5: `nnh doctor`'s core (FR-18, FR-20, FR-21)
 
-- [ ] **T5.1** `run_program` with a time limit and bounded output (a sleeping helper killed; output cut at the bound;
+- [x] **T5.1** `run_program` with a time limit and bounded output (a sleeping helper killed; output cut at the bound;
   a missing program) — files: `process_run.{hpp,cpp}` — test: `test_process_run.cpp` — covers FR-18
-- [ ] **T5.2** [P] Version parsers on recorded outputs (CMake 3.25 and 4.x, Ninja, GCC/MinGW-w64/WinLibs, clang, Apple
+- [x] **T5.2** [P] Version parsers on recorded outputs (CMake 3.25 and 4.x, Ninja, GCC/MinGW-w64/WinLibs, clang, Apple
   clang, MSVC `cl`, `arm-none-eabi-gcc`, pacman folder names) + mini-fuzz — files: `doctor/tool_versions.{hpp,cpp}`,
   `tools/nnh/tests/data/doctor/` — test: `test_tool_versions.cpp`, `test_fuzz_tool.cpp` — covers FR-19
-- [ ] **T5.3** [P] Report: types, format, `fix:` lines, verdict lines, colour off/on, exit codes with `--pc` — files:
+- [x] **T5.3** [P] Report: types, format, `fix:` lines, verdict lines, colour off/on, exit codes with `--pc` — files:
   `doctor/doctor_report.{hpp,cpp}` — test: `test_doctor_report.cpp` — covers FR-20, FR-21
-- [ ] **T5.4** Probes seam and fakes — files: `doctor/probes.hpp`, `doctor/probes_system.cpp`,
+- [x] **T5.4** Probes seam and fakes — files: `doctor/probes.hpp`, `doctor/probes_system.cpp`,
   `tools/nnh/tests/doctor_fakes.hpp` — test: used by stage 6; one real-probe smoke case (`cmake` found on this machine)
   — covers FR-18, FR-23
 

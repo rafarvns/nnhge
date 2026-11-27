@@ -53,6 +53,9 @@ add_library(nnh_tool_lib STATIC
     src/commands/run_reload.cpp
     src/commands/serve.cpp
     src/console_link.cpp
+    src/doctor/doctor_report.cpp
+    src/doctor/probes_system.cpp
+    src/doctor/tool_versions.cpp
     src/fbi.cpp
     src/file_server.cpp
     src/game_log.cpp
@@ -69,6 +72,7 @@ add_library(nnh_tool_lib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/template_files.cpp
     src/new/unique_id.cpp
     src/preset_names.cpp
+    src/process_run.cpp
     src/project_file.cpp
     src/project_root.cpp
     src/reload/asset_build.cpp
@@ -167,6 +171,7 @@ if(NNH_BUILD_TESTS)
         tests/test_cli.cpp
         tests/test_configure_command.cpp
         tests/test_console_link.cpp
+        tests/test_doctor_report.cpp
         tests/test_engine_location.cpp
         tests/test_fbi.cpp
         tests/test_fuzz_tool.cpp
@@ -178,6 +183,7 @@ if(NNH_BUILD_TESTS)
         tests/test_netloader.cpp
         tests/test_png_writer.cpp
         tests/test_preset_names.cpp
+        tests/test_process_run.cpp
         tests/test_project_file.cpp
         tests/test_project_name.cpp
         tests/test_project_writer.cpp
@@ -199,12 +205,14 @@ if(NNH_BUILD_TESTS)
         tests/test_script_timeline.cpp
         tests/test_serve.cpp
         tests/test_stdin_lines.cpp
+        tests/test_tool_versions.cpp
         tests/test_user_config.cpp
         tests/test_zlib_stored.cpp
     )
     target_link_libraries(nnh_tool_tests PRIVATE nnh_tool_lib nnh_test_framework)
     target_compile_definitions(nnh_tool_tests PRIVATE NNH_TOOL_TEST_TMP="${CMAKE_CURRENT_BINARY_DIR}"
-                                                     NNH_TOOL_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+                                                     NNH_TOOL_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+                                                     NNH_TOOL_TEST_CMAKE="${CMAKE_COMMAND}")
     nnh_engine_options(nnh_tool_tests)
     _nnh_tool_static_runtime(nnh_tool_tests)
     add_test(NAME nnh_tool COMMAND nnh_tool_tests)

@@ -772,3 +772,31 @@ installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16
 - Disk of the generated project after the four builds: `pc-dev` 38 MB, `3ds-dev` 43 MB, `3ds-release` 36 MB (116 MB
   in all, the compiler cache warm). `doctor`'s thresholds re-set from it: `FAIL` below 0.1 GB (one PC and one 3DS
   build), `warn` below 0.35 GB (≈ 3× the three folders).
+
+### Stage 5 results (`nnh doctor`'s core)
+
+- `process_run`: Windows `CreateProcessW` (suspended, assigned to a job with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`,
+  then resumed, so the time limit also kills what the program started, e.g. `bash -lc`'s children), stdin `NUL`,
+  stdout and stderr on one pipe read with `PeekNamedPipe`; elsewhere `posix_spawnp` + `poll` + `SIGKILL`. After the
+  program exits, what is left in the pipe is read and the loop stops even if a grandchild still holds the pipe.
+  `windows_command_line` quotes like the C runtime (backslashes doubled only before a quote or the closing quote).
+- `tool_versions`: `cmake --version` must start with `cmake version `; Ninja's first line is the version; compilers by
+  their banner (`Optimizing Compiler Version`, `Apple clang version`, `clang version`, else GCC when the line names
+  `gcc`/`g++`/`c++`/`(GCC)`: the version after the last `)`, so Ubuntu's `13.3.0-6ubuntu2~24.04.1` package suffix is
+  skipped); numbers of at most 6 digits, 64 KiB read; pacman folders `<name>-<version>-<release>` (`devkitARM-r68-1` →
+  `r68`, `devkitARM-gdb-*` and `3ds-cmake-*` not taken for `devkitARM`/`cmake`). Recorded outputs in
+  `tools/nnh/tests/data/doctor/` (its README says which are real recordings and which are format samples).
+- `doctor_report`: `  <state:6><name:15><found>`, `        fix: <one line>` under every warn/FAIL, a blank line, the
+  verdicts; About has no verdict line (`DoctorGroup::verdict`), a group not checked shows only its verdict; the
+  not-required groups (About, Optional) say "N problems (not required)"; `--pc` keeps the 3DS checks and says
+  "not counted: --pc". Colours wrap only the state word (green/yellow/red).
+- `Probes` (`doctor/probes.hpp`): env, is_file, is_dir, read_file (bounded), list_dir, find_program, run (10 s, 64 KiB),
+  free_bytes, os_name (`RtlGetVersion`: "Windows 11 (10.0.26100)"; `/etc/os-release`'s `PRETTY_NAME`), and the two
+  network probes, `find_console` (the remembered console read from `nnh.ini`, never written, plus the broadcasts, or
+  only `--console`) and `fetch` (a uniquely named script in the system's temporary folder, `file(DOWNLOAD ... RANGE_START
+  0 RANGE_END 0 ... [TLS_CAINFO])`, removed after). Fakes: `tools/nnh/tests/doctor_fakes.hpp` (`FakeMachine`; the
+  network probes count their calls).
+- Tests: 323 → 348 (`test_process_run.cpp` 7 incl. the real-probe smoke, `test_tool_versions.cpp` 5,
+  `test_doctor_report.cpp` 6, the parsers' mini-fuzz in `test_fuzz_tool.cpp`), the first three files seen red against
+  stubs (10 failing tests; the report stub crashed on an empty verdict list). The real-probe case was written after
+  `probes_system.cpp` (a smoke of the real machine, not a rule).

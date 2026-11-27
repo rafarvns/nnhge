@@ -141,7 +141,7 @@ Result<void> data_index_load() {
     auto read = data_index_read(g_state);
     if (!read) return read.error();
     data_index_match_types();
-    (void)add_shutdown_hook(data_index_release); // 8 hooks for a handful of optional modules: always room
+    require_shutdown_hook(data_index_release);
     if constexpr (build::kDevToolsEnabled) data_reload_register(); // spec 031: reloaded data is checked
     return {};
 }

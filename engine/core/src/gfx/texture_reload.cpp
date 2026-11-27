@@ -168,7 +168,7 @@ void texture_reload_loaded(int slot, std::uint32_t generation, const char* asset
         for (int i = 0; i < capacity; ++i) g_tags[i] = SlotTag{};
     }
     reload::register_kind(g_kind);
-    (void)add_shutdown_hook(texture_reload_shutdown);
+    require_shutdown_hook(texture_reload_shutdown);
     if (slot >= 0 && slot < g_tag_count) g_tags[slot] = SlotTag{reload::path_hash(asset_path), generation};
 }
 

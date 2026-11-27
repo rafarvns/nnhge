@@ -97,7 +97,10 @@ ReloadFiles& session_files() { return g_files; }
 ReloadReceiver& session_receiver() { return g_receiver; }
 
 void ensure_shutdown_hook() {
-    if (!g_hooked) g_hooked = add_shutdown_hook(hook_shutdown);
+    if (!g_hooked) {
+        require_shutdown_hook(hook_shutdown);
+        g_hooked = true;
+    }
 }
 
 void schedule_apply(std::uint16_t batch, std::uint16_t files) {

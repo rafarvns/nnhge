@@ -106,7 +106,7 @@ void mesh_reload_loaded(int slot, std::uint32_t generation, const char* asset_pa
             mem::alloc(MemRegion::Heap, reload::reload_memory_tag(), sizeof(SlotTag) * kMeshSlots));
         if (g_tags == nullptr) return;
         for (int i = 0; i < kMeshSlots; ++i) g_tags[i] = SlotTag{};
-        (void)add_shutdown_hook(shutdown_hook);
+        require_shutdown_hook(shutdown_hook);
     }
     reload::register_kind(g_kind);
     if (slot >= 0 && slot < kMeshSlots) g_tags[slot] = SlotTag{reload::path_hash(asset_path), generation};

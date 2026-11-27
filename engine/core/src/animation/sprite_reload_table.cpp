@@ -61,7 +61,7 @@ bool sprite_reload_track(SpriteBlock* identity, const char* asset_path, const ch
             mem::alloc(MemRegion::Heap, animation_memory_tag(), sizeof(SpriteReloadEntry) * kEntries));
         if (g_entries == nullptr) return false;
         for (int i = 0; i < kEntries; ++i) new (&g_entries[i]) SpriteReloadEntry{};
-        (void)add_shutdown_hook(shutdown_hook);
+        require_shutdown_hook(shutdown_hook);
     }
     for (int i = 0; i < kEntries; ++i) {
         SpriteReloadEntry& e = g_entries[i];

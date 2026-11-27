@@ -74,6 +74,7 @@ NNH_TEST(shutdown_hooks_have_a_fixed_capacity) {
     using Hook = void (*)();
     static void (*const kHooks[])() = {
         [] {}, [] {}, [] {}, [] {}, [] {}, [] {}, [] {}, [] {},
+        [] {}, [] {}, [] {}, [] {}, [] {}, [] {}, [] {}, [] {},
     };
     static_assert(sizeof kHooks / sizeof kHooks[0] == nnh::detail::kMaxShutdownHooks);
     for (Hook h : kHooks)
@@ -81,6 +82,19 @@ NNH_TEST(shutdown_hooks_have_a_fixed_capacity) {
     CHECK(!nnh::detail::add_shutdown_hook(counting_hook));
     nnh::shutdown();
     CHECK(g_calls == 0);
+}
+
+NNH_TEST(shutdown_hooks_have_room_for_every_optional_module) {
+    // A full Debug game (spec 031): the data index, fonts, live values, localisation and hot reload's apply point,
+    // texture, sound, mesh and sprite library tables: 9 hooks, none dropped (review S2).
+    fresh_engine();
+    static void (*const kModules[])() = {
+        [] { ++g_calls; }, [] { ++g_calls; }, [] { ++g_calls; }, [] { ++g_calls; }, [] { ++g_calls; },
+        [] { ++g_calls; }, [] { ++g_calls; }, [] { ++g_calls; }, [] { ++g_calls; },
+    };
+    for (void (*h)() : kModules) CHECK(nnh::detail::add_shutdown_hook(h));
+    nnh::shutdown();
+    CHECK(g_calls == 9);
 }
 
 NNH_TEST(shutdown_hooks_run_before_the_leak_report) {

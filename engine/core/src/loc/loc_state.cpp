@@ -171,7 +171,7 @@ Result<void> loc::start(const StartOptions& options) {
     const char* env = std::getenv("NNH_LOC_SHOW_KEYS");
     s.show_keys = env != nullptr && env[0] == '1';
 #endif
-    detail::add_shutdown_hook(&shutdown_hook);
+    detail::require_shutdown_hook(&shutdown_hook);
     if constexpr (build::kDevToolsEnabled) loc_reload_register(); // spec 031: string files reload
     announce(-1, first, reason);
     if (s.fonts_switch != nullptr) s.fonts_switch(first);

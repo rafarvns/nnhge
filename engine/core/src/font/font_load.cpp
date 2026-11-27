@@ -278,7 +278,7 @@ Result<Font> load_font(const char* path, MemTag* tag) {
     auto slot = load_entry(path, tag != nullptr ? *tag : detail::font_memory_tag(), true);
     if (!slot) return slot.error();
     detail::g_font_resolve = &detail::font_resolve_face;
-    detail::add_shutdown_hook(&fonts_shutdown);
+    detail::require_shutdown_hook(&fonts_shutdown);
     if constexpr (build::kDevToolsEnabled) detail::font_reload_register(); // spec 031: fonts reload
     return FontAccess::make(detail::font_table_id(slot.value()));
 }

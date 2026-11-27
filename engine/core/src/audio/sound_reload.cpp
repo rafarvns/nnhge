@@ -143,7 +143,7 @@ void sound_reload_loaded(int slot, std::uint32_t generation, const char* asset_p
         if (g_tags == nullptr) return;
         g_tag_count = capacity;
         for (int i = 0; i < capacity; ++i) g_tags[i] = SlotTag{};
-        (void)add_shutdown_hook(shutdown_hook);
+        require_shutdown_hook(shutdown_hook);
     }
     reload::register_kind(g_kind);
     if (slot >= 0 && slot < g_tag_count) g_tags[slot] = SlotTag{reload::path_hash(asset_path), generation};

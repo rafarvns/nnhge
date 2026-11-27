@@ -8,9 +8,11 @@
 # A registry file (written at configure time, only when the list changes) maps each name — the file
 # name without folder and extension — to its bytes for nnh::load_texture().
 
-set(_NNH_IMAGES_DIR "${CMAKE_CURRENT_LIST_DIR}")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_platform.cmake")
 
 function(nnh_add_images target)
+    set(_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}") # spec 032 FR-6: not the calling folder's
+    nnh_platform(_platform "nnh_add_game(${target})")
     set(images ${ARGN})
     set(out_dir "${CMAKE_CURRENT_BINARY_DIR}/nnh_images/${target}")
     file(MAKE_DIRECTORY "${out_dir}")
@@ -31,8 +33,8 @@ function(nnh_add_images target)
         set(stamp "${out_dir}/${symbol}.checked")
         set(cpp "${out_dir}/image_${symbol}.cpp")
 
-        set(check_cmd ${CMAKE_COMMAND} -DIMAGE=${path} -DSTAMP=${stamp} -P ${_NNH_IMAGES_DIR}/nnh_check_image.cmake)
-        if(NNH_PLATFORM STREQUAL "3ds")
+        set(check_cmd ${CMAKE_COMMAND} -DIMAGE=${path} -DSTAMP=${stamp} -P ${_cmake_dir}/nnh_check_image.cmake)
+        if(_platform STREQUAL "3ds")
             if(NOT CTR_TEX3DS_EXE)
                 message(FATAL_ERROR "nnh_add_game(${target}): tex3ds not found (install it with devkitPro)")
             endif()
@@ -47,8 +49,8 @@ function(nnh_add_images target)
             COMMAND ${check_cmd}
             ${convert_cmd}
             COMMAND ${CMAKE_COMMAND} -DINPUT=${data} -DOUTPUT=${cpp} -DSYMBOL=${symbol}
-                    -P ${_NNH_IMAGES_DIR}/nnh_embed.cmake
-            DEPENDS "${path}" "${_NNH_IMAGES_DIR}/nnh_check_image.cmake" "${_NNH_IMAGES_DIR}/nnh_embed.cmake"
+                    -P ${_cmake_dir}/nnh_embed.cmake
+            DEPENDS "${path}" "${_cmake_dir}/nnh_check_image.cmake" "${_cmake_dir}/nnh_embed.cmake"
             COMMENT "Image ${name}"
             VERBATIM)
         list(APPEND sources "${cpp}")

@@ -1763,3 +1763,4 @@ if(TARGET sprites AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQU
         PASS_REGULAR_EXPRESSION "reload script: PASS" FAIL_REGULAR_EXPRESSION "reload script: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
 endif()
+include(${CMAKE_CURRENT_SOURCE_DIR}/consumer.cmake) # spec 032: the consumer game project (labels consumer, consumer-full)

@@ -1,0 +1,16 @@
+# Spec 032 FR-16, AC-3, AC-4: the consumer game project's self-check, from its own folder.
+# PC:      nnh run nnh_consumer --pc --script game/tests/check.nnhs
+# Console: nnh run nnh_consumer --script game/tests/check.nnhs   (Homebrew Launcher open, press Y)
+#
+# The expected line is the PC's (tests/consumer.cmake has the same one: every way and flavour prints it). It changes only
+# if an asset under game/assets or self_check.cpp changes: then run the game with NNH_EXIT_AFTER_FRAMES=10 and copy its
+# "consumer:" line here and into tests/consumer.cmake.
+fail-on "] E "
+fail-on "consumer: FAIL"
+wait 30
+tap SELECT
+expect "consumer: PASS" 30
+wait 10
+screenshot check
+tap START
+end

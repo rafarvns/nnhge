@@ -6,9 +6,8 @@
 # the pinned official releases into <build>/_tools/ the first time a .cia is built
 # (nnh_fetch_ctr_tools.cmake). They are build tools: nothing of them ships inside a game.
 
-set(_NNH_CTR_TOOLS_DIR "${CMAKE_CURRENT_LIST_DIR}")
-
 function(nnh_ctr_tools)
+    set(_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}") # spec 032 FR-6: not the calling folder's
     if(NNH_MAKEROM AND NNH_BANNERTOOL)
         set(NNH_MAKEROM_PROGRAM "${NNH_MAKEROM}" PARENT_SCOPE)
         set(NNH_BANNERTOOL_PROGRAM "${NNH_BANNERTOOL}" PARENT_SCOPE)
@@ -29,7 +28,7 @@ function(nnh_ctr_tools)
     set(dir "${CMAKE_BINARY_DIR}/_tools")
     if(NOT TARGET nnh_ctr_tools)
         add_custom_target(nnh_ctr_tools
-            COMMAND ${CMAKE_COMMAND} -DHOST=${host} -DDIR=${dir} -P ${_NNH_CTR_TOOLS_DIR}/nnh_fetch_ctr_tools.cmake
+            COMMAND ${CMAKE_COMMAND} -DHOST=${host} -DDIR=${dir} -P ${_cmake_dir}/nnh_fetch_ctr_tools.cmake
             COMMENT "makerom and bannertool (downloaded once, pinned)"
             VERBATIM)
     endif()

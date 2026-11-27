@@ -26,15 +26,22 @@
 # the NNHGE icon) at build time, on every system. TITLE becomes the default AppConfig::title. CIA options
 # are stored as target properties (NNH_CIA_*); on 3DS, nnh_cia.cmake adds <target>_dist, dist and, with
 # CIA, <target>_cia.
+# Works from any folder of a game project, not only inside the engine repository (spec 032 FR-6, D55): the engine's
+# files come from this file's folder and the system from nnh_platform() (an unknown one fails before any target is
+# made); the targets it creates get the repository's C++ settings and compiler cache unless the game chose its own
+# (nnh_game_defaults.cmake).
 
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_assets.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_images.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_package_rules.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_cia.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_data.cmake")
-set(_NNH_GAME_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_platform.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_game_defaults.cmake")
 
 function(nnh_add_game target)
+    nnh_platform(platform "nnh_add_game(${target})") # first: nothing is made for an unknown system
+    set(cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
     cmake_parse_arguments(PARSE_ARGV 1 G "STRICT_STRINGS" "TITLE;DESCRIPTION;AUTHOR;VERSION;ICON;ASSETS;BASE"
                           "SOURCES;IMAGES;CIA;DATA_SCHEMA;LANGUAGES")
     if(NOT G_SOURCES)
@@ -65,6 +72,7 @@ function(nnh_add_game target)
 
     add_executable(${target} ${G_SOURCES})
     target_link_libraries(${target} PRIVATE nnh::engine)
+    _nnh_game_target_defaults(${target})
     # The game's title is the default window title (AppConfig::title), escaped for a C string.
     string(REPLACE "\\" "\\\\" _title_c "${G_TITLE}")
     string(REPLACE "\"" "\\\"" _title_c "${_title_c}")
@@ -89,8 +97,8 @@ function(nnh_add_game target)
     # Icon check: one header read, rerun only when the icon changes.
     set(_icon_stamp "${CMAKE_CURRENT_BINARY_DIR}/${target}_icon.stamp")
     add_custom_command(OUTPUT "${_icon_stamp}"
-        COMMAND ${CMAKE_COMMAND} -DICON=${P_ICON} -DSTAMP=${_icon_stamp} -P ${_NNH_GAME_CMAKE_DIR}/nnh_check_icon.cmake
-        DEPENDS "${P_ICON}" "${_NNH_GAME_CMAKE_DIR}/nnh_check_icon.cmake"
+        COMMAND ${CMAKE_COMMAND} -DICON=${P_ICON} -DSTAMP=${_icon_stamp} -P ${cmake_dir}/nnh_check_icon.cmake
+        DEPENDS "${P_ICON}" "${cmake_dir}/nnh_check_icon.cmake"
         COMMENT "Icon for ${target}"
         VERBATIM)
     add_custom_target(${target}_icon DEPENDS "${_icon_stamp}")
@@ -115,7 +123,7 @@ function(nnh_add_game target)
         set(_romfs ROMFS ${target}_assets)
     endif()
 
-    if(NNH_PLATFORM STREQUAL "3ds")
+    if(platform STREQUAL "3ds")
         ctr_generate_smdh(${target}.smdh NAME "${G_TITLE}" DESCRIPTION "${G_DESCRIPTION}" AUTHOR "${G_AUTHOR}"
                           ICON "${P_ICON}")
         ctr_create_3dsx(${target} SMDH ${target}.smdh ${_romfs})

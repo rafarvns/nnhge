@@ -510,8 +510,8 @@ Flagged for the maintainer: questions 1, 2 and 8, and risks 1, 3 and 5.
   `.3dsx` and stripped `.elf` SHA-256 equal to T0.1's, `nm -C` list equal, pc-release `.text` 0x189a0; the `hello` link
   commands (3ds-dev, 3ds-release, pc-debug, pc-release) and `nnh_tests`' identical; target lists equal to T0.1's apart
   from `nnh_core_objects`; cache entries and games equal. 0 warnings in the four presets. Fallback B (T1.3) not needed.
-- **T1.4** Stage-end guards: ctest pc-release 338/338; pc-debug (below); `check_command_length.sh` PASS on both 3DS
-  folders.
+- **T1.4** Stage-end guards: ctest pc-release 338/338, pc-debug 379/379 (one disabled); `check_command_length.sh` PASS
+  on both 3DS folders.
 
 Stage 1 refinements:
 - **Archive member order.** `libnnh_core.a` has the same 447 members, but the two vendored objects (`stb_vorbis.o`,
@@ -523,3 +523,48 @@ Stage 1 refinements:
   names `dev_pause.hpp`; the script's own notes say to check the `.3dsx` or a stripped `.elf`); the stage-end guard runs
   it on `hello.3dsx` (ok). The `pc-release` `hello.exe` form reports `NNH_REMOTE` at the base commit as well (same
   `.text`). Both are pre-existing and left to the maintainer.
+
+### Stage 2 results (the consumer skeleton and the CMake contract)
+
+- **T2.1** `tests/consumer/` (skeleton: `game/` with `SOURCES`, `ASSETS` (a PNG, a data file) and `DATA_SCHEMA` in a
+  nested folder, `small/`, `plain/`, the six presets with the `NNHGE_ENGINE_DIR` mapping, `nnh.toml`, `.gitignore`), the
+  driver `tests/consumer_tools/run_consumer.cmake` (+ `consumer_engine.cmake`, `compare_flags.cmake`, `plain_only/`),
+  `tests/consumer.cmake` and one appended `include()` line in `tests/CMakeLists.txt` (`git diff` shows that line only;
+  the file keeps its encoding). Red against the stage 1 engine (a `git archive` of `HEAD` as `ENGINE`): the configure
+  fails at the fixture's version check (`NNHGE_VERSION is "" (..)`), before the spike's `/tools/data_schema` error.
+- **T2.2** `cmake/nnh_platform.cmake` + the global property; `consumer_platform_empty` and `consumer_platform_unknown`
+  (≈ 1 s each) pass: `nnh_add_game(probe_game): unknown platform "" (empty, supported: pc, 3ds)` / `"wii" (supported:
+  pc, 3ds)`, no `build.ninja`. The first run of the empty case caught a real bug of the helper: `get_property` of an
+  unset property leaves the variable undefined, so `if(value STREQUAL "")` compared the literal `value`; now quoted.
+- **T2.3** No file-scope directory variable left in `cmake/` (`_NNH_*_DIR`, `_NNH_PACKAGE_ART`, `_NNH_DATA_*`: none);
+  the helpers read `CMAKE_CURRENT_FUNCTION_LIST_DIR` inside their functions. The regenerated `3ds-dev` `build.ninja`
+  differs from stage 1's only in the regeneration rule's list of CMake files (8 lines): no helper path changed.
+- **T2.4** The four options (`NNH_BUILD_TOOLS` PC only), `nnh_optional_part`, the `link/` gate, `enable_testing()` only
+  with tests. `consumer` checks: no example, engine test, NNH Link, `nnh` or `nnh_link` target; `ctest -N` lists only
+  `consumer_own_test` although the project calls `enable_testing()`; `nnh_games.txt` lists `nnh_consumer` and
+  `nnh_consumer_small`. In the repository: target lists equal to T0.1's apart from `nnh_core_objects`; games equal; the
+  cache gains `NNH_BUILD_APPS` (and `NNH_BUILD_TOOLS` on PC) and `NNHGE_VERSION*`, the option defaults are unchanged
+  (ON).
+- **T2.5** `cmake/nnh_game_defaults.cmake`; `NNH_CCACHE` searched only when undefined or `*-NOTFOUND`. `consumer`
+  compares `nnh_consumer_small`'s compile command with the parent's `hello` (ccache launcher, `-DNNH_FLAVOR_DEBUG`, the
+  engine's include folder, `-g -std=c++20`): equal once the build folder, `NNH_GAME_TITLE` and the `-MT`/`-MF`
+  dependency names are taken out; the project's `consumer_plain` compiles exactly as in `plain_only/` (no engine); a
+  second configure with `-DCMAKE_CXX_STANDARD=23 -DNNH_CCACHE=` keeps `-std=c++23` and no launcher on the game.
+- **T2.6** `cmake/nnh_version.cmake`: the fixture checks `NNHGE_VERSION*` against `CONSUMER_EXPECT_VERSION` (the
+  engine's `project()` version read by the driver) and the driver reads the parent's `CMakeCache.txt`. Status line
+  `-- NNHGE 0.1.0: <engine folder>` at every configure.
+- **T2.7** `consumer` green on pc-debug and pc-release (skeleton line `consumer: PASS AD8A1613`; first cold run ≈ 2 min,
+  an incremental rerun 15–28 s). Guards: 0 warnings in the four presets; `hello.3dsx` and stripped `.elf` SHA-256
+  unchanged; longest 3DS command 2,533; ctest pc-release 341/341 and pc-debug 382/382 (`-LE consumer-full`; the tree also held the stage 4 `nnh` changes).
+
+Stage 2 refinements:
+- **The unknown-platform message** is ASCII and keeps the plan's parts: `nnh_add_game(<game>): unknown platform
+  "<value>" (supported: pc, 3ds)`, and `"" (empty, supported: pc, 3ds)` for an empty value (no em dash: one less
+  encoding question in Windows consoles and regular expressions).
+- **The self-check line goes to stdout too.** Release builds compile `NNH_LOG_INFO` out, so the consumer test (which runs
+  in every PC flavour) read no line in pc-release; `CheckScene` prints the line with `printf` as well, and runs the check
+  again on SELECT (the console script's trigger, so the line comes after the remote attached).
+- **SDL3 reuse.** The driver passes the parent's SDL3 download as `FETCHCONTENT_SOURCE_DIR_NNH_SDL3(_PREBUILT)` when the
+  parent fetched one (Linux; MinGW without a system SDL3); the maintainer's machine has a system SDL3, found as before.
+- `nnh_assetc_command()` (called inside `nnh_add_assets`) and the data helpers also read the platform through
+  `nnh_platform()`; `nnh_host_tools_setup()` runs in the engine's own scope and keeps the variable.

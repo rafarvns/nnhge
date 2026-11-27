@@ -14,8 +14,6 @@
 #     _PRODUCT_CODE (default CTR-H- + the target's first 4 letters/digits), _BANNER, _BANNER_AUDIO
 #     (absolute; NNHGE defaults). Every check runs at configure time.
 
-set(_NNH_PACKAGE_ART "${CMAKE_CURRENT_LIST_DIR}/3ds")
-
 # Characters in a UTF-8 string: bytes that are not continuation bytes (0x80-0xBF).
 function(nnh_utf8_length text out)
     string(HEX "${text}" hex)
@@ -86,6 +84,7 @@ function(_nnh_package_file option path dir out)
 endfunction()
 
 function(nnh_resolve_package prefix)
+    set(_art "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/3ds") # the default package art (spec 032 FR-6)
     cmake_parse_arguments(PARSE_ARGV 1 A "" "TARGET;SOURCE_DIR;TITLE;DESCRIPTION;AUTHOR;VERSION;ICON" "CIA")
     if(NOT A_VERSION)
         set(A_VERSION "0.1.0")
@@ -100,7 +99,7 @@ function(nnh_resolve_package prefix)
     set(${prefix}_VERSION_MINOR ${minor} PARENT_SCOPE)
     set(${prefix}_VERSION_MICRO ${micro} PARENT_SCOPE)
 
-    set(icon "${_NNH_PACKAGE_ART}/default_icon.png")
+    set(icon "${_art}/default_icon.png")
     if(A_ICON)
         _nnh_package_file(ICON "${A_ICON}" "${A_SOURCE_DIR}" icon)
     endif()
@@ -125,8 +124,8 @@ function(nnh_resolve_package prefix)
         set(C_PRODUCT_CODE "CTR-H-${four}")
     endif()
     nnh_check_package_values(UNIQUE_ID "${C_UNIQUE_ID}" PRODUCT_CODE "${C_PRODUCT_CODE}")
-    set(banner "${_NNH_PACKAGE_ART}/default_banner.png")
-    set(audio "${_NNH_PACKAGE_ART}/default_banner.wav")
+    set(banner "${_art}/default_banner.png")
+    set(audio "${_art}/default_banner.wav")
     if(C_BANNER)
         _nnh_package_file(BANNER "${C_BANNER}" "${A_SOURCE_DIR}" banner)
     endif()

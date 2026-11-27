@@ -63,36 +63,36 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 2: the consumer fixture (red) and the CMake contract (green)
 
-- [ ] **T2.1** The fixture skeleton and driver, written to fail: `tests/consumer/` (`CMakeLists.txt` with
+- [x] **T2.1** The fixture skeleton and driver, written to fail: `tests/consumer/` (`CMakeLists.txt` with
   `CONSUMER_WAY`, `CMakePresets.json` with the six presets and the `NNHGE_ENGINE_DIR` mapping, `nnh.toml`, `.gitignore`,
   `game/` with `SOURCES`, `ASSETS` (one PNG, one data file) and `DATA_SCHEMA`, `small/`), `tests/consumer_tools/
   run_consumer.cmake` (way `local`: configure, build, run, the self-check line), `tests/consumer.cmake` and its
   `include` line in `tests/CMakeLists.txt`. Test: `ctest --preset pc-debug -R "^consumer$"` fails with the spike's
   `/tools/data_schema` error (red). Covers FR-16, VI.
-- [ ] **T2.2** The platform: `cmake/nnh_platform.cmake`, `CMakeLists.txt` (global property), every helper reading it
+- [x] **T2.2** The platform: `cmake/nnh_platform.cmake`, `CMakeLists.txt` (global property), every helper reading it
   (`nnh_game`, `nnh_assets`, `nnh_images`, `nnh_data`, `nnh_host_tools`'s `nnh_assetc_command`); the check first in
   `nnh_add_game`. Test first: `tests/consumer_tools/unknown_platform/` and the ctests `consumer_platform_empty` and
   `consumer_platform_unknown` (expected message with the game, `"wii"`/`empty`, `pc, 3ds`; no `build.ninja` target of
   the game). Covers FR-6, AC-12.
-- [ ] **T2.3** Engine files from the function: `CMAKE_CURRENT_FUNCTION_LIST_DIR` in `nnh_game`, `nnh_assets`,
+- [x] **T2.3** Engine files from the function: `CMAKE_CURRENT_FUNCTION_LIST_DIR` in `nnh_game`, `nnh_assets`,
   `nnh_images`, `nnh_cia`, `nnh_ctr_tools`, `nnh_package_rules`, `nnh_data` (`_NNH_*` directory variables removed; the
   data root kept as `<cmake>/..`). Test: `grep -n "_NNH_[A-Z_]*_DIR\|_NNH_PACKAGE_ART\|_NNH_DATA_" cmake/` finds no
   file-scope `set`; `consumer` gets past configure and the asset steps; in-repository `build.ninja` diff shows no path
   change of the helper scripts. Covers FR-6.
-- [ ] **T2.4** Only what a game needs: `cmake/nnh_optional_parts.cmake`, `CMakeLists.txt` (the four options with
+- [x] **T2.4** Only what a game needs: `cmake/nnh_optional_parts.cmake`, `CMakeLists.txt` (the four options with
   `PROJECT_IS_TOP_LEVEL` defaults, `NNH_BUILD_TOOLS` PC only, `link/` gate, `enable_testing()` only with tests). Test:
   `consumer`'s target list, `ctest -N` (only the consumer's own test) and `nnh_games.txt` checks; the in-repository
   target lists and defaults equal to T0.1's. Covers FR-4, AC-1.
-- [ ] **T2.5** [P] Game target defaults and the cache switch: `cmake/nnh_game_defaults.cmake`, `nnh_game.cmake`,
+- [x] **T2.5** [P] Game target defaults and the cache switch: `cmake/nnh_game_defaults.cmake`, `nnh_game.cmake`,
   `nnh_data.cmake` (the schema objects and program), `CMakeLists.txt` (`NNH_CCACHE` searched only when undefined or
   `*-NOTFOUND`). Test: `compare_flags.cmake` (the game's compile command = the parent's `hello` apart from paths and
   `NNH_GAME_TITLE`), the launcher on the game's compile when `NNH_CCACHE` is set, none with `-DNNH_CCACHE=`; a scratch
   configure with `CMAKE_CXX_STANDARD 23` keeps `-std=c++23` on the game. Covers FR-7, FR-8, AC-7.
-- [ ] **T2.6** [P] Version: `cmake/nnh_version.cmake`, `CMakeLists.txt`, the status line `NNHGE <version>: <dir>`. Test:
+- [x] **T2.6** [P] Version: `cmake/nnh_version.cmake`, `CMakeLists.txt`, the status line `NNHGE <version>: <dir>`. Test:
   the driver compares `NNHGE_VERSION*` in the consumer (a configure-time check in `tests/consumer/CMakeLists.txt` against
   `CONSUMER_EXPECT_VERSION`) and in the parent's `CMakeCache.txt` with the engine's `project()` version. Covers FR-10,
   AC-7.
-- [ ] **T2.7** Stage end: `consumer` green (PC, the skeleton's assets); the stage-end guards; plan.md ("Stage 2
+- [x] **T2.7** Stage end: `consumer` green (PC, the skeleton's assets); the stage-end guards; plan.md ("Stage 2
   results"). Covers FR-17.
 
 ## Stage 3: the full fixture and the four ways

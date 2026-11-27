@@ -23,6 +23,7 @@
 
 include_guard(GLOBAL)
 include(ExternalProject)
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_platform.cmake")
 
 set(NNH_ASSETC "" CACHE FILEPATH "Prebuilt nnh-assetc to use instead of building it (cross presets)")
 
@@ -107,7 +108,8 @@ function(nnh_assetc_command out_command out_depends)
     if(ARGC GREATER 2)
         set(_what "${ARGV2}")
     endif()
-    if(NNH_PLATFORM STREQUAL "pc")
+    nnh_platform(_platform "nnh_assetc_command") # a game's folder has no NNH_PLATFORM variable (spec 032 FR-6)
+    if(_platform STREQUAL "pc")
         set(${out_command} "$<TARGET_FILE:nnh_assetc>" PARENT_SCOPE)
         set(${out_depends} nnh_assetc PARENT_SCOPE)
         return()

@@ -198,7 +198,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 5: sprite libraries, sounds, music, fonts (Q8 step 2)
 
-- [ ] **T5.1** Sprite libraries: `animation/sprite_reload.cpp` (the 64-entry table, the kind, identity and current
+- [x] **T5.1** Sprite libraries: `animation/sprite_reload.cpp` (the 64-entry table, the kind, identity and current
   blocks), `animator_rebind.cpp`, `sprite_library_internal.hpp`, `sprite_load.cpp`, the animator files (Dev compare
   beside the serial check). Test: `tests/animation/test_sprite_reload.cpp` (queries through the identity block after a
   larger reload; the previous current block freed; destroying the library frees both),
@@ -207,7 +207,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 - [ ] **T5.2** [P] Sounds: `audio/sound_reload.cpp`, `sounds.cpp`, `audio_internal.hpp`. Test:
   `tests/audio/test_sound_reload.cpp` (voices stopped with `SoundFinished` in that frame; the next `play` uses the new
   samples; old samples freed one frame later; `duration()` new; refused without memory). Covers FR-7, FR-9, Q7.
-- [ ] **T5.3** [P] Music: `audio/music_reload.cpp`, `music.cpp` (Dev: `asset_open_shared` for build-folder streams).
+- [x] **T5.3** [P] Music: `audio/music_reload.cpp`, `music.cpp` (Dev: `asset_open_shared` for build-folder streams).
   Test: `tests/audio/test_music_reload.cpp` (Ogg and WAV: the same sample position; past the new end → loop start; a
   crossfade keeps its frames; a stream whose file is replaced underneath (`fake::replace_asset`) never crashes). Covers
   FR-9, AC-9.
@@ -221,7 +221,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 - [ ] **T6.1** Meshes: `mesh/mesh_reload.cpp`, `load_mesh.cpp`, `mesh_table.cpp`. Test: `tests/mesh/test_mesh_reload.cpp`
   (same handle, more vertices and submeshes, new textures, the old record retired through D47, draws recorded later use
   the new mesh). Covers FR-7.
-- [ ] **T6.2** [P] FR-23: `live/live_reload.cpp`, `debug/live_hook.hpp` (`reload_snapshot`, `reload_compare`), the calls
+- [x] **T6.2** [P] FR-23: `live/live_reload.cpp`, `debug/live_hook.hpp` (`reload_snapshot`, `reload_compare`), the calls
   at the apply point and 030's frame end. Test: `tests/live/test_live_reload.cpp` (a tunable on a data-loaded field shows
   the file's value after the game reloads it; `changed()` untouched; the one warning when the panel value differed; 17
   edited tunables → 16 tracked; a game without live values links nothing). Covers FR-23, Q9.

@@ -63,3 +63,20 @@ NNH_TEST(sprite_reload_a_damaged_file_keeps_the_old_library) {
     }
     nnh::shutdown();
 }
+
+NNH_TEST(sprite_reload_a_library_moved_after_loading_still_reloads) {
+    RELOAD_DEV_ONLY();
+    srt::start(srt::version1());
+    {
+        nnh::SpriteLibrary first = std::move(nnh::load_sprite_library("art/hero").value());
+        nnh::SpriteLibrary moved = std::move(first); // the block (the table's identity) moves with it
+        nnh::SpriteAnimator a{moved};
+        a.play("walk");
+        const srt::File v2 = srt::version2();
+        srt::reload(v2, 1);
+        CHECK(moved.clip_count() == 3 && !first);
+        CHECK(std::strcmp(a.clip_name(), "walk") == 0);
+    }
+    CHECK(animation_bytes() <= 64 * sizeof(nnh::detail::SpriteReloadEntry) + 64); // everything freed but the table
+    nnh::shutdown();
+}

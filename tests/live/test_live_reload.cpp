@@ -71,3 +71,52 @@ NNH_TEST(live_reload_the_file_wins_and_an_edited_tunable_warns_once) {
     }
     nnh::shutdown();
 }
+
+NNH_TEST(live_reload_checks_at_most_16_edited_tunables) {
+    if constexpr (!live::kEnabled) return;
+    RELOAD_DEV_ONLY();
+    static const char kFile[] = "x";
+    const reload_test::Put assets[] = {reload_test::text("cfg/player.txt", kFile)};
+    char index[64];
+    reload_test::start(assets, 1, index, sizeof index);
+    static float values[17];
+    for (float& v : values) v = 1.0f;
+    {
+        const live::FloatRange range{.min = 0, .max = 10, .step = 0.5f};
+        live::Handle handles[17] = {
+            live::tune("group/value00", &values[0], range),
+            live::tune("group/value01", &values[1], range),
+            live::tune("group/value02", &values[2], range),
+            live::tune("group/value03", &values[3], range),
+            live::tune("group/value04", &values[4], range),
+            live::tune("group/value05", &values[5], range),
+            live::tune("group/value06", &values[6], range),
+            live::tune("group/value07", &values[7], range),
+            live::tune("group/value08", &values[8], range),
+            live::tune("group/value09", &values[9], range),
+            live::tune("group/value10", &values[10], range),
+            live::tune("group/value11", &values[11], range),
+            live::tune("group/value12", &values[12], range),
+            live::tune("group/value13", &values[13], range),
+            live::tune("group/value14", &values[14], range),
+            live::tune("group/value15", &values[15], range),
+            live::tune("group/value16", &values[16], range),
+        };
+        static const char* const kNames[17] = {
+            "group/value00", "group/value01", "group/value02", "group/value03", "group/value04", "group/value05",
+            "group/value06", "group/value07", "group/value08", "group/value09", "group/value10", "group/value11",
+            "group/value12", "group/value13", "group/value14", "group/value15", "group/value16"};
+        for (const char* name : kNames) CHECK(queue_op(*g_registry, set_op(name, float_bits(2.0f)))); // all edited
+        CHECK(nnh::frame());
+        auto sub = nnh::events::subscribe<nnh::AssetsReloaded>([](const nnh::AssetsReloaded&) {
+            for (float& v : values) v = 3.0f; // the game's reload overwrote every one
+        });
+        reload_test::Lines warned("set by a reload");
+        const reload_test::Put batch[] = {reload_test::text("cfg/player.txt", "y")};
+        reload_test::send_batch(1, batch, 1);
+        run_until_applied(1);
+        CHECK(nnh::frame());
+        CHECK(warned.count == 16); // one per noted tunable, 16 at most (a fixed table, no allocation)
+    }
+    nnh::shutdown();
+}

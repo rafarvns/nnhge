@@ -130,3 +130,45 @@ NNH_TEST(music_reload_keeps_a_fade_and_a_damaged_file_keeps_the_old_track) {
     CHECK(fake::state().streams[0].params.gain_left == gain); // no time passed: the fade where it was
     nnh::shutdown();
 }
+
+NNH_TEST(music_a_stream_whose_file_is_rewritten_underneath_never_crashes) {
+    RELOAD_DEV_ONLY();
+    char index[64];
+    start_music(index, sizeof index);
+    CHECK(nnh::music::play("music/a", {.loop = true}).ok());
+    // The build rewrites the packed file the simulator streams (AC-9): shorter, then garbage; no reload involved.
+    fake::replace_asset("music/a.wav", g_short, g_short_size);
+    for (int i = 0; i < 8; ++i) {
+        fake::consume_stream(0, 4096);
+        CHECK(nnh::frame());
+    }
+    static std::uint8_t junk[300];
+    for (std::size_t i = 0; i < sizeof junk; ++i) junk[i] = static_cast<std::uint8_t>(i * 37);
+    fake::replace_asset("music/a.wav", junk, sizeof junk);
+    for (int i = 0; i < 8; ++i) {
+        fake::consume_stream(0, 4096);
+        CHECK(nnh::frame());
+    }
+    nnh::music::stop();
+    CHECK(nnh::frame());
+    nnh::shutdown();
+}
+
+NNH_TEST(music_reload_keeps_a_crossfade_in_progress) {
+    RELOAD_DEV_ONLY();
+    char index[64];
+    start_music(index, sizeof index);
+    CHECK(nnh::music::play("music/a", {.loop = true}).ok());
+    CHECK(nnh::music::crossfade("music/a", 2.0f, {.loop = true}).ok()); // both streams read music/a.wav
+    fake::advance_time(nnh::Duration{500'000'000});
+    CHECK(nnh::frame());
+    const float out_gain = fake::state().streams[0].params.gain_left;
+    const float in_gain = fake::state().streams[1].params.gain_left;
+    CHECK(out_gain > in_gain && in_gain > 0.0f);
+    reload_with(g_b, g_b_size);
+    CHECK(nnh::assets::reload_count() == 1);
+    CHECK(fake::state().streams[0].active && fake::state().streams[1].active); // both reopened, none ended
+    CHECK(fake::state().streams[0].params.gain_left == out_gain); // no time passed: the crossfade where it was
+    CHECK(fake::state().streams[1].params.gain_left == in_gain);
+    nnh::shutdown();
+}

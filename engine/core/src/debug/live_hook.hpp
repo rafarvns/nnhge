@@ -35,6 +35,12 @@ struct LiveOps {
                       std::uint32_t bits, std::uint32_t frame, bool paused);
     /// The PC detached (follows dropped, live records off).
     void (*remote_detached)();
+    /// Hot reload (spec 031 FR-23): a batch was applied this frame; after frame_start, the tunables whose value differs
+    /// from their default are noted (up to 16)...
+    void (*reload_snapshot)();
+    /// ... and at the frame end, before frame_end, one whose value changed meanwhile (the game reloaded its data) logs
+    /// one warning. No tunable is written.
+    void (*reload_compare)();
 };
 
 /// Null until the first live:: registration (debug/live_hook.cpp).

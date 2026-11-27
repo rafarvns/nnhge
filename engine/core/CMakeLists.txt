@@ -613,6 +613,7 @@ set(_nnh_live_sources
     src/live/live_panel_touch.cpp
     src/live/live_remote.cpp
     src/live/live_registry.cpp
+    src/live/live_reload.cpp
     src/live/live_tune.cpp
     src/live/live_watch.cpp
 )

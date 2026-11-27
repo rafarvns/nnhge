@@ -138,7 +138,7 @@ with `load_mesh("models/ship")` ([mesh.md](mesh.md), export guide [models.md](..
 > the asset target and sends the changed outputs; checked in the simulator, the console run is pending), batches applied
 > whole at one point of a frame, the queries and the event below, plain files, data assets, Tiled maps, textures, string
 > tables, fonts, sounds, music, meshes and sprite libraries, the UI's relayout, and the script commands (`swap-asset`,
-> `expect-reload`); console run 1 passed. Not yet: live values (FR-23). See [plan 031](../../specs/031-hot-reload-assets/plan.md)
+> `expect-reload`), tunables on reloaded data ([live.md](live.md#tunables), FR-23); console run 1 passed. See [plan 031](../../specs/031-hot-reload-assets/plan.md)
 > ("Implementation notes").
 
 In a Debug or Development game run with `nnh run <game> [--pc]`, saving a file in the game's assets folder reconverts it

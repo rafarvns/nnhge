@@ -1595,6 +1595,7 @@ target_sources(nnh_tests PRIVATE
     gfx/test_gfx_replay.cpp
     gfx/test_gfx_replay_tiles.cpp
     live/test_live_apply.cpp
+    live/test_live_reload.cpp
     live/test_live_cost.cpp
     live/test_live_dump.cpp
     live/test_live_panel_draw.cpp

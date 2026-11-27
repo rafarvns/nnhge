@@ -105,5 +105,8 @@ game held before frame 1 and sends the values first; `--hold` only holds. An old
   watch, 76 B per per-frame watch; ≈ 20 KB on the 3DS at the defaults. The Stats page shows `live 12/128 tun ...`.
 - Nothing allocates after the block; with the overlay hidden and nothing changing, the registry is never walked.
 - Measured on the PC (pc-dev, `LIVE_DEMO=bench`): `show()` × 64 0.023 ms a frame, the hidden cost with 128 tunables and 64
-  watches 0.0008 ms, the Tunables page 0.033 ms of CPU, registering 100 tunables + 50 watches 0.44 ms. Console numbers:
-  pending (plan.md, "Stage 10").
+  watches 0.0008 ms, the Tunables page 0.033 ms of CPU, registering 100 tunables + 50 watches 0.44 ms.
+- On an Old 3DS (Development build, with `nnh` attached): `show()` × 64 0.12 ms a frame, the hidden cost 0.020 ms, the
+  Tunables page 0.60 ms and the Watches page 0.33 ms while shown, registering 100 tunables + 50 watches 13 ms (once, at
+  load). The example's bench budgets: < 0.15, < 0.025, < 0.75, < 0.5 and < 17 ms. Records to an attached PC are batched
+  into one send per frame: a send costs ≈ 1.5 ms on the console.

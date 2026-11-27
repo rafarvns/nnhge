@@ -1,6 +1,6 @@
 # Spec 030: Live values
 
-Status: implemented 2026-11-26; Linux checks passed; console correctness passed, console run 2 (bench budgets) pending; approved 2026-11-26 (the maintainer, every open question as recommended)
+Status: implemented 2026-11-26; Linux checks and console runs passed, budgets set; approved 2026-11-26 (the maintainer, every open question as recommended)
 Author: NNHGE maintainers · Date: 2026-11-26
 Depends on: [spec 002](../002-core-foundation/spec.md) (build flavors and `kDevToolsEnabled`, the debug overlay and its
 SELECT + L / `F1` toggle, the simulator's `Pause` / `F10` / `F11` keys, logs, asserts, tagged memory),
@@ -201,6 +201,8 @@ Release build has none of it: not one byte of code, data or names, and every tun
 - **AC-7 Cost.** On the Old 3DS XL, measured and written into the budgets: frame time with the overlay hidden and 128
   tunables + 64 watches declared (no change from a build without them, within noise), and the panel's cost when shown
   (a target proposed by the plan, e.g. < 1 ms per frame); the registry's memory per entry is documented.
+  Budgets set 2026-11-26 from console run 2 + ≈ 25 %: per-frame watches × 64 < 0.15 ms, hidden cost < 0.025 ms, Tunables
+  page < 0.75 ms, Watches page < 0.5 ms, registering 150 entries < 17 ms (run 2: 0.12, 0.020, 0.60, 0.33, 13.3).
 - **AC-8 Keep a session.** In a scripted run, values changed by `set` are dumped, the dump file is saved by `nnh`, and a
   second run with `--tunes <file>` starts with those values (`expect-value` on frame 1), on PC and console.
 - **AC-9 Docs.** A `docs/api/` page for the module, `docs/api/debug.md` (overlay pages), `docs/api/simulator.md` and the

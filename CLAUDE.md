@@ -230,7 +230,7 @@ controls held when a UI becomes active are ignored; text sources (copy, `borrow`
 the localization seam); `UiStyle`/`UiTheme` per state (`ui::default_theme()` art-free); `draw()` = public gfx calls on
 layer 14 with `ignore_camera`; `use_actions` adapter linked only when called. Self-check `30400DA6`
 ([api/ui.md](docs/api/ui.md)).
-Live values (spec 030, implemented, Linux checks passed, console correctness passed, bench budgets pending; D51, D52; demo `examples/live`, guide
+Live values (spec 030, implemented, console and Linux checks passed, budgets set; D51, D52; demo `examples/live`, guide
 [tuning your game](docs/guides/tuning-your-game.md)): `<nnh/live.hpp>` — `live::tune(name, &value, {.min, .max, .step}[,
 OnChange])` for float/int/bool/Color/enum by pointer (the value then is the default), `live::action`, `live::watch`
 (read only when shown or followed) and `live::show` (per frame); RAII `Handle` (`changed()` on the one frame a change

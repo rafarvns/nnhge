@@ -355,7 +355,7 @@ spec; the order below is a proposal.
   slots quarantined until a flush, bound to a scene through D30 ([api/pool.md](api/pool.md)); the platformer's
   bullets and the example's ship use them
 - [x] **Live values in the simulator** (in place of Unity's Inspector, without an editor; spec 030, implemented,
-  Linux checks and console correctness passed, console bench budgets pending): `<nnh/live.hpp>` — tunables registered by pointer (float, int, bool, colour,
+  console and Linux checks passed, budgets set): `<nnh/live.hpp>` — tunables registered by pointer (float, int, bool, colour,
   enums, actions) and watches (registered or per frame), the overlay's Tunables and Watches pages edited by buttons and
   touch on the PC and the 3DS, pause and step one frame in core, `nnh` commands and `.nnhs` script commands (`set`,
   `expect-value`, `pause`, `step`), dumps and `--tunes`; nothing in Release ([api/live.md](api/live.md),

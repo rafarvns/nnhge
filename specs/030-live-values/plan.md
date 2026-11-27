@@ -1,6 +1,6 @@
 # Plan 030: Live values
 
-Status: implemented 2026-11-26; Linux checks passed; console correctness passed, console run 2 (bench budgets) pending; approved 2026-11-26 (the maintainer, the seven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as
+Status: implemented 2026-11-26; Linux checks and console runs passed, budgets set; approved 2026-11-26 (the maintainer, the seven questions at the end as recommended); the spec was approved 2026-11-26 with every open question as
 recommended, and those answers are this plan's decisions; seven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D51, D52 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -1137,3 +1137,18 @@ Pending for the maintainer, merged anyway with their approval of 2026-11-26:
   `live bench: FAIL` line is expected.
 - **The paused screen on the console:** check it shows the whole level.
 - **The PC Pause/F10 check** (T3.7).
+
+### Console run 2 and budgets set (2026-11-26, Old 3DS XL, 3ds-dev of main after the merge)
+
+`check.nnhs`: correctness again `live: sum 7A849F13`, `nnh: PASS`. Bench, run 1 → run 2 (after the optimisation round:
+batched record sends, names built outside the measurement, one pass per page):
+
+| Phase | Run 1 | Run 2 | Budget (run 2 + ≈ 25 %) |
+|-------|-------|-------|-------------------------|
+| show64 | 1.1356 ms | 0.1215 ms | < 0.15 ms |
+| hidden192 | 0.3082 ms (worst 88.7) | 0.0197 ms (worst 0.95) | < 0.025 ms |
+| tunables page | 1.4408 ms | 0.5971 ms | < 0.75 ms |
+| watches page | 1.3550 ms | 0.3319 ms | < 0.5 ms (the first target, met) |
+| register (100 + 50) | 693.2 ms | 13.28 ms | < 17 ms |
+
+The budgets are in `examples/live/bench.cpp`, the spec's AC-7 and `docs/api/live.md`.

@@ -1,6 +1,6 @@
 # Tasks 030: Live values
 
-Status: implemented 2026-11-26; Linux checks passed; console correctness passed, console run 2 (bench budgets) pending; approved 2026-11-26 (with plan.md)
+Status: implemented 2026-11-26; Linux checks and console runs passed, budgets set; approved 2026-11-26 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -286,7 +286,7 @@ the tree at T0.3).
 - [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target live_3dsx platformer_3dsx` without a warning; T7.7's table still true;
   3ds-release `hello.elf` byte-identical to T0.1's. Covers AC-6, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** (2026-11-26: every run passed; budgets from console run 2, plan.md) Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run live --script examples/live/tests/check.nnhs` → every value, `live: sum
      <kLiveScriptGolden>` equal to the PC's, the pause and 3-frame step, the dump file saved, the bench lines and the
      verdict (numbers recorded); screenshots compared with the `--pc` run's (the panel's pixels identical);

@@ -310,6 +310,18 @@ breaks the same-bits rule:
 ssh nnhge-build 'cd ~/wt/nnhge && F="-m32 -msse2 -mfpmath=sse" && cmake --preset pc-debug -B build/m32 -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_EXE_LINKER_FLAGS=-m32 && cmake --build build/m32 --target nnh_tests && build/m32/tests/nnh_tests'
 ```
 
+`scripts/vm_check.sh` runs the passes (maintainer's decision, 2026-11-27, to shorten each spec's Linux stage):
+
+| Command | What it does | Use |
+|---------|--------------|-----|
+| `scripts/vm_check.sh sync` | Sends the working tree with each file's own time and deletes files removed locally; the VM's build folders stay, so Ninja and ccache rebuild only what changed | before any manual command |
+| `scripts/vm_check.sh fast` | Sync, then unit tests (`nnh_tests`, `nnh_tool_tests`, `nnh_assetc_tests`) on GCC 13 and under clang ASan/UBSan, and the `FUZZ` targets for 2 min each | while fixing findings |
+| `scripts/vm_check.sh final` | Sync, then the full ctest on GCC 13 (end-to-end `*_script_pc` tests included), unit tests on GCC 14 and the 32-bit host, ASan/UBSan, and the `FUZZ` targets for 10 min each | once, when the implementation is complete, before the merge |
+
+`FUZZ="tests/fuzz_remote tools/assetc/fuzz_assetc_ttf"` names the targets (paths inside `build/asan`); `CLEAN=1`
+wipes the VM's tree and builds first. The end-to-end `*_script_pc` tests already run in the Windows suite, so the
+fast pass skips them.
+
 Size budgets written for the console (`static_assert`s and tests) test `nnh::detail::kThreeDsLayout`
 (`nnh/detail/target_layout.hpp`: 32-bit pointers and an 8-byte `max_align_t`), not `sizeof(void*) == 4`: 32-bit x86
 aligns `max_align_t` to 16 and pads more.

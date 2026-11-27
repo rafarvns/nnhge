@@ -329,11 +329,14 @@ maintainer allows any session to start/stop it and run builds; `apt`/system chan
 
 ```sh
 ssh homelab 'sudo qm status 101 | grep -q stopped && free -m && sudo qm start 120'   # never with Bazzite (101)
-git ls-files -z -co --exclude-standard | tar --null -T - -cf - | ssh nnhge-build 'rm -rf ~/wt/nnhge && mkdir -p ~/wt/nnhge && tar -xf - -C ~/wt/nnhge'
-ssh nnhge-build 'cd ~/wt/nnhge && cmake --preset pc-debug && cmake --build --preset pc-debug && ctest --preset pc-debug'
-# 32-bit host (SSE floats; x87 breaks the same-bits rule): docs/tech/cmake.md "build VM"
+FUZZ="tests/fuzz_remote" scripts/vm_check.sh fast    # incremental sync + unit tests (GCC 13, ASan/UBSan) + 2 min fuzz
+FUZZ="tests/fuzz_remote" scripts/vm_check.sh final   # once per spec, before the merge: full ctest, GCC 14, 32-bit, ASan, 10 min fuzz
 ssh homelab 'sudo qm shutdown 120'                                                  # when done (it also idles off)
 ```
+
+A spec's checks run in this order to keep the loops short: implementation complete → one independent review and one
+`final` Linux pass together → fixes (re-checked with `fast`) → console runs back to back while the maintainer is there
+([docs/tech/cmake.md](docs/tech/cmake.md), "build VM").
 
 - **3DS builds go through `scripts/dkp.sh` on Windows**: devkitPro's toolchain only runs from its MSYS2.
 - **GitHub CI is manual** (saves Actions minutes): verify locally before pushing and use the homelab

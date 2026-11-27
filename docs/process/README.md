@@ -17,6 +17,11 @@ change.
 
 The maintainer approves the spec (step 1) before any code is written.
 
+Step 7 happens once the implementation is complete: one independent review and one final Linux pass
+(`scripts/vm_check.sh final`) run together. Fixes are re-checked with the quicker `scripts/vm_check.sh fast`, then the
+console runs happen back to back ([cmake.md](../tech/cmake.md), "build VM"). A review or Linux pass on a partial
+implementation only finds what the next round changes anyway.
+
 | Document | Content |
 |----------|---------|
 | [constitution.md](constitution.md) | Non-negotiable rules; every plan is checked against them |

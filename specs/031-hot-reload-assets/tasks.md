@@ -325,6 +325,6 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 - [x] **T11.6** `docs/ROADMAP.md`: the "Hot reload of assets in the simulator" checkbox (now simulator and console), with
   the implemented summary.
 - [x] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
-- [ ] **T11.8** (the lead) Merge `spec-031` into `main` (rebased; insertions after 030's blocks); then the full ctest
+- [x] **T11.8** (done 2026-11-27: merge `5b3752c`; main pc-debug ctest all pass, 3ds-release without a warning) (the lead) Merge `spec-031` into `main` (rebased; insertions after 030's blocks); then the full ctest
   (pc-debug, pc-release), every example's `--pc` script, the self-check sums and every earlier golden, one 3ds-release
   build; T10.2 runs repeated if the merge happened after them.

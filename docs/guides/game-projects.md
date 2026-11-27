@@ -116,7 +116,9 @@ addition is the mapping of `NNHGE_ENGINE_DIR` ([a local engine](#a-local-engine)
 
 A project without the preset `nnh` needs gets `nnh: this project has no preset "3ds-dev" (CMakePresets.json)` before
 CMake runs. Presets of your own go in `CMakeUserPresets.json` (git-ignored), under other names; pick one with
-`NNH_PRESET` ([nnh-tool.md](nnh-tool.md)).
+`NNH_PRESET` ([nnh-tool.md](nnh-tool.md)). Such a preset must still look like the six to `nnh`: a name starting with
+`pc-` or `3ds-` (the system `nnh` builds for), a configure and a build preset of that name, and
+`"binaryDir": "${sourceDir}/build/${presetName}"` (inherit `base`), where `nnh` looks for the build.
 
 ## `nnh.toml`
 
@@ -156,7 +158,7 @@ Set the environment variable `NNHGE_ENGINE_DIR` to an engine checkout (or an unp
 on Windows:
 
 ```sh
-export NNHGE_ENGINE_DIR=E:/src/nnhge      # Git Bash; setx NNHGE_ENGINE_DIR E:\src\nnhge for every new shell
+export NNHGE_ENGINE_DIR=E:/src/nnhge      # Git Bash; setx NNHGE_ENGINE_DIR E:/src/nnhge for every new shell
 nnh run mygame --pc
 ```
 
@@ -201,7 +203,9 @@ paths in MSYS form, because devkitPro's CMake reads `E:/...` as a relative path:
 /e/src/nnhge/scripts/dkp.sh sh -c "cd /e/games/mygame && cmake --build --preset 3ds-dev"
 ```
 
-(Leave out the `-D` for the pinned download.)
+For the pinned download leave the `-D` out **and** make sure `NNHGE_ENGINE_DIR` is unset in that shell (or pass
+`-DFETCHCONTENT_SOURCE_DIR_NNHGE=` empty): the presets would hand its drive form (`E:/...`) to devkitPro's CMake,
+which reads it as a relative path. (`nnh` converts it for you.)
 
 Windows limits one command line to 32,767 characters. The engine archives its core library from a response file in 3DS
 presets, so its longest command stays short (about 3,100 characters in a game project). A game's own link command lists every

@@ -31,7 +31,7 @@ function(_nnh_consumer_test name way label)
 endfunction()
 
 _nnh_consumer_test(consumer local consumer)
-foreach(_way archive archive_override submodule pruned bad_hash options_on)
+foreach(_way archive archive_override submodule pruned bad_hash options_on options_mixed)
     _nnh_consumer_test(consumer_${_way} ${_way} consumer-full)
 endforeach()
 # A worktree synced without .git (the build VM): the submodule way reports itself skipped.

@@ -801,3 +801,16 @@ Batch 1 (`nnh`), test first (red seen: 5 of 8 new cases failed against stubs, th
   `preset_names.cpp` 174 → 164 lines.
 - `nnh serve` reads `nnh.toml` once (when it starts): its builds go through `build_target_in(root, ...)`.
 - A real `find_on_path()` lookup (`cmd`/`sh`, and a missing program). `nnh_tool_tests`: 279 cases, 0 failures.
+
+Batch 2 (CMake, scripts, docs):
+- FR-19: `CMAKE_NINJA_FORCE_RESPONSE_FILE` is undocumented (`cmake --help-variable`: not defined); said so in D55 item
+  9, `cmake.md` ("The command-line limit") and `engine/core/archive/CMakeLists.txt`, with the length check as its
+  guard. `scripts/vm_check.sh final` now runs `check_command_length.sh` on the fresh `build/3ds-dev` and on the
+  consumer copy's `3ds-dev`/`3ds-release`; spec 034's FR-24 checklist has the line. `check_command_length.sh` takes
+  optional targets (`dist`, `<game>_cia`), documented.
+- FR-8: `cmake.md` "Reserved names" lists SDL3's FetchContent names and overrides, its own targets when built from source
+  and the four `SDL_*` cache entries `nnh_sdl3.cmake` sets with FORCE (they override the game's values).
+- The guide: a hand-made pinned 3DS configure needs `NNHGE_ENGINE_DIR` unset (or the `-D` passed empty); a user preset
+  needs a `pc-`/`3ds-` name, both preset kinds and the `build/${presetName}` folder; `setx` with forward slashes.
+- New `consumer_options_mixed` (`consumer-full`, configure only, 19 s): `NNH_BUILD_TESTS=ON` with `NNH_BUILD_EXAMPLES=OFF`
+  in a game project adds `nnh_tests` and no example, `nnh-link` or `nnh`. ROADMAP's 032 line unticked until the merge.

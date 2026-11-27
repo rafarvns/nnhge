@@ -297,7 +297,13 @@ Targets the engine defines in a game's build (a game must not use these names): 
 `nnh_stb_image`, `nnh_stb_truetype`, `nnh_assetc_lib`, `nnh_data_schema_support` (PC); per game `<game>_icon`,
 `<game>_assets`, `<game>_3dsx`, `<game>_dist`, `<game>_cia`, `<game>_data_schema`, `<game>_data_schema_objs`,
 `<game>_data_description` and `<game>.elf`/`<game>.smdh` files on 3DS; the aliases `nnh::*`; `nnh_link` with apps,
-tools or tests. Cache entries: `NNH_BUILD_EXAMPLES`, `NNH_BUILD_TESTS`, `NNH_BUILD_APPS`, `NNH_BUILD_TOOLS`,
+tools or tests. On PC the simulator's SDL3 adds its own: a system SDL3 (`find_package`) adds `SDL3::SDL3` only; otherwise the
+FetchContent names `nnh_sdl3_prebuilt` (MinGW and MSVC: the official development package, no compile) or `nnh_sdl3`
+(Linux, macOS: built from source), each with its override `FETCHCONTENT_SOURCE_DIR_NNH_SDL3_PREBUILT` /
+`FETCHCONTENT_SOURCE_DIR_NNH_SDL3`; built from source, SDL3's own targets join the build (`SDL3-static`, `SDL3_Headers`,
+`SDL_uclibc` and its other internal ones), and `cmake/nnh_sdl3.cmake` sets `SDL_SHARED=OFF`, `SDL_STATIC=ON`,
+`SDL_TEST_LIBRARY=OFF` and `SDL_EXAMPLES=OFF` as cache entries **with FORCE: they override the game project's own
+values** of those four (a game that builds SDL3 itself must not rely on them). Cache entries: `NNH_BUILD_EXAMPLES`, `NNH_BUILD_TESTS`, `NNH_BUILD_APPS`, `NNH_BUILD_TOOLS`,
 `NNH_CCACHE`, `NNH_ASSETC`, `NNH_HOST_CXX` (3DS), `NNH_MAKEROM`, `NNH_BANNERTOOL` (3DS), `NNHGE_VERSION*`. Global
 properties: `NNH_PLATFORM`, `NNH_ASSETC_PROGRAM`, `NNH_ASSETC_MISSING`.
 
@@ -312,9 +318,15 @@ response file (paths relative to the build folder, which `arm-none-eabi-gcc-ar` 
 would break every compile: compiler response files would hold `/e/...` include paths the native compiler can't read.
 `libnnh_core.a` keeps its place and members; `hello.3dsx` stayed byte-identical.
 
+**The variable is undocumented**: CMake's Ninja generator reads it, but `cmake --help-variable` says it is not
+defined, so a CMake update could stop honouring it without an error. The length check below is its guard.
+
 `scripts/check_command_length.sh <build dir> [limit]` prints the longest command Ninja would run (`ninja -t commands`),
 its share of 32,767 and its start, and exits 1 above the limit (default 16,383, 50 %): today 2,533 characters (7.7 %,
-the platform archive) in both 3DS presets of the repository. Run it on 3DS build folders after build changes.
+the platform archive) in both 3DS presets of the repository, 3,145 in a game project at a 78-character path. It
+runs at every spec's stage ends on Windows, in `scripts/vm_check.sh final` (the repository's fresh `3ds-dev` and the
+consumer copy's 3DS folders) and in spec 034's release checklist. Without targets it reads the default build, which
+leaves out `dist` and `<game>_cia`: `scripts/check_command_length.sh build/3ds-dev 16383 dist` measures packaging too.
 
 ### Consumer tests
 
@@ -325,7 +337,7 @@ nested folder, a hello-sized game, and a plain library of its own. `tests/consum
 |-------|-------|------|
 | `consumer` | `consumer` | the project against this engine folder (`FETCHCONTENT_SOURCE_DIR_NNHGE`): configure, build, run headless, the self-check line, no engine target or test in its build, its manifest, compile commands equal to `hello`'s, its own library untouched, `NNHGE_VERSION` |
 | `consumer_platform_empty`, `consumer_platform_unknown` | `consumer` | the unknown-platform error before any target |
-| `consumer_archive`, `consumer_archive_override`, `consumer_submodule`, `consumer_pruned`, `consumer_bad_hash`, `consumer_options_on` | `consumer-full` | the other ways of adding the engine, a wrong hash, all four options ON |
+| `consumer_archive`, `consumer_archive_override`, `consumer_submodule`, `consumer_pruned`, `consumer_bad_hash`, `consumer_options_on`, `consumer_options_mixed` | `consumer-full` | the other ways of adding the engine, a wrong hash, all four options ON, `NNH_BUILD_TESTS` alone ON |
 
 The driver is `tests/consumer_tools/run_consumer.cmake`; builds go to `build/<preset>/consumer/<way>/` (the
 `consumer-full` ones are deleted once they pass) and reuse the parent's compiler cache (`CCACHE_NOHASHDIR=1`) and SDL3

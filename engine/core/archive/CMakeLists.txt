@@ -4,13 +4,16 @@
 # On Windows, devkitPro's MSYS2 CMake assumes the POSIX command-line limit and writes the archive command with every
 # object on it: 447 objects made a 27,354-character command in the repository and 35,454 in a game project
 # (_deps/nnhge-build/), against Windows' 32,767. CMAKE_NINJA_FORCE_RESPONSE_FILE is read per directory, so setting it
-# here puts this one archive's object list in a response file. Its paths are relative to the build folder, which the
+# here puts this one archive's object list in a response file. CMake reads that variable but does not document it
+# (`cmake --help-variable CMAKE_NINJA_FORCE_RESPONSE_FILE`: not defined), so a CMake update could drop it without a
+# word: scripts/check_command_length.sh guards it (stage ends, scripts/vm_check.sh final, the release checklist). Its paths are relative to the build folder, which the
 # native arm-none-eabi-gcc-ar reads. (Set for the whole build it breaks every compile: the compilers' response files
 # would hold /e/... include paths the native compiler can't read.) PC presets: unchanged (native CMake already uses
 # response files where needed on Windows).
 #
-# Same archive as before the split: engine/core/libnnh_core.a, the same members in the same order, the same usage
-# requirements (games and platform libraries see no difference).
+# Same archive as before the split: engine/core/libnnh_core.a with the same members (the two vendored objects,
+# stb_vorbis.o and f2s.o, now last instead of first) and the same usage requirements (games and platform libraries see
+# no difference; hello.3dsx stayed byte-identical).
 
 if(NNH_PLATFORM STREQUAL "3ds")
     set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON)

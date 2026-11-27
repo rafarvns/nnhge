@@ -5,7 +5,7 @@
 // layout; (13) the cursor.
 
 #include "nnh/build.hpp"
-#include "nnh/assets.hpp"
+#include "reload/reload_hooks.hpp"
 #include "nnh/app.hpp"
 #include "nnh/profile.hpp"
 #include "ui/ui_block.hpp"
@@ -108,7 +108,8 @@ void step(UiBlock& b, const UiInput& given) {
 
 void ui_step(UiBlock& b, const UiInput& in) {
     if constexpr (build::kDevToolsEnabled) { // spec 031: a hot reload this frame (strings, fonts, textures) relays out
-        if (assets::reloaded_paths().count > 0) forget_text(b);
+        const std::uint32_t frame = detail::g_reload_applied_frame; // a hook: no reload code linked for it
+        if (frame != 0 && frame == static_cast<std::uint32_t>(frame_count())) forget_text(b);
     }
     step(b, in);
 }

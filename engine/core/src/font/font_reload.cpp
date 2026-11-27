@@ -87,7 +87,9 @@ void commit(const ReloadItem&, void* state) {
     auto* p = static_cast<NewFont*>(state);
     if (p == nullptr) return;
     FontBlock* old = font_table_replace(p->slot, p->block);
-    font_free_block(old, tag_of(p->slot)); // its pages wait for the GPU (D47)
+    // The old block's pages wait for the GPU (D47); a slot released meanwhile (never expected) takes nothing: the new
+    // block is freed instead, so nothing leaks (review nit).
+    font_free_block(old != nullptr ? old : p->block, tag_of(p->slot));
     mem::free(p);
 }
 

@@ -61,6 +61,7 @@ std::size_t format_list(const char* const* paths, int count, char* out, std::siz
     if (kept < count) {
         const int n = std::snprintf(out + used, capacity - used, "%s... (+%d)", kept > 0 ? ", " : "", count - kept);
         used += static_cast<std::size_t>(n > 0 ? n : 0);
+        if (used >= capacity) used = capacity - 1; // snprintf cut the tail: `used` stays inside `out` (review nit)
     }
     out[used] = '\0';
     return used;

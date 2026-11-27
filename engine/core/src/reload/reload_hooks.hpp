@@ -45,6 +45,8 @@ extern void (*g_reload_apply)(std::uint32_t frame);
 extern bool g_reload_assets_active;
 /// The assets module's own index (set by assets_init() in Debug/Development builds).
 extern const AssetIndex* g_reload_original_index;
+/// The frame of the last applied batch (0: none): the UI relays out on it without linking the reload core (review nit).
+extern std::uint32_t g_reload_applied_frame;
 
 namespace reload {
 /// Links and turns on the reload core (the kinds call it through register_kind()). Idempotent.

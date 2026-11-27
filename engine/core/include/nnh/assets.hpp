@@ -12,9 +12,8 @@
 /// Textures load from assets too: nnh::load_texture("characters/hero") (<nnh/texture.hpp>).
 ///
 /// Hot reload (spec 031, Debug/Development builds under `nnh run`): saving a file in the game's assets folder reloads
-/// it at the start of a frame. Textures, sounds, fonts, meshes and string tables change behind the handles the game
-/// holds (sprite libraries and music are still to come); data assets, tilemaps and plain files are announced so the
-/// game reloads its own copies:
+/// it at the start of a frame. Textures, sounds, music, fonts, meshes, sprite libraries and string tables change behind
+/// the handles the game holds; data assets, tilemaps and plain files are announced so the game reloads its own copies:
 /// assets::reloaded(), assets::reload_count(), the AssetsReloaded event. In Release these are constants (0, false,
 /// empty) and nothing reloads. See docs/api/assets.md#hot-reload.
 

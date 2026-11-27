@@ -132,6 +132,7 @@ void apply_now(std::uint32_t frame) {
         return;
     }
     ++g_count;
+    g_reload_applied_frame = frame; // the UI's relayout reads this (reload_hooks.hpp): no reload code linked for it
     g_files.keep_batch();
     make_list(frame);
     log_applied(frame, g_list_count);

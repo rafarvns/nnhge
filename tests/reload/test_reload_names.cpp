@@ -81,3 +81,13 @@ NNH_TEST(reload_names_list_with_a_first_name_too_long) {
     format_list(paths, 2, out, sizeof out);
     CHECK(std::strcmp(out, "... (+2)") == 0);
 }
+
+NNH_TEST(reload_names_a_short_buffer_never_overflows) {
+    const char* paths[] = {"art/a_rather_long_name.png", "art/another_long_name.png", "levels/room_number_one.nnhmap"};
+    char out[24];
+    out[sizeof out - 1] = 'Z';
+    const std::size_t n = format_list(paths, 3, out, 16); // shorter than the contract asks (review nit)
+    CHECK(n < 16);
+    CHECK(std::strlen(out) == n);
+    CHECK(out[sizeof out - 1] == 'Z');
+}

@@ -524,7 +524,7 @@ writes a build folder).
 |---------|-----|------|
 | I | ✅ | One template source for both systems; `nnh`'s system code stays in the tool (`process_run`, `new_fs_system`, `probes_system`) |
 | II | ✅ | No engine change; the template is `hello`-sized; 60 Hz and controls checked on the Old 3DS |
-| III | ✅ | Budgets measured on a generated project (AC-5); the e2e under `consumer-full`; the default `ctest` adds ≈ 12 s; the version and pin definitions recompile one `nnh` file |
+| III | ⚠️ | **AC-5/FR-17 not met for the simulator** (review round, like for like in `pc-debug`, 7 warm interleaved runs: the template's `play_scene.cpp` edit median 2.48 s, the repository's `hello` median 2.17 s, both over the < 2 s budget on this machine; `.3dsx` 3.61 s, within < 5 s): a question for the maintainer under "What is open". The e2e under `consumer-full`; the default `ctest` adds ≈ 12 s; the version and pin definitions recompile one `nnh` file |
 | IV | ✅ | Template: scene, queries, `SoundFinished` |
 | V | ✅ | No engine change; template allocation-free per frame |
 | VI | ✅ | Pure functions over fakes first; template proven by scripts; mutants |
@@ -1003,7 +1003,64 @@ sprite move with the Circle Pad and the D-Pad, A play the blip and START quit? (
   doctor` with and without `DEVKITPRO`, a generated project's 3DS builds). The template's sources were not built with
   GCC 12 or clang 16/17 (they didn't exist at T0.3).
 - CMake 3.25 itself was not measured (T0.2): fetching a CMake binary onto the VM was not allowed in this session.
-- The simulator edit budget (< 2 s) is missed on this machine by the template (2.36 s) and by `hello` (2.06 s): a
-  question for the maintainer (the link dominates).
+- **Maintainer question (constitution III, AC-5/FR-17):** the simulator edit budget (< 2 s) is missed on this
+  machine, like for like in `pc-debug`: the template's edit median 2.48 s, `hello`'s 2.17 s (review round); the link
+  of a static program dominates (1.2–1.4 s). Record an exception for 1.0, or open an engine build-speed item (link
+  time)?
 - AC-7's "MSYS2 without Ninja" was shown with an MSYS2 folder without bash (the unit test covers the Ninja case).
 - The console run (T10.1) and the status changes (T10.2).
+
+### Review round (2026-11-27): fixes
+
+The independent review asked for changes (two blockers). Every point fixed in the worktree, test first where it was
+code; the commits `1a4902b` (blockers and should-fix code), `0db9805` (nits and docs) and the plan update.
+
+- **Blocker 1, FR-6 with a real write failure:** `create_file` removes a half-written file when a write or the close
+  fails (the `NewFs::create_file` contract says so). `create_file_exclusive(path, bytes, fail_after)` is the real
+  create with a test hook that makes the real write fail after N bytes. Tests (seen red: the file stayed):
+  `a_real_write_failure_after_the_open_leaves_no_file`, `a_write_failing_mid_file_leaves_nothing_behind` (the third
+  file fails mid-write: no folder left).
+- **Blocker 2:** the FR-22 runner cases moved to `tools/nnh/tests/test_script_runner_hello.cpp`;
+  `test_script_runner.cpp` back to 385 lines.
+- **3, the time limit:** both loops of `run_program` check the deadline first in every iteration (a program that keeps
+  writing is killed; what it wrote past `max_output` is still drained only until the deadline). Test
+  `a_program_that_never_stops_writing_is_still_killed_at_its_limit` (a CMake script printing a 64 KiB line forever,
+  300 ms): it could **not** be seen red on Windows, where `nnh` reads faster than CMake writes, so the old loop still
+  reached its deadline check between writes; it stays as the regression test (Linux runs it at stage 9). Also on
+  Windows only the pipe and `NUL` are inherited (`PROC_THREAD_ATTRIBUTE_HANDLE_LIST`, falling back to the old call if
+  the list can't be built).
+- **4, the rollback's own failures:** `undo` collects what it could not remove; the error then says "could not remove
+  X, Y (remove them by hand)", exit 1. Test `what_the_rollback_cannot_remove_is_named` (red first).
+- **5, docs:** README's quick start sets `NNHGE_ENGINE_DIR`; getting-started says `--pc` shows the 3DS group without
+  counting it.
+- **6, `DEVKITPRO_MSYS2`:** cleaned (`\` → `/`, no trailing `/`); with a space in it, the fix is devkitPro's pacman page
+  instead of a command. Values in MSYS form (`/d/...`) of `DEVKITPRO`, `DEVKITPRO_MSYS2` and `NNHGE_ENGINE_DIR` get
+  "write it in drive form: D:/...". Tests (red first): `the_msys2_folder_is_normalised_and_a_space_gets_the_docs_link`,
+  `an_msys_form_path_outside_msys_gets_the_drive_form_hint`, `the_engine_variable_in_msys_form_and_in_the_repository`.
+- **7, AC-5 like for like** (`pc-debug` both, a project made by `nnh new` outside the repository configured with the
+  parent's SDL3, one warm-up then 7 interleaved runs, edit + `cmake --build --preset pc-debug --target <game>`):
+
+  | Run | 1 | 2 | 3 | 4 | 5 | 6 | 7 | Median |
+  |---|---|---|---|---|---|---|---|---|
+  | template `play_scene.cpp` | 2.48 | 2.51 | 2.43 | 2.45 | 2.50 | 2.57 | 2.47 | **2.48 s** |
+  | `examples/hello/main.cpp` | 2.26 | 2.26 | 2.10 | 2.17 | 2.17 | 2.00 | 2.06 | **2.17 s** |
+
+  Both over the 2 s budget; the template +0.31 s. The after-design Constitution Check now marks III ⚠️ and "What is
+  open" carries the question.
+- **Nits:** the set-lines single-quoted for Git Bash and PowerShell (`'''`, `''`), `set "X=..."` for cmd, a quoted
+  `setx` (test with `( ) ' $` and a backtick); `doctor --online`'s script built by `doctor_fetch_script`, which
+  refuses a URL or CA path with a quote, `$`, `;`, a backslash or a control character (test with hostile values), the
+  file created exclusively, removed if the write fails, passed as UTF-8; `embed_template.cmake` with one list of
+  binary and one of text extensions, failing on any other; the release pin's URL character set equal to doctor's
+  (three more `nnh_pin_check` cases, red first); the repository's `NNHGE_ENGINE_DIR` line "not set"; the generated
+  `CMakeLists.txt` with one docs line at the top, every line ≤ 120 columns (tested) and the commented `AUTHOR` aligned;
+  the template's `.gitattributes` `* text=auto eol=lf`; `CXX="ccache g++"` named ("CXX=... not found ...
+  CMAKE_CXX_COMPILER_LAUNCHER"); the OneDrive (reparse point) refusal documented; with `CMAKE_TLS_CAINFO` unset a
+  certificate failure gets the docs link, not a no-op `setx`; `<algorithm>` where `std::min` is used; a Linux clone
+  path in "Your first game".
+- Tests: 389 → 399 in `nnh_tool_tests`.
+- Guards after the round (Windows): `pc-debug`, `pc-release`, `3ds-dev`, `3ds-release` 0 warnings; `hello.3dsx`
+  `92e8dbd27aa0d256be55726e9d0d5dbae6de232d34a9783d72647505bdd2408f`, unchanged from the stage 0 baseline in this
+  worktree; `nnh_tool_tests` 399/399; `ctest --preset pc-debug -LE consumer-full -j4` 385/385 (556 s);
+  `nnh_new_smoke` passed (131 s); `docs_tool.py check` 223 files, 0 broken links. The Linux `final` pass that was
+  running during this round used the tree synced before it: the fixes above still need a `scripts/vm_check.sh fast`.

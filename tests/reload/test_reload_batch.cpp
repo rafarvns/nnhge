@@ -190,33 +190,51 @@ NNH_TEST(reload_batch_index_add_remove_rename) {
     nnh::shutdown();
 }
 
+namespace {
+
+/// Batch 2 of a fresh game with `room` heap bytes left; checks that a refusal changed nothing. @return applied.
+bool batch_with_room(std::size_t room) {
+    char index[256];
+    start_game(index, sizeof index);
+    const Put warm[] = {text("art/b.png", "W")}; // the first batch allocates the buffer and the overlay
+    send_batch(1, warm, 1);
+    frames(2);
+    const std::size_t used = nnh::mem::region_stats(nnh::MemRegion::Heap).bytes;
+    const std::size_t before = nnh::mem::tag_stats(reload_memory_tag()).bytes;
+    fake::set_region_capacity(nnh::MemRegion::Heap, used + room);
+    const Put batch[] = {text("art/a.png", "A2"), text(".nnh_assets", "art/a.png\nart/b.png\nlevels/room.txt\n")};
+    send_batch(2, batch, 2);
+    frames(2);
+    char out[32];
+    const bool applied = nnh::assets::reload_count() == 2;
+    if (applied) {
+        CHECK(read_text("art/a.png", out, sizeof out) == 2);
+    } else {
+        CHECK(read_text("art/a.png", out, sizeof out) == 8);
+        // what the refused batch allocated went back (its block is freed with it)
+        CHECK(nnh::mem::tag_stats(reload_memory_tag()).bytes <= before);
+    }
+    fake::set_region_capacity(nnh::MemRegion::Heap, 64u << 20);
+    nnh::shutdown();
+    return applied;
+}
+
+} // namespace
+
 NNH_TEST(reload_batch_an_allocation_failure_at_every_size_changes_nothing) {
     RELOAD_DEV_ONLY();
-    int refused = 0, applied = 0;
-    for (std::size_t room = 0; room < 40000; room += 997) {
-        char index[256];
-        start_game(index, sizeof index);
-        const Put warm[] = {text("art/b.png", "W")}; // the first batch allocates the buffer and the overlay
-        send_batch(1, warm, 1);
-        frames(2);
-        const std::size_t used = nnh::mem::region_stats(nnh::MemRegion::Heap).bytes;
-        const std::size_t before = nnh::mem::tag_stats(reload_memory_tag()).bytes;
-        fake::set_region_capacity(nnh::MemRegion::Heap, used + room);
-        const Put batch[] = {text("art/a.png", "A2"), text(".nnh_assets", "art/a.png\nart/b.png\nlevels/room.txt\n")};
-        send_batch(2, batch, 2);
-        frames(2);
-        char out[32];
-        if (nnh::assets::reload_count() == 2) {
-            ++applied;
-            CHECK(read_text("art/a.png", out, sizeof out) == 2);
-        } else {
-            ++refused;
-            CHECK(read_text("art/a.png", out, sizeof out) == 8);
-            // what the refused batch allocated went back (its block is freed with it)
-            CHECK(nnh::mem::tag_stats(reload_memory_tag()).bytes <= before);
-        }
-        fake::set_region_capacity(nnh::MemRegion::Heap, 64u << 20);
-        nnh::shutdown();
+    // The batch's peak need depends on the compiler and the allocator (Linux finding): find the threshold first, then
+    // sweep around it, so both outcomes are always exercised.
+    CHECK(!batch_with_room(0));
+    std::size_t lo = 0, hi = 1u << 20;
+    CHECK(batch_with_room(hi));
+    while (hi - lo > 64) {
+        const std::size_t mid = lo + (hi - lo) / 2;
+        if (batch_with_room(mid)) hi = mid;
+        else lo = mid;
     }
+    int refused = 0, applied = 0;
+    const std::size_t from = lo > 4000 ? lo - 4000 : 0;
+    for (std::size_t room = from; room < hi + 4000; room += 97) (batch_with_room(room) ? applied : refused) += 1;
     CHECK(refused > 0 && applied > 0);
 }

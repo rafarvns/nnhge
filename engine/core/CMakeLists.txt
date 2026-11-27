@@ -8,6 +8,7 @@ target_include_directories(nnh_core_contract INTERFACE contract include)
 
 add_library(nnh_core STATIC
     src/animation/animator.cpp
+    src/animation/animator_rebind.cpp
     src/animation/animator_advance.cpp
     src/animation/animator_notices.cpp
     src/animation/animator_queries.cpp
@@ -19,6 +20,8 @@ add_library(nnh_core STATIC
     src/animation/sprite_layout.cpp
     src/animation/sprite_library.cpp
     src/animation/sprite_load.cpp
+    src/animation/sprite_reload.cpp
+    src/animation/sprite_reload_table.cpp
     src/animation/sprite_markers.cpp
     src/animation/sprite_sequence.cpp
     src/animation/sprite_states.cpp

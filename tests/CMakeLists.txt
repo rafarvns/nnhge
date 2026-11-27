@@ -62,6 +62,8 @@ add_executable(nnh_tests
     animation/test_sprite_layout.cpp
     animation/test_sprite_library.cpp
     animation/test_sprite_load.cpp
+    animation/test_sprite_reload.cpp
+    animation/test_animator_rebind.cpp
     animation/test_sprite_lifetime.cpp
     animation/test_sprite_markers.cpp
     animation/test_sprite_sequence.cpp

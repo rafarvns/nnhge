@@ -46,9 +46,50 @@ struct SpriteView {
     int cap(int s) const { return block->header.cap[s]; }
 };
 
+/// Hot reload (spec 031, Debug/Development; sprite_reload_table.cpp): a library loaded from an asset path. The game's
+/// SpriteLibrary keeps its first block (`identity`); a reload builds `current`; the block before it (`previous`) is kept
+/// until the next reload so that animators bound to it can still read its clip names when they rebind.
+struct SpriteReloadEntry {
+    SpriteBlock* identity = nullptr;
+    SpriteBlock* current = nullptr;
+    SpriteBlock* previous = nullptr;
+    std::uint32_t hash = 0;     ///< reload::path_hash of the asset path
+    std::uint16_t serial = 0;   ///< the library's lifetime serial
+    std::uint8_t epoch = 0;     ///< reloads applied (animators keep its 2 low bits: a reused address is told apart)
+    std::uint16_t extras[6] = {}; ///< LoadSpriteLibraryOptions, for the reloaded blocks
+    char name[32] = {};         ///< the load path, for warnings
+};
+inline constexpr std::uint8_t kSpriteForwarded = 1; ///< Header::reserved[0] of an identity block that was reloaded
+/// Reloads applied to any library so far: 0 keeps the animators' check to one load.
+extern int g_sprite_reloads;
+SpriteReloadEntry* sprite_reload_entry(const SpriteBlock* identity);
+SpriteReloadEntry* sprite_reload_entry_of_serial(std::uint16_t serial);
+/// The tracked libraries (`count` entries, some empty: identity null).
+SpriteReloadEntry* sprite_reload_entries(int& count);
+/// load_sprite_library made `identity` from `asset_path` (false: the table is full or has no memory; not tracked).
+bool sprite_reload_track(SpriteBlock* identity, const char* asset_path, const char* name,
+                         const LoadSpriteLibraryOptions& options);
+/// The library is destroyed: its reloaded blocks are freed and its entry forgotten (the identity is the caller's).
+void sprite_reload_forget(SpriteBlock* identity);
+/// sprite_reload.cpp: registers the kind and tracks the library (called by load_sprite_library).
+void sprite_reload_loaded(SpriteBlock* identity, const char* asset_path, const char* name,
+                          const LoadSpriteLibraryOptions& options);
+
+/// A view of the library's content: in Debug/Development, a reloaded library's identity block forwards to its current
+/// block (one flag test for every other library).
 inline SpriteView sprite_view(const SpriteBlock* block) {
+#if !defined(NNH_FLAVOR_RELEASE)
+    if (block != nullptr && block->header.reserved[0] == kSpriteForwarded) {
+        if (const SpriteReloadEntry* e = sprite_reload_entry(block)) block = e->current;
+    }
+#endif
     return SpriteView{const_cast<SpriteBlock*>(block)};
 }
+
+/// Validates a `.nnhsprite` file and copies it into a new block (not adopted: no serial) with `extras` (the six
+/// LoadSpriteLibraryOptions values). Errors as load_sprite_library's (logged with `name`).
+Result<SpriteBlock*> sprite_block_from_file(const void* data, std::size_t size, const int (&extras)[6],
+                                            const char* name);
 
 /// The memory tag of every library block ("animation").
 MemTag& animation_memory_tag();

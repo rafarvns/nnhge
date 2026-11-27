@@ -121,10 +121,12 @@ NNH_TEST(damaged_newer_and_over_limit_files_are_refused) {
 NNH_TEST(loading_leaves_only_the_librarys_block) {
     start();
     const int before = nnh::mem::live_allocations();
+    // Debug/Development: the hot reload table of loaded libraries (spec 031), one block kept until shutdown.
+    const int table = nnh::build::kDevToolsEnabled ? 1 : 0;
     {
         auto lib = nnh::load_sprite_library("art/hero");
-        CHECK(nnh::mem::live_allocations() == before + 1); // the asset's buffer is already freed
+        CHECK(nnh::mem::live_allocations() == before + 1 + table); // the asset's buffer is already freed
     }
-    CHECK(nnh::mem::live_allocations() == before);
+    CHECK(nnh::mem::live_allocations() == before + table);
     nnh::shutdown();
 }

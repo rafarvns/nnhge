@@ -4,6 +4,7 @@
 // expect-reload passing and failing; an unheld swap waited for with within N.
 
 #include <cstdio>
+#include <chrono>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -187,6 +188,57 @@ NNH_TEST(script_reload_an_interrupted_run_leaves_a_journal_the_next_restores) {
     CHECK(next.journal_left());
     CHECK(next.restore_all() == 1);
     CHECK(read(g.game + "/assets/a.txt") == "original");
+}
+
+NNH_TEST(script_reload_a_failed_restore_keeps_its_backup_and_journal) {
+    Game g("restorefail");
+    {
+        AssetSwaps swaps(g.game, g.root + "/backup");
+        CHECK(swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+        std::error_code ec;
+        fs::remove(g.game + "/assets/a.txt", ec);
+        fs::create_directories(g.game + "/assets/a.txt", ec); // something in the way: the copy back fails
+        CHECK(swaps.restore_all() == 0);
+        CHECK(swaps.journal_left()); // the backup is still there: kept for later (review S5)
+        fs::remove_all(g.game + "/assets/a.txt", ec);
+    }
+    AssetSwaps later(g.game, g.root + "/backup");
+    CHECK(later.restore_all() == 1);
+    CHECK(read(g.game + "/assets/a.txt") == "original");
+    CHECK(!later.journal_left());
+}
+
+NNH_TEST(script_reload_a_swap_without_a_journal_fails) {
+    Game g("nojournal");
+    std::error_code ec;
+    fs::create_directories(g.root + "/backup/journal.txt", ec); // the journal can't be written
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    CHECK(!swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(read(g.game + "/assets/a.txt") == "original"); // nothing swapped without a way back
+}
+
+NNH_TEST(script_reload_a_swapped_file_is_newer_than_before) {
+    Game g("mtime");
+    std::error_code ec;
+    const auto old_time = fs::file_time_type::clock::now() - std::chrono::hours(1);
+    fs::last_write_time(g.game + "/assets/a.txt", old_time, ec);
+    fs::last_write_time(g.script + "/fixtures/a_new.txt", old_time, ec); // an old fixture: copy_file may keep its time
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    CHECK(swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(fs::last_write_time(g.game + "/assets/a.txt", ec) > old_time + std::chrono::minutes(30)); // the build sees it
+    CHECK(swaps.restore_all() == 1);
+    CHECK(fs::last_write_time(g.game + "/assets/a.txt", ec) > old_time + std::chrono::minutes(30)); // and the restore
+}
+
+NNH_TEST(script_reload_backup_names_never_collide) {
+    Game g("collide");
+    write(g.game + "/a/b", "slash");
+    write(g.game + "/a__b", "underscores");
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    CHECK(swaps.swap("a/b", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(swaps.swap("a__b", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(swaps.restore_all() == 2);
+    CHECK(read(g.game + "/a/b") == "slash" && read(g.game + "/a__b") == "underscores");
 }
 
 NNH_TEST(script_reload_a_held_swap_lands_on_its_frame) {

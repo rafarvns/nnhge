@@ -13,14 +13,24 @@ namespace fs = std::filesystem;
 
 constexpr const char* kJournal = "journal.txt";
 
-/// "assets/art/hero.png" → "assets__art__hero.png" (one flat folder of backups).
+/// "assets/art/hero.png" → "assets%2Fart%2Fhero.png" (one flat folder of backups; '%' itself becomes "%25", so two
+/// sources never share a name: review nit).
 std::string flat(const std::string& source) {
     std::string out;
     for (const char c : source) {
-        if (c == '/') out += "__";
+        if (c == '/') out += "%2F";
+        else if (c == '%') out += "%25";
         else out += c;
     }
     return out;
+}
+
+/// copy_file keeps the source's time on some systems (MSVC's CopyFile2): the build must see the file as changed.
+bool copy_now(const std::string& from, const std::string& to, std::error_code& ec) {
+    if (!fs::copy_file(from, to, fs::copy_options::overwrite_existing, ec)) return false;
+    fs::last_write_time(to, fs::file_time_type::clock::now(), ec);
+    ec.clear();
+    return true;
 }
 
 } // namespace
@@ -68,18 +78,18 @@ bool AssetSwaps::journal_left() const {
     return fs::exists(backup_dir_ + "/" + kJournal, ec);
 }
 
-void AssetSwaps::write_journal() const {
+bool AssetSwaps::write_journal() const {
     std::error_code ec;
     fs::create_directories(backup_dir_, ec);
     if (swapped_.empty()) {
         fs::remove(backup_dir_ + "/" + kJournal, ec);
-        return;
+        return true;
     }
     std::FILE* f = std::fopen((backup_dir_ + "/" + kJournal).c_str(), "wb");
-    if (f == nullptr) return;
-    std::fprintf(f, "game=%s\n", game_dir_.c_str());
-    for (const std::string& s : swapped_) std::fprintf(f, "%s\n", s.c_str());
-    std::fclose(f);
+    if (f == nullptr) return false;
+    bool ok = std::fprintf(f, "game=%s\n", game_dir_.c_str()) > 0;
+    for (const std::string& s : swapped_) ok = std::fprintf(f, "%s\n", s.c_str()) > 0 && ok;
+    return std::fclose(f) == 0 && ok;
 }
 
 std::vector<std::string> AssetSwaps::read_journal() const {
@@ -108,9 +118,13 @@ std::string AssetSwaps::swap(const std::string& source, const std::string& fixtu
             return "swap-asset: can't back " + target + " up";
         }
         swapped_.push_back(source);
-        write_journal(); // before the source changes: an interruption from here on is recoverable
+        if (!write_journal()) { // before the source changes: an interruption from here on is recoverable
+            swapped_.pop_back();
+            fs::remove(backup_of(source), ec);
+            return "swap-asset: can't write the journal in " + backup_dir_ + " (nothing swapped)";
+        }
     }
-    if (!fs::copy_file(fixture, target, fs::copy_options::overwrite_existing, ec)) {
+    if (!copy_now(fixture, target, ec)) {
         return "swap-asset: can't copy " + fixture + " over " + target;
     }
     return "";
@@ -120,7 +134,7 @@ std::string AssetSwaps::restore(const std::string& source) {
     const auto it = std::find(swapped_.begin(), swapped_.end(), source);
     if (it == swapped_.end()) return "restore-asset: " + source + " wasn't swapped";
     std::error_code ec;
-    if (!fs::copy_file(backup_of(source), game_dir_ + "/" + source, fs::copy_options::overwrite_existing, ec)) {
+    if (!copy_now(backup_of(source), game_dir_ + "/" + source, ec)) {
         return "restore-asset: can't put " + source + " back (its backup is " + backup_of(source) + ")";
     }
     fs::remove(backup_of(source), ec);
@@ -134,17 +148,21 @@ int AssetSwaps::restore_all() {
         if (std::find(swapped_.begin(), swapped_.end(), s) == swapped_.end()) swapped_.push_back(s);
     }
     int restored = 0;
-    while (!swapped_.empty()) {
-        const std::string s = swapped_.back();
-        if (restore(s).empty()) {
+    const std::vector<std::string> sources(swapped_.rbegin(), swapped_.rend());
+    for (const std::string& s : sources) {
+        const std::string error = restore(s);
+        if (error.empty()) {
             ++restored;
-        } else {
-            swapped_.pop_back(); // a backup that is gone: nothing to put back
-            write_journal();
+            continue;
+        }
+        std::error_code ec;
+        if (!fs::exists(backup_of(s), ec)) { // a backup that is gone: nothing to put back, forget it
+            swapped_.erase(std::find(swapped_.begin(), swapped_.end(), s));
+        } else { // kept in the journal: `nnh restore-assets` tries again (review S5)
+            std::fprintf(stderr, "nnh: %s\n", error.c_str());
         }
     }
-    std::error_code ec;
-    fs::remove(backup_dir_ + "/" + kJournal, ec);
+    (void)write_journal(); // removed when everything is back
     return restored;
 }
 

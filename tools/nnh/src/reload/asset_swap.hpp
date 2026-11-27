@@ -29,7 +29,7 @@ public:
 
 private:
     std::string backup_of(const std::string& source) const;
-    void write_journal() const;
+    bool write_journal() const; ///< false: it couldn't be written
     std::vector<std::string> read_journal() const;
 
     std::string game_dir_, backup_dir_;

@@ -21,7 +21,7 @@ Bug fix = first a test that reproduces the bug (red), then the fix.
 cmake --build --preset pc-debug && ctest --preset pc-debug     # all
 build/pc-debug/tests/nnh_tests.exe                             # all, one line per test
 build/pc-debug/tests/nnh_tests.exe <substring>...              # filter by test name (any of them)
-build/pc-debug/tests/nnh_tests.exe --reverse                   # reverse order: finds tests that lean on an earlier one
+build/pc-debug/tests/nnh_tests.exe --reverse                   # reverse order (ctest unit_reverse): finds tests that lean on an earlier one
 ```
 
 If the preset isn't configured yet: `cmake --preset pc-debug` first.

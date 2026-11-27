@@ -38,7 +38,7 @@ Build folders: `build/<preset>/`. Personal presets go in `CMakeUserPresets.json`
 | `cmake/nnh_data.cmake` | `nnh_add_data_schema()` (the `DATA_SCHEMA` of `nnh_add_game`) and `nnh_use_data_schema()` (data assets, below) |
 | `tools/data_schema/CMakeLists.txt` | the data schema programs: `nnh_data_schema_support` (PC) or one game's program (3DS `ExternalProject`) |
 | `examples/CMakeLists.txt` | One `add_subdirectory` per example |
-| `tests/CMakeLists.txt` | `nnh_tests` (core + fake), `nnh_conformance_<platform>` (PC only) |
+| `tests/CMakeLists.txt` | `nnh_tests` (core + fake; ctests `unit` and `unit_reverse`, the same tests in reverse order to catch state one test leaves for the next), `nnh_conformance_<platform>` (PC only) |
 
 ## Common changes
 

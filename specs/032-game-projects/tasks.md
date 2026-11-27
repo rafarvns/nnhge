@@ -97,28 +97,28 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 3: the full fixture and the four ways
 
-- [ ] **T3.1** Every keyword and asset kind: `tests/consumer/game/` gains `IMAGES`, `LANGUAGES en pt-BR BASE en`,
+- [x] **T3.1** Every keyword and asset kind: `tests/consumer/game/` gains `IMAGES`, `LANGUAGES en pt-BR BASE en`,
   `TITLE`/`DESCRIPTION`/`AUTHOR`/`VERSION`, `ICON`, `CIA UNIQUE_ID 0xF7032 PRODUCT_CODE CTR-N-NNHC BANNER BANNER_AUDIO`
   and assets copied from `tests/data/` (a Tiled map + tileset, an Aseprite export, data files, a `.font` over
   `nnhtest.ttf`, two string files, a glTF model, a WAV, package art). Test: `consumer` builds every asset step on PC; a
   3DS configure of the fixture through `scripts/dkp.sh`-style commands generates the `.3dsx`, `dist` and `_cia` targets.
   Covers FR-6, FR-16, IX.
-- [ ] **T3.2** The self-check: `game/src/` (`main.cpp`, `check_scene.{hpp,cpp}`, `self_check.{hpp,cpp}`): one scene
+- [x] **T3.2** The self-check: `game/src/` (`main.cpp`, `check_scene.{hpp,cpp}`, `self_check.{hpp,cpp}`): one scene
   loads each kind and prints `consumer: PASS <crc32>`; `game/tests/check.nnhs`. Test: the golden recorded and identical
   in pc-debug and pc-release; changing one asset value changes it (once by hand). Covers FR-16, AC-1.
-- [ ] **T3.3** [P] `plain/` and `tests/consumer_tools/plain_only/`: a project library compiled with and without the
+- [x] **T3.3** [P] `plain/` and `tests/consumer_tools/plain_only/`: a project library compiled with and without the
   engine; the driver compares the two compile commands. Covers FR-8, AC-7.
-- [ ] **T3.4** The other ways (label `consumer-full`): `consumer_archive` (tarball of the engine folder without `build/`
+- [x] **T3.4** The other ways (label `consumer-full`): `consumer_archive` (tarball of the engine folder without `build/`
   and `.git`, SHA-256, `CMAKE_DISABLE_FIND_PACKAGE_Git=ON`), `consumer_archive_override`, `consumer_submodule` (clone of
   `HEAD`; skipped with a message without `.git`), `consumer_pruned` (without `examples/ tests/ apps/ specs/ docs/`; then
   a second configure with `NNH_BUILD_EXAMPLES=ON` fails naming the option and folder), `consumer_bad_hash`; AC-5
   listings of the copied engine before/after; each way's configure time recorded; each build deleted after it passes.
   Test: every way prints the same golden. Covers FR-1, FR-2, FR-3, FR-5, FR-9, AC-2, AC-5.
-- [ ] **T3.5** [P] `consumer_options_on` (configure only, all four options ON: targets exist, `ctest -N` lists the
+- [x] **T3.5** [P] `consumer_options_on` (configure only, all four options ON: targets exist, `ctest -N` lists the
   engine's tests). Covers FR-4, AC-13.
-- [ ] **T3.6** Cost: `consumer` time on Windows pc-debug cold and warm, with and without `CCACHE_NOHASHDIR=1` (ccache
+- [x] **T3.6** Cost: `consumer` time on Windows pc-debug cold and warm, with and without `CCACHE_NOHASHDIR=1` (ccache
   hit counts); Linux SDL3 reuse wired (`FETCHCONTENT_SOURCE_DIR_NNH_SDL3`) for stage 8. Files: plan.md. Covers III, Q4.
-- [ ] **T3.7** Stage end: the stage-end guards; plan.md ("Stage 3 results"). Covers AC-1, AC-2.
+- [x] **T3.7** Stage end: the stage-end guards; plan.md ("Stage 3 results"). Covers AC-1, AC-2.
 
 ## Stage 4: `nnh` in a game project
 

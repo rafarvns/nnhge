@@ -568,3 +568,52 @@ Stage 2 refinements:
   parent fetched one (Linux; MinGW without a system SDL3); the maintainer's machine has a system SDL3, found as before.
 - `nnh_assetc_command()` (called inside `nnh_add_assets`) and the data helpers also read the platform through
   `nnh_platform()`; `nnh_host_tools_setup()` runs in the engine's own scope and keeps the variable.
+
+### Stage 3 results (the full fixture and the four ways)
+
+- **T3.1** `tests/consumer/game/` calls `nnh_add_game()` with every keyword (`SOURCES`, `ASSETS`, `IMAGES`,
+  `DATA_SCHEMA`, `LANGUAGES en pt-BR`, `BASE`, `TITLE`, `DESCRIPTION`, `AUTHOR`, `VERSION 1.2.3`, `ICON`, `CIA
+  UNIQUE_ID 0xF7032 PRODUCT_CODE CTR-N-NNHC BANNER BANNER_AUDIO`) and ships one asset of each kind, copied from
+  `tests/data/` (`art/hero.png`, `levels/good.tmj` + tileset, `sprites/good.ase.json`, `things/lamp.thing`,
+  `fonts/body_16.font` over `nnhtest.ttf`, `strings/en.strings` + `pt-BR.strings`, `models/vertex_colors.gltf`,
+  `sfx/blip.wav`, `images/logo.png` (16×8), `package/` icon, banner and jingle). Every asset step runs on PC; a
+  `3ds-dev` configure of the fixture generates `nnh_consumer.elf`, `_3dsx`, `_dist`, `_cia`, `dist` and the data schema
+  targets (and `nnh build` built the `.3dsx`, stage 4).
+- **T3.2** The self-check (textures' sizes, the map's size and `lives`, the sprite library's frames and clips, the data
+  values, the font's metrics and an advance, both languages' code and name and the base text of one key, the mesh's
+  vertices, the sound's length) prints **`consumer: PASS D99E1764`** in pc-debug and pc-release and in every way below;
+  changing `value = 321` to `322` in `things/lamp.thing` made it `D8176E32` (then put back). `game/tests/check.nnhs`
+  taps SELECT and expects that line.
+- **T3.3** `plain/` + `consumer_tools/plain_only/`: equal compile commands (stage 2).
+- **T3.4** The other ways (label `consumer-full`), each with the same line, each folder deleted once it passed:
+
+  | ctest | Time (Windows pc-debug) | Configure | Notes |
+  |---|---|---|---|
+  | `consumer` (local) | 76 s cold, 23 s warm | ≈ 15 s fresh, 2–4 s again | 595 ccache hits, 0 misses (cold) |
+  | `consumer_archive` | 180 s | 24 s | `file://E:/...` tarball + SHA-256, `CMAKE_DISABLE_FIND_PACKAGE_Git=ON`; `_deps/nnhge-src` listing unchanged by the build |
+  | `consumer_archive_override` | 177 s | 16 s | no `nnhge-subbuild` (nothing downloaded); the unpacked copy unchanged |
+  | `consumer_submodule` | 131 s | 15 s | `git clone` of the committed `HEAD`; the clone unchanged |
+  | `consumer_pruned` | 144 s | 14 s | no `examples/ tests/ apps/ specs/ docs/`; then `-DNNH_BUILD_EXAMPLES=ON` fails naming the option and `examples/` |
+  | `consumer_bad_hash` | 43 s | – | fails: `SHA256 hash of .../nnhge.tar.gz does not match expected value`; nothing unpacked or built |
+  | `consumer_options_on` | 21 s | 19 s | `hello`, `nnh_tests`, `nnh-link`, `nnh`, `nnh_tool_tests` exist; `ctest -N` lists the engine's tests |
+
+- **T3.5** `consumer_options_on` as above (configure only).
+- **T3.6** Cost on Windows pc-debug: the default `consumer` costs 76 s on a cold folder with `CCACHE_NOHASHDIR=1` (every
+  engine object a direct ccache hit from the parent build) and 23 s when its folder exists; without `CCACHE_NOHASHDIR` a cold run took 139 s (568 misses: Debug
+  objects hash the build folder), so the driver sets it. The
+  other ways copy or clone the engine to another folder, so their compiles miss the cache (paths differ): 2–3 minutes
+  each, ≈ 13 minutes for `consumer-full`. Linux reuses the parent's SDL3 download through
+  `FETCHCONTENT_SOURCE_DIR_NNH_SDL3` (wired; checked by the VM pass).
+
+Stage 3 refinements:
+- **A wrong hash of a local archive** is reported by CMake as `SHA256 hash of <file> does not match expected value`
+  (a download says `HASH mismatch`): both name the archive; the check accepts either.
+- **The pseudo-language `qps`** ships in Debug/Development (spec 029), so the self-check looks `en` and `pt-BR` up with
+  `loc::find` instead of counting languages.
+- **The submodule way clones the committed `HEAD`**: it checks the last commit, not the working tree (the other ways
+  check the working tree). Skipped with a message where the engine folder has no `.git` (`SKIP_REGULAR_EXPRESSION`).
+- **Golden in two places:** `tests/consumer.cmake` (`_consumer_line`) and `game/tests/check.nnhs`.
+- **T3.7** Stage-end guards: stage 3 changed only `tests/` (no engine or CMake helper), so the 3DS builds and `hello`
+  stay those of stage 2; `consumer` and the platform checks pass in pc-debug and pc-release with the golden; the full
+  ctest runs at stage 4's end on the same tree.
+

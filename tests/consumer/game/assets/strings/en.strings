@@ -1,0 +1,7 @@
+# The consumer game's base language (spec 032 FR-16).
+
+[language]
+name = "English"
+
+[game]
+greeting = "Hello from a game project"

@@ -1,0 +1,49 @@
+{ "type": "map", "version": "1.10", "tiledversion": "1.10.2", "orientation": "orthogonal",
+  "renderorder": "right-down", "infinite": false, "width": 6, "height": 4, "tilewidth": 16, "tileheight": 16,
+  "parallaxoriginx": 8, "parallaxoriginy": 4, "nextlayerid": 5, "nextobjectid": 6,
+  "properties": [
+    { "name": "music", "type": "string", "value": "theme" },
+    { "name": "gravity", "type": "float", "value": 9.5 },
+    { "name": "lives", "type": "int", "value": 3 },
+    { "name": "hard", "type": "bool", "value": true }
+  ],
+  "tilesets": [
+    { "firstgid": 1, "source": "tiles/good.tsj" },
+    { "firstgid": 20, "name": "second", "image": "tiles/second.png", "imagewidth": 64, "imageheight": 64,
+      "tilewidth": 16, "tileheight": 16, "margin": 1, "spacing": 4, "tilecount": 9, "columns": 3,
+      "tiles": [ { "id": 0, "properties": [ { "name": "kind", "type": "string", "value": "water" } ],
+                   "animation": [ { "tileid": 0, "duration": 100 }, { "tileid": 2, "duration": 50 } ] } ] }
+  ],
+  "layers": [
+    { "id": 1, "type": "tilelayer", "name": "back", "x": 0, "y": 0, "width": 6, "height": 4,
+      "offsetx": 2, "offsety": -3, "parallaxx": 0.5, "parallaxy": 1, "opacity": 0.75, "visible": true,
+      "properties": [ { "name": "depth", "type": "float", "value": 1.5 } ],
+      "data": [1, 2147483650, 0, 0, 3, 0,
+               0, 0, 0, 0, 0, 0,
+               1073741825, 0, 0, 20, 0, 0,
+               0, 0, 0, 0, 0, 536870917] },
+    { "id": 2, "type": "tilelayer", "name": "ground", "x": 0, "y": 0, "width": 6, "height": 4,
+      "opacity": 1, "visible": true,
+      "properties": [ { "name": "collision", "type": "bool", "value": true } ],
+      "data": [0, 0, 0, 0, 0, 0,
+               0, 0, 5, 5, 0, 0,
+               0, 0, 0, 0, 0, 21,
+               3, 3, 3, 3, 3, 3758096387] },
+    { "id": 3, "type": "objectgroup", "name": "things", "draworder": "topdown", "opacity": 1, "visible": true,
+      "properties": [ { "name": "active", "type": "bool", "value": true } ],
+      "objects": [
+        { "id": 1, "name": "spawn", "type": "start", "x": 16, "y": 32, "width": 0, "height": 0, "rotation": 0,
+          "visible": true, "point": true },
+        { "id": 2, "name": "coin", "type": "coin", "x": 48, "y": 16, "width": 16, "height": 16, "rotation": 0,
+          "visible": true, "properties": [ { "name": "value", "type": "int", "value": 5 } ] },
+        { "id": 5, "name": "coin_b", "type": "coin", "x": 64, "y": 16, "width": 16, "height": 16, "rotation": 0,
+          "visible": true }
+      ] },
+    { "id": 4, "type": "tilelayer", "name": "front", "x": 0, "y": 0, "width": 6, "height": 4,
+      "opacity": 1, "visible": false,
+      "data": [0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0,
+               28, 0, 0, 0, 0, 0] }
+  ]
+}

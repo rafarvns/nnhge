@@ -1,0 +1,7 @@
+# The consumer game's second language (spec 032 FR-16).
+
+[language]
+name = "Portugues (Brasil)"
+
+[game]
+greeting = "Ola de um projeto de jogo"

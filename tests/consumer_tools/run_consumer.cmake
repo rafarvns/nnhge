@@ -24,7 +24,9 @@ set(ENV{SDL_VIDEO_DRIVER} offscreen)
 set(ENV{SDL_RENDER_DRIVER} software)
 set(ENV{NNH_SIM_RENDERER} sdl)
 set(ENV{SDL_AUDIO_DRIVER} dummy)
-set(ENV{CCACHE_NOHASHDIR} 1)
+if(NOT DEFINED NOHASHDIR OR NOHASHDIR) # -DNOHASHDIR=0: measure without it (plan 032 T3.6)
+    set(ENV{CCACHE_NOHASHDIR} 1)
+endif()
 set(SDL3_ARGS "")
 if(SDL3_SOURCE) # reuse the parent's SDL3 download: no network in the tests
     set(SDL3_ARGS "-DFETCHCONTENT_SOURCE_DIR_NNH_SDL3_PREBUILT=${SDL3_SOURCE}" "-DFETCHCONTENT_SOURCE_DIR_NNH_SDL3=${SDL3_SOURCE}")
@@ -214,8 +216,9 @@ elseif(WAY STREQUAL "pruned") # FR-1.4, FR-5: a copy without the parts a game do
 elseif(WAY STREQUAL "bad_hash") # FR-2: a wrong SHA-256 fails the configure, naming the URL; nothing is built
     set(ALLOW_FAILURE ON)
     configure("-DCONSUMER_ENGINE_URL=${url}" "-DCONSUMER_ENGINE_SHA256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
-    string(REPLACE "file://" "" path "${url}")
-    if(step_rc EQUAL 0 OR NOT step_output MATCHES "HASH mismatch" OR NOT step_output MATCHES "nnhge\\.tar\\.gz")
+    # A download says "HASH mismatch"; a local file:// archive "SHA256 hash of <file> does not match expected value".
+    string(REGEX REPLACE "[ \t\r\n]+" " " flat "${step_output}")
+    if(step_rc EQUAL 0 OR NOT flat MATCHES "HASH mismatch|does not match expected value" OR NOT flat MATCHES "nnhge\\.tar\\.gz")
         message(FATAL_ERROR "consumer ${WAY}: a wrong hash didn't fail naming the archive:\n${step_output}")
     endif()
     file(GLOB built "${BUILD}/game/nnh_consumer*")

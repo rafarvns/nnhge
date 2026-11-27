@@ -11,7 +11,9 @@
 #include "check_scene.hpp"
 
 int main() {
-    if (!nnh::init()) return 1; // TITLE in game/CMakeLists.txt
+    nnh::AppConfig config; // the title: TITLE in game/CMakeLists.txt
+    config.gfx.max_draws_3d = 8; // meshes need 3D on
+    if (!nnh::init(config)) return 1;
     {
         std::unique_ptr<CheckScene> scene(new (std::nothrow) CheckScene());
         if (scene != nullptr) nnh::run(*scene);

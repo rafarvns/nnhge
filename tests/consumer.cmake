@@ -21,7 +21,7 @@ foreach(_sdl nnh_sdl3_prebuilt nnh_sdl3)
     endif()
 endforeach()
 # The self-check line every way and flavour prints (tests/consumer/game/src/self_check.cpp; also the console's).
-set(_consumer_line "")
+set(_consumer_line "consumer: PASS D99E1764")
 
 function(_nnh_consumer_test name way label)
     add_test(NAME ${name}
@@ -31,6 +31,11 @@ function(_nnh_consumer_test name way label)
 endfunction()
 
 _nnh_consumer_test(consumer local consumer)
+foreach(_way archive archive_override submodule pruned bad_hash options_on)
+    _nnh_consumer_test(consumer_${_way} ${_way} consumer-full)
+endforeach()
+# A worktree synced without .git (the build VM): the submodule way reports itself skipped.
+set_tests_properties(consumer_submodule PROPERTIES SKIP_REGULAR_EXPRESSION "consumer submodule: skipped")
 
 # FR-6, AC-12: an empty or unsupported platform fails the configure with the game, the value and the supported systems.
 foreach(_case "empty;<unset>;nnh_add_game[(]probe_game[)]: unknown platform \"\" [(]empty, supported: pc, 3ds[)]"

@@ -1,6 +1,6 @@
 # Tasks 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: draft (with plan 033, for the maintainer's review)
+Status: approved 2026-11-27 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops (test first, red seen, then green). `[P]` = can be done in parallel with the previous

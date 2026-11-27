@@ -1,6 +1,6 @@
 # Plan 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: draft (for the maintainer's review; questions at the end)
+Status: approved 2026-11-27 (the maintainer, the ten questions at the end as recommended; question 4 authorises `apt install` of older compilers on VM 120)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D56 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
 Uses spec 032 and D55 (the game-project contract: the engine as a subproject, `nnh.toml`, the six presets,

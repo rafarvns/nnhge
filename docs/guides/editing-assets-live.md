@@ -1,7 +1,8 @@
 # Editing assets while the game runs
 
-> Status: in progress (spec 031). Images, Tiled maps, data files, string tables, fonts, sounds, music, meshes and sprite
-> libraries reload, and tunables on reloaded data follow the file. Checked in the simulator and in a first console run.
+> Spec 031 (implemented 2026-11-27): images, Tiled maps, data files, string tables, fonts, sounds, music, meshes and
+> sprite libraries reload, and tunables on reloaded data follow the file. Checked in the simulator, on Linux and in a
+> first console run; a second console run (sprite libraries, music, font, timing) is pending.
 
 Run a Debug or Development build with `nnh run`, change a file in the game's assets folder, save, and see the change in
 the running game — in the simulator or on the console — without a restart. This page is the walk-through; the reference

@@ -1,6 +1,6 @@
 # Tasks 031: Hot reload of assets
 
-Status: approved 2026-11-26 (with plan.md); in progress (every kind and FR-23 implemented, `examples/reload` with its scripts; console run 1 passed; console run 2, the Linux stage and the tests in plan "Not done" open)
+Status: approved 2026-11-26 (with plan.md); implemented 2026-11-27; Linux checks and console run 1 passed; console run 2 (sprite libraries, music, font, timing) pending
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -271,7 +271,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 9: Linux checks (VM 120, run by the lead)
 
-- [ ] **T9.1** On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14 and
+- [x] **T9.1** On `nnhge-build` (start it per CLAUDE.md, never with the Bazzite VM; shut it down after): GCC 13, GCC 14 and
   clang 18 (ASan/UBSan): `nnh_tests`, `nnh_tool_tests` and ctest pass in pc-debug and pc-release; the self-check sums
   identical on all three and on the 32-bit host build; libFuzzer `libfuzzer_reload_receiver` and the remote targets 10
   minutes each, plus the mini-fuzzers; the `--pc` scripts (the polling watcher and the build on Linux). Files: tasks.md
@@ -282,7 +282,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 - [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target reload_3dsx sprites_3dsx` without a warning; T7.6's table still true;
   3ds-release `hello` identical to T0.1's. Covers AC-7, II.
-- [ ] **T10.2** Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [ ] **T10.2** (pending: console run 2 for sprite libraries, music, font and timing.nnhs; run 1 covered the rest) Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/check.nnhs` → every kind reloaded, every sum
      equal to the PC's, screenshots compared with the `--pc` run's;
   2. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/errors.nnhs` → the refusals, including the
@@ -295,36 +295,36 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
      restart? yes/no.
   `git status` clean after each. Files: plan.md ("Console run 1": verdicts, numbers, log paths, the screenshot
   comparison). Covers AC-2, AC-3, AC-4b, AC-8, FR-21.
-- [ ] **T10.3** (only if a target is missed) Optimisation round: find the cost (3ds-dev disassembly, the timing lines),
+- [ ] **T10.3** (partly done: the build-side round of plan "Optimisation round"; budgets wait for console run 2) (only if a target is missed) Optimisation round: find the cost (3ds-dev disassembly, the timing lines),
   apply risk 4's fallback or other fixes without changing the wire or a golden (tests first); T10.2 run 3 again; then the
   budgets are set from the console measurement with ≈ 25 % margin and written into the spec's AC-8, `timing.nnhs` and
   `docs/api/assets.md`. Files: plan.md ("Optimisation round", "Console run 2 and budgets set"). Covers AC-8.
 
 ## Stage 11: docs, roadmap, status
 
-- [ ] **T11.1** `docs/api/assets.md` (reloading: what changes behind handles, what is announced, `reload_count`,
+- [x] **T11.1** `docs/api/assets.md` (reloading: what changes behind handles, what is announced, `reload_count`,
   `reloaded`, `reloaded_paths`, `AssetsReloaded`, refusals, memory, Release), header comments (allocates? per-frame safe?
   misuse?); the kinds' pages: `texture.md`/`gfx.md` (`width()` in Development), `animation.md` (rebind rules),
   `audio.md` (voices stopped, music position), `font.md`, `localization.md`, `mesh.md`, `data.md`, `tilemap.md`, `ui.md`,
   `live.md` (FR-23). Covers VIII, AC-10.
-- [ ] **T11.2** `docs/guides/editing-assets-live.md` ("editing assets while the game runs": the loop, what reloads by
+- [x] **T11.2** `docs/guides/editing-assets-live.md` ("editing assets while the game runs": the loop, what reloads by
   itself, reacting to `AssetsReloaded` for maps and data, errors and refusals, the console, limits, `--no-reload`). Covers
   AC-10.
-- [ ] **T11.3** Other pages: `docs/guides/nnh-tool.md` (watching, `--no-reload`, `reload`, `restore-assets`, script
+- [x] **T11.3** Other pages: `docs/guides/nnh-tool.md` (watching, `--no-reload`, `reload`, `restore-assets`, script
   commands), `docs/guides/testing-on-the-console.md` (`swap-asset`, `expect-reload`), `docs/architecture/debugging.md`
   (the payload messages and records), `security.md` (the `.nnh_reload` folder), `foundation.md` and
   `project-structure.md` (`src/reload/`, `tools/nnh/src/reload/`), `docs/tech/cmake.md` (`nnh_reload_<game>.txt`),
   `docs/tech/devkitpro-3ds.md` (SD files, transfer rates), `docs/REFERENCES.md` (Bevy, Defold, Godot, the rename-save
   note), `CLAUDE.md` (layout paragraph and commands); `python -I scripts/docs_tool.py check` → 0 broken links. Covers
   AC-10.
-- [ ] **T11.4** `docs/architecture/decisions.md`: D53 and D54 change-log notes ("approved"/"implemented") with the stage
+- [x] **T11.4** `docs/architecture/decisions.md`: D53 and D54 change-log notes ("approved"/"implemented") with the stage
   refinements and the maintainer's answers; D28's payload messages, D31's table, D47's raw handles, D50's reloadable
   chain noted. Covers AC-10.
-- [ ] **T11.5** Final measurements (header cost, build times, `hello` sizes, the reload core's `.text`, save → frame
+- [x] **T11.5** Final measurements (header cost, build times, `hello` sizes, the reload core's `.text`, save → frame
   times) in plan.md and `docs/ROADMAP.md`'s baseline table if it changed. Covers III, AC-8.
-- [ ] **T11.6** `docs/ROADMAP.md`: the "Hot reload of assets in the simulator" checkbox (now simulator and console), with
+- [x] **T11.6** `docs/ROADMAP.md`: the "Hot reload of assets in the simulator" checkbox (now simulator and console), with
   the implemented summary.
-- [ ] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
+- [x] **T11.7** spec, plan, tasks and `specs/README.md` status → implemented (or "implemented, console T10.2 pending").
 - [ ] **T11.8** (the lead) Merge `spec-031` into `main` (rebased; insertions after 030's blocks); then the full ctest
   (pc-debug, pc-release), every example's `--pc` script, the self-check sums and every earlier golden, one 3ds-release
   build; T10.2 runs repeated if the merge happened after them.

@@ -1,6 +1,6 @@
 # Plan 031: Hot reload of assets
 
-Status: approved 2026-11-26 (the maintainer, the eleven questions at the end as recommended); in progress (see "Implementation notes"); the spec was approved 2026-11-26 with every open question as recommended, and those answers
+Status: approved 2026-11-26 (the maintainer, the eleven questions at the end as recommended); implemented 2026-11-27; Linux checks and console run 1 passed; console run 2 (sprite libraries, music, font, timing) pending
 are this plan's decisions; eleven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D53, D54 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -1174,6 +1174,34 @@ Guards (sixth session): ctest pc-debug 378 (377 + the flaky sprites ctest, fixed
 `nnh_tests` 4143 forward, `--reverse` 2 failures outside spec 031 (above); 0 warnings on all four presets; 3ds-release
 `hello` `8c687f3d…` / `5cd5d950…`, pc-release 134 880 / 22 052 / 212 400, identical to T0.1.
 
+### Stage 9 results (the lead, VM 120, `scripts/vm_check.sh final` on `1b76be3`)
+
+| Check | Result |
+|-------|--------|
+| GCC 13 full ctest | all pass but `platformer_doors_script_pc` (the known timing flake); the reload `--pc` scripts pass on Linux |
+| GCC 14 | `nnh_tests` 4143/4143 |
+| 32-bit host | 4143/4143 |
+| clang 18 ASan/UBSan | `nnh_tests` 4143, `nnh_assetc_tests` 333, `nnh_tool_tests` 242; no report |
+| libFuzzer, 10 min each | `fuzz_reload_receiver` 1.41 M runs, `fuzz_remote` 2.67 M: clean |
+
+Earlier Linux rounds found and fixed: the data folder named like the program (now `nnh_user/`), and three
+order-dependent tests (`g_reload_applied_frame` left over; the fake's region accounting). Windows pc-debug ctest: all
+pass. **Follow-up (pre-existing, outside spec 031):** `when_full_assert_logs_the_prefab_and_asserts` (spec 021) and
+`transitions_self_check_matches_its_golden_checkpoints` (spec 023) fail only with `nnh_tests --reverse`.
+
+### Final measurements (T11.5)
+
+- `hello`: 3ds-release `.3dsx` and `--strip-debug` `.elf` and pc-release sizes byte-identical to T0.1 (Release adds
+  nothing); 3ds-dev `hello` text 227 088 → **229 488 B** (+2 400 B: the reader's payload mode, the reload messages, the
+  hooks, FR-23's frame flag; for the maintainer to confirm, R23).
+- The reload core in a Development game that reloads (3ds-dev `reload.elf` text 445 792, Release 385 684 B); `hello`
+  (plain files) links none of it; `sprites` links the core and the texture kind only.
+- Header cost: `<nnh/assets.hpp>` +55 preprocessed lines, `<nnh/texture.hpp>` +21; `-fsyntax-only` time unchanged.
+- Edit-one-`.cpp` of the example: pc-debug 2.4–2.6 s, `.3dsx` 5.6–5.7 s (the same as `hierarchy` on that machine state).
+- Save → frame: simulator 1.0–1.4 s; Old 3DS (console run 1) 3.0–3.3 s, the first swap of a session 5–6 s; after T10.3
+  the 3DS asset build of a data file is ≈ 1.6 s instead of ≈ 2.9 s (console run 2 measures the new save → frame).
+- Bench (pc-debug): idle frame 0.022–0.042 ms, asset reads 19.7–37.5 µs (the PC's file system).
+
 ### Not done (open, for the lead or a next session)
 
 - Stage 0: T0.1–T0.3's reference comparisons against `cf15822` need a reference tree (a clone plus four preset builds,
@@ -1190,8 +1218,8 @@ Guards (sixth session): ctest pc-debug 378 (377 + the flaky sprites ctest, fixed
 - Stage 7: `RELOAD_SHOT` (the scripts take the screenshots instead), the `tight` scene with `huge.png` (errors.nnhs's
   linear-memory refusal on the console), the plan's OFL font copy (the HUD BMFont is used instead).
 - Stage 8: T8.4's `compare.sh` against T0.1 (no reference tree).
-- Stage 9 (the lead, VM 120) and console run 2 (below).
-- Stage 11: final statuses after console run 2 and the Linux stage.
+- Console run 2 (below) and T10.3's budgets after it.
+- Stage 11: statuses to "console run 2 passed" after it.
 
 ## Stage 10: console run (prepared)
 

@@ -245,7 +245,7 @@ Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc]
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
 `examples/<name>/tests/*.nnhs` ([guides/testing-on-the-console.md](docs/guides/testing-on-the-console.md)).
-Hot reload of assets (spec 031, **in progress** on branch `spec-031`; D53, D54): interactive `nnh run <game> [--pc]`
+Hot reload of assets (spec 031, implemented 2026-11-27; Linux checks and console run 1 passed; console run 2 (sprite libraries, music, font, timing) pending; D53, D54): interactive `nnh run <game> [--pc]`
 watches the assets folder, builds `<game>_assets`, dry-runs `<game>` (a needed rebuild is refused) and sends the changed
 outputs as one batch over the remote connection (payload messages 12–17, records 13–15); the game keeps them in
 `.nnh_reload/` of its data folder and applies the batch whole at one point of a frame (`engine/core/src/reload/`,

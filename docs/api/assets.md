@@ -134,12 +134,8 @@ with `load_mesh("models/ship")` ([mesh.md](mesh.md), export guide [models.md](..
 
 ## Hot reload
 
-> Status: in progress (spec 031). Implemented: the edit loop (`nnh run <game> [--pc]` watches the assets folder, builds
-> the asset target and sends the changed outputs; checked in the simulator, the console run is pending), batches applied
-> whole at one point of a frame, the queries and the event below, plain files, data assets, Tiled maps, textures, string
-> tables, fonts, sounds, music, meshes and sprite libraries, the UI's relayout, and the script commands (`swap-asset`,
-> `expect-reload`), tunables on reloaded data ([live.md](live.md#tunables), FR-23); console run 1 passed. See [plan 031](../../specs/031-hot-reload-assets/plan.md)
-> ("Implementation notes").
+> Status: implemented (spec 031, 2026-11-27): Linux checks and console run 1 passed; console run 2 (sprite libraries,
+> music, font, timing) pending. See [plan 031](../../specs/031-hot-reload-assets/plan.md) ("Implementation notes").
 
 In a Debug or Development game run with `nnh run <game> [--pc]`, saving a file in the game's assets folder reconverts it
 with the build's own steps and reloads it in the running game at the start of a frame — no restart, relink or resend

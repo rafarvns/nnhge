@@ -321,9 +321,9 @@ D28, [plan 013](../../specs/013-console-remote/plan.md); code: `tools/nnh/src/re
 
 ## Hot reload of assets
 
-> Status: in progress (spec 031): interactive watching, typed `reload`, the script commands (`swap-asset`,
-> `restore-asset`, `expect-reload`; [testing-on-the-console.md](testing-on-the-console.md#hot-reload-in-scripts-spec-031))
-> and `nnh restore-assets <game>` work; see [assets.md](../api/assets.md#hot-reload) for the kinds that reload.
+> Spec 031 (implemented): interactive watching, typed `reload`, the script commands (`swap-asset`, `restore-asset`,
+> `expect-reload`; [testing-on-the-console.md](testing-on-the-console.md#hot-reload-in-scripts-spec-031)) and
+> `nnh restore-assets <game>`; see [assets.md](../api/assets.md#hot-reload) for the kinds that reload.
 
 While `nnh run <game> [--pc]` follows a Debug or Development game, it watches the game's assets folder (`nnh: hot reload
 on: ...`). Saving a file there — an image, a Tiled map, a data file — starts a reload once nothing changed for 250 ms (so

@@ -61,9 +61,3 @@ NNH_TEST(nnh_preset_picks_another_preset_of_the_same_system) {
     CHECK(preset_for(true, false, "pc-") == "pc-dev");
     CHECK(preset_for(true, false, "pc-x y") == "pc-dev"); // goes into a shell command: names only
 }
-
-NNH_TEST(the_repository_root_is_found_from_inside_it) {
-    const std::string root = find_repo_root(NNH_TOOL_SOURCE_DIR);
-    CHECK(!root.empty());
-    CHECK(find_repo_root(root) == root);
-}

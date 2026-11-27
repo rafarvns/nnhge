@@ -62,12 +62,8 @@ int command_serve(const Options& options) {
     // Messages (the pairing code) must show at once even through a pipe or a file (Windows has no line
     // buffering: _IOLBF is full buffering there).
     std::setvbuf(stdout, nullptr, _IONBF, 0);
-    std::error_code ec;
-    const std::string root = find_repo_root(std::filesystem::current_path(ec).generic_string());
-    if (root.empty()) {
-        std::fprintf(stderr, "nnh: run it inside the NNHGE repository (no CMakePresets.json above here)\n");
-        return 1;
-    }
+    const std::string root = open_project(); // a game project or the engine repository (spec 032)
+    if (root.empty()) return 1;
     net::Socket listener = net::tcp_listen(Ipv4{}, link::kLinkPort);
     net::Socket udp = net::udp_open(Ipv4{}, link::kLinkPort);
     if (!listener.valid() || !udp.valid()) {

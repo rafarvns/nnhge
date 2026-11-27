@@ -1,5 +1,6 @@
 // nnh build (spec 010 FR-2): configure the preset once, build the game's target, find it in the manifest.
-// nnh serve (spec 011) uses the same steps with the output captured line by line.
+// nnh serve (spec 011) uses the same steps with the output captured line by line. Since spec 032 the project is a game
+// project or the engine repository, its preset checked before CMake runs (commands/project.cpp).
 
 #include <cstdio>
 #include <cstdlib>
@@ -52,7 +53,12 @@ bool configure_and_list(const std::string& root, const std::string& preset, bool
     std::error_code ec;
     if (!std::filesystem::exists(build_dir + "/CMakeCache.txt", ec)) {
         report.say("nnh: configuring " + preset, false);
-        if (report.run(cmake_command(root, "--preset " + preset, shell), shell) != 0) {
+        const std::string command = project_configure_command(root, preset, shell);
+        if (command.empty()) {
+            report.say("nnh: a path holds a quote (' or \"): devkitPro's shell can't be given it", true);
+            return false;
+        }
+        if (report.run(command, shell) != 0) {
             report.say("nnh: configuring " + preset + " failed", true);
             return false;
         }
@@ -64,19 +70,17 @@ bool configure_and_list(const std::string& root, const std::string& preset, bool
 bool build_target(const Options& options, const std::string& target_suffix, bool release, BuiltGame& out,
                   bool need_cia, const OutputFn* output) {
     Reporter report{output};
-    std::error_code ec;
-    out.root = find_repo_root(std::filesystem::current_path(ec).generic_string());
-    if (out.root.empty()) {
-        report.say("nnh: run it inside the NNHGE repository (no CMakePresets.json above here)", true);
-        return false;
-    }
+    out.root = open_project(output); // a game project (nnh.toml) or the engine repository (spec 032)
+    if (out.root.empty()) return false;
     out.preset = preset_for(options.pc, release, std::getenv("NNH_PRESET"));
+    if (!check_preset(out.root, out.preset, output)) return false;
     const Shell shell = host_shell(!options.pc);
     std::vector<GameEntry> games;
     if (!configure_and_list(out.root, out.preset, !options.pc, games, output)) return false;
     auto game = find_game(games, options.game);
     if (!game) { // a new game, or a build folder configured before the manifest existed: configure again
-        if (report.run(cmake_command(out.root, "--preset " + out.preset, shell), shell) != 0) return false;
+        const std::string command = project_configure_command(out.root, out.preset, shell);
+        if (command.empty() || report.run(command, shell) != 0) return false;
         games = parse_manifest(read_file(out.root + "/build/" + out.preset + "/nnh_games.txt"));
         game = find_game(games, options.game);
     }

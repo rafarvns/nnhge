@@ -6,6 +6,7 @@ add_library(nnh_tool_lib STATIC
     src/cli.cpp
     src/commands/build.cpp
     src/commands/install.cpp
+    src/commands/project.cpp
     src/commands/run.cpp
     src/commands/run_pc.cpp
     src/commands/run_reload.cpp
@@ -14,10 +15,14 @@ add_library(nnh_tool_lib STATIC
     src/fbi.cpp
     src/file_server.cpp
     src/game_log.cpp
+    src/host_compiler.cpp
     src/log_listener.cpp
     src/log_view.cpp
     src/manifest.cpp
     src/netloader.cpp
+    src/preset_names.cpp
+    src/project_file.cpp
+    src/project_root.cpp
     src/reload/asset_build.cpp
     src/reload/asset_swap.cpp
     src/reload/batch_sender.cpp
@@ -96,6 +101,7 @@ _nnh_tool_static_runtime(nnh)
 if(NNH_BUILD_TESTS)
     add_executable(nnh_tool_tests
         tests/test_cli.cpp
+        tests/test_configure_command.cpp
         tests/test_console_link.cpp
         tests/test_fbi.cpp
         tests/test_fuzz_tool.cpp
@@ -106,6 +112,9 @@ if(NNH_BUILD_TESTS)
         tests/test_manifest.cpp
         tests/test_netloader.cpp
         tests/test_png_writer.cpp
+        tests/test_preset_names.cpp
+        tests/test_project_file.cpp
+        tests/test_project_root.cpp
         tests/test_reload_controller.cpp
         tests/test_reload_tool.cpp
         tests/test_repo.cpp

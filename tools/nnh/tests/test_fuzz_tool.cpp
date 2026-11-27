@@ -1,10 +1,13 @@
-// Mini-fuzz of the tool's untrusted inputs (spec 013 T3.7, FR-8): the game's stream (bytes from the network)
-// and scripts (files). Seeded, deterministic mutations; each run checks invariants, not exact output.
+// Mini-fuzz of the tool's untrusted inputs (spec 013 T3.7, FR-8): the game's stream (bytes from the network),
+// scripts (files), a game project's nnh.toml and presets files (spec 032, constitution X). Seeded, deterministic
+// mutations; each run checks invariants, not exact output.
 
 #include <cstdint>
 #include <string>
 #include <vector>
 
+#include "preset_names.hpp"
+#include "project_file.hpp"
 #include "remote/game_stream.hpp"
 #include "remote/script.hpp"
 #include "remote/script_timeline.hpp"
@@ -143,4 +146,32 @@ NNH_TEST(script_target_survives_mutated_inputs) {
             }
         }
     }
+}
+
+NNH_TEST(project_file_target_survives_mutated_inputs) {
+    const std::string seed = "# a game project\nname = \"mygame\"\nengine = \"1.0.0\"\n[later]\nkey = 3\n";
+    CHECK(nnh::tool::read_project_file(seed).errors.empty());
+    Rng rng{32};
+    for (int i = 0; i < 6000; ++i) {
+        std::string text = seed;
+        mutate(text, rng);
+        const nnh::tool::ProjectFile f = nnh::tool::read_project_file(text);
+        for (const std::string& e : f.errors) CHECK(e.rfind("nnh.toml:", 0) == 0);
+        for (const std::string& w : f.warnings) CHECK(w.rfind("nnh.toml:", 0) == 0);
+        CHECK(f.name.size() <= text.size() && f.engine.size() <= text.size()); // nothing is invented
+    }
+}
+
+NNH_TEST(presets_target_survives_mutated_inputs) {
+    const std::string seed = R"({ "version": 6, "configurePresets": [ { "name": "pc-dev", "inherits": ["base"] } ],
+                                  "buildPresets": [ { "name": "pc-dev", "configurePreset": "pc-dev" } ] })";
+    CHECK(nnh::tool::presets_define(seed, "", "pc-dev"));
+    Rng rng{55};
+    int found = 0;
+    for (int i = 0; i < 6000; ++i) {
+        std::string text = seed;
+        mutate(text, rng);
+        found += nnh::tool::presets_define(text, "", "pc-dev") ? 1 : 0; // never crashes or loops
+    }
+    CHECK(found > 0 && found < 6000);
 }

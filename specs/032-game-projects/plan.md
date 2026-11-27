@@ -617,3 +617,45 @@ Stage 3 refinements:
   stay those of stage 2; `consumer` and the platform checks pass in pc-debug and pc-release with the golden; the full
   ctest runs at stage 4's end on the same tree.
 
+### Stage 4 results (`nnh` in a game project)
+
+- **T4.1** `tools/nnh/src/project_root.{hpp,cpp}` (29 lines): nearest `nnh.toml` or engine root; a folder with both
+  markers is a game project. `test_project_root.cpp` (7 cases: the engine repository and below it, a game project and
+  below it, a game project inside the repository (and the repository again above it), both markers, the real repository
+  from the tool's sources, nothing found under the system's temporary folder, the message). `test_repo.cpp`'s root case
+  moved there; `find_repo_root` removed.
+- **T4.2** `project_file.{hpp,cpp}` over `remote::read_tunes` (`nnh.toml:<line>: reason`); `test_project_file.cpp`
+  (empty and comment-only files, `name`/`engine`, an unknown key and a key in a table each one warning line, malformed
+  lines, a key set twice, > 64 KiB refused) and the mini-fuzz `project_file_target_survives_mutated_inputs` (6,000
+  mutations: every error and warning starts with `nnh.toml:`).
+- **T4.3** `preset_names.{hpp,cpp}`: a bounded JSON reader (1 MiB, 64 levels) that records only the `name` of objects
+  directly in the top-level `configurePresets`/`buildPresets` arrays; a preset counts when both a configure and a build
+  preset have the name, in `CMakePresets.json` or `CMakeUserPresets.json`. `test_preset_names.cpp` (the repository's own
+  file, a style copy, a user file, escaped strings, a preset only in `buildPresets`, names outside the arrays or nested
+  in a preset, malformed and too deep JSON, > 1 MiB) and the mini-fuzz `presets_target_survives_mutated_inputs`.
+- **T4.4** `host_compiler.{hpp,cpp}` (`find_host_cxx`: `NNH_HOST_CXX`, else `g++`, `c++`, `clang++` on `PATH` with
+  `.exe` on Windows) and `repo.{hpp,cpp}` `configure_command` + `ConfigureExtras`; `test_configure_command.cpp`
+  (environment first, the `PATH` order, none; Windows 3DS: `C:\...` and `c:/...` to `/c/...`, spaces kept inside single
+  quotes, the override as `/e/...`; a `'` or `"` in any of the three paths refused; Linux 3DS and PC presets unchanged).
+- **T4.5** `commands/project.cpp` (`open_project`, `check_preset`, `project_configure_command`) used by `build.cpp`
+  (both configure paths), `serve.cpp`; `run.cpp` and `run_reload.cpp` use `find_project_root`. Checked by hand: outside
+  any project `nnh build hello` prints the FR-11 message, exit 1; a project with `nnh.toml` and only `pc-dev` presets:
+  `nnh: this project has no preset "3ds-dev" (CMakePresets.json): ...`, exit 1, CMake not run, and the unknown key
+  warned; `name =` → `nnh: nnh.toml:1: expected "name = value"`, exit 1. From `tests/consumer/game/` (a game project
+  inside the repository, `NNHGE_ENGINE_DIR` set): `nnh build nnh_consumer` configured `tests/consumer/build/3ds-dev`
+  (the command carried `NNH_HOST_CXX` and the override in MSYS form) and built `nnh_consumer.3dsx` (514 KB; longest
+  command 3,222 characters, 9.8 %), and `NNH_PRESET=pc-debug nnh build nnh_consumer --pc` configured and built
+  `tests/consumer/build/pc-debug/game/nnh_consumer.exe` (that folder deleted afterwards). `nnh_script_pc_smoke` passes.
+- **T4.6** `nnh_tool_tests`: 271 cases, 0 failures (36 in the touched filters). Stage-end guards: 0 warnings;
+  ctest pc-debug 382/382 and pc-release 341/341 (`-LE consumer-full`); the 3DS presets have no `nnh` code (unchanged
+  since stage 2).
+
+Stage 4 refinements:
+- **`NNH_PRESET=pc-debug nnh build nnh_consumer`** (T4.5's wording) builds the 3DS game: `nnh build` without `--pc`
+  targets the console and `NNH_PRESET` only picks among presets of the same system; the PC check uses `--pc`.
+- The engine override is passed only when the project is a game project (an `nnh.toml` at its root): the engine
+  repository's own configure never gets an unused `FETCHCONTENT_SOURCE_DIR_NNHGE`.
+- `preset_names.cpp` is 174 lines (the plan's sketch said ≤ 150 for the new `nnh` files): one class, the JSON reader;
+  within the 200-line aim.
+- The red step of these `nnh` tests was not observed separately (the sources were written alongside them while the
+  baseline builds ran); the mutation pass (T6.4) covers that they can fail.

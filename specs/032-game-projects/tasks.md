@@ -122,28 +122,28 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 4: `nnh` in a game project
 
-- [ ] **T4.1** Root detection: `tools/nnh/src/project_root.{hpp,cpp}`. Test first: `tools/nnh/tests/test_project_root.cpp`
+- [x] **T4.1** Root detection: `tools/nnh/src/project_root.{hpp,cpp}`. Test first: `tools/nnh/tests/test_project_root.cpp`
   (engine repository; game project; a game project inside the engine repository; nested folders below each; a folder
   with `nnh.toml` *and* the engine markers → game; nothing found → empty; the message names `nnh.toml` and the engine
   repository); `test_repo.cpp`'s old root cases moved. Covers FR-11, AC-6.
-- [ ] **T4.2** [P] `nnh.toml`: `tools/nnh/src/project_file.{hpp,cpp}` over `remote::read_tunes`. Test first:
+- [x] **T4.2** [P] `nnh.toml`: `tools/nnh/src/project_file.{hpp,cpp}` over `remote::read_tunes`. Test first:
   `test_project_file.cpp` (empty; `name` and `engine`; an unknown key → one warning line; a table → warning; malformed
   lines → `nnh.toml:<line>: reason`; > 64 KiB refused), a mini-fuzz case in `test_fuzz_tool.cpp`. Covers FR-12, X,
   AC-6.
-- [ ] **T4.3** [P] Presets: `tools/nnh/src/preset_names.{hpp,cpp}`. Test first: `test_preset_names.cpp` (the
+- [x] **T4.3** [P] Presets: `tools/nnh/src/preset_names.{hpp,cpp}`. Test first: `test_preset_names.cpp` (the
   repository's file; a user file; escaped strings; a preset only in `buildPresets`; missing; malformed JSON → not
   found; > 1 MiB refused). Covers FR-13, AC-6.
-- [ ] **T4.4** The configure command: `tools/nnh/src/host_compiler.{hpp,cpp}`, `repo.{hpp,cpp}` (`configure_command`,
+- [x] **T4.4** The configure command: `tools/nnh/src/host_compiler.{hpp,cpp}`, `repo.{hpp,cpp}` (`configure_command`,
   `ConfigureExtras`). Test first: `test_configure_command.cpp` (`NNH_HOST_CXX` from the environment, from `PATH`
   (`g++` before `c++` before `clang++`), absent; Windows 3DS: `/c/...` for `C:\...` and `c:/...`, spaces quoted, the
   override from `NNHGE_ENGINE_DIR` as `/e/...`, a `'` refused; Linux 3DS and every PC preset: `cmake --preset <p>`
   unchanged). Covers FR-14, FR-15, AC-6.
-- [ ] **T4.5** The commands: `commands/build.cpp` (root, `nnh.toml`, preset check before CMake, `configure_command` on
+- [x] **T4.5** The commands: `commands/build.cpp` (root, `nnh.toml`, preset check before CMake, `configure_command` on
   both configure paths), `run.cpp`, `run_reload.cpp`, `serve.cpp`, `tools/nnh/CMakeLists.txt`. Test: `nnh_tool_tests`
   build-path cases with a fake shell runner where they exist; `nnh_script_pc_smoke` passes; from `tests/consumer/` (a
   game project inside the repository) `NNH_PRESET=pc-debug nnh build nnh_consumer` builds into
   `tests/consumer/build/pc-debug/` (git-ignored by the fixture's `.gitignore`). Covers FR-11, FR-13, AC-6.
-- [ ] **T4.6** Stage end: the stage-end guards; `nnh_tool_tests` count; plan.md ("Stage 4 results"). Covers AC-6.
+- [x] **T4.6** Stage end: the stage-end guards; `nnh_tool_tests` count; plan.md ("Stage 4 results"). Covers AC-6.
 
 ## Stage 5: Windows end to end (outside the repository)
 

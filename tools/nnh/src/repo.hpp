@@ -1,16 +1,14 @@
 #pragma once
-// The repository nnh works in (spec 010 FR-2): its root, the presets, running CMake (through devkitPro's
-// MSYS2 bash for the 3DS on Windows, like scripts/dkp.sh), and paths. The command and path helpers are
-// pure and unit tested in tools/nnh/tests/test_repo.cpp.
+// The project nnh works in (spec 010 FR-2; a game project or the engine repository since spec 032, project_root.hpp):
+// the presets, running CMake (through devkitPro's MSYS2 bash for the 3DS on Windows, like scripts/dkp.sh), and paths.
+// The command and path helpers are pure and unit tested in tools/nnh/tests/test_repo.cpp and
+// test_configure_command.cpp.
 
 #include <ctime>
 #include <functional>
 #include <string>
 
 namespace nnh::tool {
-
-/// Walks up from `start` to the folder holding CMakePresets.json and engine/core/. Empty if none.
-std::string find_repo_root(const std::string& start);
 
 /// "3ds-dev", "3ds-release", "pc-dev" or "pc-release".
 std::string preset_name(bool pc, bool release);
@@ -31,6 +29,21 @@ struct Shell {
 
 /// The shell command that runs `cmake <args>` in `root`.
 std::string cmake_command(const std::string& root, const std::string& args, const Shell& shell);
+
+/// What a configure hands to devkitPro's MSYS2 CMake besides the preset (spec 032 FR-14, FR-15, D55 items 7 and 8), in
+/// the form the caller found them (drive paths on Windows); configure_command converts them.
+struct ConfigureExtras {
+    std::string host_cxx;   ///< the host C++ compiler (host_compiler.hpp), "" = none found
+    std::string engine_dir; ///< NNHGE_ENGINE_DIR, the local engine of a game project, "" = none
+};
+
+/// The shell command that configures `preset` in `root`. Through devkitPro's bash (a 3DS preset on Windows) it adds
+/// `-DNNH_HOST_CXX=<msys path>` and `-DFETCHCONTENT_SOURCE_DIR_NNHGE=<msys path>` for the extras given, each
+/// single-quoted (spaces allowed), because that CMake reads "E:/..." as a relative path and the shell has no host
+/// compiler. Elsewhere `cmake --preset <preset>` unchanged (PC presets map NNHGE_ENGINE_DIR themselves; Linux CMake
+/// finds the host compiler). "" when a path holds a quote (' or "), which can't be passed through that shell.
+std::string configure_command(const std::string& root, const std::string& preset, const Shell& shell,
+                              const ConfigureExtras& extras);
 
 /// The Shell for this computer and target (3DS presets go through devkitPro's bash on Windows;
 /// DEVKITPRO_MSYS2 overrides its location, default C:/devkitPro/msys2).

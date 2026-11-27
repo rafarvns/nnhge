@@ -13,6 +13,7 @@
 #include "link_types.hpp"
 #include "log_listener.hpp"
 #include "netloader.hpp"
+#include "project_root.hpp"
 #include "remote/script_runner.hpp"
 #include "remote/stdin_lines.hpp"
 #include "remote/tunes_file.hpp"
@@ -153,7 +154,7 @@ int command_run(const Options& options) {
         }
     }
     if (script_reloads) {
-        const std::string root = find_repo_root(std::filesystem::current_path().string());
+        const std::string root = find_project_root(std::filesystem::current_path().string()).path;
         if (!root.empty() && !reload::journal_game_dir(reload::swap_backup_dir(root, options.game)).empty()) {
             std::fprintf(stderr, "nnh: assets of %s were left swapped by an interrupted script: run \"nnh "
                                  "restore-assets %s\"\n", options.game.c_str(), options.game.c_str());

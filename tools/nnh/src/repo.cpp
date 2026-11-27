@@ -3,29 +3,13 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
+#include <initializer_list>
 
 #ifndef _WIN32
 #include <sys/wait.h>
 #endif
 
 namespace nnh::tool {
-
-namespace fs = std::filesystem;
-
-std::string find_repo_root(const std::string& start) {
-    std::error_code ec;
-    fs::path at = fs::absolute(start, ec);
-    for (int depth = 0; depth < 64 && !at.empty(); ++depth) {
-        if (fs::exists(at / "CMakePresets.json", ec) && fs::is_directory(at / "engine" / "core", ec)) {
-            return at.generic_string();
-        }
-        const fs::path parent = at.parent_path();
-        if (parent == at) break;
-        at = parent;
-    }
-    return {};
-}
 
 std::string preset_name(bool pc, bool release) {
     return std::string(pc ? "pc-" : "3ds-") + (release ? "release" : "dev");
@@ -55,6 +39,19 @@ std::string cmake_command(const std::string& root, const std::string& args, cons
     }
     if (shell.windows) return "cd /d \"" + root + "\" && cmake " + args;
     return "cd '" + root + "' && cmake " + args;
+}
+
+std::string configure_command(const std::string& root, const std::string& preset, const Shell& shell,
+                              const ConfigureExtras& extras) {
+    std::string args = "--preset " + preset;
+    if (!shell.devkitpro_bash.empty()) {
+        for (const std::string* path : {&root, &extras.host_cxx, &extras.engine_dir}) {
+            if (path->find_first_of("'\"") != std::string::npos) return {};
+        }
+        if (!extras.host_cxx.empty()) args += " '-DNNH_HOST_CXX=" + msys_path(extras.host_cxx) + "'";
+        if (!extras.engine_dir.empty()) args += " '-DFETCHCONTENT_SOURCE_DIR_NNHGE=" + msys_path(extras.engine_dir) + "'";
+    }
+    return cmake_command(root, args, shell);
 }
 
 Shell host_shell(bool for_3ds) {

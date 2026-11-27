@@ -1,7 +1,7 @@
 #pragma once
 // The hot reload example's self-check (spec 031 AC-1, AC-2): what the scene sees after the start and after each batch —
 // texture sizes, the enemies' data, the room's tiles and platform, a translated text and its width, the sound's length,
-// the gem's vertex count and reload_count() — folded with FNV-1a field by field (no padding bytes, floats by their
+// the gem's vertex count, reload_count(), the walker's library and animator, a width in the HUD font, the music — folded with FNV-1a field by field (no padding bytes, floats by their
 // bits). Pure: also built into nnh_tests (tests/reload_example/test_self_check.cpp).
 
 #include <cstddef>
@@ -21,9 +21,14 @@ struct ReloadSnapshot {
     int sound_ms = 0;
     int gem_vertices = 0;
     int reloads = 0;
+    int walker_clips = 0;           ///< the sprite library's clip count
+    std::uint32_t walker_clip = 0;  ///< FNV-1a of the animator's clip name
+    int walker_position = 0;        ///< its frame position
+    int font_width = 0;             ///< "12 34" measured in the HUD font
+    int music_playing = 0;
 };
 
-inline constexpr int kReloadSnapshotFields = 16;
+inline constexpr int kReloadSnapshotFields = 21;
 
 /// FNV-1a over the snapshot's fields in declaration order.
 std::uint32_t reload_sum(const ReloadSnapshot& s);

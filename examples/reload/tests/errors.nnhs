@@ -2,7 +2,7 @@
 # self-check line is not logged again: nothing was applied); a valid map after it is applied; a changed schema source
 # is an input of the program: nnh refuses it before sending anything ("rebuild and restart"). The source tree is unchanged
 # afterwards.
-expect "reload: sum 2B7C6114 after 0" 90
+expect "reload: sum 770785CB after 0" 90
 wait 10
 swap-asset assets/levels/room.tmj fixtures/room_broken.tmj
 expect-reload levels/room refused

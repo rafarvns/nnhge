@@ -27,6 +27,7 @@ void ReloadScene::on_enter() {
         if (!world_.refresh()) NNH_LOG_ERROR(example, "reload example: a reloaded asset could not be loaded again");
         report_at_ = frame_ + 2; // the frame after the batch's: a script's expect-reload matched that frame
     });
+    (void)nnh::music::play("music/loop"); // reloads at the same sample (spec 031 FR-9)
     nnh::Camera3D camera;
     camera.position = {0, 0, 4};
     nnh::gfx3d::set_camera(nnh::Screen::Top, camera);
@@ -40,10 +41,12 @@ void ReloadScene::report() {
 }
 
 void ReloadScene::update() {
+    world_.walking.update();
     if (++frame_ == report_at_) report(); // the first at frame 60: once a script listens (it attaches in the first frames)
     goblin_x_ = wrap(goblin_x_, world_.goblin.speed);
     bat_x_ = wrap(bat_x_, world_.bat.speed);
     if (nnh::input::pressed(nnh::Button::A)) (void)nnh::audio::play(world_.blip);
+    if (bench_ != nullptr && nnh::input::pressed(nnh::Button::X)) nnh::scenes::push(*bench_);
     if (nnh::input::pressed(nnh::Button::Start)) nnh::scenes::pop();
 }
 
@@ -56,6 +59,11 @@ void ReloadScene::draw() {
         nnh::gfx::fill_rect(Screen::Top, b, nnh::rgb(250, 220, 90), {.layer = 9});
     }
     nnh::gfx::draw(Screen::Top, world_.hero, {184, 176}, {.layer = 10});
+    nnh::DrawOptions walker = world_.walking.draw_options();
+    walker.layer = 10;
+    walker.scale = {2, 2};
+    nnh::gfx::draw(Screen::Top, world_.walker_art, {300, 176}, walker);
+    nnh::gfx::draw_text(Screen::Bottom, {8, 200}, "12 34", {.font = world_.hud});
     nnh::gfx::fill_rect(Screen::Top, {goblin_x_, 200, 12, 12}, world_.goblin.tint, {.layer = 10});
     nnh::gfx::fill_rect(Screen::Top, {bat_x_, 60, 10, 6}, world_.bat.tint, {.layer = 10});
     const nnh::Quat spin = nnh::quat_axis_angle({0, 1, 0}, static_cast<float>(frame_ % 360) * 0.0174533f);

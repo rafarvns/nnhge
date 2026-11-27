@@ -35,6 +35,13 @@ bool load_room(World& w) {
     return true;
 }
 
+bool load_walker(World& w) {
+    if (!take(nnh::load_sprite_library("art/walker"), w.walker, "art/walker")) return false;
+    w.walking = nnh::SpriteAnimator{w.walker};
+    w.walking.play("walk");
+    return true;
+}
+
 bool load_enemies(World& w) {
     return nnh::data::load("enemies/goblin", w.goblin).ok() && nnh::data::load("enemies/bat", w.bat).ok();
 }
@@ -44,7 +51,9 @@ bool load_enemies(World& w) {
 bool World::load() {
     return take(nnh::load_texture("art/backdrop"), backdrop, "art/backdrop") &&
            take(nnh::load_texture("art/hero"), hero, "art/hero") && load_room(*this) && load_enemies(*this) &&
-           take(nnh::load_sound("sfx/blip"), blip, "sfx/blip") && take(nnh::load_mesh("models/gem"), gem, "models/gem");
+           take(nnh::load_sound("sfx/blip"), blip, "sfx/blip") && take(nnh::load_mesh("models/gem"), gem, "models/gem") &&
+           take(nnh::load_texture("art/walker"), walker_art, "art/walker") && load_walker(*this) &&
+           take(nnh::load_font("fonts/hud"), hud, "fonts/hud");
 }
 
 bool World::refresh() {
@@ -87,5 +96,10 @@ ReloadSnapshot World::snapshot() const {
     s.sound_ms = static_cast<int>(blip.duration() * 1000.0f + 0.5f);
     s.gem_vertices = gem.vertex_count();
     s.reloads = static_cast<int>(nnh::assets::reload_count());
+    s.walker_clips = walker.clip_count();
+    s.walker_clip = reload_hash(walking.clip_name());
+    s.walker_position = walking.position();
+    s.font_width = static_cast<int>(nnh::gfx::measure_text("12 34", {.font = hud}).x);
+    s.music_playing = nnh::music::playing() ? 1 : 0;
     return s;
 }

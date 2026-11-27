@@ -1,45 +1,59 @@
-# Hot reload of every implemented kind (spec 031 AC-1, AC-2): each swap is rebuilt, sent and applied on the script's
-# frame; the example logs its self-check line after each batch and the sums must be the PC's. Restores two sources at the
-# end (the original sums again for those fields); the source tree is unchanged afterwards (nnh restores every swap).
+# Hot reload of every kind (spec 031 AC-1, AC-2): each swap is rebuilt, sent and applied on the script's frame; the
+# example logs its self-check line on the frame after each batch and the sums must be the PC's. Then two sources are
+# restored; the source tree is unchanged afterwards (nnh restores every swap).
 fail-on "] E "
-expect "reload: sum 2B7C6114 after 0" 90
+expect "reload: sum 770785CB after 0" 90
 wait 10
 swap-asset assets/art/hero.png fixtures/hero_big.png
 expect-reload art/hero
-expect "reload: sum 1E0979A5 after 1" 5
+expect "reload: sum 85960F26 after 1" 5
 wait 10
 screenshot hero_big
 swap-asset assets/levels/room.tmj fixtures/room_moved.tmj
 expect-reload levels/room
-expect "reload: sum B431FED6 after 2" 5
+expect "reload: sum 81450DE1 after 2" 5
 wait 10
 screenshot room_moved
 swap-asset assets/enemies/goblin.enemy fixtures/goblin_fast.enemy
 expect-reload enemies/goblin
-expect "reload: sum 2C7F4726 after 3" 5
+expect "reload: sum D21D8C71 after 3" 5
 wait 10
 tap A
 wait 10
 swap-asset assets/sfx/blip.wav fixtures/blip2.wav
 expect-reload sfx/blip
-expect "reload: sum 9EBF4F3F after 4" 5
+expect "reload: sum 6A8DD95C after 4" 5
 wait 10
 swap-asset assets/strings/en.strings fixtures/en_new.strings
 expect-reload strings/en
-expect "reload: sum 454252F5 after 5" 5
+expect "reload: sum 50F69476 after 5" 5
 wait 10
 screenshot strings
 swap-asset assets/models/gem.glb fixtures/gem2.glb
 expect-reload models/gem
-expect "reload: sum 5FA80812 after 6" 5
+expect "reload: sum 6EFB266D after 6" 5
 wait 10
 screenshot gem
+swap-asset assets/art/walker.ase.json fixtures/walker_v2.ase.json
+expect-reload art/walker
+expect "reload: sum 1FDA416C after 7" 5
+wait 10
+screenshot walker
+swap-asset assets/music/loop.wav fixtures/loop2.wav
+expect-reload music/loop
+expect "reload: sum A8A08A0C after 8" 5
+wait 10
+swap-asset assets/fonts/hud.fnt fixtures/hud_wide.fnt
+expect-reload fonts/hud
+expect "reload: sum 9A8E8270 after 9" 5
+wait 10
+screenshot font
 restore-asset assets/art/hero.png
 expect-reload art/hero
-expect "reload: sum 1C2468A3 after 7" 5
+expect "reload: sum 098F5CDD after 10" 5
 wait 10
 restore-asset assets/levels/room.tmj
 expect-reload levels/room
-expect "reload: sum 70C46B1C after 8" 5
+expect "reload: sum 1294E48A after 11" 5
 wait 10
 end

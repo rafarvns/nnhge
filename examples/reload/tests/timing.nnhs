@@ -1,0 +1,19 @@
+# Save -> frame times (spec 031 AC-8): unheld swaps of a PNG, a Tiled map and a data file land when they arrive; nnh
+# prints "reload N applied at frame F, X s after the save" for each (target < 3 s on the console). Then X runs the
+# bench (the idle frame after three batches, and asset reads through the overlay).
+fail-on "] E "
+expect "reload: sum 770785CB after 0" 90
+wait 10
+swap-asset assets/art/backdrop.png fixtures/hero_big.png unheld
+expect-reload art/backdrop within 600
+wait 10
+swap-asset assets/levels/room.tmj fixtures/room_moved.tmj unheld
+expect-reload levels/room within 600
+wait 10
+swap-asset assets/enemies/goblin.enemy fixtures/goblin_fast.enemy unheld
+expect-reload enemies/goblin within 600
+wait 10
+tap X
+expect "reload bench: reads" 400
+wait 10
+end

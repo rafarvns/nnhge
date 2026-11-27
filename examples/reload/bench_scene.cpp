@@ -5,6 +5,7 @@
 #include <nnh/app.hpp>
 #include <nnh/assets.hpp>
 #include <nnh/log.hpp>
+#include <nnh/scene.hpp>
 
 
 
@@ -49,6 +50,7 @@ void BenchScene::draw() {
     NNH_LOG_INFO(example, "reload bench: idle avg %.3f ms worst %.3f ms over %d frames", total_ms_ / kFrames, worst_ms_,
                  kFrames);
     bench_reads();
+    if (pushed_) nnh::scenes::pop();
     frames_ = 0;
     total_ms_ = worst_ms_ = 0;
 }

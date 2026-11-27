@@ -127,3 +127,34 @@ open(out(os.path.join(FIXTURES, "room_moved.tmj")), "w", newline="\n").write(roo
 open(out(os.path.join(FIXTURES, "room_broken.tmj")), "w", newline="\n").write(room(64, broken=True) + "\n")
 wav(os.path.join(FIXTURES, "blip2.wav"), 12000, 16000, lambda i: int(5000 * math.sin(i * 0.11)))
 gltf(os.path.join(FIXTURES, "gem2.glb"), tetrahedron(), (255, 160, 60, 255))
+
+
+def walker(x, y):
+    frame, fx = x // 16, x % 16
+    body = abs(fx - 8) < 5 and 3 <= y < 14
+    leg = (fx - 8 + (frame % 2) * 4 - 2) in (-3, 3) and y >= 13
+    colour = (90 + 40 * frame, 160, 230 - 30 * frame, 255)
+    return colour if body or leg else (0, 0, 0, 0)
+
+
+def aseprite(clips, durations):
+    """A 4-frame 16x16 strip export with frame tags `clips` [(name, from, to)]."""
+    frames = [{"filename": "walker %d.aseprite" % i, "frame": {"x": 16 * i, "y": 0, "w": 16, "h": 16},
+               "rotated": False, "trimmed": False, "spriteSourceSize": {"x": 0, "y": 0, "w": 16, "h": 16},
+               "sourceSize": {"w": 16, "h": 16}, "duration": durations[i]} for i in range(4)]
+    tags = [{"name": n, "from": a, "to": b, "direction": "forward", "color": "#000000ff"} for n, a, b in clips]
+    meta = {"app": "https://www.aseprite.org/", "version": "1.3.7-x64", "image": "walker.png", "format": "RGBA8888",
+            "size": {"w": 64, "h": 16}, "scale": "1", "frameTags": tags,
+            "layers": [{"name": "Layer 1", "opacity": 255, "blendMode": "normal"}], "slices": []}
+    return json.dumps({"frames": frames, "meta": meta}, indent=1) + "\n"
+
+
+# Sprite library (spec 016): idle 0-1, walk 2-3; the fixture's walk covers 1-3 with other durations and adds "wave".
+png(os.path.join(ASSETS, "art", "walker.png"), 64, 16, walker)
+open(out(os.path.join(ASSETS, "art", "walker.ase.json")), "w", newline="\n").write(
+    aseprite([("idle", 0, 1), ("walk", 2, 3)], [200, 200, 100, 100]))
+open(out(os.path.join(FIXTURES, "walker_v2.ase.json")), "w", newline="\n").write(
+    aseprite([("idle", 0, 0), ("walk", 1, 3), ("wave", 0, 3)], [150, 50, 50, 50]))
+# Music: a 3 s looping tone; the fixture is a lower one, 2 s.
+wav(os.path.join(ASSETS, "music", "loop.wav"), 48000, 16000, lambda i: int(3000 * math.sin(i * 0.05)))
+wav(os.path.join(FIXTURES, "loop2.wav"), 32000, 16000, lambda i: int(3000 * math.sin(i * 0.03)))

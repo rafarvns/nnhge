@@ -2,7 +2,7 @@
 // and save anything in examples/reload/assets/ (art/*.png, levels/room.tmj, enemies/*.enemy, sfx/blip.wav,
 // strings/*.strings, models/gem.glb; art/make_assets.py makes the art) and the running game shows the change.
 // Textures, the sound, the gem and the strings change behind their handles; the room and the enemies are loaded again
-// when a batch names them (world.cpp). RELOAD_DEMO=bench times the idle frame and asset reads instead.
+// when a batch names them (world.cpp). RELOAD_DEMO=bench (or X) times the idle frame and asset reads.
 //   NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/reload.png build/pc-debug/examples/reload/reload.exe
 // Test script (simulator or console): nnh run reload [--pc] --script examples/reload/tests/check.nnhs
 
@@ -23,6 +23,8 @@ struct Game {
     World world;
     ReloadScene showcase{world};
     BenchScene bench{world};
+    BenchScene pushed_bench{world, true};
+    Game() { showcase.set_bench(&pushed_bench); }
     nnh::Scene& first() { return demo_is("bench") ? static_cast<nnh::Scene&>(bench) : showcase; }
 };
 

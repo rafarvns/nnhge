@@ -40,7 +40,8 @@ std::uint32_t reload_sum(const ReloadSnapshot& s) {
     const std::uint32_t values[kReloadSnapshotFields] = {
         u(s.backdrop_w), u(s.backdrop_h), u(s.hero_w),     u(s.hero_h),       u(s.goblin_hp),  bits(s.goblin_speed),
         u(s.bat_hp),     bits(s.bat_speed), s.map_tiles,   u(s.platform_x),   u(s.platform_y), s.text_hash,
-        u(s.text_width), u(s.sound_ms),   u(s.gem_vertices), u(s.reloads)};
+        u(s.text_width), u(s.sound_ms),   u(s.gem_vertices), u(s.reloads),       u(s.walker_clips), s.walker_clip,
+        u(s.walker_position), u(s.font_width), u(s.music_playing)};
     std::uint32_t hash = kOffset;
     for (std::uint32_t v : values) hash = reload_fold(hash, v);
     return hash;
@@ -59,7 +60,12 @@ void nudge(ReloadSnapshot& s, int field) {
     else if (field == 12) ++s.text_width;
     else if (field == 13) ++s.sound_ms;
     else if (field == 14) ++s.gem_vertices;
-    else ++s.reloads;
+    else if (field == 15) ++s.reloads;
+    else if (field == 16) ++s.walker_clips;
+    else if (field == 17) ++s.walker_clip;
+    else if (field == 18) ++s.walker_position;
+    else if (field == 19) ++s.font_width;
+    else ++s.music_playing;
 }
 
 void format_reload_line(char* out, std::size_t capacity, std::uint32_t sum, int reloads) {

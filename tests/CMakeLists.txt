@@ -1737,7 +1737,7 @@ endif()
 # then the refusals (a broken map, a changed schema); the example's folder unchanged afterwards.
 if(TARGET reload AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     get_filename_component(_reload_preset ${CMAKE_BINARY_DIR} NAME)
-    foreach(_script check errors)
+    foreach(_script check errors timing)
         add_test(NAME reload_${_script}_script_pc
                  COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DGAME=reload -DSCRIPT=examples/reload/tests/${_script}.nnhs
                          -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/reload_example/script_clean.cmake)

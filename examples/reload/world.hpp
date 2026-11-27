@@ -1,8 +1,10 @@
 #pragma once
 // What the hot reload example loads (spec 031): handles that follow a reload by themselves (textures, the sound, the
-// mesh, the strings) and copies the game reloads when a batch names them (the enemies' data, the room).
+// mesh, the strings, the sprite library and its animator, the HUD font, the music) and copies the game reloads when a batch names them (the enemies' data, the room).
 
+#include <nnh/animation.hpp>
 #include <nnh/audio.hpp>
+#include <nnh/font.hpp>
 #include <nnh/log.hpp>
 #include <nnh/mesh.hpp>
 #include <nnh/texture.hpp>
@@ -21,6 +23,10 @@ struct World {
     Enemy goblin, bat;
     nnh::Sound blip;
     nnh::Mesh gem;
+    nnh::Texture walker_art;
+    nnh::SpriteLibrary walker;   ///< follows a reload by itself; the animator rebinds (spec 031 FR-8)
+    nnh::SpriteAnimator walking;
+    nnh::Font hud;
     char last[96] = "";   ///< the last batch's names
     int platform = -1;    ///< the room's platform object
 

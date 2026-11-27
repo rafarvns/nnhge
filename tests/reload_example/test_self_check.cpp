@@ -34,7 +34,7 @@ ReloadSnapshot sample() {
 
 NNH_TEST(reload_self_check_equal_snapshots_equal_sums) {
     CHECK(reload_sum(sample()) == reload_sum(sample()));
-    CHECK(reload_sum(sample()) == 0x5C9FEDE9u); // the same bits on every host compiler
+    CHECK(reload_sum(sample()) == 0xF40673B9u); // the same bits on every host compiler
 }
 
 NNH_TEST(reload_self_check_every_field_moves_the_sum) {

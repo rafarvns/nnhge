@@ -262,3 +262,16 @@ NNH_TEST(the_template_readme_has_every_section) {
         CHECK(readme->bytes.find(part) != std::string::npos);
     }
 }
+
+NNH_TEST(the_smoke_script_only_expects_lines_its_own_input_causes) { // the Linux final pass, 2026-11-27
+    // A line the game logs before the script attaches can't be expected (the runner reads lines from its Hello's
+    // answer on; on a fast machine the game's first frames come first), so the first expect follows an input.
+    const RenderResult r = render_project(inputs());
+    const OutputFile* script = output(r, "tests/smoke.nnhs");
+    CHECK(script != nullptr);
+    if (!script) return;
+    const std::string& s = script->bytes;
+    const std::size_t expect = s.find("\nexpect ");
+    CHECK(expect != std::string::npos && s.substr(0, expect).find("\ntap ") != std::string::npos);
+    CHECK(s.find("\ntap SELECT\nexpect \"play: running") != std::string::npos);
+}

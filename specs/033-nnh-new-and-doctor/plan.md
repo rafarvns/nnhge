@@ -1064,3 +1064,23 @@ code; the commits `1a4902b` (blockers and should-fix code), `0db9805` (nits and 
   worktree; `nnh_tool_tests` 399/399; `ctest --preset pc-debug -LE consumer-full -j4` 385/385 (556 s);
   `nnh_new_smoke` passed (131 s); `docs_tool.py check` 223 files, 0 broken links. The Linux `final` pass that was
   running during this round used the tree synced before it: the fixes above still need a `scripts/vm_check.sh fast`.
+
+### Linux final pass (2026-11-27): the template's smoke script
+
+The final pass (run from the tree before the review round) passed everything but one step: the generated project's
+smoke script in the headless simulator, `FAIL at tests/smoke.nnhs:6: expect "play: started": no matching line in frames
+1-61`. Reproduced on VM 120: the game logged `[f1 0.000s] play: started` and only then `[f1 0.067s] PC attached`. The
+connection to `nnh` completes during frame 1, after the first `update()`; the runner reads log lines only from its
+Hello's answer on (D28; `lines_from_before_the_hello_is_answered_are_not_matched` now pins this down), so on a fast
+machine the line came too early. Stage 3's refinement (log on the first `update()`) only moved the race. Fix: every
+`expect` of the smoke script waits for a line the script's own input causes. The scene logs `play: started` in
+`on_enter()` again (for people reading the log) and answers SELECT with `play: running, the sprite at (x, y)`; the
+script starts `wait 30`, `tap SELECT`, `expect "play: running" 10` (the consumer fixture's pattern), and waits 10 frames
+before `screenshot moved` (the warning nnh gave). The deterministic test
+`the_smoke_script_only_expects_lines_its_own_input_causes` (red on the old script) guards it. On VM 120 the generated
+project's script then passed three runs in a row (`nnh: PASS (23 lines, frames 1-96)`), and on Windows
+`nnh_template_smoke` passes.
+
+`nnh doctor` with `DEVKITPRO` unset on Linux: `FAIL devkitPro /opt/devkitpro found, but DEVKITPRO is not set (the 3DS
+presets read it)`, `fix: export DEVKITPRO=/opt/devkitpro`, exit 1: what FR-19, AC-7 and the plan's table ask (the
+presets read `$env{DEVKITPRO}`, so a 3DS configure would fail).

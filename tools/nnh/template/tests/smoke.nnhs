@@ -1,9 +1,13 @@
 # The game's smoke test: nnh run <game> --pc --script tests/smoke.nnhs (the simulator), or without --pc on the
 # console (Homebrew Launcher open, press Y). Grow it with your game. Script format: the NNHGE guide
 # "Testing on the console" (guides/testing-on-the-console.md).
+# Each expect waits for a line the script's own input causes: lines the game logs before the script is attached
+# (like "play: started") come too early to be expected.
 
 fail-on "] E "                  # any error line fails the script
-expect "play: started" 60       # the scene's first frame (within 60 frames)
+wait 30                         # let the game settle
+tap SELECT
+expect "play: running" 10       # the scene answers SELECT: it started and runs
 wait 10                         # input right after a log line may reach the console late: wait a little
 tap A
 expect "play: blip" 10          # A plays the sound
@@ -12,8 +16,8 @@ stick circle 1 0                # push the Circle Pad right ...
 wait 30                         # ... for half a second
 stick circle 0 0
 expect "play: stopped at (" 30  # the sprite moved and came to rest
-screenshot moved
 wait 10
+screenshot moved
 tap START
 expect "play: quit" 10          # START quits (the game ends after 30 frames of "Bye!")
 end

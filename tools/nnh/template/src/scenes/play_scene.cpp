@@ -40,6 +40,7 @@ void PlayScene::on_enter() {
 
     // Events report changes: the engine publishes SoundFinished when a voice ends (api/events.md).
     sound_done_ = nnh::events::subscribe<&PlayScene::on_sound_finished>(this);
+    NNH_LOG_INFO(game, "play: started");
 }
 
 void PlayScene::on_exit() {
@@ -47,10 +48,6 @@ void PlayScene::on_exit() {
 }
 
 void PlayScene::update() {
-    if (!started_) { // on the scene's first frame: a test script is attached by then (tests/smoke.nnhs)
-        started_ = true;
-        NNH_LOG_INFO(game, "play: started");
-    }
     // Quitting: count the "Bye!" frames down, then leave; the empty scene stack ends the game (api/scene.md).
     if (bye_frames_ > 0) {
         if (--bye_frames_ == 0) nnh::scenes::pop();
@@ -61,6 +58,10 @@ void PlayScene::update() {
     if (nnh::input::pressed(nnh::Button::A)) {
         blip_voice_ = nnh::audio::play(blip_); // api/audio.md
         NNH_LOG_INFO(game, "play: blip");
+    }
+    if (nnh::input::pressed(nnh::Button::Select)) { // the test script asks whether the scene runs
+        NNH_LOG_INFO(game, "play: running, the sprite at (%d, %d)", static_cast<int>(position_.x),
+                     static_cast<int>(position_.y));
     }
     if (nnh::input::pressed(nnh::Button::Start)) {
         NNH_LOG_INFO(game, "play: quit");

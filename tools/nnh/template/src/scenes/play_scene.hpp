@@ -25,7 +25,6 @@ class PlayScene final : public nnh::Scene {
     nnh::Voice blip_voice_;        // the blip playing now, if any
     nnh::Subscription sound_done_; // SoundFinished while the scene runs (api/events.md)
     nnh::Vec2 position_{184, 104}; // the sprite's top-left corner, in top-screen pixels
-    bool started_ = false;
     bool moving_ = false;
     int blips_finished_ = 0;
     int bye_frames_ = 0; // > 0: quitting, "Bye!" shown for this many more frames

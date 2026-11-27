@@ -43,3 +43,12 @@ NNH_TEST(a_game_refusing_the_hello_is_a_protocol_refusal) {
     CHECK(r.verdict() == Verdict::Error && r.exit_code() == 2 && !r.attached());
     CHECK(c.noted("the game refused nnh's remote protocol version 1 (nnh 0.1.0; this project's engine: 0.2.0)"));
 }
+
+NNH_TEST(lines_from_before_the_hello_is_answered_are_not_matched) { // D28, as the template's smoke script relies on
+    ScriptRunner r = runner_for("expect \"play: started\" 60\n");
+    r.start();
+    FakeConsole c(r);
+    r.on_line("[f1        0.000s] I game   play: started"); // the game's own line, before its Hello answer arrives
+    c.run(70);
+    CHECK(r.verdict() == Verdict::Fail && c.noted("expect \"play: started\": no matching line"));
+}

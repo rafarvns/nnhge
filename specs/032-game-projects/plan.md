@@ -692,7 +692,7 @@ Stage 4 refinements:
 - **T5.6** One-file edit of `small/main.cpp` (3 runs): simulator (pc-debug) 2.94 / 2.14 / 1.94 s, `.3dsx` (3ds-dev)
   3.57 / 3.58 / 3.62 s; the repository's `hello` at the same time 2.69 / 1.86 / 1.88 s, so the game project is on par
   with the repository (the first run of each series pays a cold file cache; the PC budget of < 2 s is borderline on this
-  machine for both, as at T0.2). `ninja -v` shows `ccache.exe` on the game's compile. Configure (fresh / again): local
+  machine for both, as at T0.2). `ninja -v` shows `ccache.exe` on the game's compile. **Re-measured in the review round** (7 warm runs each, interleaved, after one warm-up; the hello-sized `nnh_consumer_small` of the consumer project's build, the engine through `FETCHCONTENT_SOURCE_DIR_NNHGE`): `cmake --build` → simulator, game project 1.73–1.81 s, **median 1.77 s**; the repository's `hello` 1.79–1.84 s, **median 1.82 s**; through Ninja alone 1.65 s and 1.71 s. Both within the < 2 s budget; the 2.94 s and 2.69 s above were cold first runs. Configure (fresh / again): local
   way 17.5 / 1.8 s, pinned archive 22.0 / 2.8 s. Build folders: pc-debug 164 MB, pc-dev 206 MB, 3ds-dev 59 MB,
   3ds-release 72 MB. The copy was deleted afterwards (E: 9.7 GB free).
 
@@ -814,3 +814,12 @@ Batch 2 (CMake, scripts, docs):
   needs a `pc-`/`3ds-` name, both preset kinds and the `build/${presetName}` folder; `setx` with forward slashes.
 - New `consumer_options_mixed` (`consumer-full`, configure only, 19 s): `NNH_BUILD_TESTS=ON` with `NNH_BUILD_EXAMPLES=OFF`
   in a game project adds `nnh_tests` and no example, `nnh-link` or `nnh`. ROADMAP's 032 line unticked until the merge.
+
+Batch 3 (AC-9 re-measured, final checks):
+- Simulator one-file edit, 7 warm runs each, interleaved: game project (`nnh_consumer_small`) median **1.77 s**
+  (1.73–1.81), the repository's `hello` median **1.82 s** (1.79–1.84); through Ninja alone 1.65 s and 1.71 s. Within
+  < 2 s (recorded at T5.6 and in the ROADMAP).
+- Final: `nnh_tool_tests` 279/279; ctest pc-debug 382/382 (`-LE consumer-full`); `consumer_options_mixed` passes;
+  `3ds-dev` and `3ds-release` 0 warnings; `hello.3dsx` SHA-256 `b0b243dd…70c3` (unchanged; only a comment of
+  `engine/core/archive/CMakeLists.txt` changed in the engine build); longest 3DS command 2,533; `docs_tool.py check`
+  0 broken links.

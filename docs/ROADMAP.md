@@ -122,9 +122,9 @@ Spec 032 (game projects outside the repository), 2026-11-27, same machine, three
 (3ds-dev); clean engine (`nnh_core` + platform) pc-release 19.4 → 19.1 s (ccache), 3ds-release 48.1 → 47.2 s; fresh
 configure pc-debug 25.6 → 19.9 s, 3ds-dev 24.4 → 23.1 s; `hello.3dsx` byte-identical. In a game project outside the
 repository (78-character path, the engine as a pinned archive or a local checkout): edit a hello-sized game → simulator
-1.94–2.94 s (the repository's `hello` 1.86–2.69 s in the same series), → `.3dsx` 3.57–3.62 s; configure fresh 17.5 s
-(local engine) / 22.0 s (archive), again 1.8 / 2.8 s; the consumer ctest 76 s cold, 23 s warm. The simulator's < 2 s is
-borderline on this machine for the repository's own `hello` too (it was 1.6–1.8 s in the spike, 2026-11-27 morning).
+median 1.77 s over 7 warm runs (the repository's `hello` 1.82 s in the same series; first cold runs up to 2.9 s), → `.3dsx` 3.57–3.62 s; configure fresh 17.5 s
+(local engine) / 22.0 s (archive), again 1.8 / 2.8 s; the consumer ctest 76 s cold, 23 s warm. Both within the < 2 s budget,
+with less than 0.25 s to spare on this machine.
 Details: plan 032, "Stage 0 results" to "Stage 6 results".
 
 ## M0.5 — Way of working

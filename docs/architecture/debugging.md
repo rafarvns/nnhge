@@ -69,6 +69,15 @@ with no missed frame); a screenshot pair costs a 288 000-byte linear buffer on t
 0.6–0.8 s on the console over Wi-Fi, a frame the log marks as not representative. When the PC leaves, every remote
 control is released.
 
+### Hot reload over the same connection (spec 031, D54)
+
+Reload batches travel on the remote connection too: messages 12–17 (`ReloadBegin`, `ReloadFile`, `ReloadChunk`,
+`ReloadApply`, `ReloadCancel`, `ReloadNotice`) are the first that carry a **payload** — raw bytes after the 16-byte message
+(a path, a CRC-32, a chunk of up to 16 KB), whose length the decoder derives from the message's own fields. Transfer
+messages are handled when they arrive (the game reads at most 16 KB of payload per frame); only `ReloadApply` is
+frame-stamped. The game answers with records 13–15 (`ReloadStaged`, `ReloadApplied` with the apply time, `ReloadRefused`
+with the stage and reason), sent only after the PC spoke reload. See [assets.md](../api/assets.md#hot-reload).
+
 ## Choosing a tool
 
 | Symptom | First tool |

@@ -8,6 +8,8 @@
 #include "assets/asset_path.hpp"
 #include "assets/assets_internal.hpp"
 #include "gfx/gfx_state.hpp"
+#include "gfx/texture_reload.hpp"
+#include "nnh/build.hpp"
 #include "nnh/assets.hpp"
 #include "nnh/detail/image_registry.hpp"
 #include "gfx/texture_rules.hpp"
@@ -129,6 +131,9 @@ Result<Texture> load_texture(const char* name) {
         return refuse(ErrorCode::LimitReached, name, "too many textures (AppConfig::gfx.max_textures)");
     }
     detail::mem_account(MemRegion::Linear, NNH_MEM_TAG_REF(textures), info.bytes, true);
+    if constexpr (build::kDevToolsEnabled) { // spec 031: a texture made from an asset reloads with it
+        if (asset_bytes.valid()) detail::texture_reload_loaded(slot, generation, asset_path);
+    }
     return TextureAccess::make(slot, generation, info.width, info.height);
 }
 

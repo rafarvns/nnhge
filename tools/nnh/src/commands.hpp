@@ -40,6 +40,15 @@ struct GameRun;
 /// simulator's without a script.
 int run_on_pc(const Options& options, const GameRun& run);
 
+/// Hot reload (spec 031, commands/run_reload.cpp): once `built` is built and connected, sets up `run.reload` (reads
+/// <binary dir>/nnh_reload_<game>.txt, scans the outputs) and gives it to the runner; notes why when it can't.
+void start_reload(const GameRun& run, const BuiltGame& built, bool pc);
+
+/// nnh restore-assets <game> (spec 031): puts back the sources an interrupted script left swapped.
+int command_restore_assets(const Options& options);
+/// The end of a run (spec 031): every swapped source put back, the asset target rebuilt so the outputs match again.
+void finish_reload(const GameRun& run);
+
 int command_serve(const Options& options);
 int command_unpair();
 

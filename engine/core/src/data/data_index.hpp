@@ -45,4 +45,7 @@ const DataTypeEntry* data_type(TypeId type);
 
 MemTag& data_memory_tag();
 
+/// Registers the data kind of hot reload (spec 031, data_reload.cpp; Debug/Development builds, once the index is loaded).
+void data_reload_register();
+
 } // namespace nnh::detail

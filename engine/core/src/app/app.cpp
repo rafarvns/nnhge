@@ -31,6 +31,7 @@
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
 #include "remote/remote_internal.hpp"
+#include "reload/reload_hooks.hpp"
 #include "time/time_internal.hpp"
 
 namespace nnh {
@@ -40,6 +41,7 @@ bool g_initialized = false;
 bool g_frame_open = false;
 bool g_gpu_busy = false; // a frame was submitted and the platform hasn't waited for the GPU since (D47)
 std::uint64_t g_frame_count = 0;
+bool g_reload_frame = false; // spec 031: a hot reload batch was applied (or refused) at this frame's start
 char g_data_folder[48];
 
 /// Ends the open frame: 2D passes per screen, then the debug pass (text, overlay) on top, then the platform starts
@@ -48,7 +50,11 @@ void close_frame() {
     if (g_frame_open) {
         detail::gfx_submit();
         if constexpr (build::kDevToolsEnabled) { // live values (spec 030): follows, dumps, per-frame watches' sweep
-            if (detail::g_live_ops != nullptr) detail::g_live_ops->frame_end(static_cast<std::uint32_t>(g_frame_count), false);
+            if (detail::g_live_ops != nullptr) {
+                if (g_reload_frame) detail::g_live_ops->reload_compare(); // spec 031 FR-23
+                detail::g_live_ops->frame_end(static_cast<std::uint32_t>(g_frame_count), false);
+            }
+            g_reload_frame = false;
             detail::g_debug_game_mark = detail::g_debug_recorded; // the game's debug entries, replayed while paused
         }
         detail::overlay_draw();     // recorded after the game's debug text, so it covers it
@@ -147,8 +153,15 @@ bool frame() {
     if constexpr (build::kDevToolsEnabled) detail::gfx_begin_recording(); // the held lists go (spec 030)
     g_frame_open = true;
     ++g_frame_count;
-    if constexpr (build::kDevToolsEnabled) { // live values (spec 030 FR-3): the one point where edits apply
-        if (detail::g_live_ops != nullptr) detail::g_live_ops->frame_start(static_cast<std::uint32_t>(g_frame_count));
+    if constexpr (build::kDevToolsEnabled) {
+        // Hot reload (spec 031 FR-6): a batch due now is applied first, so the live point and the game see it.
+        g_reload_frame = detail::g_reload_apply != nullptr;
+        if (g_reload_frame) detail::g_reload_apply(static_cast<std::uint32_t>(g_frame_count));
+        // Live values (spec 030 FR-3): the one point where edits apply.
+        if (detail::g_live_ops != nullptr) {
+            detail::g_live_ops->frame_start(static_cast<std::uint32_t>(g_frame_count));
+            if (g_reload_frame) detail::g_live_ops->reload_snapshot(); // FR-23: what the panel set, before the game runs
+        }
     }
     detail::input_publish_events();
     if (detail::g_run_input_hooks != nullptr) detail::g_run_input_hooks(); // D32: input actions, before dispatch
@@ -169,7 +182,11 @@ void shutdown() {
     detail::audio_shutdown(); // after scenes too (sounds); before assets
     // Optional modules (data assets) free what they keep, before the leak report. Release has no leak report and
     // skips this, so games that don't use those modules stay byte-for-byte the same (spec 014 AC-6).
-    if constexpr (build::kDevToolsEnabled) detail::run_shutdown_hooks();
+    if constexpr (build::kDevToolsEnabled) {
+        detail::run_shutdown_hooks();
+        detail::g_reload_applied_frame = 0; // spec 031: the next init's frame 2 is no batch frame (frames restart at 0)
+        g_reload_frame = false;
+    }
     detail::assets_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();

@@ -14,6 +14,7 @@ namespace {
 
 std::map<std::string, std::vector<unsigned char>> g_files;
 int g_failing_writes = 0;
+int g_failing_appends = 0; // fail_next_appends() (spec 031)
 // Power cuts (spec 027 AC-3): -1 = none scheduled; otherwise mutating calls left before the cut.
 int g_power_ops = -1;
 bool g_power_off = false;
@@ -93,6 +94,10 @@ bool platform::fs_write(const char* path, const FsChunk* chunks, int count) {
 
 bool platform::fs_append(const char* path, const void* data, std::size_t size) {
     count_call('A');
+    if (g_failing_appends > 0) {
+        --g_failing_appends;
+        return false;
+    }
     const Power power = power_step();
     if (power == Power::Off || (power == Power::Cut && !g_power_torn)) return false;
     auto& file = g_files[path];
@@ -118,9 +123,19 @@ bool platform::fs_remove(const char* path) {
     return true;
 }
 
+long long platform_fake::detail::fs_copy(const char* path, unsigned char* out, std::size_t capacity) {
+    const auto it = g_files.find(path);
+    if (it == g_files.end()) return -1;
+    if (out == nullptr) return static_cast<long long>(it->second.size()); // the size only
+    if (it->second.size() > capacity) return -1;
+    if (!it->second.empty()) std::memcpy(out, it->second.data(), it->second.size());
+    return static_cast<long long>(it->second.size());
+}
+
 void platform_fake::detail::fs_reset() {
     g_files.clear();
     g_failing_writes = 0;
+    g_failing_appends = 0;
     g_power_ops = -1;
     g_power_off = false;
     g_power_torn = true;
@@ -128,6 +143,7 @@ void platform_fake::detail::fs_reset() {
 }
 
 void platform_fake::fail_next_writes(int count) { g_failing_writes = count; }
+void platform_fake::fail_next_appends(int count) { g_failing_appends = count; }
 
 void platform_fake::corrupt_file(const char* path, std::size_t byte_index) {
     const auto it = g_files.find(path);

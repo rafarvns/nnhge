@@ -65,6 +65,10 @@ void platform_fake::set_region_capacity(MemRegion region, std::size_t bytes) {
     detail::controls().region_capacity[static_cast<int>(region)] = bytes;
 }
 
+std::size_t platform_fake::region_used(MemRegion region) {
+    return detail::controls().region_used[static_cast<int>(region)];
+}
+
 void platform_fake::set_alloc_fill(int byte) { detail::controls().alloc_fill = byte < 0 ? -1 : (byte & 0xFF); }
 
 } // namespace nnh

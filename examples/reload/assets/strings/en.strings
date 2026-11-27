@@ -1,0 +1,9 @@
+# The base language of the hot reload example (spec 031): edit a line and save while the game runs.
+
+[language]
+name = "English"
+
+[demo]
+hello = "Hello, reloaded world"
+hint = "Save a file in assets/ to reload it"
+count = "Reloads"

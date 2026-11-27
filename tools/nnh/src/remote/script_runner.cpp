@@ -113,7 +113,10 @@ void ScriptRunner::on_record(Record record) {
             hello_answered(record);
         }
         return;
-    case wire::RecordType::Tick: tick(record.frame); return;
+    case wire::RecordType::Tick:
+        reload_record(record); // spec 031: the batch's pacing
+        tick(record.frame);
+        return;
     case wire::RecordType::Late:
         problem(line_of(record.seq), "the input for frame " + std::to_string(record.wanted) +
                                          " reached the console on frame " + std::to_string(record.applied) +
@@ -139,6 +142,9 @@ void ScriptRunner::on_record(Record record) {
     case wire::RecordType::LiveValue:
     case wire::RecordType::LiveRefused:
     case wire::RecordType::LiveState: on_live_record(record); return;
+    case wire::RecordType::ReloadStaged:
+    case wire::RecordType::ReloadApplied:
+    case wire::RecordType::ReloadRefused: reload_record(record); return; // spec 031: the reload controller's
     }
 }
 
@@ -316,6 +322,7 @@ void ScriptRunner::pump(bool ignore_room) {
         expect_value_sent_ = true;
         start_expect_value(seg.until, base_ + seg.length);
     }
+    if (verdict_ == Verdict::Running && attached_ && reload_step_due()) start_reload_step(seg.until, base_ + seg.length);
 }
 
 void ScriptRunner::check_end() {
@@ -373,6 +380,8 @@ void ScriptRunner::script_tick() {
                value_watch_.text + ": no value in " + frames(value_watch_.from, value_watch_.to));
         return;
     }
+    reload_tick(); // spec 031: expect-reload ... within
+    if (verdict_ != Verdict::Running) return;
     pump();
     check_end();
 }

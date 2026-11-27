@@ -1,0 +1,452 @@
+// Reload lines in scripts (spec 031 T3.6, FR-22, Q11): syntax and line errors, paths outside the game's folder, the
+// paused-section rules; backups restored byte for byte, the journal, an interrupted run; the runner against a fake game
+// and builder: a held swap pauses at F, sends the batch with its Apply and a Resume for F, and goes on at F + 1;
+// expect-reload passing and failing; an unheld swap waited for with within N.
+
+#include <cstdio>
+#include <chrono>
+#include <filesystem>
+#include <string>
+#include <vector>
+
+#include "reload/asset_swap.hpp"
+#include "reload/interrupt.hpp"
+#include "reload/reload_controller.hpp"
+#include "reload/reload_wire.hpp"
+#include "remote/live_wire.hpp"
+#include "remote/script.hpp"
+#include "remote/script_runner.hpp"
+#include "test.hpp"
+
+using namespace nnh::tool::remote;
+using nnh::tool::reload::AssetSwaps;
+using nnh::tool::reload::BuildOutcome;
+using nnh::tool::reload::ControllerSetup;
+using nnh::tool::reload::ReloadController;
+namespace fs = std::filesystem;
+
+namespace {
+
+ParsedScript parse(const char* text) { return parse_script(text, "t.nnhs"); }
+
+std::string dir(const std::string& name) {
+    const std::string d = std::string(NNH_TOOL_TEST_TMP) + "/scriptreload_" + name;
+    std::error_code ec;
+    fs::remove_all(d, ec);
+    fs::create_directories(d, ec);
+    return d;
+}
+
+void write(const std::string& path, const std::string& text) {
+    std::error_code ec;
+    fs::create_directories(fs::path(path).parent_path(), ec);
+    std::FILE* f = std::fopen(path.c_str(), "wb");
+    std::fwrite(text.data(), 1, text.size(), f);
+    std::fclose(f);
+}
+
+std::string read(const std::string& path) {
+    std::FILE* f = std::fopen(path.c_str(), "rb");
+    if (f == nullptr) return "<missing>";
+    std::string s;
+    char b[256];
+    std::size_t n;
+    while ((n = std::fread(b, 1, sizeof b, f)) > 0) s.append(b, n);
+    std::fclose(f);
+    return s;
+}
+
+Record payload_record(wire::RecordType type, const std::uint8_t* bytes, std::size_t n) {
+    Record r;
+    r.type = type;
+    r.payload.assign(bytes + wire::kRecordHeaderSize, bytes + n);
+    return r;
+}
+
+Record hello_record() {
+    Record r;
+    r.type = wire::RecordType::Hello;
+    r.version = wire::kVersion;
+    r.frame = 1;
+    return r;
+}
+
+Record state_record(std::uint32_t frame, bool paused) {
+    std::uint8_t buf[16];
+    return payload_record(wire::RecordType::LiveState, buf, wire::encode_live_state(frame, paused, 0, 0, buf));
+}
+
+Record applied_record(std::uint16_t batch, std::uint32_t frame) {
+    std::uint8_t buf[wire::kMaxReloadRecord];
+    return payload_record(wire::RecordType::ReloadApplied, buf,
+                          wire::encode_reload_applied({batch, 1, frame, 1, 50}, buf));
+}
+
+Record tick(std::uint32_t frame) {
+    Record r;
+    r.type = wire::RecordType::Tick;
+    r.frame = frame;
+    return r;
+}
+
+std::vector<wire::Message> messages_in(const std::vector<std::uint8_t>& bytes) {
+    std::vector<wire::Message> out;
+    for (std::size_t at = 0; at + wire::kMessageSize <= bytes.size();) {
+        wire::Message m;
+        if (wire::decode_message(bytes.data() + at, m) != wire::Reject::None) break;
+        out.push_back(m);
+        at += wire::kMessageSize + wire::payload_length(m);
+    }
+    return out;
+}
+
+/// A game folder with assets/a.txt and its converted out/a.txt; the fake build converts by copying.
+struct Game {
+    std::string root, game, out, script;
+    Game(const char* name) {
+        root = dir(name);
+        game = root + "/game";
+        out = root + "/out";
+        script = root + "/scripts";
+        write(game + "/assets/a.txt", "original");
+        write(out + "/a.txt", "original");
+        write(script + "/fixtures/a_new.txt", "fixture bytes");
+    }
+    ControllerSetup setup(bool fails = false) {
+        const std::string g = game, o = out;
+        return ControllerSetup{o, g + "/assets",
+                               [g, o, fails](const std::string&) {
+                                   BuildOutcome b;
+                                   b.ok = !fails;
+                                   if (!fails) write(o + "/a.txt", read(g + "/assets/a.txt"));
+                                   return b;
+                               },
+                               [] { return 0LL; }, std::string()};
+    }
+};
+
+} // namespace
+
+NNH_TEST(script_reload_lines_parse) {
+    const ParsedScript p = parse("swap-asset assets/art/hero.png fixtures/hero_big.png\n"
+                                 "swap-asset data_types.cpp fixtures/changed.cpp unheld\n"
+                                 "expect-reload art/hero within 600\n"
+                                 "expect-reload refused\n"
+                                 "expect-reload\n"
+                                 "restore-asset assets/art/hero.png\n");
+    CHECK(p.errors.empty());
+    CHECK(p.script.steps.size() == 7);
+    CHECK(p.script.steps[0].command == Command::SwapAsset && p.script.steps[0].text == "assets/art/hero.png" &&
+          p.script.steps[0].value == "fixtures/hero_big.png" && !p.script.steps[0].unheld);
+    CHECK(p.script.steps[1].unheld);
+    CHECK(p.script.steps[2].command == Command::ExpectReload && p.script.steps[2].text == "art/hero" &&
+          p.script.steps[2].frames == 600);
+    CHECK(p.script.steps[3].refused && p.script.steps[3].text.empty());
+    CHECK(p.script.steps[5].command == Command::RestoreAsset);
+}
+
+NNH_TEST(script_reload_errors_name_their_lines) {
+    const ParsedScript p = parse("swap-asset ../outside.png fixtures/a.png\n"
+                                 "swap-asset assets/a.png /abs/fixture.png\n"
+                                 "swap-asset assets/a.png f.png later\n"
+                                 "expect-reload a b\n"
+                                 "restore-asset\n"
+                                 "pause\n"
+                                 "swap-asset assets/a.png f.png\n"
+                                 "expect-reload within 10\n");
+    CHECK(p.errors.size() == 7);
+    CHECK(p.errors[0].find("t.nnhs:1: SOURCE must be a relative path") == 0);
+    CHECK(p.errors[1].find("t.nnhs:2: FIXTURE") == 0);
+    CHECK(p.errors[2].find("t.nnhs:3: usage: swap-asset") == 0);
+    CHECK(p.errors[3].find("t.nnhs:4: usage: expect-reload") == 0);
+    CHECK(p.errors[4].find("t.nnhs:5: wrong number of arguments") == 0);
+    CHECK(p.errors[5].find("t.nnhs:7: swap-asset while paused") == 0);
+    CHECK(p.errors[6].find("t.nnhs:8: expect-reload while paused") == 0);
+}
+
+NNH_TEST(script_reload_swaps_are_restored_byte_for_byte) {
+    Game g("swaps");
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    CHECK(swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(read(g.game + "/assets/a.txt") == "fixture bytes");
+    CHECK(swaps.journal_left());
+    CHECK(swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty()); // twice: the first backup stays
+    CHECK(swaps.restore_all() == 1);
+    CHECK(read(g.game + "/assets/a.txt") == "original");
+    CHECK(!swaps.journal_left());
+    CHECK(!swaps.swap("../x", "y").empty());
+    CHECK(!swaps.swap("assets/missing.txt", g.script + "/fixtures/a_new.txt").empty());
+}
+
+NNH_TEST(script_reload_an_interrupted_run_leaves_a_journal_the_next_restores) {
+    Game g("journal");
+    {
+        AssetSwaps first(g.game, g.root + "/backup");
+        CHECK(first.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+    } // the process "dies" here: nothing restored
+    CHECK(nnh::tool::reload::journal_game_dir(g.root + "/backup") == g.game); // nnh restore-assets finds the game
+    AssetSwaps next(g.game, g.root + "/backup");
+    CHECK(next.journal_left());
+    CHECK(next.restore_all() == 1);
+    CHECK(read(g.game + "/assets/a.txt") == "original");
+}
+
+NNH_TEST(script_reload_a_failed_restore_keeps_its_backup_and_journal) {
+    Game g("restorefail");
+    {
+        AssetSwaps swaps(g.game, g.root + "/backup");
+        CHECK(swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+        std::error_code ec;
+        fs::remove(g.game + "/assets/a.txt", ec);
+        fs::create_directories(g.game + "/assets/a.txt", ec); // something in the way: the copy back fails
+        CHECK(swaps.restore_all() == 0);
+        CHECK(swaps.journal_left()); // the backup is still there: kept for later (review S5)
+        fs::remove_all(g.game + "/assets/a.txt", ec);
+    }
+    AssetSwaps later(g.game, g.root + "/backup");
+    CHECK(later.restore_all() == 1);
+    CHECK(read(g.game + "/assets/a.txt") == "original");
+    CHECK(!later.journal_left());
+}
+
+NNH_TEST(script_reload_a_swap_without_a_journal_fails) {
+    Game g("nojournal");
+    std::error_code ec;
+    fs::create_directories(g.root + "/backup/journal.txt", ec); // the journal can't be written
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    CHECK(!swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(read(g.game + "/assets/a.txt") == "original"); // nothing swapped without a way back
+}
+
+NNH_TEST(script_reload_a_swapped_file_is_newer_than_before) {
+    Game g("mtime");
+    std::error_code ec;
+    const auto old_time = fs::file_time_type::clock::now() - std::chrono::hours(1);
+    fs::last_write_time(g.game + "/assets/a.txt", old_time, ec);
+    fs::last_write_time(g.script + "/fixtures/a_new.txt", old_time, ec); // an old fixture: copy_file may keep its time
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    CHECK(swaps.swap("assets/a.txt", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(fs::last_write_time(g.game + "/assets/a.txt", ec) > old_time + std::chrono::minutes(30)); // the build sees it
+    CHECK(swaps.restore_all() == 1);
+    CHECK(fs::last_write_time(g.game + "/assets/a.txt", ec) > old_time + std::chrono::minutes(30)); // and the restore
+}
+
+NNH_TEST(script_reload_backup_names_never_collide) {
+    Game g("collide");
+    write(g.game + "/a/b", "slash");
+    write(g.game + "/a__b", "underscores");
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    CHECK(swaps.swap("a/b", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(swaps.swap("a__b", g.script + "/fixtures/a_new.txt").empty());
+    CHECK(swaps.restore_all() == 2);
+    CHECK(read(g.game + "/a/b") == "slash" && read(g.game + "/a__b") == "underscores");
+}
+
+NNH_TEST(script_reload_ctrl_c_ends_the_script_on_the_main_loop) {
+    Game g("interrupt");
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt unheld\nwait 600\nend\n");
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    CHECK(read(g.game + "/assets/a.txt") == "fixture bytes");
+    nnh::tool::reload::install_interrupt();
+    nnh::tool::reload::simulate_interrupt(); // what Ctrl+C's handler does: a flag only (review S6)
+    r.poll_reload();
+    CHECK(r.finished() && r.verdict() == Verdict::Error);
+    CHECK(swaps.restore_all() == 1); // finish_reload's work, on the main thread
+    nnh::tool::reload::interrupt_handled();
+    nnh::tool::reload::uninstall_interrupt();
+    CHECK(read(g.game + "/assets/a.txt") == "original");
+}
+
+NNH_TEST(script_reload_a_held_swap_lands_on_its_frame) {
+    Game g("held");
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("wait 5\nswap-asset assets/a.txt fixtures/a_new.txt\nexpect-reload a\nwait 3\nend\n");
+    CHECK(p.errors.empty());
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.take_messages();
+    r.on_record(hello_record());
+    // the pause for F = 1 + 5 = 6
+    bool paused_at_6 = false;
+    for (const MessageBytes& b : r.take_messages()) {
+        wire::Message m;
+        CHECK(wire::decode_message(b.data(), m) == wire::Reject::None);
+        paused_at_6 = paused_at_6 || (m.type == wire::MessageType::Pause && m.frame == 6);
+    }
+    CHECK(paused_at_6);
+    CHECK(read(g.game + "/assets/a.txt") == "fixture bytes");
+    r.on_record(state_record(6, true)); // paused: build and send
+    const std::vector<wire::Message> sent = messages_in(r.take_bytes());
+    CHECK(!sent.empty() && sent.front().type == wire::MessageType::ReloadBegin);
+    CHECK(sent.size() >= 2 && sent[sent.size() - 2].type == wire::MessageType::ReloadApply &&
+          sent[sent.size() - 2].frame == 6);
+    CHECK(sent.back().type == wire::MessageType::Pause && sent.back().frame == 6); // the resume
+    r.on_record(applied_record(1, 6));
+    r.on_record(tick(12));
+    CHECK(r.finished() && r.verdict() == Verdict::Pass);
+    swaps.restore_all();
+    CHECK(read(g.game + "/assets/a.txt") == "original");
+}
+
+NNH_TEST(script_reload_expect_reload_fails_on_a_refusal) {
+    Game g("refused");
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt\nexpect-reload\nend\n");
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    r.take_messages();
+    r.on_record(state_record(1, true));
+    r.take_bytes();
+    std::uint8_t buf[wire::kMaxReloadRecord];
+    r.on_record(payload_record(
+        wire::RecordType::ReloadRefused, buf,
+        wire::encode_reload_refused({1, wire::ReloadStage::Validate, wire::ReloadReason::Corrupted, 0, 1, 0}, buf)));
+    CHECK(r.finished() && r.verdict() == Verdict::Fail);
+    bool said = false;
+    for (const std::string& n : r.take_notes()) said = said || n.find("t.nnhs:2: expect-reload: refused") != std::string::npos;
+    CHECK(said);
+    swaps.restore_all();
+}
+
+NNH_TEST(script_reload_a_held_swap_refused_by_the_build_resumes_before_the_next_step) {
+    Game g("buildfail");
+    ReloadController controller(g.setup(true));
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt\nexpect-reload refused\nwait 10\nscreenshot x\nend\n");
+    CHECK(p.errors.empty());
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    r.take_messages(); // the pause for frame 1
+    r.on_record(state_record(1, true)); // paused: the build fails, a notice and the resume are queued
+    CHECK(r.take_messages().empty()); // nothing of the next steps may overtake the resume (frame order)
+    const std::vector<wire::Message> sent = messages_in(r.take_bytes());
+    CHECK(sent.size() == 2 && sent[0].type == wire::MessageType::ReloadNotice && sent[1].type == wire::MessageType::Pause);
+    bool screenshot = false;
+    for (const MessageBytes& b : r.take_messages()) {
+        wire::Message m;
+        CHECK(wire::decode_message(b.data(), m) == wire::Reject::None);
+        screenshot = screenshot || m.type == wire::MessageType::Screenshot;
+    }
+    CHECK(screenshot);
+    swaps.restore_all();
+}
+
+NNH_TEST(script_reload_input_sent_during_a_large_batch_keeps_the_stream_aligned) {
+    Game g("aligned");
+    write(g.script + "/fixtures/big.txt", std::string(200 * 1024, 'b'));
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/big.txt unheld\ntap A\nwait 2\ntap B\n"
+                           "expect-reload a within 600\nend\n");
+    CHECK(p.errors.empty());
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    std::vector<std::uint8_t> stream; // what the game would read, in the order game_session writes it
+    for (std::uint32_t frame = 2; frame < 40 && controller.sending(); frame += 4) {
+        for (const MessageBytes& b : r.take_messages()) stream.insert(stream.end(), b.begin(), b.end());
+        const std::vector<std::uint8_t> slice = r.take_bytes();
+        stream.insert(stream.end(), slice.begin(), slice.end());
+        r.on_record(tick(frame));
+    }
+    for (const MessageBytes& b : r.take_messages()) stream.insert(stream.end(), b.begin(), b.end());
+    std::size_t at = 0;
+    int buttons = 0;
+    while (at < stream.size()) { // every header decodes where the previous unit ended
+        wire::Message m;
+        CHECK(wire::decode_message(stream.data() + at, m) == wire::Reject::None);
+        if (wire::decode_message(stream.data() + at, m) != wire::Reject::None) break;
+        buttons += m.type == wire::MessageType::Buttons ? 1 : 0;
+        at += wire::kMessageSize + wire::payload_length(m);
+    }
+    CHECK(at == stream.size());
+    CHECK(buttons >= 2); // the taps went out between the batch's units
+    swaps.restore_all();
+}
+
+NNH_TEST(script_reload_a_swap_while_the_last_batch_is_unanswered_fails) {
+    Game g("busy");
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    write(g.script + "/fixtures/other.txt", "other bytes");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt unheld\n"
+                           "swap-asset assets/a.txt fixtures/other.txt unheld\nend\n");
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    CHECK(r.finished() && r.verdict() == Verdict::Fail);
+    const std::vector<wire::Message> sent = messages_in(controller.take_bytes());
+    CHECK(!sent.empty() && sent.front().type == wire::MessageType::ReloadBegin &&
+          wire::reload_batch(sent.front()) == 1); // the first batch, not overwritten
+    bool said = false;
+    for (const std::string& n : r.take_notes()) said = said || n.find("t.nnhs:2: the last reload isn't answered") != std::string::npos;
+    CHECK(said);
+    swaps.restore_all();
+}
+
+NNH_TEST(reload_controller_run_cycle_while_busy_sends_nothing_new) {
+    Game g("busy2");
+    ReloadController controller(g.setup());
+    controller.start();
+    write(g.game + "/assets/a.txt", "changed once");
+    CHECK(controller.run_cycle(0));
+    write(g.game + "/assets/a.txt", "changed twice");
+    CHECK(!controller.run_cycle(0)); // still Sending: refused
+    const std::vector<wire::Message> sent = messages_in(controller.take_bytes());
+    CHECK(sent.size() >= 2 && sent.front().type == wire::MessageType::ReloadBegin && wire::reload_batch(sent.front()) == 1);
+}
+
+NNH_TEST(script_reload_an_unheld_swap_is_waited_for_within_n) {
+    Game g("unheld");
+    ReloadController controller(g.setup());
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt unheld\nexpect-reload a within 60\nend\n");
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    const std::vector<wire::Message> sent = messages_in(r.take_bytes());
+    CHECK(!sent.empty() && sent.back().type == wire::MessageType::ReloadApply && sent.back().frame == 0);
+    r.on_record(tick(20));
+    CHECK(!r.finished());
+    r.on_record(applied_record(1, 24));
+    r.on_record(tick(30));
+    CHECK(r.finished() && r.verdict() == Verdict::Pass);
+    swaps.restore_all();
+}
+
+NNH_TEST(script_reload_without_hot_reload_is_an_error) {
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt\nend\n");
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.start();
+    r.on_record(hello_record());
+    CHECK(r.finished() && r.verdict() == Verdict::Error);
+}

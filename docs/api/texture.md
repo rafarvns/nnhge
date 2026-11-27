@@ -55,3 +55,11 @@ Each failure is also logged on the `gfx` channel with the image name.
 
 A 3D material names a texture by value with `nnh::texture_id(texture)`; models loaded with `load_mesh` own their
 textures ([mesh.md](mesh.md)). The same size rules apply.
+
+## Hot reload (spec 031)
+
+In Debug/Development builds run under `nnh run`, a texture loaded from an asset reloads when its PNG is saved: the same
+`Texture` shows the new pixels, and `width()`/`height()` read the texture's slot so a new size shows too (Release returns
+the size cached at load; `cached_width()`/`cached_height()` always do). The old GPU texture is freed once the GPU is done
+with it (D47). Images embedded with `IMAGES` don't reload (they are compiled in). See
+[assets.md](assets.md#hot-reload).

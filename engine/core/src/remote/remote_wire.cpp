@@ -4,6 +4,7 @@
 
 #include <cstring>
 
+#include "reload/reload_wire.hpp"
 #include "remote/live_wire.hpp"
 #include "system/language_tag.hpp" // pack_language (the `nnh` tool's side)
 
@@ -98,6 +99,12 @@ bool decode_arguments(const std::uint8_t* in, Message& out) {
     case MessageType::LiveSet: return decode_live_set_arguments(a, out);
     case MessageType::Live: return decode_live_arguments(a, out);
     case MessageType::Pause: return decode_pause_arguments(a, out);
+    case MessageType::ReloadBegin:
+    case MessageType::ReloadFile:
+    case MessageType::ReloadChunk:
+    case MessageType::ReloadApply:
+    case MessageType::ReloadCancel:
+    case MessageType::ReloadNotice: return decode_reload_arguments(in, out);
     }
     return false;
 }
@@ -117,6 +124,9 @@ bool record_length_ok(std::uint8_t type, std::uint32_t length) {
     case RecordType::LiveValue:
     case RecordType::LiveRefused:
     case RecordType::LiveState: return live_record_length_ok(static_cast<RecordType>(type), length);
+    case RecordType::ReloadStaged:
+    case RecordType::ReloadApplied:
+    case RecordType::ReloadRefused: return reload_record_length_ok(static_cast<RecordType>(type), length);
     }
     return false;
 }
@@ -158,12 +168,18 @@ void encode_message(const Message& m, std::uint8_t out[kMessageSize]) {
         break;
     case MessageType::Live:
     case MessageType::Pause: encode_live_arguments(m, a); break;
+    case MessageType::ReloadBegin:
+    case MessageType::ReloadFile:
+    case MessageType::ReloadChunk:
+    case MessageType::ReloadApply:
+    case MessageType::ReloadCancel:
+    case MessageType::ReloadNotice: encode_reload_arguments(m, a); break;
     }
 }
 
 Reject decode_message(const std::uint8_t in[kMessageSize], Message& out) {
     if (in[0] != kMessageMagic) return Reject::Magic;
-    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::Pause)) {
+    if (in[1] < static_cast<std::uint8_t>(MessageType::Hello) || in[1] > static_cast<std::uint8_t>(MessageType::ReloadNotice)) {
         return Reject::Type;
     }
     out = Message{};

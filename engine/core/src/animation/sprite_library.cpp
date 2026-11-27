@@ -125,6 +125,9 @@ Result<SpriteLibrary> SpriteLibrary::create(const SpriteLibraryDesc& d) {
 SpriteLibrary::~SpriteLibrary() {
     if (block_ == nullptr) return;
     detail::sprite_release_serial(block_->header.serial);
+#if !defined(NNH_FLAVOR_RELEASE)
+    detail::sprite_reload_forget(block_); // spec 031: its reloaded blocks, if any
+#endif
     mem::free(block_);
 }
 
@@ -139,16 +142,16 @@ SpriteLibrary& SpriteLibrary::operator=(SpriteLibrary&& other) noexcept {
 }
 
 int SpriteLibrary::frame_count() const {
-    return block_ != nullptr ? block_->header.count[detail::spritefmt::kFrames] : 0;
+    return block_ != nullptr ? detail::sprite_view(block_).header().count[detail::spritefmt::kFrames] : 0;
 }
 int SpriteLibrary::clip_count() const {
-    return block_ != nullptr ? block_->header.count[detail::spritefmt::kClips] : 0;
+    return block_ != nullptr ? detail::sprite_view(block_).header().count[detail::spritefmt::kClips] : 0;
 }
 int SpriteLibrary::state_count() const {
-    return block_ != nullptr ? block_->header.count[detail::spritefmt::kStates] : 0;
+    return block_ != nullptr ? detail::sprite_view(block_).header().count[detail::spritefmt::kStates] : 0;
 }
 std::size_t SpriteLibrary::memory_used() const {
-    return block_ != nullptr ? block_->header.file_size : 0;
+    return block_ != nullptr ? detail::sprite_view(block_).header().file_size : 0;
 }
 
 } // namespace nnh

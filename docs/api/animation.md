@@ -188,6 +188,20 @@ contents plus the extras asked for, so the game can add markers, states and rule
 machines). A loaded library and the same library built in code behave identically. The validator is the converter's
 own and is fuzzed.
 
+### Hot reload (spec 031)
+
+In a Debug/Development game under `nnh run`, saving the `.ase.json` (or its sheet) of a library loaded with
+`load_sprite_library` reloads it: the same `SpriteLibrary` answers from the new content (more frames or clips are fine),
+with the same extra capacities it was loaded with (markers, states and rules added in code afterwards are not kept). Each
+animator moves onto the new content on its next use (any command, update or query): the clip of the same name goes on
+at its frame, clamped into a shorter clip, with the new durations and markers; a clip that no longer exists switches to
+the library's first clip with one warning (`animation: clip "walk" no longer exists in art/hero: playing "idle"`); a
+state machine whose states (names, clips, next-on-finish) or rules changed restarts at state 0 with a warning. An
+animator that wasn't used across two reloads starts the first clip (or state 0): the content it was bound to is gone.
+Memory (Debug/Development): a reloaded library holds its first block, the current one and the one before until it is
+destroyed; a table of 64 libraries (≈ 4 KB) from the first load. Code-built libraries don't reload. See
+[assets.md](assets.md#hot-reload).
+
 ## Cost
 
 Updating one animator is a pending-flag test, an add and a compare in the common case; a crossing reads one 12-byte

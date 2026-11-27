@@ -2,6 +2,8 @@
 
 #include "core/shutdown_hooks.hpp"
 
+#include "nnh/assert.hpp"
+
 namespace nnh::detail {
 
 namespace {
@@ -18,6 +20,12 @@ bool add_shutdown_hook(ShutdownHook hook) {
     if (g_count >= kMaxShutdownHooks) return false;
     g_hooks[g_count++] = hook;
     return true;
+}
+
+void require_shutdown_hook(ShutdownHook hook) {
+    const bool added = add_shutdown_hook(hook);
+    NNH_ASSERT(added, "shutdown hooks: no room (raise kMaxShutdownHooks)");
+    (void)added;
 }
 
 void run_shutdown_hooks() {

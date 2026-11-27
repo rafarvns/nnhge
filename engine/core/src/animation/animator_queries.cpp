@@ -25,15 +25,18 @@ const FrameEntry* shown_frame(const SpriteAnimator& a, int clip) {
 } // namespace
 
 bool SpriteAnimator::playing() const {
+    Access::fresh(*this);
     return clip_ != kNoClip && (flags_ & kAnimFinished) == 0;
 }
 bool SpriteAnimator::paused() const {
     return (flags_ & kAnimPaused) != 0;
 }
 bool SpriteAnimator::finished() const {
+    Access::fresh(*this);
     return clip_ != kNoClip && (flags_ & kAnimFinished) != 0;
 }
 SpriteClipId SpriteAnimator::clip() const {
+    Access::fresh(*this);
     return SpriteClipId{clip_};
 }
 
@@ -54,21 +57,25 @@ int SpriteAnimator::frame() const {
 }
 
 Region SpriteAnimator::region() const {
+    Access::fresh(*this);
     const FrameEntry* e = shown_frame(*this, clip_);
     return e != nullptr ? Region{e->x, e->y, e->w, e->h} : Region{};
 }
 
 Vec2 SpriteAnimator::pivot() const {
+    Access::fresh(*this);
     const FrameEntry* e = shown_frame(*this, clip_);
     return e != nullptr ? sprite_draw_pivot(*e, flip_x(), flip_y()) : Vec2{};
 }
 
 Vec2 SpriteAnimator::offset() const {
+    Access::fresh(*this);
     const FrameEntry* e = shown_frame(*this, clip_);
     return e != nullptr ? sprite_frame_of(*e).offset : Vec2{};
 }
 
 FrameTime SpriteAnimator::time_in_frame() const {
+    Access::fresh(*this);
     return clip_ == kNoClip ? FrameTime{} : FrameTime::from_ticks(elapsed_);
 }
 
@@ -94,6 +101,7 @@ float SpriteAnimator::progress() const {
 }
 
 int SpriteAnimator::loops() const {
+    Access::fresh(*this);
     return cycles_;
 }
 

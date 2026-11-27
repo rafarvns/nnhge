@@ -100,7 +100,10 @@ copied — or, in a game with `DATA_SCHEMA`, go through the data steps ([Data as
 build for names that break the asset path rules, use characters outside `A-Z a-z 0-9 space - _ .`, are
 reserved, or differ from another only by letter case; it also deletes outputs of removed assets. On PC
 that folder is next to the executable; on 3DS the target `<game>_assets` is a devkitPro asset target
-passed as `ROMFS` to `ctr_create_3dsx`, so the `.3dsx` is repacked when an asset changes. The folder is
+passed as `ROMFS` to `ctr_create_3dsx`, so the `.3dsx` is repacked when an asset changes. At configure time
+`nnh_add_assets()` also writes `<binary dir>/nnh_reload_<game>.txt` (`assets=`, `game=`, `out=`: the source folder, the
+game's folder and the converted folder) for `nnh run`'s hot reload (spec 031), which builds `<game>_assets` alone and
+dry-runs `<game>` (`-- -n`) to tell whether a change needs a rebuild. The folder is
 scanned with `file(GLOB_RECURSE ... CONFIGURE_DEPENDS)` — the one exception to "no GLOB" below: assets
 are data, and adding a file must not require editing CMake. Script tests: `asset_index_*` (fixtures in
 `tests/data/asset_lists/`; `asset_index_names_maps_by_their_output` checks the output names).
@@ -174,11 +177,13 @@ host compiler and starts with an almost empty environment (Git Bash's variables 
 it over as an argument; inside it is exported in MSYS form (`/c/...`, or `/home/...` for `C:/Users`), because
 MSYS's CMake misreads `C:/...` as a list. Paths given with `-D` inside `dkp.sh` must use that form too
 (`-DNNH_ASSETC=/e/.../nnh-assetc.exe`). The first build of the tool takes about 9 s on Windows (host compiler
-detection; under 1 s on Linux), then a check of its sources about 0.7 s on Windows / 0.15 s on Linux
-(`BUILD_ALWAYS`: the sub-build's own Ninja decides what is stale, header changes included). That check runs on
-every 3DS build of a game with maps: measured on Windows (2026-11-22), a no-op build of `platformer` takes 2.8 s
-against 1.8 s for `hello`, and a map edit costs one conversion (`level1.tmj`, 128×20 with 5 tile layers: 0.2 s)
-plus the romfs and `.3dsx` (3.2–3.3 s in all). Numbers in the [ROADMAP](../ROADMAP.md) table.
+detection; under 1 s on Linux). Since spec 031 (T10.3) the sub-build runs only when one of the files it compiles
+changed: its build step depends on `tools/assetc/**`, the engine core sources and headers and the vendored stb
+libraries (globbed at configure time; a new source file comes with a change of `tools/assetc/CMakeLists.txt`, which is
+in the list). Before, `BUILD_ALWAYS` ran the sub-build's three steps on every 3DS build of a game with maps or data
+(≈ 1.2 s on Windows through MSYS): a no-op `data_assets` went from 2.7 s to 1.9 s through `scripts/dkp.sh`, a data-file
+edit from 2.8–3.0 s to 1.6 s with `nnh`'s Ninja call. If the tool's executable is deleted by hand, touch one of its
+sources (or delete `build/<preset>/_host/assetc-ep/`) to rebuild it. Numbers in the [ROADMAP](../ROADMAP.md) table.
 
 ```sh
 scripts/dkp.sh cmake --build --preset 3ds-release --target nnh_assetc   # build it for the host explicitly

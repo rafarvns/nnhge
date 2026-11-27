@@ -360,8 +360,7 @@ spec; the order below is a proposal.
   touch on the PC and the 3DS, pause and step one frame in core, `nnh` commands and `.nnhs` script commands (`set`,
   `expect-value`, `pause`, `step`), dumps and `--tunes`; nothing in Release ([api/live.md](api/live.md),
   [guide](guides/tuning-your-game.md), `examples/live`, the platformer's movement numbers)
-- [ ] **Hot reload of assets in the simulator** (both engines): a changed image, map or data file reloads in the
-  running game; with "hot reload of game code" below, the fastest edit loop
+- [x] **Hot reload of assets in the simulator and on the console** (both engines) — [spec 031](../specs/031-hot-reload-assets/spec.md): `nnh run <game> [--pc]` watches the assets folder, rebuilds the asset target and sends the changed outputs as one batch, applied whole at one point of a frame; textures, maps, data, strings, fonts, sounds, music, meshes and sprite libraries (animators rebind) follow behind their handles, data and maps are announced (`assets::reloaded`, `AssetsReloaded`), tunables on reloaded data follow the file; script lines `swap-asset`/`restore-asset`/`expect-reload`; demo `examples/reload`, guide [editing assets live](guides/editing-assets-live.md). Implemented 2026-11-27; Linux checks and console run 1 passed; console run 2 (sprite libraries, music, font, timing) pending; save → frame on the Old 3DS 3.0–3.3 s in run 1, the 3DS asset build then cut from ≈ 2.9 s to ≈ 1.6 s.
 
 ## M8 — 3D
 - [x] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)

@@ -18,6 +18,7 @@ add_library(nnh_platform_3ds STATIC
     src/memory_3ds.cpp
     src/network_3ds.cpp
     src/pass3d_3ds.cpp
+    src/reload_3ds.cpp
     src/remote_3ds.cpp
     src/remote_capture_3ds.cpp
     src/slider_3ds.cpp

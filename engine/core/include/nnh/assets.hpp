@@ -10,9 +10,17 @@
 /// parse_level(static_cast<const char*>(level.value().data()), level.value().size());
 /// @endcode
 /// Textures load from assets too: nnh::load_texture("characters/hero") (<nnh/texture.hpp>).
+///
+/// Hot reload (spec 031, Debug/Development builds under `nnh run`): saving a file in the game's assets folder reloads
+/// it at the start of a frame. Textures, sounds, music, fonts, meshes, sprite libraries and string tables change behind
+/// the handles the game holds; data assets, tilemaps and plain files are announced so the game reloads its own copies:
+/// assets::reloaded(), assets::reload_count(), the AssetsReloaded event. In Release these are constants (0, false,
+/// empty) and nothing reloads. See docs/api/assets.md#hot-reload.
 
 #include <cstddef>
+#include <cstdint>
 
+#include "nnh/build.hpp"
 #include "nnh/result.hpp"
 
 namespace nnh {
@@ -39,7 +47,58 @@ private:
     std::size_t size_ = 0;
 };
 
+/// A batch of reloaded assets was applied at the start of this frame (spec 031; Debug/Development only, never published
+/// in Release). Delivered in the same frame, before the scene's update. Game logic must not depend on it: use it to
+/// reload what the game keeps itself (a map, data structs), e.g. `if (nnh::assets::reloaded("levels/room")) ...`.
+struct AssetsReloaded {
+    std::uint32_t count = 0;   ///< assets::reload_count() after this batch
+    std::uint16_t changed = 0; ///< paths added or replaced
+    std::uint16_t removed = 0; ///< paths removed
+};
+
 namespace assets {
+
+/// True in the builds that reload assets (Debug, Development).
+inline constexpr bool kReloadEnabled = build::kDevToolsEnabled;
+
+/// This frame's reloaded asset paths, as the index stores them ("art/hero.png"; removed paths included, index files
+/// such as ".nnh_assets" too). Valid until the end of the frame.
+struct ReloadedPaths {
+    const char* const* paths = nullptr;
+    int count = 0;
+    const char* const* begin() const { return paths; }
+    const char* const* end() const { return paths + count; }
+};
+
+} // namespace assets
+
+namespace detail { // spec 031's back ends (Debug/Development only)
+std::uint32_t reload_count_dev();
+bool reloaded_dev(const char* path_or_name);
+assets::ReloadedPaths reloaded_paths_dev();
+} // namespace detail
+
+namespace assets {
+
+/// Applied batches since nnh::init() (+1 per batch). Release: always 0. Never allocates; any frame.
+inline std::uint32_t reload_count() {
+    if constexpr (kReloadEnabled) return nnh::detail::reload_count_dev();
+    else return 0;
+}
+
+/// True when the batch applied this frame added, replaced or removed `path_or_name`: an exact asset path
+/// ("levels/level1.nnhmap") or a load name — the path without its last extension ("levels/level1", "art/hero").
+/// Release: always false. Never allocates; any frame (false on frames without a batch).
+inline bool reloaded(const char* path_or_name) {
+    if constexpr (kReloadEnabled) return nnh::detail::reloaded_dev(path_or_name);
+    else return false;
+}
+
+/// The paths of the batch applied this frame (empty on other frames). Release: always empty. Never allocates.
+inline ReloadedPaths reloaded_paths() {
+    if constexpr (kReloadEnabled) return nnh::detail::reloaded_paths_dev();
+    else return {};
+}
 
 /// True if the game has this asset (exact path, case included).
 bool exists(const char* path);

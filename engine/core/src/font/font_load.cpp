@@ -15,6 +15,7 @@
 #include "gfx/texture_alpha.hpp"
 #include "memory/memory_internal.hpp"
 #include "nnh/assets.hpp"
+#include "nnh/build.hpp"
 #include "nnh/detail/name_hash.hpp"
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
@@ -29,18 +30,20 @@ NNH_LOG_CHANNEL(font);
 
 MemTag& font_block_tag() { return detail::font_memory_tag(); }
 
-namespace {
-
 using detail::FontBlock;
 namespace ff = detail::font;
+
+namespace {
 
 Error refuse(ErrorCode code, const char* path, const char* what) {
     NNH_LOG_WARN(font, "load_font(\"%s\"): %s", path, what);
     return Error::make(code, "font \"%s\": %s", path, what);
 }
 
+} // namespace
+
 /// Frees a block and the pages made so far.
-void free_block(FontBlock* block, MemTag& tag) {
+void detail::font_free_block(FontBlock* block, MemTag& tag) {
     if (block == nullptr) return;
     for (int i = 0; i < block->header.page_count; ++i) {
         if (block->page_slot[i] >= 0) detail::texture_release_page(block->page_slot[i], block->page_generation[i], tag);
@@ -49,7 +52,7 @@ void free_block(FontBlock* block, MemTag& tag) {
 }
 
 /// Decodes page `i` of `file` into a temporary buffer and makes its texture. @return nullptr or the error's text.
-const char* make_page(FontBlock& block, int i, const std::uint8_t* file, MemTag& tag, ErrorCode& code) {
+const char* detail::font_make_page(FontBlock& block, int i, const std::uint8_t* file, MemTag& tag, ErrorCode& code) {
     const ff::PageRecord& p = block.pages[i];
     const bool rgba = p.format == ff::kPageRgba8;
     const std::size_t pixels = std::size_t{p.width} * p.height;
@@ -74,6 +77,11 @@ const char* make_page(FontBlock& block, int i, const std::uint8_t* file, MemTag&
     block.page_bytes[i] = static_cast<std::uint32_t>(detail::gfx_state().textures.get(slot, generation)->bytes);
     return nullptr;
 }
+
+namespace {
+
+using detail::font_free_block;
+using detail::font_make_page;
 
 Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks);
 
@@ -208,7 +216,7 @@ Result<int> load_entry(const char* path, MemTag& tag, bool with_fallbacks) {
     block->name = extra.path;
     for (int i = 0; i < h.page_count; ++i) {
         ErrorCode code = ErrorCode::None;
-        if (const char* why = make_page(*block, i, data, tag, code)) {
+        if (const char* why = font_make_page(*block, i, data, tag, code)) {
             detail::font_release(detail::font_table_id(slot));
             return refuse(code, path, why);
         }
@@ -237,7 +245,7 @@ void detail::font_release(std::uint32_t id) {
     for (int i = 0; i < extra.fallback_count; ++i) {
         if (extra.fallbacks[i] >= 0) font_release(font_table_id(extra.fallbacks[i]));
     }
-    free_block(block, extra.tag != nullptr ? *extra.tag : font_memory_tag());
+    font_free_block(block, extra.tag != nullptr ? *extra.tag : font_memory_tag());
 }
 
 bool detail::font_resolve_face(std::uint32_t id, TextFace& face) {
@@ -270,7 +278,8 @@ Result<Font> load_font(const char* path, MemTag* tag) {
     auto slot = load_entry(path, tag != nullptr ? *tag : detail::font_memory_tag(), true);
     if (!slot) return slot.error();
     detail::g_font_resolve = &detail::font_resolve_face;
-    detail::add_shutdown_hook(&fonts_shutdown);
+    detail::require_shutdown_hook(&fonts_shutdown);
+    if constexpr (build::kDevToolsEnabled) detail::font_reload_register(); // spec 031: fonts reload
     return FontAccess::make(detail::font_table_id(slot.value()));
 }
 

@@ -157,7 +157,7 @@ Registry& registry() {
     r->shown_buckets = shown_buckets_for(r->max_shown);
     r->shown_table = reinterpret_cast<std::uint16_t*>(take(sizeof(std::uint16_t) * static_cast<std::size_t>(r->shown_buckets)));
     g_registry = r;
-    add_shutdown_hook(shutdown_hook);
+    require_shutdown_hook(shutdown_hook);
     install_ops();
     return *r;
 }

@@ -134,3 +134,16 @@ about 40 bytes each).
 | `Corrupted` | the file is damaged |
 | `LimitReached` | `max_sounds` are loaded, or the decoded sound is over 4 MB |
 | `OutOfMemory` | no memory to decode or for the samples |
+
+## Hot reload (spec 031)
+
+In a Debug/Development game under `nnh run`, saving a `.wav`/`.ogg` that a `Sound` was loaded from reloads it at the start
+of a frame: the same `Sound` handle now has the new samples (`duration()` too), the voices playing it stop in that frame —
+each with its `SoundFinished` — and the next `audio::play` uses the new samples. The old platform samples are freed at the
+next batch or at shutdown. A file that doesn't decode refuses the whole batch and the old sound stays.
+
+Music playing from a reloaded file goes on in the new file from the sample it had reached (from the loop start, or it
+ends, when the new file is shorter); what is already queued in the platform's buffers (a fraction of a second) plays out
+first; `music::position()`, the volume and a fade or crossfade go on unchanged. The new file is checked at prepare (its
+header and the track's loop point): one that isn't a valid track refuses the batch and the old track plays on. A
+crossfade's outgoing track reloads the same way. See [assets.md](assets.md#hot-reload).

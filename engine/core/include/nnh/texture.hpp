@@ -12,9 +12,16 @@
 
 #include <cstdint>
 
+#include "nnh/build.hpp"
 #include "nnh/result.hpp"
 
 namespace nnh {
+
+class Texture;
+namespace detail {
+int texture_width_dev(const Texture& t);  // spec 031: the slot's size (a reload may change it)
+int texture_height_dev(const Texture& t);
+} // namespace detail
 
 /// A loaded texture. Move-only; the GPU memory is freed when the Texture is destroyed or reset()
 /// (if it was drawn in the current frame, at the end of that frame). The same texture will serve 3D
@@ -33,8 +40,19 @@ public:
 
     /// True while the texture is loaded (false for an empty Texture or after shutdown()).
     bool valid() const;
-    int width() const { return width_; }
-    int height() const { return height_; }
+    /// The size in pixels. Debug/Development builds read the texture's slot, so a hot reload of another size (spec 031)
+    /// shows; Release returns the size cached at load.
+    int width() const {
+        if constexpr (build::kDevToolsEnabled) return detail::texture_width_dev(*this);
+        else return width_;
+    }
+    int height() const {
+        if constexpr (build::kDevToolsEnabled) return detail::texture_height_dev(*this);
+        else return height_;
+    }
+    /// The size cached when the texture was loaded (what Release's width()/height() return).
+    int cached_width() const { return width_; }
+    int cached_height() const { return height_; }
 
 private:
     friend struct TextureAccess;

@@ -245,6 +245,16 @@ Console remote (spec 013, implemented, D28; no game API): `nnh run <game> [--pc]
 Debug/Development game over its log connection — buttons, sticks, touch, screenshots, log checks — and exits 0/1/2;
 core side `engine/core/src/remote/`, contract `nnh/platform/remote.hpp`, PC side `tools/nnh/src/remote/`; scripts in
 `examples/<name>/tests/*.nnhs` ([guides/testing-on-the-console.md](docs/guides/testing-on-the-console.md)).
+Hot reload of assets (spec 031, implemented 2026-11-27; Linux checks and console run 1 passed; console run 2 (sprite libraries, music, font, timing) pending; D53, D54): interactive `nnh run <game> [--pc]`
+watches the assets folder, builds `<game>_assets`, dry-runs `<game>` (a needed rebuild is refused) and sends the changed
+outputs as one batch over the remote connection (payload messages 12–17, records 13–15); the game keeps them in
+`.nnh_reload/` of its data folder and applies the batch whole at one point of a frame (`engine/core/src/reload/`,
+`tools/nnh/src/reload/`); `<nnh/assets.hpp>` gains `reload_count()`, `reloaded()`, `reloaded_paths()`,
+`AssetsReloaded`; textures, fonts, sounds, music, meshes, sprite libraries (animators rebind) and string tables swap
+behind their handles, data assets and maps are announced, tunables on reloaded data follow the file (FR-23); `--no-reload`, typed `reload [PATH]`, script lines `swap-asset`/`restore-asset`/`expect-reload`,
+`nnh restore-assets <game>` ([api/assets.md](docs/api/assets.md#hot-reload), guide
+[editing assets live](docs/guides/editing-assets-live.md); demo `examples/reload`, scripts `tests/check.nnhs` (sums)
+`tests/errors.nnhs` (refusals) and `tests/timing.nnhs` (save → frame, bench)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)
@@ -280,7 +290,7 @@ Maintainer's machine: WinLibs MinGW-w64 GCC + CMake + Ninja on PATH (Git Bash); 
 ```sh
 cmake --preset pc-debug && cmake --build --preset pc-debug     # simulator (flavors: -debug, -dev, -release)
 ctest --preset pc-debug                                        # unit tests
-build/pc-debug/tests/nnh_tests.exe [name-filter]               # tests, one line each
+build/pc-debug/tests/nnh_tests.exe [--reverse] [name-filter...]  # tests, one line each (--reverse: other link order)
 scripts/dkp.sh cmake --preset 3ds-release                      # 3DS configure (once)
 scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-release/**/<game>.3dsx
 scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3ds-release/dist/<game>/ (.3dsx, .cia)
@@ -320,6 +330,8 @@ NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build
 build/pc-debug/tools/nnh/nnh run live [--pc] --script examples/live/tests/check.nnhs   # live values: sets, expect-value, pause/step, self-check 7A849F13, bench
 LIVE_SHOT=tunables NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/live.png build/pc-debug/examples/live/live.exe   # stats|tunables|watches|colour|paused; LIVE_DEMO=check|bench
 build/pc-debug/tools/nnh/nnh run live [--pc] --tunes build/logs/<game>-<date>-<time>-tunes.toml   # start held with a dump's values
+build/pc-debug/tools/nnh/nnh run reload [--pc] --script examples/reload/tests/check.nnhs   # hot reload: every kind swapped, sums = PC's
+build/pc-debug/tools/nnh/nnh run reload [--pc]                 # then save a file in examples/reload/assets/: it reloads (RELOAD_DEMO=bench)
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

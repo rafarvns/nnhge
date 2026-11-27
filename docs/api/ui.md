@@ -328,3 +328,9 @@ modal, a non-finite offset, opacity or reveal rate, a texture slot outside 0..7,
 bound UI or from the UI's own callback, destroying a root: an assert in Debug/Development; ignored (or clamped) in
 Release, with one generic error line per UI. Never undefined behaviour (the random-operation test runs 100 000 of them
 under ASan/UBSan on the Linux build VM).
+
+## Hot reload (spec 031)
+
+In a Debug/Development game, a UI updated in the frame a hot reload batch is applied resolves its keys and measures its
+texts again (as `text_changed()`), so a reloaded string table or font shows without game code. See
+[assets.md](assets.md#hot-reload).

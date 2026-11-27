@@ -82,14 +82,17 @@ void SpriteAnimator::force(SpriteStateId state) {
 }
 
 SpriteStateId SpriteAnimator::state() const {
+    Access::fresh(*this);
     return SpriteStateId{state_};
 }
 
 SpriteStateId SpriteAnimator::previous_state() const {
+    Access::fresh(*this);
     return SpriteStateId{previous_};
 }
 
 FrameTime SpriteAnimator::time_in_state() const {
+    Access::fresh(*this);
     return state_ == kNoState ? FrameTime{} : FrameTime::from_ticks(state_time_);
 }
 

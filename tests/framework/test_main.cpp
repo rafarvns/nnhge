@@ -1,4 +1,6 @@
-// Test runner. Usage: nnh_tests [filter]  — runs tests whose name contains `filter`.
+// Test runner. Usage: nnh_tests [--reverse] [filter...] — runs the tests whose name contains any filter (all without
+// one), in registration order or, with --reverse, the other way round (another platform's link order may differ: a test
+// that depends on what an earlier one left behind shows up here).
 
 #include <cstring>
 
@@ -16,6 +18,14 @@ Entry g_tests[kMaxTests];
 int g_count = 0;
 int g_failures = 0;
 
+bool selected(const char* name, int filters, char** filter) {
+    if (filters == 0) return true;
+    for (int f = 0; f < filters; ++f) {
+        if (std::strstr(name, filter[f]) != nullptr) return true;
+    }
+    return false;
+}
+
 } // namespace
 
 void nnh::test::register_test(const char* name, TestFn fn) {
@@ -32,10 +42,13 @@ void nnh::test::fail(const char* file, int line, const char* expr) {
 }
 
 int main(int argc, char** argv) {
-    const char* filter = argc > 1 ? argv[1] : nullptr;
+    int first = 1;
+    const bool reverse = argc > 1 && std::strcmp(argv[1], "--reverse") == 0;
+    if (reverse) first = 2;
     int run = 0;
-    for (int i = 0; i < g_count; ++i) {
-        if (filter != nullptr && std::strstr(g_tests[i].name, filter) == nullptr) continue;
+    for (int k = 0; k < g_count; ++k) {
+        const int i = reverse ? g_count - 1 - k : k;
+        if (!selected(g_tests[i].name, argc - first, argv + first)) continue;
         const int before = g_failures;
         g_tests[i].fn();
         ++run;

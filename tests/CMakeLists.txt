@@ -62,6 +62,8 @@ add_executable(nnh_tests
     animation/test_sprite_layout.cpp
     animation/test_sprite_library.cpp
     animation/test_sprite_load.cpp
+    animation/test_sprite_reload.cpp
+    animation/test_animator_rebind.cpp
     animation/test_sprite_lifetime.cpp
     animation/test_sprite_markers.cpp
     animation/test_sprite_sequence.cpp
@@ -603,6 +605,8 @@ endif()
 target_include_directories(nnh_tests PRIVATE ${PROJECT_SOURCE_DIR}/examples)
 # The tweens example's self-check (spec 015 T6.1): its golden checksum must hold on every host compiler.
 target_sources(nnh_tests PRIVATE tweens/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/tweens/self_check.cpp)
+# The hot reload example's self-check fold (spec 031 T7.3): the same bits on every host compiler.
+target_sources(nnh_tests PRIVATE reload_example/test_self_check.cpp ${PROJECT_SOURCE_DIR}/examples/reload/self_check.cpp)
 # The animation example's self-check (spec 016 T8.2): its golden checksum on every host compiler.
 target_sources(nnh_tests PRIVATE animation_example/test_self_check.cpp
                                  ${PROJECT_SOURCE_DIR}/examples/animation/libraries.cpp
@@ -878,8 +882,8 @@ if(TARGET localization AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE S
     # the script starts from "follow the system language": a saved choice left by an earlier, failed run is removed
     add_test(NAME loc_reset_saved_language
              COMMAND ${CMAKE_COMMAND} -E rm -f
-                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav
-                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav.bak)
+                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_user/nnhge-localization/localization.sav
+                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_user/nnhge-localization/localization.sav.bak)
     set_tests_properties(loc_reset_saved_language PROPERTIES FIXTURES_SETUP loc_saved_language)
     add_test(NAME loc_check_script_pc
              COMMAND $<TARGET_FILE:nnh> run localization --pc --no-build --script examples/localization/tests/check.nnhs
@@ -1064,6 +1068,7 @@ nnh_add_conformance(pc)
 include(nnh_sdl3)
 target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_draw_tiles_pc.cpp)
 target_include_directories(nnh_conformance_pc PRIVATE ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
+target_include_directories(nnh_conformance_pc PRIVATE ${PROJECT_SOURCE_DIR}/engine/platforms/shared)
 target_link_libraries(nnh_conformance_pc PRIVATE SDL3::SDL3)
 # PC only: the console remote's loopback transport and screen read-back (spec 013); the test plays nnh with
 # nnh_link's sockets.
@@ -1071,7 +1076,9 @@ target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_remote_pc.cp
 target_link_libraries(nnh_conformance_pc PRIVATE nnh_link)
 # PC only (spec 029): coverage textures draw like white RGBA texels of that alpha, read back.
 target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_texture_alpha_pc.cpp
-                                          platform_conformance/test_language_pc.cpp)
+                                          platform_conformance/test_language_pc.cpp
+                                          platform_conformance/test_reload_shared_open_pc.cpp
+                                          platform_conformance/test_data_root_pc.cpp)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 # Headless and quiet: no display, no sound card needed (the dummy audio driver still runs the backend).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;SDL_AUDIO_DRIVER=dummy")
@@ -1590,6 +1597,7 @@ target_sources(nnh_tests PRIVATE
     gfx/test_gfx_replay.cpp
     gfx/test_gfx_replay_tiles.cpp
     live/test_live_apply.cpp
+    live/test_live_reload.cpp
     live/test_live_cost.cpp
     live/test_live_dump.cpp
     live/test_live_panel_draw.cpp
@@ -1680,5 +1688,75 @@ if(TARGET live AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL 
     set_tests_properties(live_panel_script_pc PROPERTIES
         ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_live_preset}"
         PASS_REGULAR_EXPRESSION "nnh: PASS" FAIL_REGULAR_EXPRESSION "nnh: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+endif()
+
+# Hot reload of assets (spec 031): every test of the spec in one block.
+target_sources(nnh_tests PRIVATE
+    assets/test_assets_overlay.cpp
+    data_assets/test_data_reload.cpp
+    gfx/test_texture_reload.cpp
+    audio/test_sound_reload.cpp
+    audio/test_music_reload.cpp
+    font/test_font_reload.cpp
+    mesh/test_mesh_reload.cpp
+    loc/test_loc_reload.cpp
+    ui/test_ui_reload.cpp
+    reload/test_reload_apply.cpp
+    reload/test_reload_batch.cpp
+    reload/test_reload_cost.cpp
+    reload/test_reload_files.cpp
+    reload/test_reload_names.cpp
+    reload/test_reload_overlay.cpp
+    reload/test_reload_queries.cpp
+    reload/test_reload_random.cpp
+    reload/test_reload_release.cpp
+    reload/test_reload_receiver.cpp
+    reload/test_reload_wire.cpp
+    remote/test_remote_reader_payload.cpp
+    tilemap/test_map_reload.cpp
+    fuzz/test_fuzz_reload.cpp)
+# The reload receiver's fuzz target (T1.6, AC-6): mini-fuzz above, libFuzzer on the build VM.
+target_sources(nnh_fuzz_targets PRIVATE fuzz/fuzz_reload_receiver.cpp)
+if(NNH_BUILD_FUZZERS)
+    add_executable(fuzz_reload_receiver fuzz/libfuzzer_reload_receiver.cpp)
+    target_link_libraries(fuzz_reload_receiver PRIVATE nnh_fuzz_targets)
+    target_compile_options(fuzz_reload_receiver PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_reload_receiver PRIVATE -fsanitize=fuzzer,address)
+endif()
+# The hot reload smoke script (T3.7): a data asset swapped and restored in the simulator, the source tree unchanged.
+if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    get_filename_component(_reload_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME reload_data_smoke_pc
+             COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DGAME=data -DSCRIPT=examples/data/tests/reload.nnhs
+                     -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/reload_example/script_clean.cmake)
+    set_tests_properties(reload_data_smoke_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_reload_preset}"
+        PASS_REGULAR_EXPRESSION "reload script: PASS" FAIL_REGULAR_EXPRESSION "reload script: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+endif()
+# The hot reload example (spec 031 AC-1–AC-3): every implemented kind swapped and applied with the PC's self-check sums,
+# then the refusals (a broken map, a changed schema); the example's folder unchanged afterwards.
+if(TARGET reload AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    get_filename_component(_reload_preset ${CMAKE_BINARY_DIR} NAME)
+    foreach(_script check errors timing)
+        add_test(NAME reload_${_script}_script_pc
+                 COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DGAME=reload -DSCRIPT=examples/reload/tests/${_script}.nnhs
+                         -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/reload_example/script_clean.cmake)
+        set_tests_properties(reload_${_script}_script_pc PROPERTIES
+            ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_reload_preset}"
+            PASS_REGULAR_EXPRESSION "reload script: PASS" FAIL_REGULAR_EXPRESSION "reload script: FAIL" TIMEOUT 600
+            RESOURCE_LOCK nnh_remote_port)
+    endforeach()
+endif()
+# AC-4b: the sprites example (no reload-aware code) picks up a swapped PNG; its folder unchanged afterwards.
+if(TARGET sprites AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    get_filename_component(_reload_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME sprites_reload_script_pc
+             COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DGAME=sprites -DSCRIPT=examples/sprites/tests/reload.nnhs
+                     -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/reload_example/script_clean.cmake)
+    set_tests_properties(sprites_reload_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_reload_preset}"
+        PASS_REGULAR_EXPRESSION "reload script: PASS" FAIL_REGULAR_EXPRESSION "reload script: FAIL" TIMEOUT 300
         RESOURCE_LOCK nnh_remote_port)
 endif()

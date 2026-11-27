@@ -1,0 +1,18 @@
+# Refusals (spec 031 AC-3, FR-14, FR-15): a broken map is refused by the build and the game keeps the old room (the same
+# self-check line is not logged again: nothing was applied); a valid map after it is applied; a changed schema source
+# is an input of the program: nnh refuses it before sending anything ("rebuild and restart"). The source tree is unchanged
+# afterwards.
+expect "reload: sum 770785CB after 0" 90
+wait 10
+swap-asset assets/levels/room.tmj fixtures/room_broken.tmj
+expect-reload levels/room refused
+wait 10
+screenshot broken_kept
+swap-asset assets/levels/room.tmj fixtures/room_moved.tmj
+expect-reload levels/room
+expect "reload: sum * after 1" 5
+wait 10
+swap-asset data_types.cpp fixtures/data_types_changed.cpp
+expect-reload refused
+wait 10
+end

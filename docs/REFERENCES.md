@@ -302,3 +302,15 @@ Written from the published specifications and documentation; the only third-part
 - GameDev.net, Tweakable Constants and Configuration and Tweaking; cbloom, Tweakable Vars; Corrade's `Utility::Tweakable`;
   tunable-cpp; AntTweakBar.
 - Ulf Adams, Ryū: fast float-to-string conversion (PLDI 2018); <https://github.com/ulfjack/ryu> (vendored `f2s`, BSL-1.0).
+
+## Hot reload of assets (spec 031)
+
+Written from the published designs, no code copied:
+
+- **Bevy** `AssetServer` file watching and `AssetEvent::Modified` (handles keep pointing at the asset; the game is told):
+  <https://docs.rs/bevy/latest/bevy/asset/enum.AssetEvent.html>
+- **Defold** hot reload of resources on a running device (the editor sends the built resource to the engine):
+  <https://defold.com/manuals/hot-reload/>
+- **Godot** remote debugging with "Synchronize Scene Changes" / resource changes pushed to the running game.
+- Saving through a temporary file and a rename (why the watcher waits for a quiet period instead of reacting to the first
+  change event): editors such as Vim and many image editors replace a file instead of writing it in place.

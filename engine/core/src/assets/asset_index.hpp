@@ -19,6 +19,8 @@ public:
     bool parse(char* text, std::size_t size, const char** entries, int capacity);
 
     int count() const { return count_; }
+    /// The entry storage given to parse() (spec 031: the reload layer frees the indexes it parsed).
+    const char** entries() const { return entries_; }
 
     /// The stored path equal to `path`, or nullptr.
     const char* find(const char* path) const;

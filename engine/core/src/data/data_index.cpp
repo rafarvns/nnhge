@@ -1,6 +1,7 @@
 // The data index at run time (data_index.hpp).
 
 #include "data/data_index.hpp"
+#include "data/data_index_state.hpp"
 
 #include <cstring>
 
@@ -8,7 +9,9 @@
 #include "core/shutdown_hooks.hpp"
 #include "data/schema_fingerprint.hpp"
 #include "nnh/assets.hpp"
+#include "nnh/build.hpp"
 #include "nnh/platform/assets.hpp"
+#include "reload/reload_assets.hpp"
 
 namespace nnh {
 
@@ -17,26 +20,23 @@ NNH_MEM_TAG(data);
 
 namespace detail {
 
+DataIndexState g_data_index_state;
+
 namespace {
 
-struct State {
-    std::uint8_t* block = nullptr; ///< the index file, then the scratch buffer
-    std::size_t index_size = 0;
-    std::size_t scratch_size = 0;
-    IndexView view;
-    DataTypeEntry types[datafmt::kMaxDataTypes];
-    int type_count = 0;
-};
-
-State g_state;
+using State = DataIndexState;
+DataIndexState& g_state = g_data_index_state;
 
 void forget() {
     mem::free(g_state.block);
     g_state = State{};
 }
 
+} // namespace
+
 /// The game's compiled data types, each matched with the index; warns about those the build didn't see.
-void match_types() {
+void data_index_match_types() {
+    g_state.type_count = 0;
     const DataRegistry& registry = data_registry();
     for (const TypeNode* n = registry.types; n != nullptr; n = n->next) {
         const TypeInfo& t = *n->info;
@@ -56,6 +56,8 @@ void match_types() {
     }
 }
 
+namespace {
+
 ErrorCode code_of(DataProblem problem) {
     switch (problem) {
     case DataProblem::NewerVersion:
@@ -74,15 +76,23 @@ Error refuse(ErrorCode code, const char* why) {
 
 bool read_header(std::uint8_t (&header)[idxfmt::kHeaderSize]) {
     platform::AssetStream stream = 0;
-    if (!platform::asset_open(idxfmt::kAssetName, stream)) return false;
+    if constexpr (build::kDevToolsEnabled) { // spec 031: a received index replaces the packed one
+        const bool opened = g_reload_asset_ops != nullptr ? g_reload_asset_ops->open(idxfmt::kAssetName, stream, false)
+                                                          : platform::asset_open(idxfmt::kAssetName, stream);
+        if (!opened) return false;
+    } else {
+        if (!platform::asset_open(idxfmt::kAssetName, stream)) return false;
+    }
     std::size_t read = 0;
     const bool ok = platform::asset_read_at(stream, 0, header, sizeof header, read) && read == sizeof header;
     platform::asset_close(stream);
     return ok;
 }
 
-/// Reads and validates the index into a new block (freed on any error).
-Result<void> read_index() {
+} // namespace
+
+/// Reads and validates the index into a new block (freed on any error) described by `into`.
+Result<void> data_index_read(DataIndexState& into) {
     auto size = assets::size(idxfmt::kAssetName);
     if (!size) {
         if (size.error().code == ErrorCode::NotFound) {
@@ -114,14 +124,12 @@ Result<void> read_index() {
         return read ? refuse(code_of(check.problem), check.reason)
                     : refuse(read.error().code, "can't be read");
     }
-    g_state.block = block;
-    g_state.index_size = size.value();
-    g_state.scratch_size = scratch;
-    g_state.view = IndexView{block};
+    into.block = block;
+    into.index_size = size.value();
+    into.scratch_size = scratch;
+    into.view = IndexView{block};
     return {};
 }
-
-} // namespace
 
 MemTag& data_memory_tag() {
     return NNH_MEM_TAG_REF(data);
@@ -130,10 +138,11 @@ MemTag& data_memory_tag() {
 Result<void> data_index_load() {
     if (!engine_initialized()) return Error::make(ErrorCode::Unsupported, "data used before nnh::init()");
     if (g_state.block != nullptr) return {};
-    auto read = read_index();
+    auto read = data_index_read(g_state);
     if (!read) return read.error();
-    match_types();
-    (void)add_shutdown_hook(data_index_release); // 8 hooks for a handful of optional modules: always room
+    data_index_match_types();
+    require_shutdown_hook(data_index_release);
+    if constexpr (build::kDevToolsEnabled) data_reload_register(); // spec 031: reloaded data is checked
     return {};
 }
 

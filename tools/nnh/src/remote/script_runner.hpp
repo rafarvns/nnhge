@@ -32,6 +32,11 @@
 #include "remote/script.hpp"
 #include "remote/script_timeline.hpp"
 
+namespace nnh::tool::reload {
+class AssetSwaps;
+class ReloadController;
+}
+
 namespace nnh::tool::remote {
 
 /// Messages sent but not yet applied (frame after the last tick); the console's queue holds 64.
@@ -82,6 +87,16 @@ public:
     /// Dumps the game wrote (spec 030 FR-14): each a TOML file's text, for the session to save next to the log.
     std::vector<std::string> take_dumps();
 
+    // Hot reload (spec 031, script_runner_reload.cpp)
+    /// The reload controller of this run (null: no reloads — Release, --no-reload).
+    void set_reload(reload::ReloadController* controller);
+    /// The session loop: the controller polls (watching); interactive mode attaches at once while watching.
+    void poll_reload();
+    /// The controller's paced batch bytes, sent after take_messages()'s in the same write.
+    std::vector<std::uint8_t> take_bytes();
+    /// Script mode: where `swap-asset` swaps (null: reload steps fail) and the folder FIXTURE paths start from.
+    void set_reload_script(reload::AssetSwaps* swaps, std::string script_dir);
+
     Verdict verdict() const { return verdict_; }
     /// Script mode: a verdict was reached. Interactive mode: the game closed.
     bool finished() const { return finished_; }
@@ -121,6 +136,21 @@ private:
     void live_state(const Record& record);
     void dump_line(const std::string& line);
     bool typed_live(const std::string& text);
+    // hot reload (script_runner_reload.cpp, spec 031)
+    bool typed_reload(const std::string& text);
+    void reload_record(const Record& record);
+    // script reload steps (script_runner_swap.cpp, spec 031)
+    bool reload_step_due() const;
+    void start_reload_step(const Step& step, std::uint32_t frame);
+    void reload_paused(std::uint32_t frame, bool paused);
+    void finish_held_reload();
+    void reload_flushed(); ///< a held swap refused by the build goes on once its notice and Resume are out
+    void record_outcome();
+    void reload_outcome();
+    void expect_reload_now();
+    void reload_tick();
+    void complete_reload_step(std::uint32_t base);
+    void take_reload_notes();
     void finish(Verdict verdict, int line, const std::string& why);
     void problem(int line, const std::string& why);
     std::string where(int line) const;
@@ -188,6 +218,28 @@ private:
     bool in_dump_ = false;
     std::vector<std::string> dump_lines_;
     std::vector<std::string> dumps_;
+
+    reload::ReloadController* reload_ = nullptr;
+    reload::AssetSwaps* swaps_ = nullptr;
+    std::string script_dir_;
+    struct ReloadStepState {
+        /// 0 none, 1 waiting for the pause, 2 waiting for the batch's answer, 3 expect-reload within N, 4 a build
+        /// refusal's notice and Resume being flushed
+        int phase = 0;
+        Step step;
+        std::uint32_t frame = 0; ///< the clock's frame F at the step
+        std::uint32_t wait_to = 0;
+    };
+    ReloadStepState reload_step_;
+    std::size_t reload_started_ = 0; ///< segment index + 1 whose reload step started
+    std::string reload_source_;      ///< the swapped source (relative to the game's folder)
+    struct LastReload {
+        bool any = false, done = true, applied = false;
+        std::uint32_t frame = 0;
+        std::vector<std::string> paths;
+        std::string why;
+    };
+    LastReload last_reload_;
 
     std::vector<MessageBytes> messages_;
     std::vector<std::string> notes_;

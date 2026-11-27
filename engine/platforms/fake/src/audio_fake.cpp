@@ -34,6 +34,7 @@ nnh::platform_fake::FakeVoice* voice_at(int voice) {
 namespace nnh::platform_fake {
 
 void set_audio_available(bool available) { controls().audio_unavailable = !available; }
+void set_sample_create_fails(bool fails) { controls().sample_create_fails = fails; }
 
 void finish_voice(int voice) { voice_at(voice)->playing = false; }
 
@@ -67,6 +68,7 @@ void audio_shutdown() {
 
 bool sample_create(std::uint32_t count, int channels, SampleInfo& out) {
     out = {};
+    if (controls().sample_create_fails) return false; // like linearAlloc() out of memory
     const std::size_t values = static_cast<std::size_t>(count) * static_cast<std::size_t>(channels);
     void* memory = std::malloc(sizeof(FakeSample) + values * sizeof(std::int16_t));
     if (memory == nullptr) return false;

@@ -8,6 +8,7 @@ target_include_directories(nnh_core_contract INTERFACE contract include)
 
 add_library(nnh_core STATIC
     src/animation/animator.cpp
+    src/animation/animator_rebind.cpp
     src/animation/animator_advance.cpp
     src/animation/animator_notices.cpp
     src/animation/animator_queries.cpp
@@ -19,6 +20,8 @@ add_library(nnh_core STATIC
     src/animation/sprite_layout.cpp
     src/animation/sprite_library.cpp
     src/animation/sprite_load.cpp
+    src/animation/sprite_reload.cpp
+    src/animation/sprite_reload_table.cpp
     src/animation/sprite_markers.cpp
     src/animation/sprite_sequence.cpp
     src/animation/sprite_states.cpp
@@ -45,6 +48,7 @@ add_library(nnh_core STATIC
     src/data/data_apply.cpp
     src/data/data_index.cpp
     src/data/data_list.cpp
+    src/data/data_reload.cpp
     src/data/data_load.cpp
     src/data/data_validate.cpp
     src/data/enum_names.cpp
@@ -63,6 +67,8 @@ add_library(nnh_core STATIC
     src/audio/ogg_seek.cpp
     src/audio/sound_decode.cpp
     src/audio/sounds.cpp
+    src/audio/sound_reload.cpp
+    src/audio/music_reload.cpp
     src/audio/voice_api.cpp
     src/audio/voice_table.cpp
     src/audio/wav_reader.cpp
@@ -90,6 +96,7 @@ add_library(nnh_core STATIC
     src/gfx/texture_table.cpp
     src/gfx/tile_batches.cpp
     src/gfx/textures.cpp
+    src/gfx/texture_reload.cpp
     src/input/dpad_mirror.cpp
     src/input/input.cpp
     src/input/input_block.cpp
@@ -131,6 +138,7 @@ add_library(nnh_core STATIC
     src/tilemap/map_load_layers.cpp
     src/tilemap/map_objects.cpp
     src/tilemap/map_properties.cpp
+    src/tilemap/map_reload.cpp
     src/tilemap/map_property_table.cpp
     src/tilemap/map_runtime.cpp
     src/tilemap/map_strings.cpp
@@ -431,6 +439,7 @@ endif()
 set(_nnh_mesh_sources
     src/mesh/create_mesh.cpp
     src/mesh/load_mesh.cpp
+    src/mesh/mesh_reload.cpp
     src/mesh/mesh.cpp
     src/mesh/mesh_build.cpp
     src/mesh/mesh_layout.cpp
@@ -556,6 +565,7 @@ set(_nnh_font_sources
     src/font/font_format.cpp
     src/font/font_index.cpp
     src/font/font_load.cpp
+    src/font/font_reload.cpp
     src/font/font_table.cpp
     src/font/font_validate.cpp
     src/font/page_codec.cpp
@@ -571,6 +581,7 @@ set(_nnh_loc_sources
     src/loc/loc_format.cpp
     src/loc/loc_lookup.cpp
     src/loc/loc_number.cpp
+    src/loc/loc_reload.cpp
     src/loc/loc_queries.cpp
     src/loc/loc_state.cpp
     src/loc/loc_switch.cpp
@@ -602,6 +613,7 @@ set(_nnh_live_sources
     src/live/live_panel_touch.cpp
     src/live/live_remote.cpp
     src/live/live_registry.cpp
+    src/live/live_reload.cpp
     src/live/live_tune.cpp
     src/live/live_watch.cpp
 )
@@ -609,6 +621,25 @@ target_sources(nnh_core PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_sour
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_live_steps_source} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
+# Hot reload of assets (spec 031, D53, D54): the wire, the receiver and names are pure and shared with the `nnh` tool.
+# Reached only from Debug/Development branches (the remote session, the apply point): Release links none of it.
+set(_nnh_reload_pure_sources
+    src/reload/reload_names.cpp
+    src/reload/reload_overlay.cpp
+    src/reload/reload_receiver.cpp
+    src/reload/reload_wire.cpp
+)
+# The game side: received files, reads through the overlay, the batch engine, the apply point, the session's glue.
+set(_nnh_reload_sources
+    src/reload/reload_apply.cpp
+    src/reload/reload_assets.cpp
+    src/reload/reload_batch.cpp
+    src/reload/reload_files.cpp
+    src/reload/reload_hooks.cpp
+    src/reload/reload_index.cpp
+    src/remote/remote_reload.cpp
+)
+target_sources(nnh_core PRIVATE ${_nnh_reload_pure_sources} ${_nnh_reload_sources})
 add_library(nnh::core ALIAS nnh_core)
 target_include_directories(nnh_core PUBLIC include PRIVATE src)
 target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis nnh_ryu)

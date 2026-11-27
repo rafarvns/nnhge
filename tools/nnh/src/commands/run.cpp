@@ -3,6 +3,7 @@
 // runs the simulator instead (run_pc.cpp). With --script: exit 0 pass, 1 fail, 2 could not run.
 
 #include <cstdio>
+#include <filesystem>
 #include <optional>
 #include <vector>
 
@@ -15,6 +16,8 @@
 #include "remote/script_runner.hpp"
 #include "remote/stdin_lines.hpp"
 #include "remote/tunes_file.hpp"
+#include "reload/asset_swap.hpp"
+#include "reload/reload_setup.hpp"
 #include "repo.hpp"
 #include "user_config.hpp"
 
@@ -110,6 +113,7 @@ int run_on_console(const Options& options, const GameRun& run, bool scripted) {
         return scripted ? 2 : 0;
     }
     net::Socket game = logs.take_game();
+    start_reload(run, built, false);
     return follow_game(game, built.root, options.game, run); // on the console the game keeps running
 }
 
@@ -140,13 +144,38 @@ int command_run(const Options& options) {
         tunes = remote::tunes_steps(file, options.tunes);
         if (scripted) script->steps.insert(script->steps.begin(), tunes.begin(), tunes.end());
     }
+    // Interactive runs watch the assets; a script reloads only through its swap-asset/restore-asset lines.
+    bool script_reloads = false;
+    if (scripted) {
+        for (const remote::Step& s : script->steps) {
+            script_reloads = script_reloads || s.command == remote::Command::SwapAsset ||
+                             s.command == remote::Command::RestoreAsset || s.command == remote::Command::ExpectReload;
+        }
+    }
+    if (script_reloads) {
+        const std::string root = find_repo_root(std::filesystem::current_path().string());
+        if (!root.empty() && !reload::journal_game_dir(reload::swap_backup_dir(root, options.game)).empty()) {
+            std::fprintf(stderr, "nnh: assets of %s were left swapped by an interrupted script: run \"nnh "
+                                 "restore-assets %s\"\n", options.game.c_str(), options.game.c_str());
+            return 2;
+        }
+    }
     remote::RunnerOptions runner_options{.interactive = !scripted, .quit_at_end = closes_game_at_end(options)};
     remote::ScriptRunner runner(scripted ? std::move(*script) : remote::Script{}, runner_options);
+    reload::ReloadSession reload_session; // spec 031: watching the assets folder (started once the game is built)
+    if (script_reloads) {
+        reload_session.watch = false;
+        reload_session.script_dir = std::filesystem::path(options.script).parent_path().string();
+    }
     StdinLines typed;
     if (!scripted) typed.start(stdin); // interactive mode: every typed line is a command (spec 013 FR-5)
     if (!scripted) runner.on_typed_steps(tunes); // origin kept: undeclared names are noted and skipped
-    const GameRun run{.runner = &runner, .typed = scripted ? nullptr : &typed, .linger_ms = 1000};
-    return options.pc ? run_on_pc(options, run) : run_on_console(options, run, scripted);
+    const bool reloads = !options.release && !options.no_reload && (!scripted || script_reloads);
+    const GameRun run{.runner = &runner, .typed = scripted ? nullptr : &typed, .linger_ms = 1000,
+                      .reload = reloads ? &reload_session : nullptr};
+    const int code = options.pc ? run_on_pc(options, run) : run_on_console(options, run, scripted);
+    finish_reload(run); // spec 031: swapped sources back, outputs rebuilt
+    return code;
 }
 
 } // namespace nnh::tool

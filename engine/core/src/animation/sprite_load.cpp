@@ -10,6 +10,7 @@
 #include "animation/sprite_validate.hpp"
 #include "assets/asset_path.hpp"
 #include "nnh/assets.hpp"
+#include "nnh/build.hpp"
 #include "nnh/profile.hpp"
 
 namespace nnh {
@@ -35,12 +36,19 @@ Error refuse(ErrorCode code, const char* name, const char* what) {
 
 Result<SpriteLibrary> detail::sprite_library_from_file(const void* data, std::size_t size,
                                                        const LoadSpriteLibraryOptions& o, const char* name) {
+    const int extras[kSectionCount] = {o.extra_frames, o.extra_clips,  o.extra_clip_frames,
+                                       o.extra_markers, o.extra_states, o.extra_transitions};
+    auto block = sprite_block_from_file(data, size, extras, name);
+    if (!block) return block.error();
+    return SpriteLibraryAccess::adopt(block.value());
+}
+
+Result<detail::SpriteBlock*> detail::sprite_block_from_file(const void* data, std::size_t size,
+                                                            const int (&extras)[6], const char* name) {
     const SpriteCheck check = validate_sprite_library(data, size);
     if (!check.ok()) return refuse(code_of(check.problem), name, check.reason);
     Header file;
     std::memcpy(&file, data, sizeof file);
-    const int extras[kSectionCount] = {o.extra_frames, o.extra_clips,  o.extra_clip_frames,
-                                       o.extra_markers, o.extra_states, o.extra_transitions};
     SpriteCapacities caps;
     bool limit = false;
     if (const char* why = sprite_loaded_capacities(file, extras, caps, limit)) {
@@ -51,7 +59,7 @@ Result<SpriteLibrary> detail::sprite_library_from_file(const void* data, std::si
     if (memory == nullptr) return refuse(ErrorCode::OutOfMemory, name, "no memory for the library");
     std::memset(memory, 0, bytes);
     copy_sprite_library(static_cast<const std::uint8_t*>(data), caps, static_cast<std::uint8_t*>(memory));
-    return SpriteLibraryAccess::adopt(static_cast<SpriteBlock*>(memory));
+    return static_cast<SpriteBlock*>(memory);
 }
 
 Result<SpriteLibrary> load_sprite_library(const char* path, const LoadSpriteLibraryOptions& options) {
@@ -63,7 +71,11 @@ Result<SpriteLibrary> load_sprite_library(const char* path, const LoadSpriteLibr
     }
     auto file = assets::load(asset);
     if (!file) return file.error();
-    return detail::sprite_library_from_file(file.value().data(), file.value().size(), options, path);
+    auto library = detail::sprite_library_from_file(file.value().data(), file.value().size(), options, path);
+    if constexpr (build::kDevToolsEnabled) { // spec 031: the library reloads with its asset
+        if (library) detail::sprite_reload_loaded(SpriteLibraryAccess::block(library.value()), asset, path, options);
+    }
+    return library;
 }
 
 } // namespace nnh

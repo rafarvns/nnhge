@@ -1,0 +1,11 @@
+# Hot reload smoke test (spec 031 T3.7): a data asset swapped for a fixture is rebuilt, sent and applied on the
+# script's frame; restore-asset brings the original back the same way. The source tree is unchanged afterwards.
+fail-on "] E "
+wait 30
+swap-asset assets/enemies/goblin.enemy fixtures/goblin_fast.enemy
+expect-reload enemies/goblin
+wait 10
+restore-asset assets/enemies/goblin.enemy
+expect-reload enemies/goblin
+wait 10
+end

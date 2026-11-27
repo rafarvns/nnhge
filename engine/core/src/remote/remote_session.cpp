@@ -12,6 +12,9 @@
 #include "nnh/profile.hpp"
 #include "remote/remote_input.hpp"
 #include "remote/remote_reader.hpp"
+#include "reload/reload_hooks.hpp"
+#include "remote/remote_reload.hpp"
+#include "reload/reload_wire.hpp"
 #include "remote/remote_schedule.hpp"
 #include "remote/remote_wire.hpp"
 #include "system/system_internal.hpp"
@@ -76,6 +79,7 @@ void detach() {
     set_language_override(nullptr); // and its own language (spec 029)
     screenshots_clear();
     remote_live_detached();
+    if (g_reload_session != nullptr) g_reload_session->detached(); // spec 031: a batch goes with the PC
 }
 
 /// The 3D slider (spec 026 FR-16): a value replaces the console's slider; `slider off` gives it back — to the script's
@@ -137,28 +141,79 @@ void reject(const ReadItem& item, std::uint32_t frame) {
     }
 }
 
+/// A game that links no reload kind answers reload messages as an older game does (spec 031, reload_hooks.hpp).
+void no_reload(std::uint16_t seq) {
+    std::uint8_t record[kMaxFixedRecord];
+    send_record(record, encode_rejected_record(seq, Reject::Type, record));
+}
+
 void accept(const Message& message, std::uint32_t frame) {
     if (message.type == MessageType::Hello) {
         attach(frame, message.exclusive);
+    } else if (is_reload_transfer(message.type)) { // spec 031: handled at receipt, never scheduled
+        if (g_reload_session != nullptr) {
+            g_reload_session->message(message, frame);
+        } else if (message.type == MessageType::ReloadBegin || message.type == MessageType::ReloadNotice) {
+            no_reload(message.seq); // nothing reloadable linked: `nnh` stops watching
+        }
     } else if (!g_schedule.push(message, frame)) {
         std::uint8_t record[kMaxFixedRecord];
         send_record(record, encode_dropped_record(message.seq, record));
     }
 }
 
-/// Reads what arrived (bounded by the queue's room, at least one message so a full queue answers Dropped).
-/// @return false when the connection is gone.
+/// Hands `got` bytes at `data` to the reader and what comes out to the session (payload pieces to the reload receiver).
+void handle_bytes(const std::uint8_t* data, std::size_t got, std::uint32_t frame) {
+    // A read yields at most `room` messages, plus payload pieces (spec 031): feed until every byte is handled.
+    for (std::size_t at = 0; at < got;) {
+        const FeedResult fed = g_reader.feed(data + at, got - at, frame, g_items, kScheduleCapacity);
+        at += fed.consumed;
+        for (std::size_t i = 0; i < fed.items; ++i) {
+            if (g_items[i].payload_size > 0) {
+                if (g_reload_session != nullptr) g_reload_session->payload(g_items[i].payload, g_items[i].payload_size, frame);
+            } else if (g_items[i].reason == Reject::None) {
+                accept(g_items[i].message, frame);
+            } else {
+                reject(g_items[i], frame);
+            }
+        }
+    }
+}
+
+/// Reads what arrived (bounded by the queue's room, at least one message so a full queue answers Dropped). While a
+/// reload batch arrives (spec 031), more reads follow in the same frame up to kReloadReadPerFrame bytes, a chunk's bytes
+/// read in place into the reload receive buffer. @return false when the connection is gone.
 bool read_messages(std::uint32_t frame) {
     NNH_PROFILE_SCOPE("remote"); // the per-frame poll's cost (a socket call on the console), in the overlay
-    const std::size_t room = g_schedule.room() > 0 ? g_schedule.room() : 1;
-    const long got = platform::remote_receive(g_scratch, g_reader.bytes_wanted(room));
-    if (got < 0) return false;
-    const FeedResult fed =
-        g_reader.feed(g_scratch, static_cast<std::size_t>(got), frame, g_items, room);
-    for (std::size_t i = 0; i < fed.items; ++i) {
-        if (g_items[i].reason == Reject::None) accept(g_items[i].message, frame);
-        else reject(g_items[i], frame);
+    std::size_t budget = kReloadReadPerFrame;
+    for (int round = 0; round < 64; ++round) {
+        std::uint8_t* into = g_scratch;
+        std::size_t wanted = 0;
+        const bool payload = g_reader.payload_left() > 0;
+        if (payload) {
+            std::size_t room = 0;
+            std::uint8_t* window = g_reload_session != nullptr ? g_reload_session->window(room) : nullptr;
+            if (window != nullptr && room > 0) into = window;
+            else room = sizeof g_scratch;
+            wanted = g_reader.payload_left();
+            if (wanted > room) wanted = room;
+            if (wanted > budget) wanted = budget;
+        } else {
+            const std::size_t room = g_schedule.room() > 0 ? g_schedule.room() : 1;
+            wanted = g_reader.bytes_wanted(room);
+            if (wanted > sizeof g_scratch) wanted = sizeof g_scratch;
+            if (round > 0 && wanted > budget) wanted = budget;
+        }
+        if (wanted == 0) break;
+        const long got = platform::remote_receive(into, wanted);
+        if (got < 0) return false;
+        handle_bytes(into, static_cast<std::size_t>(got), frame);
+        if (round > 0 || payload) budget -= static_cast<std::size_t>(got) < budget ? static_cast<std::size_t>(got) : budget;
+        // Idle: one read, as before spec 031. Go on only while a batch's bytes keep coming.
+        if (static_cast<std::size_t>(got) < wanted || budget == 0) break;
+        if (!payload && g_reader.payload_left() == 0) break;
     }
+    if (g_reload_session != nullptr) g_reload_session->flush();
     return true;
 }
 
@@ -179,6 +234,10 @@ int apply_due(std::uint32_t frame) {
         case MessageType::LiveSet:
         case MessageType::Live:
         case MessageType::Pause: remote_live_message(message, frame); break;
+        case MessageType::ReloadApply:
+            if (g_reload_session != nullptr) g_reload_session->apply(message, frame);
+            else no_reload(message.seq);
+            break;
         case MessageType::Bye:
             NNH_LOG_INFO(remote, "PC detached: remote control off");
             g_session.quit = g_session.quit || message.quit;

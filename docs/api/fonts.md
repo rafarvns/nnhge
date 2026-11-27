@@ -98,3 +98,10 @@ no missed frame.
 
 A destroyed font drawn or measured asserts in Debug/Development and draws with the built-in font in Release; a scale
 outside 1..8 is clamped; `outline_color` on a font without outlines is ignored (logged once).
+
+## Hot reload (spec 031)
+
+In a Debug/Development game under `nnh run`, a reloaded `<path>.nnhfont` replaces the font behind its table entry: every
+`Font` and `FontRef` of it keep working and show the new glyphs and metrics; the old page textures are freed once the GPU is
+done with them (D47). The entry's fallbacks stay as loaded. A damaged file, a full texture table or no memory refuses the
+whole batch. See [assets.md](assets.md#hot-reload).

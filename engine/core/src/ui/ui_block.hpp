@@ -309,6 +309,13 @@ inline UiRect rect_of(const UiHot& n) { return {n.x, n.y, n.w, n.h}; }
 /// Marks the root of slot `s` for layout.
 inline void mark_dirty(UiBlock& b, int s) { b.dirty[root_index_of(b, s)] = true; }
 
+/// Every key resolved again and every text measured again (Ui::text_changed(); spec 031: after a hot reload).
+inline void forget_text(UiBlock& b) {
+    for (int s = 0; s < b.capacity; ++s) b.cold[s].cflags &= static_cast<std::uint8_t>(~kUiResolved);
+    for (int i = 0; i < b.texts_used; ++i) b.text_kinds[i] &= 0x7F;
+    b.dirty[0] = b.dirty[1] = true;
+}
+
 } // namespace nnh::detail
 
 #if defined(NNH_FLAVOR_RELEASE)

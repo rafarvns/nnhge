@@ -16,9 +16,11 @@ add_library(nnh_platform_pc STATIC
     src/gamepad_pc.cpp
     src/input_override_pc.cpp
     src/input_pc.cpp
+    src/data_root_pc.cpp
     src/language_pc.cpp
     src/log_pc.cpp
     src/memory_pc.cpp
+    src/reload_pc.cpp
     src/remote_address_pc.cpp
     src/remote_capture_pc.cpp
     src/remote_pc.cpp

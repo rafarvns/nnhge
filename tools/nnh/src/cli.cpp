@@ -13,6 +13,8 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
         out.command = Command::Run;
     } else if (command == "install") {
         out.command = Command::Install;
+    } else if (command == "restore-assets") { // spec 031: after a script that was interrupted mid-swap
+        out.command = Command::RestoreAssets;
     } else if (command == "serve" || command == "unpair") {
         out.command = command == "serve" ? Command::Serve : Command::Unpair;
         for (std::size_t i = 1; i < args.size(); ++i) {
@@ -54,6 +56,12 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
                 }
                 out.tunes = args[++i];
             }
+        } else if (a == "--no-reload") {
+            if (out.command != Command::Run) {
+                error = a + " is for nnh run";
+                return false;
+            }
+            out.no_reload = true;
         } else if (a == "--script" || a == "--no-build" || a == "--keep-open") {
             if (out.command != Command::Run) {
                 error = a + " is for nnh run";
@@ -105,7 +113,7 @@ const char* help_text() {
            "\n"
            "  nnh build <game> [--release] [--pc]   build a game for the 3DS (Development) or the PC\n"
            "  nnh run <game> [--release] [--console <ip>] [--pc] [--script <file.nnhs>] [--keep-open]\n"
-           "                [--no-build] [--tunes <file>] [--hold]\n"
+           "                [--no-build] [--tunes <file>] [--hold] [--no-reload]\n"
            "                                        build, send to the Homebrew Launcher (press Y on the\n"
            "                                        console) and show the game's log; --pc runs the simulator.\n"
            "                                        While it runs, type script commands to drive the game\n"
@@ -116,9 +124,14 @@ const char* help_text() {
            "                                        Launcher); --keep-open leaves it running. --no-build\n"
            "                                        runs what is already built. --tunes <file> starts the game\n"
            "                                        held and sends a dump's values before frame 1; --hold only\n"
-           "                                        starts it held (live values, Debug/Development builds)\n"
+           "                                        starts it held (live values, Debug/Development builds).\n"
+           "                                        Saving a file in the game's assets folder reloads it in\n"
+           "                                        the running game (hot reload, Debug/Development builds;\n"
+           "                                        type reload to force one); --no-reload turns it off\n"
            "  nnh install <game> [--console <ip>]   build the .cia and install it with FBI (Remote Install ->\n"
            "                                        Receive URLs over the network)\n"
+           "  nnh restore-assets <game>              put back the assets a test script swapped and couldn't\n"
+           "                                        restore (it was interrupted; spec 031)\n"
            "  nnh serve [--release]                 wait for NNH Link on the console: it lists the games,\n"
            "                                        asks for builds and starts them (spec 011); Ctrl+C stops\n"
            "  nnh unpair                            forget every console paired with nnh serve\n"

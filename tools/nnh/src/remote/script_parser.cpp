@@ -5,6 +5,7 @@
 #include "remote/remote_wire.hpp"
 #include "remote/script.hpp"
 #include "remote/script_live.hpp"
+#include "remote/script_reload.hpp"
 #include "remote/script_tokens.hpp"
 
 namespace nnh::tool::remote {
@@ -42,6 +43,9 @@ constexpr CommandInfo kCommands[] = {
     {"resume", Command::Resume, 0, 0, "resume"},
     {"step", Command::StepFrames, 0, 1, "step [N]"},
     {"expect-value", Command::ExpectValue, 3, 7, "expect-value NAME OP VALUE [~ E] [within N]"},
+    {"swap-asset", Command::SwapAsset, 2, 3, "swap-asset SOURCE FIXTURE [unheld]"},
+    {"restore-asset", Command::RestoreAsset, 1, 1, "restore-asset SOURCE"},
+    {"expect-reload", Command::ExpectReload, 0, 4, "expect-reload [PATH] [refused] [within N]"},
 };
 
 const CommandInfo* find_command(const std::string& name) {
@@ -53,7 +57,7 @@ const CommandInfo* find_command(const std::string& name) {
 
 bool is_input(Command c) {
     return c != Command::Wait && c != Command::Expect && c != Command::FailOn && c != Command::End &&
-           !is_live_command(c);
+           !is_live_command(c) && !is_reload_command(c);
 }
 
 const char* const kFramesError = "frames must be a whole number 1 to 216000";
@@ -72,6 +76,7 @@ std::string text_argument(const Token& t, std::string& out) {
 /// Fills `step` from the arguments of its command (count already checked). @return "" or the error.
 std::string read_arguments(const std::vector<Token>& a, Step& step) {
     if (is_live_command(step.command)) return read_live_arguments(a, step); // values may be quoted (text, colours)
+    if (is_reload_command(step.command)) return read_reload_arguments(a, step);
     for (std::size_t i = 1; i < a.size(); ++i) {
         const bool text_slot = (step.command == Command::Expect || step.command == Command::FailOn) && i == 1;
         if (a[i].quoted && !text_slot) return "only TEXT goes in double quotes";

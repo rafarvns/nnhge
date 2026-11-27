@@ -25,6 +25,9 @@ void (*g_remote_op)(std::uint8_t, std::uint8_t, std::uint16_t, std::uint16_t, st
 void (*g_remote_detached)() = nullptr;
 void (*g_follows_frame_end)(Registry&, std::uint32_t, bool) = nullptr;
 
+void reload_snapshot(); // live_reload.cpp (spec 031 FR-23)
+void reload_compare();
+
 namespace {
 
 void log_line(void*, [[maybe_unused]] const char* text) { NNH_LOG_INFO(live, "%s", text); }
@@ -48,8 +51,8 @@ void remote_detached() {
     if (g_remote_detached != nullptr) g_remote_detached();
 }
 
-const LiveOps kOps = {frame_start, frame_end, stats_line, panel_input, panel_draw, panel_select, remote_op,
-                      remote_detached};
+const LiveOps kOps = {frame_start, frame_end,     stats_line,      panel_input,   panel_draw,
+                      panel_select, remote_op, remote_detached, reload_snapshot, reload_compare};
 
 } // namespace
 

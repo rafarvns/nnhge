@@ -54,8 +54,30 @@ struct SpriteAnimatorAccess {
     /// library was destroyed: Debug/Development).
     /// Inline (every command and update checks): the misuse cases go to library_misuse().
     static detail::SpriteView library(const SpriteAnimator& a, const char* command) {
-        if (a.block_ != nullptr && detail::sprite_serial_live(a.serial_)) return detail::sprite_view(a.block_);
+        if (a.block_ != nullptr && detail::sprite_serial_live(a.serial_)) {
+#if !defined(NNH_FLAVOR_RELEASE)
+            // Spec 031: the library was reloaded since this animator last ran: rebind first (queries too: an
+            // animator is never a const object in practice; its fields are only re-pointed at the new content).
+            if (detail::g_sprite_reloads != 0) rebind_if_reloaded(const_cast<SpriteAnimator&>(a));
+#endif
+            return detail::sprite_view(a.block_);
+        }
         return library_misuse(a, command);
+    }
+    /// Spec 031 FR-8 (animator_rebind.cpp; Debug/Development): when the animator's block isn't its library's current
+    /// block, moves it onto the current one: the clip of the same name at its frame (clamped), else the first clip
+    /// with a warning; a state machine whose states or rules changed restarts at state 0 with a warning. The old
+    /// block is read only when it is still alive (the library's identity or previous block), else never.
+    static void rebind_if_reloaded(SpriteAnimator& a);
+    /// The queries that read the animator's own fields call this first (Debug/Development: the rebind above).
+    static void fresh(const SpriteAnimator& a) {
+#if !defined(NNH_FLAVOR_RELEASE)
+        if (detail::g_sprite_reloads != 0 && a.block_ != nullptr && detail::sprite_serial_live(a.serial_)) {
+            rebind_if_reloaded(const_cast<SpriteAnimator&>(a));
+        }
+#else
+        (void)a;
+#endif
     }
     static detail::SpriteView library_misuse(const SpriteAnimator& a, const char* command);
     static bool misuse(const char* what); ///< logs and asserts `what`; returns false

@@ -66,6 +66,12 @@ Record decode_record(const wire::RecordHeader& header, const std::uint8_t* p) {
         r.payload.assign(p, p + header.length);
         if (header.type != wire::RecordType::LiveRefused) r.frame = get32(p);
         break;
+    case wire::RecordType::ReloadStaged:  // spec 031: the payload is decoded by reload_wire.hpp's decoders
+    case wire::RecordType::ReloadApplied:
+    case wire::RecordType::ReloadRefused:
+        r.payload.assign(p, p + header.length);
+        r.frame = get32(p + (header.type == wire::RecordType::ReloadRefused ? 8 : 4));
+        break;
     }
     return r;
 }

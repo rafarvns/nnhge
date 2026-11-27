@@ -293,3 +293,28 @@ that uses them asks for the game's catalogue first and starts its clock when it 
 part of the script is sent. Between `pause` (or `step`) and `resume`, commands that move the clock are errors and a
 screenshot takes no frame. Examples: `examples/live/tests/check.nnhs`, `panel.nnhs`, `keep.nnhs` + `keep_second.nnhs`
 (run with `--tunes`).
+
+## Hot reload in scripts (spec 031)
+
+A script can swap an asset's source for a test fixture and check the reload, in the simulator and on the console:
+
+```
+fail-on "] E "
+wait 30
+swap-asset assets/art/hero.png fixtures/hero_swapped.png   # SOURCE: the game's folder; FIXTURE: the script's
+expect-reload art/hero                                     # applied, and the batch has art/hero (path or load name)
+screenshot after
+restore-asset assets/art/hero.png                          # optional: every swap is put back at the end anyway
+end
+```
+
+`swap-asset` (held) pauses the game at the script's frame F, builds the asset target, sends the batch with its Apply and a
+Resume both stamped F, and the script goes on at F + 1: the batch lands on the same frame on every system. `swap-asset ...
+unheld` only copies and sends (for timings); `expect-reload [PATH] [refused] [within N]` checks the last swap — `refused`
+expects a refusal, `within N` waits up to N frames for an unheld one. A swapped source outside the assets folder (e.g. a
+`DATA_SCHEMA` source) gets Ninja's dry run: a change that needs a rebuild is refused. None of them may be used while the
+script has the game paused. Every swapped source is put back byte for byte at the end (pass, fail or Ctrl+C) and the
+asset target rebuilt; an interrupted run leaves a journal in `build/logs/reload-backup/<game>/`, and `nnh run` then
+refuses to start until `nnh restore-assets <game>` puts the originals back. Examples:
+[`examples/data/tests/reload.nnhs`](../../examples/data/tests/reload.nnhs),
+[`examples/sprites/tests/reload.nnhs`](../../examples/sprites/tests/reload.nnhs).

@@ -67,6 +67,13 @@ int mesh_add(MeshRecord* record, std::uint32_t& generation) {
     return -1;
 }
 
+MeshRecord* mesh_replace(int slot, std::uint32_t generation, MeshRecord* record) {
+    if (mesh_get(slot, generation) == nullptr || g_slots[slot].stage != kLive) return nullptr;
+    MeshRecord* old = g_slots[slot].record;
+    g_slots[slot].record = record;
+    return old;
+}
+
 void mesh_release(int slot, std::uint32_t generation) {
     if (mesh_get(slot, generation) == nullptr) return;
     Slot& s = g_slots[slot];

@@ -13,7 +13,7 @@ SDL 3.4, imitating a Nintendo 3DS: one window with both screens, 60 Hz, keyboard
 | Developer keys | F1 overlay, Pause, F10 step, F11 slow motion, F12 screenshot (Debug/Development) |
 | Developer options | `NNH_EXIT_AFTER_FRAMES`, `NNH_SCREENSHOT`, `NNH_SIM_*`, `SDL_VIDEO_DRIVER=offscreen`; `NNH_REMOTE` (set by `nnh run --pc`) |
 | Links | `ws2_32` on Windows (the console remote's loopback socket) |
-| Data folder | Debug/Development: `<exe dir>/data/<data_folder>/`; Release: `SDL_GetPrefPath("NNHGE", <data_folder>)` |
+| Data folder | Debug/Development: `<exe dir>/nnh_user/<data_folder>/` (never `<exe dir>/data/`: on Linux that may be the `data` program itself); Release: `SDL_GetPrefPath("NNHGE", <data_folder>)` |
 
 Details: [docs/tech/sdl3.md](../../../docs/tech/sdl3.md), keyboard map in
 [docs/api/input.md](../../../docs/api/input.md). Contract tests: `nnh_conformance_pc` (runs headless).

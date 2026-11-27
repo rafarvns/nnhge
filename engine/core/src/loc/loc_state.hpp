@@ -50,6 +50,13 @@ inline LocState& loc_state() { return g_loc_state; }
 
 /// Loads `language`'s chain into the block. @return nullptr or the reason (the block then holds garbage: reload).
 const char* load_chain(int language);
+/// The same into any block (`bytes` long) and table array (spec 031: a reload prepares a new block).
+const char* load_chain_into(const LanguageRecord* languages, int language, std::uint8_t* block, std::size_t bytes,
+                            LoadedTable* tables, int& count);
+/// The chain block's size for a manifest (its largest chain, the per-table alignment, the guard).
+std::size_t chain_block_bytes(const ManifestHeader& h);
+/// Registers the strings kind of hot reload (loc_reload.cpp; Debug/Development builds, at loc::start()).
+void loc_reload_register();
 /// The language a system code matches (exact, then the same language and script with another region), or −1.
 int match_language(const char* code);
 /// The after-input hook (loc_switch.cpp): applies the pending switch, follows the system language.

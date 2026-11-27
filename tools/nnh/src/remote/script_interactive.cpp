@@ -41,6 +41,7 @@ void ScriptRunner::on_typed(const std::string& text) {
         return;
     }
     if (typed_live(text)) return; // spec 030: tunes, watches, get, watch, unwatch
+    if (typed_reload(text)) return; // spec 031: reload [PATH]
     Script typed;
     std::vector<std::string> errors;
     parse_script_line(parser_, text, typed_lines_, typed, errors);

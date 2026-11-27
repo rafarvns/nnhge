@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
     case Command::Install: return command_install(options);
     case Command::Serve: return command_serve(options);
     case Command::Unpair: return command_unpair();
+    case Command::RestoreAssets: return command_restore_assets(options);
     case Command::Help: break;
     }
     std::fputs(help_text(), stdout);

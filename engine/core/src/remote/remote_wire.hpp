@@ -37,11 +37,13 @@ inline constexpr std::uint16_t kHelloExclusive = 1u << 0;
 /// Every Hello flag this version knows; any other bit is Reject::Range.
 inline constexpr std::uint16_t kHelloFlags = kHelloExclusive;
 
-/// Slider (spec 026), Language (spec 029) and LiveSet, Live, Pause (spec 030, remote/live_wire.hpp) are additive in
-/// version 1: an older game rejects them as Reject::Type.
+/// Slider (spec 026), Language (spec 029), LiveSet, Live, Pause (spec 030, remote/live_wire.hpp) and the reload
+/// messages (spec 031, reload/reload_wire.hpp) are additive in version 1: an older game rejects them as Reject::Type.
+/// The reload messages 12–14 and 17 are followed by a payload of raw bytes (D54, payload_length()).
 enum class MessageType : std::uint8_t {
     Hello = 1, Buttons = 2, Stick = 3, Touch = 4, Screenshot = 5, Bye = 6, Slider = 7, Language = 8,
     LiveSet = 9, Live = 10, Pause = 11,
+    ReloadBegin = 12, ReloadFile = 13, ReloadChunk = 14, ReloadApply = 15, ReloadCancel = 16, ReloadNotice = 17,
 };
 
 /// The system language (spec 029 FR-27): bytes 8–15 hold a code NUL-padded, or are all zero for `language off`. The
@@ -124,6 +126,10 @@ enum class RecordType : std::uint8_t {
     LiveValue = 10,
     LiveRefused = 11,
     LiveState = 12,
+    // spec 031 (reload/reload_wire.hpp): sent only after a ReloadBegin or ReloadNotice in this attachment
+    ReloadStaged = 13,
+    ReloadApplied = 14,
+    ReloadRefused = 15,
 };
 
 /// Payload sizes: exact for every type but Screen, whose fixed part is followed by the pixels.

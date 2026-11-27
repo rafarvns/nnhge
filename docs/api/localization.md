@@ -111,3 +111,11 @@ inline, a table popcount, 32-bit digits and modulo below 2^32) brought the conso
 `tr`/`set_language` before `start()` assert (`tr` returns `""` in Release); `start()` twice asserts and changes nothing;
 `format` without a buffer asserts; a placeholder without an argument shows `{name}` in Debug/Development (logged) and
 nothing in Release.
+
+## Hot reload (spec 031)
+
+In a Debug/Development game under `nnh run`, a reloaded string file (`strings/<code>.nnhstr`, rebuilt from your
+`.strings`) or manifest reloads the current language's chain at the start of a frame: new text, added and removed keys
+(a removed key shows its name), `loc::serial()` bumped so `text_changed()` and the UI's widgets resolve again. `tr` pointers
+obtained before that frame are invalid after it, as after a language switch. A manifest with another language list, base
+or pseudo-language is refused ("rebuild and restart"). See [assets.md](assets.md#hot-reload).

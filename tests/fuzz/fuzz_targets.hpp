@@ -89,4 +89,9 @@ int loc_manifest_target(const std::uint8_t* data, std::size_t size);
 bool loc_table_fixed_accepted(const std::uint8_t* data, std::size_t size);
 bool loc_manifest_fixed_accepted(const std::uint8_t* data, std::size_t size);
 
+/// The reload receiver (spec 031, fuzz_reload_receiver.cpp): bytes through the remote reader's payload mode into the
+/// receiver and a checking sink; the first byte's low bit picks a raw stream (control bytes as remote_target) or
+/// well-formed but wrong transfer sequences. A broken sink invariant aborts.
+int reload_receiver_target(const std::uint8_t* data, std::size_t size);
+
 } // namespace nnh::fuzz

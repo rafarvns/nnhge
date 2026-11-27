@@ -6,13 +6,15 @@
 
 namespace nnh::detail {
 
-inline constexpr int kMaxShutdownHooks = 8;
+inline constexpr int kMaxShutdownHooks = 16; ///< a full Debug game registers 9 (spec 031)
 
 using ShutdownHook = void (*)();
 
 /// Runs `hook` at the next nnh::shutdown(). Adding a hook already waiting does nothing (true). False when
 /// kMaxShutdownHooks hooks are waiting.
 bool add_shutdown_hook(ShutdownHook hook);
+/// add_shutdown_hook() for a module that would leak without it: asserts when there is no room (review S2).
+void require_shutdown_hook(ShutdownHook hook);
 
 /// Runs the waiting hooks, newest first, and forgets them (nnh::shutdown()).
 void run_shutdown_hooks();

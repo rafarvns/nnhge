@@ -27,7 +27,7 @@ Out of scope: protecting a game against cheating or piracy, and protecting the c
 ## Confined file access (spec 002)
 
 - All engine file I/O goes through `nnh::fs`. Games use it too; the engine never calls `fopen` elsewhere.
-- Writable root: `sdmc:/3ds/<data_folder>/` on 3DS; on PC `<exe dir>/data/<data_folder>/` (Debug/Development)
+- Writable root: `sdmc:/3ds/<data_folder>/` on 3DS; on PC `<exe dir>/nnh_user/<data_folder>/` (Debug/Development)
   or the user's app-data folder (Release). Read-only assets (`romfs:/`) arrive with the asset pipeline.
 - Paths are **relative** to those roots. Rejected with an error: absolute paths, `..` segments, drive or
   device prefixes (`sdmc:`, `C:`), empty segments, backslashes, characters outside `[A-Za-z0-9._-]`,
@@ -159,6 +159,16 @@ screenshot requests (decision D28, [debugging](debugging.md#driving-a-game-from-
   over 1 MiB, unknown types and bad headers fall back to text, screen sizes must match exactly; its stream
   splitter and script parser have mini-fuzz tests in `nnh_tool_tests`. `nnh_tests` and `nnh_tool_tests`
   passed under ASan + UBSan (clang 18, Linux) the same day.
+
+## Hot reload (spec 031)
+
+A Debug/Development game under `nnh run` receives converted asset files from the PC (D54) and writes them into its own
+data folder, only as `.nnh_reload/<n>.bin` with names it picks itself (never a received path; they pass
+`nnh::fs::validate_path`). Every transfer message is bounded and checked (one batch at a time, files in order,
+contiguous chunks, sizes, totals, a CRC-32 per file; paths must be valid asset paths); every received file is validated
+by its loader's own validator before anything changes, and a refused batch leaves the old content. The reader and the
+receiver are fuzz targets (`fuzz_reload_receiver`, and the mini-fuzz in `nnh_tests`). The folder is wiped at the
+session's first batch and at shutdown, and Release builds contain no code that reads or writes it.
 
 ## Supply chain and CI
 

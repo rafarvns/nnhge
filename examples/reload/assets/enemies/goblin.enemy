@@ -1,0 +1,5 @@
+# The goblin of the hot reload example (spec 031): edit a value and save while the game runs.
+name = "Goblin"
+hp = 30
+speed = 1.25
+tint = "#7FD36A"

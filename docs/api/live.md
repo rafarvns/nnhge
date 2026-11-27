@@ -45,6 +45,11 @@ if (jump.changed()) rebuild();   // true on the one frame a change landed
   handle and not move. A handle used after its entry ended asserts.
 - **Misuse** (asserts in Debug/Development): a bad range, a default outside it, a null pointer, a name used twice or as a
   group, a full table, `configure()` after a registration, a stale handle.
+- **Hot reload** (spec 031, FR-23): a reload never writes a tunable. When the game reloads a data asset into a tuned
+  field (`live::tune("enemy/speed", &goblin.speed, ...)` and `data::load` after `AssetsReloaded`), the field and the panel
+  show the file's value: the file wins. A tunable edited away from its default and overwritten that way logs one warning
+  in the batch's frame (`live: enemy/speed was set by a reload (panel value 5.25, file value 3)`; up to 16 edited
+  tunables are checked per batch). `changed()` stays the application point's: a reload doesn't set it.
 
 ## Watches
 

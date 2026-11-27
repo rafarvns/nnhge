@@ -38,6 +38,7 @@ struct Controls {
     FakeAsset assets[kMaxFakeAssets];
     int asset_count = 0;
     bool audio_unavailable = false;
+    bool sample_create_fails = false; ///< set_sample_create_fails (spec 031: a reload without linear memory)
 };
 
 State& mutable_state();
@@ -55,5 +56,11 @@ void language_reset();                                       // language_fake.cp
 void alpha_reset();                                          // texture_alpha_fake.cpp
 void alpha_texture_forgotten(platform::TextureHandle handle); // texture_alpha_fake.cpp
 void set_last_error(const char* message); // app_fake.cpp
+/// fs_fake.cpp (spec 031): a copy of a stored file's bytes into `out` (capacity `capacity`); its size, or -1 if missing
+/// (or longer than `capacity`). With `out` null: only its size.
+long long fs_copy(const char* path, unsigned char* out, std::size_t capacity);
+/// reload_fake.cpp (spec 031): asset_close() of a stream reload_stream_open() opened frees its slot.
+void reload_stream_closed(const FakeAsset* asset);
+void reload_reset();
 
 } // namespace nnh::platform_fake::detail

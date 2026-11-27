@@ -9,6 +9,7 @@
 //   language CODE|off      (spec 029: the system language, e.g. ja or pt-BR, or back to the script's default en)
 //   set NAME VALUE         reset NAME|GROUP|all   action NAME   dump   pause   resume   step [N]
 //   expect-value NAME OP VALUE [~ E] [within N]   (spec 030: live values; a colour is quoted: "#FFC040")
+//   swap-asset SOURCE FIXTURE [unheld]   restore-asset SOURCE   expect-reload [PATH] [refused] [within N]   (spec 031)
 
 #include <cstdint>
 #include <string>
@@ -21,6 +22,7 @@ enum class Command : std::uint8_t {
     Wait, Press, Release, ReleaseAll, Hold, Tap, Stick, Touch, Drag, Untouch, Screenshot, Expect, FailOn, End,
     Slider, SliderOff, Language, LanguageOff,
     Set, Reset, Action, Dump, Pause, Resume, StepFrames, ExpectValue, // spec 030 (script_live.cpp)
+    SwapAsset, RestoreAsset, ExpectReload,                            // spec 031 (script_reload.cpp)
 };
 
 /// One script line. Only the fields of its command are meaningful.
@@ -40,6 +42,8 @@ struct Step {
     double tolerance = 0;       ///< ExpectValue: `~ E`
     std::string origin;         ///< steps from `--tunes FILE`: "file:line" (unknown names are skipped, not failed)
     bool paused = false;        ///< written while the script has the game paused (a screenshot then takes no frame)
+    bool unheld = false;        ///< SwapAsset: no pause around the batch (it lands when it arrives)
+    bool refused = false;       ///< ExpectReload: the batch must have been refused
 };
 
 struct Script {

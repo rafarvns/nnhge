@@ -1,0 +1,5 @@
+# A fast goblin: tests/check.nnhs swaps it over assets/enemies/goblin.enemy (spec 031).
+name = "Goblin"
+hp = 30
+speed = 3.5
+tint = "#7FD36A"

@@ -11,6 +11,9 @@
 namespace nnh::tool {
 
 class StdinLines;
+namespace reload {
+struct ReloadSession;
+}
 namespace remote {
 class ScriptRunner;
 }
@@ -20,6 +23,7 @@ struct GameRun {
     remote::ScriptRunner* runner = nullptr; ///< a script, or interactive mode; null = the log only
     StdinLines* typed = nullptr;            ///< interactive mode
     int linger_ms = 1000;                   ///< after a script's verdict, how long to wait for the game to close
+    reload::ReloadSession* reload = nullptr; ///< hot reload (spec 031): null = off (Release, --no-reload, scripts)
 };
 
 /// Shows and saves the log of the connected `game` until it closes (or a script's verdict).

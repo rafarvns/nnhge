@@ -659,3 +659,39 @@ Stage 4 refinements:
   within the 200-line aim.
 - The red step of these `nnh` tests was not observed separately (the sources were written alongside them while the
   baseline builds ran); the mutation pass (T6.4) covers that they can fail.
+
+### Stage 5 results (Windows end to end, outside the repository)
+
+- **T5.1** `tests/consumer_tools/copy_project.sh <dest> [pin|local]` (+ `pack_engine.cmake`): a copy of the fixture;
+  `pin` packs this engine folder as `<dest>/../nnhge-engine/nnhge.tar.gz` (5.5 MB) and writes `engine_pin.cmake` with
+  its `file://E:/...` URL and SHA-256. Copy at `E:/RANDOM/nnhge-032-checks/a-game-project-folder-with-a-deliberately-long-name`
+  (78 characters).
+- **T5.2** From the copy, `nnh` of the worktree's pc-debug, fresh build folders, no `scripts/dkp.sh` run:
+  `nnh build nnh_consumer` (3ds-dev) 113 s and `--release` 104 s, both from the pinned archive, 0 warnings: `.3dsx` 527
+  KB / 457 KB; the cache holds `NNH_HOST_CXX=/c/.../g++.exe` passed by `nnh`. `nnh run nnh_consumer --pc --script
+  game/tests/check.nnhs` (pc-dev): the expect matched (`consumer: PASS D99E1764` at frame 31), screenshot read back
+  (the PASS banner and the line), log under `<copy>/build/logs/`; the first run failed at the script's last line
+  because the script pressed START before `end` (the game closed first): the fixture's script no longer quits
+  (`nnh` closes the game at the end), then exit 0. With the pin file removed and `NNHGE_ENGINE_DIR=E:/...` (drive
+  form): `NNH_PRESET=pc-debug nnh run ... --script` exit 0 (`-- NNHGE 0.1.0: E:/...`), `nnh build nnh_consumer`
+  (3ds-dev) 97 s (`-- NNHGE 0.1.0: /e/...`: `nnh` converted the override). Both manifests list only `nnh_consumer` and
+  `nnh_consumer_small` (what `nnh serve` offers). With `PATH=/c/Windows/system32` and no `NNH_HOST_CXX`, a fresh
+  `3ds-debug` configure through `nnh` fails: `This game has ... which need nnh-assetc: no host C++ compiler: set
+  NNH_HOST_CXX (environment or -D), or -DNNH_ASSETC=<prebuilt nnh-assetc>`, `nnh: configuring 3ds-debug failed`.
+- **T5.3** In the worktree, `build/3ds-dev` deleted, then `nnh build animation`: configured by `nnh` (host compiler
+  passed) and built in 112 s, 0 warnings.
+- **T5.4** After the builds the worktree has no new or changed file but this stage's own sources; the copy's pc build
+  fetched SDL3's pinned MinGW package into `<copy>/build/pc-*/_deps/nnh_sdl3_prebuilt-src`, and `cmake --build
+  build/3ds-dev --target dist` (10.5 s) fetched makerom and bannertool into `<copy>/build/3ds-dev/_tools/` and made
+  `dist/nnh_consumer/nnh_consumer.3dsx` and `.cia`.
+- **T5.5** Longest commands of the copy: 3,145 characters (9.6 %) in `3ds-dev` and `3ds-release` (the platform archive
+  under `_deps/nnhge-build/`; the core's archive from its response file). A game's own link command holds its objects
+  relative to the build folder (the project's path doesn't count): 788 characters with 6 objects, about 50 characters
+  per object (`game/CMakeFiles/<game>.dir/src/<file>.o`), so a game reaches the 50 % margin at roughly 300 source files
+  (question 10; the guide says so).
+- **T5.6** One-file edit of `small/main.cpp` (3 runs): simulator (pc-debug) 2.94 / 2.14 / 1.94 s, `.3dsx` (3ds-dev)
+  3.57 / 3.58 / 3.62 s; the repository's `hello` at the same time 2.69 / 1.86 / 1.88 s, so the game project is on par
+  with the repository (the first run of each series pays a cold file cache; the PC budget of < 2 s is borderline on this
+  machine for both, as at T0.2). `ninja -v` shows `ccache.exe` on the game's compile. Configure (fresh / again): local
+  way 17.5 / 1.8 s, pinned archive 22.0 / 2.8 s. Build folders: pc-debug 164 MB, pc-dev 206 MB, 3ds-dev 59 MB,
+  3ds-release 72 MB. The copy was deleted afterwards (E: 9.7 GB free).

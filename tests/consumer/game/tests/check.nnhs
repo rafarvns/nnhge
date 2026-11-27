@@ -12,5 +12,4 @@ tap SELECT
 expect "consumer: PASS D99E1764" 30
 wait 10
 screenshot check
-tap START
 end

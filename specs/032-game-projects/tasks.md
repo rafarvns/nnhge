@@ -147,28 +147,28 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 5: Windows end to end (outside the repository)
 
-- [ ] **T5.1** `tests/consumer_tools/copy_project.sh <dest> [pin|local]`: copies the fixture, writes `engine_pin.cmake`
+- [x] **T5.1** `tests/consumer_tools/copy_project.sh <dest> [pin|local]`: copies the fixture, writes `engine_pin.cmake`
   (a tarball of the engine folder and its SHA-256, in the `file://` form T0.3 found) or nothing (local). Dest for this
   stage: a path of ≥ 64 characters outside the repository (e.g. `E:/RANDOM/nnhge-032-checks/a-game-project-folder-with-a
   -deliberately-long-name`). Covers FR-16, AC-11.
-- [ ] **T5.2** From the copy, fresh build folders, no `scripts/dkp.sh` run, `nnh` from the worktree's pc-debug: `nnh build
+- [x] **T5.2** From the copy, fresh build folders, no `scripts/dkp.sh` run, `nnh` from the worktree's pc-debug: `nnh build
   nnh_consumer` (3ds-dev) and `nnh build nnh_consumer --release` → `.3dsx`; `nnh run nnh_consumer --pc --script
   game/tests/check.nnhs` → exit 0, log under `<copy>/build/logs/`; then with `NNHGE_ENGINE_DIR` set (drive form) and the
   pin file removed: `pc-debug` and `3ds-dev` again; `nnh serve` lists only the consumer's games. With no compiler on
   `nnh`'s `PATH` and no `NNH_HOST_CXX`: the 3DS configure fails with the `NNH_HOST_CXX`/`NNH_ASSETC` message. Covers
   FR-1, FR-13, FR-14, FR-15, AC-3.
-- [ ] **T5.3** [P] In the worktree: delete `build/3ds-dev`, then `nnh build animation` → configured by `nnh` and built.
+- [x] **T5.3** [P] In the worktree: delete `build/3ds-dev`, then `nnh build animation` → configured by `nnh` and built.
   Covers FR-14, AC-3.
-- [ ] **T5.4** Outputs and pins: after T5.2, `git status --porcelain` of the engine checkout empty; SDL3 under
+- [x] **T5.4** Outputs and pins: after T5.2, `git status --porcelain` of the engine checkout empty; SDL3 under
   `<copy>/build/pc-*/_deps/`, makerom/bannertool under `<copy>/build/3ds-*/_tools/` after a `dist`; nothing under the
   engine folder. Covers FR-2, FR-9, AC-5.
-- [ ] **T5.5** [P] Lengths: `scripts/check_command_length.sh` on the copy's `build/3ds-dev` and `build/3ds-release`
+- [x] **T5.5** [P] Lengths: `scripts/check_command_length.sh` on the copy's `build/3ds-dev` and `build/3ds-release`
   (≤ 16,383; record), and the object count at which a game's own link line would reach 50 % (plan question 10). Covers
   FR-19, AC-11.
-- [ ] **T5.6** Budgets (3 runs each): edit `small/main.cpp` → simulator (pc-debug) and `.3dsx` (3ds-dev); `ninja -v`
+- [x] **T5.6** Budgets (3 runs each): edit `small/main.cpp` → simulator (pc-debug) and `.3dsx` (3ds-dev); `ninja -v`
   shows the cache launcher on the game's compile; fresh and repeated configure times for the pin and local ways; the
   copy's build folder sizes. Then delete the copy. Covers FR-7, III, AC-9.
-- [ ] **T5.7** Stage end: plan.md ("Stage 5 results"). Covers AC-3, AC-9, AC-11.
+- [x] **T5.7** Stage end: plan.md ("Stage 5 results"). Covers AC-3, AC-9, AC-11.
 
 ## Stage 6: the repository unchanged
 

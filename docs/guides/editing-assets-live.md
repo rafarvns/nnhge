@@ -1,7 +1,7 @@
 # Editing assets while the game runs
 
-> Status: in progress (spec 031). Images, Tiled maps, data files, string tables, fonts, sounds and meshes reload; sprite
-> libraries, music and live values (FR-23) don't yet. Checked in the simulator; the console run is pending.
+> Status: in progress (spec 031). Images, Tiled maps, data files, string tables, fonts, sounds, music, meshes and sprite
+> libraries reload, and tunables on reloaded data follow the file. Checked in the simulator and in a first console run.
 
 Run a Debug or Development build with `nnh run`, change a file in the game's assets folder, save, and see the change in
 the running game — in the simulator or on the console — without a restart. This page is the walk-through; the reference
@@ -31,8 +31,10 @@ are kept in `.nnh_reload/` of the game's data folder on the SD card; the romfs n
 ## What reloads by itself
 
 Handles keep pointing at the same slot, so these need no code: textures (and a tilemap's tilesets, UI images and mesh
-textures that use them), fonts, sounds (voices playing them stop with `SoundFinished`), meshes from `load_mesh`, and the
-current language's strings (`loc::serial()` changes; UI texts resolve again).
+textures that use them), fonts, sounds (voices playing them stop with `SoundFinished`), music (it goes on at the same
+sample), meshes from `load_mesh`, sprite libraries from `load_sprite_library` (each animator goes on with the clip of the
+same name), and the current language's strings (`loc::serial()` changes; UI texts resolve again). A tunable on a field
+you reload from a data file shows the file's value ([live.md](../api/live.md#tunables)).
 
 ## What you reload yourself
 
@@ -59,8 +61,8 @@ applied (`expect-reload enemies/goblin`), then restores it.
 
 - Debug and Development builds only; Release has no reload code and the queries are constants. Game logic must not
   depend on reloads.
-- A game links the reload code only if it loads something reloadable (a texture, sound, font, mesh, map, data asset or
-  string table).
+- A game links the reload code only if it loads something reloadable (a texture, sound, music, font, mesh, sprite
+  library, map, data asset or string table).
 - During a batch, the old and new content of its assets are in memory at once.
 - `nnh run --no-reload` turns watching off; scripts never watch, but can swap files themselves (`swap-asset`,
   `expect-reload`: [testing-on-the-console.md](testing-on-the-console.md#hot-reload-in-scripts-spec-031)). If `nnh` was

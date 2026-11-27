@@ -363,9 +363,10 @@ spec; the order below is a proposal.
 - [ ] **Hot reload of assets in the simulator** (both engines): a changed image, map or data file reloads in the
   running game; with "hot reload of game code" below, the fastest edit loop. **In progress:**
   [spec 031](../specs/031-hot-reload-assets/spec.md) (simulator and console; branch `spec-031`: the edit loop, batches,
-  data assets, maps, textures, fonts, sounds, meshes, string tables and the script commands work in the simulator;
-  demo `examples/reload`, guide [editing assets live](guides/editing-assets-live.md); sprite libraries, music, live
-  values and the console check are open)
+  every kind (textures, maps, data, strings, fonts, sounds, music, meshes, sprite libraries) and FR-23 work in the
+  simulator; console run 1 on the Old 3DS passed for textures, maps, data, strings, sounds and meshes (same sums; save →
+  frame 3.0–3.3 s, the 3DS asset build then cut from ≈ 2.9 s to ≈ 1.6 s); demo `examples/reload`, guide [editing assets live](guides/editing-assets-live.md); console run
+  2 and the Linux stage are open)
 
 ## M8 — 3D
 - [x] citro3d meshes, materials, stereoscopic rendering, model import in `assetc` — [spec 026](../specs/026-3d-foundation/spec.md)

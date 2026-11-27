@@ -1,6 +1,6 @@
 # Tasks 031: Hot reload of assets
 
-Status: approved 2026-11-26 (with plan.md); in progress (stages 1–4 and 7 mostly done; 5–6 partly (no sprite libraries, music, FR-23); 8 partly; see plan "Not done")
+Status: approved 2026-11-26 (with plan.md); in progress (every kind and FR-23 implemented, `examples/reload` with its scripts; console run 1 passed; console run 2, the Linux stage and the tests in plan "Not done" open)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -261,7 +261,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   `reload refused`, `was removed`, `rebuild and restart`, `.nnh_reload`, the rebind warnings) and the example's names;
   run on the 3ds-release and pc-release `reload` and `sprites`; `nm` shows no `reload` symbol; the Release example prints
   its start sum. Covers FR-19, AC-7.
-- [ ] **T8.3** [P] Opt-in by linking: probes (`build/ref-031/probe_*`, not committed) on 3ds-dev and 3ds-release: a
+- [x] **T8.3** [P] Opt-in by linking: probes (`build/ref-031/probe_*`, not committed) on 3ds-dev and 3ds-release: a
   Development game loading only plain files (the reload core, no kind objects), one loading textures (the texture kind
   only); `hello` 3ds-release bytes and pc-release size/`nm` identical to T0.1's; Debug/Development `hello` growth against
   question 9's estimate. Files: plan.md ("Stage 8 results"). Covers FR-19, FR-20, XI.

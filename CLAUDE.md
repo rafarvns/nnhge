@@ -250,11 +250,11 @@ watches the assets folder, builds `<game>_assets`, dry-runs `<game>` (a needed r
 outputs as one batch over the remote connection (payload messages 12–17, records 13–15); the game keeps them in
 `.nnh_reload/` of its data folder and applies the batch whole at one point of a frame (`engine/core/src/reload/`,
 `tools/nnh/src/reload/`); `<nnh/assets.hpp>` gains `reload_count()`, `reloaded()`, `reloaded_paths()`,
-`AssetsReloaded`; textures, fonts, sounds, meshes and string tables swap behind their handles, data assets and maps
-are announced; `--no-reload`, typed `reload [PATH]`, script lines `swap-asset`/`restore-asset`/`expect-reload`,
+`AssetsReloaded`; textures, fonts, sounds, music, meshes, sprite libraries (animators rebind) and string tables swap
+behind their handles, data assets and maps are announced, tunables on reloaded data follow the file (FR-23); `--no-reload`, typed `reload [PATH]`, script lines `swap-asset`/`restore-asset`/`expect-reload`,
 `nnh restore-assets <game>` ([api/assets.md](docs/api/assets.md#hot-reload), guide
 [editing assets live](docs/guides/editing-assets-live.md); demo `examples/reload`, scripts `tests/check.nnhs` (sums)
-and `tests/errors.nnhs` (refusals)). Sprite libraries, music and live values don't reload yet.
+`tests/errors.nnhs` (refusals) and `tests/timing.nnhs` (save → frame, bench)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

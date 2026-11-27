@@ -1035,32 +1035,80 @@ bash login per cycle) and the glob check (≈ 0.3 s).
   (`levels/room.tmj: conversion failed`) instead of `assets` (test
   `reload_controller_a_script_source_names_the_notice_and_is_checked_when_outside`).
 
+### Stages 5–7 completed (fourth session, after console run 1)
+
+- **T5.3 music** (`audio/music_reload.cpp`, `music.cpp`'s `music_reload_reopen`, `MusicTrack::seek`): a playing track's
+  file is checked at prepare (a temporary track and Ogg arena opened on the staged file, its loop point applied) and
+  reopened at commit at the sample the decoder had reached (the loop start when the new file is shorter; the end for a
+  track that doesn't loop); the platform's queued buffers play out first; `position()`, volume and fades go on (`submitted`
+  is set so that position() is what the player hears). Tests `test_music_reload` (4: same sample, past the end, an Ogg
+  track, a fade kept and a damaged file refused).
+- **T5.1 sprite libraries** (`animation/sprite_reload.cpp` the kind, `sprite_reload_table.cpp` the 64-entry table kept
+  apart so animators link no reload code, `animator_rebind.cpp`, `sprite_load.cpp`'s `sprite_block_from_file`): as planned,
+  with two refinements. **R32** the identity block is flagged in `Header::reserved[0]` (memory only; files keep 0) and
+  `sprite_view` forwards it to the current block (one byte test for other libraries); the previous current block is
+  kept until the next reload (not freed at commit) so an animator bound to it can still read its clip names; the one
+  before is freed. **R33** a freed block's address can come back as a later block (seen in the test: the same size), so
+  the animator keeps the library's reload epoch in the two free bits of its `flags_` (no size change): a pointer match
+  with another epoch is treated as unreadable. Animators rebind in `Access::library()` and, through `Access::fresh()`, in
+  the queries that read their own fields (`clip()`, `state()`, `playing()`...); the old block is read only when it is the
+  identity or the previous block of the previous epoch. A state machine is "the same" when the states' names, next-on-
+  finish and clips by name and the rules byte for byte agree (clip indices may move). Tests `test_sprite_reload` (3),
+  `test_animator_rebind` (5); `loading_leaves_only_the_librarys_block` counts the Development table.
+- **T6.2 FR-23** (`live/live_reload.cpp`, two `LiveOps` entries, `app.cpp`): in a batch's frame, after the application
+  point, up to 16 tunables away from their default are noted; at the frame end one whose bits changed logs
+  `live: player/speed was set by a reload (panel value 5.25, file value 3)`; nothing written, `changed()` untouched.
+  Test `test_live_reload` (1).
+- **Example**: `examples/reload` gains `art/walker.ase.json` + `walker.png` (a sprite library and its animator), the HUD
+  BMFont from `examples/localization` (the project's own art, made by its `make_hud_font.py`; a `.fnt` instead of the
+  plan's OFL subset to keep 270 KB out of the example) and `music/loop.wav`; fixtures `walker_v2.ase.json`, `hud_wide.fnt`,
+  `loop2.wav`; the self-check folds 21 fields (walker clips, clip name, position, a HUD-font width, music playing; test
+  golden `F40673B9`). `check.nnhs` now swaps all eleven (hero, room, goblin, blip, strings, gem, walker, music, font,
+  then the two restores): sums `770785CB` start, `85960F26`, `81450DE1`, `D21D8C71`, `6A8DD95C`, `50F69476`, `6EFB266D`,
+  `1FDA416C`, `A8A08A0C`, `9A8E8270`, `098F5CDD`, `1294E48A` after 1–11 (PASS, 59 lines, frames 1–221; put back 7).
+  `timing.nnhs`: unheld swaps of a PNG, a map and a data file (`within 600`), then X runs the bench (`reload bench: idle
+  avg 0.042 ms worst 0.231 ms`, `reads 19.72 us per read` on pc-debug); ctest `reload_timing_script_pc`. The music swap
+  in `check.nnhs` streams the file while it is swapped (the Windows sharing case of AC-9, so `reload_open_file_pc` isn't
+  a separate test).
+- More tests: `sound_reload_without_linear_memory_refuses_and_keeps_the_old_sound` (the fake platform gains
+  `set_sample_create_fails`), `mesh_reload_without_memory_for_the_new_model_refuses`,
+  `mesh_reload_draws_recorded_after_the_swap_use_the_new_model`.
+
+### Guards at the end of the fourth session
+
+ctest pc-debug **378/378** (with `reload_check_script_pc`, `reload_errors_script_pc`, `reload_timing_script_pc`),
+pc-release **337/337**; 0 warnings on pc-debug, pc-release, 3ds-release and 3ds-dev; 3ds-release `hello.3dsx`
+`8c687f3dec3df9fa…` and `hello.elf` (`strip --strip-debug`) `5cd5d9505dd67b73…`, identical to T0.1; pc-release `hello.exe`
+134 880 / 22 052 / 212 400, identical; `check_release_strings.sh` passes on the 3ds-release `reload` and `sprites` `.3dsx`;
+`docs_tool check` 0 broken links. **3ds-dev `hello` text 229 488 B** (+2 400 B over T0.1's 227 088; +72 B this session:
+FR-23's frame flag and calls), for the maintainer to confirm as before. T8.3's probes by `nm` on 3ds-dev: `hello` (plain
+files only) links no reload code; `sprites` (textures only) links the reload core and the texture kind only; `reload`
+links the texture, sound, music, font, mesh and sprite-library kinds.
+
 ### Not done (open, for the lead or a next session)
 
-- Stage 0: T0.1's per-object disassembly, edit-one-`.cpp` timings and header measurements against `cf15822`; T0.2's
-  MSYS start-up and Windows file-sharing cases; T0.3's goldens and reference screenshots (no reference tree was kept:
-  the disk is tight; the hello checks and the full ctest stand in for them).
+- Stage 0: T0.1–T0.3's reference comparisons against `cf15822` need a reference tree (a clone plus four preset builds,
+  ≈ 8–10 GB); E: has ≈ 10 GB free, so they were skipped. The hello checks and the full ctest stand in for them.
 - Stage 1: T1.6's 60 s libFuzzer run (clang; the lead on VM 120).
 - Stage 2: T2.8's guard bytes around the buffers (ASan on the VM checks the bounds).
 - Stage 3: T3.4's loopback stress test (a game logging heavily during a 4 MB transfer).
-- Stage 4: T4.1's tests of tileset and mesh textures following and of a Linear-memory refusal with its bytes; T4.2's
-  tests of the pseudo-language and of a font rebaked in the same batch.
-- Stage 5: **T5.1 sprite libraries** (identity/current blocks, the animator rebind), **T5.3 music**; T5.2's no-memory
-  refusal test; T5.4's full-texture-table and fallback tests.
-- Stage 6: **T6.2 FR-23** (live values); T6.1's tests of more submeshes/textures and of draws recorded after the swap.
-- Stage 7: the example's sprite library, music and font assets (with their kinds), `RELOAD_SHOT`, the `tight` scene,
-  `timing.nnhs`, `reload_open_file_pc`; the two findings above (the dry run missing a schema change; the notice naming
-  `assets` in scripts).
-- Stage 8: T8.3's texture-only probe; T8.4's `compare.sh` against T0.1.
-- Stage 9 (the lead, VM 120) and stage 10 (the console): see below.
-- Stage 11: the kinds' API pages still to touch for this run's changes (`animation.md`, `live.md` wait for their kinds);
-  final statuses once stages 5–6 and the console run are done.
+- Stage 4: T4.1's tests of tileset and mesh textures following a texture reload and of a texture refused for Linear
+  memory (the fake platform's texture_create has no failure control yet); T4.2's tests of the pseudo-language and of a
+  font rebaked in the same batch.
+- Stage 5: T5.1's test of a library moved after loading and ASan's proof (VM); T5.3's test of a stream whose file is
+  replaced underneath (`fake::replace_asset`); T5.4's full-texture-table and fallback tests.
+- Stage 6: T6.1's tests of more submeshes and new textures; T6.2's "17 edited → 16 tracked" and "no live values links
+  nothing" tests.
+- Stage 7: `RELOAD_SHOT` (the scripts take the screenshots instead), the `tight` scene with `huge.png` (errors.nnhs's
+  linear-memory refusal on the console), the plan's OFL font copy (the HUD BMFont is used instead).
+- Stage 8: T8.4's `compare.sh` against T0.1 (no reference tree).
+- Stage 9 (the lead, VM 120) and console run 2 (below).
+- Stage 11: final statuses after console run 2 and the Linux stage.
 
 ## Stage 10: console run (prepared)
 
-What can run on the Old 3DS now (build first: `scripts/dkp.sh cmake --build --preset 3ds-dev --target data_3dsx
-sprites_3dsx reload_3dsx`, 0 warnings expected). D and E use `examples/reload` (T10.2's runs 1–2 without the sprite
-library, music and font kinds):
+Console run 2 (build first: `scripts/dkp.sh cmake --build --preset 3ds-dev --target reload_3dsx`, 0 warnings expected;
+then Homebrew Launcher, press **Y**, for each of D, E, F). A, B and C passed or were waived in console run 1.
 
 A. `build/pc-debug/tools/nnh/nnh run data --script examples/data/tests/reload.nnhs` (Homebrew Launcher, **Y**) → expected
    lines: `nnh: reload 1: 1 files, 0.1 KB (build …)`, the game's `I assets reloaded 1 (frame 31): enemies/goblin`,
@@ -1070,15 +1118,20 @@ A. `build/pc-debug/tools/nnh/nnh run data --script examples/data/tests/reload.nn
 B. `build/pc-debug/tools/nnh/nnh run sprites --script examples/sprites/tests/reload.nnhs` → `expect-reload applied at
    frame 31`, `PASS`; compare `build/logs/sprites-<date>-<time>/frame-000033-after-top.png` with the `--pc` one (the hero
    drawn from the tile atlas).
-D. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/check.nnhs` → the same sums as the PC:
-   `reload: sum 2B7C6114 after 0`, then `1E0979A5`, `B431FED6`, `2C7F4726`, `9EBF4F3F`, `454252F5`, `5FA80812`,
-   `1C2468A3`, `70C46B1C` after 1–8, `nnh: PASS (45 lines, …)`, `nnh: put back 4 swapped assets`; compare the
-   screenshots `hero_big`, `room_moved`, `strings`, `gem` in `build/logs/reload-<date>-<time>/` with the `--pc` ones.
-   Note each `applied at frame …, X s after the save` (AC-8). Risk: the start line is logged at frame 60; if the console
-   attaches later than that the first `expect` fails (then raise R30's frame).
-E. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/errors.nnhs` → `line 7: expect-reload refused`
-   (the broken map), `line 11: expect-reload applied`, `reload 2 refused by the game: enemies/bat.enemy: made for another
-   struct: rebuild and restart`, `PASS (17 lines, …)`.
+D. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/check.nnhs` → the same sums as the PC (console
+   run 2: every kind): `reload: sum 770785CB after 0`, then `85960F26`, `81450DE1`, `D21D8C71`, `6A8DD95C`, `50F69476`,
+   `6EFB266D`, `1FDA416C` (walker), `A8A08A0C` (music), `9A8E8270` (font), `098F5CDD`, `1294E48A` after 1–11,
+   `nnh: PASS (59 lines, …)`, `nnh: put back 7 swapped assets`; compare the screenshots `hero_big`, `room_moved`,
+   `strings`, `gem`, `walker`, `font` in `build/logs/reload-<date>-<time>/` with the `--pc` ones. Note each `applied at
+   frame …, X s after the save` (AC-8; with T10.3 the build should be ≈ 1.6 s instead of 2.8–3.1 s).
+E. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/errors.nnhs` → `line 8: expect-reload refused`
+   (the broken map: the game logs `levels/room.tmj: conversion failed`), `line 12: expect-reload applied`, `reload refused:
+   …/data_types.cpp is compiled into the program: rebuild and restart (nnh run)` (now refused by `nnh` before sending),
+   `PASS (17 lines, …)`, `put back 2`.
+F. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/timing.nnhs` → three `reload N applied at frame
+   …, X s after the save` lines (a PNG, a map, a data file: AC-8's < 3 s), then `reload bench: idle avg … ms worst …` and
+   `reload bench: reads … us per read`; `PASS (19 lines, …)`.
+
 C. The interactive yes/no loop below (about 2 minutes; the lead edits a file on the PC):
 
 1. PC: `scripts/dkp.sh cmake --build --preset 3ds-dev --target sprites_3dsx`. Console: Homebrew Launcher, press **Y**.

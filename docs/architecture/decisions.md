@@ -372,3 +372,9 @@ never through `#ifdef` in game code.
   opt-in by linking (R23: the reload core is reached through hooks a kind installs when it registers, so a game that
   loads nothing reloadable answers `Rejected{Type}` like an older game). Not yet: sprite libraries (D31's current
   blocks), music and FR-23.
+- 2026-11-26: D53 after console run 1 (passed on the Old 3DS): music, sprite libraries (D31: a loaded library's first
+  block forwards to its current one; the previous block is kept one reload longer; animators keep a 2-bit reload epoch
+  in spare flag bits so a reused address is never read) and FR-23 (two `LiveOps` entries, D51) implemented. The program
+  check of a changed source is `ninja -t inputs` instead of a dry run (which CMake's glob check made useless). The 3DS
+  host tool's ExternalProject (D27) runs its sub-build only when a file it compiles changed (no `BUILD_ALWAYS`), and
+  `nnh` calls devkitPro's Ninja directly: a 3DS data-asset build ≈ 1.6 s instead of ≈ 2.9 s.

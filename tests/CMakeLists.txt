@@ -1692,6 +1692,7 @@ target_sources(nnh_tests PRIVATE
     data_assets/test_data_reload.cpp
     gfx/test_texture_reload.cpp
     audio/test_sound_reload.cpp
+    audio/test_music_reload.cpp
     font/test_font_reload.cpp
     mesh/test_mesh_reload.cpp
     loc/test_loc_reload.cpp

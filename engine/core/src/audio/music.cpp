@@ -2,6 +2,8 @@
 // stream. Every frame, core tops up the stream's free buffers; a track that doesn't loop ends when the
 // platform has played all it was given. Without audio output, time is kept by the clock.
 
+#include <cstring>
+
 #include "assets/assets_internal.hpp"
 #include "audio/audio_internal.hpp"
 #include "audio/fade.hpp"
@@ -33,6 +35,7 @@ struct Slot {
     detail::Fade fade;
     std::uint64_t submitted = 0;  ///< frames given to the platform since the start
     double silent_played = 0;     ///< frames "played" without audio output
+    std::uint64_t loop_option = 0; ///< Options::loop_start as given (a reloaded file applies it again)
     detail::MusicTrack track;     ///< ~21 KB: the slots are static
 };
 
@@ -124,6 +127,8 @@ Result<void> open_slot(int i, const char* path, const music::Options& options, f
         return opened.error();
     }
     s.active = true;
+    s.loop_option = options.loop_start;
+    if constexpr (build::kDevToolsEnabled) detail::music_reload_opened(i, asset); // spec 031: reloads with its file
     s.volume = detail::clamp_volume(options.volume);
     s.fade = fade_in > 0 ? detail::Fade::between(0.0f, 1.0f, fade_in) : detail::Fade{};
     if (output()) {
@@ -204,7 +209,64 @@ constexpr detail::MusicHooks kHooks{music_frame, music_shutdown, music_mix_chang
 
 void register_music() { audio_state().music = &kHooks; }
 
+/// Opens the slot's asset again after a reload (its track closed): Errors as open_slot's.
+Result<void> reopen_track(Slot& s, const char* asset, bool loop) {
+    const std::size_t n = std::strlen(asset);
+    const bool ogg = n > 4 && std::strcmp(asset + n - 4, ".ogg") == 0;
+    auto size = assets::size(asset);
+    if (!size || detail::g_reload_asset_ops == nullptr || !detail::g_reload_asset_ops->open(asset, s.asset, true)) {
+        return Error::make(ErrorCode::IoError, "\"%s\": can't open", asset);
+    }
+    s.asset_size = size.value();
+    if (ogg && s.arena == nullptr) return Error::make(ErrorCode::OutOfMemory, "\"%s\": no Ogg decoder", asset);
+    const detail::ByteSource source{&s, s.asset_size, read_asset};
+    return s.track.open(source, ogg, s.arena, detail::OggDecoder::kDefaultArenaBytes, s.loop_option, loop);
+}
+
 } // namespace
+
+/// Hot reload (spec 031, music_reload.cpp's commit): the slot's file changed; its track goes on in the new file from the
+/// sample it had decoded (the loop start, or the end, when the new file is shorter); the player keeps hearing the old
+/// file's queued buffers first; music::position() and the fade go on unchanged. A file that can't be opened ends the
+/// track (MusicFinished), with a warning.
+void detail::music_reload_reopen(int i, const char* asset) {
+    Slot& s = g_slots[i];
+    if (!s.active) return;
+    const bool loop = s.track.loops();
+    const int channels = s.track.channels();
+    const std::uint64_t queued = output() ? platform::stream_queued(i) : 0;
+    const auto silent = static_cast<std::uint64_t>(s.silent_played);
+    const std::uint64_t heard = s.track.position_at(output() ? s.submitted - queued : silent);
+    std::uint64_t at = s.track.position_at(output() ? s.submitted : silent);
+    s.track.close();
+    if (s.asset != 0) platform::asset_close(s.asset);
+    s.asset = 0;
+    auto opened = reopen_track(s, asset, loop);
+    const std::uint64_t length = opened ? s.track.length() : 0;
+    if (opened && at >= length) at = loop ? s.track.loop_start() : length;
+    if (opened && at < length) opened = s.track.seek(at);
+    if (!opened) {
+        NNH_LOG_WARN(audio, "music \"%s\" stopped: the reloaded file: %s", asset, opened.error().message);
+        end_track(i);
+        return;
+    }
+    s.finishing = at >= length;
+    s.silent_played = static_cast<double>(heard < length ? heard : at);
+    s.submitted = queued + (heard < length ? heard : at); // position() goes on from what the player hears
+    if (output() && s.track.channels() != channels) { // the queued buffers had another layout: start over
+        platform::stream_stop(i);
+        const auto params = audio_state().mixer.params(s.volume * s.fade.value(), 0.0f, 1.0f, s.track.rate(),
+                                                       AudioGroup::Music);
+        platform::stream_start(i, s.track.channels(), params);
+        if (effective_paused()) platform::stream_pause(i, true);
+        s.submitted = at;
+    }
+    fill(i);
+}
+
+bool detail::music_reload_active(int i) { return i >= 0 && i < platform::kStreams && g_slots[i].active; }
+std::uint64_t detail::music_reload_loop_option(int i) { return g_slots[i].loop_option; }
+bool detail::music_reload_loops(int i) { return g_slots[i].track.loops(); }
 
 namespace music {
 

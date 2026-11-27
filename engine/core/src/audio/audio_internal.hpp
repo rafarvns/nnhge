@@ -86,6 +86,14 @@ Result<void> decode_sound(const char* path, const AssetData& file, bool ogg, Sou
 /// Hot reload (spec 031, sound_reload.cpp; Debug/Development): load_sound() made slot `slot` from `asset_path`.
 void sound_reload_loaded(int slot, std::uint32_t generation, const char* asset_path);
 
+/// Hot reload of music (spec 031; Debug/Development): music.cpp opened stream slot `slot` from `asset_path`
+/// (music_reload.cpp keeps the path's hash); the reload's commit reopens it (music.cpp); what a prepare checks.
+void music_reload_opened(int slot, const char* asset_path);
+void music_reload_reopen(int slot, const char* asset_path);
+bool music_reload_active(int slot);
+std::uint64_t music_reload_loop_option(int slot);
+bool music_reload_loops(int slot);
+
 /// The live sound behind a handle, or nullptr.
 SoundSlot* sound_get(int slot, std::uint32_t generation);
 

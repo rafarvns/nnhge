@@ -31,6 +31,8 @@ public:
 
     /// The track position after `played` frames from its start (loops counted).
     std::uint64_t position_at(std::uint64_t played) const;
+    /// Goes to `frame` of the source (hot reload, spec 031: a reopened track goes on where the old one was).
+    Result<void> seek(std::uint64_t frame) { return seek_source(frame); }
 
 private:
     Result<std::uint32_t> read_source(std::int16_t* out, std::uint32_t capacity);

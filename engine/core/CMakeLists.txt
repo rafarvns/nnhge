@@ -65,6 +65,7 @@ add_library(nnh_core STATIC
     src/audio/sound_decode.cpp
     src/audio/sounds.cpp
     src/audio/sound_reload.cpp
+    src/audio/music_reload.cpp
     src/audio/voice_api.cpp
     src/audio/voice_table.cpp
     src/audio/wav_reader.cpp

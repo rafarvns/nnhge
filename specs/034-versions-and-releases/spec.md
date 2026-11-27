@@ -203,7 +203,9 @@ and then becomes `v1.0.0`.
   and licence audit; on the Old 3DS XL (Development builds from the release source, the maintainer presses Y) every
   example's check script, the platformer's level/gate/doors scripts, the stereo script and the generated project's smoke
   script, a `.cia` installed through FBI and started from the HOME Menu, NNH Link pairing and one build, one release
-  `.3dsx` copied to the SD card and opened from the Homebrew Launcher; then the draft's assets, hashes, prebuilt `nnh`
+  `.3dsx` copied to the SD card and opened from the Homebrew Launcher; `scripts/check_command_length.sh` on the 3DS
+  build folders (the repository and the consumer project) within 50 % of the Windows limit (spec 032 FR-19: it guards
+  the undocumented `CMAKE_NINJA_FORCE_RESPONSE_FILE`); then the draft's assets, hashes, prebuilt `nnh`
   (`--version`, `doctor`, `new`) and notes. The ticked copy for each release is kept where Q17 decides and linked from
   the release notes.
 - **FR-25 Nothing public without the maintainer.** Pushing a release tag and publishing a release are done by the

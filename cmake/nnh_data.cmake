@@ -27,18 +27,8 @@
 
 include_guard(GLOBAL)
 include(ExternalProject)
-
-set(_NNH_DATA_ROOT "${CMAKE_CURRENT_LIST_DIR}/..")
-# The host program's own engine sources (besides the schema sources): a change rebuilds it on 3DS.
-set(_NNH_DATA_HOST_SOURCES
-    ${_NNH_DATA_ROOT}/tools/data_schema/CMakeLists.txt
-    ${_NNH_DATA_ROOT}/tools/data_schema/schema_main.cpp
-    ${_NNH_DATA_ROOT}/engine/core/src/core/crc32_update.cpp
-    ${_NNH_DATA_ROOT}/engine/core/src/data/enum_names.cpp
-    ${_NNH_DATA_ROOT}/engine/core/src/data/schema_check.cpp
-    ${_NNH_DATA_ROOT}/engine/core/src/data/schema_fingerprint.cpp
-    ${_NNH_DATA_ROOT}/engine/core/src/data/schema_registry.cpp
-    ${_NNH_DATA_ROOT}/engine/core/src/data/schema_write.cpp)
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_platform.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_game_defaults.cmake")
 
 function(nnh_use_data_schema target description producer)
     set_target_properties(${target} PROPERTIES NNH_DATA_SCHEMA_FILE "${description}"
@@ -54,6 +44,18 @@ function(_nnh_data_host_program target objs sources includes out_program out_why
             PARENT_SCOPE)
         return()
     endif()
+    # The engine's root from this file, never from the calling folder (spec 032 FR-6); the program's own engine sources
+    # (besides the schema sources): a change rebuilds it.
+    set(root "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/..")
+    set(host_sources
+        ${root}/tools/data_schema/CMakeLists.txt
+        ${root}/tools/data_schema/schema_main.cpp
+        ${root}/engine/core/src/core/crc32_update.cpp
+        ${root}/engine/core/src/data/enum_names.cpp
+        ${root}/engine/core/src/data/schema_check.cpp
+        ${root}/engine/core/src/data/schema_fingerprint.cpp
+        ${root}/engine/core/src/data/schema_registry.cpp
+        ${root}/engine/core/src/data/schema_write.cpp)
     set(dir "${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}_host")
     set(name "${target}_data_schema")
     if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows|MSYS|CYGWIN|MINGW")
@@ -64,7 +66,7 @@ function(_nnh_data_host_program target objs sources includes out_program out_why
     string(REPLACE ";" "|" sources_arg "${sources}")
     string(REPLACE ";" "|" includes_arg "${includes}")
     ExternalProject_Add(${name}
-        SOURCE_DIR ${_NNH_DATA_ROOT}/tools/data_schema
+        SOURCE_DIR ${root}/tools/data_schema
         BINARY_DIR ${dir}
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}_host-ep
         CMAKE_ARGS -DCMAKE_CXX_COMPILER=${cxx} -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
@@ -78,13 +80,14 @@ function(_nnh_data_host_program target objs sources includes out_program out_why
     set(stamp "${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}_objects.stamp")
     add_custom_command(OUTPUT "${stamp}"
         COMMAND ${CMAKE_COMMAND} -E touch "${stamp}"
-        DEPENDS $<TARGET_OBJECTS:${objs}> ${_NNH_DATA_HOST_SOURCES}
+        DEPENDS $<TARGET_OBJECTS:${objs}> ${host_sources}
         VERBATIM)
     ExternalProject_Add_StepDependencies(${name} build "${stamp}")
     set(${out_program} "${exe}" PARENT_SCOPE)
 endfunction()
 
 function(nnh_add_data_schema target)
+    nnh_platform(platform "nnh_add_game(${target})")
     set(sources "")
     set(includes "${CMAKE_CURRENT_SOURCE_DIR}")
     foreach(source IN LISTS ARGN)
@@ -105,11 +108,13 @@ function(nnh_add_data_schema target)
     target_link_libraries(${objs} PRIVATE nnh::core)
     target_include_directories(${objs} PRIVATE ${includes})
     target_sources(${target} PRIVATE $<TARGET_OBJECTS:${objs}>)
+    _nnh_game_target_defaults(${objs}) # the game's build settings (spec 032 FR-7)
 
     set(description "${CMAKE_CURRENT_BINARY_DIR}/nnh_data/${target}.nnhschema")
-    if(NNH_PLATFORM STREQUAL "pc")
+    if(platform STREQUAL "pc")
         set(program_target ${target}_data_schema)
         add_executable(${program_target} $<TARGET_OBJECTS:${objs}>)
+        _nnh_game_target_defaults(${program_target})
         set_target_properties(${program_target} PROPERTIES LINKER_LANGUAGE CXX)
         target_link_libraries(${program_target} PRIVATE nnh_data_schema_support)
         if(CMAKE_CXX_PLATFORM_ID STREQUAL "MinGW")

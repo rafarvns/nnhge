@@ -48,6 +48,11 @@ tests/
                                              localization (loc_fixture.hpp writes tables and manifests), the shared
                                              wrapper and run layout; data/fonts: make_test_fonts.py's fixtures and
                                              golden.cmake, routing.cmake; data/strings_decl: LANGUAGES cases
+  consumer/                                  spec 032: a game project kept with the tests (nnh.toml, the six presets,
+                                             game/ with every nnh_add_game keyword, small/, plain/), built against
+                                             the engine by the consumer ctests (tests/consumer.cmake)
+  consumer_tools/                            their driver (run_consumer.cmake, consumer_engine.cmake,
+                                             compare_flags.cmake), plain_only/, unknown_platform/, copy_project.sh
 examples/<name>/                             one small program per feature (main.cpp + CMakeLists.txt)
   tests/*.nnhs                               test scripts (spec 013): nnh run <name> [--pc] --script ...
                                              (guide: guides/testing-on-the-console.md)
@@ -73,14 +78,18 @@ tools/<tool>/                                host tools: tools/nnh (the nnh comm
                                              program, cmake/nnh_data.cmake)
 third_party/<library>/                       vendored code, unmodified and pinned (README: commit, SHA-256,
                                              license); exempt from the file-size rules
-cmake/                                       CMake helpers
+cmake/                                       CMake helpers (nnh_game.cmake and what it includes; spec 032:
+                                             nnh_platform, nnh_version, nnh_game_defaults, nnh_optional_parts)
+engine/core/archive/                         spec 032: the static nnh_core archived from nnh_core_objects (a
+                                             response file in 3DS presets, FR-19)
 scripts/                                     small helpers (dkp.sh, docs tool, hooks)
 ```
 
-A game made with NNHGE follows the same idea:
+A game made with NNHGE follows the same idea, in a game project of its own ([guide](../guides/game-projects.md)):
 
 ```
 mygame/
+  CMakeLists.txt  CMakePresets.json  nnh.toml   the project: the engine pinned, the six presets, nnh's marker
   src/main.cpp                       init, push first scene, run
   src/scenes/<name>_scene.hpp|.cpp   one scene per pair
   src/<feature>/...                  game modules (player/, enemies/, ui/)

@@ -11,6 +11,7 @@
 
 #include "commands.hpp"
 #include "game_log.hpp"
+#include "project_root.hpp"
 #include "reload/asset_build.hpp"
 #include "reload/asset_swap.hpp"
 #include "reload/interrupt.hpp"
@@ -94,9 +95,9 @@ void finish_reload(const GameRun& run) {
 }
 
 int command_restore_assets(const Options& options) {
-    const std::string root = find_repo_root(std::filesystem::current_path().string());
+    const std::string root = find_project_root(std::filesystem::current_path().string()).path;
     if (root.empty()) {
-        std::fprintf(stderr, "nnh: not inside an NNHGE repository\n");
+        std::fprintf(stderr, "%s\n", no_project_message().c_str());
         return 1;
     }
     const std::string backup = reload::swap_backup_dir(root, options.game);

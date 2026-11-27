@@ -40,7 +40,7 @@
 # The folder is scanned with file(GLOB_RECURSE ... CONFIGURE_DEPENDS): an explicit exception to the
 # "no GLOB" rule, because assets are data, not sources — adding a file must not require editing CMake.
 
-set(_NNH_ASSETS_DIR "${CMAKE_CURRENT_LIST_DIR}")
+include("${CMAKE_CURRENT_LIST_DIR}/nnh_platform.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_strings.cmake") # string files (spec 029)
 
 # nnh_asset_output_name(<name> <out_var>): the asset name a source file becomes ("" = not packed).
@@ -220,6 +220,9 @@ function(_nnh_model_buffers files out_var)
 endfunction()
 
 function(nnh_add_assets target folder)
+    # The engine's files and system from the engine, never from the calling folder (spec 032 FR-6).
+    set(_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
+    nnh_platform(_platform "nnh_add_game(${target})")
     get_filename_component(source "${folder}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     if(NOT IS_DIRECTORY "${source}")
         message(FATAL_ERROR "nnh_add_game(${target}): ASSETS folder not found: ${source}")
@@ -286,8 +289,8 @@ function(nnh_add_assets target folder)
             _nnh_add_sprite_step(${target} "${source}" "${out}" "${name}" "${output_name}" "${assetc}"
                                  "${assetc_depends}")
         elseif(name MATCHES "\\.png$")
-            set(check ${CMAKE_COMMAND} -DIMAGE=${input} -P ${_NNH_ASSETS_DIR}/nnh_check_image.cmake)
-            if(NNH_PLATFORM STREQUAL "3ds")
+            set(check ${CMAKE_COMMAND} -DIMAGE=${input} -P ${_cmake_dir}/nnh_check_image.cmake)
+            if(_platform STREQUAL "3ds")
                 if(NOT CTR_TEX3DS_EXE)
                     message(FATAL_ERROR "nnh_add_game(${target}): tex3ds not found (install it with devkitPro)")
                 endif()
@@ -299,15 +302,15 @@ function(nnh_add_assets target folder)
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
                 COMMAND ${check}
                 COMMAND ${convert}
-                DEPENDS "${input}" "${_NNH_ASSETS_DIR}/nnh_check_image.cmake"
+                DEPENDS "${input}" "${_cmake_dir}/nnh_check_image.cmake"
                 COMMENT "Asset ${name}"
                 VERBATIM)
         elseif(name MATCHES "\\.([wW][aA][vV]|[oO][gG][gG])$")
             add_custom_command(OUTPUT "${output}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
-                COMMAND ${CMAKE_COMMAND} -DSOUND=${input} -P ${_NNH_ASSETS_DIR}/nnh_check_sound.cmake
+                COMMAND ${CMAKE_COMMAND} -DSOUND=${input} -P ${_cmake_dir}/nnh_check_sound.cmake
                 COMMAND ${CMAKE_COMMAND} -E copy ${input} ${output}
-                DEPENDS "${input}" "${_NNH_ASSETS_DIR}/nnh_check_sound.cmake"
+                DEPENDS "${input}" "${_cmake_dir}/nnh_check_sound.cmake"
                 COMMENT "Asset ${name}"
                 VERBATIM)
         elseif(schema AND NOT name MATCHES "\\.(ase\\.json|ase|aseprite)$")
@@ -347,8 +350,8 @@ function(nnh_add_assets target folder)
     set(index "${out}/.nnh_assets")
     add_custom_command(OUTPUT "${index}"
         COMMAND ${CMAKE_COMMAND} -DLIST=${list_file} -DOUT=${index} -DFOLDER=${out} ${generated}
-                -P ${_NNH_ASSETS_DIR}/nnh_asset_index.cmake
-        DEPENDS "${list_file}" "${_NNH_ASSETS_DIR}/nnh_asset_index.cmake" ${outputs}
+                -P ${_cmake_dir}/nnh_asset_index.cmake
+        DEPENDS "${list_file}" "${_cmake_dir}/nnh_asset_index.cmake" ${outputs}
         COMMENT "Asset index for ${target}"
         VERBATIM)
 

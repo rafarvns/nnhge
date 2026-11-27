@@ -1,6 +1,6 @@
 # Plan 032: Game projects outside the engine repository
 
-Status: approved 2026-11-27 (the maintainer, the twelve questions at the end as recommended, `NNHGE_ENGINE_DIR` included)
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed 2026-11-27; merged); approved 2026-11-27 (the maintainer, the twelve questions at the end as recommended, `NNHGE_ENGINE_DIR` included)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D55 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
 Uses spec 010 and D23 (`nnh build`/`run`/`install`, the games manifest, the MSYS shell for 3DS on Windows), spec 011
@@ -460,3 +460,384 @@ Flagged for the maintainer: questions 1, 2 and 8, and risks 1, 3 and 5.
 12. **The pinned-download way on Windows 3DS**: checked by `file://` only if T0.3 finds a form devkitPro's MSYS CMake
     reads, else through the override (and by URL on Linux, VM); `https://` from MSYS CMake left to spec 034's release
     candidate? Recommended: yes — no local web server in the tests.
+
+## Implementation results
+
+### Stage 0 results (2026-11-27, Windows; worktree `spec-032` at `7e08303`)
+
+- **T0.0** `df -h /e`: 12 GB free at the start, 10 GB after the four baseline builds. The spike's findings hold in the
+  tree: the eight directory values (`_NNH_GAME_CMAKE_DIR`, `_NNH_ASSETS_DIR`, `_NNH_CIA_DIR`, `_NNH_CTR_TOOLS_DIR`,
+  `_NNH_IMAGES_DIR`, `_NNH_PACKAGE_ART`, `_NNH_DATA_ROOT`, `_NNH_DATA_HOST_SOURCES`) are set at file scope in `cmake/`,
+  `NNH_PLATFORM` is read as a variable by `nnh_game`, `nnh_assets`, `nnh_images`, `nnh_data` and `nnh_host_tools`; the
+  `find_repo_root` callers are `build.cpp`, `run.cpp`, `run_reload.cpp` and `serve.cpp`.
+- **T0.1** Fresh `pc-debug`, `pc-release`, `3ds-dev`, `3ds-release` (0 warnings each; full builds 5 m 30 s, 5 m 50 s,
+  2 m 05 s, 2 m 01 s). Target lists 183 (PC) / 182 (3DS) names, `NNH_*` cache entries and the 27 games of
+  `nnh_games.txt` kept in `build/ref-032/base/` (not committed). **`hello` reference:** 3ds-release `hello.3dsx`
+  247,628 bytes, SHA-256 `b0b243ddfe6f94cc932c771f32c2d7a9ac14945561ad996eae4bc2b6873670c3`; stripped `hello.elf`
+  SHA-256 `91680297f5395b6b32d41a5bb6ec21ae5869fc61f8062ef5bba1d4f260a73531` (`size`: text 202,204, data 28,360,
+  bss 107,368); pc-release `hello.exe` `.text` 0x189a0. `libnnh_core.a`: 447 members. The `hello` link commands
+  (both 3DS presets, pc-debug, pc-release) and `nnh_tests`' kept for T1.2.
+  **Pre-existing failure found:** `ctest --preset pc-debug` at the base commit fails `unit` and `unit_reverse` on
+  three `test_door_run.cpp` cases: commit `fd688f3` made the door run judge 60 Hz only in Development builds
+  ("not judged (Debug)") without changing its tests. Fixed in stage 0 as a test-only change (the expected verdict
+  follows `nnh::build::flavor()`); every other test passed (380 tests, 9 m 21 s with `-j8`).
+- **T0.2** Longest 3DS commands (`scripts/check_command_length.sh`, written at T1.1): 27,354 characters (83.5 %) in
+  `3ds-dev` and `3ds-release`, the `libnnh_core.a` archive. `hello` one-file edit: pc-debug simulator 2.22 / 1.91 /
+  1.95 s; 3ds-dev `.3dsx` 3.81 / 3.57 / 3.66 s. Clean engine (`nnh_core` + platform, `ninja -t clean`): pc-release
+  19.4 s (ccache), 3ds-release 48.1 s (devkitPro's MSYS2 has no ccache; the 447-object core). Fresh configures:
+  pc-debug 25.6 s, 3ds-dev 24.4 s. pc-release stands in for pc-dev (one PC build folder less on a tight disk).
+- **T0.3** (temporary folder outside the repository, deleted): `file://` URL forms for `FetchContent` with
+  `URL_HASH`: native CMake 4.4.2 reads `file://E:/x/y.tar.gz` and fails `file:///E:/...` and `file:///e/...`
+  ("File not found: /E:/..."); devkitPro's MSYS2 CMake 4.0.2 reads `file://E:/...`, `file:///e/...`, `/e/...` and
+  `E:/...`, and fails `file:///E:/...`. So the tests use `file://` + the path as CMake writes it (`file://E:/...` on
+  Windows, `file:///tmp/...` on Linux), which both CMakes read (question 12: the pinned way is checked by `file://` on
+  Windows 3DS too). In MSYS2 CMake, a preset's `"FETCHCONTENT_SOURCE_DIR_DEP": "$env{X}"` uses the folder when `X` is
+  set, and `cmake --preset x -DFETCHCONTENT_SOURCE_DIR_DEP=<other>` overrides it, as in native CMake.
+  `arm-none-eabi-gcc-ar qc lib.a @list.rsp` from MSYS2 bash reads a response file of relative paths (members `a.o b.o`)
+  and refuses MSYS absolute paths (`/e/.../a.o: No such file or directory`): the archive's response file must hold
+  paths relative to the build folder, which CMake's Ninja generator writes.
+
+### Stage 1 results (FR-19)
+
+- **T1.1** `scripts/check_command_length.sh` red on the base tree: 27,354 characters (83.5 %), exit 1, in `3ds-dev` and
+  `3ds-release`; exit 0 with the limit 32,767; exit 2 on a folder without `build.ninja`.
+- **T1.2** Option A works: `nnh_core_objects` (OBJECT, every source, per-file option and usage requirement as before)
+  and `engine/core/archive/` (static `nnh_core`, alias `nnh::core`, archived to `engine/core/libnnh_core.a`;
+  `CMAKE_NINJA_FORCE_RESPONSE_FILE` only when `NNH_PLATFORM` is `3ds`). The archive command became
+  `arm-none-eabi-gcc-ar qc engine/core/libnnh_core.a @CMakeFiles/nnh_core.rsp` (≈ 250 characters; the response file
+  holds paths relative to the build folder, which the native archiver reads). Longest 3DS command after: **2,533
+  characters (7.7 %)**, the platform archive, in both 3DS presets (before: 27,354, 83.5 %). `hello` unchanged:
+  `.3dsx` and stripped `.elf` SHA-256 equal to T0.1's, `nm -C` list equal, pc-release `.text` 0x189a0; the `hello` link
+  commands (3ds-dev, 3ds-release, pc-debug, pc-release) and `nnh_tests`' identical; target lists equal to T0.1's apart
+  from `nnh_core_objects`; cache entries and games equal. 0 warnings in the four presets. Fallback B (T1.3) not needed.
+- **T1.4** Stage-end guards: ctest pc-release 338/338, pc-debug 379/379 (one disabled); `check_command_length.sh` PASS
+  on both 3DS folders.
+
+Stage 1 refinements:
+- **Archive member order.** `libnnh_core.a` has the same 447 members, but the two vendored objects (`stb_vorbis.o`,
+  `f2s.o`, object libraries the core links) moved from the first two places to the last two: CMake puts the objects
+  of linked object libraries after `$<TARGET_OBJECTS:...>` sources. Members' order inside an archive with a symbol
+  index does not change what the linker takes (the `hello` hashes prove it), so the order is accepted rather than
+  forced with a link-order trick.
+- **`scripts/check_release_strings.sh` on `hello.elf`** fails at the base commit too (`dev_pause`: the `.elf`'s DWARF
+  names `dev_pause.hpp`; the script's own notes say to check the `.3dsx` or a stripped `.elf`); the stage-end guard runs
+  it on `hello.3dsx` (ok). The `pc-release` `hello.exe` form reports `NNH_REMOTE` at the base commit as well (same
+  `.text`). Both are pre-existing and left to the maintainer.
+
+### Stage 2 results (the consumer skeleton and the CMake contract)
+
+- **T2.1** `tests/consumer/` (skeleton: `game/` with `SOURCES`, `ASSETS` (a PNG, a data file) and `DATA_SCHEMA` in a
+  nested folder, `small/`, `plain/`, the six presets with the `NNHGE_ENGINE_DIR` mapping, `nnh.toml`, `.gitignore`), the
+  driver `tests/consumer_tools/run_consumer.cmake` (+ `consumer_engine.cmake`, `compare_flags.cmake`, `plain_only/`),
+  `tests/consumer.cmake` and one appended `include()` line in `tests/CMakeLists.txt` (`git diff` shows that line only;
+  the file keeps its encoding). Red against the stage 1 engine (a `git archive` of `HEAD` as `ENGINE`): the configure
+  fails at the fixture's version check (`NNHGE_VERSION is "" (..)`), before the spike's `/tools/data_schema` error.
+- **T2.2** `cmake/nnh_platform.cmake` + the global property; `consumer_platform_empty` and `consumer_platform_unknown`
+  (≈ 1 s each) pass: `nnh_add_game(probe_game): unknown platform "" (empty, supported: pc, 3ds)` / `"wii" (supported:
+  pc, 3ds)`, no `build.ninja`. The first run of the empty case caught a real bug of the helper: `get_property` of an
+  unset property leaves the variable undefined, so `if(value STREQUAL "")` compared the literal `value`; now quoted.
+- **T2.3** No file-scope directory variable left in `cmake/` (`_NNH_*_DIR`, `_NNH_PACKAGE_ART`, `_NNH_DATA_*`: none);
+  the helpers read `CMAKE_CURRENT_FUNCTION_LIST_DIR` inside their functions. The regenerated `3ds-dev` `build.ninja`
+  differs from stage 1's only in the regeneration rule's list of CMake files (8 lines): no helper path changed.
+- **T2.4** The four options (`NNH_BUILD_TOOLS` PC only), `nnh_optional_part`, the `link/` gate, `enable_testing()` only
+  with tests. `consumer` checks: no example, engine test, NNH Link, `nnh` or `nnh_link` target; `ctest -N` lists only
+  `consumer_own_test` although the project calls `enable_testing()`; `nnh_games.txt` lists `nnh_consumer` and
+  `nnh_consumer_small`. In the repository: target lists equal to T0.1's apart from `nnh_core_objects`; games equal; the
+  cache gains `NNH_BUILD_APPS` (and `NNH_BUILD_TOOLS` on PC) and `NNHGE_VERSION*`, the option defaults are unchanged
+  (ON).
+- **T2.5** `cmake/nnh_game_defaults.cmake`; `NNH_CCACHE` searched only when undefined or `*-NOTFOUND`. `consumer`
+  compares `nnh_consumer_small`'s compile command with the parent's `hello` (ccache launcher, `-DNNH_FLAVOR_DEBUG`, the
+  engine's include folder, `-g -std=c++20`): equal once the build folder, `NNH_GAME_TITLE` and the `-MT`/`-MF`
+  dependency names are taken out; the project's `consumer_plain` compiles exactly as in `plain_only/` (no engine); a
+  second configure with `-DCMAKE_CXX_STANDARD=23 -DNNH_CCACHE=` keeps `-std=c++23` and no launcher on the game.
+- **T2.6** `cmake/nnh_version.cmake`: the fixture checks `NNHGE_VERSION*` against `CONSUMER_EXPECT_VERSION` (the
+  engine's `project()` version read by the driver) and the driver reads the parent's `CMakeCache.txt`. Status line
+  `-- NNHGE 0.1.0: <engine folder>` at every configure.
+- **T2.7** `consumer` green on pc-debug and pc-release (skeleton line `consumer: PASS AD8A1613`; first cold run ≈ 2 min,
+  an incremental rerun 15–28 s). Guards: 0 warnings in the four presets; `hello.3dsx` and stripped `.elf` SHA-256
+  unchanged; longest 3DS command 2,533; ctest pc-release 341/341 and pc-debug 382/382 (`-LE consumer-full`; the tree also held the stage 4 `nnh` changes).
+
+Stage 2 refinements:
+- **The unknown-platform message** is ASCII and keeps the plan's parts: `nnh_add_game(<game>): unknown platform
+  "<value>" (supported: pc, 3ds)`, and `"" (empty, supported: pc, 3ds)` for an empty value (no em dash: one less
+  encoding question in Windows consoles and regular expressions).
+- **The self-check line goes to stdout too.** Release builds compile `NNH_LOG_INFO` out, so the consumer test (which runs
+  in every PC flavour) read no line in pc-release; `CheckScene` prints the line with `printf` as well, and runs the check
+  again on SELECT (the console script's trigger, so the line comes after the remote attached).
+- **SDL3 reuse.** The driver passes the parent's SDL3 download as `FETCHCONTENT_SOURCE_DIR_NNH_SDL3(_PREBUILT)` when the
+  parent fetched one (Linux; MinGW without a system SDL3); the maintainer's machine has a system SDL3, found as before.
+- `nnh_assetc_command()` (called inside `nnh_add_assets`) and the data helpers also read the platform through
+  `nnh_platform()`; `nnh_host_tools_setup()` runs in the engine's own scope and keeps the variable.
+
+### Stage 3 results (the full fixture and the four ways)
+
+- **T3.1** `tests/consumer/game/` calls `nnh_add_game()` with every keyword (`SOURCES`, `ASSETS`, `IMAGES`,
+  `DATA_SCHEMA`, `LANGUAGES en pt-BR`, `BASE`, `TITLE`, `DESCRIPTION`, `AUTHOR`, `VERSION 1.2.3`, `ICON`, `CIA
+  UNIQUE_ID 0xF7032 PRODUCT_CODE CTR-N-NNHC BANNER BANNER_AUDIO`) and ships one asset of each kind, copied from
+  `tests/data/` (`art/hero.png`, `levels/good.tmj` + tileset, `sprites/good.ase.json`, `things/lamp.thing`,
+  `fonts/body_16.font` over `nnhtest.ttf`, `strings/en.strings` + `pt-BR.strings`, `models/vertex_colors.gltf`,
+  `sfx/blip.wav`, `images/logo.png` (16×8), `package/` icon, banner and jingle). Every asset step runs on PC; a
+  `3ds-dev` configure of the fixture generates `nnh_consumer.elf`, `_3dsx`, `_dist`, `_cia`, `dist` and the data schema
+  targets (and `nnh build` built the `.3dsx`, stage 4).
+- **T3.2** The self-check (textures' sizes, the map's size and `lives`, the sprite library's frames and clips, the data
+  values, the font's metrics and an advance, both languages' code and name and the base text of one key, the mesh's
+  vertices, the sound's length) prints **`consumer: PASS D99E1764`** in pc-debug and pc-release and in every way below;
+  changing `value = 321` to `322` in `things/lamp.thing` made it `D8176E32` (then put back). `game/tests/check.nnhs`
+  taps SELECT and expects that line.
+- **T3.3** `plain/` + `consumer_tools/plain_only/`: equal compile commands (stage 2).
+- **T3.4** The other ways (label `consumer-full`), each with the same line, each folder deleted once it passed:
+
+  | ctest | Time (Windows pc-debug) | Configure | Notes |
+  |---|---|---|---|
+  | `consumer` (local) | 76 s cold, 23 s warm | ≈ 15 s fresh, 2–4 s again | 595 ccache hits, 0 misses (cold) |
+  | `consumer_archive` | 180 s | 24 s | `file://E:/...` tarball + SHA-256, `CMAKE_DISABLE_FIND_PACKAGE_Git=ON`; `_deps/nnhge-src` listing unchanged by the build |
+  | `consumer_archive_override` | 177 s | 16 s | no `nnhge-subbuild` (nothing downloaded); the unpacked copy unchanged |
+  | `consumer_submodule` | 131 s | 15 s | `git clone` of the committed `HEAD`; the clone unchanged |
+  | `consumer_pruned` | 144 s | 14 s | no `examples/ tests/ apps/ specs/ docs/`; then `-DNNH_BUILD_EXAMPLES=ON` fails naming the option and `examples/` |
+  | `consumer_bad_hash` | 43 s | – | fails: `SHA256 hash of .../nnhge.tar.gz does not match expected value`; nothing unpacked or built |
+  | `consumer_options_on` | 21 s | 19 s | `hello`, `nnh_tests`, `nnh-link`, `nnh`, `nnh_tool_tests` exist; `ctest -N` lists the engine's tests |
+
+- **T3.5** `consumer_options_on` as above (configure only).
+- **T3.6** Cost on Windows pc-debug: the default `consumer` costs 76 s on a cold folder with `CCACHE_NOHASHDIR=1` (every
+  engine object a direct ccache hit from the parent build) and 23 s when its folder exists; without `CCACHE_NOHASHDIR` a cold run took 139 s (568 misses: Debug
+  objects hash the build folder), so the driver sets it. The
+  other ways copy or clone the engine to another folder, so their compiles miss the cache (paths differ): 2–3 minutes
+  each, ≈ 13 minutes for `consumer-full`. Linux reuses the parent's SDL3 download through
+  `FETCHCONTENT_SOURCE_DIR_NNH_SDL3` (wired; checked by the VM pass).
+
+Stage 3 refinements:
+- **A wrong hash of a local archive** is reported by CMake as `SHA256 hash of <file> does not match expected value`
+  (a download says `HASH mismatch`): both name the archive; the check accepts either.
+- **The pseudo-language `qps`** ships in Debug/Development (spec 029), so the self-check looks `en` and `pt-BR` up with
+  `loc::find` instead of counting languages.
+- **The submodule way clones the committed `HEAD`**: it checks the last commit, not the working tree (the other ways
+  check the working tree). Skipped with a message where the engine folder has no `.git` (`SKIP_REGULAR_EXPRESSION`).
+- **Golden in two places:** `tests/consumer.cmake` (`_consumer_line`) and `game/tests/check.nnhs`.
+- **T3.7** Stage-end guards: stage 3 changed only `tests/` (no engine or CMake helper), so the 3DS builds and `hello`
+  stay those of stage 2; `consumer` and the platform checks pass in pc-debug and pc-release with the golden; the full
+  ctest runs at stage 4's end on the same tree.
+
+### Stage 4 results (`nnh` in a game project)
+
+- **T4.1** `tools/nnh/src/project_root.{hpp,cpp}` (29 lines): nearest `nnh.toml` or engine root; a folder with both
+  markers is a game project. `test_project_root.cpp` (7 cases: the engine repository and below it, a game project and
+  below it, a game project inside the repository (and the repository again above it), both markers, the real repository
+  from the tool's sources, nothing found under the system's temporary folder, the message). `test_repo.cpp`'s root case
+  moved there; `find_repo_root` removed.
+- **T4.2** `project_file.{hpp,cpp}` over `remote::read_tunes` (`nnh.toml:<line>: reason`); `test_project_file.cpp`
+  (empty and comment-only files, `name`/`engine`, an unknown key and a key in a table each one warning line, malformed
+  lines, a key set twice, > 64 KiB refused) and the mini-fuzz `project_file_target_survives_mutated_inputs` (6,000
+  mutations: every error and warning starts with `nnh.toml:`).
+- **T4.3** `preset_names.{hpp,cpp}`: a bounded JSON reader (1 MiB, 64 levels) that records only the `name` of objects
+  directly in the top-level `configurePresets`/`buildPresets` arrays; a preset counts when both a configure and a build
+  preset have the name, in `CMakePresets.json` or `CMakeUserPresets.json`. `test_preset_names.cpp` (the repository's own
+  file, a style copy, a user file, escaped strings, a preset only in `buildPresets`, names outside the arrays or nested
+  in a preset, malformed and too deep JSON, > 1 MiB) and the mini-fuzz `presets_target_survives_mutated_inputs`.
+- **T4.4** `host_compiler.{hpp,cpp}` (`find_host_cxx`: `NNH_HOST_CXX`, else `g++`, `c++`, `clang++` on `PATH` with
+  `.exe` on Windows) and `repo.{hpp,cpp}` `configure_command` + `ConfigureExtras`; `test_configure_command.cpp`
+  (environment first, the `PATH` order, none; Windows 3DS: `C:\...` and `c:/...` to `/c/...`, spaces kept inside single
+  quotes, the override as `/e/...`; a `'` or `"` in any of the three paths refused; Linux 3DS and PC presets unchanged).
+- **T4.5** `commands/project.cpp` (`open_project`, `check_preset`, `project_configure_command`) used by `build.cpp`
+  (both configure paths), `serve.cpp`; `run.cpp` and `run_reload.cpp` use `find_project_root`. Checked by hand: outside
+  any project `nnh build hello` prints the FR-11 message, exit 1; a project with `nnh.toml` and only `pc-dev` presets:
+  `nnh: this project has no preset "3ds-dev" (CMakePresets.json): ...`, exit 1, CMake not run, and the unknown key
+  warned; `name =` → `nnh: nnh.toml:1: expected "name = value"`, exit 1. From `tests/consumer/game/` (a game project
+  inside the repository, `NNHGE_ENGINE_DIR` set): `nnh build nnh_consumer` configured `tests/consumer/build/3ds-dev`
+  (the command carried `NNH_HOST_CXX` and the override in MSYS form) and built `nnh_consumer.3dsx` (514 KB; longest
+  command 3,222 characters, 9.8 %), and `NNH_PRESET=pc-debug nnh build nnh_consumer --pc` configured and built
+  `tests/consumer/build/pc-debug/game/nnh_consumer.exe` (that folder deleted afterwards). `nnh_script_pc_smoke` passes.
+- **T4.6** `nnh_tool_tests`: 271 cases, 0 failures (36 in the touched filters). Stage-end guards: 0 warnings;
+  ctest pc-debug 382/382 and pc-release 341/341 (`-LE consumer-full`); the 3DS presets have no `nnh` code (unchanged
+  since stage 2).
+
+Stage 4 refinements:
+- **`NNH_PRESET=pc-debug nnh build nnh_consumer`** (T4.5's wording) builds the 3DS game: `nnh build` without `--pc`
+  targets the console and `NNH_PRESET` only picks among presets of the same system; the PC check uses `--pc`.
+- The engine override is passed only when the project is a game project (an `nnh.toml` at its root): the engine
+  repository's own configure never gets an unused `FETCHCONTENT_SOURCE_DIR_NNHGE`.
+- `preset_names.cpp` is 174 lines (the plan's sketch said ≤ 150 for the new `nnh` files): one class, the JSON reader;
+  within the 200-line aim.
+- The red step of these `nnh` tests was not observed separately (the sources were written alongside them while the
+  baseline builds ran); the mutation pass (T6.4) covers that they can fail.
+
+### Stage 5 results (Windows end to end, outside the repository)
+
+- **T5.1** `tests/consumer_tools/copy_project.sh <dest> [pin|local]` (+ `pack_engine.cmake`): a copy of the fixture;
+  `pin` packs this engine folder as `<dest>/../nnhge-engine/nnhge.tar.gz` (5.5 MB) and writes `engine_pin.cmake` with
+  its `file://E:/...` URL and SHA-256. Copy at `E:/RANDOM/nnhge-032-checks/a-game-project-folder-with-a-deliberately-long-name`
+  (78 characters).
+- **T5.2** From the copy, `nnh` of the worktree's pc-debug, fresh build folders, no `scripts/dkp.sh` run:
+  `nnh build nnh_consumer` (3ds-dev) 113 s and `--release` 104 s, both from the pinned archive, 0 warnings: `.3dsx` 527
+  KB / 457 KB; the cache holds `NNH_HOST_CXX=/c/.../g++.exe` passed by `nnh`. `nnh run nnh_consumer --pc --script
+  game/tests/check.nnhs` (pc-dev): the expect matched (`consumer: PASS D99E1764` at frame 31), screenshot read back
+  (the PASS banner and the line), log under `<copy>/build/logs/`; the first run failed at the script's last line
+  because the script pressed START before `end` (the game closed first): the fixture's script no longer quits
+  (`nnh` closes the game at the end), then exit 0. With the pin file removed and `NNHGE_ENGINE_DIR=E:/...` (drive
+  form): `NNH_PRESET=pc-debug nnh run ... --script` exit 0 (`-- NNHGE 0.1.0: E:/...`), `nnh build nnh_consumer`
+  (3ds-dev) 97 s (`-- NNHGE 0.1.0: /e/...`: `nnh` converted the override). Both manifests list only `nnh_consumer` and
+  `nnh_consumer_small` (what `nnh serve` offers). With `PATH=/c/Windows/system32` and no `NNH_HOST_CXX`, a fresh
+  `3ds-debug` configure through `nnh` fails: `This game has ... which need nnh-assetc: no host C++ compiler: set
+  NNH_HOST_CXX (environment or -D), or -DNNH_ASSETC=<prebuilt nnh-assetc>`, `nnh: configuring 3ds-debug failed`.
+- **T5.3** In the worktree, `build/3ds-dev` deleted, then `nnh build animation`: configured by `nnh` (host compiler
+  passed) and built in 112 s, 0 warnings.
+- **T5.4** After the builds the worktree has no new or changed file but this stage's own sources; the copy's pc build
+  fetched SDL3's pinned MinGW package into `<copy>/build/pc-*/_deps/nnh_sdl3_prebuilt-src`, and `cmake --build
+  build/3ds-dev --target dist` (10.5 s) fetched makerom and bannertool into `<copy>/build/3ds-dev/_tools/` and made
+  `dist/nnh_consumer/nnh_consumer.3dsx` and `.cia`.
+- **T5.5** Longest commands of the copy: 3,145 characters (9.6 %) in `3ds-dev` and `3ds-release` (the platform archive
+  under `_deps/nnhge-build/`; the core's archive from its response file). A game's own link command holds its objects
+  relative to the build folder (the project's path doesn't count): 788 characters with 6 objects, about 50 characters
+  per object (`game/CMakeFiles/<game>.dir/src/<file>.o`), so a game reaches the 50 % margin at roughly 300 source files
+  (question 10; the guide says so).
+- **T5.6** One-file edit of `small/main.cpp` (3 runs): simulator (pc-debug) 2.94 / 2.14 / 1.94 s, `.3dsx` (3ds-dev)
+  3.57 / 3.58 / 3.62 s; the repository's `hello` at the same time 2.69 / 1.86 / 1.88 s, so the game project is on par
+  with the repository (the first run of each series pays a cold file cache; the PC budget of < 2 s is borderline on this
+  machine for both, as at T0.2). `ninja -v` shows `ccache.exe` on the game's compile. **Re-measured in the review round** (7 warm runs each, interleaved, after one warm-up; the hello-sized `nnh_consumer_small` of the consumer project's build, the engine through `FETCHCONTENT_SOURCE_DIR_NNHGE`): `cmake --build` → simulator, game project 1.73–1.81 s, **median 1.77 s**; the repository's `hello` 1.79–1.84 s, **median 1.82 s**; through Ninja alone 1.65 s and 1.71 s. Both within the < 2 s budget; the 2.94 s and 2.69 s above were cold first runs. Configure (fresh / again): local
+  way 17.5 / 1.8 s, pinned archive 22.0 / 2.8 s. Build folders: pc-debug 164 MB, pc-dev 206 MB, 3ds-dev 59 MB,
+  3ds-release 72 MB. The copy was deleted afterwards (E: 9.7 GB free).
+
+### Stage 6 results (the repository unchanged)
+
+- **T6.1** After stages 1–5, fresh builds of all four presets (0 warnings): target lists equal to T0.1's apart from
+  `nnh_core_objects`; games equal; cache entries as listed at T2.4. `hello`: `.3dsx` SHA-256 `b0b243dd…70c3`, stripped
+  `.elf` `91680297…a531` (both equal to T0.1's), `nm -C` equal, pc-release `.text` 0x189a0; the `hello` and `nnh_tests`
+  link commands equal; `check_release_strings.sh` ok on `hello.3dsx`; longest 3DS command 2,533. Every example's
+  `--pc` check script runs in ctest (the `*_script_pc` tests, goldens unchanged): pc-debug 382/382 at stage 4's end,
+  rerun at stage 7's end with the docs.
+- **T6.2** (3 runs) `hello` edit → simulator (pc-debug) 2.09 / 2.06 / 2.02 s (T0.2: 2.22 / 1.91 / 1.95), → `.3dsx`
+  (3ds-dev) 3.62 / 3.61 / 3.53 s (3.81 / 3.57 / 3.66); clean engine pc-release 19.1 s (19.4), 3ds-release 47.2 s (48.1);
+  fresh configure pc-debug 19.9 s (25.6), 3ds-dev 23.1 s (24.4). No measurable change.
+- **T6.3** `docs/ROADMAP.md` baseline table: a "Spec 032" paragraph with these numbers and T5.6's.
+- **T6.4** Mutation pass (`build/ref-032/mutate.py`, not committed: one mutant at a time, judged by the named tests):
+  18 mutants, 18 killed. CMake (judged by `consumer`, `consumer_platform_*`, `consumer_pruned`): the platform check
+  returning early; an empty platform taken as `pc`; `nnh_game` reading a directory variable again; examples always ON;
+  the `link/` gate removed; the missing-folder check removed; the launcher not applied; C++20 forced over the game's
+  choice; the version not cached. `nnh` (judged by `nnh_tool_tests` filters): the farthest root instead of the nearest;
+  `nnh.toml` errors dropped; unknown keys refused; build presets not required; `NNH_HOST_CXX` in drive form; the override
+  not converted; a quote not refused; the extras on every shell; the `PATH` order changed. Two CMake mutants (examples
+  always ON, the version not cached) first **survived**: `consumer` reused its build folder, whose cache kept the
+  earlier values. Fix: the local way deletes its `CMakeCache.txt` before every configure (objects kept; +7 s), then both
+  were killed. Argued, not run: the response-file variable not set (the length check fails: T1.1's 27,354) or set in
+  `engine/core/` (breaks every compile, the spike); `check_preset` and `open_project` skipped in the commands (glue,
+  checked by hand at T4.5 and by stage 5's runs).
+
+### Stage 7 results (docs)
+
+- **T7.1** `docs/guides/game-projects.md` (new): the layout, the four ways' `CMakeLists.txt`, the six presets with the
+  `NNHGE_ENGINE_DIR` mapping, `nnh.toml`, `.gitignore`, where outputs go, a local engine (per machine, per shell; an
+  existing build folder keeps its engine), upgrading the pin, `NNHGE_VERSION`, what the engine adds (options, defaults,
+  reserved names), 3DS builds on Windows (what `nnh` passes, the manual `dkp.sh` form, the command-line limit and a
+  game's own link line), CA certificates. `getting-started.md` §5 points to it.
+- **T7.2** `docs/tech/cmake.md` (the layout table, "Game projects: the engine as a subproject" with the contract, the
+  options, the defaults, the version, "Reserved names" (checked against the consumer's `ninja -t targets` and cache),
+  "The command-line limit (Windows, 3DS)", "Consumer tests", `vm_check.sh final`'s new steps, `nnh` passing
+  `NNH_HOST_CXX`); `docs/guides/nnh-tool.md` ("Game projects": the root rule and message, `nnh.toml`, the preset check,
+  3DS configures on Windows, `NNHGE_ENGINE_DIR`); `docs/architecture/project-structure.md`; `CLAUDE.md` (a summary
+  paragraph, the layout line, three build lines); `README.md` says nothing about games living in the repository (no
+  change).
+- **T7.3** `decisions.md`: a change-log line for the built D55; `python -I scripts/docs_tool.py check`: 0 broken links.
+- **T7.4** The page followed word for word (`build/ref-032/verbatim.py` takes the guide's code blocks and
+  getting-started's `nnh_add_game()` block, `ICON` left out as it says "optional", `hello`'s `main.cpp` as the game) in
+  an empty folder: with `NNHGE_ENGINE_DIR` set, `nnh run mygame --pc` configured, built and ran it (screenshot read back:
+  "Hello from NNHGE!", frame 30) although the file still had the placeholder URL and hash (the override skips them);
+  then with an archive made by the page's `git archive --format=tar.gz --prefix=nnhge/ ...` line, its `file://E:/...`
+  URL and SHA-256 written into `URL`/`URL_HASH` and the variable unset: the same run from the download (`-- NNHGE
+  0.1.0: .../build/pc-dev/_deps/nnhge-src`). The page's manual 3DS line through `dkp.sh` configured `3ds-dev`. Doc fixes
+  from it: the manual line (no extra `cd`, the build line added) and the link-line note (objects are relative to the
+  build folder: about 50 characters each, ≈ 300 files to half the limit). The folder was deleted.
+- **T8.1** (code only) `scripts/vm_check.sh final` runs `ctest -L consumer-full`, the consumer copy's 3DS builds through
+  `nnh` under `/tmp` with `/opt/devkitpro`, and a fresh `3ds-dev` `nnh build animation`; the main ctest there runs
+  `-LE consumer-full`. Not run: the VM pass is the lead's.
+
+### Console run (stage 9; passed 2026-11-27, results at the end)
+
+T9.1 on the PC (Git Bash, from the engine checkout that will be tested: this worktree, or `main` after the merge;
+`E` below is its folder in drive form, `$N` its `nnh`):
+
+```sh
+E=E:/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-032
+N=/e/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-032/build/pc-debug/tools/nnh/nnh.exe
+cd /e/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-032
+tests/consumer_tools/copy_project.sh /e/RANDOM/nnhge-032-console local
+cd /e/RANDOM/nnhge-032-console && export NNHGE_ENGINE_DIR=$E
+$N build nnh_consumer && $N build nnh_consumer --release        # 3ds-dev and 3ds-release, no warning expected
+```
+
+T9.2 on the Old 3DS XL (nobody touches it after Y):
+
+1. Homebrew Launcher open, press **Y**; on the PC: `$N run nnh_consumer --script game/tests/check.nnhs`. Expected:
+   `nnh: PASS`, exit 0, the line `consumer: PASS D99E1764` (the PC's), the log and screenshots under
+   `/e/RANDOM/nnhge-032-console/build/logs/`.
+2. FBI → Remote Install → Receive URLs over the network; on the PC: `$N install nnh_consumer`. Then from the HOME
+   Menu: is "NNHGE Consumer" there with the fixture's icon (the 48×48 test icon) and banner, and does it start to the
+   green PASS screen? (yes/no)
+3. Afterwards: `rm -rf /e/RANDOM/nnhge-032-console` (disk).
+
+### Final guards (2026-11-27, Windows) and what is open
+
+- ctest pc-release 341/341 and pc-debug 382/382 (`-LE consumer-full`; the first pc-debug run reported `nnh_tool`
+  failing on the mutant `path_order_changed`: the mutation harness had rebuilt `nnh_tool_tests` with the mutant and
+  restoring the source doesn't rebuild it; after `cmake --build build/pc-debug`, `nnh_tool` and `nnh_script_pc_smoke`
+  pass). The four presets build with 0 warnings (stage 6; no engine or helper change since); `hello.3dsx` and the
+  stripped `.elf` equal to T0.1's; `check_command_length.sh` 2,533 (7.7 %) in both 3DS presets; `docs_tool.py check`
+  0 broken links. The `consumer-full` ways passed at stage 3 on this engine (only the driver's local way and the docs
+  changed since).
+- **Open** (the new check order, docs/process/README.md): T8.1's script step and T8.2 (one review together with one
+  `scripts/vm_check.sh final` on VM 120: Linux `ctest` with `consumer` and `consumer-full`, the consumer's 3DS builds
+  with `/opt/devkitpro`, GCC 14, 32-bit, ASan/UBSan), stage 9 (the console run above) and T10.3 (merge, then the
+  post-merge checks). Not started by this implementation, as instructed.
+
+### Review round (2026-11-27): fixes
+
+Batch 1 (`nnh`), test first (red seen: 5 of 8 new cases failed against stubs, then green):
+- FR-13: `check_preset()` moved to the top of `configure_and_list()`, so `nnh serve`'s game list checks the preset too
+  (`configure_and_list_checks_the_preset_first`: false, the message, CMake not run, no `build/`).
+- AC-6 glue: the `NNHGE_ENGINE_DIR` / host-compiler decision is the pure `configure_extras(game, devkitpro_shell,
+  engine_env, host_env, find)` (host_compiler.cpp); tests for the devkitPro-only extras, the override only in a game
+  project, `check_preset()`'s message captured through an `OutputFn`, and `open_project_at()` stopping on a malformed
+  `nnh.toml` (and opening, with the warning shown, on an unknown key) — `tests/test_project_commands.cpp`.
+- `configure_command` refuses `$`, the backtick and `%` as well as quotes, in the root (every shell) and the extras.
+- One bounded reader `text_file.{hpp,cpp}` (`read_text_file`) for `nnh.toml`, presets and the manifest;
+  `preset_names.cpp` 174 → 164 lines.
+- `nnh serve` reads `nnh.toml` once (when it starts): its builds go through `build_target_in(root, ...)`.
+- A real `find_on_path()` lookup (`cmd`/`sh`, and a missing program). `nnh_tool_tests`: 279 cases, 0 failures.
+
+Batch 2 (CMake, scripts, docs):
+- FR-19: `CMAKE_NINJA_FORCE_RESPONSE_FILE` is undocumented (`cmake --help-variable`: not defined); said so in D55 item
+  9, `cmake.md` ("The command-line limit") and `engine/core/archive/CMakeLists.txt`, with the length check as its
+  guard. `scripts/vm_check.sh final` now runs `check_command_length.sh` on the fresh `build/3ds-dev` and on the
+  consumer copy's `3ds-dev`/`3ds-release`; spec 034's FR-24 checklist has the line. `check_command_length.sh` takes
+  optional targets (`dist`, `<game>_cia`), documented.
+- FR-8: `cmake.md` "Reserved names" lists SDL3's FetchContent names and overrides, its own targets when built from source
+  and the four `SDL_*` cache entries `nnh_sdl3.cmake` sets with FORCE (they override the game's values).
+- The guide: a hand-made pinned 3DS configure needs `NNHGE_ENGINE_DIR` unset (or the `-D` passed empty); a user preset
+  needs a `pc-`/`3ds-` name, both preset kinds and the `build/${presetName}` folder; `setx` with forward slashes.
+- New `consumer_options_mixed` (`consumer-full`, configure only, 19 s): `NNH_BUILD_TESTS=ON` with `NNH_BUILD_EXAMPLES=OFF`
+  in a game project adds `nnh_tests` and no example, `nnh-link` or `nnh`. ROADMAP's 032 line unticked until the merge.
+
+Batch 3 (AC-9 re-measured, final checks):
+- Simulator one-file edit, 7 warm runs each, interleaved: game project (`nnh_consumer_small`) median **1.77 s**
+  (1.73–1.81), the repository's `hello` median **1.82 s** (1.79–1.84); through Ninja alone 1.65 s and 1.71 s. Within
+  < 2 s (recorded at T5.6 and in the ROADMAP).
+- Final: `nnh_tool_tests` 279/279; ctest pc-debug 382/382 (`-LE consumer-full`); `consumer_options_mixed` passes;
+  `3ds-dev` and `3ds-release` 0 warnings; `hello.3dsx` SHA-256 `b0b243dd…70c3` (unchanged; only a comment of
+  `engine/core/archive/CMakeLists.txt` changed in the engine build); longest 3DS command 2,533; `docs_tool.py check`
+  0 broken links.
+
+### Review, Linux pass and console run (2026-11-27)
+
+- Review (`nnh-reviewer`): approve with fixes, no blockers; every item fixed in the review round above.
+- `scripts/vm_check.sh final` on VM 120 (from the tree before the review fixes): full ctest on GCC 13, GCC 14 and
+  32-bit `nnh_tests` 4143/0, ASan/UBSan `nnh_tests` 4143/0, `nnh_assetc_tests` 333/0, `nnh_tool_tests` 271/0. Then the
+  spec's own steps: `ctest -L consumer-full` passed (7 tests; `consumer_submodule` skips on the VM, whose tree has no
+  `.git`); a pinned consumer copy under `/tmp` (a long folder name) built `nnh_consumer.3dsx` in 3ds-dev and 3ds-release
+  through `nnh`, longest command 3,133 characters (9.6 %); `nnh build animation` in a fresh `build/3ds-dev`, 2,521.
+- `scripts/vm_check.sh fast` with the fixes: GCC 13 4143/0, `nnh_tool_tests` 279/0, ASan 279/0 after a stale-object
+  rebuild. The cause was the sync, not the code: files edited during the final pass reached the VM with their real
+  (older) times, so Ninja kept objects built from the earlier sync. `vm_check.sh` now touches every file whose content
+  changed since the last sync.
+- Console (Old 3DS XL, 3ds-dev from a `local` copy outside the repository): `nnh run nnh_consumer --script
+  game/tests/check.nnhs` → `nnh: PASS`, `consumer: PASS D99E1764` (the PC's), the green PASS screenshot (the first try
+  got no log: the Windows Firewall rule for the worktree's `nnh.exe` was created during it). `nnh install nnh_consumer`
+  (makerom and bannertool downloaded on first use) → FBI installed the `.cia`; "NNHGE Consumer" in the HOME Menu with the
+  fixture's icon and banner, starting to the green PASS screen (maintainer: yes).

@@ -8,9 +8,9 @@
 # The .cia step reruns only when one of its inputs changes; the tools are fetched by its first build.
 
 include("${CMAKE_CURRENT_LIST_DIR}/nnh_ctr_tools.cmake")
-set(_NNH_CIA_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(nnh_add_3ds_package target)
+    set(_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}") # spec 032 FR-6: not the calling folder's
     cmake_parse_arguments(PARSE_ARGV 1 K "ASSETS" "" "")
     set(dist "${CMAKE_BINARY_DIR}/dist/${target}")
     set(threedsx "${CMAKE_CURRENT_BINARY_DIR}/${target}.3dsx")
@@ -38,9 +38,9 @@ function(nnh_add_3ds_package target)
     set(banner "${CMAKE_CURRENT_BINARY_DIR}/${target}.bnr")
     add_custom_command(OUTPUT "${banner}"
         COMMAND ${CMAKE_COMMAND} -DBANNER=${CIA_BANNER} -DAUDIO=${CIA_BANNER_AUDIO}
-                -P ${_NNH_CIA_DIR}/nnh_check_banner.cmake
+                -P ${_cmake_dir}/nnh_check_banner.cmake
         COMMAND "${NNH_BANNERTOOL_PROGRAM}" makebanner -i "${CIA_BANNER}" -a "${CIA_BANNER_AUDIO}" -o "${banner}"
-        DEPENDS "${CIA_BANNER}" "${CIA_BANNER_AUDIO}" "${_NNH_CIA_DIR}/nnh_check_banner.cmake"
+        DEPENDS "${CIA_BANNER}" "${CIA_BANNER_AUDIO}" "${_cmake_dir}/nnh_check_banner.cmake"
         COMMENT "Banner for ${target}"
         VERBATIM)
 
@@ -63,12 +63,12 @@ function(nnh_add_3ds_package target)
     add_custom_command(OUTPUT "${cia_file}"
         COMMAND ${CMAKE_COMMAND} -E make_directory "${dist}"
         COMMAND "${NNH_MAKEROM_PROGRAM}" -f cia -o "${cia_file}" -target t -exefslogo
-                -elf "$<TARGET_FILE:${target}>" -rsf "${_NNH_CIA_DIR}/3ds/nnhge.rsf"
+                -elf "$<TARGET_FILE:${target}>" -rsf "${_cmake_dir}/3ds/nnhge.rsf"
                 -icon "${smdh}" -banner "${banner}"
                 -major ${VERSION_MAJOR} -minor ${VERSION_MINOR} -micro ${VERSION_MICRO}
                 "-DAPP_TITLE=${short}" "-DAPP_PRODUCT_CODE=${CIA_PRODUCT_CODE}"
                 "-DAPP_UNIQUE_ID=${CIA_UNIQUE_ID}" "-DAPP_ROMFS=${romfs}"
-        DEPENDS ${target} "${smdh}" "${banner}" "${_NNH_CIA_DIR}/3ds/nnhge.rsf" ${romfs_deps}
+        DEPENDS ${target} "${smdh}" "${banner}" "${_cmake_dir}/3ds/nnhge.rsf" ${romfs_deps}
         COMMENT "CIA ${target}: unique ID ${CIA_UNIQUE_ID}, ${CIA_PRODUCT_CODE}, v${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}"
         VERBATIM)
     add_custom_target(${target}_cia DEPENDS "${cia_file}")

@@ -65,7 +65,10 @@ The console needs custom firmware with the Homebrew Launcher.
 
 ## 5. Make your own game
 
-Inside this repository, add a folder with a `CMakeLists.txt`:
+A game lives best in its own folder and repository, with the engine as a pinned dependency: a `CMakeLists.txt` that
+adds the engine (a hash-pinned download, your local engine checkout, a git submodule or a copied folder), the six
+presets and an `nnh.toml`, written by hand today ([Game projects](game-projects.md)); `nnh build`, `run`, `install`
+and `serve` work from that folder as they do here. Whichever way, the game's own folder has a `CMakeLists.txt`:
 
 ```cmake
 nnh_add_game(mygame
@@ -76,9 +79,10 @@ nnh_add_game(mygame
     ICON icon.png)   # optional, 48x48
 ```
 
-and `add_subdirectory(mygame)` it from the top-level `CMakeLists.txt`. Images, sounds and levels go in an
+added with `add_subdirectory(mygame)` from the project's `CMakeLists.txt` (or, to try something quickly inside this
+repository, from its top-level one). Images, sounds and levels go in an
 assets folder (`ASSETS assets`, [api/assets.md](../api/assets.md)); levels can be drawn in Tiled
-([Levels in Tiled](levels.md)) or built in code ([api/tilemap.md](../api/tilemap.md)). A standalone project template
-(engine as a dependency) comes with the `nnh` CLI. To give it to players — a `.3dsx`, or a `.cia` with
+([Levels in Tiled](levels.md)) or built in code ([api/tilemap.md](../api/tilemap.md)). A generated project
+(`nnh new`) comes with spec 033. To give it to players — a `.3dsx`, or a `.cia` with
 a banner for the HOME Menu, installed over the network with FBI — see
 [Distributing your game](packaging.md).

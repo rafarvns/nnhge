@@ -84,7 +84,7 @@ link::BuildOutput ServeHooks::build(const link::BuildRequest& request,
     const bool release = request.release || release_;
     BuiltGame built;
     link::BuildOutput out;
-    out.ok = build_target(options, "_3dsx", release, built, false, &output);
+    out.ok = build_target_in(root_, options, "_3dsx", release, built, false, &output); // nnh.toml read once
     if (out.ok) {
         out.file = built.game.binary_dir + "/" + request.game + ".3dsx";
         std::printf("nnh: sending %s.3dsx to the console\n", request.game.c_str());

@@ -117,6 +117,16 @@ budget: the input filter's check and raw engine buttons, 56; the scene stack's t
 transition or input-block symbol in either. `<nnh/transition.hpp>` 8,476 preprocessed lines, 0.43 s alone;
 `<nnh/ease.hpp>` 461 lines. Details: plan 023, "Stage 0 results" to "Stage 8 results".
 
+Spec 032 (game projects outside the repository), 2026-11-27, same machine, three edits each: in the repository, edit
+`hello` → simulator 1.91–2.22 s before, 2.02–2.09 s after (pc-debug); → `.3dsx` 3.57–3.81 s before, 3.53–3.62 s after
+(3ds-dev); clean engine (`nnh_core` + platform) pc-release 19.4 → 19.1 s (ccache), 3ds-release 48.1 → 47.2 s; fresh
+configure pc-debug 25.6 → 19.9 s, 3ds-dev 24.4 → 23.1 s; `hello.3dsx` byte-identical. In a game project outside the
+repository (78-character path, the engine as a pinned archive or a local checkout): edit a hello-sized game → simulator
+median 1.77 s over 7 warm runs (the repository's `hello` 1.82 s in the same series; first cold runs up to 2.9 s), → `.3dsx` 3.57–3.62 s; configure fresh 17.5 s
+(local engine) / 22.0 s (archive), again 1.8 / 2.8 s; the consumer ctest 76 s cold, 23 s warm. Both within the < 2 s budget,
+with less than 0.25 s to spare on this machine.
+Details: plan 032, "Stage 0 results" to "Stage 6 results".
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`
@@ -377,6 +387,20 @@ spec; the order below is a proposal.
   (camera, ambient + 4 lights, draws between the 2D layers, culling, order, `to_screen`/`screen_ray`, probe pixels);
   the simulator's CPU rasteriser (D41) and the citro3d backend; `examples/models` (showcase, check, bench, smoke).
   A 2D game links no 3D code (`hello` 3DS `.text` +272 B: the hook and the shared 2D slice function).
+
+## Release 1.0 (specs 032–034, study [2026-11-26](plans/2026-11-26-release-1.0.md))
+
+- [x] **Game projects outside the engine repository** — [spec 032](../specs/032-game-projects/spec.md) (D55):
+  the engine is a CMake subproject of a game's own project — a hash-pinned source archive through `FetchContent`
+  (`NNHGE_ENGINE_DIR` for a local engine), a git submodule or a copied folder; `nnh_add_game()` with every keyword from
+  any folder; examples, tests, NNH Link and `nnh` stay out (`NNH_BUILD_*` default to `PROJECT_IS_TOP_LEVEL`); game
+  targets get C++20 and the compiler cache; `NNHGE_VERSION*`; `nnh` works in a folder marked by `nnh.toml`, checks the
+  presets and passes the host compiler and paths in MSYS form to 3DS configures (a fresh `nnh build` of a 3DS preset now
+  works in the repository too); the core is archived from a response file in 3DS presets (longest command 27,354 →
+  2,533 characters, `hello` byte-identical). Proof: `tests/consumer/` and the `consumer`/`consumer-full` ctests; guide
+  [game projects](guides/game-projects.md). Done 2026-11-27: review, Linux pass (GCC 13/14, 32-bit, ASan, every consumer way, the copy's 3DS builds through `nnh`) and console run (script PASS, `.cia` from the HOME Menu) passed.
+- [ ] `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs — [spec 033](../specs/033-nnh-new-and-doctor/spec.md)
+- [ ] Versions, API stability and releases — [spec 034](../specs/034-versions-and-releases/spec.md)
 
 ## After 1.0 (planned 2026-11-26)
 

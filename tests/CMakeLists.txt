@@ -1045,6 +1045,9 @@ if(NNH_BUILD_FUZZERS)
     target_link_options(fuzz_path_ops PRIVATE -fsanitize=fuzzer,address)
 endif()
 add_test(NAME unit COMMAND nnh_tests)
+# The same tests the other way round: a test that leans on what an earlier one left behind (a static, a global the
+# engine's shutdown() doesn't reset) fails here instead of on another platform whose link order differs.
+add_test(NAME unit_reverse COMMAND nnh_tests --reverse)
 
 # Platform contract conformance: the same tests against each platform library.
 function(nnh_add_conformance platform)

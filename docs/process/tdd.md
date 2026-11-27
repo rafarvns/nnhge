@@ -15,9 +15,18 @@ Repeat per behaviour. Commit when green.
 cmake --build --preset pc-debug && ctest --preset pc-debug     # build + all tests
 build/pc-debug/tests/nnh_tests.exe                             # all tests, one line per test
 build/pc-debug/tests/nnh_tests.exe <filter>                    # only tests whose name contains <filter>
+build/pc-debug/tests/nnh_tests.exe --reverse [filter...]       # the other way round (ctest unit_reverse)
 ```
 
 The test build is fast on purpose: an in-house framework (`tests/framework/`), no external dependency.
+
+Tests must not lean on what an earlier test left behind: another platform's link order runs them in a different
+order. ctest runs `nnh_tests` twice, as `unit` (registration order) and `unit_reverse` (`--reverse`), so a leak
+fails on every machine (cost: one more `nnh_tests` run, 75 s in pc-debug on the maintainer's machine, about 8% of the
+full ctest's 921 s). When only the reverse run fails, bisect with `nnh_tests --reverse <failing test> <earlier
+tests...>` until one earlier test is left, then fix the cause: reset the engine state in `nnh::shutdown()` (or the
+fake platform's `reset()`), or make the test set up what it reads (a static object, a file-level variable an assert
+may leave unassigned). Never order the tests to hide it.
 
 ## How much to run, and when
 

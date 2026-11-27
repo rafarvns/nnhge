@@ -22,6 +22,9 @@ int play() {
     nnh::platform_fake::reset();
     CHECK(nnh::init({.gfx = {.max_draws = 2048}}));
     TransitionsCheck& check = check_object();
+    // The object is static: an earlier play() left it done(), and the driver's on_enter (which restarts it) runs only
+    // inside the first frame, after the loop's first done() test. Start it here, as a fresh object would be.
+    check.reset();
     nnh::scenes::push(check.driver());
     int frames = 0;
     while (!check.done() && frames < 2000) {
@@ -54,8 +57,8 @@ NNH_TEST(transitions_self_check_matches_its_golden_checkpoints) {
 }
 
 NNH_TEST(transitions_self_check_plays_the_same_twice) {
-    play();
+    CHECK(play() == TransitionsCheck::kFrames);
     const std::uint32_t first = check_object().checksum();
-    play();
+    CHECK(play() == TransitionsCheck::kFrames); // the whole script again, not a finished one
     CHECK(check_object().checksum() == first);
 }

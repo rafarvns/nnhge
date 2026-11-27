@@ -41,8 +41,16 @@ struct Fixture {
 
 Fixture* g_f = nullptr;
 Entity g_e{};
-void spawn_one() { g_e = g_f->lib.spawn(g_f->a, g_f->p); }
-void spawn_with_a_bob() { g_e = g_f->lib.spawn_with(g_f->a, g_f->p, Bob{1}); }
+// g_e is cleared first: an assert stops the call before the assignment, and a stale entity from an earlier test must
+// not read as "spawned".
+void spawn_one() {
+    g_e = {};
+    g_e = g_f->lib.spawn(g_f->a, g_f->p);
+}
+void spawn_with_a_bob() {
+    g_e = {};
+    g_e = g_f->lib.spawn_with(g_f->a, g_f->p, Bob{1});
+}
 
 } // namespace
 

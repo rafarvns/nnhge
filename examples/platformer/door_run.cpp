@@ -1,6 +1,7 @@
 #include "door_run.hpp"
 
 #include <cstdio>
+#include <nnh/build.hpp>
 #include <nnh/log.hpp>
 
 NNH_LOG_CHANNEL_EXTERN(platformer);
@@ -37,8 +38,12 @@ void DoorRun::door(Demo from, Demo to) {
 void DoorRun::door_done() {
     if (!running_ || ++finished_ < kDoors) return;
     running_ = false;
+    // 60 Hz is a console budget: judged in Development builds (3ds-dev on the console, pc-dev), like the other benches;
+    // a Debug build (the ctest runs pc-debug, often next to other tests) only reports its times.
+    const bool judged = nnh::build::flavor() == nnh::build::Flavor::Development;
     std::snprintf(line_, sizeof line_, "doors: done %d irises frames %d worst %.1f ms avg %.1f ms: 60 Hz %s", kDoors,
-                  frames_, meter_.worst_ms(), meter_.average_ms(), meter_.ok() ? "PASS" : "FAIL");
+                  frames_, meter_.worst_ms(), meter_.average_ms(),
+                  !judged ? "not judged (Debug)" : meter_.ok() ? "PASS" : "FAIL");
     log();
 }
 

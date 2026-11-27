@@ -1161,3 +1161,10 @@ costs gfx ≈ 0.063 ms, i.e. three quarters of a fade; the transition module's o
 budgets replace the old targets (the maintainer's policy: no target predating the measurement) in AC-8,
 `examples/transitions/bench.cpp` and `docs/api/transition.md`. The platformer's door verdict (no frame over 25 ms) is
 unchanged.
+
+### Follow-up (2026-11-27): the doors verdict in Debug builds
+
+`platformer_doors_script_pc` failed from time to time in pc-debug ctest runs (Windows under `-j`, the Linux VM): a
+Debug simulator frame next to other tests sometimes takes 30+ ms. 60 Hz is a console budget, so `door_run.cpp` now
+judges it only in Development builds (3ds-dev on the console, pc-dev), like the other benches; Debug prints
+`60 Hz not judged (Debug)` with the times. The console run is unchanged.

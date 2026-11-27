@@ -182,7 +182,11 @@ void shutdown() {
     detail::audio_shutdown(); // after scenes too (sounds); before assets
     // Optional modules (data assets) free what they keep, before the leak report. Release has no leak report and
     // skips this, so games that don't use those modules stay byte-for-byte the same (spec 014 AC-6).
-    if constexpr (build::kDevToolsEnabled) detail::run_shutdown_hooks();
+    if constexpr (build::kDevToolsEnabled) {
+        detail::run_shutdown_hooks();
+        detail::g_reload_applied_frame = 0; // spec 031: the next init's frame 2 is no batch frame (frames restart at 0)
+        g_reload_frame = false;
+    }
     detail::assets_shutdown();
     if constexpr (build::kDevToolsEnabled) mem::report_leaks();
     detail::log_file_stop();

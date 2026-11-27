@@ -203,7 +203,8 @@ bool batch_with_room(std::size_t room) {
     const Put warm[] = {text("art/b.png", "W")}; // the first batch allocates the buffer and the overlay
     send_batch(1, warm, 1);
     frames(2);
-    const std::size_t used = nnh::mem::region_stats(nnh::MemRegion::Heap).bytes;
+    // What the fake's limit counts (not core's stats: they may differ by blocks earlier tests left, the Linux finding).
+    const std::size_t used = fake::region_used(nnh::MemRegion::Heap);
     const std::size_t before = nnh::mem::tag_stats(reload_memory_tag()).bytes;
     fake::set_region_capacity(nnh::MemRegion::Heap, used + room);
     const Put batch[] = {text("art/a.png", "A2"), text(".nnh_assets", "art/a.png\nart/b.png\nlevels/room.txt\n")};
@@ -227,20 +228,29 @@ bool batch_with_room(std::size_t room) {
 
 NNH_TEST(reload_batch_an_allocation_failure_at_every_size_changes_nothing) {
     RELOAD_DEV_ONLY();
-    // The batch's peak need depends on the compiler and the allocator (Linux finding): find the threshold first, then
-    // sweep around it, so both outcomes are always exercised.
+    // The batch's peak need depends on the compiler, the allocator and what earlier tests left in the heap (Linux and
+    // reverse-order runs): no fixed range. Both ends are checked, the threshold found by bisection, then sizes around it
+    // swept; every run checks that a refusal changed nothing. The threshold may move a little between runs (the heap's
+    // own state), so the outcomes are counted, not predicted.
+    int refused = 0, applied = 0;
     CHECK(!batch_with_room(0));
+    ++refused;
     std::size_t lo = 0, hi = 1u << 20;
     CHECK(batch_with_room(hi));
+    ++applied;
     while (hi - lo > 64) {
         const std::size_t mid = lo + (hi - lo) / 2;
-        if (batch_with_room(mid)) hi = mid;
-        else lo = mid;
+        if (batch_with_room(mid)) {
+            hi = mid;
+            ++applied;
+        } else {
+            lo = mid;
+            ++refused;
+        }
     }
-    int refused = 0, applied = 0;
     const std::size_t from = lo > 4000 ? lo - 4000 : 0;
     for (std::size_t room = from; room < hi + 4000; room += 97) (batch_with_room(room) ? applied : refused) += 1;
-    CHECK(refused > 0 && applied > 0);
+    CHECK(refused > 0 && applied > 0 && refused + applied > 40); // both outcomes, at many sizes
 }
 
 NNH_TEST(reload_batch_a_replaced_file_is_removed_after_the_kinds_committed) {

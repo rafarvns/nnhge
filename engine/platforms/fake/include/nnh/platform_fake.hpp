@@ -174,6 +174,8 @@ void advance_time(Duration elapsed);
 
 /// Bytes region_alloc() may hand out in a region (defaults: heap 64 MB, linear 32 MB, vram 6 MB).
 void set_region_capacity(MemRegion region, std::size_t bytes);
+/// Bytes region_alloc() has handed out and not taken back in a region (what set_region_capacity() limits).
+std::size_t region_used(MemRegion region);
 
 /// Fills each new Heap and Linear block with `byte` (0..255) instead of leaving what malloc returns; −1 (the default,
 /// and after reset()) turns it off. Proves core initialises every byte it later compares or hashes.

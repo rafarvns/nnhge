@@ -290,7 +290,7 @@ Maintainer's machine: WinLibs MinGW-w64 GCC + CMake + Ninja on PATH (Git Bash); 
 ```sh
 cmake --preset pc-debug && cmake --build --preset pc-debug     # simulator (flavors: -debug, -dev, -release)
 ctest --preset pc-debug                                        # unit tests
-build/pc-debug/tests/nnh_tests.exe [name-filter]               # tests, one line each
+build/pc-debug/tests/nnh_tests.exe [--reverse] [name-filter...]  # tests, one line each (--reverse: other link order)
 scripts/dkp.sh cmake --preset 3ds-release                      # 3DS configure (once)
 scripts/dkp.sh cmake --build --preset 3ds-release              # → build/3ds-release/**/<game>.3dsx
 scripts/dkp.sh cmake --build --preset 3ds-release --target dist   # → build/3ds-release/dist/<game>/ (.3dsx, .cia)

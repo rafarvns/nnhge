@@ -1146,6 +1146,21 @@ pc-debug, pc-release, 3ds-release and 3ds-dev; 3ds-release `hello.3dsx` `8c687f3
 `hello` text 229 488 B (unchanged); `check_release_strings.sh` passes on the 3ds-release `reload.3dsx`. The `ui` example
 still links the reload core in Development, through its textures (the texture kind), not through the UI.
 
+### Linux pass of `e0a50b7`: order-dependent tests
+
+`nnh_tests` failed three tests on every Linux build (4133/4138) and passed on Windows: Linux runs the tests in another
+(link) order. Reproduced on Windows with a new runner option, `nnh_tests --reverse [filter...]` (several filters allowed):
+- `ui_reload_a_batch_frame_resolves_and_measures_again` and `ui_text_keys_are_resolved_once_until_text_changed`:
+  `g_reload_applied_frame` (the review round's UI hook) kept the frame of a batch from an earlier test; frames restart at
+  each `nnh::init`, so a later test's frame 2 looked like a batch frame. `nnh::shutdown()` now clears it (and the FR-23
+  frame flag).
+- `reload_batch_an_allocation_failure_at_every_size_changes_nothing`: the room was computed from core's heap stats, but
+  the fake platform's limit counts its own `region_used`, which differs by what earlier tests left; the test now reads
+  `fake::region_used()` (new), bisects the threshold, sweeps around it and counts both outcomes.
+- Full suite: forward 4138/4138, `--reverse` 4136/4138. The two left, `when_full_assert_logs_the_prefab_and_asserts`
+  (spec 021) and `transitions_self_check_matches_its_golden_checkpoints` (spec 023), touch no reload code and pass in
+  the forward and Linux orders; not investigated here (noted for the lead).
+
 ### Not done (open, for the lead or a next session)
 
 - Stage 0: T0.1–T0.3's reference comparisons against `cf15822` need a reference tree (a clone plus four preset builds,

@@ -496,3 +496,30 @@ Flagged for the maintainer: questions 1, 2 and 8, and risks 1, 3 and 5.
   `arm-none-eabi-gcc-ar qc lib.a @list.rsp` from MSYS2 bash reads a response file of relative paths (members `a.o b.o`)
   and refuses MSYS absolute paths (`/e/.../a.o: No such file or directory`): the archive's response file must hold
   paths relative to the build folder, which CMake's Ninja generator writes.
+
+### Stage 1 results (FR-19)
+
+- **T1.1** `scripts/check_command_length.sh` red on the base tree: 27,354 characters (83.5 %), exit 1, in `3ds-dev` and
+  `3ds-release`; exit 0 with the limit 32,767; exit 2 on a folder without `build.ninja`.
+- **T1.2** Option A works: `nnh_core_objects` (OBJECT, every source, per-file option and usage requirement as before)
+  and `engine/core/archive/` (static `nnh_core`, alias `nnh::core`, archived to `engine/core/libnnh_core.a`;
+  `CMAKE_NINJA_FORCE_RESPONSE_FILE` only when `NNH_PLATFORM` is `3ds`). The archive command became
+  `arm-none-eabi-gcc-ar qc engine/core/libnnh_core.a @CMakeFiles/nnh_core.rsp` (≈ 250 characters; the response file
+  holds paths relative to the build folder, which the native archiver reads). Longest 3DS command after: **2,533
+  characters (7.7 %)**, the platform archive, in both 3DS presets (before: 27,354, 83.5 %). `hello` unchanged:
+  `.3dsx` and stripped `.elf` SHA-256 equal to T0.1's, `nm -C` list equal, pc-release `.text` 0x189a0; the `hello` link
+  commands (3ds-dev, 3ds-release, pc-debug, pc-release) and `nnh_tests`' identical; target lists equal to T0.1's apart
+  from `nnh_core_objects`; cache entries and games equal. 0 warnings in the four presets. Fallback B (T1.3) not needed.
+- **T1.4** Stage-end guards: ctest pc-release 338/338; pc-debug (below); `check_command_length.sh` PASS on both 3DS
+  folders.
+
+Stage 1 refinements:
+- **Archive member order.** `libnnh_core.a` has the same 447 members, but the two vendored objects (`stb_vorbis.o`,
+  `f2s.o`, object libraries the core links) moved from the first two places to the last two: CMake puts the objects
+  of linked object libraries after `$<TARGET_OBJECTS:...>` sources. Members' order inside an archive with a symbol
+  index does not change what the linker takes (the `hello` hashes prove it), so the order is accepted rather than
+  forced with a link-order trick.
+- **`scripts/check_release_strings.sh` on `hello.elf`** fails at the base commit too (`dev_pause`: the `.elf`'s DWARF
+  names `dev_pause.hpp`; the script's own notes say to check the `.3dsx` or a stripped `.elf`); the stage-end guard runs
+  it on `hello.3dsx` (ok). The `pc-release` `hello.exe` form reports `NNH_REMOTE` at the base commit as well (same
+  `.text`). Both are pre-existing and left to the maintainer.

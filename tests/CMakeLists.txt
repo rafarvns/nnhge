@@ -1533,7 +1533,7 @@ option(NNH_BUILD_FUZZERS "Build libFuzzer targets (requires clang)" OFF)
 if(NNH_BUILD_FUZZERS)
     # The code under test lives in these libraries: instrument it for coverage and ASan, or libFuzzer
     # mutates blind (it reported "cov: 1" before this was added).
-    foreach(lib nnh_core nnh_stb_vorbis nnh_fuzz_targets)
+    foreach(lib nnh_core_objects nnh_stb_vorbis nnh_fuzz_targets)
         target_compile_options(${lib} PRIVATE -fsanitize=fuzzer-no-link,address)
     endforeach()
     foreach(name path save asset_index wav ogg remote tilemap data data_index sprite bindings world_ops prefab_ops

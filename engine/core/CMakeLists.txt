@@ -6,7 +6,10 @@ add_library(nnh_core_contract INTERFACE)
 add_library(nnh::core_contract ALIAS nnh_core_contract)
 target_include_directories(nnh_core_contract INTERFACE contract include)
 
-add_library(nnh_core STATIC
+# The core's sources are an OBJECT library; the static library nnh::core (libnnh_core.a) is archived from it in
+# engine/core/archive/, whose folder makes 3DS presets write the archive's object list to a response file
+# (spec 032 FR-19, D55 item 9). Sources, per-file options and usage requirements stay here.
+add_library(nnh_core_objects OBJECT
     src/animation/animator.cpp
     src/animation/animator_rebind.cpp
     src/animation/animator_advance.cpp
@@ -169,7 +172,7 @@ set(_nnh_tween_sources
     src/tween/tween_update.cpp
     src/tween/tween_values.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_tween_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_tween_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_tween_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -197,7 +200,7 @@ set(_nnh_actions_sources
     src/actions/source_eval.cpp
     src/actions/source_names.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_actions_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_actions_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_actions_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -213,7 +216,7 @@ set(_nnh_camera_sources
     src/camera/camera_shake.cpp
     src/camera/camera_update.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_camera_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_camera_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_camera_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -232,7 +235,7 @@ set(_nnh_transition_sources
     src/transition/transition_request.cpp
     src/transition/transition_timeline.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_transition_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_transition_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_transition_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -245,7 +248,7 @@ set(_nnh_zoom_sources
     src/tilemap/visible_range.cpp
     src/tilemap/zoom_edges.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_zoom_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_zoom_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_zoom_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -268,7 +271,7 @@ set(_nnh_query_sources
 )
 # The queries' only square root: -fno-math-errno makes std::sqrt one instruction (no call into libm).
 set(_nnh_query_sqrt_source src/collision/ray_distance.cpp)
-target_sources(nnh_core PRIVATE ${_nnh_query_sources} ${_nnh_query_sqrt_source})
+target_sources(nnh_core_objects PRIVATE ${_nnh_query_sources} ${_nnh_query_sqrt_source})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_query_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
     set_source_files_properties(${_nnh_query_sqrt_source} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
@@ -294,7 +297,7 @@ set(_nnh_pathfinding_sources
     src/pathfinding/searcher_create.cpp
     src/pathfinding/smooth.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_pathfinding_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_pathfinding_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_pathfinding_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -304,7 +307,7 @@ set(_nnh_pool_sources
     src/pool/pool_runtime.cpp
     src/pool/pool_scene.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_pool_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_pool_sources})
 # Entities, components and tags (spec 020, D35): integer-only, built on the pools' slot tables.
 set(_nnh_entities_sources
     src/entities/block_layout.cpp
@@ -322,7 +325,7 @@ set(_nnh_entities_sources
     src/entities/world_stats.cpp
     src/entities/world_tags.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_entities_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_entities_sources})
 # Prefabs (spec 021, D36): libraries of flattened prototypes spawned into worlds. Only prefab_map.cpp includes
 # <nnh/tilemap.hpp>, so a game that spawns from code only links no tilemap code.
 set(_nnh_prefabs_sources
@@ -336,7 +339,7 @@ set(_nnh_prefabs_sources
     src/prefabs/prefab_spawn.cpp
     src/prefabs/prefab_tree_plan.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_prefabs_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_prefabs_sources})
 # Structured saves (spec 027, D45, D46): integer-only codec (floats move as bits), no allocation. Each file is linked
 # only by a game that reaches it: a game without <nnh/saves.hpp> links none of them.
 set(_nnh_saves_sources
@@ -355,7 +358,7 @@ set(_nnh_saves_sources
     src/saves/save_rows.cpp
     src/saves/save_validate.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_saves_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_saves_sources})
 # Transforms (spec 022, D37): the shared deterministic sine and every float operation of the transform values. No fused
 # multiply-add, so compositions, points, inverses and the sine have the same bits on every compiler and on the 3DS.
 # A game that uses only <nnh/transform.hpp> links these objects and no entities code.
@@ -367,7 +370,7 @@ set(_nnh_transform_sources
     src/transform/relative.cpp
     src/transform/sin_cos.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_transform_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_transform_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_transform_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -388,7 +391,7 @@ set(_nnh_hierarchy_sources
     src/hierarchy/propagate.cpp
     src/hierarchy/world_now.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_hierarchy_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_hierarchy_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_hierarchy_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -413,7 +416,7 @@ set(_nnh_particles_sources
     src/particles/particle_expand.cpp
     src/particles/particle_shapes.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_particles_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_particles_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_particles_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -430,7 +433,7 @@ set(_nnh_math3d_sources
     src/math3d/transform3d.cpp
     src/math3d/vec3.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_math3d_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_math3d_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_math3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
@@ -450,7 +453,7 @@ set(_nnh_mesh_sources
     src/mesh/mesh_validate.cpp
     src/mesh/primitives.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_mesh_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_mesh_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_mesh_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
@@ -475,7 +478,7 @@ set(_nnh_gfx3d_sources
     src/gfx3d/stats3d.cpp
     src/gfx3d/submit3d.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_gfx3d_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_gfx3d_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_gfx3d_sources} PROPERTIES COMPILE_OPTIONS "-ffp-contract=off;-fno-math-errno")
 endif()
@@ -531,7 +534,7 @@ set(_nnh_ui_sources
     src/ui/ui_widgets_display.cpp
     src/ui/ui_widgets_input.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_ui_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_ui_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_ui_sources} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -542,7 +545,7 @@ set(_nnh_language_sources
     src/system/language_tag.cpp
     src/system/system_language.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_language_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_language_sources})
 # Shared text code (D49): line-break classes, faces, runs, the one wrapper (spec 028's labels and draw_text), measuring,
 # drawing with game fonts. break_class.cpp is pure (also in nnh-assetc).
 set(_nnh_text_sources
@@ -555,7 +558,7 @@ set(_nnh_text_sources
     src/text/text_face.cpp
     src/text/text_wrap.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_text_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_text_sources})
 # Game fonts (spec 029, D49): the .nnhfont format and validator (pure, shared with nnh-assetc), the page codec, the font
 # table, loading, lookups. Reached only through load_font() (it sets gfx's resolver): a game that never loads a font
 # links none of it.
@@ -571,7 +574,7 @@ set(_nnh_font_sources
     src/font/page_codec.cpp
     src/gfx/texture_alpha.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_font_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_font_sources})
 # Localization (spec 029, D50): the converted formats' validator and the plural interpreter (pure, shared with
 # nnh-assetc), the module state, lookups, format, switching; fonts per language and the UI's adapter in their own files.
 # Reached only through loc:: calls: a game that never calls them links none of it.
@@ -589,7 +592,7 @@ set(_nnh_loc_sources
     src/loc/loc_validate.cpp
     src/loc/plural.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_loc_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_loc_sources})
 # Live values (spec 030, D51): names, stepping, the value text (Ryu's f2s, third_party/ryu) and the wire's live messages
 # are pure and shared with the `nnh` tool. Stepping has no fused multiply-add, so the panel, `nnh` and every system step
 # to the same bits. The module is reached only through live:: calls (and the remote decoder, Debug/Development): a game
@@ -617,7 +620,7 @@ set(_nnh_live_sources
     src/live/live_tune.cpp
     src/live/live_watch.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_source} ${_nnh_live_sources})
+target_sources(nnh_core_objects PRIVATE ${_nnh_live_pure_sources} ${_nnh_live_steps_source} ${_nnh_live_sources})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(${_nnh_live_steps_source} PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 endif()
@@ -639,12 +642,11 @@ set(_nnh_reload_sources
     src/reload/reload_index.cpp
     src/remote/remote_reload.cpp
 )
-target_sources(nnh_core PRIVATE ${_nnh_reload_pure_sources} ${_nnh_reload_sources})
-add_library(nnh::core ALIAS nnh_core)
-target_include_directories(nnh_core PUBLIC include PRIVATE src)
-target_link_libraries(nnh_core PRIVATE nnh::core_contract nnh_stb_vorbis nnh_ryu)
-target_include_directories(nnh_core PRIVATE ${PROJECT_SOURCE_DIR}/third_party/stb_vorbis)
-nnh_engine_options(nnh_core)
+target_sources(nnh_core_objects PRIVATE ${_nnh_reload_pure_sources} ${_nnh_reload_sources})
+target_include_directories(nnh_core_objects PUBLIC include PRIVATE src)
+target_link_libraries(nnh_core_objects PRIVATE nnh::core_contract nnh_stb_vorbis nnh_ryu)
+target_include_directories(nnh_core_objects PRIVATE ${PROJECT_SOURCE_DIR}/third_party/stb_vorbis)
+nnh_engine_options(nnh_core_objects)
 
 # Build flavor (docs/architecture/foundation.md#build-flavors), PUBLIC so games and platform
 # libraries see the same value through <nnh/build.hpp>:
@@ -653,5 +655,10 @@ set(_nnh_flavor_definitions
     $<$<CONFIG:Debug>:NNH_FLAVOR_DEBUG>
     $<$<CONFIG:RelWithDebInfo>:NNH_FLAVOR_DEVELOPMENT>
     $<$<CONFIG:Release,MinSizeRel>:NNH_FLAVOR_RELEASE>)
-target_compile_definitions(nnh_core PUBLIC ${_nnh_flavor_definitions})
+target_compile_definitions(nnh_core_objects PUBLIC ${_nnh_flavor_definitions})
 target_compile_definitions(nnh_core_contract INTERFACE ${_nnh_flavor_definitions})
+
+# The static library nnh_core (alias nnh::core) in engine/core/libnnh_core.a, as before the split.
+set(_nnh_core_binary_dir "${CMAKE_CURRENT_BINARY_DIR}")
+set(_nnh_core_include_dir "${CMAKE_CURRENT_SOURCE_DIR}/include")
+add_subdirectory(archive)

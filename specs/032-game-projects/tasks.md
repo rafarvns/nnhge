@@ -44,11 +44,11 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 1: the command-line limit (FR-19)
 
-- [ ] **T1.1** The check first: `scripts/check_command_length.sh <build dir> [limit]` (`ninja -C <dir> -t commands`;
+- [x] **T1.1** The check first: `scripts/check_command_length.sh <build dir> [limit]` (`ninja -C <dir> -t commands`;
   prints the longest length, its share of 32,767 and its first 100 characters; exit 1 above the limit, default
   16,383; exit 2 without a `build.ninja`). Test: on today's `build/3ds-release` it prints 27,354 and exits 1 (red);
   with `32767` it exits 0; on a folder without `build.ninja` exit 2. Covers FR-19, AC-11.
-- [ ] **T1.2** The archive from a response file: `engine/core/CMakeLists.txt` (`nnh_core_objects` OBJECT library with
+- [x] **T1.2** The archive from a response file: `engine/core/CMakeLists.txt` (`nnh_core_objects` OBJECT library with
   every source, per-file option and include as before), `engine/core/archive/CMakeLists.txt` (static `nnh_core` from it,
   `LINKER_LANGUAGE CXX`, the same PUBLIC include/definitions/features and PRIVATE link libraries, archive output in
   `engine/core/`, `CMAKE_NINJA_FORCE_RESPONSE_FILE` only when `NNH_PLATFORM` is `3ds`), `tests/CMakeLists.txt` (fuzz
@@ -59,7 +59,7 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 - [ ] **T1.3** (only if T1.2 fails) Fallback B: split the core into a few static libraries (module groups, link order
   kept stable, cycles checked); `hello`'s one-time change checked (sizes, `nm -C` diff, disassembly of moved objects)
   and recorded as FR-17's new reference in plan.md and spec.md's verification notes. Covers FR-19, FR-17.
-- [ ] **T1.4** Stage end: the stage-end guards; plan.md ("Stage 1 results": lengths before/after). Covers AC-11.
+- [x] **T1.4** Stage end: the stage-end guards; plan.md ("Stage 1 results": lengths before/after). Covers AC-11.
 
 ## Stage 2: the consumer fixture (red) and the CMake contract (green)
 

@@ -12,7 +12,7 @@
 #   - cross presets (3DS): an ExternalProject (EXCLUDE_FROM_ALL) that configures tools/assetc as a project of
 #     its own with the host compiler NNH_HOST_CXX, into build/<preset>/_host/assetc/. It only runs when a
 #     custom command needs the program or someone builds the target; the first time it also detects the host
-#     compiler (a few seconds), afterwards it is a no-op check of the tool's sources.
+#     compiler (a few seconds); afterwards it runs only when one of the files it compiles changed.
 #   - cross presets with -DNNH_ASSETC=<path>: use a prebuilt nnh-assetc (from a PC build:
 #     build/pc-*/tools/assetc/), like NNH_MAKEROM. Nothing is built; the target just prints its version.
 #
@@ -82,11 +82,22 @@ function(nnh_host_tools_setup)
         PREFIX ${PROJECT_BINARY_DIR}/_host/assetc-ep
         CMAKE_ARGS -DCMAKE_CXX_COMPILER=${_cxx} -DCMAKE_BUILD_TYPE=Release
                    -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
-        BUILD_ALWAYS TRUE # the sub-build's own Ninja decides what is out of date
         BUILD_BYPRODUCTS ${_exe}
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL TRUE
         USES_TERMINAL_CONFIGURE TRUE USES_TERMINAL_BUILD TRUE)
+    # The sub-build runs only when a file it compiles changed (spec 031 T10.3): with BUILD_ALWAYS its three steps cost
+    # ≈ 1.2 s of every 3DS asset build through MSYS, hot reload's included. Its sources are tools/assetc, the engine core
+    # files and headers it compiles in and the vendored stb libraries; a new source file comes with a change of
+    # tools/assetc/CMakeLists.txt, which is in the list.
+    file(GLOB_RECURSE _assetc_inputs
+         ${PROJECT_SOURCE_DIR}/tools/assetc/*.cpp ${PROJECT_SOURCE_DIR}/tools/assetc/*.hpp
+         ${PROJECT_SOURCE_DIR}/tools/assetc/*.h ${PROJECT_SOURCE_DIR}/tools/assetc/CMakeLists.txt
+         ${PROJECT_SOURCE_DIR}/engine/core/src/*.cpp ${PROJECT_SOURCE_DIR}/engine/core/src/*.hpp
+         ${PROJECT_SOURCE_DIR}/engine/core/include/*.hpp
+         ${PROJECT_SOURCE_DIR}/third_party/stb_truetype/* ${PROJECT_SOURCE_DIR}/third_party/stb_image/*)
+    list(FILTER _assetc_inputs EXCLUDE REGEX "/tests/")
+    ExternalProject_Add_StepDependencies(nnh_assetc build ${_assetc_inputs})
     set_property(GLOBAL PROPERTY NNH_ASSETC_PROGRAM "${_exe}")
     message(STATUS "NNHGE nnh-assetc: built on demand with ${_cxx}")
 endfunction()

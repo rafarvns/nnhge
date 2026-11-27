@@ -46,7 +46,7 @@ void write(const std::string& path, const std::string& text) {
 
 ControllerSetup setup(Fake& f) {
     return ControllerSetup{f.out, f.src,
-                           [&f](bool) {
+                           [&f](const std::string&) {
                                ++f.builds;
                                BuildOutcome b;
                                b.ok = !f.fail;
@@ -142,6 +142,32 @@ NNH_TEST(reload_controller_a_failed_build_sends_a_notice_never_a_batch) {
     CHECK(has(notes, "assets/a.txt:1: broken"));
     CHECK(has(notes, "conversion failed"));
     CHECK(c.state() == ReloadController::State::Idle);
+}
+
+NNH_TEST(reload_controller_a_script_source_names_the_notice_and_is_checked_when_outside) {
+    Fake f = make("scriptsource");
+    f.fail = true;
+    std::string checked = "unset";
+    ControllerSetup s = setup(f);
+    const auto inner = s.build;
+    s.build = [&checked, inner](const std::string& outside) {
+        checked = outside;
+        return inner(outside);
+    };
+    s.game_dir = fs::path(f.src).parent_path().string() + "/game";
+    s.src_dir = s.game_dir + "/assets";
+    ReloadController c(s);
+    c.start();
+    CHECK(!c.run_cycle(0, {}, "assets/levels/room.tmj"));
+    CHECK(checked.empty()); // inside the assets folder: no program check
+    const std::vector<std::uint8_t> bytes = c.take_bytes();
+    CHECK(bytes.size() >= wire::kMessageSize + 15);
+    if (bytes.size() < wire::kMessageSize + 15) return;
+    wire::Message m;
+    CHECK(wire::decode_message(bytes.data(), m) == wire::Reject::None && wire::reload_path_length(m) == 15);
+    CHECK(std::string(bytes.begin() + wire::kMessageSize, bytes.begin() + wire::kMessageSize + 15) == "levels/room.tmj");
+    CHECK(!c.run_cycle(0, {}, "data_types.cpp"));
+    CHECK(checked == s.game_dir + "/data_types.cpp");
 }
 
 NNH_TEST(reload_controller_a_dry_run_with_commands_needs_a_restart) {

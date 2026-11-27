@@ -52,9 +52,9 @@ void ScriptRunner::start_reload_step(const Step& step, std::uint32_t frame) {
     last_reload_ = LastReload{};
     last_reload_.any = true;
     last_reload_.done = false;
-    reload_dry_run_ = !reload_->inside_assets(step.text); // a source outside the assets folder may need a rebuild
+    reload_source_ = step.text; // names a refusal; one outside the assets folder is checked against the program
     if (step.unheld) {
-        reload_->run_cycle(0, {}, reload_dry_run_);
+        reload_->run_cycle(0, {}, reload_source_);
         take_reload_notes();
         if (reload_->outcome().done) record_outcome();
         complete_reload_step(frame); // the batch lands when it arrives: no frame of the clock
@@ -75,7 +75,7 @@ void ScriptRunner::reload_paused(std::uint32_t frame, bool paused) {
     std::vector<std::uint8_t> tail(wire::kMessageSize);
     wire::encode_message(resume, tail.data());
     reload_step_.phase = 2;
-    reload_->run_cycle(reload_step_.frame, tail, reload_dry_run_);
+    reload_->run_cycle(reload_step_.frame, tail, reload_source_);
     take_reload_notes();
     // Refused before a batch (the build): the notice and the Resume are queued; the next steps wait until they're out,
     // or a later-stamped message would overtake the Resume and the game would reject it (frame order).

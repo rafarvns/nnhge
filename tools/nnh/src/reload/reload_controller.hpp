@@ -21,16 +21,16 @@ namespace nnh::tool::reload {
 struct BuildOutcome {
     bool ok = false;                ///< the asset target built
     std::vector<std::string> lines; ///< its output, shown as a build shows it
-    std::string restart;            ///< non-empty: the dry run's first command (the change needs a rebuild)
+    std::string restart;            ///< non-empty: the changed file is an input of the program (rebuild)
     long long ms = 0;               ///< how long it took
 };
 
 struct ControllerSetup {
     std::string out_dir;  ///< the converted assets folder (what the game was packed with)
     std::string src_dir;  ///< the source assets folder (watched)
-    /// Builds the asset target; with `dry_run`, then asks Ninja whether the program would rebuild (a change outside the
-    /// assets folder: a schema source, IMAGES, the CMake declaration). Changes inside the folder skip it (≈ 0.4 s).
-    std::function<BuildOutcome(bool dry_run)> build;
+    /// Builds the asset target; with an `outside_source` (an absolute path: a changed file outside the assets folder, a
+    /// schema source for instance), then asks Ninja whether it is an input of the program (→ BuildOutcome::restart).
+    std::function<BuildOutcome(const std::string& outside_source)> build;
     std::function<long long()> now_ms;
     std::string game_dir; ///< the game's folder (script SOURCE paths are relative to it)
 };
@@ -56,15 +56,18 @@ public:
     void poll();
     /// Typed `reload` (now, skipping the quiet period) or `reload PATH` (that output sent again).
     void request(const std::string& output_path = "");
-    /// One cycle now: build, dry run, diff, encode; the Apply for `apply_frame` (0 = the next frame) follows the batch,
-    /// then `tail` (a script's Resume). @return false when nothing was sent (a note says why).
-    bool run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail = {}, bool dry_run = false);
+    /// One cycle now: build, diff, encode; the Apply for `apply_frame` (0 = the next frame) follows the batch,
+    /// then `tail` (a script's Resume). `script_source`: a script's swapped file, relative to the game's folder: it
+    /// names a refusal's notice, and one outside the assets folder is checked against the program's inputs
+    /// (BuildOutcome::restart). @return false when nothing was sent (a note says why).
+    bool run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail = {},
+                   const std::string& script_source = "");
     /// True when `game_path` (relative to the game's folder) is inside the source assets folder.
     bool inside_assets(const std::string& game_path) const;
 
     void on_record(const remote::Record& record);
     /// Builds the asset target once more, sending nothing (after a script put its swapped sources back).
-    void rebuild() { setup_.build(false); }
+    void rebuild() { setup_.build(""); }
     /// What may go to the game now (paced). Messages of other kinds may be sent around it: a batch is never split
     /// inside a message.
     std::vector<std::uint8_t> take_bytes();

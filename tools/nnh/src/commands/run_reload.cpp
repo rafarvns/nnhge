@@ -30,7 +30,7 @@ void on_interrupt(int) {
 
 reload::ControllerSetup controller_setup(const reload::ReloadPaths& paths, const BuiltGame& built, bool pc) {
     const Shell shell = host_shell(!pc);
-    const std::string ninja = pc ? reload::cached_ninja(built.root + "/build/" + built.preset) : std::string();
+    const std::string ninja = reload::cached_ninja(built.root + "/build/" + built.preset); // PC, or devkitPro's (MSYS)
     const reload::BuildCommands commands =
         reload::build_commands(built.root, built.preset, built.game.name, shell, ninja);
     const reload::CommandRunner runner = reload::shell_runner(shell);
@@ -38,16 +38,18 @@ reload::ControllerSetup controller_setup(const reload::ReloadPaths& paths, const
     setup.out_dir = paths.out;
     setup.src_dir = paths.assets;
     setup.game_dir = paths.game;
-    setup.build = [commands, runner](bool dry_run) {
+    const std::string build_dir = built.root + "/build/" + built.preset;
+    setup.build = [commands, runner, build_dir](const std::string& outside_source) {
         const auto start = std::chrono::steady_clock::now();
         reload::BuildOutcome out;
         const reload::BuildResult built_assets = reload::build_assets(commands, runner);
         out.ok = built_assets.ok;
         out.lines = built_assets.lines;
-        if (out.ok && dry_run) {
-            std::vector<std::string> dry;
-            runner(commands.dry_run, dry);
-            out.restart = reload::first_dry_run_command(dry);
+        if (out.ok && !outside_source.empty() && !commands.program_inputs.empty()) {
+            std::vector<std::string> inputs;
+            runner(commands.program_inputs, inputs);
+            const std::string input = reload::program_input(inputs, outside_source, build_dir);
+            if (!input.empty()) out.restart = input + " is compiled into the program";
         }
         out.ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
         return out;

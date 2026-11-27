@@ -124,7 +124,7 @@ NNH_TEST(reload_build_commands_per_preset) {
     nnh::tool::Shell pc;
     const BuildCommands c = build_commands("E:/repo", "pc-debug", "data", pc);
     CHECK(c.assets.find("--build --preset pc-debug --target data_assets") != std::string::npos);
-    CHECK(c.dry_run.find("--target data -- -n") != std::string::npos);
+    CHECK(c.program_inputs.empty()); // no Ninja known: no check
     nnh::tool::Shell dkp;
     dkp.windows = true;
     dkp.devkitpro_bash = "C:/devkitPro/msys2/usr/bin/bash.exe";
@@ -133,9 +133,13 @@ NNH_TEST(reload_build_commands_per_preset) {
     CHECK(d.assets.find("--target data_assets") != std::string::npos);
     const BuildCommands n = build_commands("E:/repo", "pc-debug", "data", pc, "C:/tools/ninja.exe");
     CHECK(n.assets == "\"C:/tools/ninja.exe\" -C \"E:/repo/build/pc-debug\" data_assets");
-    CHECK(n.dry_run == "\"C:/tools/ninja.exe\" -C \"E:/repo/build/pc-debug\" -n data");
-    CHECK(build_commands("E:/repo", "3ds-dev", "data", dkp, "C:/tools/ninja.exe").assets.find("bash.exe") !=
-          std::string::npos); // the 3DS keeps devkitPro's shell
+    CHECK(n.program_inputs == "\"C:/tools/ninja.exe\" -C \"E:/repo/build/pc-debug\" -t inputs data");
+    // The 3DS keeps devkitPro's shell but calls its Ninja (an MSYS path) directly: no `cmake --build` start-up.
+    const BuildCommands m = build_commands("E:/repo", "3ds-dev", "data", dkp, "/usr/bin/ninja.exe");
+    CHECK(m.assets == "\"C:/devkitPro/msys2/usr/bin/bash.exe\" -lc \"cd '/e/repo' && /usr/bin/ninja.exe -C build/3ds-dev "
+                      "data_assets\"");
+    CHECK(m.program_inputs == "\"C:/devkitPro/msys2/usr/bin/bash.exe\" -lc \"cd '/e/repo' && /usr/bin/ninja.exe -C "
+                              "build/3ds-dev -t inputs data\"");
 }
 
 NNH_TEST(reload_build_retries_once_and_keeps_the_lines) {
@@ -157,15 +161,18 @@ NNH_TEST(reload_build_retries_once_and_keeps_the_lines) {
     CHECK(f.lines[0] == "assets/levels/room.tmj:12: unknown layer type");
 }
 
-NNH_TEST(reload_dry_run_first_command) {
-    CHECK(first_dry_run_command({"ninja: no work to do."}).empty());
-    CHECK(first_dry_run_command({}).empty());
-    CHECK(first_dry_run_command({"[1/3] Building CXX object examples/data/CMakeFiles/data.dir/data_types.cpp.obj",
-                                 "[2/3] Linking CXX executable examples/data/data.exe"}) ==
-          "Building CXX object examples/data/CMakeFiles/data.dir/data_types.cpp.obj");
-    CHECK(first_dry_run_command({"ninja: Entering directory `build'", "[1/1] Re-running CMake..."}).empty());
-    CHECK(first_dry_run_command({"[x/1] nope", "[] nope"}).empty());
-    CHECK(first_dry_run_command({"[0/2] Re-checking globbed directories...", "ninja: no work to do."}).empty());
+NNH_TEST(reload_program_input_finds_a_changed_source) {
+    const std::vector<std::string> inputs = {
+        "E:/repo/examples/data/data_types.cpp", "examples/data/CMakeFiles/data.dir/main.cpp.obj",
+        "/e/repo/examples/data/main.cpp", "E:\\repo\\examples\\data\\check.cpp"};
+    CHECK(program_input(inputs, "E:/repo/examples/data/data_types.cpp", "E:/repo/build/pc-debug") ==
+          "E:/repo/examples/data/data_types.cpp");
+    CHECK(!program_input(inputs, "e:\\repo\\examples\\data\\main.cpp", "E:/repo/build/3ds-dev").empty()); // MSYS form
+    CHECK(!program_input(inputs, "E:/repo/examples/data/check.cpp", "E:/repo/build/pc-debug").empty());
+    CHECK(!program_input(inputs, "E:/repo/build/pc-debug/examples/data/CMakeFiles/data.dir/main.cpp.obj",
+                         "E:/repo/build/pc-debug").empty()); // relative to the build folder
+    CHECK(program_input(inputs, "E:/repo/examples/data/assets/enemies/goblin.enemy", "E:/repo/build/pc-debug").empty());
+    CHECK(program_input({}, "E:/repo/examples/data/data_types.cpp", "E:/repo/build/pc-debug").empty());
 }
 
 NNH_TEST(reload_batch_bytes_exactly) {

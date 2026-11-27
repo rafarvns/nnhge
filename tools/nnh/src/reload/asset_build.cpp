@@ -33,11 +33,17 @@ BuildCommands build_commands(const std::string& root, const std::string& preset,
     if (!ninja.empty() && shell.devkitpro_bash.empty()) {
         const std::string base = "\"" + ninja + "\" -C \"" + root + "/build/" + preset + "\" ";
         c.assets = base + game + "_assets";
-        c.dry_run = base + "-n " + game;
+        c.program_inputs = base + "-t inputs " + game;
+        return c;
+    }
+    if (!ninja.empty()) { // the 3DS on Windows: devkitPro's Ninja inside its shell (T10.3: no `cmake --build` start-up)
+        const std::string base = "\"" + shell.devkitpro_bash + "\" -lc \"cd '" + msys_path(root) + "' && " + ninja +
+                                 " -C build/" + preset + " ";
+        c.assets = base + game + "_assets\"";
+        c.program_inputs = base + "-t inputs " + game + "\"";
         return c;
     }
     c.assets = cmake_command(root, "--build --preset " + preset + " --target " + game + "_assets", shell);
-    c.dry_run = cmake_command(root, "--build --preset " + preset + " --target " + game + " -- -n", shell);
     return c;
 }
 
@@ -61,21 +67,29 @@ BuildResult build_assets(const BuildCommands& commands, const CommandRunner& run
     return r;
 }
 
-std::string first_dry_run_command(const std::vector<std::string>& lines) {
-    for (const std::string& line : lines) {
-        if (line.size() < 4 || line[0] != '[') continue;
-        const std::size_t close = line.find("] ");
-        const std::size_t slash = line.find('/');
-        if (close == std::string::npos || slash == std::string::npos || slash > close) continue;
-        bool numbers = true;
-        for (std::size_t i = 1; i < close; ++i) numbers = numbers && (i == slash || (line[i] >= '0' && line[i] <= '9'));
-        if (!numbers) continue;
-        const std::string what = line.substr(close + 2);
-        // CMake's CONFIGURE_DEPENDS check runs in every build, and a dry run can't know it would find nothing, so it
-        // also lists CMake's re-run: neither is a command of the game (the asset build already re-ran CMake when a
-        // declaration changed; what that changed in the game shows as compiles and links). Plan risk 3.
-        if (what.rfind("Re-checking globbed directories", 0) == 0 || what.rfind("Re-running CMake", 0) == 0) continue;
-        return what;
+namespace {
+
+std::string comparable(std::string path) {
+    path = native_path(path); // "/e/x" -> "E:/x"
+    for (char& c : path) {
+        if (c == '\\') c = '/';
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    return path;
+}
+
+bool absolute(const std::string& path) {
+    return !path.empty() && (path[0] == '/' || path[0] == '\\' || (path.size() > 1 && path[1] == ':'));
+}
+
+} // namespace
+
+std::string program_input(const std::vector<std::string>& inputs, const std::string& source,
+                          const std::string& build_dir) {
+    const std::string want = comparable(source);
+    for (const std::string& line : inputs) {
+        const std::string full = absolute(line) ? line : build_dir + "/" + line;
+        if (comparable(full) == want) return line;
     }
     return "";
 }

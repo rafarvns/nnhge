@@ -113,7 +113,7 @@ struct Game {
     ControllerSetup setup(bool fails = false) {
         const std::string g = game, o = out;
         return ControllerSetup{o, g + "/assets",
-                               [g, o, fails](bool) {
+                               [g, o, fails](const std::string&) {
                                    BuildOutcome b;
                                    b.ok = !fails;
                                    if (!fails) write(o + "/a.txt", read(g + "/assets/a.txt"));

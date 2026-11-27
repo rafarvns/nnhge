@@ -279,7 +279,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 10: console check (the only steps on the 3DS)
 
-- [ ] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
+- [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target reload_3dsx sprites_3dsx` without a warning; T7.6's table still true;
   3ds-release `hello` identical to T0.1's. Covers AC-7, II.
 - [ ] **T10.2** Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:

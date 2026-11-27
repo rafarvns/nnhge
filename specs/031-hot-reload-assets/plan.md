@@ -994,6 +994,47 @@ bss 110 456.
   `nnh_add_game` globs the assets folder) and Ninja's start-up; removing the glob check needs the asset list written by
   `nnh` instead of globbed (a CMake change, not cheap): left for the lead.
 
+### Console run 1 (2026-11-26, Old 3DS XL, 3ds-dev of `eac9abc`, run by the lead)
+
+Logs: `E:\RANDOM
+nhge-console-r-{a,b,d,e}.log` (A, B, D, E of "Stage 10: console run (prepared)"); C (the interactive
+sprites yes/no) waived: B covers the same swap by script.
+
+| Run | Verdict | Numbers |
+|-----|---------|---------|
+| A `data/tests/reload.nnhs` | PASS (11 lines), applied at frames 31 and 42 | save → frame 5.17 s and 5.09 s; the 3DS asset build through MSYS 3.00 s and 2.82 s |
+| B `sprites/tests/reload.nnhs` | PASS, applied at frame 32 | 5.83 s (build 1.66 s); the `after` screenshot (`build/logs/sprites-20261126-230249/`) shows the swapped texture on the hero and on the rotating sprite |
+| D `reload/tests/check.nnhs` | PASS (45 lines), put back 4 | all 9 sums equal the PC's (`2B7C6114` … `70C46B1C`); 8 reloads (hero, room, goblin, blip, strings/en + qps, gem, hero, room); save → frame 2.99–3.33 s, the first 5.93 s; builds 2.76–3.08 s; the frame-60 start line was in time |
+| E `reload/tests/errors.nnhs` | PASS (17 lines), put back 2 | the broken map refused (conversion failed, "old content kept"); the valid map applied at frame 83 (3.10 s); the schema change refused by the game ("made for another struct: rebuild and restart"); that build 6.61 s (the schema program rebuilt) |
+
+The engine side holds on the console: same sums, same frames as the simulator, every kind applied whole. **AC-8's
+< 3 s save → frame is missed by a little** (3.0–3.3 s; 5–6 s for a session's first swap): the transfer and the apply are
+a few frames, the 3DS asset build through devkitPro's MSYS is ≈ 2.8–3.1 s of it. Measured on the PC afterwards (warm):
+`scripts/dkp.sh true` 1.0–1.2 s, a no-op `scripts/dkp.sh cmake --build --preset 3ds-dev --target data_assets` 2.7–2.8 s;
+inside one MSYS shell a no-op `ninja data_assets` still costs 1.65–1.78 s, of which the host tool's ExternalProject steps
+(`nnh_assetc` build, install and complete: three `/bin/sh` scripts and a sub-Ninja, run every time by `BUILD_ALWAYS`)
+are ≈ 1.2 s and CMake's glob check ≈ 0.3 s. So the optimisation round (T10.3) is in the build, not in the engine.
+
+**Optimisation round (T10.3, PC side only; no wire or golden change).** (1) `cmake/nnh_host_tools.cmake`: the
+`nnh_assetc` ExternalProject loses `BUILD_ALWAYS`; its build step depends on the files it compiles (`tools/assetc/**`,
+`engine/core/src|include`, the stb libraries, globbed at configure time); checked: touching an assetc source or
+`crc32_update.cpp` rebuilds the tool, a data edit doesn't. (2) `nnh` calls devkitPro's Ninja (`CMAKE_MAKE_PROGRAM`,
+`/usr/bin/ninja.exe`) inside its shell instead of `cmake --build --preset` (test `reload_build_commands_per_preset`).
+Measured (3ds-dev, warm): a data-file edit's asset build 2.8–3.0 s → **1.57–1.63 s**, a PNG 1.95 s (tex3ds), a no-op
+`scripts/dkp.sh … data_assets` 2.7 → 1.9 s. Expected save → frame ≈ 1.8–2.3 s on the console (run 1's apply and transfer
+were ≈ 0.2–0.3 s on top of the build): console run 2 measures it. Left: a persistent MSYS shell (≈ 0.5 s more of
+bash login per cycle) and the glob check (≈ 0.3 s).
+
+- **R31 (findings of stage 7, fixed) The program check is `ninja -t inputs`, and scripts name their source.** The dry
+  run `ninja -n <game>` never worked in a game with an assets folder: CMake's glob check makes Ninja plan a CMake re-run
+  first, and a dry run stops there ("Re-running CMake", which it then ignored). `nnh` now lists the program's inputs
+  (`ninja -t inputs <game>`, no manifest check) and refuses when the changed file outside the assets folder is one of
+  them (`program_input`, test `reload_program_input_finds_a_changed_source`): `errors.nnhs`'s schema swap is now refused
+  by `nnh` before anything is sent (`data_types.cpp is compiled into the program: rebuild and restart`; the game logs
+  `data_types.cpp: needs a rebuild and restart`). A script's swap passes its source to the cycle, so a refusal names it
+  (`levels/room.tmj: conversion failed`) instead of `assets` (test
+  `reload_controller_a_script_source_names_the_notice_and_is_checked_when_outside`).
+
 ### Not done (open, for the lead or a next session)
 
 - Stage 0: T0.1's per-object disassembly, edit-one-`.cpp` timings and header measurements against `cf15822`; T0.2's

@@ -85,8 +85,11 @@ bool ReloadController::inside_assets(const std::string& game_path) const {
            full[setup_.src_dir.size()] == '/';
 }
 
-bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail, bool dry_run) {
+bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail,
+                                 const std::string& script_source) {
     outcome_ = Outcome{};
+    const bool inside = script_source.empty() || inside_assets(script_source);
+    const std::string outside_source = inside ? std::string() : setup_.game_dir + "/" + script_source;
     if (!enabled_) {
         outcome_.done = true;
         outcome_.why = "the game has no hot reload";
@@ -95,9 +98,12 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
         return false;
     }
     if (saved_at_ == 0) saved_at_ = setup_.now_ms();
-    const BuildOutcome built = setup_.build(dry_run);
+    const BuildOutcome built = setup_.build(outside_source);
     for (const std::string& line : built.lines) note(line);
-    const std::string first_source = watcher_.changed().empty() ? std::string("assets") : watcher_.changed()[0];
+    std::string first_source = watcher_.changed().empty() ? std::string("assets") : watcher_.changed()[0];
+    if (!script_source.empty()) { // a script's swap: the file it swapped, relative to the assets folder when inside
+        first_source = inside ? (setup_.game_dir + "/" + script_source).substr(setup_.src_dir.size() + 1) : script_source;
+    }
     if (!built.ok || !built.restart.empty()) {
         const bool restart = built.ok;
         const std::string why = restart ? "reload refused: " + built.restart + ": rebuild and restart (nnh run)"

@@ -232,7 +232,7 @@ private:
     };
     ReloadStepState reload_step_;
     std::size_t reload_started_ = 0; ///< segment index + 1 whose reload step started
-    bool reload_dry_run_ = false;    ///< the swapped source is outside the assets folder
+    std::string reload_source_;      ///< the swapped source (relative to the game's folder)
     struct LastReload {
         bool any = false, done = true, applied = false;
         std::uint32_t frame = 0;

@@ -329,8 +329,8 @@ While `nnh run <game> [--pc]` follows a Debug or Development game, it watches th
 on: ...`). Saving a file there — an image, a Tiled map, a data file — starts a reload once nothing changed for 250 ms (so
 an editor's save through a temporary file, or Tiled saving a map and its tileset, is one reload):
 
-1. `nnh` builds the game's asset target (Ninja directly in the preset's folder on the PC, `cmake --build --preset <p>
-   --target <game>_assets` through devkitPro's shell for the 3DS: the same converters, checks
+1. `nnh` builds the game's asset target `<game>_assets` with the preset's Ninja (directly on the PC, inside devkitPro's
+   shell for the 3DS on Windows, ≈ 1.6 s for a data file): the same converters, checks
    and output bytes as a normal build; nothing is compiled or linked, the `.3dsx` isn't repacked) and shows its output.
    A conversion error prints the converter's `file:line: reason`, and the game logs one warning and keeps its old content.
 2. For a changed file outside the assets folder (a script's `swap-asset` of a `DATA_SCHEMA` source, for instance), a Ninja

@@ -218,7 +218,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 6: meshes (Q8 step 3) and live values
 
-- [ ] **T6.1** Meshes: `mesh/mesh_reload.cpp`, `load_mesh.cpp`, `mesh_table.cpp`. Test: `tests/mesh/test_mesh_reload.cpp`
+- [x] **T6.1** Meshes: `mesh/mesh_reload.cpp`, `load_mesh.cpp`, `mesh_table.cpp`. Test: `tests/mesh/test_mesh_reload.cpp`
   (same handle, more vertices and submeshes, new textures, the old record retired through D47, draws recorded later use
   the new mesh). Covers FR-7.
 - [x] **T6.2** [P] FR-23: `live/live_reload.cpp`, `debug/live_hook.hpp` (`reload_snapshot`, `reload_compare`), the calls

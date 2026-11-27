@@ -54,6 +54,35 @@ NNH_TEST(mesh_reload_the_same_handle_shows_the_new_model) {
     nnh::shutdown();
 }
 
+NNH_TEST(mesh_reload_more_submeshes_and_another_texture) {
+    RELOAD_DEV_ONLY();
+    start_models();
+    {
+        nnh::Mesh gem = std::move(nnh::load_mesh("models/gem").value());
+        CHECK(gem.submesh_count() == 1);
+        // The quad in two submeshes, each with its own texture (the second one new to the model).
+        static const nnh::SubmeshDesc halves[2] = {{.first_index = 0, .index_count = 3}, {.first_index = 3, .index_count = 3}};
+        nnh::MeshDesc desc = mesh_test::quad_desc();
+        desc.submeshes = halves;
+        desc.submesh_count = 2;
+        const char* paths[2] = {"art/checker", "art/other"};
+        const std::uint8_t which[2] = {0, 1};
+        static std::vector<std::uint8_t> two;
+        two = mesh_test::build(desc, {paths, 2, which});
+        CHECK(!two.empty());
+        static const char other[] = {'F', 'A', 'K', 'E', 8, 0, 8, 0};
+        static const char index[] = "art/checker.png\nart/other.png\nmodels/gem.nnhmesh\n";
+        const Put batch[] = {Put{"art/other.png", other, sizeof other}, Put{"models/gem.nnhmesh", two.data(), two.size()},
+                             Put{".nnh_assets", index, sizeof index - 1}};
+        reload_test::send_batch(1, batch, 3);
+        for (int i = 0; i < 5 && nnh::assets::reload_count() == 0; ++i) CHECK(nnh::frame());
+        CHECK(nnh::assets::reload_count() == 1);
+        CHECK(gem.valid() && gem.submesh_count() == 2 && gem.triangle_count() == 2);
+        CHECK(reload_test::fake::pass3d_log().live_meshes == 1); // the old record went
+    }
+    nnh::shutdown();
+}
+
 NNH_TEST(mesh_reload_a_damaged_file_keeps_the_old_model) {
     RELOAD_DEV_ONLY();
     start_models();

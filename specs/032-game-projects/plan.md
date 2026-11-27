@@ -695,3 +695,28 @@ Stage 4 refinements:
   machine for both, as at T0.2). `ninja -v` shows `ccache.exe` on the game's compile. Configure (fresh / again): local
   way 17.5 / 1.8 s, pinned archive 22.0 / 2.8 s. Build folders: pc-debug 164 MB, pc-dev 206 MB, 3ds-dev 59 MB,
   3ds-release 72 MB. The copy was deleted afterwards (E: 9.7 GB free).
+
+### Stage 6 results (the repository unchanged)
+
+- **T6.1** After stages 1–5, fresh builds of all four presets (0 warnings): target lists equal to T0.1's apart from
+  `nnh_core_objects`; games equal; cache entries as listed at T2.4. `hello`: `.3dsx` SHA-256 `b0b243dd…70c3`, stripped
+  `.elf` `91680297…a531` (both equal to T0.1's), `nm -C` equal, pc-release `.text` 0x189a0; the `hello` and `nnh_tests`
+  link commands equal; `check_release_strings.sh` ok on `hello.3dsx`; longest 3DS command 2,533. Every example's
+  `--pc` check script runs in ctest (the `*_script_pc` tests, goldens unchanged): pc-debug 382/382 at stage 4's end,
+  rerun at stage 7's end with the docs.
+- **T6.2** (3 runs) `hello` edit → simulator (pc-debug) 2.09 / 2.06 / 2.02 s (T0.2: 2.22 / 1.91 / 1.95), → `.3dsx`
+  (3ds-dev) 3.62 / 3.61 / 3.53 s (3.81 / 3.57 / 3.66); clean engine pc-release 19.1 s (19.4), 3ds-release 47.2 s (48.1);
+  fresh configure pc-debug 19.9 s (25.6), 3ds-dev 23.1 s (24.4). No measurable change.
+- **T6.3** `docs/ROADMAP.md` baseline table: a "Spec 032" paragraph with these numbers and T5.6's.
+- **T6.4** Mutation pass (`build/ref-032/mutate.py`, not committed: one mutant at a time, judged by the named tests):
+  18 mutants, 18 killed. CMake (judged by `consumer`, `consumer_platform_*`, `consumer_pruned`): the platform check
+  returning early; an empty platform taken as `pc`; `nnh_game` reading a directory variable again; examples always ON;
+  the `link/` gate removed; the missing-folder check removed; the launcher not applied; C++20 forced over the game's
+  choice; the version not cached. `nnh` (judged by `nnh_tool_tests` filters): the farthest root instead of the nearest;
+  `nnh.toml` errors dropped; unknown keys refused; build presets not required; `NNH_HOST_CXX` in drive form; the override
+  not converted; a quote not refused; the extras on every shell; the `PATH` order changed. Two CMake mutants (examples
+  always ON, the version not cached) first **survived**: `consumer` reused its build folder, whose cache kept the
+  earlier values. Fix: the local way deletes its `CMakeCache.txt` before every configure (objects kept; +7 s), then both
+  were killed. Argued, not run: the response-file variable not set (the length check fails: T1.1's 27,354) or set in
+  `engine/core/` (breaks every compile, the spike); `check_preset` and `open_project` skipped in the commands (glue,
+  checked by hand at T4.5 and by stage 5's runs).

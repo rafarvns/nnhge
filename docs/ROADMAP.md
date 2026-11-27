@@ -117,6 +117,16 @@ budget: the input filter's check and raw engine buttons, 56; the scene stack's t
 transition or input-block symbol in either. `<nnh/transition.hpp>` 8,476 preprocessed lines, 0.43 s alone;
 `<nnh/ease.hpp>` 461 lines. Details: plan 023, "Stage 0 results" to "Stage 8 results".
 
+Spec 032 (game projects outside the repository), 2026-11-27, same machine, three edits each: in the repository, edit
+`hello` → simulator 1.91–2.22 s before, 2.02–2.09 s after (pc-debug); → `.3dsx` 3.57–3.81 s before, 3.53–3.62 s after
+(3ds-dev); clean engine (`nnh_core` + platform) pc-release 19.4 → 19.1 s (ccache), 3ds-release 48.1 → 47.2 s; fresh
+configure pc-debug 25.6 → 19.9 s, 3ds-dev 24.4 → 23.1 s; `hello.3dsx` byte-identical. In a game project outside the
+repository (78-character path, the engine as a pinned archive or a local checkout): edit a hello-sized game → simulator
+1.94–2.94 s (the repository's `hello` 1.86–2.69 s in the same series), → `.3dsx` 3.57–3.62 s; configure fresh 17.5 s
+(local engine) / 22.0 s (archive), again 1.8 / 2.8 s; the consumer ctest 76 s cold, 23 s warm. The simulator's < 2 s is
+borderline on this machine for the repository's own `hello` too (it was 1.6–1.8 s in the spike, 2026-11-27 morning).
+Details: plan 032, "Stage 0 results" to "Stage 6 results".
+
 ## M0.5 — Way of working
 - [x] Architecture (event bus + scenes), process (SDD, TDD, SOLID, constitution) and tech docs
 - [x] Project skills and agents in `.claude/`

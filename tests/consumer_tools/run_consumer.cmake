@@ -172,6 +172,9 @@ if(WAY MATCHES "^(archive|archive_override|bad_hash)$")
 endif()
 
 if(WAY STREQUAL "local")
+    # A fresh cache every run (the objects stay): option defaults and cache entries are checked as a new game project
+    # gets them, not as an earlier run left them.
+    file(REMOVE "${BUILD}/CMakeCache.txt")
     configure("-DFETCHCONTENT_SOURCE_DIR_NNHGE=${ENGINE}")
     build_and_run()
     check_contents()

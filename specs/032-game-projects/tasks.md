@@ -172,15 +172,15 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 6: the repository unchanged
 
-- [ ] **T6.1** Regression: target lists, defaults and `nnh_games.txt` of every preset against T0.1 (only
+- [x] **T6.1** Regression: target lists, defaults and `nnh_games.txt` of every preset against T0.1 (only
   `nnh_core_objects` new); every example's `--pc` check script and golden; 3ds-release `hello` SHA-256 (`.3dsx`, stripped
   `.elf`) and pc-release `.text` size; `scripts/check_release_strings.sh` on `hello`; `ctest --preset pc-debug` and
   `pc-release` (all labels but `consumer-full`). Covers FR-17, AC-8.
-- [ ] **T6.2** [P] Build times against T0.2 (3 runs): `hello` one-file edit (simulator, `.3dsx`), clean engine, fresh
+- [x] **T6.2** [P] Build times against T0.2 (3 runs): `hello` one-file edit (simulator, `.3dsx`), clean engine, fresh
   configures. Covers III, AC-8.
-- [ ] **T6.3** `docs/ROADMAP.md` baseline table: a line "after spec 032" with T6.2's numbers and T5.6's game-project
+- [x] **T6.3** `docs/ROADMAP.md` baseline table: a line "after spec 032" with T6.2's numbers and T5.6's game-project
   numbers. Covers AC-8, AC-9.
-- [ ] **T6.4** Mutation pass (plan.md's planned hand mutants, one at a time, with the consumer and `nnh_tool_tests`
+- [x] **T6.4** Mutation pass (plan.md's planned hand mutants, one at a time, with the consumer and `nnh_tool_tests`
   filters); survivors become tests or are argued equivalent. Files: plan.md ("Mutation testing"). Covers VI.
 
 ## Stage 7: docs

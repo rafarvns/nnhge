@@ -173,11 +173,12 @@ void ReloadController::set_pending(const std::vector<std::uint8_t>& batch, const
     pending_.mark_tail();
     pending_.append(tail);
     allowance_ = kInitialAllowance;
+    file_allowance_ = kFilesPerTick;
 }
 
 std::vector<std::uint8_t> ReloadController::take_bytes() {
     if (pending_.empty()) return {};
-    std::vector<std::uint8_t> out = pending_.take(allowance_);
+    std::vector<std::uint8_t> out = pending_.take(allowance_, file_allowance_);
     if (pending_.empty() && state_ == State::Sending) {
         state_ = State::Waiting;
         waiting_since_ = setup_.now_ms();
@@ -194,7 +195,10 @@ void ReloadController::finish_cycle() {
 void ReloadController::on_record(const remote::Record& r) {
     switch (r.type) {
     case wire::RecordType::Tick:
-        if (!pending_.empty()) allowance_ += kAllowancePerTick;
+        if (!pending_.empty()) {
+            allowance_ += kAllowancePerTick;
+            file_allowance_ = kFilesPerTick; // not added up: never more than this many files in one frame's read
+        }
         return;
     case wire::RecordType::Rejected:
         if (state_ == State::Idle) return;

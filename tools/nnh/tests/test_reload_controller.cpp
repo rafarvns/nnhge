@@ -308,6 +308,33 @@ NNH_TEST(reload_controller_slices_are_whole_units) {
     CHECK(slices >= 4 && !c.sending());
 }
 
+NNH_TEST(reload_controller_many_small_files_go_a_few_per_tick) {
+    Fake f = make("files");
+    for (int i = 0; i < 40; ++i) write(f.out + "/f" + std::to_string(i) + ".txt", "old");
+    ReloadController c(setup(f));
+    c.start();
+    for (int i = 0; i < 40; ++i) write(f.out + "/f" + std::to_string(i) + ".txt", "new!"); // what the build made
+    CHECK(c.run_cycle(0));
+    Record tick;
+    tick.type = wire::RecordType::Tick;
+    int files = 0;
+    for (int t = 0; t < 20 && c.sending(); ++t) {
+        int in_slice = 0;
+        const std::vector<std::uint8_t> slice = c.take_bytes();
+        std::size_t at = 0;
+        while (at < slice.size()) {
+            wire::Message m;
+            CHECK(wire::decode_message(slice.data() + at, m) == wire::Reject::None);
+            in_slice += m.type == wire::MessageType::ReloadFile ? 1 : 0;
+            at += wire::kMessageSize + wire::payload_length(m);
+        }
+        CHECK(in_slice <= kFilesPerTick); // the console opens an SD file for each: a few per tick (review S7)
+        files += in_slice;
+        c.on_record(tick);
+    }
+    CHECK(files == 41 && !c.sending()); // the 40 and a.txt
+}
+
 NNH_TEST(reload_controller_a_refusal_mid_send_keeps_the_resume) {
     Fake f = make("midsend");
     f.next_out_text = std::string(200 * 1024, 'm');

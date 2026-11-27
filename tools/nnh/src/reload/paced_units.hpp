@@ -18,8 +18,9 @@ public:
     void append(const std::vector<std::uint8_t>& bytes);
     /// Units appended from now on are the tail.
     void mark_tail() { tail_unit_ = ends_.size(); }
-    /// Whole units, as many as fit in `allowance` (decreased by what was taken).
-    std::vector<std::uint8_t> take(std::size_t& allowance);
+    /// Whole units, as many as fit in `allowance` (decreased by what was taken) and, of them, at most `files`
+    /// ReloadFile units (decreased too: the console opens an SD file for each, review S7).
+    std::vector<std::uint8_t> take(std::size_t& allowance, int& files);
     /// Forgets the units not sent yet before the tail.
     void drop_batch();
     bool empty() const { return next_ == ends_.size(); }
@@ -28,6 +29,7 @@ public:
 private:
     std::vector<std::uint8_t> bytes_;
     std::vector<std::size_t> ends_; ///< each unit's end offset in bytes_
+    std::vector<bool> file_;        ///< the unit is a ReloadFile
     std::size_t next_ = 0;          ///< the next unit to send
     std::size_t tail_unit_ = static_cast<std::size_t>(-1);
 };

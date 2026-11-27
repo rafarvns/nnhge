@@ -12,6 +12,7 @@ namespace wire = nnh::detail::remote;
 void PacedUnits::clear() {
     bytes_.clear();
     ends_.clear();
+    file_.clear();
     next_ = 0;
     tail_unit_ = static_cast<std::size_t>(-1);
 }
@@ -22,21 +23,25 @@ void PacedUnits::append(const std::vector<std::uint8_t>& bytes) {
     std::size_t at = 0;
     while (at < bytes.size()) {
         std::size_t size = bytes.size() - at; // a malformed rest goes as one unit (never happens: the encoders' output)
+        bool file = false;
         wire::Message m;
         if (bytes.size() - at >= wire::kMessageSize && wire::decode_message(bytes.data() + at, m) == wire::Reject::None) {
             size = wire::kMessageSize + wire::payload_length(m);
             if (size > bytes.size() - at) size = bytes.size() - at;
+            file = m.type == wire::MessageType::ReloadFile;
         }
         at += size;
         ends_.push_back(base + at);
+        file_.push_back(file);
     }
 }
 
-std::vector<std::uint8_t> PacedUnits::take(std::size_t& allowance) {
+std::vector<std::uint8_t> PacedUnits::take(std::size_t& allowance, int& files) {
     std::vector<std::uint8_t> out;
     const std::size_t start = next_ == 0 ? 0 : ends_[next_ - 1];
     std::size_t end = start;
-    while (next_ < ends_.size() && ends_[next_] - end <= allowance) {
+    while (next_ < ends_.size() && ends_[next_] - end <= allowance && (!file_[next_] || files > 0)) {
+        if (file_[next_]) --files;
         allowance -= ends_[next_] - end;
         end = ends_[next_++];
     }
@@ -55,11 +60,17 @@ void PacedUnits::drop_batch() {
     const std::size_t start = next_ == 0 ? 0 : ends_[next_ - 1];
     std::vector<std::uint8_t> tail(bytes_.begin() + static_cast<long>(from), bytes_.end());
     std::vector<std::size_t> tail_ends;
-    for (std::size_t u = tail_unit_; u < ends_.size(); ++u) tail_ends.push_back(ends_[u] - from + start);
+    std::vector<bool> tail_files;
+    for (std::size_t u = tail_unit_; u < ends_.size(); ++u) {
+        tail_ends.push_back(ends_[u] - from + start);
+        tail_files.push_back(file_[u]);
+    }
     bytes_.resize(start);
     bytes_.insert(bytes_.end(), tail.begin(), tail.end());
     ends_.resize(next_);
     ends_.insert(ends_.end(), tail_ends.begin(), tail_ends.end());
+    file_.resize(next_);
+    file_.insert(file_.end(), tail_files.begin(), tail_files.end());
     tail_unit_ = next_;
 }
 

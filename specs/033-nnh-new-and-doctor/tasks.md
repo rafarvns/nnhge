@@ -39,25 +39,25 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 2: `nnh new`'s core (FR-3 to FR-12)
 
-- [ ] **T2.1** Name and text rules: FR-4's rules with the named rule and a suggestion; title/author rules (UTF-8, ≤ 64,
+- [x] **T2.1** Name and text rules: FR-4's rules with the named rule and a suggestion; title/author rules (UTF-8, ≤ 64,
   forbidden characters); `--unique-id` forms and range — files: `new/project_name.{hpp,cpp}` — test:
   `test_project_name.cpp` — covers FR-4, FR-11
-- [ ] **T2.2** [P] `random_unique_id()` — files: `new/unique_id.{hpp,cpp}` — test: `test_project_name.cpp` (10,000 draws
+- [x] **T2.2** [P] `random_unique_id()` — files: `new/unique_id.{hpp,cpp}` — test: `test_project_name.cpp` (10,000 draws
   in range) — covers FR-11
-- [ ] **T2.3** Engine location: pin or none; `--engine` (MSYS form converted) or the checkout default; engine-folder
+- [x] **T2.3** Engine location: pin or none; `--engine` (MSYS form converted) or the checkout default; engine-folder
   check and version; set-lines per shell; variable already equal / different — files: `new/engine_location.{hpp,cpp}` —
   test: `test_engine_location.cpp` — covers FR-9, FR-10
-- [ ] **T2.4** The embed step with a two-file stand-in template (one text with a placeholder, one binary): `-P` script,
+- [x] **T2.4** The embed step with a two-file stand-in template (one text with a placeholder, one binary): `-P` script,
   LF normalisation, fixed order, `DEPENDS` per file — files: `tools/nnh/embed_template.cmake`, `new/template_files.hpp`,
   `tools/nnh/CMakeLists.txt`, root `.gitattributes` — test: `test_template_render.cpp` (bytes equal the stand-in) —
   covers FR-7
-- [ ] **T2.5** Rendering: placeholders, the author line, pin/no-pin values, `@docs_base@`, unknown or leftover
+- [x] **T2.5** Rendering: placeholders, the author line, pin/no-pin values, `@docs_base@`, unknown or leftover
   placeholder → test failure, deterministic output — files: `new/template_render.{hpp,cpp}` — test:
   `test_template_render.cpp` — covers FR-7, FR-8, FR-9
-- [ ] **T2.6** Writing: target checks (missing, empty folder, file, non-empty folder, link), sub-folders, exclusive
+- [x] **T2.6** Writing: target checks (missing, empty folder, file, non-empty folder, link), sub-folders, exclusive
   creates, rollback at each failing index — files: `new/project_writer.{hpp,cpp}`, `new/new_fs_system.cpp` — test:
   `test_project_writer.cpp` (real folders under `NNH_TOOL_TEST_TMP`, a failing `NewFs`) — covers FR-5, FR-6
-- [ ] **T2.7** Stage end: guards; the module filters green; mutation spot-check of one rule per file.
+- [x] **T2.7** Stage end: guards; the module filters green; mutation spot-check of one rule per file.
 
 ## Stage 3: the template (FR-8, FR-12 to FR-14, FR-16)
 

@@ -656,3 +656,41 @@ installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16
 - The default `ctest -LE consumer-full -j4` took 627 s here; its four `reload_*` failures were caused by editing
   `tools/nnh/CMakeLists.txt` while it ran (those tests rebuild in the same build folder, which re-ran CMake on a
   half-edited file) and passed when re-run (stage 2 end). Lesson kept: no CMake edits during a ctest run.
+
+### Stage 2 results (`nnh new`'s core)
+
+- `new/project_name`: the FR-4 rules in this order, each named in the refusal: empty, a path separator, `..`, a drive
+  letter, a leading `-`/`.`, more than 32 characters, a character outside `[a-z0-9_-]` (upper case included: "only
+  lowercase letters, digits, '_' and '-'"), not starting with a letter, a Windows device name, a target name
+  (`dist all clean install test help package package_source edit_cache rebuild_cache list_install_components nnh`,
+  `nnh_*`, `nnh-*`). The suggestion lower-cases, turns each run of other characters into one `-`, starts at the first
+  letter, cuts at 32 and appends `-game` to a device or target name; nothing when the result is still invalid
+  (`nnh_x`, `!!!`). Titles and authors: strict UTF-8 (no overlongs, surrogates or > U+10FFFF), ≤ 64 characters, no
+  C0/DEL/C1 controls, none of `" \ $ ; @ `` ` ``. `--unique-id`: `0x`/`0X` optional, hex only, the homebrew range.
+- `new/engine_location`: as designed; `engine_dir_from_option` makes `--engine` absolute (MSYS form, `\`, relative to
+  the current folder); the set-lines are quoted only when the path has a space (cmd as `set "NNHGE_ENGINE_DIR=..."`).
+  An engine folder = `CMakeLists.txt` with a line starting `project(nnhge VERSION x.y.z` + `cmake/nnh_game.cmake`.
+- Refinement (T2.4): `file(WRITE)` is a text write on Windows (`\n` became `\r\n`, seen in the stand-in), so the embed
+  script normalises line endings in hex: the bytes become `,xx` tokens and `,0d,0a` → `,0a` (a pair can only match at a
+  token boundary). The stand-in (`tools/nnh/tests/data/template_standin/`) is committed, its `greeting.txt.in` kept with
+  CRLF by `-text` in `.gitattributes`; `art/blob.png` holds NUL, CR LF and 0xFF bytes. The generated source is always
+  rewritten (the command only runs when a listed file or the script changed).
+- `.gitattributes`: `tools/nnh/template/** text eol=lf`, then `*.png`/`*.wav` under it `binary` again (a later line
+  wins), and the stand-in's `-text`.
+- Placeholders may hold digits (`@engine_sha256@`); a `@` not followed by `word@` is copied; values are never scanned
+  again; an unknown placeholder fails the render naming the stored file.
+- `new/new_fs_system`: Windows uses `GetFileAttributesW` (a reparse point, symbolic link or junction, is a link),
+  `CreateDirectoryW`, `_wopen(_O_CREAT | _O_EXCL | _O_BINARY)`, `DeleteFileW`, `RemoveDirectoryW` from UTF-8; elsewhere
+  `symlink_status`, `mkdir`, `open(O_CREAT | O_EXCL | O_CLOEXEC)`, `unlink`, `rmdir`. MinGW's
+  `std::filesystem::create_directory_symlink` reports "Function not implemented", so the real-link case of
+  `a_link_is_refused_unchanged` is skipped here (it runs on Linux) and the rule is checked with a fake `kind`.
+- Tests: 287 → 323 (`test_project_name.cpp` 8, `test_engine_location.cpp` 11, `test_template_render.cpp` 7,
+  `test_project_writer.cpp` 9 + 1 in `test_template_render.cpp`'s embed check), seen red against stubs (181 failing
+  checks; a stubbed render crashed on an empty file list, so the test now stops when the count is wrong).
+- Mutation spot-check, one per file, each killed: the Windows-device rule dropped (`names_windows_reserves_are_refused`);
+  the random range from 0 (`random_unique_ids_stay_in_the_homebrew_range`); case-sensitive folder comparison on Windows
+  (`the_set_lines_are_skipped_when_the_variable_already_names_the_folder`); an unknown placeholder copied
+  (`an_unknown_placeholder_is_an_error`; the first try, `continue` without advancing, hung the test: killed by hand);
+  the rollback skipped (three writer tests); `_O_EXCL` → `_O_TRUNC` (`the_system_create_is_exclusive`).
+- Stage end: `nnh_tool_tests` 323/323, ctests `nnh_tool`, `nnh_pin_check`, `nnh_script_pc_smoke` and the four
+  `reload_*` green, `pc-debug` 0 warnings.

@@ -6,3 +6,9 @@
 *.sav binary
 # A data file kept with CRLF line ends on purpose (spec 014: the reader accepts both)
 tests/data/data_assets/game/assets/enemies/bat.enemy -text
+# The nnh new template (spec 033): text always LF (nnh embeds it LF anyway), its images and sounds binary
+tools/nnh/template/** text eol=lf
+tools/nnh/template/**/*.png binary
+tools/nnh/template/**/*.wav binary
+# The embed step's stand-in keeps a CRLF text file on purpose (test_template_render.cpp)
+tools/nnh/tests/data/template_standin/greeting.txt.in -text

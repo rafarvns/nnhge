@@ -10,6 +10,26 @@ set(NNH_RELEASE_ENGINE_SHA256 "" CACHE STRING "The SHA-256 of NNH_RELEASE_ENGINE
 include(${CMAKE_CURRENT_SOURCE_DIR}/nnh_release_pin.cmake)
 nnh_check_release_pin("${NNH_RELEASE_ENGINE_URL}" "${NNH_RELEASE_ENGINE_SHA256}")
 
+# The project template `nnh new` writes (spec 033 FR-7, D56 item 1): the files below, in this order, embedded into one
+# generated source at build time (embed_template.cmake). Explicit list: tools/nnh/template/README.md (provenance) and
+# anything else in the folder stays out.
+set(NNH_TEMPLATE_FILES
+    CMakeLists.txt.in
+    nnh.toml.in
+)
+function(_nnh_embed_template symbol source_dir output)
+    list(TRANSFORM ARGN PREPEND "${source_dir}/" OUTPUT_VARIABLE deps)
+    string(REPLACE ";" "|" files "${ARGN}")
+    add_custom_command(OUTPUT ${output}
+        COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${source_dir} -DOUTPUT=${output} -DSYMBOL=${symbol} "-DFILES=${files}"
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/embed_template.cmake
+        DEPENDS ${deps} ${CMAKE_CURRENT_SOURCE_DIR}/embed_template.cmake
+        COMMENT "Embedding the ${symbol} files"
+        VERBATIM)
+endfunction()
+_nnh_embed_template(kProjectTemplate ${CMAKE_CURRENT_SOURCE_DIR}/template
+                    ${CMAKE_CURRENT_BINARY_DIR}/template_files.cpp ${NNH_TEMPLATE_FILES})
+
 add_library(nnh_tool_lib STATIC
     src/build_info.cpp
     src/cli.cpp
@@ -30,6 +50,13 @@ add_library(nnh_tool_lib STATIC
     src/log_view.cpp
     src/manifest.cpp
     src/netloader.cpp
+    src/new/engine_location.cpp
+    src/new/new_fs_system.cpp
+    src/new/project_name.cpp
+    src/new/project_writer.cpp
+    src/new/template_render.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/template_files.cpp
+    src/new/unique_id.cpp
     src/preset_names.cpp
     src/project_file.cpp
     src/project_root.cpp
@@ -120,11 +147,16 @@ endfunction()
 _nnh_tool_static_runtime(nnh)
 
 if(NNH_BUILD_TESTS)
+    # The embed step on a stand-in (tests/data/template_standin, its greeting.txt.in kept with CRLF line endings):
+    # test_template_render.cpp.
+    _nnh_embed_template(kStandinTemplate ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/template_standin
+                        ${CMAKE_CURRENT_BINARY_DIR}/standin_files.cpp greeting.txt.in art/blob.png gitignore notes.txt)
     add_executable(nnh_tool_tests
         tests/test_build_info.cpp
         tests/test_cli.cpp
         tests/test_configure_command.cpp
         tests/test_console_link.cpp
+        tests/test_engine_location.cpp
         tests/test_fbi.cpp
         tests/test_fuzz_tool.cpp
         tests/test_game_session.cpp
@@ -136,6 +168,10 @@ if(NNH_BUILD_TESTS)
         tests/test_png_writer.cpp
         tests/test_preset_names.cpp
         tests/test_project_file.cpp
+        tests/test_project_name.cpp
+        tests/test_project_writer.cpp
+        tests/test_template_render.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/standin_files.cpp
         tests/test_project_commands.cpp
         tests/test_project_root.cpp
         tests/test_reload_controller.cpp

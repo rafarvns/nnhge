@@ -1,6 +1,6 @@
 # Plan 032: Game projects outside the engine repository
 
-Status: draft (2026-11-27; twelve plan-level questions at the end, each with a recommendation)
+Status: approved 2026-11-27 (the maintainer, the twelve questions at the end as recommended, `NNHGE_ENGINE_DIR` included)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D55 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
 Uses spec 010 and D23 (`nnh build`/`run`/`install`, the games manifest, the MSYS shell for 3DS on Windows), spec 011
@@ -417,7 +417,7 @@ projects reuse the six presets; the local-engine mapping), D23 (`nnh`'s root is 
 and D29 (host programs never gated; found through function-relative paths), D53 (hot reload from a game project).
 Flagged for the maintainer: questions 1, 2 and 8, and risks 1, 3 and 5.
 
-## Questions for the maintainer
+## Questions for the maintainer (answered 2026-11-27: each as recommended)
 
 1. **Local engine override: the approved Q11 (A) cannot work** — CMake refuses a `CMakeUserPresets.json` preset with
    the name of a `CMakePresets.json` preset (measured: `Duplicate preset: "pc-debug"`), and project presets can't

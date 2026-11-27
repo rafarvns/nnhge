@@ -720,3 +720,31 @@ Stage 4 refinements:
   were killed. Argued, not run: the response-file variable not set (the length check fails: T1.1's 27,354) or set in
   `engine/core/` (breaks every compile, the spike); `check_preset` and `open_project` skipped in the commands (glue,
   checked by hand at T4.5 and by stage 5's runs).
+
+### Stage 7 results (docs)
+
+- **T7.1** `docs/guides/game-projects.md` (new): the layout, the four ways' `CMakeLists.txt`, the six presets with the
+  `NNHGE_ENGINE_DIR` mapping, `nnh.toml`, `.gitignore`, where outputs go, a local engine (per machine, per shell; an
+  existing build folder keeps its engine), upgrading the pin, `NNHGE_VERSION`, what the engine adds (options, defaults,
+  reserved names), 3DS builds on Windows (what `nnh` passes, the manual `dkp.sh` form, the command-line limit and a
+  game's own link line), CA certificates. `getting-started.md` §5 points to it.
+- **T7.2** `docs/tech/cmake.md` (the layout table, "Game projects: the engine as a subproject" with the contract, the
+  options, the defaults, the version, "Reserved names" (checked against the consumer's `ninja -t targets` and cache),
+  "The command-line limit (Windows, 3DS)", "Consumer tests", `vm_check.sh final`'s new steps, `nnh` passing
+  `NNH_HOST_CXX`); `docs/guides/nnh-tool.md` ("Game projects": the root rule and message, `nnh.toml`, the preset check,
+  3DS configures on Windows, `NNHGE_ENGINE_DIR`); `docs/architecture/project-structure.md`; `CLAUDE.md` (a summary
+  paragraph, the layout line, three build lines); `README.md` says nothing about games living in the repository (no
+  change).
+- **T7.3** `decisions.md`: a change-log line for the built D55; `python -I scripts/docs_tool.py check`: 0 broken links.
+- **T7.4** The page followed word for word (`build/ref-032/verbatim.py` takes the guide's code blocks and
+  getting-started's `nnh_add_game()` block, `ICON` left out as it says "optional", `hello`'s `main.cpp` as the game) in
+  an empty folder: with `NNHGE_ENGINE_DIR` set, `nnh run mygame --pc` configured, built and ran it (screenshot read back:
+  "Hello from NNHGE!", frame 30) although the file still had the placeholder URL and hash (the override skips them);
+  then with an archive made by the page's `git archive --format=tar.gz --prefix=nnhge/ ...` line, its `file://E:/...`
+  URL and SHA-256 written into `URL`/`URL_HASH` and the variable unset: the same run from the download (`-- NNHGE
+  0.1.0: .../build/pc-dev/_deps/nnhge-src`). The page's manual 3DS line through `dkp.sh` configured `3ds-dev`. Doc fixes
+  from it: the manual line (no extra `cd`, the build line added) and the link-line note (objects are relative to the
+  build folder: about 50 characters each, ≈ 300 files to half the limit). The folder was deleted.
+- **T8.1** (code only) `scripts/vm_check.sh final` runs `ctest -L consumer-full`, the consumer copy's 3DS builds through
+  `nnh` under `/tmp` with `/opt/devkitpro`, and a fresh `3ds-dev` `nnh build animation`; the main ctest there runs
+  `-LE consumer-full`. Not run: the VM pass is the lead's.

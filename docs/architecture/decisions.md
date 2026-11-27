@@ -389,3 +389,7 @@ never through `#ifdef` in game code.
   `CMakeUserPresets.json`), which CMake can't do for presets of the same name (measured: `Duplicate preset`); plan
   032's question 1 asks the maintainer to confirm.
 - 2026-11-27: D55 **approved** with plan 032 (the maintainer; the twelve plan questions as recommended, the local engine through `NNHGE_ENGINE_DIR` instead of a `CMakeUserPresets.json` override).
+- 2026-11-27: D55 **built** (spec 032, worktree `spec-032`, before its review and Linux pass): item 9 as planned (the
+  core's archive from a response file in 3DS presets: longest 3DS command 27,354 → 2,533 characters, `hello.3dsx`
+  byte-identical; fallback B not needed); `nnh_platform()`'s messages are ASCII (`unknown platform "wii" (supported:
+  pc, 3ds)`, `"" (empty, supported: pc, 3ds)`); the engine override reaches `nnh`'s 3DS configures only in a game project.

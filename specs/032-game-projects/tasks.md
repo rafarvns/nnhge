@@ -185,21 +185,21 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 7: docs
 
-- [ ] **T7.1** `docs/guides/game-projects.md` (new): a game project by hand — the four ways' `CMakeLists.txt`, the six
+- [x] **T7.1** `docs/guides/game-projects.md` (new): a game project by hand — the four ways' `CMakeLists.txt`, the six
   presets with the local-engine mapping, `nnh.toml`, `.gitignore`, where outputs go, using a local engine checkout (per
   machine and per shell), upgrading the pin, reading `NNHGE_VERSION`, the options, the reserved names, 3DS builds on
   Windows (MSYS forms by hand, `NNH_HOST_CXX`), CA certificates on Windows, the large-game link note; `getting-started.md`
   §5 points to it. Covers FR-18, AC-10.
-- [ ] **T7.2** `docs/tech/cmake.md` (the subproject contract, the four options, `link/` gate, game target defaults,
+- [x] **T7.2** `docs/tech/cmake.md` (the subproject contract, the four options, `link/` gate, game target defaults,
   `NNH_CCACHE`, `NNHGE_VERSION*`, the reserved target names and cache entries taken from the consumer's `--target help`
   and cache, the archive response file and `check_command_length.sh`, `engine/core/archive/`, the consumer tests and
   labels, `vm_check.sh`'s new step), `docs/guides/nnh-tool.md` (game projects, `nnh.toml`, the root rule and message,
   the preset check, `NNH_HOST_CXX`, `NNHGE_ENGINE_DIR`), `docs/architecture/project-structure.md` (`tests/consumer/`,
   `tests/consumer_tools/`, the new `cmake/` files), `CLAUDE.md` (layout and build lines), `README.md` if it says games
   live in the repository. Covers FR-18, AC-10.
-- [ ] **T7.3** `docs/architecture/decisions.md`: D55's change-log note (approved/implemented, stage refinements);
+- [x] **T7.3** `docs/architecture/decisions.md`: D55's change-log note (approved/implemented, stage refinements);
   `python -I scripts/docs_tool.py check` → 0 broken links. Covers AC-10.
-- [ ] **T7.4** The page verbatim: in an empty folder outside the repository, follow `game-projects.md` word for word
+- [x] **T7.4** The page verbatim: in an empty folder outside the repository, follow `game-projects.md` word for word
   (local way, then the pin with a locally made archive) → `nnh run <game> --pc` shows the window (screenshot read back);
   every difference becomes a doc fix. Covers FR-18, AC-10.
 

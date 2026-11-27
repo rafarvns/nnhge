@@ -255,6 +255,15 @@ behind their handles, data assets and maps are announced, tunables on reloaded d
 `nnh restore-assets <game>` ([api/assets.md](docs/api/assets.md#hot-reload), guide
 [editing assets live](docs/guides/editing-assets-live.md); demo `examples/reload`, scripts `tests/check.nnhs` (sums)
 `tests/errors.nnhs` (refusals) and `tests/timing.nnhs` (save → frame, bench)).
+Game projects outside the repository (spec 032, D55; guide [game projects](docs/guides/game-projects.md)): a game's own
+`CMakeLists.txt` adds the engine by `FetchContent` (a hash-pinned archive; `NNHGE_ENGINE_DIR` → `FETCHCONTENT_SOURCE_DIR_NNHGE`
+through the project's presets for a local engine) or `add_subdirectory` (submodule, copy), then `nnh_add_game()` works from any
+of its folders (helpers use `CMAKE_CURRENT_FUNCTION_LIST_DIR` and the global property `NNH_PLATFORM`); `NNH_BUILD_EXAMPLES/
+TESTS/APPS/TOOLS` default to `PROJECT_IS_TOP_LEVEL`; game targets get C++20 and the compiler cache; `NNHGE_VERSION*`; `nnh`
+works in the nearest folder holding `nnh.toml` or the engine repository, checks presets first and passes `NNH_HOST_CXX` and
+the override in MSYS form to 3DS configures on Windows. The core is archived from a response file in 3DS presets
+(`engine/core/archive/`; `scripts/check_command_length.sh`). Proof: `tests/consumer/` and the ctests labelled `consumer`
+(every PC ctest) and `consumer-full` (archive, override, submodule, pruned, wrong hash, options ON).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)
@@ -267,6 +276,7 @@ engine/platforms/3ds/include/nnh/3ds/            3DS extension headers (system-o
 tests/framework/  tests/<module>/                in-house test framework, unit tests mirroring core/src
 tests/platform_conformance/                      contract tests run against every platform
 tests/fuzz/                                      fuzz targets (mini-fuzz in nnh_tests; libFuzzer with NNH_BUILD_FUZZERS)
+tests/consumer/  tests/consumer_tools/           a game project built against the engine by ctest (spec 032) and its driver
 link/                                            nnh_link (spec 011): sockets, crypto, messages, pairing, sessions; PC + 3DS
 apps/nnh-link/                                   NNH Link app (spec 011): pick a PC, pair, build and run from the console
 tools/nnh/                                       the nnh command (spec 010): build, run on the console, install; test scripts (013)
@@ -330,6 +340,9 @@ NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build
 build/pc-debug/tools/nnh/nnh run live [--pc] --script examples/live/tests/check.nnhs   # live values: sets, expect-value, pause/step, self-check 7A849F13, bench
 LIVE_SHOT=tunables NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/live.png build/pc-debug/examples/live/live.exe   # stats|tunables|watches|colour|paused; LIVE_DEMO=check|bench
 build/pc-debug/tools/nnh/nnh run live [--pc] --tunes build/logs/<game>-<date>-<time>-tunes.toml   # start held with a dump's values
+ctest --preset pc-debug -L consumer-full                       # spec 032: the consumer project in every way (one engine build each)
+tests/consumer_tools/copy_project.sh /e/games/consumer pin     # a copy of it outside the repo, pinned to a local archive of this engine
+scripts/check_command_length.sh build/3ds-dev                  # longest 3DS command vs. Windows' 32,767 (limit 50 %)
 build/pc-debug/tools/nnh/nnh run reload [--pc] --script examples/reload/tests/check.nnhs   # hot reload: every kind swapped, sums = PC's
 build/pc-debug/tools/nnh/nnh run reload [--pc]                 # then save a file in examples/reload/assets/: it reloads (RELOAD_DEMO=bench)
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)

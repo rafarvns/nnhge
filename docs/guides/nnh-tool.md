@@ -6,7 +6,7 @@ run test scripts on it ([below](#driving-the-game-from-the-pc), spec [013](../..
 tutorial: [Testing on the console](testing-on-the-console.md)). `nnh serve` lets the console drive
 instead, through the NNH Link app (spec [011](../../specs/011-nnh-link/spec.md)). It is built with the PC presets:
 after `cmake --build --preset pc-debug` it is `build/pc-debug/tools/nnh/nnh(.exe)`. Run it from anywhere
-inside the repository.
+inside the engine repository or inside a [game project](#game-projects).
 
 ```sh
 nnh run hello                 # build for the 3DS, send to the console, show the log
@@ -22,6 +22,33 @@ nnh help
 
 `<game>` is the name given to `nnh_add_game()` (`hello`, `audio`, …). If you mistype it, `nnh` lists the
 games it knows.
+
+## Game projects
+
+`nnh` works in the nearest folder, at or above the current one, that is either a **game project** (it holds a file
+named `nnh.toml`; spec [032](../../specs/032-game-projects/spec.md), [Game projects](game-projects.md)) or the
+**engine repository** (`CMakePresets.json` and `engine/core/`). A game project inside another folder, or inside the
+engine repository (the engine's `tests/consumer/`), is found as itself. Everything else is the same in both: the six
+presets, `build/<preset>/` under that folder, its games manifest, logs and screenshots in its `build/logs/`. Outside
+both, `nnh` says `nnh: no game project here: no nnh.toml (game project) or NNHGE repository (CMakePresets.json +
+engine/core) in this folder or above it` and exits 1.
+
+- **`nnh.toml`** is read once per command: `name` and `engine` (text) today; any other key is one warning line
+  (`nnh.toml:3: unknown key "x" (ignored)`), so later versions can add keys; a malformed line stops `nnh`
+  (`nnh.toml:<line>: <reason>`, exit 1). An empty file is valid.
+- **Presets** are checked before CMake runs: a project whose `CMakePresets.json` (or `CMakeUserPresets.json`) has no
+  configure and build preset of the name `nnh` picked gets `nnh: this project has no preset "3ds-dev"
+  (CMakePresets.json): add the six presets (docs/guides/game-projects.md)`, exit 1.
+- **3DS configures on Windows** go through devkitPro's MSYS2 shell, which has no host C++ compiler and reads `E:/...` as
+  a relative path. So the first configure of a 3DS preset passes `-DNNH_HOST_CXX=/c/.../g++.exe` (the environment's
+  `NNH_HOST_CXX`, else `g++`, `c++` or `clang++` on `nnh`'s `PATH`, like `scripts/dkp.sh`) and, in a game project with
+  `NNHGE_ENGINE_DIR` set, `-DFETCHCONTENT_SOURCE_DIR_NNHGE=/e/...`, each in MSYS form. A fresh `nnh build` of a 3DS preset
+  therefore works without running `scripts/dkp.sh` first, in the engine repository too (whose examples need
+  `nnh-assetc`). With no host compiler, games with Tiled maps, Aseprite exports, data assets or fonts fail to configure
+  with a message naming `NNH_HOST_CXX` and `NNH_ASSETC`. On Linux and in PC presets the configure command is the plain
+  `cmake --preset <preset>`.
+- **`NNHGE_ENGINE_DIR`** (a game project's local engine, [Game projects](game-projects.md#a-local-engine)) reaches PC
+  presets through the project's presets; `nnh` itself only converts it for 3DS configures on Windows.
 
 ## Running on the console
 

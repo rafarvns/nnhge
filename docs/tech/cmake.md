@@ -1,7 +1,8 @@
 # CMake
 
 One CMake project builds every target. The platform is chosen by the preset (toolchain), never by
-options in game code.
+options in game code. The same engine is also a subproject of a game's own project
+([game projects](#game-projects-the-engine-as-a-subproject)).
 
 ## Presets
 
@@ -27,10 +28,12 @@ Build folders: `build/<preset>/`. Personal presets go in `CMakeUserPresets.json`
 |------|------|
 | `CMakeLists.txt` | Project, C++20, platform detection (`NINTENDO_3DS` → `NNH_PLATFORM`), ccache, subdirectories |
 | `engine/CMakeLists.txt` | Adds core + the preset's platform library; defines `nnh::engine` (INTERFACE: core + platform), what games link |
-| `engine/core/CMakeLists.txt` | `nnh::core` (static) and `nnh::core_contract` (contract headers, INTERFACE) |
+| `engine/core/CMakeLists.txt` | the core's sources as the OBJECT library `nnh_core_objects`, and `nnh::core_contract` (contract headers, INTERFACE) |
+| `engine/core/archive/CMakeLists.txt` | `nnh::core` (static, `engine/core/libnnh_core.a`) archived from `nnh_core_objects`; a response file in 3DS presets ([below](#the-command-line-limit-windows-3ds)) |
 | `engine/platforms/<system>/CMakeLists.txt` | `nnh::platform_<system>` (static), links the system SDK `PRIVATE` |
 | `cmake/nnh_engine_options.cmake` | `nnh_engine_options(target)`: C++20, warnings, no exceptions/RTTI |
 | `cmake/nnh_game.cmake` | `nnh_add_game()` |
+| `cmake/nnh_platform.cmake`, `nnh_version.cmake`, `nnh_game_defaults.cmake`, `nnh_optional_parts.cmake` | the subproject contract (spec 032, [below](#game-projects-the-engine-as-a-subproject)): `nnh_platform()`, `NNHGE_VERSION*`, game target defaults, `nnh_optional_part()` |
 | `cmake/nnh_assets.cmake` | `nnh_add_assets()` (the `ASSETS` folder of `nnh_add_game`), with `nnh_asset_index.cmake` (the index and its name checks) |
 | `cmake/nnh_images.cmake` | `nnh_add_images()` (the `IMAGES` of `nnh_add_game`), with the build-time scripts `nnh_check_image.cmake` and `nnh_embed.cmake` |
 | `cmake/nnh_sdl3.cmake` | Provides `SDL3::SDL3` for the PC platform |
@@ -51,7 +54,8 @@ presets selecting it ([platforms.md](../architecture/platforms.md)).
 
 **Add an example**: `examples/<name>/CMakeLists.txt` with `nnh_add_game(...)`, then
 `add_subdirectory(<name>)` in `examples/CMakeLists.txt`. Apps that ship with NNHGE (`apps/nnh-link`, spec
-011) are added the same way under `apps/`, built in every preset even with `NNH_BUILD_EXAMPLES=OFF`;
+011) are added the same way under `apps/`, built in every preset of the engine repository (`NNH_BUILD_APPS`, independent
+of `NNH_BUILD_EXAMPLES`; OFF in a game project);
 they may link more libraries after `nnh_add_game()` (`target_link_libraries(nnh-link PRIVATE nnh_link)`)
 and pick a platform file with `src/platform_link_${NNH_PLATFORM}.cpp`.
 
@@ -176,7 +180,9 @@ host compiler and starts with an almost empty environment (Git Bash's variables 
 `scripts/dkp.sh` finds `g++` (else `c++`, `clang++`) on Git Bash's PATH — or takes your `NNH_HOST_CXX` — and hands
 it over as an argument; inside it is exported in MSYS form (`/c/...`, or `/home/...` for `C:/Users`), because
 MSYS's CMake misreads `C:/...` as a list. Paths given with `-D` inside `dkp.sh` must use that form too
-(`-DNNH_ASSETC=/e/.../nnh-assetc.exe`). The first build of the tool takes about 9 s on Windows (host compiler
+(`-DNNH_ASSETC=/e/.../nnh-assetc.exe`). `nnh` does the same since spec 032: its first configure of a 3DS preset on
+Windows passes `-DNNH_HOST_CXX=/c/...` (found the same way), so `nnh build` works in a fresh 3DS build folder without
+`dkp.sh` ([nnh-tool.md](../guides/nnh-tool.md#game-projects)). The first build of the tool takes about 9 s on Windows (host compiler
 detection; under 1 s on Linux). Since spec 031 (T10.3) the sub-build runs only when one of the files it compiles
 changed: its build step depends on `tools/assetc/**`, the engine core sources and headers and the vendored stb
 libraries (globbed at configure time; a new source file comes with a change of `tools/assetc/CMakeLists.txt`, which is
@@ -254,6 +260,77 @@ decision during spec 029, confirmed by the maintainer 2026-11-26): Git Bash puts
 built against `msvcrt.dll`) before the compiler's on `PATH`, and a string that DLL allocated, freed by an inlined Release
 destructor through the UCRT, corrupted the heap. Games use no C++ runtime allocation and keep the default linking.
 
+## Game projects: the engine as a subproject
+
+Spec 032 (D55): a game project adds the engine with `FetchContent` (a hash-pinned archive, or the local override
+`FETCHCONTENT_SOURCE_DIR_NNHGE`) or `add_subdirectory` (a git submodule, a copied folder), and calls `nnh_add_game()`
+from any of its folders ([guide](../guides/game-projects.md)). What makes that work:
+
+- **Caller-independent helpers.** Every helper finds the engine's files through `CMAKE_CURRENT_FUNCTION_LIST_DIR`,
+  read inside the function, never through variables set when its file was included (a game's folder doesn't have
+  them). The system comes from the global property `NNH_PLATFORM`, set by the engine's top-level `CMakeLists.txt` and
+  read with `nnh_platform(<out> <who>)` (`cmake/nnh_platform.cmake`): an empty or unknown value fails the configure,
+  `nnh_add_game(mygame): unknown platform "wii" (supported: pc, 3ds)`, before any target is made. The engine's own
+  folders keep their `NNH_PLATFORM` variable.
+- **Optional parts.** `NNH_BUILD_EXAMPLES` (examples), `NNH_BUILD_TESTS` (unit, conformance and fuzz tests, the
+  consumer tests; PC presets), `NNH_BUILD_APPS` (NNH Link) and `NNH_BUILD_TOOLS` (the `nnh` tool and its tests; PC
+  presets) default to the engine's `PROJECT_IS_TOP_LEVEL`: ON in the engine repository, OFF in a game project. Each is
+  added by `nnh_optional_part(<option> <folder>)` (`cmake/nnh_optional_parts.cmake`), which fails the configure when the
+  option is ON and the folder is missing (a pruned copy). `link/` is configured only with apps, tools or tests. The host
+  programs (`nnh-assetc`, the data schema support) are never behind an option.
+- **Game target defaults** (`cmake/nnh_game_defaults.cmake`): every target `nnh_add_game()` creates (the game,
+  `<game>_data_schema_objs`, `<game>_data_schema`) gets C++20 without extensions unless the calling folder set
+  `CMAKE_CXX_STANDARD` / `CMAKE_CXX_EXTENSIONS`, and `NNH_CCACHE` as its compiler launcher unless the calling folder set
+  one. Inside the repository the calling folders already have all three, so nothing changes. `NNH_CCACHE` is searched
+  only when undefined or `*-NOTFOUND`: `-DNNH_CCACHE=` turns the cache off.
+- **Version.** `cmake/nnh_version.cmake` sets `NNHGE_VERSION`, `NNHGE_VERSION_MAJOR`, `_MINOR`, `_PATCH` (INTERNAL cache
+  entries, from `project(nnhge VERSION ...)`) and prints `NNHGE <version>: <engine folder>` at every configure.
+- **Outputs** go under `CMAKE_BINARY_DIR` (the game's build folder): the manifest, `dist/`, `_tools/`, `_host/`; the
+  engine's own build under `_deps/nnhge-build/` (FetchContent) or the `add_subdirectory` binary folder. Nothing is
+  written into the engine's source folder.
+
+### Reserved names
+
+Targets the engine defines in a game's build (a game must not use these names): `dist`, `nnh_assetc`,
+`nnh_ctr_tools` (3DS), `nnh_engine`, `nnh_core`, `nnh_core_objects`, `nnh_core_contract`, `nnh_platform_pc` or
+`nnh_platform_3ds`, `nnh_raster3d` (PC), `nnh_mesh3d_shader`, `nnh_mesh3d_shbin` (3DS), `nnh_stb_vorbis`, `nnh_ryu`,
+`nnh_stb_image`, `nnh_stb_truetype`, `nnh_assetc_lib`, `nnh_data_schema_support` (PC); per game `<game>_icon`,
+`<game>_assets`, `<game>_3dsx`, `<game>_dist`, `<game>_cia`, `<game>_data_schema`, `<game>_data_schema_objs`,
+`<game>_data_description` and `<game>.elf`/`<game>.smdh` files on 3DS; the aliases `nnh::*`; `nnh_link` with apps,
+tools or tests. Cache entries: `NNH_BUILD_EXAMPLES`, `NNH_BUILD_TESTS`, `NNH_BUILD_APPS`, `NNH_BUILD_TOOLS`,
+`NNH_CCACHE`, `NNH_ASSETC`, `NNH_HOST_CXX` (3DS), `NNH_MAKEROM`, `NNH_BANNERTOOL` (3DS), `NNHGE_VERSION*`. Global
+properties: `NNH_PLATFORM`, `NNH_ASSETC_PROGRAM`, `NNH_ASSETC_MISSING`.
+
+### The command-line limit (Windows, 3DS)
+
+devkitPro's MSYS2 CMake assumes the POSIX command-line limit, so it writes no response files, while its tools are native
+Windows programs limited to 32,767 characters. The core's archive command listed all of its objects (27,354 characters
+in the repository, 35,454 in a game project's `_deps/nnhge-build/`). So the core's sources are the OBJECT library
+`nnh_core_objects` (`engine/core/CMakeLists.txt`) and the static `nnh_core` is archived in `engine/core/archive/`, whose
+folder sets `CMAKE_NINJA_FORCE_RESPONSE_FILE` in 3DS presets: CMake reads it per folder, so only that archive uses a
+response file (paths relative to the build folder, which `arm-none-eabi-gcc-ar` reads). Set for the whole build it
+would break every compile: compiler response files would hold `/e/...` include paths the native compiler can't read.
+`libnnh_core.a` keeps its place and members; `hello.3dsx` stayed byte-identical.
+
+`scripts/check_command_length.sh <build dir> [limit]` prints the longest command Ninja would run (`ninja -t commands`),
+its share of 32,767 and its start, and exits 1 above the limit (default 16,383, 50 %): today 2,533 characters (7.7 %,
+the platform archive) in both 3DS presets of the repository. Run it on 3DS build folders after build changes.
+
+### Consumer tests
+
+`tests/consumer/` is a game project kept with the tests (FR-16): every `nnh_add_game()` keyword and asset kind in a
+nested folder, a hello-sized game, and a plain library of its own. `tests/consumer.cmake` registers, in PC presets:
+
+| ctest | Label | What |
+|-------|-------|------|
+| `consumer` | `consumer` | the project against this engine folder (`FETCHCONTENT_SOURCE_DIR_NNHGE`): configure, build, run headless, the self-check line, no engine target or test in its build, its manifest, compile commands equal to `hello`'s, its own library untouched, `NNHGE_VERSION` |
+| `consumer_platform_empty`, `consumer_platform_unknown` | `consumer` | the unknown-platform error before any target |
+| `consumer_archive`, `consumer_archive_override`, `consumer_submodule`, `consumer_pruned`, `consumer_bad_hash`, `consumer_options_on` | `consumer-full` | the other ways of adding the engine, a wrong hash, all four options ON |
+
+The driver is `tests/consumer_tools/run_consumer.cmake`; builds go to `build/<preset>/consumer/<way>/` (the
+`consumer-full` ones are deleted once they pass) and reuse the parent's compiler cache (`CCACHE_NOHASHDIR=1`) and SDL3
+download. `ctest -LE consumer` skips them while developing; `scripts/vm_check.sh final` runs `consumer-full`.
+
 ## Rules (Modern CMake)
 
 - Targets and properties only: `target_include_directories`, `target_link_libraries`,
@@ -321,7 +398,7 @@ ssh nnhge-build 'cd ~/wt/nnhge && F="-m32 -msse2 -mfpmath=sse" && cmake --preset
 |---------|--------------|-----|
 | `scripts/vm_check.sh sync` | Sends the working tree with each file's own time and deletes files removed locally; the VM's build folders stay, so Ninja and ccache rebuild only what changed | before any manual command |
 | `scripts/vm_check.sh fast` | Sync, then unit tests (`nnh_tests`, `nnh_tool_tests`, `nnh_assetc_tests`) on GCC 13 and under clang ASan/UBSan, and the `FUZZ` targets for 2 min each | while fixing findings |
-| `scripts/vm_check.sh final` | Sync, then the full ctest on GCC 13 (end-to-end `*_script_pc` tests included), unit tests on GCC 14 and the 32-bit host, ASan/UBSan, and the `FUZZ` targets for 10 min each | once, when the implementation is complete, before the merge |
+| `scripts/vm_check.sh final` | Sync, then the full ctest on GCC 13 (end-to-end `*_script_pc` tests included), the consumer tests' `consumer-full` ways, the consumer project's 3DS builds through `nnh` from a copy under `/tmp` and a fresh `3ds-dev` `nnh build animation` (spec 032), unit tests on GCC 14 and the 32-bit host, ASan/UBSan, and the `FUZZ` targets for 10 min each | once, when the implementation is complete, before the merge |
 
 `FUZZ="tests/fuzz_remote tools/assetc/fuzz_assetc_ttf"` names the targets (paths inside `build/asan`); `CLEAN=1`
 wipes the VM's tree and builds first. The end-to-end `*_script_pc` tests already run in the Windows suite, so the

@@ -134,13 +134,13 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 7: versions on a protocol refusal (FR-22)
 
-- [ ] **T7.1** The message builder — files: `protocol_mismatch.{hpp,cpp}` — test: `test_protocol_mismatch.cpp` — covers
+- [x] **T7.1** The message builder — files: `protocol_mismatch.{hpp,cpp}` — test: `test_protocol_mismatch.cpp` — covers
   FR-22
-- [ ] **T7.2** `ScriptRunner`: Hello answered with another version, Hello rejected before attaching; the project's engine
+- [x] **T7.2** `ScriptRunner`: Hello answered with another version, Hello rejected before attaching; the project's engine
   version through `RunnerOptions`; `run.cpp`/`run_pc.cpp` pass it; `script_runner.cpp` stays ≤ 400 lines — files:
   `remote/script_runner.{hpp,cpp}`, `commands/run.cpp`, `commands/run_pc.cpp` — test: `test_script_runner.cpp` (fake
   game answering version 2; fake game rejecting the Hello) — covers FR-22
-- [ ] **T7.3** [P] `nnh serve`: the link-version refusal printed with the versions — files: `commands/serve.cpp` — test:
+- [x] **T7.3** [P] `nnh serve`: the link-version refusal printed with the versions — files: `commands/serve.cpp` — test:
   `test_serve.cpp` — covers FR-22
 
 ## Stage 8: mutants, docs and the verbatim walk (FR-24)

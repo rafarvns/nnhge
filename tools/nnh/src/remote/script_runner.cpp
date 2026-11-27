@@ -95,24 +95,7 @@ void ScriptRunner::on_record(Record record) {
         return it == sent_.end() ? 0 : it->second.line;
     };
     switch (record.type) {
-    case wire::RecordType::Hello:
-        if (!hello_sent_) return;
-        attached_ = true;
-        if (record.frame > last_frame_) last_frame_ = record.frame;
-        if (record.version != wire::kVersion) {
-            finish(Verdict::Error, 0, "the game speaks remote protocol version " + std::to_string(record.version) +
-                                          ", nnh speaks " + std::to_string(wire::kVersion) + ": rebuild one of them");
-            return;
-        }
-        capabilities_ = record.capabilities;
-        if (options_.interactive) {
-            for (const Step& step : waiting_) typed_step(step);
-            waiting_.clear();
-            pump_typed();
-        } else {
-            hello_answered(record);
-        }
-        return;
+    case wire::RecordType::Hello: hello_record(record); return; // script_runner_hello.cpp
     case wire::RecordType::Tick:
         reload_record(record); // spec 031: the batch's pacing
         tick(record.frame);
@@ -123,6 +106,7 @@ void ScriptRunner::on_record(Record record) {
                                          " (late): give it more frames, e.g. a longer wait before it");
         return;
     case wire::RecordType::Rejected:
+        if (hello_refused(record)) return; // spec 033 FR-22: an older or newer game refuses nnh's Hello
         if (record.reason == wire::Reject::Type && waiting_catalogue_) { // spec 030's messages, to an older game
             waiting_catalogue_ = false;
             if (options_.interactive) notes_.push_back("the game has no live values (built before spec 030)");

@@ -890,3 +890,28 @@ installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16
 - Stage end: `nnh_tool_tests` 382/382, ctests `nnh_tool`, `nnh_pin_check`, `nnh_new_files`, `nnh_template_smoke`,
   `nnh_script_pc_smoke` green, `pc-debug` 0 warnings; `cmake/` changed, so `3ds-release` and `3ds-dev` rebuilt: 0
   warnings, `hello.3dsx` SHA-256 `92e8dbd2…408f` unchanged.
+
+### Stage 7 results (versions on a protocol refusal)
+
+- `protocol_mismatch.{hpp,cpp}`: `protocol_mismatch_message(side, theirs, ours, nnh_version, project_engine)`; with the
+  project's engine known and different: "… use the nnh of NNHGE <x>, or change the project's engine pin to <ours>";
+  unknown: "… use the nnh of the game's engine release, or rebuild the game with NNHGE <ours>"; equal to this nnh's
+  (a stale game binary): "… rebuild the game (it was built with another engine than this project's)"; a refused
+  Hello has no version to name ("the game refused nnh's remote protocol version 1 (nnh 0.1.0; this project's engine:
+  0.2.0)…"). `serve_end_text` turns nnh serve's "the console speaks link protocol version N" into the Link message.
+- Refinement (T7.2): the versions reach the runner through `ScriptRunner::set_versions(nnh_version, project_engine)`,
+  not new `RunnerOptions` members: GCC's `-Wmissing-field-initializers` warns for every designated initializer that
+  leaves a member out, and 22 initialisations (run.cpp and the tests) leave them out. `commands/project.cpp`'s
+  `name_versions(run, built)` sets them once the game is built (the preset's `CMakeCache.txt` `NNHGE_VERSION`, the
+  engine really built), from `run.cpp` and `run_pc.cpp`.
+- The Hello's answer and refusal moved to `remote/script_runner_hello.cpp` (39 lines); `script_runner.cpp` 389 → 373.
+  A refusal is a `Rejected` record for sequence number 0 (the Hello's) before attaching.
+- `link/src/server_session.cpp` (the PC side of NNH Link's handshake, also compiled into the 3DS app's library): "the
+  console speaks another protocol version" → "the console speaks link protocol version N"; the console's own text is
+  unchanged (question 10).
+- Tests: 382 → 389 (`test_protocol_mismatch.cpp` 4, `test_script_runner.cpp` +2 (a game answering version 2, a game
+  rejecting the Hello), `test_serve.cpp` +1), each seen red (a stub builder; the runner's old message; a stub
+  `serve_end_text`). `nnh_link_tests` 55/55.
+- Stage end: `nnh_tool_tests` 389/389, ctests `nnh_tool`, `nnh_script_pc_smoke`, `nnh_template_smoke` green, `pc-debug`
+  0 warnings; `link/` changed, so `3ds-release` and `3ds-dev` rebuilt: 0 warnings, `hello.3dsx` unchanged
+  (`92e8dbd2…408f`).

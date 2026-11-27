@@ -63,6 +63,10 @@ int run_on_pc(const Options& options, const GameRun& run);
 /// <binary dir>/nnh_reload_<game>.txt, scans the outputs) and gives it to the runner; notes why when it can't.
 void start_reload(const GameRun& run, const BuiltGame& built, bool pc);
 
+/// Spec 033 FR-22 (commands/project.cpp): gives `run`'s runner this nnh's engine version and the one `built`'s preset
+/// was configured with (its CMakeCache.txt's NNHGE_VERSION), which a protocol refusal names.
+void name_versions(const GameRun& run, const BuiltGame& built);
+
 /// nnh restore-assets <game> (spec 031): puts back the sources an interrupted script left swapped.
 int command_restore_assets(const Options& options);
 /// The end of a run (spec 031): every swapped source put back, the asset target rebuilt so the outputs match again.

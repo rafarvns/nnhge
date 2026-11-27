@@ -9,12 +9,14 @@
 #include <random>
 #include <thread>
 
+#include "build_info.hpp"
 #include "commands.hpp"
 #include "game_log.hpp"
 #include "link_types.hpp"
 #include "log_listener.hpp"
 #include "netloader.hpp"
 #include "nnh_link/server_session.hpp"
+#include "protocol_mismatch.hpp"
 #include "repo.hpp"
 #include "serve/discovery_responder.hpp"
 #include "serve/serve_hooks.hpp"
@@ -99,7 +101,7 @@ int command_serve(const Options& options) {
         mine.id = id;
         mine.nonce = random_bytes<16>();
         const std::string end = link::serve_console(static_cast<net::Socket&&>(console), mine, hooks, guard);
-        std::printf("nnh: %s\n", end.c_str());
+        std::printf("nnh: %s\n", serve_end_text(end, build_info().version).c_str()); // spec 033 FR-22
         const std::string game = hooks.take_launch();
         if (!game.empty() && logs_ok && !show_game_log(logs, root, game, 20000)) {
             std::printf("nnh: %s started; no log (Release builds don't send one)\n", game.c_str());

@@ -66,6 +66,7 @@ int run_on_pc(const Options& options, const GameRun& run) {
     const bool connected = game.valid();
     int code = 2;
     if (connected) {
+        name_versions(run, built); // spec 033 FR-22: named if the game refuses the protocol
         start_reload(run, built, true);
         GameRun pc_run = run;
         pc_run.linger_ms = 10000; // Bye{quit} closes the simulator: show its last lines

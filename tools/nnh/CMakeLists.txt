@@ -83,6 +83,7 @@ add_library(nnh_tool_lib STATIC
     src/process_run.cpp
     src/project_file.cpp
     src/project_root.cpp
+    src/protocol_mismatch.cpp
     src/reload/asset_build.cpp
     src/reload/asset_swap.cpp
     src/reload/batch_sender.cpp
@@ -104,6 +105,7 @@ add_library(nnh_tool_lib STATIC
     src/remote/script_live.cpp
     src/remote/script_parser.cpp
     src/remote/script_runner.cpp
+    src/remote/script_runner_hello.cpp
     src/remote/script_runner_reload.cpp
     src/remote/script_runner_swap.cpp
     src/remote/script_reload.cpp
@@ -199,6 +201,7 @@ if(NNH_BUILD_TESTS)
         tests/test_project_file.cpp
         tests/test_project_name.cpp
         tests/test_project_writer.cpp
+        tests/test_protocol_mismatch.cpp
         tests/test_template_render.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/standin_files.cpp
         tests/test_project_commands.cpp

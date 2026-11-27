@@ -5,11 +5,15 @@
 #include <cstdlib>
 #include <filesystem>
 
+#include "build_info.hpp"
 #include "commands.hpp"
+#include "doctor/project_versions.hpp"
+#include "game_log.hpp"
 #include "host_compiler.hpp"
 #include "preset_names.hpp"
 #include "project_file.hpp"
 #include "project_root.hpp"
+#include "remote/script_runner.hpp"
 #include "repo.hpp"
 #include "text_file.hpp"
 
@@ -55,6 +59,12 @@ std::string project_configure_command(const std::string& root, const std::string
     return configure_command(root, preset, shell,
                              configure_extras(game, !shell.devkitpro_bash.empty(), std::getenv("NNHGE_ENGINE_DIR"),
                                               std::getenv("NNH_HOST_CXX"), find_on_path));
+}
+
+void name_versions(const GameRun& run, const BuiltGame& built) {
+    if (run.runner == nullptr) return;
+    const std::string cache = read_text_file(built.root + "/build/" + built.preset + "/CMakeCache.txt", 4u << 20);
+    run.runner->set_versions(build_info().version, cache_engine_version(cache));
 }
 
 } // namespace nnh::tool

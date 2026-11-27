@@ -114,6 +114,7 @@ int run_on_console(const Options& options, const GameRun& run, bool scripted) {
         return scripted ? 2 : 0;
     }
     net::Socket game = logs.take_game();
+    name_versions(run, built); // spec 033 FR-22: named if the game refuses the protocol
     start_reload(run, built, false);
     return follow_game(game, built.root, options.game, run); // on the console the game keeps running
 }

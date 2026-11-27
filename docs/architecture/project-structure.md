@@ -144,3 +144,9 @@ session's glue), one `<kind>_reload.cpp` per reloaded kind in its own module (`g
 platform; `tools/nnh/src/reload/` (the output mirror, the source watcher, the asset build, the batch encoder, the
 controller, the paths file, `asset_swap.*`: a script's swaps with their journal) and `tools/nnh/src/remote/script_reload.*`,
 `script_runner_reload.cpp`, `script_runner_swap.cpp`, `commands/run_reload.cpp`.
+
+> Status: design (spec 033, D56 proposed). `nnh new` and `nnh doctor` add `tools/nnh/template/` (the game-project
+> template as real files, embedded into `nnh` by `tools/nnh/embed_template.cmake` and compiled by the engine's tests as
+> `nnh_template_check`), `tools/nnh/src/new/` (name rules, engine location, rendering, writing) and
+> `tools/nnh/src/doctor/` (probes, version parsers, one check group per file, the report); see
+> [plan 033](../../specs/033-nnh-new-and-doctor/plan.md).

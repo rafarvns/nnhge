@@ -1,8 +1,11 @@
 # Spec 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: approved 2026-11-27 (the maintainer, every open question as recommended)
+Status: approved 2026-11-27 (the maintainer, every open question as recommended); FR-8, FR-9 and FR-10 amended
+2026-11-27 by [plan 033](plan.md) to follow D55 (the local engine is the environment variable `NNHGE_ENGINE_DIR`, not a
+`CMakeUserPresets.json`), pending the maintainer's confirmation (plan question 1)
 Author: NNHGE maintainers · Date: 2026-11-26
-Depends on: [spec 032](../032-game-projects/spec.md) (draft: the game-project contract this spec generates: the engine as
+Plan: [plan.md](plan.md) · Tasks: [tasks.md](tasks.md)
+Depends on: [spec 032](../032-game-projects/spec.md) (implemented: the game-project contract this spec generates: the engine as
 a subproject, `nnh.toml`, the six presets in a game project, `NNHGE_VERSION`, `nnh` working from a game project),
 [spec 010](../010-nnh-cli-run/spec.md) (`nnh build`/`run`/`install`, console discovery, LAN-only rule, exit codes),
 [spec 013](../013-console-remote/spec.md) (`.nnhs` scripts, `--pc --script`), [spec 009](../009-packaging/spec.md)
@@ -87,21 +90,28 @@ and a rewritten getting-started page walk the whole path.
   - `tests/smoke.nnhs`;
   - `.gitignore` (the build folder, `CMakeUserPresets.json`, and the `.3dsx`, `.cia`, `.smdh`, `.elf` outputs) and
     `.gitattributes` (assets are binary);
-  - `README.md` — how to build and run on PC and 3DS, how to run the test script, links to the engine's docs for the
-    engine version it pins, and the licence note of FR-12;
-  - `CMakeUserPresets.json` only when a local engine is used (FR-10).
-  No `LICENSE` file is written (the game's licence is the author's choice).
+  - `README.md` — how to build and run on PC and 3DS, how to run the test script, how to use a local engine
+    (`NNHGE_ENGINE_DIR`, FR-10), links to the engine's docs for the engine version it pins, and the licence note of
+    FR-12.
+  No `LICENSE` file is written (the game's licence is the author's choice), and no file ever holds the local engine's
+  path (amended 2026-11-27: an earlier draft wrote a `CMakeUserPresets.json`, which D55 replaced).
 - **FR-9 Engine location.** The generated `CMakeLists.txt` always has the same shape. Which engine it pins:
   - an `nnh` that was given an engine archive URL and SHA-256 when it was built (spec 034's release builds) writes them
     into the pinned download;
   - otherwise (an `nnh` built from a source checkout) the project uses a local engine (FR-10), and the pinned download
     is written so that configuring without a local engine stops at once with a message saying how to set one or which
     release pin to paste, instead of an unverified download (open question Q6).
-- **FR-10 Local engine.** With `--engine <path>`, or by default for an `nnh` built from a source checkout (that
-  checkout), `nnh new` writes `CMakeUserPresets.json` setting spec 032's local override for all six presets, in the
-  path form each preset needs on this system (spec 032 FR-15). The path must be an existing engine source folder
-  (checked: it contains the engine's top-level CMake project); otherwise `nnh new` refuses with exit 1 before creating
-  anything. The file is git-ignored, so the path never reaches the game's repository.
+- **FR-10 Local engine** (amended 2026-11-27 to follow D55 item 8). The local engine of a game project is spec 032's
+  environment variable `NNHGE_ENGINE_DIR` (an engine folder in drive form), which the generated presets map to
+  `FETCHCONTENT_SOURCE_DIR_NNHGE` and which `nnh` converts for devkitPro's CMake; a `CMakeUserPresets.json` cannot
+  override the six presets (CMake refuses duplicate preset names). With `--engine <path>`, or by default for an `nnh`
+  built from a source checkout (that checkout), `nnh new` checks that the folder is an engine source folder (it contains
+  the engine's top-level CMake project; otherwise it refuses with exit 1 before creating anything) and, unless
+  `NNHGE_ENGINE_DIR` already names that folder, ends its output with the lines that set the variable in the user's
+  shells (Git Bash, PowerShell, cmd, and once for every new shell) and says that builds need it. If the variable names
+  another folder, the output says which engine builds will use. `nnh new` writes the path into no file and never
+  changes the environment, so the path never reaches the game's repository; `nnh doctor` reports the variable
+  (FR-19).
 - **FR-11 Unique ID.** `CIA UNIQUE_ID` is a random number in the homebrew range `0x00300`–`0xF7FFF` from the operating
   system's random source, or the value of `--unique-id` (refused outside that range). The README says to keep it for the
   life of the game ([packaging guide](../../docs/guides/packaging.md#choosing-a-unique-id)).
@@ -158,7 +168,8 @@ and a rewritten getting-started page walk the whole path.
   - **This project** (inside a game project or the engine repository): `nnh.toml` parses; the engine version the
     project builds with (from an existing configure if there is one, else `nnh.toml`'s `engine`) equals this `nnh`'s
     version, else `warn` with the fix (the game↔tool protocol must match); free disk space in the project folder
-    (thresholds: Q11); the presets `nnh` needs exist.
+    (thresholds: Q11); the presets `nnh` needs exist; `NNHGE_ENGINE_DIR` when set (an engine folder, its version;
+    `FAIL` when it names no engine; added 2026-11-27 with FR-10's amendment).
   The Python interpreter is not checked: no build step uses it (it is only used by the engine repository's docs tool).
 - **FR-20 Report format.** One line per check: the state, the check's name and what was found (version, path). Every
   `warn` and `FAIL` has a following line `fix: <one command or one link>`: a command the user can paste in the shell
@@ -291,7 +302,10 @@ review); the rest came up while writing this spec.
 
 - [x] **Q1 How the generated project consumes the engine** (study decision 1; spec 032 Q1). — *Recommendation (study):
   `FetchContent` of the release source archive by URL + SHA-256, with the local override in `CMakeUserPresets.json`.
-  Submodule and vendored copy stay documented by hand (spec 032), not as `nnh new` options.*
+  Submodule and vendored copy stay documented by hand (spec 032), not as `nnh new` options.* Amended 2026-11-27: the
+  local override became the environment variable `NNHGE_ENGINE_DIR` in spec 032 (D55 item 8: CMake refuses a
+  `CMakeUserPresets.json` preset named like one of `CMakePresets.json`); FR-8, FR-10 and FR-19 follow it (plan 033,
+  question 1).
 - [x] **Q2 Presets and marker in the generated project** (study decisions 2 and 3; spec 032 Q2, Q3). —
   *Recommendation (study): a full `CMakePresets.json` with the six names; `nnh.toml` with `name` and `engine`.*
 - [x] **Q3 `doctor` only, no `nnh setup` in 1.0** (study decision 4). — *Recommendation (study): yes, for the reasons in

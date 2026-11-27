@@ -1,6 +1,6 @@
 # Tasks 032: Game projects outside the engine repository
 
-Status: **implemented 2026-11-27** (worktree `spec-032`; the review, the Linux pass and the console run are pending); approved 2026-11-27 (with plan.md)
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed 2026-11-27; merged); approved 2026-11-27 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -56,7 +56,7 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
   3ds-dev and 3ds-release (record the new longest); the archive's member list (`ar t`) and order equal to T0.1's; the
   `hello` and `nnh_tests` link commands equal to T0.1's; the stage-end guards (hash identical); the Linux 3DS build is
   checked in stage 8. Covers FR-19, FR-17, AC-11.
-- [ ] **T1.3** (only if T1.2 fails) Fallback B: split the core into a few static libraries (module groups, link order
+- [x] **T1.3** (not needed: T1.2 passed) (only if T1.2 fails) Fallback B: split the core into a few static libraries (module groups, link order
   kept stable, cycles checked); `hello`'s one-time change checked (sizes, `nm -C` diff, disassembly of moved objects)
   and recorded as FR-17's new reference in plan.md and spec.md's verification notes. Covers FR-19, FR-17.
 - [x] **T1.4** Stage end: the stage-end guards; plan.md ("Stage 1 results": lengths before/after). Covers AC-11.
@@ -205,10 +205,10 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 8: review and Linux (once, after stages 0–7)
 
-- [ ] **T8.1** `scripts/vm_check.sh`: `final` gains `ctest --preset pc-debug -L consumer-full` and a 3DS build of a
+- [x] **T8.1** `scripts/vm_check.sh`: `final` gains `ctest --preset pc-debug -L consumer-full` and a 3DS build of a
   consumer copy (`copy_project.sh` under `/tmp`, `DEVKITPRO=/opt/devkitpro`, `nnh build nnh_consumer` and `--release`)
   plus `nnh build animation` in a fresh `build/3ds-dev`. Test: the script's new step on the VM. Covers AC-1, AC-3.
-- [ ] **T8.2** The lead: one independent review (`nnh-reviewer`: every helper path that read the caller's scope, the
+- [x] **T8.2** The lead: one independent review (`nnh-reviewer`: every helper path that read the caller's scope, the
   repository unchanged, `tests/CMakeLists.txt`'s one-line diff and encoding) together with one `scripts/vm_check.sh
   final` on VM 120 (GCC 13 `ctest` with `consumer` and `consumer-full`, GCC 14, 32-bit, ASan/UBSan, the 3DS consumer
   build); fixes re-checked with `scripts/vm_check.sh fast`. Files: plan.md ("Review round", "Stage 8 results"). Covers
@@ -216,9 +216,9 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 
 ## Stage 9: console (the only steps on the 3DS)
 
-- [ ] **T9.1** (on the PC) A fresh consumer copy (`local`), `nnh build nnh_consumer` (3ds-dev) and `--release` without a
+- [x] **T9.1** (on the PC) A fresh consumer copy (`local`), `nnh build nnh_consumer` (3ds-dev) and `--release` without a
   warning; 3ds-release `hello` identical to the reference. Covers AC-4.
-- [ ] **T9.2** Old 3DS XL, nobody touching it after Y: from the copy, `nnh run nnh_consumer --script
+- [x] **T9.2** Old 3DS XL, nobody touching it after Y: from the copy, `nnh run nnh_consumer --script
   game/tests/check.nnhs` → PASS, the self-check line equal to the PC's, log under `<copy>/build/logs/`; then `nnh install
   nnh_consumer` → FBI installs the `.cia` and it starts from the HOME Menu with the fixture's icon and banner (yes/no).
   Files: plan.md ("Console run"). Covers AC-4, FR-9, FR-13.
@@ -228,5 +228,5 @@ identical; the target lists, option defaults and `nnh_games.txt` of every preset
 - [x] **T10.1** `docs/ROADMAP.md`: an entry for game projects outside the repository (spec 032) in the 1.0 release
   section (created here if 033/034 have not), with the implemented summary. Covers FR-18.
 - [x] **T10.2** spec, plan, tasks and `specs/README.md` status → implemented; D55 → implemented in `decisions.md`.
-- [ ] **T10.3** (the lead) Merge `spec-032` into `main`; then `ctest --preset pc-debug` (with `consumer`), every example's
+- [x] **T10.3** (the lead) Merge `spec-032` into `main`; then `ctest --preset pc-debug` (with `consumer`), every example's
   `--pc` script, one 3ds-release build with `hello`'s hash; the worktree's build folders and copies deleted (disk).

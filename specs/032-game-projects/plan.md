@@ -1,6 +1,6 @@
 # Plan 032: Game projects outside the engine repository
 
-Status: **implemented 2026-11-27** (worktree `spec-032`; the review, the Linux pass and the console run are pending); approved 2026-11-27 (the maintainer, the twelve questions at the end as recommended, `NNHGE_ENGINE_DIR` included)
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed 2026-11-27; merged); approved 2026-11-27 (the maintainer, the twelve questions at the end as recommended, `NNHGE_ENGINE_DIR` included)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D55 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
 Uses spec 010 and D23 (`nnh build`/`run`/`install`, the games manifest, the MSYS shell for 3DS on Windows), spec 011
@@ -749,7 +749,7 @@ Stage 4 refinements:
   `nnh` under `/tmp` with `/opt/devkitpro`, and a fresh `3ds-dev` `nnh build animation`; the main ctest there runs
   `-LE consumer-full`. Not run: the VM pass is the lead's.
 
-### Console run (stage 9, prepared; not run: the maintainer runs it after the review and the Linux pass)
+### Console run (stage 9; passed 2026-11-27, results at the end)
 
 T9.1 on the PC (Git Bash, from the engine checkout that will be tested: this worktree, or `main` after the merge;
 `E` below is its folder in drive form, `$N` its `nnh`):
@@ -823,3 +823,21 @@ Batch 3 (AC-9 re-measured, final checks):
   `3ds-dev` and `3ds-release` 0 warnings; `hello.3dsx` SHA-256 `b0b243dd…70c3` (unchanged; only a comment of
   `engine/core/archive/CMakeLists.txt` changed in the engine build); longest 3DS command 2,533; `docs_tool.py check`
   0 broken links.
+
+### Review, Linux pass and console run (2026-11-27)
+
+- Review (`nnh-reviewer`): approve with fixes, no blockers; every item fixed in the review round above.
+- `scripts/vm_check.sh final` on VM 120 (from the tree before the review fixes): full ctest on GCC 13, GCC 14 and
+  32-bit `nnh_tests` 4143/0, ASan/UBSan `nnh_tests` 4143/0, `nnh_assetc_tests` 333/0, `nnh_tool_tests` 271/0. Then the
+  spec's own steps: `ctest -L consumer-full` passed (7 tests; `consumer_submodule` skips on the VM, whose tree has no
+  `.git`); a pinned consumer copy under `/tmp` (a long folder name) built `nnh_consumer.3dsx` in 3ds-dev and 3ds-release
+  through `nnh`, longest command 3,133 characters (9.6 %); `nnh build animation` in a fresh `build/3ds-dev`, 2,521.
+- `scripts/vm_check.sh fast` with the fixes: GCC 13 4143/0, `nnh_tool_tests` 279/0, ASan 279/0 after a stale-object
+  rebuild. The cause was the sync, not the code: files edited during the final pass reached the VM with their real
+  (older) times, so Ninja kept objects built from the earlier sync. `vm_check.sh` now touches every file whose content
+  changed since the last sync.
+- Console (Old 3DS XL, 3ds-dev from a `local` copy outside the repository): `nnh run nnh_consumer --script
+  game/tests/check.nnhs` → `nnh: PASS`, `consumer: PASS D99E1764` (the PC's), the green PASS screenshot (the first try
+  got no log: the Windows Firewall rule for the worktree's `nnh.exe` was created during it). `nnh install nnh_consumer`
+  (makerom and bannertool downloaded on first use) → FBI installed the `.cia`; "NNHGE Consumer" in the HOME Menu with the
+  fixture's icon and banner, starting to the green PASS screen (maintainer: yes).

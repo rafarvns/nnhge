@@ -1,6 +1,6 @@
 # Spec 032: Game projects outside the engine repository
 
-Status: **implemented 2026-11-27** (worktree `spec-032`; the review, the Linux pass and the console run are pending); approved 2026-11-27 (the maintainer, every open question as recommended; if FR-19 needs the core split, `hello` may change once, sizes and symbols checked, and FR-17's byte identity holds again from then on)
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed 2026-11-27; merged); approved 2026-11-27 (the maintainer, every open question as recommended; if FR-19 needs the core split, `hello` may change once, sizes and symbols checked, and FR-17's byte identity holds again from then on)
 Author: NNHGE maintainers · Date: 2026-11-26 · Updated: 2026-11-27 (the study's step 1 spike results)
 Depends on: [spec 010](../010-nnh-cli-run/spec.md) (`nnh build`/`run`/`install`, the games manifest, the presets
 `nnh` picks), [spec 011](../011-nnh-link/spec.md) (`nnh serve`), [spec 007](../007-assets-and-romfs/spec.md),

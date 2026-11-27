@@ -1,0 +1,9 @@
+# Text files with LF line ends everywhere; assets are binary (never converted)
+* text=auto
+*.png binary
+*.wav binary
+*.ogg binary
+*.ttf binary
+*.otf binary
+*.glb binary
+*.bin binary

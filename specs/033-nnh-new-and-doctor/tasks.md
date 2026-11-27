@@ -61,23 +61,23 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 3: the template (FR-8, FR-12 to FR-14, FR-16)
 
-- [ ] **T3.1** The template's non-C++ files: `CMakeLists.txt.in`, `CMakePresets.json` (equal to
+- [x] **T3.1** The template's non-C++ files: `CMakeLists.txt.in`, `CMakePresets.json` (equal to
   `tests/consumer/CMakePresets.json`), `nnh.toml.in`, `gitignore`, `gitattributes` — files: `tools/nnh/template/` —
   test: `test_template_render.cpp` (exact file list; presets equal; `nnh.toml` read back without warnings) — covers FR-8
-- [ ] **T3.2** The game: `src/main.cpp`, `src/scenes/play_scene.{hpp,cpp}` (plan "The template"), assets
+- [x] **T3.2** The game: `src/main.cpp`, `src/scenes/play_scene.{hpp,cpp}` (plan "The template"), assets
   `art/player.png` (engine-made, provenance in `tools/nnh/template/README.md`) and `sfx/blip.wav` — files:
   `tools/nnh/template/src/`, `assets/`; `tools/nnh/CMakeLists.txt` (`nnh_template_check`, engine warnings as errors) —
   test: `nnh_template_check` builds with 0 warnings in `pc-debug` and `pc-release` — covers FR-13, FR-14
-- [ ] **T3.3** `tests/smoke.nnhs` and the ctest `nnh_template_smoke` (headless, non-Release PC presets) — files:
+- [x] **T3.3** `tests/smoke.nnhs` and the ctest `nnh_template_smoke` (headless, non-Release PC presets) — files:
   `tools/nnh/template/tests/smoke.nnhs`, `tools/nnh/tests/template_smoke.cmake` — test: the ctest exits 0; a broken
   expectation makes it fail (seen once) — covers FR-16
-- [ ] **T3.4** [P] Screenshot check: `NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=...` of the check game read back (both
+- [x] **T3.4** [P] Screenshot check: `NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=...` of the check game read back (both
   screens' text, the sprite) — covers FR-13
-- [ ] **T3.5** [P] `README.md.in`: build/run on PC and 3DS, the smoke script, `.cia` and the unique ID, "The engine"
+- [x] **T3.5** [P] `README.md.in`: build/run on PC and 3DS, the smoke script, `.cia` and the unique ID, "The engine"
   (pin, upgrade, `NNHGE_ENGINE_DIR`), `git init`, docs links, the licence note checked per library against
   `third_party/*/LICENSE*` and devkitPro's `licenses/` (files recorded in plan.md) — test: `test_template_render.cpp`
   (sections present) — covers FR-8, FR-12
-- [ ] **T3.6** Stage end: guards; `nnh_template_smoke` in `pc-debug` and `pc-dev`.
+- [x] **T3.6** Stage end: guards; `nnh_template_smoke` in `pc-debug` and `pc-dev`.
 
 ## Stage 4: `nnh new` end to end (FR-3, FR-15, FR-17)
 

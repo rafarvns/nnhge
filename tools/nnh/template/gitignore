@@ -1,0 +1,8 @@
+# Build folders (one per preset) and your machine's own presets
+build/
+CMakeUserPresets.json
+# What a 3DS build makes, if you copy it here
+*.3dsx
+*.cia
+*.smdh
+*.elf

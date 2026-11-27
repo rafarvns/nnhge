@@ -4,7 +4,9 @@
 #include <iterator>
 #include <string>
 
+#include "build_info.hpp"
 #include "new/template_render.hpp"
+#include "project_file.hpp"
 #include "test.hpp"
 
 using namespace nnh::tool;
@@ -125,5 +127,108 @@ NNH_TEST(rendering_is_deterministic) {
     CHECK(a.ok && b.ok && a.files.size() == b.files.size());
     for (std::size_t i = 0; i < a.files.size() && i < b.files.size(); ++i) {
         CHECK(a.files[i].path == b.files[i].path && a.files[i].bytes == b.files[i].bytes);
+    }
+}
+
+// ---- the real template (stage 3) ----
+
+namespace {
+
+const OutputFile* output(const RenderResult& r, const char* path) {
+    for (const OutputFile& f : r.files) {
+        if (f.path == path) return &f;
+    }
+    return nullptr;
+}
+
+} // namespace
+
+NNH_TEST(the_template_writes_exactly_the_files_of_fr8) {
+    const RenderResult r = render_project(inputs());
+    CHECK(r.ok && r.error.empty());
+    std::string paths;
+    for (const OutputFile& f : r.files) paths += f.path + "\n";
+    CHECK(paths == "CMakeLists.txt\nCMakePresets.json\nnnh.toml\nREADME.md\n.gitignore\n.gitattributes\nsrc/main.cpp\n"
+                   "src/scenes/play_scene.hpp\nsrc/scenes/play_scene.cpp\nassets/art/player.png\nassets/sfx/blip.wav\n"
+                   "tests/smoke.nnhs\n");
+}
+
+NNH_TEST(the_template_presets_are_the_consumer_projects) {
+    const RenderResult r = render_project(inputs());
+    const OutputFile* presets = output(r, "CMakePresets.json");
+    std::string consumer = file_bytes(NNH_TOOL_SOURCE_DIR "/../../tests/consumer/CMakePresets.json");
+    std::string lf;
+    for (char c : consumer) {
+        if (c != '\r') lf += c; // the checkout may have CRLF; nnh embeds LF
+    }
+    CHECK(presets && !lf.empty() && presets->bytes == lf);
+}
+
+NNH_TEST(the_template_text_files_are_lf_without_placeholders_or_local_paths) {
+    NewInputs in = inputs();
+    in.author = "Me";
+    const RenderResult r = render_project(in);
+    CHECK(r.ok);
+    for (const OutputFile& f : r.files) {
+        if (f.path.find(".png") != std::string::npos || f.path.find(".wav") != std::string::npos) continue;
+        CHECK(f.bytes.find('\r') == std::string::npos);
+        // A leftover "@word@" would be a placeholder the render missed (emails and decorators have no closing '@').
+        bool leftover = false;
+        for (std::size_t at = f.bytes.find('@'); at != std::string::npos; at = f.bytes.find('@', at + 1)) {
+            std::size_t end = at + 1;
+            while (end < f.bytes.size() && ((f.bytes[end] >= 'a' && f.bytes[end] <= 'z') || f.bytes[end] == '_')) ++end;
+            leftover = leftover || (end > at + 1 && end < f.bytes.size() && f.bytes[end] == '@');
+        }
+        CHECK(!leftover);
+        CHECK(f.bytes.find(build_info().checkout_dir) == std::string::npos); // FR-10: no local engine path anywhere
+    }
+}
+
+NNH_TEST(the_template_nnh_toml_reads_back_without_warnings) {
+    const RenderResult r = render_project(inputs());
+    const OutputFile* toml = output(r, "nnh.toml");
+    CHECK(toml != nullptr);
+    if (!toml) return;
+    const ProjectFile p = read_project_file(toml->bytes);
+    CHECK(p.errors.empty() && p.warnings.empty());
+    CHECK(p.name == "demo" && p.engine == "0.1.0");
+}
+
+NNH_TEST(the_template_cmakelists_carries_name_title_id_and_the_guard) {
+    NewInputs in = inputs();
+    const OutputFile* cmake = nullptr;
+    RenderResult r = render_project(in);
+    cmake = output(r, "CMakeLists.txt");
+    CHECK(cmake != nullptr);
+    if (!cmake) return;
+    const std::string& t = cmake->bytes;
+    CHECK(t.find("project(demo LANGUAGES C CXX)") != std::string::npos);
+    CHECK(t.find("nnh_add_game(demo\n") != std::string::npos && t.find("TITLE \"Demo Game\"") != std::string::npos);
+    CHECK(t.find("CIA UNIQUE_ID 0x5A3C1)") != std::string::npos && t.find("VERSION 0.1.0") != std::string::npos);
+    CHECK(t.find("set(nnhge_url \"\")") != std::string::npos && t.find("set(nnhge_sha256 \"\")") != std::string::npos);
+    CHECK(t.find("no engine release is pinned") != std::string::npos);
+    CHECK(t.find("NNHGE_VERSION VERSION_LESS 0.1)") != std::string::npos);
+    CHECK(t.find("# AUTHOR \"Your name\"") != std::string::npos);
+    CHECK(t.find("blob/main/docs/guides/packaging.md") != std::string::npos);
+    in.engine_url = "https://github.com/rafarvns/nnhge/archive/refs/tags/v0.1.0.tar.gz";
+    in.engine_sha256 = std::string(64, 'c');
+    r = render_project(in);
+    cmake = output(r, "CMakeLists.txt");
+    CHECK(cmake && cmake->bytes.find("set(nnhge_url \"" + in.engine_url + "\")") != std::string::npos);
+    CHECK(cmake && cmake->bytes.find("set(nnhge_sha256 \"" + in.engine_sha256 + "\")") != std::string::npos);
+    CHECK(cmake && cmake->bytes.find("blob/v0.1.0/docs/") != std::string::npos);
+}
+
+NNH_TEST(the_template_readme_has_every_section) {
+    const RenderResult r = render_project(inputs());
+    const OutputFile* readme = output(r, "README.md");
+    CHECK(readme != nullptr);
+    if (!readme) return;
+    for (const char* part : {"# Demo Game", "## Build and run", "nnh run demo --pc", "## The test script",
+                             "nnh run demo --pc --script tests/smoke.nnhs", "## Install on the HOME Menu (.cia)",
+                             "CIA UNIQUE_ID 0x5A3C1", "keep it for the life of the game", "## The engine",
+                             "NNHGE_ENGINE_DIR", "## Version control", "git init", "## Licence",
+                             "zlib", "newlib", "GCC Runtime Library Exception", "No Nintendo SDK"}) {
+        CHECK(readme->bytes.find(part) != std::string::npos);
     }
 }

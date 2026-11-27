@@ -694,3 +694,39 @@ installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16
   the rollback skipped (three writer tests); `_O_EXCL` → `_O_TRUNC` (`the_system_create_is_exclusive`).
 - Stage end: `nnh_tool_tests` 323/323, ctests `nnh_tool`, `nnh_pin_check`, `nnh_script_pc_smoke` and the four
   `reload_*` green, `pc-debug` 0 warnings.
+
+### Stage 3 results (the template)
+
+- The twelve files are embedded in the order of `NNH_TEMPLATE_FILES`; the render tests check the exact list, LF text,
+  no leftover `@word@`, no checkout path in any file, `nnh.toml` read back with no warning, the presets byte-equal to
+  `tests/consumer/CMakePresets.json` (CR removed from the checkout's copy), the `CMakeLists.txt` values (name, title,
+  ID, the guard, `VERSION_LESS 0.1`, the commented author, docs links per build kind) and every README section. Seen
+  red with only two files embedded (3 of the 6 new tests).
+- `CMakeLists.txt.in` follows the sketch, plus a commented `DESCRIPTION` line and one comment naming `BANNER`,
+  `BANNER_AUDIO`, `PRODUCT_CODE` (they belong after `CIA UNIQUE_ID`, so they can't be a commented keyword line of
+  their own). The author line, when not given: `# AUTHOR "Your name"  # shown in the HOME Menu (default: "Unknown")`.
+- Refinement (T3.3): the scene logs `play: started` on its **first `update()`**, not in `on_enter()`: `on_enter()` runs
+  at frame 0, before a test script attaches, and a script's frames start at 1 (the first run failed with "no matching
+  line in frames 1-61"). The script waits 10 frames after each `expect` before the next input (`nnh` warned that input
+  right after a log line may reach the console late).
+- The scene sets both screens' clear colours, draws the sprite, the title (`NNH_GAME_TITLE`, scale 2 with a shadow),
+  the controls, "Bye!" while quitting, and counts the blips that ended (`SoundFinished` for its own voice) on the
+  bottom screen with a stack buffer. `main.cpp` 19 lines, `play_scene.hpp` 32, `play_scene.cpp` 105.
+- Includes: `main.cpp` uses `"scenes/play_scene.hpp"`, the scene's source `"play_scene.hpp"` (relative to each file:
+  no include path is added for a game's own folders).
+- `nnh_template_check` (TITLE "Template Check") gets `nnh_engine_options` (`-Wall -Wextra -fno-exceptions -fno-rtti`)
+  and `-Werror`: 0 warnings in `pc-debug`, `pc-dev` and `pc-release`.
+- `nnh_template_smoke`: PASS in `pc-debug` and `pc-dev` (3.0 s), `nnh: PASS (19 lines, frames 1-66)`; the two PNGs of
+  `screenshot moved` checked; not registered in Release (no remote control). A copy expecting `play: blop` made it fail
+  (`nnh exited with 1`), seen once.
+- T3.4: the screenshot of the check game (`NNH_EXIT_AFTER_FRAMES=30`) and the script's `moved` pair read back: title
+  and controls on the top screen, the sprite (moved right to (244, 104) in the script), the bottom screen's text and
+  "Sounds finished: 1" after the blip.
+- Assets: `player.png` (155 bytes) drawn by `tools/nnh/make_template_player.py`; `blip.wav` = `tests/data/sounds/
+  ok_mono16.wav` (byte-equal to the consumer fixture's `blip.wav`), synthesized by `tests/data/sounds/make_sounds.py`.
+  Provenance in `tools/nnh/template/README.md`.
+- T3.5 licence note, files checked: `third_party/ryu/LICENSE-Boost` (Boost 1.0), the stb READMEs and the licence
+  blocks at the end of `stb_vorbis.c`, `stb_image.h`, `stb_truetype.h` (MIT or public domain). devkitPro's installed
+  `licenses/` folder (`C:/devkitPro/licenses/`) holds only its tools' `COPYING` files (3dslink, 3dstools, gdb, ...): no
+  newlib, libctru, citro2d or citro3d licence is installed, so the README names the licences and links newlib's
+  `COPYING.NEWLIB` upstream rather than a local file.

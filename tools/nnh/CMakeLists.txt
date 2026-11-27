@@ -1,5 +1,5 @@
 # nnh — the NNHGE command-line tool (spec 010): build, run on the console with readable logs, install;
-# serve for NNH Link (spec 011).
+# serve for NNH Link (spec 011); new projects, the doctor and --version (spec 033).
 # A host program built with the PC presets; never a dependency of games. Explicit source lists.
 
 # The release pin (spec 033 FR-9, spec 034): an engine archive's URL and SHA-256 that `nnh new` writes as a new
@@ -15,7 +15,17 @@ nnh_check_release_pin("${NNH_RELEASE_ENGINE_URL}" "${NNH_RELEASE_ENGINE_SHA256}"
 # anything else in the folder stays out.
 set(NNH_TEMPLATE_FILES
     CMakeLists.txt.in
+    CMakePresets.json
     nnh.toml.in
+    README.md.in
+    gitignore
+    gitattributes
+    src/main.cpp
+    src/scenes/play_scene.hpp
+    src/scenes/play_scene.cpp
+    assets/art/player.png
+    assets/sfx/blip.wav
+    tests/smoke.nnhs
 )
 function(_nnh_embed_template symbol source_dir output)
     list(TRANSFORM ARGN PREPEND "${source_dir}/" OUTPUT_VARIABLE deps)
@@ -209,6 +219,29 @@ if(NNH_BUILD_TESTS)
                  COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
                          -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/script_pc_smoke.cmake)
         set_tests_properties(nnh_script_pc_smoke PROPERTIES
+            ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_nnh_preset}"
+            TIMEOUT 180)
+    endif()
+
+    # The template as a game (spec 033 FR-13, FR-14, question 5): its sources and assets built in every PC build with
+    # tests, with the engine's warnings as errors, and its smoke script run against it (FR-16) as a game project's
+    # developer would. Listed in this build's games manifest (so in nnh serve's list here too).
+    nnh_add_game(nnh_template_check
+        SOURCES template/src/main.cpp template/src/scenes/play_scene.cpp
+        ASSETS template/assets
+        TITLE "Template Check")
+    nnh_engine_options(nnh_template_check)
+    if(MSVC)
+        target_compile_options(nnh_template_check PRIVATE /WX)
+    else()
+        target_compile_options(nnh_template_check PRIVATE -Werror)
+    endif()
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+        get_filename_component(_nnh_preset "${PROJECT_BINARY_DIR}" NAME)
+        add_test(NAME nnh_template_smoke
+                 COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+                         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/template_smoke.cmake)
+        set_tests_properties(nnh_template_smoke PROPERTIES
             ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_nnh_preset}"
             TIMEOUT 180)
     endif()

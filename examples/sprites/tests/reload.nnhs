@@ -1,0 +1,11 @@
+# Hot reload with no reload-aware code (spec 031 AC-4b): the sprites example's hero.png is swapped for another image
+# (the tile atlas) and the very next frame draws the hero from it. Screenshots before and after; the PNG is put back
+# when the script ends.
+fail-on "] E "
+wait 30
+screenshot before
+swap-asset assets/art/hero.png fixtures/hero_swapped.png
+expect-reload art/hero
+screenshot after
+wait 5
+end

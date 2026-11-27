@@ -89,4 +89,11 @@ void font_table_forget(int slot) {
 
 FontEntryExtra& font_table_extra(int slot) { return g_entries[slot >= 0 && slot < kFontSlots ? slot : 0].extra; }
 
+FontBlock* font_table_replace(int slot, FontBlock* block) {
+    if (!live(slot)) return nullptr;
+    FontBlock* old = g_entries[slot].block;
+    g_entries[slot].block = block;
+    return old;
+}
+
 } // namespace nnh::detail

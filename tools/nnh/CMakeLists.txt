@@ -19,6 +19,7 @@ add_library(nnh_tool_lib STATIC
     src/manifest.cpp
     src/netloader.cpp
     src/reload/asset_build.cpp
+    src/reload/asset_swap.cpp
     src/reload/batch_sender.cpp
     src/reload/output_snapshot.cpp
     src/reload/reload_controller.cpp
@@ -37,6 +38,8 @@ add_library(nnh_tool_lib STATIC
     src/remote/script_parser.cpp
     src/remote/script_runner.cpp
     src/remote/script_runner_reload.cpp
+    src/remote/script_runner_swap.cpp
+    src/remote/script_reload.cpp
     src/remote/script_runner_live.cpp
     src/remote/script_timeline.cpp
     src/remote/script_tokens.cpp
@@ -109,6 +112,7 @@ if(NNH_BUILD_TESTS)
         tests/test_script_interactive.cpp
         tests/test_script_live.cpp
         tests/test_script_parser.cpp
+        tests/test_script_reload.cpp
         tests/test_script_runner.cpp
         tests/test_script_stereo.cpp
         tests/test_script_timeline.cpp

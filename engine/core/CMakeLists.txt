@@ -64,6 +64,7 @@ add_library(nnh_core STATIC
     src/audio/ogg_seek.cpp
     src/audio/sound_decode.cpp
     src/audio/sounds.cpp
+    src/audio/sound_reload.cpp
     src/audio/voice_api.cpp
     src/audio/voice_table.cpp
     src/audio/wav_reader.cpp
@@ -559,6 +560,7 @@ set(_nnh_font_sources
     src/font/font_format.cpp
     src/font/font_index.cpp
     src/font/font_load.cpp
+    src/font/font_reload.cpp
     src/font/font_table.cpp
     src/font/font_validate.cpp
     src/font/page_codec.cpp
@@ -574,6 +576,7 @@ set(_nnh_loc_sources
     src/loc/loc_format.cpp
     src/loc/loc_lookup.cpp
     src/loc/loc_number.cpp
+    src/loc/loc_reload.cpp
     src/loc/loc_queries.cpp
     src/loc/loc_state.cpp
     src/loc/loc_switch.cpp
@@ -626,6 +629,7 @@ set(_nnh_reload_sources
     src/reload/reload_assets.cpp
     src/reload/reload_batch.cpp
     src/reload/reload_files.cpp
+    src/reload/reload_hooks.cpp
     src/reload/reload_index.cpp
     src/remote/remote_reload.cpp
 )

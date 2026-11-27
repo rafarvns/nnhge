@@ -149,6 +149,7 @@ void ScriptRunner::live_state(const Record& record) {
     wire::LiveStateRecord s;
     if (!wire::decode_live_state(record.payload.data(), static_cast<std::uint32_t>(record.payload.size()), s)) return;
     paused_ = s.paused;
+    if (!options_.interactive) reload_paused(s.frame, s.paused); // spec 031: a held swap's pause
     // Messages due at s.frame were applied (a paused tick, or the frame's start): progress while ticks stop.
     const std::uint32_t applied = s.paused ? s.frame : s.frame - 1;
     if (applied > last_tick_) {

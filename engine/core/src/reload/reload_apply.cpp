@@ -22,7 +22,6 @@
 
 namespace nnh::detail {
 
-void (*g_reload_apply)(std::uint32_t frame) = nullptr;
 
 namespace reload {
 namespace {

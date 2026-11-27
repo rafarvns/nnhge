@@ -8,6 +8,7 @@
 #include "audio/mix.hpp"
 #include "audio/voice_table.hpp"
 #include "nnh/app.hpp"
+#include "nnh/assets.hpp"
 #include "nnh/audio.hpp"
 #include "nnh/memory.hpp"
 #include "nnh/platform/audio.hpp"
@@ -79,6 +80,11 @@ void audio_frame(Duration delta);
 /// `out`). @return true for Ogg. Errors (logged): InvalidArgument, NotFound.
 Result<bool> find_audio_asset(const char* path, char (&out)[kMaxAssetPath + 1]);
 
+
+/// Decodes a WAV or Ogg Vorbis file into `out` (a platform sample when there is audio output). Errors are logged.
+Result<void> decode_sound(const char* path, const AssetData& file, bool ogg, SoundSlot& out);
+/// Hot reload (spec 031, sound_reload.cpp; Debug/Development): load_sound() made slot `slot` from `asset_path`.
+void sound_reload_loaded(int slot, std::uint32_t generation, const char* asset_path);
 
 /// The live sound behind a handle, or nullptr.
 SoundSlot* sound_get(int slot, std::uint32_t generation);

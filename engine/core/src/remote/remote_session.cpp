@@ -12,6 +12,7 @@
 #include "nnh/profile.hpp"
 #include "remote/remote_input.hpp"
 #include "remote/remote_reader.hpp"
+#include "reload/reload_hooks.hpp"
 #include "remote/remote_reload.hpp"
 #include "reload/reload_wire.hpp"
 #include "remote/remote_schedule.hpp"
@@ -78,7 +79,7 @@ void detach() {
     set_language_override(nullptr); // and its own language (spec 029)
     screenshots_clear();
     remote_live_detached();
-    remote_reload_detached(); // spec 031: an open, staged or pending batch goes with the PC
+    if (g_reload_session != nullptr) g_reload_session->detached(); // spec 031: a batch goes with the PC
 }
 
 /// The 3D slider (spec 026 FR-16): a value replaces the console's slider; `slider off` gives it back — to the script's
@@ -140,11 +141,21 @@ void reject(const ReadItem& item, std::uint32_t frame) {
     }
 }
 
+/// A game that links no reload kind answers reload messages as an older game does (spec 031, reload_hooks.hpp).
+void no_reload(std::uint16_t seq) {
+    std::uint8_t record[kMaxFixedRecord];
+    send_record(record, encode_rejected_record(seq, Reject::Type, record));
+}
+
 void accept(const Message& message, std::uint32_t frame) {
     if (message.type == MessageType::Hello) {
         attach(frame, message.exclusive);
-    } else if (is_reload_transfer(message.type)) {
-        remote_reload_message(message, frame); // spec 031: handled at receipt, never scheduled
+    } else if (is_reload_transfer(message.type)) { // spec 031: handled at receipt, never scheduled
+        if (g_reload_session != nullptr) {
+            g_reload_session->message(message, frame);
+        } else if (message.type == MessageType::ReloadBegin || message.type == MessageType::ReloadNotice) {
+            no_reload(message.seq); // nothing reloadable linked: `nnh` stops watching
+        }
     } else if (!g_schedule.push(message, frame)) {
         std::uint8_t record[kMaxFixedRecord];
         send_record(record, encode_dropped_record(message.seq, record));
@@ -159,7 +170,7 @@ void handle_bytes(const std::uint8_t* data, std::size_t got, std::uint32_t frame
         at += fed.consumed;
         for (std::size_t i = 0; i < fed.items; ++i) {
             if (g_items[i].payload_size > 0) {
-                remote_reload_payload(g_items[i].payload, g_items[i].payload_size, frame);
+                if (g_reload_session != nullptr) g_reload_session->payload(g_items[i].payload, g_items[i].payload_size, frame);
             } else if (g_items[i].reason == Reject::None) {
                 accept(g_items[i].message, frame);
             } else {
@@ -181,7 +192,8 @@ bool read_messages(std::uint32_t frame) {
         const bool payload = g_reader.payload_left() > 0;
         if (payload) {
             std::size_t room = 0;
-            if (std::uint8_t* window = remote_reload_window(room); window != nullptr && room > 0) into = window;
+            std::uint8_t* window = g_reload_session != nullptr ? g_reload_session->window(room) : nullptr;
+            if (window != nullptr && room > 0) into = window;
             else room = sizeof g_scratch;
             wanted = g_reader.payload_left();
             if (wanted > room) wanted = room;
@@ -201,7 +213,7 @@ bool read_messages(std::uint32_t frame) {
         if (static_cast<std::size_t>(got) < wanted || budget == 0) break;
         if (!payload && g_reader.payload_left() == 0) break;
     }
-    remote_reload_flush();
+    if (g_reload_session != nullptr) g_reload_session->flush();
     return true;
 }
 
@@ -222,7 +234,10 @@ int apply_due(std::uint32_t frame) {
         case MessageType::LiveSet:
         case MessageType::Live:
         case MessageType::Pause: remote_live_message(message, frame); break;
-        case MessageType::ReloadApply: remote_reload_apply(message, frame); break;
+        case MessageType::ReloadApply:
+            if (g_reload_session != nullptr) g_reload_session->apply(message, frame);
+            else no_reload(message.seq);
+            break;
         case MessageType::Bye:
             NNH_LOG_INFO(remote, "PC detached: remote control off");
             g_session.quit = g_session.quit || message.quit;

@@ -13,6 +13,8 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
         out.command = Command::Run;
     } else if (command == "install") {
         out.command = Command::Install;
+    } else if (command == "restore-assets") { // spec 031: after a script that was interrupted mid-swap
+        out.command = Command::RestoreAssets;
     } else if (command == "serve" || command == "unpair") {
         out.command = command == "serve" ? Command::Serve : Command::Unpair;
         for (std::size_t i = 1; i < args.size(); ++i) {
@@ -128,6 +130,8 @@ const char* help_text() {
            "                                        type reload to force one); --no-reload turns it off\n"
            "  nnh install <game> [--console <ip>]   build the .cia and install it with FBI (Remote Install ->\n"
            "                                        Receive URLs over the network)\n"
+           "  nnh restore-assets <game>              put back the assets a test script swapped and couldn't\n"
+           "                                        restore (it was interrupted; spec 031)\n"
            "  nnh serve [--release]                 wait for NNH Link on the console: it lists the games,\n"
            "                                        asks for builds and starts them (spec 011); Ctrl+C stops\n"
            "  nnh unpair                            forget every console paired with nnh serve\n"

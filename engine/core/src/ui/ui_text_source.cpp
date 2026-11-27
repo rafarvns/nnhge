@@ -162,9 +162,7 @@ void Ui::set_resolver(UiResolver r) {
 void Ui::text_changed() {
     detail::UiBlock* b = block_;
     if (b == nullptr) return;
-    for (int s = 0; s < b->capacity; ++s) b->cold[s].cflags &= static_cast<std::uint8_t>(~detail::kUiResolved);
-    for (int i = 0; i < b->texts_used; ++i) b->text_kinds[i] &= 0x7F;
-    b->dirty[0] = b->dirty[1] = true;
+    detail::forget_text(*b);
 }
 
 } // namespace nnh

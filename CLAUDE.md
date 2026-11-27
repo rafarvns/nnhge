@@ -250,8 +250,9 @@ watches the assets folder, builds `<game>_assets`, dry-runs `<game>` (a needed r
 outputs as one batch over the remote connection (payload messages 12–17, records 13–15); the game keeps them in
 `.nnh_reload/` of its data folder and applies the batch whole at one point of a frame (`engine/core/src/reload/`,
 `tools/nnh/src/reload/`); `<nnh/assets.hpp>` gains `reload_count()`, `reloaded()`, `reloaded_paths()`,
-`AssetsReloaded`; textures swap behind their handles, data assets and maps are announced; `--no-reload`, typed
-`reload [PATH]` ([api/assets.md](docs/api/assets.md#hot-reload)).
+`AssetsReloaded`; textures, fonts, sounds and string tables swap behind their handles, data assets and maps are
+announced; `--no-reload`, typed `reload [PATH]`, script lines `swap-asset`/`restore-asset`/`expect-reload`,
+`nnh restore-assets <game>` ([api/assets.md](docs/api/assets.md#hot-reload)).
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)

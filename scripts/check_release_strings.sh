@@ -39,6 +39,10 @@ forbidden="$forbidden"'|dump: begin|refused it|not declared by the game|waiting 
 forbidden="$forbidden"'|A open X reset|SEL[+]R page|registered twice|can.t also be a group|raise live::configure'
 forbidden="$forbidden"'|f2s_buffered|live_registry|live_panel|dev_pause|overlay_pages|g_live_ops'
 forbidden="$forbidden"'|player/jump|colors/sky|spawn/alive|frame/count'
+# Hot reload (spec 031 FR-19, AC-7): the apply and refusal lines, the received files' folder, the reason texts and the
+# reload core's symbols (Release links none of it).
+forbidden="$forbidden"'|reloaded %d [(]frame|reload refused|was removed: what was loaded|[.]nnh_reload'
+forbidden="$forbidden"'|rebuild and restart|chunk at the wrong offset|reload_receiver|reload_overlay|apply_batch'
 
 if grep -aEq "$forbidden" "$binary"; then
     echo "FAIL: $binary contains debug-only strings:"

@@ -13,8 +13,6 @@
 
 namespace nnh::detail {
 
-bool g_reload_assets_active = false;
-const AssetIndex* g_reload_original_index = nullptr;
 
 namespace reload {
 namespace {
@@ -109,5 +107,7 @@ bool reload_asset_open(const char* path, platform::AssetStream& out, bool shared
     }
     return shared ? platform::asset_open_shared(path, out) : platform::asset_open(path, out);
 }
+
+const ReloadAssetOps kReloadAssetOps{reload_asset_lookup, reload_asset_case_hint, reload_read_file, reload_asset_open};
 
 } // namespace nnh::detail

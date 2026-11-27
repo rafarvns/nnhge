@@ -22,8 +22,14 @@ std::optional<ReloadPaths> parse_reload_paths(const std::string& text);
 /// Reads <binary_dir>/nnh_reload_<game>.txt.
 std::optional<ReloadPaths> read_reload_paths(const std::string& binary_dir, const std::string& game);
 
+class AssetSwaps;
+
 struct ReloadSession {
     std::unique_ptr<ReloadController> controller;
+    bool watch = true;               ///< interactive runs watch the sources; scripts swap explicitly
+    std::string script_dir;          ///< a script's folder (FIXTURE paths start there)
+    std::string backup_dir;          ///< build/logs/reload-backup/<game>
+    std::unique_ptr<AssetSwaps> swaps;
 };
 
 } // namespace nnh::tool::reload

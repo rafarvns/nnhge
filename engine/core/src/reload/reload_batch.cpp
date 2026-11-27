@@ -8,6 +8,8 @@
 #include "assets/assets_internal.hpp"
 #include "nnh/memory.hpp"
 #include "reload/reload_assets.hpp"
+#include "reload/reload_hooks.hpp"
+#include "remote/remote_reload.hpp"
 #include "reload/reload_files.hpp"
 #include "reload/reload_index.hpp"
 #include "reload/reload_kind.hpp"
@@ -122,7 +124,13 @@ BatchResult prepare_all(const BatchFile* files, int count, Done* done, int capac
 
 } // namespace
 
+void install() {
+    g_reload_session = &kReloadSessionOps;
+    g_reload_asset_ops = &kReloadAssetOps;
+}
+
 void register_kind(ReloadKind& kind) {
+    install(); // a game that loads something reloadable links (and turns on) the reload core
     ReloadKind** at = &g_first;
     while (*at != nullptr) {
         if (*at == &kind) return;

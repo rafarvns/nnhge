@@ -77,7 +77,9 @@ Error refuse(ErrorCode code, const char* why) {
 bool read_header(std::uint8_t (&header)[idxfmt::kHeaderSize]) {
     platform::AssetStream stream = 0;
     if constexpr (build::kDevToolsEnabled) { // spec 031: a received index replaces the packed one
-        if (!reload_asset_open(idxfmt::kAssetName, stream, false)) return false;
+        const bool opened = g_reload_asset_ops != nullptr ? g_reload_asset_ops->open(idxfmt::kAssetName, stream, false)
+                                                          : platform::asset_open(idxfmt::kAssetName, stream);
+        if (!opened) return false;
     } else {
         if (!platform::asset_open(idxfmt::kAssetName, stream)) return false;
     }

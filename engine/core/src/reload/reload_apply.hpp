@@ -7,12 +7,11 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "reload/reload_hooks.hpp"
 #include "reload/reload_wire.hpp"
 
 namespace nnh::detail {
 
-/// Set while a batch waits for its frame; app.cpp calls it at the apply point.
-extern void (*g_reload_apply)(std::uint32_t frame);
 
 namespace reload {
 

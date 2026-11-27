@@ -29,6 +29,13 @@ void font_release(std::uint32_t id);
 bool font_resolve_face(std::uint32_t id, TextFace& face);
 /// Bytes of a loaded font: its block and its pages as the console counts them.
 std::size_t font_bytes(int slot);
+struct FontBlock;
+/// Frees a block and the page textures made so far (font_load.cpp).
+void font_free_block(FontBlock* block, MemTag& tag);
+/// Decodes page `i` of `file` and makes its texture (font_load.cpp). @return nullptr or the error's text (`code`).
+const char* font_make_page(FontBlock& block, int i, const std::uint8_t* file, MemTag& tag, ErrorCode& code);
+/// Registers the font kind of hot reload (font_reload.cpp; Debug/Development builds, at the first load_font()).
+void font_reload_register();
 
 } // namespace detail
 } // namespace nnh

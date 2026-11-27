@@ -1,6 +1,6 @@
 # Spec 031: Hot reload of assets
 
-Status: approved 2026-11-26 (the maintainer, every open question as recommended); in progress (stages 1–2 done; stage 3 and T4.1 partly)
+Status: approved 2026-11-26 (the maintainer, every open question as recommended); in progress (stages 1–3 done; stages 4–5 partly; see plan "Not done")
 Author: NNHGE maintainers · Date: 2026-11-26
 Depends on: [spec 007](../007-assets-and-romfs/spec.md) (the assets folder, one build step per file, the asset index
 `.nnh_assets`, romfs on 3DS and a folder next to the program on PC), [spec 010](../010-nnh-cli-run/spec.md) (`nnh run`

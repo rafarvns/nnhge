@@ -12,6 +12,7 @@
 #include "nnh/build.hpp"
 #include "nnh/log.hpp"
 #include "nnh/platform_fake.hpp"
+#include "reload/reload_hooks.hpp"
 #include "reload/reload_wire.hpp"
 #include "../remote/remote_fixture.hpp"
 #include "test.hpp"
@@ -83,6 +84,7 @@ inline void start(const Put* assets, int count, char* index, std::size_t index_c
     fake::add_asset(".nnh_assets", index, used);
     fake::remote_connect();
     CHECK(nnh::init());
+    nnh::detail::reload::install(); // plain files only: the tests link the reload core themselves
     send(remote_test::hello());
     CHECK(nnh::frame()); // frame 1 attaches
 }

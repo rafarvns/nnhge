@@ -46,7 +46,7 @@ void write(const std::string& path, const std::string& text) {
 
 ControllerSetup setup(Fake& f) {
     return ControllerSetup{f.out, f.src,
-                           [&f] {
+                           [&f](bool) {
                                ++f.builds;
                                BuildOutcome b;
                                b.ok = !f.fail;

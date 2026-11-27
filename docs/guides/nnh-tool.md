@@ -321,23 +321,27 @@ D28, [plan 013](../../specs/013-console-remote/plan.md); code: `tools/nnh/src/re
 
 ## Hot reload of assets
 
-> Status: in progress (spec 031): interactive `nnh run` watches and reloads; the script commands `swap-asset`,
-> `restore-asset` and `expect-reload` are not implemented yet.
+> Status: in progress (spec 031): interactive watching, typed `reload`, the script commands (`swap-asset`,
+> `restore-asset`, `expect-reload`; [testing-on-the-console.md](testing-on-the-console.md#hot-reload-in-scripts-spec-031))
+> and `nnh restore-assets <game>` work; see [assets.md](../api/assets.md#hot-reload) for the kinds that reload.
 
 While `nnh run <game> [--pc]` follows a Debug or Development game, it watches the game's assets folder (`nnh: hot reload
 on: ...`). Saving a file there — an image, a Tiled map, a data file — starts a reload once nothing changed for 250 ms (so
 an editor's save through a temporary file, or Tiled saving a map and its tileset, is one reload):
 
-1. `nnh` builds the game's asset target (`cmake --build --preset <p> --target <game>_assets`: the same converters, checks
+1. `nnh` builds the game's asset target (Ninja directly in the preset's folder on the PC, `cmake --build --preset <p>
+   --target <game>_assets` through devkitPro's shell for the 3DS: the same converters, checks
    and output bytes as a normal build; nothing is compiled or linked, the `.3dsx` isn't repacked) and shows its output.
    A conversion error prints the converter's `file:line: reason`, and the game logs one warning and keeps its old content.
-2. A Ninja dry run of the game's program tells whether the change needs a rebuild (a `DATA_SCHEMA` source, `IMAGES`, the
-   CMake declaration): `nnh: reload refused: <command>: rebuild and restart (nnh run)`.
+2. For a changed file outside the assets folder (a script's `swap-asset` of a `DATA_SCHEMA` source, for instance), a Ninja
+   dry run of the game's program tells whether the change needs a rebuild: `nnh: reload refused: <command>: rebuild and
+   restart (nnh run)`. Saves inside the assets folder skip it (≈ 0.4 s).
 3. The converted files whose bytes changed go to the game as one batch over the log connection (the simulator's loopback
    too): `nnh: reload 1: 2 files, 6.2 KB (build 0.21 s)`, then `nnh: reload 1 applied at frame 1234, 0.58 s after the
    save: art/hero, levels/room`.
 
 Typed commands: `reload` (build and send now, without waiting for a save), `reload <output path>` (send that converted
 file again, e.g. `reload art/hero.png`). `nnh run --no-reload` turns watching off; scripts (`--script`) never watch.
-Release builds and games built before spec 031 don't reload (`the game has no hot reload (built before spec 031):
+A game that loads nothing reloadable (no texture, sound, font, map, data asset or string table) links no reload code and
+answers like an older game. Release builds and games built before spec 031 don't reload (`the game has no hot reload (built before spec 031):
 watching off`). What reloads by itself and what a game reloads on its own: [assets.md](../api/assets.md#hot-reload).

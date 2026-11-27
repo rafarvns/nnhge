@@ -19,8 +19,12 @@ struct BuildCommands {
     std::string dry_run; ///< lists what building <game> would still do
 };
 
+/// With `ninja` (the preset's CMAKE_MAKE_PROGRAM) and no MSYS shell, Ninja is called directly in the preset's build
+/// folder (≈ 0.15 s less per cycle than `cmake --build`); otherwise through `cmake --build --preset`.
 BuildCommands build_commands(const std::string& root, const std::string& preset, const std::string& game,
-                             const Shell& shell);
+                             const Shell& shell, const std::string& ninja = "");
+/// CMAKE_MAKE_PROGRAM from <build_dir>/CMakeCache.txt when it is Ninja, else "".
+std::string cached_ninja(const std::string& build_dir);
 
 /// Runs a shell command, collecting its output lines. @return its exit status.
 using CommandRunner = std::function<int(const std::string& command, std::vector<std::string>& lines)>;

@@ -84,8 +84,8 @@ Result<const char*> locate(const char* path) {
     if constexpr (build::kDevToolsEnabled) { // hot reload (spec 031): the newest index and the received files
         if (detail::g_reload_assets_active) {
             detail::AssetRedirect r;
-            if (detail::reload_asset_lookup(path, r)) return r.stored;
-            if (const char* hint = detail::reload_asset_case_hint(path)) {
+            if (detail::g_reload_asset_ops->lookup(path, r)) return r.stored;
+            if (const char* hint = detail::g_reload_asset_ops->case_hint(path)) {
                 NNH_LOG_WARN(assets, "asset \"%s\" not found; paths are case-sensitive: did you mean \"%s\"?", path, hint);
             }
             return Error::make(ErrorCode::NotFound, "asset \"%.44s\" not found", path);
@@ -121,7 +121,7 @@ const char* detail::asset_lookup(const char* path) {
     if constexpr (build::kDevToolsEnabled) {
         if (detail::g_reload_assets_active) {
             detail::AssetRedirect r;
-            return g_ready && valid_asset_path(path) && detail::reload_asset_lookup(path, r) ? r.stored : nullptr;
+            return g_ready && valid_asset_path(path) && detail::g_reload_asset_ops->lookup(path, r) ? r.stored : nullptr;
         }
     }
     return g_ready && valid_asset_path(path) ? g_index.find(path) : nullptr;
@@ -157,7 +157,7 @@ Result<std::size_t> assets::size(const char* path) {
     std::size_t size = 0;
     if constexpr (build::kDevToolsEnabled) {
         detail::AssetRedirect r;
-        if (detail::g_reload_assets_active && detail::reload_asset_lookup(path, r) && r.file != 0) return r.size;
+        if (detail::g_reload_assets_active && detail::g_reload_asset_ops->lookup(path, r) && r.file != 0) return r.size;
     }
     if (!platform::asset_size(found.value(), size)) {
         return Error::make(ErrorCode::IoError, "asset \"%.44s\" can't be opened", path);
@@ -174,8 +174,8 @@ Result<std::size_t> assets::read(const char* path, void* buffer, std::size_t cap
     std::size_t read = 0;
     if constexpr (build::kDevToolsEnabled) {
         detail::AssetRedirect r;
-        if (detail::g_reload_assets_active && detail::reload_asset_lookup(path, r) && r.file != 0) {
-            if (!detail::reload_read_file(r, buffer, read) || read != size.value()) {
+        if (detail::g_reload_assets_active && detail::g_reload_asset_ops->lookup(path, r) && r.file != 0) {
+            if (!detail::g_reload_asset_ops->read_file(r, buffer, read) || read != size.value()) {
                 return Error::make(ErrorCode::IoError, "asset \"%.44s\" could not be read", path);
             }
             return read;

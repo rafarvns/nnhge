@@ -9,6 +9,7 @@
 #include "core/shutdown_hooks.hpp"
 #include "nnh/assert.hpp"
 #include "nnh/assets.hpp"
+#include "nnh/build.hpp"
 #include "nnh/events.hpp"
 #include "nnh/log.hpp"
 #include "nnh/memory.hpp"
@@ -28,19 +29,19 @@ namespace {
 
 void shutdown_hook() { nnh::loc::stop(); }
 
-/// The table of `language` read into the block at `at`. @return nullptr or the reason.
-const char* read_table(int language, std::size_t& at, LoadedTable& t) {
-    LocState& s = g_loc_state;
+/// The table of `language` (of `languages`) read into `block` at `at`. @return nullptr or the reason.
+const char* read_table(const LanguageRecord* languages, int language, std::uint8_t* block, std::size_t bytes,
+                       std::size_t& at, LoadedTable& t) {
     char path[40];
-    const char* code = s.languages[language].code;
+    const char* code = languages[language].code;
     std::size_t n = std::strlen(code);
     std::memcpy(path, "strings/", 8);
     std::memcpy(path + 8, code, n);
     std::memcpy(path + 8 + n, ".nnhstr", 8);
-    const std::size_t room = s.block_bytes - at;
-    auto got = assets::read(path, s.block + at, room);
+    const std::size_t room = bytes - at;
+    auto got = assets::read(path, block + at, room);
     if (!got) return "a string table is missing";
-    const std::uint8_t* data = s.block + at;
+    const std::uint8_t* data = block + at;
     if (const char* why = validate_table(data, got.value())) return why;
     t.base = data;
     std::memcpy(&t.h, data, sizeof t.h);
@@ -55,16 +56,26 @@ const char* read_table(int language, std::size_t& at, LoadedTable& t) {
 
 } // namespace
 
+const char* load_chain_into(const LanguageRecord* languages, int language, std::uint8_t* block, std::size_t bytes,
+                            LoadedTable* tables, int& count) {
+    std::size_t at = 0;
+    count = 0;
+    for (int c = 0; c < kMaxChain && languages[language].chain[c] != kNoIndex; ++c) {
+        if (const char* why = read_table(languages, languages[language].chain[c], block, bytes, at, tables[c])) return why;
+        ++count;
+    }
+    std::memset(block + at, 0, bytes - at); // the rest (and the guard) zero
+    return nullptr;
+}
+
 const char* load_chain(int language) {
     LocState& s = g_loc_state;
-    std::size_t at = 0;
-    s.table_count = 0;
-    for (int c = 0; c < kMaxChain && s.languages[language].chain[c] != kNoIndex; ++c) {
-        if (const char* why = read_table(s.languages[language].chain[c], at, s.tables[c])) return why;
-        ++s.table_count;
-    }
-    std::memset(s.block + at, 0, s.block_bytes - at); // the rest (and the guard) zero
-    return nullptr;
+    return load_chain_into(s.languages, language, s.block, s.block_bytes, s.tables, s.table_count);
+}
+
+std::size_t chain_block_bytes(const ManifestHeader& h) {
+    return static_cast<std::size_t>(((std::uint64_t{h.block_bytes} + 7) & ~std::uint64_t{7}) + 8 * kMaxChain +
+                                    kGuardBytes); // block_bytes <= kMaxBlockBytes: fits a size_t
 }
 
 int match_language(const char* code) {
@@ -124,8 +135,7 @@ Result<void> loc::start(const StartOptions& options) {
     }
     std::memcpy(&s.header, s.manifest, sizeof s.header);
     s.languages = reinterpret_cast<const LanguageRecord*>(s.manifest + s.header.off_languages);
-    s.block_bytes = static_cast<std::size_t>(((std::uint64_t{s.header.block_bytes} + 7) & ~std::uint64_t{7}) + 8 * kMaxChain +
-                                            kGuardBytes); // block_bytes <= kMaxBlockBytes: fits a size_t
+    s.block_bytes = chain_block_bytes(s.header);
     s.block = static_cast<std::uint8_t*>(mem::alloc(MemRegion::Heap, tag, s.block_bytes, 8));
     if (s.block == nullptr) {
         mem::free(s.manifest);
@@ -162,6 +172,7 @@ Result<void> loc::start(const StartOptions& options) {
     s.show_keys = env != nullptr && env[0] == '1';
 #endif
     detail::add_shutdown_hook(&shutdown_hook);
+    if constexpr (build::kDevToolsEnabled) loc_reload_register(); // spec 031: string files reload
     announce(-1, first, reason);
     if (s.fonts_switch != nullptr) s.fonts_switch(first);
     return Result<void>{};

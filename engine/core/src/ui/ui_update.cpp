@@ -4,6 +4,8 @@
 // (7) the direction; (8) pages; (9) confirm; (10) cancel; (11, 12) results sorted, layout, callbacks, opt-in events,
 // layout; (13) the cursor.
 
+#include "nnh/build.hpp"
+#include "nnh/assets.hpp"
 #include "nnh/app.hpp"
 #include "nnh/profile.hpp"
 #include "ui/ui_block.hpp"
@@ -104,7 +106,12 @@ void step(UiBlock& b, const UiInput& given) {
 
 } // namespace
 
-void ui_step(UiBlock& b, const UiInput& in) { step(b, in); }
+void ui_step(UiBlock& b, const UiInput& in) {
+    if constexpr (build::kDevToolsEnabled) { // spec 031: a hot reload this frame (strings, fonts, textures) relays out
+        if (assets::reloaded_paths().count > 0) forget_text(b);
+    }
+    step(b, in);
+}
 
 void ui_read_input(UiBlock& b, UiInput& in) {
     if (b.source) {

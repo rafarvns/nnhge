@@ -3,13 +3,39 @@
 #include "reload/asset_build.hpp"
 
 #include <chrono>
+#include <cstdio>
 #include <thread>
 
 namespace nnh::tool::reload {
 
+std::string cached_ninja(const std::string& build_dir) {
+    std::FILE* f = std::fopen((build_dir + "/CMakeCache.txt").c_str(), "rb");
+    if (f == nullptr) return "";
+    char line[1024];
+    std::string found;
+    const std::string key = "CMAKE_MAKE_PROGRAM:FILEPATH=";
+    while (std::fgets(line, sizeof line, f) != nullptr) {
+        std::string s(line);
+        if (s.rfind(key, 0) != 0) continue;
+        found = s.substr(key.size());
+        while (!found.empty() && (found.back() == '\n' || found.back() == '\r')) found.pop_back();
+        break;
+    }
+    std::fclose(f);
+    const std::size_t slash = found.find_last_of("/\\");
+    const std::string name = slash == std::string::npos ? found : found.substr(slash + 1);
+    return name == "ninja" || name == "ninja.exe" ? found : "";
+}
+
 BuildCommands build_commands(const std::string& root, const std::string& preset, const std::string& game,
-                             const Shell& shell) {
+                             const Shell& shell, const std::string& ninja) {
     BuildCommands c;
+    if (!ninja.empty() && shell.devkitpro_bash.empty()) {
+        const std::string base = "\"" + ninja + "\" -C \"" + root + "/build/" + preset + "\" ";
+        c.assets = base + game + "_assets";
+        c.dry_run = base + "-n " + game;
+        return c;
+    }
     c.assets = cmake_command(root, "--build --preset " + preset + " --target " + game + "_assets", shell);
     c.dry_run = cmake_command(root, "--build --preset " + preset + " --target " + game + " -- -n", shell);
     return c;

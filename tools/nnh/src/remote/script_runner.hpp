@@ -33,6 +33,7 @@
 #include "remote/script_timeline.hpp"
 
 namespace nnh::tool::reload {
+class AssetSwaps;
 class ReloadController;
 }
 
@@ -93,6 +94,8 @@ public:
     void poll_reload();
     /// The controller's paced batch bytes, sent after take_messages()'s in the same write.
     std::vector<std::uint8_t> take_bytes();
+    /// Script mode: where `swap-asset` swaps (null: reload steps fail) and the folder FIXTURE paths start from.
+    void set_reload_script(reload::AssetSwaps* swaps, std::string script_dir);
 
     Verdict verdict() const { return verdict_; }
     /// Script mode: a verdict was reached. Interactive mode: the game closed.
@@ -136,6 +139,17 @@ private:
     // hot reload (script_runner_reload.cpp, spec 031)
     bool typed_reload(const std::string& text);
     void reload_record(const Record& record);
+    // script reload steps (script_runner_swap.cpp, spec 031)
+    bool reload_step_due() const;
+    void start_reload_step(const Step& step, std::uint32_t frame);
+    void reload_paused(std::uint32_t frame, bool paused);
+    void finish_held_reload();
+    void record_outcome();
+    void reload_outcome();
+    void expect_reload_now();
+    void reload_tick();
+    void complete_reload_step(std::uint32_t base);
+    void take_reload_notes();
     void finish(Verdict verdict, int line, const std::string& why);
     void problem(int line, const std::string& why);
     std::string where(int line) const;
@@ -205,6 +219,24 @@ private:
     std::vector<std::string> dumps_;
 
     reload::ReloadController* reload_ = nullptr;
+    reload::AssetSwaps* swaps_ = nullptr;
+    std::string script_dir_;
+    struct ReloadStepState {
+        int phase = 0; ///< 0 none, 1 waiting for the pause, 2 waiting for the batch's answer, 3 expect-reload within
+        Step step;
+        std::uint32_t frame = 0; ///< the clock's frame F at the step
+        std::uint32_t wait_to = 0;
+    };
+    ReloadStepState reload_step_;
+    std::size_t reload_started_ = 0; ///< segment index + 1 whose reload step started
+    bool reload_dry_run_ = false;    ///< the swapped source is outside the assets folder
+    struct LastReload {
+        bool any = false, done = true, applied = false;
+        std::uint32_t frame = 0;
+        std::vector<std::string> paths;
+        std::string why;
+    };
+    LastReload last_reload_;
 
     std::vector<MessageBytes> messages_;
     std::vector<std::string> notes_;

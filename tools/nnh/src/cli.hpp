@@ -7,7 +7,7 @@
 
 namespace nnh::tool {
 
-enum class Command { Help, Build, Run, Install, Serve, Unpair };
+enum class Command { Help, Build, Run, Install, Serve, Unpair, RestoreAssets };
 
 struct Options {
     Command command = Command::Help;

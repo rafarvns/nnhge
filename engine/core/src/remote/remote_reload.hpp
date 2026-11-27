@@ -25,4 +25,8 @@ void remote_reload_flush();
 /// The PC detached or disconnected: the open, staged or pending batch is dropped (its files removed).
 void remote_reload_detached();
 
+struct ReloadSessionOps;
+/// The functions above, as g_reload_session points at them once a kind is registered (reload_hooks.hpp).
+extern const ReloadSessionOps kReloadSessionOps;
+
 } // namespace nnh::detail

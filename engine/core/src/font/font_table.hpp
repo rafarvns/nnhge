@@ -44,5 +44,7 @@ int font_table_count();
 /// Empties an entry without freeing its block (an entry of an earlier engine run, in Release: its textures are gone).
 void font_table_forget(int slot);
 FontEntryExtra& font_table_extra(int slot);
+/// Puts `block` in a live entry (spec 031: a hot reload; the id, references and fallbacks stay). @return the old block.
+FontBlock* font_table_replace(int slot, FontBlock* block);
 
 } // namespace nnh::detail

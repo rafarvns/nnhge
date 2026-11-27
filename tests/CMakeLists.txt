@@ -1688,6 +1688,10 @@ target_sources(nnh_tests PRIVATE
     assets/test_assets_overlay.cpp
     data_assets/test_data_reload.cpp
     gfx/test_texture_reload.cpp
+    audio/test_sound_reload.cpp
+    font/test_font_reload.cpp
+    loc/test_loc_reload.cpp
+    ui/test_ui_reload.cpp
     reload/test_reload_apply.cpp
     reload/test_reload_batch.cpp
     reload/test_reload_cost.cpp
@@ -1709,4 +1713,26 @@ if(NNH_BUILD_FUZZERS)
     target_link_libraries(fuzz_reload_receiver PRIVATE nnh_fuzz_targets)
     target_compile_options(fuzz_reload_receiver PRIVATE -fsanitize=fuzzer,address)
     target_link_options(fuzz_reload_receiver PRIVATE -fsanitize=fuzzer,address)
+endif()
+# The hot reload smoke script (T3.7): a data asset swapped and restored in the simulator, the source tree unchanged.
+if(TARGET data AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    get_filename_component(_reload_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME reload_data_smoke_pc
+             COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DGAME=data -DSCRIPT=examples/data/tests/reload.nnhs
+                     -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/reload_example/script_clean.cmake)
+    set_tests_properties(reload_data_smoke_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_reload_preset}"
+        PASS_REGULAR_EXPRESSION "reload script: PASS" FAIL_REGULAR_EXPRESSION "reload script: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
+endif()
+# AC-4b: the sprites example (no reload-aware code) picks up a swapped PNG; its folder unchanged afterwards.
+if(TARGET sprites AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    get_filename_component(_reload_preset ${CMAKE_BINARY_DIR} NAME)
+    add_test(NAME sprites_reload_script_pc
+             COMMAND ${CMAKE_COMMAND} -DNNH=$<TARGET_FILE:nnh> -DGAME=sprites -DSCRIPT=examples/sprites/tests/reload.nnhs
+                     -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/reload_example/script_clean.cmake)
+    set_tests_properties(sprites_reload_script_pc PROPERTIES
+        ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;NNH_SIM_RENDERER=sdl;SDL_AUDIO_DRIVER=dummy;NNH_PRESET=${_reload_preset}"
+        PASS_REGULAR_EXPRESSION "reload script: PASS" FAIL_REGULAR_EXPRESSION "reload script: FAIL" TIMEOUT 300
+        RESOURCE_LOCK nnh_remote_port)
 endif()

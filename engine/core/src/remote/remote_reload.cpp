@@ -7,6 +7,7 @@
 
 #include "reload/reload_apply.hpp"
 #include "reload/reload_files.hpp"
+#include "reload/reload_hooks.hpp"
 #include "reload/reload_receiver.hpp"
 #include "remote/remote_internal.hpp"
 
@@ -138,5 +139,8 @@ void remote_reload_detached() {
 void reload::send_reload_record(const std::uint8_t* bytes, std::size_t size) {
     if (g_spoken) remote::send_record(bytes, size);
 }
+
+const ReloadSessionOps kReloadSessionOps{remote_reload_message, remote_reload_payload, remote_reload_apply,
+                                         remote_reload_window,  remote_reload_flush,   remote_reload_detached};
 
 } // namespace nnh::detail

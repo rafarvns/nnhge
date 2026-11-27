@@ -1,0 +1,22 @@
+# A fast goblin: the hot reload smoke test (spec 031) swaps it over assets/enemies/goblin.enemy.
+name = "Goblin"
+element = "Normal"
+speed = 3.5
+sprite = "art/goblin"
+hurt_sound = "sfx/squish"
+tint = "#7FD36A"
+spawn = [40, 120]
+flags = [false, false, false]   # flying, boss, undead
+
+[stats]
+hp = 30
+attack = 6
+defense = 2
+
+[[drops]]
+item = "items/potion"
+chance = 0.5
+
+[[drops]]
+item = "items/ether"
+chance = 0.1

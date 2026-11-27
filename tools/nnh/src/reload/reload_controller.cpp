@@ -78,15 +78,24 @@ void ReloadController::request(const std::string& output_path) {
     requested_ = true;
 }
 
-bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail) {
+bool ReloadController::inside_assets(const std::string& game_path) const {
+    if (setup_.game_dir.empty()) return false;
+    const std::string full = setup_.game_dir + "/" + game_path;
+    return full.size() > setup_.src_dir.size() && full.compare(0, setup_.src_dir.size(), setup_.src_dir) == 0 &&
+           full[setup_.src_dir.size()] == '/';
+}
+
+bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail, bool dry_run) {
     outcome_ = Outcome{};
     if (!enabled_) {
         outcome_.done = true;
         outcome_.why = "the game has no hot reload";
+        pending_ = tail;
+        allowance_ = kInitialAllowance;
         return false;
     }
     if (saved_at_ == 0) saved_at_ = setup_.now_ms();
-    const BuildOutcome built = setup_.build();
+    const BuildOutcome built = setup_.build(dry_run);
     for (const std::string& line : built.lines) note(line);
     const std::string first_source = watcher_.changed().empty() ? std::string("assets") : watcher_.changed()[0];
     if (!built.ok || !built.restart.empty()) {
@@ -108,6 +117,7 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
     if (changes_.empty()) {
         note("reload: nothing changed in the converted assets");
         pending_ = tail;
+        allowance_ = kInitialAllowance;
         outcome_.done = true;
         saved_at_ = 0;
         return false;
@@ -120,6 +130,8 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
         if (!ok) {
             note("reload: can't read " + c.path + ": try again");
             outcome_.done = true;
+            pending_ = tail;
+            allowance_ = kInitialAllowance;
             return false;
         }
         files.push_back(std::move(f));
@@ -129,6 +141,8 @@ bool ReloadController::run_cycle(std::uint32_t apply_frame, const std::vector<st
     if (!e.error.empty()) {
         note("reload refused: " + e.error);
         outcome_ = Outcome{true, false, false, 0, {}, e.error};
+        pending_ = tail;
+        allowance_ = kInitialAllowance;
         return false;
     }
     pending_ = e.bytes;

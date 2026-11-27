@@ -27,6 +27,12 @@ std::vector<std::uint8_t> ScriptRunner::take_bytes() {
 bool ScriptRunner::typed_reload(const std::string& text) {
     std::size_t at = 0;
     while (at < text.size() && std::isspace(static_cast<unsigned char>(text[at])) != 0) ++at;
+    for (const char* script_only : {"swap-asset", "restore-asset", "expect-reload"}) {
+        if (text.compare(at, std::string(script_only).size(), script_only) == 0) {
+            notes_.push_back(std::string(script_only) + " is for scripts (--script); save the file instead");
+            return true;
+        }
+    }
     if (text.compare(at, 6, "reload") != 0) return false;
     std::size_t end = at + 6;
     if (end < text.size() && std::isspace(static_cast<unsigned char>(text[end])) == 0) return false; // reloadx
@@ -46,6 +52,7 @@ void ScriptRunner::reload_record(const Record& record) {
     if (reload_ == nullptr) return;
     reload_->on_record(record);
     for (std::string& n : reload_->take_notes()) notes_.push_back(std::move(n));
+    if (!options_.interactive) reload_outcome(); // spec 031: a script's swap waits for it
 }
 
 } // namespace nnh::tool::remote

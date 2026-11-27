@@ -31,7 +31,7 @@
 #include "nnh/platform/time.hpp"
 #include "nnh/platform/video.hpp"
 #include "remote/remote_internal.hpp"
-#include "reload/reload_apply.hpp"
+#include "reload/reload_hooks.hpp"
 #include "time/time_internal.hpp"
 
 namespace nnh {

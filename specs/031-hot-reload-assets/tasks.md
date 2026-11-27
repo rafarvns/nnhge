@@ -1,6 +1,6 @@
 # Tasks 031: Hot reload of assets
 
-Status: approved 2026-11-26 (with plan.md); in progress (stages 1–2 done; stage 3 and T4.1 partly)
+Status: approved 2026-11-26 (with plan.md); in progress (stages 1–3 done; stages 4–5 partly; see plan "Not done")
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -148,7 +148,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   injected clock and lister). Test: `tools/nnh/tests/test_source_watcher.cpp` (one save, a temporary file + rename, a
   `.tmj` + `.tsj` burst, an add, a remove, a rename, a change during the quiet period, nothing for touch-free polls).
   Covers FR-1.
-- [ ] **T3.3** Building: `reload/asset_build.{hpp,cpp}` (the asset target's command per preset, the MSYS form and — if
+- [x] **T3.3** Building: `reload/asset_build.{hpp,cpp}` (the asset target's command per preset, the MSYS form and — if
   T0.2 measured > 0.3 s — the persistent shell with a sentinel; output passthrough; one retry after 200 ms on failure;
   the dry run and its first command's description). Test: `tools/nnh/tests/test_asset_build.cpp` (command lines,
   dry-run parsing of real Ninja output samples recorded at T0.2, the retry, a failing build's lines kept). Covers FR-2,
@@ -164,7 +164,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   message. Test: `tools/nnh/tests/test_reload_controller.cpp` (a fake builder and game: every state change, a save
   during a cycle, a failed build, a dry run with commands, a refused batch keeps the mirror, an older game turns watching
   off; the exact lines). Covers FR-1, FR-3, FR-14, FR-15, FR-22.
-- [ ] **T3.6** Script commands: `remote/script.hpp`, `script_parser.cpp`, `script_reload.cpp` (`swap-asset SOURCE FIXTURE
+- [x] **T3.6** Script commands: `remote/script.hpp`, `script_parser.cpp`, `script_reload.cpp` (`swap-asset SOURCE FIXTURE
   [unheld]`, `restore-asset SOURCE`, `expect-reload [PATH] [refused] [within N]`; 030's paused-section rules),
   `script_timeline.*`, `script_runner.*`, `script_runner_reload.cpp` (held flow: pause at F, wait for `LiveState`,
   build, send, `Apply` + `resume` at F; unheld flow; refusals; expectations), `reload/asset_swap.{hpp,cpp}` (backups,
@@ -172,11 +172,11 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   `tools/nnh/tests/test_script_reload.cpp` (syntax, line errors, paths outside the game's folder, paused rules),
   `test_script_runner_reload.cpp` (a fake console: held and unheld, applied and refused, the clock rules),
   `test_asset_swap.cpp` (byte-for-byte restore, the journal, interrupted runs). Covers FR-22, Q11.
-- [ ] **T3.7** End to end on PC: `nnh run data --pc` by hand (edit `goblin.enemy`, see `I assets reloaded 1` and
+- [x] **T3.7** End to end on PC: `nnh run data --pc` by hand (edit `goblin.enemy`, see `I assets reloaded 1` and
   `nnh: reload 1 applied …`; a broken field shows `file:line`), and a ctest `reload_data_smoke_pc` (`--pc --script` with a
   `swap-asset` of a data file and `expect-reload`). Files: plan.md ("Stage 3 results": first save → frame times). Covers
   FR-1–FR-6, FR-13.
-- [ ] **T3.8** Stage end: the stage-end guards; plan.md. Covers AC-5, AC-7.
+- [x] **T3.8** Stage end: the stage-end guards; plan.md. Covers AC-5, AC-7.
 
 ## Stage 4: textures and string tables (Q8 step 1)
 
@@ -190,10 +190,10 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   (a file of the current language and of its fallback; serial bump and `text_changed()`; a larger chain reallocates; a
   removed key shows its name; a manifest with another language list refuses; the pseudo-language follows the base; a
   font rebaked in the same batch). Covers FR-10, FR-14, FR-16.
-- [ ] **T4.3** UI follows: the UI's update/draw (Dev branch: relayout when `assets::reload_count()` changed). Test:
+- [x] **T4.3** UI follows: the UI's update/draw (Dev branch: relayout when `assets::reload_count()` changed). Test:
   `tests/ui/test_ui_reload.cpp` (an image widget's natural size and a 9-slice after a texture reload; a label after a
   font or strings reload; golden `30400DA6` unchanged). Covers FR-7, FR-10.
-- [ ] **T4.4** Stage end: the stage-end guards; by hand `nnh run sprites --pc`, save a PNG of another size → the new
+- [x] **T4.4** Stage end: the stage-end guards; by hand `nnh run sprites --pc`, save a PNG of another size → the new
   sprite at once (AC-4b's preview); plan.md ("Stage 4 results"). Covers AC-4b, AC-7.
 
 ## Stage 5: sprite libraries, sounds, music, fonts (Q8 step 2)

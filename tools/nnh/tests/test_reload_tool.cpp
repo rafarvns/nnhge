@@ -131,6 +131,11 @@ NNH_TEST(reload_build_commands_per_preset) {
     const BuildCommands d = build_commands("E:/repo", "3ds-dev", "data", dkp);
     CHECK(d.assets.find("bash.exe") != std::string::npos);
     CHECK(d.assets.find("--target data_assets") != std::string::npos);
+    const BuildCommands n = build_commands("E:/repo", "pc-debug", "data", pc, "C:/tools/ninja.exe");
+    CHECK(n.assets == "\"C:/tools/ninja.exe\" -C \"E:/repo/build/pc-debug\" data_assets");
+    CHECK(n.dry_run == "\"C:/tools/ninja.exe\" -C \"E:/repo/build/pc-debug\" -n data");
+    CHECK(build_commands("E:/repo", "3ds-dev", "data", dkp, "C:/tools/ninja.exe").assets.find("bash.exe") !=
+          std::string::npos); // the 3DS keeps devkitPro's shell
 }
 
 NNH_TEST(reload_build_retries_once_and_keeps_the_lines) {

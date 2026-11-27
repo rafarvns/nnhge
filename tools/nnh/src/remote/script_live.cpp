@@ -110,6 +110,9 @@ std::string paused_rule(const ScriptParser& parser, const Step& step) {
     case Command::ExpectValue:
         if (step.frames > 0) what = "expect-value ... within";
         break;
+    case Command::SwapAsset: what = "swap-asset"; break; // spec 031: the held swap pauses and resumes itself
+    case Command::RestoreAsset: what = "restore-asset"; break;
+    case Command::ExpectReload: what = "expect-reload"; break;
     default: break;
     }
     return what == nullptr ? "" : std::string(what) + " while paused: step or resume first";

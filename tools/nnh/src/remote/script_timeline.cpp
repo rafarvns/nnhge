@@ -146,6 +146,9 @@ void Timeline::add(const Step& step) {
         break;
     case Command::ExpectValue:
     case Command::Expect:
+    case Command::SwapAsset: // spec 031: barriers the runner carries out (script_runner_reload.cpp)
+    case Command::RestoreAsset:
+    case Command::ExpectReload:
     case Command::End:
         open_.until = step;
         closed_.push_back(std::move(open_));

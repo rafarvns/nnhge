@@ -9,6 +9,7 @@
 #include <cstdint>
 
 #include "nnh/platform/assets.hpp"
+#include "reload/reload_hooks.hpp"
 
 namespace nnh::detail {
 
@@ -21,10 +22,8 @@ struct AssetRedirect {
     std::uint32_t size = 0;       ///< that file's bytes
 };
 
-/// True from the first staged batch to shutdown: assets.cpp asks reload_asset_lookup() instead of its own index.
-extern bool g_reload_assets_active;
-/// The assets module's own index (set by assets_init() in Debug/Development builds).
-extern const AssetIndex* g_reload_original_index;
+/// These four as g_reload_asset_ops points at them (reload_hooks.hpp).
+extern const ReloadAssetOps kReloadAssetOps;
 
 /// @return false when `path` (a valid asset path) is not an asset now (NotFound).
 bool reload_asset_lookup(const char* path, AssetRedirect& out);

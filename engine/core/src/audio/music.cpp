@@ -12,6 +12,7 @@
 #include "nnh/events.hpp"
 #include "nnh/log.hpp"
 #include "nnh/platform/assets.hpp"
+#include "nnh/platform/reload.hpp"
 #include "reload/reload_assets.hpp"
 
 namespace nnh {
@@ -99,7 +100,9 @@ Result<void> open_slot(int i, const char* path, const music::Options& options, f
     Slot& s = g_slots[i];
     auto size = assets::size(asset);
     if constexpr (build::kDevToolsEnabled) { // spec 031: a received file, or a packed one the build may rewrite
-        if (!size || !detail::reload_asset_open(asset, s.asset, true)) {
+        const bool opened = detail::g_reload_asset_ops != nullptr ? detail::g_reload_asset_ops->open(asset, s.asset, true)
+                                                                  : platform::asset_open_shared(asset, s.asset);
+        if (!size || !opened) {
             return Error::make(ErrorCode::IoError, "\"%s\": can't open", path);
         }
     } else {

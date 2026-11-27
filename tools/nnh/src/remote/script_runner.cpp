@@ -322,6 +322,7 @@ void ScriptRunner::pump(bool ignore_room) {
         expect_value_sent_ = true;
         start_expect_value(seg.until, base_ + seg.length);
     }
+    if (verdict_ == Verdict::Running && attached_ && reload_step_due()) start_reload_step(seg.until, base_ + seg.length);
 }
 
 void ScriptRunner::check_end() {
@@ -379,6 +380,8 @@ void ScriptRunner::script_tick() {
                value_watch_.text + ": no value in " + frames(value_watch_.from, value_watch_.to));
         return;
     }
+    reload_tick(); // spec 031: expect-reload ... within
+    if (verdict_ != Verdict::Running) return;
     pump();
     check_end();
 }

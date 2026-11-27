@@ -28,8 +28,11 @@ struct BuildOutcome {
 struct ControllerSetup {
     std::string out_dir;  ///< the converted assets folder (what the game was packed with)
     std::string src_dir;  ///< the source assets folder (watched)
-    std::function<BuildOutcome()> build;
+    /// Builds the asset target; with `dry_run`, then asks Ninja whether the program would rebuild (a change outside the
+    /// assets folder: a schema source, IMAGES, the CMake declaration). Changes inside the folder skip it (≈ 0.4 s).
+    std::function<BuildOutcome(bool dry_run)> build;
     std::function<long long()> now_ms;
+    std::string game_dir; ///< the game's folder (script SOURCE paths are relative to it)
 };
 
 /// Bytes sent at the start of a batch before the game's first tick, then per tick (it reads 16 KB a frame, ticks come
@@ -55,9 +58,13 @@ public:
     void request(const std::string& output_path = "");
     /// One cycle now: build, dry run, diff, encode; the Apply for `apply_frame` (0 = the next frame) follows the batch,
     /// then `tail` (a script's Resume). @return false when nothing was sent (a note says why).
-    bool run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail = {});
+    bool run_cycle(std::uint32_t apply_frame, const std::vector<std::uint8_t>& tail = {}, bool dry_run = false);
+    /// True when `game_path` (relative to the game's folder) is inside the source assets folder.
+    bool inside_assets(const std::string& game_path) const;
 
     void on_record(const remote::Record& record);
+    /// Builds the asset target once more, sending nothing (after a script put its swapped sources back).
+    void rebuild() { setup_.build(false); }
     /// What may go to the game now (paced). Messages of other kinds may be sent around it: a batch is never split
     /// inside a message.
     std::vector<std::uint8_t> take_bytes();

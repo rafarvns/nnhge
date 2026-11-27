@@ -11,6 +11,7 @@
 #include "log/engine_channels.hpp"
 #include "memory/memory_internal.hpp"
 #include "nnh/assets.hpp"
+#include "nnh/build.hpp"
 #include "nnh/log.hpp"
 
 namespace nnh {
@@ -48,8 +49,10 @@ std::size_t read_memory(void* context, std::uint64_t offset, void* out, std::siz
     return count;
 }
 
-/// Decodes `file` into a new slot (and platform sample when there is audio output).
-Result<int> decode_into_slot(const char* path, const AssetData& file, bool ogg) {
+} // namespace
+
+/// Decodes `file` into `slot` (and a platform sample when there is audio output); the slot isn't placed anywhere.
+Result<void> detail::decode_sound(const char* path, const AssetData& file, bool ogg, SoundSlot& out) {
     static detail::OggDecoder decoder; // ~17 KB: static, not on the (small 3DS) stack
     const auto* bytes = static_cast<const std::uint8_t*>(file.data());
     detail::WavFormat wav;
@@ -71,7 +74,7 @@ Result<int> decode_into_slot(const char* path, const AssetData& file, bool ogg) 
         }
         slot = {true, 0, 0, static_cast<std::uint32_t>(decoder.length()), decoder.channels(), decoder.rate()};
     }
-    auto finish = [&](Result<int> result) {
+    auto finish = [&](Result<void> result) {
         decoder.close();
         mem::free(arena);
         return result;
@@ -80,8 +83,6 @@ Result<int> decode_into_slot(const char* path, const AssetData& file, bool ogg) 
     if (slot.frames == 0 || pcm_bytes > detail::kMaxSoundBytes) {
         return finish(refuse(ErrorCode::LimitReached, path, "empty or over 4 MB decoded: play it as music"));
     }
-    const int index = free_slot();
-    if (index < 0) return finish(refuse(ErrorCode::LimitReached, path, "too many sounds (AppConfig::audio.max_sounds)"));
     platform::SampleInfo info;
     if (audio_state().available && !platform::sample_create(slot.frames, slot.channels, info)) {
         return finish(refuse(ErrorCode::OutOfMemory, path, "no audio memory left"));
@@ -98,9 +99,22 @@ Result<int> decode_into_slot(const char* path, const AssetData& file, bool ogg) 
     }
     slot.sample = info.handle;
     slot.bytes = info.bytes;
+    out = slot;
+    return finish(Result<void>{});
+}
+
+namespace {
+
+/// Decodes `file` into a new slot (and platform sample when there is audio output).
+Result<int> decode_into_slot(const char* path, const AssetData& file, bool ogg) {
+    const int index = free_slot();
+    if (index < 0) return refuse(ErrorCode::LimitReached, path, "too many sounds (AppConfig::audio.max_sounds)");
+    SoundSlot slot;
+    auto decoded = detail::decode_sound(path, file, ogg, slot);
+    if (!decoded) return decoded.error();
     slot.generation = g_next_generation++;
     audio_state().sounds[index] = slot;
-    return finish(index);
+    return index;
 }
 
 } // namespace
@@ -179,6 +193,9 @@ Result<Sound> load_sound(const char* path) {
     if (!file) return file.error();
     auto slot = decode_into_slot(path, file.value(), ogg);
     if (!slot) return slot.error();
+    if constexpr (build::kDevToolsEnabled) { // spec 031: the sound reloads with its asset
+        detail::sound_reload_loaded(slot.value(), audio_state().sounds[slot.value()].generation, asset);
+    }
     return SoundAccess::make(slot.value(), audio_state().sounds[slot.value()].generation);
 }
 

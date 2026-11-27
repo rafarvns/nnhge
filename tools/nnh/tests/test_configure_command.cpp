@@ -66,3 +66,38 @@ NNH_TEST(pc_and_linux_configures_are_unchanged) {
     CHECK(configure_command("/home/me/game", "3ds-dev", kPosix, extras) == "cd '/home/me/game' && cmake --preset 3ds-dev");
     CHECK(configure_command("/home/me/game", "pc-dev", kPosix, extras) == "cd '/home/me/game' && cmake --preset pc-dev");
 }
+
+NNH_TEST(shell_characters_in_a_path_are_refused) {
+    for (const char* bad : {"E:/a$b", "E:/a`b", "E:/a%PATH%b"}) {
+        CHECK(configure_command(bad, "3ds-dev", kDkp, {}).empty());
+        CHECK(configure_command("E:/nnhge", "3ds-dev", kDkp, {.host_cxx = bad, .engine_dir = ""}).empty());
+        CHECK(configure_command("E:/nnhge", "3ds-dev", kDkp, {.host_cxx = "", .engine_dir = bad}).empty());
+        CHECK(configure_command(bad, "pc-dev", kCmd, {}).empty()); // cmd.exe expands %...% too
+    }
+}
+
+NNH_TEST(configure_extras_are_for_devkitpros_shell_only) {
+    const auto found = [](const char* n) { return std::string(n) == "g++" ? "C:/w/g++.exe" : ""; };
+    const ConfigureExtras pc = configure_extras(true, false, "E:/nnhge", "C:/x/g++.exe", found);
+    CHECK(pc.host_cxx.empty() && pc.engine_dir.empty());
+    const ConfigureExtras dkp = configure_extras(true, true, "E:/nnhge", nullptr, found);
+    CHECK(dkp.host_cxx == "C:/w/g++.exe" && dkp.engine_dir == "E:/nnhge");
+    CHECK(configure_extras(true, true, nullptr, "C:/x/g++.exe", found).host_cxx == "C:/x/g++.exe");
+}
+
+NNH_TEST(the_engine_override_is_passed_only_in_a_game_project) {
+    const ConfigureExtras repo = configure_extras(false, true, "E:/nnhge", nullptr, none);
+    CHECK(repo.engine_dir.empty());
+    CHECK(configure_extras(true, true, "", nullptr, none).engine_dir.empty()); // set but empty: the pinned download
+}
+
+NNH_TEST(find_on_path_finds_a_real_program) {
+#ifdef _WIN32
+    const std::string found = find_on_path("cmd");
+    CHECK(found.size() > 8 && found.substr(found.size() - 8) == "/cmd.exe");
+#else
+    const std::string found = find_on_path("sh");
+    CHECK(found.size() > 3 && found.substr(found.size() - 3) == "/sh");
+#endif
+    CHECK(find_on_path("nnh-no-such-program-032").empty());
+}

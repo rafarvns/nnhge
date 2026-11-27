@@ -786,3 +786,18 @@ T9.2 on the Old 3DS XL (nobody touches it after Y):
   `scripts/vm_check.sh final` on VM 120: Linux `ctest` with `consumer` and `consumer-full`, the consumer's 3DS builds
   with `/opt/devkitpro`, GCC 14, 32-bit, ASan/UBSan), stage 9 (the console run above) and T10.3 (merge, then the
   post-merge checks). Not started by this implementation, as instructed.
+
+### Review round (2026-11-27): fixes
+
+Batch 1 (`nnh`), test first (red seen: 5 of 8 new cases failed against stubs, then green):
+- FR-13: `check_preset()` moved to the top of `configure_and_list()`, so `nnh serve`'s game list checks the preset too
+  (`configure_and_list_checks_the_preset_first`: false, the message, CMake not run, no `build/`).
+- AC-6 glue: the `NNHGE_ENGINE_DIR` / host-compiler decision is the pure `configure_extras(game, devkitpro_shell,
+  engine_env, host_env, find)` (host_compiler.cpp); tests for the devkitPro-only extras, the override only in a game
+  project, `check_preset()`'s message captured through an `OutputFn`, and `open_project_at()` stopping on a malformed
+  `nnh.toml` (and opening, with the warning shown, on an unknown key) — `tests/test_project_commands.cpp`.
+- `configure_command` refuses `$`, the backtick and `%` as well as quotes, in the root (every shell) and the extras.
+- One bounded reader `text_file.{hpp,cpp}` (`read_text_file`) for `nnh.toml`, presets and the manifest;
+  `preset_names.cpp` 174 → 164 lines.
+- `nnh serve` reads `nnh.toml` once (when it starts): its builds go through `build_target_in(root, ...)`.
+- A real `find_on_path()` lookup (`cmd`/`sh`, and a missing program). `nnh_tool_tests`: 279 cases, 0 failures.

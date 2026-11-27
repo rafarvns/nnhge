@@ -38,8 +38,13 @@ std::string find_on_path(const char* name) {
     return {};
 }
 
-std::string host_cxx() {
-    return find_host_cxx(std::getenv("NNH_HOST_CXX"), find_on_path);
+ConfigureExtras configure_extras(bool game, bool devkitpro_shell, const char* engine_env, const char* host_env,
+                                 const std::function<std::string(const char*)>& find_on_path) {
+    ConfigureExtras extras;
+    if (!devkitpro_shell) return extras; // PC presets map NNHGE_ENGINE_DIR themselves; Linux CMake finds a compiler
+    extras.host_cxx = find_host_cxx(host_env, find_on_path);
+    if (game && engine_env != nullptr) extras.engine_dir = engine_env;
+    return extras;
 }
 
 } // namespace nnh::tool

@@ -30,11 +30,16 @@ using OutputFn = std::function<bool(const std::string&)>;
 /// With `output`, every message and output line also goes there.
 bool build_target(const Options& options, const std::string& target_suffix, bool release, BuiltGame& out,
                   bool need_cia = false, const OutputFn* output = nullptr);
+/// build_target in a project already opened (nnh serve: nnh.toml read once, when it started).
+bool build_target_in(const std::string& root, const Options& options, const std::string& target_suffix, bool release,
+                     BuiltGame& out, bool need_cia = false, const OutputFn* output = nullptr);
 
 /// The project nnh works in (commands/project.cpp, spec 032 FR-11, FR-12): the nearest game project (nnh.toml) or
 /// engine repository at or above the current folder, its nnh.toml read (warnings printed). "" after printing why: no
 /// project, or a malformed nnh.toml.
 std::string open_project(const OutputFn* output = nullptr);
+/// open_project from the folder `start` instead of the current one.
+std::string open_project_at(const std::string& start, const OutputFn* output = nullptr);
 
 /// Whether `root`'s CMakePresets.json (or CMakeUserPresets.json) has a configure and a build preset `preset`; prints
 /// which one is missing otherwise (spec 032 FR-13), before CMake runs.
@@ -44,7 +49,7 @@ bool check_preset(const std::string& root, const std::string& preset, const Outp
 /// compiler and, in a game project, NNHGE_ENGINE_DIR (spec 032 FR-14, FR-15). "" when a path can't be passed.
 std::string project_configure_command(const std::string& root, const std::string& preset, const Shell& shell);
 
-/// Configures `preset` in `root` if it never was, then reads its games manifest.
+/// Checks the preset (check_preset), configures it in `root` if it never was, then reads its games manifest.
 bool configure_and_list(const std::string& root, const std::string& preset, bool for_3ds, std::vector<GameEntry>& games,
                         const OutputFn* output = nullptr);
 

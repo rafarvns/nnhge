@@ -8,21 +8,14 @@
 
 #include "commands.hpp"
 #include "repo.hpp"
+#include "text_file.hpp"
 
 namespace nnh::tool {
 
 namespace {
 
-std::string read_file(const std::string& path) {
-    std::string text;
-    std::FILE* f = std::fopen(path.c_str(), "rb");
-    if (f == nullptr) return text;
-    char buffer[4096];
-    std::size_t n = 0;
-    while ((n = std::fread(buffer, 1, sizeof buffer, f)) > 0) text.append(buffer, n);
-    std::fclose(f);
-    return text;
-}
+/// The games manifest: one short line per game.
+std::string read_file(const std::string& path) { return read_text_file(path, 16u << 20); }
 
 /// Where build_target's messages and command output go: the terminal, and `output` when given.
 struct Reporter {
@@ -48,6 +41,7 @@ struct Reporter {
 bool configure_and_list(const std::string& root, const std::string& preset, bool for_3ds, std::vector<GameEntry>& games,
                         const OutputFn* output) {
     Reporter report{output};
+    if (!check_preset(root, preset, output)) return false; // before CMake runs (nnh serve's game list too)
     const Shell shell = host_shell(for_3ds);
     const std::string build_dir = root + "/build/" + preset;
     std::error_code ec;
@@ -55,7 +49,7 @@ bool configure_and_list(const std::string& root, const std::string& preset, bool
         report.say("nnh: configuring " + preset, false);
         const std::string command = project_configure_command(root, preset, shell);
         if (command.empty()) {
-            report.say("nnh: a path holds a quote (' or \"): devkitPro's shell can't be given it", true);
+            report.say("nnh: a path holds ' \" $ ` or %, which the shell would read: move the project", true);
             return false;
         }
         if (report.run(command, shell) != 0) {
@@ -69,11 +63,16 @@ bool configure_and_list(const std::string& root, const std::string& preset, bool
 
 bool build_target(const Options& options, const std::string& target_suffix, bool release, BuiltGame& out,
                   bool need_cia, const OutputFn* output) {
+    const std::string root = open_project(output); // a game project (nnh.toml) or the engine repository (spec 032)
+    if (root.empty()) return false;
+    return build_target_in(root, options, target_suffix, release, out, need_cia, output);
+}
+
+bool build_target_in(const std::string& root, const Options& options, const std::string& target_suffix, bool release,
+                     BuiltGame& out, bool need_cia, const OutputFn* output) {
     Reporter report{output};
-    out.root = open_project(output); // a game project (nnh.toml) or the engine repository (spec 032)
-    if (out.root.empty()) return false;
+    out.root = root;
     out.preset = preset_for(options.pc, release, std::getenv("NNH_PRESET"));
-    if (!check_preset(out.root, out.preset, output)) return false;
     const Shell shell = host_shell(!options.pc);
     std::vector<GameEntry> games;
     if (!configure_and_list(out.root, out.preset, !options.pc, games, output)) return false;

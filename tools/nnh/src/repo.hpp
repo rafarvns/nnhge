@@ -41,7 +41,7 @@ struct ConfigureExtras {
 /// `-DNNH_HOST_CXX=<msys path>` and `-DFETCHCONTENT_SOURCE_DIR_NNHGE=<msys path>` for the extras given, each
 /// single-quoted (spaces allowed), because that CMake reads "E:/..." as a relative path and the shell has no host
 /// compiler. Elsewhere `cmake --preset <preset>` unchanged (PC presets map NNHGE_ENGINE_DIR themselves; Linux CMake
-/// finds the host compiler). "" when a path holds a quote (' or "), which can't be passed through that shell.
+/// finds the host compiler). "" when a path holds ' " $ ` or %, which the shell (bash -lc "...", cmd.exe) would read itself.
 std::string configure_command(const std::string& root, const std::string& preset, const Shell& shell,
                               const ConfigureExtras& extras);
 

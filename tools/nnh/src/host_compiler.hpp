@@ -7,6 +7,8 @@
 #include <functional>
 #include <string>
 
+#include "repo.hpp"
+
 namespace nnh::tool {
 
 /// `env_value` (the NNH_HOST_CXX environment variable, may be null) when non-empty, else the first of g++, c++,
@@ -16,7 +18,10 @@ std::string find_host_cxx(const char* env_value, const std::function<std::string
 /// The program `name` on this process's PATH (with ".exe" on Windows), as a full path; "" when absent.
 std::string find_on_path(const char* name);
 
-/// find_host_cxx with the real environment and PATH.
-std::string host_cxx();
+/// What a configure hands to devkitPro's MSYS2 CMake (repo.hpp ConfigureExtras): nothing unless `devkitpro_shell` (a 3DS
+/// preset on Windows); then the host compiler (find_host_cxx over `host_env` and `find_on_path`) and, only in a game
+/// project (`game`: an nnh.toml at the root), a non-empty `engine_env` (NNHGE_ENGINE_DIR). Pure.
+ConfigureExtras configure_extras(bool game, bool devkitpro_shell, const char* engine_env, const char* host_env,
+                                 const std::function<std::string(const char*)>& find_on_path);
 
 } // namespace nnh::tool

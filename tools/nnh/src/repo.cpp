@@ -44,10 +44,11 @@ std::string cmake_command(const std::string& root, const std::string& args, cons
 std::string configure_command(const std::string& root, const std::string& preset, const Shell& shell,
                               const ConfigureExtras& extras) {
     std::string args = "--preset " + preset;
+    // Characters a shell would read inside the command (bash -lc "...": quotes, $, `; cmd.exe: %...%): refused.
+    for (const std::string* path : {&root, &extras.host_cxx, &extras.engine_dir}) {
+        if (path->find_first_of("'\"$`%") != std::string::npos) return {};
+    }
     if (!shell.devkitpro_bash.empty()) {
-        for (const std::string* path : {&root, &extras.host_cxx, &extras.engine_dir}) {
-            if (path->find_first_of("'\"") != std::string::npos) return {};
-        }
         if (!extras.host_cxx.empty()) args += " '-DNNH_HOST_CXX=" + msys_path(extras.host_cxx) + "'";
         if (!extras.engine_dir.empty()) args += " '-DFETCHCONTENT_SOURCE_DIR_NNHGE=" + msys_path(extras.engine_dir) + "'";
     }

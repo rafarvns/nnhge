@@ -1,6 +1,6 @@
 #include "preset_names.hpp"
 
-#include <cstdio>
+#include "text_file.hpp"
 
 namespace nnh::tool {
 
@@ -144,17 +144,6 @@ void scan(std::string_view text, const std::string& preset, bool& configure, boo
     build = build || p.build;
 }
 
-std::string read_small_file(const std::string& path) {
-    std::string text;
-    std::FILE* f = std::fopen(path.c_str(), "rb");
-    if (f == nullptr) return text;
-    char buffer[4096];
-    std::size_t n = 0;
-    while ((n = std::fread(buffer, 1, sizeof buffer, f)) > 0 && text.size() <= kMaxPresetsBytes) text.append(buffer, n);
-    std::fclose(f);
-    return text;
-}
-
 } // namespace
 
 bool presets_define(std::string_view presets_json, std::string_view user_presets_json, const std::string& preset) {
@@ -167,8 +156,9 @@ bool presets_define(std::string_view presets_json, std::string_view user_presets
 
 bool presets_file_defines(const std::string& presets_path, const std::string& user_presets_path,
                           const std::string& preset) {
-    const std::string user = user_presets_path.empty() ? std::string() : read_small_file(user_presets_path);
-    return presets_define(read_small_file(presets_path), user, preset);
+    const std::string user =
+        user_presets_path.empty() ? std::string() : read_text_file(user_presets_path, kMaxPresetsBytes);
+    return presets_define(read_text_file(presets_path, kMaxPresetsBytes), user, preset);
 }
 
 } // namespace nnh::tool

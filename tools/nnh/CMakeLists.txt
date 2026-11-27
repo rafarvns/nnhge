@@ -58,6 +58,7 @@ add_library(nnh_tool_lib STATIC
     src/serve/pairs_file.cpp
     src/serve/serve_hooks.cpp
     src/terminal.cpp
+    src/text_file.cpp
     src/user_config.cpp
     src/zlib_stored.cpp
     # pure core files (no engine includes), shared with the console (spec 013, D28)
@@ -114,6 +115,7 @@ if(NNH_BUILD_TESTS)
         tests/test_png_writer.cpp
         tests/test_preset_names.cpp
         tests/test_project_file.cpp
+        tests/test_project_commands.cpp
         tests/test_project_root.cpp
         tests/test_reload_controller.cpp
         tests/test_reload_tool.cpp

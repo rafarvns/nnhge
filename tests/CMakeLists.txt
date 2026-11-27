@@ -882,8 +882,8 @@ if(TARGET localization AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE S
     # the script starts from "follow the system language": a saved choice left by an earlier, failed run is removed
     add_test(NAME loc_reset_saved_language
              COMMAND ${CMAKE_COMMAND} -E rm -f
-                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav
-                     ${CMAKE_BINARY_DIR}/examples/localization/data/nnhge-localization/localization.sav.bak)
+                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_data/nnhge-localization/localization.sav
+                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_data/nnhge-localization/localization.sav.bak)
     set_tests_properties(loc_reset_saved_language PROPERTIES FIXTURES_SETUP loc_saved_language)
     add_test(NAME loc_check_script_pc
              COMMAND $<TARGET_FILE:nnh> run localization --pc --no-build --script examples/localization/tests/check.nnhs
@@ -1068,6 +1068,7 @@ nnh_add_conformance(pc)
 include(nnh_sdl3)
 target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_draw_tiles_pc.cpp)
 target_include_directories(nnh_conformance_pc PRIVATE ${PROJECT_SOURCE_DIR}/engine/platforms/pc/src)
+target_include_directories(nnh_conformance_pc PRIVATE ${PROJECT_SOURCE_DIR}/engine/platforms/shared)
 target_link_libraries(nnh_conformance_pc PRIVATE SDL3::SDL3)
 # PC only: the console remote's loopback transport and screen read-back (spec 013); the test plays nnh with
 # nnh_link's sockets.
@@ -1076,7 +1077,8 @@ target_link_libraries(nnh_conformance_pc PRIVATE nnh_link)
 # PC only (spec 029): coverage textures draw like white RGBA texels of that alpha, read back.
 target_sources(nnh_conformance_pc PRIVATE platform_conformance/test_texture_alpha_pc.cpp
                                           platform_conformance/test_language_pc.cpp
-                                          platform_conformance/test_reload_shared_open_pc.cpp)
+                                          platform_conformance/test_reload_shared_open_pc.cpp
+                                          platform_conformance/test_data_root_pc.cpp)
 # The PC platform runs headless in tests (no window on screen, works in CI).
 # Headless and quiet: no display, no sound card needed (the dummy audio driver still runs the backend).
 set_tests_properties(conformance_pc PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=offscreen;SDL_RENDER_DRIVER=software;SDL_AUDIO_DRIVER=dummy")

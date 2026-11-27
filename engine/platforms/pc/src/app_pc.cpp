@@ -18,6 +18,7 @@
 #include <cstring>
 
 #include "context_pc.hpp"
+#include "data_root_pc.hpp"
 #include "nnh/build.hpp"
 #include "nnh/platform/app.hpp"
 #include "nnh/platform/system.hpp"
@@ -76,13 +77,15 @@ void destroy_window() {
     g_context = {};
 }
 
-/// Debug/Development: <exe dir>/data/<folder>/ (easy to inspect next to the build);
+/// Debug/Development: <exe dir>/nnh_data/<folder>/ (easy to inspect next to the build; data_root_pc.hpp);
 /// Release: the user's app-data folder (SDL_GetPrefPath).
 void set_data_root(const AppConfig& config) {
     char root[256];
     if constexpr (build::kDevToolsEnabled) {
         const char* base = SDL_GetBasePath();
-        std::snprintf(root, sizeof root, "%sdata/%s/", base != nullptr ? base : "./", config.data_folder);
+        if (!pc::dev_data_root(base != nullptr ? base : "./", config.data_folder, root, sizeof root)) {
+            std::snprintf(root, sizeof root, "./nnh_data/");
+        }
     } else {
         char* pref = SDL_GetPrefPath("NNHGE", config.data_folder);
         std::snprintf(root, sizeof root, "%s", pref != nullptr ? pref : "./");

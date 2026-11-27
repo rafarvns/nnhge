@@ -27,7 +27,7 @@ Out of scope: protecting a game against cheating or piracy, and protecting the c
 ## Confined file access (spec 002)
 
 - All engine file I/O goes through `nnh::fs`. Games use it too; the engine never calls `fopen` elsewhere.
-- Writable root: `sdmc:/3ds/<data_folder>/` on 3DS; on PC `<exe dir>/data/<data_folder>/` (Debug/Development)
+- Writable root: `sdmc:/3ds/<data_folder>/` on 3DS; on PC `<exe dir>/nnh_data/<data_folder>/` (Debug/Development)
   or the user's app-data folder (Release). Read-only assets (`romfs:/`) arrive with the asset pipeline.
 - Paths are **relative** to those roots. Rejected with an error: absolute paths, `..` segments, drive or
   device prefixes (`sdmc:`, `C:`), empty segments, backslashes, characters outside `[A-Za-z0-9._-]`,

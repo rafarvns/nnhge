@@ -250,9 +250,11 @@ watches the assets folder, builds `<game>_assets`, dry-runs `<game>` (a needed r
 outputs as one batch over the remote connection (payload messages 12–17, records 13–15); the game keeps them in
 `.nnh_reload/` of its data folder and applies the batch whole at one point of a frame (`engine/core/src/reload/`,
 `tools/nnh/src/reload/`); `<nnh/assets.hpp>` gains `reload_count()`, `reloaded()`, `reloaded_paths()`,
-`AssetsReloaded`; textures, fonts, sounds and string tables swap behind their handles, data assets and maps are
-announced; `--no-reload`, typed `reload [PATH]`, script lines `swap-asset`/`restore-asset`/`expect-reload`,
-`nnh restore-assets <game>` ([api/assets.md](docs/api/assets.md#hot-reload)).
+`AssetsReloaded`; textures, fonts, sounds, meshes and string tables swap behind their handles, data assets and maps
+are announced; `--no-reload`, typed `reload [PATH]`, script lines `swap-asset`/`restore-asset`/`expect-reload`,
+`nnh restore-assets <game>` ([api/assets.md](docs/api/assets.md#hot-reload), guide
+[editing assets live](docs/guides/editing-assets-live.md); demo `examples/reload`, scripts `tests/check.nnhs` (sums)
+and `tests/errors.nnhs` (refusals)). Sprite libraries, music and live values don't reload yet.
 
 ```
 engine/core/include/nnh/<module>.hpp             public API for games (app, gfx, input, debug, ...)
@@ -328,6 +330,8 @@ NNH_SIM_SLIDER=1 NNH_SIM_EYE=right NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build
 build/pc-debug/tools/nnh/nnh run live [--pc] --script examples/live/tests/check.nnhs   # live values: sets, expect-value, pause/step, self-check 7A849F13, bench
 LIVE_SHOT=tunables NNH_EXIT_AFTER_FRAMES=30 NNH_SCREENSHOT=build/live.png build/pc-debug/examples/live/live.exe   # stats|tunables|watches|colour|paused; LIVE_DEMO=check|bench
 build/pc-debug/tools/nnh/nnh run live [--pc] --tunes build/logs/<game>-<date>-<time>-tunes.toml   # start held with a dump's values
+build/pc-debug/tools/nnh/nnh run reload [--pc] --script examples/reload/tests/check.nnhs   # hot reload: every kind swapped, sums = PC's
+build/pc-debug/tools/nnh/nnh run reload [--pc]                 # then save a file in examples/reload/assets/: it reloads (RELOAD_DEMO=bench)
 python -I scripts/docs_tool.py check                           # docs: broken links (python3 on Linux)
 scripts/check_release_strings.sh build/3ds-release/examples/hello/hello.elf   # Release has no debug strings
 ```

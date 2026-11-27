@@ -21,7 +21,9 @@ void ScriptRunner::poll_reload() {
 
 std::vector<std::uint8_t> ScriptRunner::take_bytes() {
     if (reload_ == nullptr || !attached_ || closed_) return {};
-    return reload_->take_bytes();
+    std::vector<std::uint8_t> bytes = reload_->take_bytes();
+    reload_flushed();
+    return bytes;
 }
 
 bool ScriptRunner::typed_reload(const std::string& text) {

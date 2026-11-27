@@ -91,7 +91,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   first batch (counter files until 16 missing) and the Dev shutdown hook). Test: `tests/reload/test_reload_files.cpp`
   (names pass `fs::validate_path`; an SD write failure (the fake's failure injection) refuses the batch and removes its
   files; the wipe; nothing outside `.nnh_reload/`; the buffer allocated once). Covers FR-18, X, II.
-- [ ] **T2.2** The contract: `engine/core/contract/nnh/platform/reload.hpp` (`reload_stream_open`, `asset_open_shared`),
+- [x] **T2.2** The contract: `engine/core/contract/nnh/platform/reload.hpp` (`reload_stream_open`, `asset_open_shared`),
   `engine/platforms/{pc,3ds,fake}/src/reload_<system>.cpp`, `platform_fake.hpp` (`fake::replace_asset`, counters), the
   platforms' CMake lists. Test: `tests/platform_conformance/test_reload_streams.cpp` (a data-folder file read through
   `asset_read_at`/`asset_close`; on the PC platform a shared stream survives a rewrite of its file by another handle —
@@ -237,7 +237,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   `tests/reload_example/test_self_check.cpp` (the start golden; the sum changes when one value changes — once by hand).
   Covers AC-1, FR-21.
 - [ ] **T7.3** Screenshots: `RELOAD_SHOT=start|hero_big|room_moved|strings|font|gem`, read back. Covers AC-1, FR-7.
-- [ ] **T7.4** [P] The bench: `idle` and `reads` phases with their lines. Test: a pc-dev run logs every line. Covers
+- [x] **T7.4** [P] The bench: `idle` and `reads` phases with their lines. Test: a pc-dev run logs every line. Covers
   AC-8, FR-17.
 - [ ] **T7.5** The scripts: `examples/reload/tests/check.nnhs`, `errors.nnhs`, `timing.nnhs`,
   `examples/sprites/tests/reload.nnhs` + fixture; ctests `reload_check_script_pc`, `reload_errors_script_pc`,
@@ -246,7 +246,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
   while their files are swapped). Test: each passes with `--pc --no-build` twice in a row; save → frame times recorded.
   Files: plan.md ("Stage 10: console run (prepared)" with every expected line and sum). Covers AC-2, AC-3, AC-4b, AC-8,
   AC-9.
-- [ ] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of
+- [x] **T7.6** ARM11 pre-check (before any console run): `arm-none-eabi-objdump -drC` of the 3ds-dev objects of
   `src/reload/*`, `remote_reload.o`, the kind objects and the reader; per plan.md's cost table record instructions and
   calls on the idle path, the CRC loop (no `__aeabi_*`), `-fstack-usage` (< 1 KiB in the receiver and the batch engine);
   fix what differs without changing a byte on the wire or a golden. Files: plan.md ("Stage 7 ARM pre-check"). Covers
@@ -254,7 +254,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 
 ## Stage 8: mutation testing, release hygiene, opt-in checks, build times
 
-- [ ] **T8.1** Mutation pass as in plans 019–030: plan.md's planned hand mutants (`build/ref-031/mutants.py`, one at a time
+- [x] **T8.1** Mutation pass as in plans 019–030: plan.md's planned hand mutants (`build/ref-031/mutants.py`, one at a time
   with the module filters) and Release-path mutants in pc-release; survivors become tests or are argued equivalent.
   Files: plan.md ("Mutation testing"). Covers VI.
 - [ ] **T8.2** [P] Release hygiene: `scripts/check_release_strings.sh` gains the reload texts (`assets reloaded`,

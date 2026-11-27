@@ -342,6 +342,6 @@ an editor's save through a temporary file, or Tiled saving a map and its tileset
 
 Typed commands: `reload` (build and send now, without waiting for a save), `reload <output path>` (send that converted
 file again, e.g. `reload art/hero.png`). `nnh run --no-reload` turns watching off; scripts (`--script`) never watch.
-A game that loads nothing reloadable (no texture, sound, font, map, data asset or string table) links no reload code and
-answers like an older game. Release builds and games built before spec 031 don't reload (`the game has no hot reload (built before spec 031):
+A game that loads nothing reloadable (no texture, sound, font, mesh, map, data asset or string table) links no reload
+code and answers like an older game. Walk-through: [editing-assets-live.md](editing-assets-live.md). Release builds and games built before spec 031 don't reload (`the game has no hot reload (built before spec 031):
 watching off`). What reloads by itself and what a game reloads on its own: [assets.md](../api/assets.md#hot-reload).

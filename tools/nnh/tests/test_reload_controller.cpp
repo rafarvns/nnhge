@@ -183,6 +183,21 @@ NNH_TEST(reload_controller_an_applied_batch_moves_the_mirror) {
     CHECK(has(c.take_notes(), "nothing changed"));
 }
 
+NNH_TEST(reload_controller_a_batch_refused_for_a_restart_ends_the_cycle) {
+    Fake f = make("restartrefused");
+    ReloadController c(setup(f));
+    c.start();
+    CHECK(c.run_cycle(0));
+    c.take_bytes();
+    std::uint8_t out[wire::kMaxReloadRecord];
+    wire::encode_reload_refused({1, wire::ReloadStage::Restart, wire::ReloadReason::Schema, 0, 9, 0}, out);
+    Record r;
+    r.type = wire::RecordType::ReloadRefused;
+    r.payload.assign(out + wire::kRecordHeaderSize, out + wire::kRecordHeaderSize + wire::kReloadRefusedPayload);
+    c.on_record(r); // the game's verdict on batch 1, not the echo of a notice (batch 0)
+    CHECK(c.state() == ReloadController::State::Idle && c.outcome().done && !c.outcome().applied);
+}
+
 NNH_TEST(reload_controller_nothing_changed_sends_nothing) {
     Fake f = make("nothing");
     f.next_out_text = "v1";

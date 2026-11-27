@@ -128,8 +128,10 @@ remote side), Development-only core files `app/dev_pause.*`, `debug/dev_controls
 
 Hot reload (spec 031, Debug/Development only): `engine/core/src/reload/` (the wire, the receiver, names and the overlay —
 pure, the wire and names also in `nnh` —, received files, reads through the overlay, the batch engine, the asset-index
-kind, the apply point), `remote/remote_reload.*` (the session's glue), one `<kind>_reload.cpp` per reloaded kind in its
-own module (`gfx/texture_reload.*`, `data/data_reload.cpp`, `tilemap/map_reload.cpp`), the contract
-`nnh/platform/reload.hpp` with `reload_<system>.cpp` per platform; `tools/nnh/src/reload/` (the output mirror, the
-source watcher, the asset build, the batch encoder, the controller, the paths file) and
-`tools/nnh/src/remote/script_runner_reload.cpp`, `commands/run_reload.cpp`.
+kind, the apply point, `reload_hooks.*`: the opt-in hooks set when a kind registers), `remote/remote_reload.*` (the
+session's glue), one `<kind>_reload.cpp` per reloaded kind in its own module (`gfx/texture_reload.*`,
+`data/data_reload.cpp`, `tilemap/map_reload.cpp`, `loc/loc_reload.cpp`, `audio/sound_reload.cpp`,
+`font/font_reload.cpp`, `mesh/mesh_reload.cpp`), the contract `nnh/platform/reload.hpp` with `reload_<system>.cpp` per
+platform; `tools/nnh/src/reload/` (the output mirror, the source watcher, the asset build, the batch encoder, the
+controller, the paths file, `asset_swap.*`: a script's swaps with their journal) and `tools/nnh/src/remote/script_reload.*`,
+`script_runner_reload.cpp`, `script_runner_swap.cpp`, `commands/run_reload.cpp`.

@@ -110,16 +110,16 @@ struct Game {
         write(out + "/a.txt", "original");
         write(script + "/fixtures/a_new.txt", "fixture bytes");
     }
-    ControllerSetup setup() {
+    ControllerSetup setup(bool fails = false) {
         const std::string g = game, o = out;
         return ControllerSetup{o, g + "/assets",
-                               [g, o](bool) {
-                                   write(o + "/a.txt", read(g + "/assets/a.txt"));
+                               [g, o, fails](bool) {
                                    BuildOutcome b;
-                                   b.ok = true;
+                                   b.ok = !fails;
+                                   if (!fails) write(o + "/a.txt", read(g + "/assets/a.txt"));
                                    return b;
                                },
-                               [] { return 0LL; }};
+                               [] { return 0LL; }, std::string()};
     }
 };
 
@@ -246,6 +246,33 @@ NNH_TEST(script_reload_expect_reload_fails_on_a_refusal) {
     bool said = false;
     for (const std::string& n : r.take_notes()) said = said || n.find("t.nnhs:2: expect-reload: refused") != std::string::npos;
     CHECK(said);
+    swaps.restore_all();
+}
+
+NNH_TEST(script_reload_a_held_swap_refused_by_the_build_resumes_before_the_next_step) {
+    Game g("buildfail");
+    ReloadController controller(g.setup(true));
+    controller.start();
+    AssetSwaps swaps(g.game, g.root + "/backup");
+    ParsedScript p = parse("swap-asset assets/a.txt fixtures/a_new.txt\nexpect-reload refused\nwait 10\nscreenshot x\nend\n");
+    CHECK(p.errors.empty());
+    ScriptRunner r(std::move(p.script), RunnerOptions{});
+    r.set_reload(&controller);
+    r.set_reload_script(&swaps, g.script);
+    r.start();
+    r.on_record(hello_record());
+    r.take_messages(); // the pause for frame 1
+    r.on_record(state_record(1, true)); // paused: the build fails, a notice and the resume are queued
+    CHECK(r.take_messages().empty()); // nothing of the next steps may overtake the resume (frame order)
+    const std::vector<wire::Message> sent = messages_in(r.take_bytes());
+    CHECK(sent.size() == 2 && sent[0].type == wire::MessageType::ReloadNotice && sent[1].type == wire::MessageType::Pause);
+    bool screenshot = false;
+    for (const MessageBytes& b : r.take_messages()) {
+        wire::Message m;
+        CHECK(wire::decode_message(b.data(), m) == wire::Reject::None);
+        screenshot = screenshot || m.type == wire::MessageType::Screenshot;
+    }
+    CHECK(screenshot);
     swaps.restore_all();
 }
 

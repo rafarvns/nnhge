@@ -23,3 +23,4 @@ add_subdirectory(ui)
 add_subdirectory(localization)
 add_subdirectory(tweens)
 add_subdirectory(live) # spec 030
+add_subdirectory(reload) # spec 031

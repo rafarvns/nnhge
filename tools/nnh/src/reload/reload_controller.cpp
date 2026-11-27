@@ -205,7 +205,7 @@ void ReloadController::on_record(const remote::Record& r) {
     case wire::RecordType::ReloadRefused: {
         wire::ReloadRefusedRecord f;
         if (!wire::decode_reload_refused(r.payload.data(), static_cast<std::uint32_t>(r.payload.size()), f)) return;
-        if (f.stage == wire::ReloadStage::Notice || f.stage == wire::ReloadStage::Restart) return; // our own notices
+        if (f.batch == 0) return; // the echo of our own notice (a batch's own refusal, Restart included, has its number)
         if (f.batch != batch_ || state_ == State::Idle) return;
         std::string what = f.file < changes_.size() ? changes_[f.file].path + ": " : std::string();
         outcome_.why = what + wire::reload_reason_text(f.reason);

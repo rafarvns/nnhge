@@ -68,6 +68,8 @@ public:
     /// What may go to the game now (paced). Messages of other kinds may be sent around it: a batch is never split
     /// inside a message.
     std::vector<std::uint8_t> take_bytes();
+    /// Bytes are still waiting for take_bytes().
+    bool sending() const { return !pending_.empty(); }
     std::vector<std::string> take_notes();
 
     enum class State : std::uint8_t { Idle, Sending, Waiting };

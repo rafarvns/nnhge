@@ -1,0 +1,5 @@
+# The bat of the hot reload example (spec 031).
+name = "Bat"
+hp = 12
+speed = 2.5
+tint = "#B48CE6"

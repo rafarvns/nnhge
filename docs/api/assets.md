@@ -137,19 +137,19 @@ with `load_mesh("models/ship")` ([mesh.md](mesh.md), export guide [models.md](..
 > Status: in progress (spec 031). Implemented: the edit loop (`nnh run <game> [--pc]` watches the assets folder, builds
 > the asset target and sends the changed outputs; checked in the simulator, the console run is pending), batches applied
 > whole at one point of a frame, the queries and the event below, plain files, data assets, Tiled maps, textures, string
-> tables, fonts and sounds, the UI's relayout, and the script commands (`swap-asset`, `expect-reload`). Not yet: sprite
-> libraries, music, meshes, live values (FR-23). See [plan 031](../../specs/031-hot-reload-assets/plan.md)
+> tables, fonts, sounds and meshes, the UI's relayout, and the script commands (`swap-asset`, `expect-reload`). Not yet:
+> sprite libraries, music, live values (FR-23). See [plan 031](../../specs/031-hot-reload-assets/plan.md)
 > ("Implementation notes").
 
 In a Debug or Development game run with `nnh run <game> [--pc]`, saving a file in the game's assets folder reconverts it
 with the build's own steps and reloads it in the running game at the start of a frame — no restart, relink or resend
-(guide: [nnh-tool.md](../guides/nnh-tool.md#hot-reload-of-assets)). Release builds have none of it.
+(guides: [editing-assets-live.md](../guides/editing-assets-live.md), [nnh-tool.md](../guides/nnh-tool.md#hot-reload-of-assets)). Release builds have none of it.
 
 - **Behind your handles** (no code needed): a `Texture` loaded from an asset shows the new pixels, and `width()`/`height()`
   the new size (Debug/Development read the texture's slot; Release returns the size cached at load). A tilemap's tileset
   and UI images keep using the same texture slot, so they follow. A `Font` (and every `FontRef`) shows the new glyphs and
   metrics; a `Sound` plays its new samples (voices playing it stop, each with its `SoundFinished`, in the batch's frame);
-  the current language's string chain is read again (`loc::serial()` bumped; `tr` pointers from before are invalid, as
+  a `Mesh` from `load_mesh` shows the new model; the current language's string chain is read again (`loc::serial()` bumped; `tr` pointers from before are invalid, as
   after a language switch; a manifest with another language list is refused: rebuild and restart). A UI updated in the
   batch's frame resolves and measures its texts again.
 - **Announced** (your copies are yours): structs filled by `data::load`, a `Tilemap`, bytes from `assets::load`/`read`.
@@ -176,7 +176,7 @@ struct: rebuild and restart". An applied batch logs `I assets reloaded 2 (frame 
 asset can no longer be loaded (`NotFound`) but what was loaded from it keeps its content (one warning).
 
 Reloading is opt-in by linking: a Debug/Development game links the reload core only when it loads something reloadable
-(a texture, sound, font, map, data asset or string table); one that only reads plain files answers `nnh` like a game
+(a texture, sound, font, mesh, map, data asset or string table); one that only reads plain files answers `nnh` like a game
 built before spec 031 (`watching off`).
 
 Received files are kept in `.nnh_reload/` of the game's data folder (wiped at the session's first batch and at

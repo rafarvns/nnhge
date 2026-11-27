@@ -366,3 +366,9 @@ never through `#ifdef` in game code.
   writes instead of a non-blocking sender; the dry run ignores CMake's glob re-check and re-run lines; D47 also retires
   raw platform textures a reload replaced (a Development-only list freed at the next GPU idle). Refinements R1–R13 in
   [plan 031](../../specs/031-hot-reload-assets/plan.md#implementation-refinements).
+- 2026-11-26: D53 implementation continued (spec 031 stages 3–6, partial): the script commands with held swaps and a
+  restore journal; string tables (D50's chain reloaded at the apply point, a new block, `loc::serial()` bumped), the UI's
+  relayout, sounds, fonts and meshes (a replaced mesh record freed at the apply point itself: R29). Reloading became
+  opt-in by linking (R23: the reload core is reached through hooks a kind installs when it registers, so a game that
+  loads nothing reloadable answers `Rejected{Type}` like an older game). Not yet: sprite libraries (D31's current
+  blocks), music and FR-23.

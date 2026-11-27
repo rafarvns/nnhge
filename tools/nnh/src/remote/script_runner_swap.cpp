@@ -2,7 +2,8 @@
 // (the default): the source is swapped, Pause goes out for the clock's frame F, and once the game says it is paused the
 // controller builds and sends the batch, its Apply for F and a Resume for F, so the batch lands exactly on F on every
 // system; the script goes on at F + 1. `unheld`: the swap and the cycle only (the batch lands when it arrives);
-// `expect-reload ... within N` waits for it. `expect-reload` checks the last swap's outcome.
+// `expect-reload ... within N` waits for it. `expect-reload` checks the last swap's outcome. A held swap refused by the
+// build (no batch) goes on once its notice and Resume have been taken (reload_flushed()).
 
 #include "reload/asset_swap.hpp"
 #include "reload/reload_controller.hpp"
@@ -76,7 +77,13 @@ void ScriptRunner::reload_paused(std::uint32_t frame, bool paused) {
     reload_step_.phase = 2;
     reload_->run_cycle(reload_step_.frame, tail, reload_dry_run_);
     take_reload_notes();
-    if (reload_->outcome().done) finish_held_reload();
+    // Refused before a batch (the build): the notice and the Resume are queued; the next steps wait until they're out,
+    // or a later-stamped message would overtake the Resume and the game would reject it (frame order).
+    if (reload_->outcome().done) reload_step_.phase = 4;
+}
+
+void ScriptRunner::reload_flushed() {
+    if (reload_step_.phase == 4 && !reload_->sending()) finish_held_reload();
 }
 
 void ScriptRunner::finish_held_reload() {

@@ -1,0 +1,9 @@
+# Brazilian Portuguese for the hot reload example (spec 031).
+
+[language]
+name = "Português (Brasil)"
+
+[demo]
+hello = "Olá, mundo recarregado"
+hint = "Salve um arquivo em assets/ para recarregá-lo"
+count = "Recargas"

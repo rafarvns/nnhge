@@ -144,6 +144,7 @@ private:
     void start_reload_step(const Step& step, std::uint32_t frame);
     void reload_paused(std::uint32_t frame, bool paused);
     void finish_held_reload();
+    void reload_flushed(); ///< a held swap refused by the build goes on once its notice and Resume are out
     void record_outcome();
     void reload_outcome();
     void expect_reload_now();
@@ -222,7 +223,9 @@ private:
     reload::AssetSwaps* swaps_ = nullptr;
     std::string script_dir_;
     struct ReloadStepState {
-        int phase = 0; ///< 0 none, 1 waiting for the pause, 2 waiting for the batch's answer, 3 expect-reload within
+        /// 0 none, 1 waiting for the pause, 2 waiting for the batch's answer, 3 expect-reload within N, 4 a build
+        /// refusal's notice and Resume being flushed
+        int phase = 0;
         Step step;
         std::uint32_t frame = 0; ///< the clock's frame F at the step
         std::uint32_t wait_to = 0;

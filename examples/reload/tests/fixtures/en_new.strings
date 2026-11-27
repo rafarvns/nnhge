@@ -1,0 +1,9 @@
+# English with a new greeting: tests/check.nnhs swaps it over assets/strings/en.strings (spec 031).
+
+[language]
+name = "English"
+
+[demo]
+hello = "Hello again, new words"
+hint = "Save a file in assets/ to reload it"
+count = "Reloads"

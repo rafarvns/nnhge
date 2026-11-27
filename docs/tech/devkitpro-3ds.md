@@ -295,3 +295,12 @@ What our backend (`input_3ds.cpp`) does:
 `nnh run --tunes/--hold` adds `--nnh-hold` to the netloader's argv; `poll_dev_requests()` returns it once
 (Development only) and core holds the game before frame 1. While paused, voices and streams are held with
 `ndspChnSetPaused` (through `voice_pause`/`stream_pause`) and released for a stepped frame.
+
+## Hot reload on the 3DS (spec 031)
+
+Debug/Development only. Received files are written to the game's data folder on the SD card,
+`sdmc:/3ds/<data folder>/.nnh_reload/<n>.bin` (through `nnh::fs`, wiped at the session's first batch and at shutdown),
+and read before the romfs, which never changes. `reload_3ds.cpp` opens a received file with `fopen` under `fs_root()`;
+its "shared" open of a packed asset is the plain romfs open (the romfs is read-only, so nothing can replace it under a
+stream). Batches arrive over the same 3dslink log socket as spec 013's messages, paced by the game's ticks (64 KB, then
+48 KB per tick); the transfer rate over Wi-Fi is measured in the console run (plan 031, stage 10).

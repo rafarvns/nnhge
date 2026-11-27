@@ -19,6 +19,7 @@ NNH_TEST(pc_data_root_never_is_the_programs_own_name) {
     CHECK(nnh::platform::pc::dev_data_root("/games/build/", "data", root, sizeof root));
     CHECK(std::strncmp(root, "/games/build/data/", 18) != 0); // `/games/build/data` is the program on Linux
     CHECK(std::strstr(root, "/data/") != nullptr);           // the folder is still named after the game
+    CHECK(std::strstr(root, "/nnh_data/") == nullptr); // the build's own folder (data assets' refs, schema programs)
     CHECK(!nnh::platform::pc::dev_data_root("/games/build/", "data", root, 8)); // too long: refused, not cut
 }
 

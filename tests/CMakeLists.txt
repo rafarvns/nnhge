@@ -882,8 +882,8 @@ if(TARGET localization AND NNH_PLATFORM STREQUAL "pc" AND NOT CMAKE_BUILD_TYPE S
     # the script starts from "follow the system language": a saved choice left by an earlier, failed run is removed
     add_test(NAME loc_reset_saved_language
              COMMAND ${CMAKE_COMMAND} -E rm -f
-                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_data/nnhge-localization/localization.sav
-                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_data/nnhge-localization/localization.sav.bak)
+                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_user/nnhge-localization/localization.sav
+                     ${CMAKE_BINARY_DIR}/examples/localization/nnh_user/nnhge-localization/localization.sav.bak)
     set_tests_properties(loc_reset_saved_language PROPERTIES FIXTURES_SETUP loc_saved_language)
     add_test(NAME loc_check_script_pc
              COMMAND $<TARGET_FILE:nnh> run localization --pc --no-build --script examples/localization/tests/check.nnhs

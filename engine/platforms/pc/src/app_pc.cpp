@@ -77,14 +77,14 @@ void destroy_window() {
     g_context = {};
 }
 
-/// Debug/Development: <exe dir>/nnh_data/<folder>/ (easy to inspect next to the build; data_root_pc.hpp);
+/// Debug/Development: <exe dir>/nnh_user/<folder>/ (easy to inspect next to the build; data_root_pc.hpp);
 /// Release: the user's app-data folder (SDL_GetPrefPath).
 void set_data_root(const AppConfig& config) {
     char root[256];
     if constexpr (build::kDevToolsEnabled) {
         const char* base = SDL_GetBasePath();
         if (!pc::dev_data_root(base != nullptr ? base : "./", config.data_folder, root, sizeof root)) {
-            std::snprintf(root, sizeof root, "./nnh_data/");
+            std::snprintf(root, sizeof root, "./nnh_user/");
         }
     } else {
         char* pref = SDL_GetPrefPath("NNHGE", config.data_folder);

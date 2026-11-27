@@ -1085,6 +1085,63 @@ FR-23's frame flag and calls), for the maintainer to confirm as before. T8.3's p
 files only) links no reload code; `sprites` (textures only) links the reload core and the texture kind only; `reload`
 links the texture, sound, music, font, mesh and sprite-library kinds.
 
+### Review round (independent review of `cf15822..c9fc427`, "changes needed"; Linux pass of `c9fc427`)
+
+Every item fixed test first:
+
+- **B1** `nnh` sent paced batch bytes cut anywhere, so a typed or scripted message sent between two slices landed inside a
+  chunk; a refusal mid-send cleared everything, a held swap's Resume included. `reload/paced_units.*` keeps the cycle's
+  bytes as whole units (message + payload) with a read offset; `take_bytes` returns whole units only; a refusal drops
+  the unsent units of the batch and keeps the tail. Tests `reload_controller_slices_are_whole_units`,
+  `reload_controller_a_refusal_mid_send_keeps_the_resume`,
+  `script_reload_input_sent_during_a_large_batch_keeps_the_stream_aligned`.
+- **S1** `run_cycle` refuses while a batch is in flight; a script swap then fails ("the last reload isn't answered
+  yet"). Tests `script_reload_a_swap_while_the_last_batch_is_unanswered_fails`,
+  `reload_controller_run_cycle_while_busy_sends_nothing_new`. Nit: a Rejected record of a transfer message (seq 0) or of
+  the Apply ends the cycle, and 10 s without an answer (`kAnswerTimeoutMs`) too (tests
+  `reload_controller_a_rejected_batch_message_ends_the_cycle`, `reload_controller_no_answer_times_out`).
+- **S2** 16 shutdown hooks (a full Debug game registers 10 now) and `require_shutdown_hook` (asserts) at every module
+  that would leak without its hook. Test `shutdown_hooks_have_room_for_every_optional_module`. **This changes Release
+  `hello`**: the hook table's BSS grows by 32 bytes (8 more pointers), so the 3ds-release `hello.3dsx`/`.elf` and
+  pc-release `hello` are no longer byte-identical to T0.1 (numbers in the guards below) — a deliberate change, for the
+  maintainer to see.
+- **S3** The data index block a batch replaced is kept until the next batch (Debug/Development), so names and paths
+  borrowed from it stay readable; documented in `data.hpp`, `data.md` and `assets.md`. Test
+  `data_reload_a_borrowed_name_survives_one_reload`.
+- **S4** The animator keeps a full 16-bit reload epoch (`reload_epoch_`, in spare bytes: still 64 bytes on the 3DS, the
+  static_assert holds) and the fast path checks `clip_` against the current block's clip count. Test
+  `animator_rebind_survives_address_reuse_over_many_reloads` (15 reloads).
+- **S5** `restore_all` drops an entry only when its backup is really gone; otherwise it keeps it in the journal and prints
+  the error; `swap()` fails (and swaps nothing) when the journal can't be written. Tests
+  `script_reload_a_failed_restore_keeps_its_backup_and_journal`, `script_reload_a_swap_without_a_journal_fails`. Nit:
+  backup names escape `/` and `%` (`a/b` and `a__b` no longer collide; test `script_reload_backup_names_never_collide`).
+- **S6** Ctrl+C (and a console close on Windows, through `SetConsoleCtrlHandler`) only sets a flag
+  (`reload/interrupt.*`); the session loop ends the script and `finish_reload` puts the sources back on the main thread,
+  then uninstalls the handler. Test `script_reload_ctrl_c_ends_the_script_on_the_main_loop`.
+- **S7** Many small files: `nnh` sends at most `kFilesPerTick` (8) ReloadFile units per tick (not added up), so the
+  console opens a few SD files per frame. A console-side cap was tried first and dropped: a frame's first read (before
+  the batch's Begin is seen) can't be bounded without slowing every remote message. Test
+  `reload_controller_many_small_files_go_a_few_per_tick`.
+- **S8** Received files a commit replaced or removed are deleted only after every kind committed (a music stream on the
+  old file is closed first). Test `reload_batch_a_replaced_file_is_removed_after_the_kinds_committed`.
+- **S9** `assets.hpp`'s comment. **S10** copies set the file time to now (`copy_now`), for MSVC's CopyFile2 (test
+  `script_reload_a_swapped_file_is_newer_than_before`).
+- Nits: `font_reload`'s commit frees the new block if the slot was released; `format_list` clamps a cut list (test
+  `reload_names_a_short_buffer_never_overflows`); the UI's relayout reads `g_reload_applied_frame` from the hooks instead
+  of `assets::reloaded_paths()`, so a Debug UI game links no reload core for it. Release codegen: `music.cpp`'s
+  `Slot::loop_option` and the refactors in `sounds.cpp`, `data_index.cpp`, `loc_state.cpp`, `font_load.cpp` and
+  `load_mesh.cpp` change Release code for games that use those modules (AC-7's byte check covers `hello` only); they
+  are behaviour-preserving and covered by the pc-release ctest.
+- **Linux finding 1**: `reload_batch_an_allocation_failure_at_every_size_changes_nothing` used a fixed sweep that missed
+  the batch's threshold on every Linux compiler; it now binary-searches the threshold and sweeps around it.
+- **Linux finding 2** (`reload_data_smoke_pc`: "could not write the file"): on Linux the `data` example's program is the
+  file `<exe dir>/data`, so the Debug/Development data folder `<exe dir>/data/data/` could not be created. The PC data
+  folder is now `<exe dir>/nnh_user/<folder>/` (`data_root_pc.*`; Release unchanged; `nnh_data/`, tried first, is the
+  build's own folder of data refs and schema programs: the data smoke failed on Windows with it); tests
+  `pc_data_root_never_is_the_programs_own_name`, `pc_received_files_can_be_created_next_to_a_program_named_like_its_data_folder`
+  (both red on Windows too before the fix). The other reload ctests use games whose program name differs from `data`,
+  so they shouldn't have failed on Linux for this reason; the lead's rerun will tell.
+
 ### Not done (open, for the lead or a next session)
 
 - Stage 0: T0.1–T0.3's reference comparisons against `cf15822` need a reference tree (a clone plus four preset builds,

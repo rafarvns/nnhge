@@ -382,4 +382,4 @@ never through `#ifdef` in game code.
   batch; the batch engine deletes replaced received files after every kind committed; a 16-bit sprite reload epoch;
   borrowed data names kept until the next batch) and the Linux checks (GCC 13/14, 32-bit, clang ASan/UBSan, 10 minutes
   of libFuzzer per target: clean). The PC Debug/Development data folder moved to `<exe dir>/nnh_user/<folder>/`. Console
-  run 1 passed; console run 2 (sprite libraries, music, font, timing) is pending.
+  run 1 passed; console run 2 (sprite libraries, music, font, timing) passed on 2026-11-27 (save → frame ≈ 2.1–2.5 s).

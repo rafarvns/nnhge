@@ -1,6 +1,6 @@
 # Tasks 031: Hot reload of assets
 
-Status: approved 2026-11-26 (with plan.md); implemented 2026-11-27; Linux checks and console run 1 passed; console run 2 (sprite libraries, music, font, timing) pending
+Status: approved 2026-11-26 (with plan.md); implemented 2026-11-27; Linux checks and console runs 1 and 2 passed
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task is one or a few TDD loops (test first, then code). `[P]` means the task can be done in parallel with the
@@ -282,7 +282,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
 - [x] **T10.1** (on the PC) Builds and checks: `scripts/dkp.sh cmake --build --preset 3ds-release` and `scripts/dkp.sh
   cmake --build --preset 3ds-dev --target reload_3dsx sprites_3dsx` without a warning; T7.6's table still true;
   3ds-release `hello` identical to T0.1's. Covers AC-7, II.
-- [ ] **T10.2** (pending: console run 2 for sprite libraries, music, font and timing.nnhs; run 1 covered the rest) Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
+- [x] **T10.2** (console runs 1 and 2 passed 2026-11-26/27; plan.md) Old 3DS, nobody touching it after Y. Runs, each: Homebrew Launcher, press **Y**, then on the PC:
   1. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/check.nnhs` → every kind reloaded, every sum
      equal to the PC's, screenshots compared with the `--pc` run's;
   2. `build/pc-debug/tools/nnh/nnh run reload --script examples/reload/tests/errors.nnhs` → the refusals, including the
@@ -295,7 +295,7 @@ platformer replay ctest with the tree's lines); every example's `--pc` script st
      restart? yes/no.
   `git status` clean after each. Files: plan.md ("Console run 1": verdicts, numbers, log paths, the screenshot
   comparison). Covers AC-2, AC-3, AC-4b, AC-8, FR-21.
-- [ ] **T10.3** (partly done: the build-side round of plan "Optimisation round"; budgets wait for console run 2) (only if a target is missed) Optimisation round: find the cost (3ds-dev disassembly, the timing lines),
+- [x] **T10.3** (done: plan.md "Optimisation round"; console run 2 met AC-8's < 3 s) (only if a target is missed) Optimisation round: find the cost (3ds-dev disassembly, the timing lines),
   apply risk 4's fallback or other fixes without changing the wire or a golden (tests first); T10.2 run 3 again; then the
   budgets are set from the console measurement with ≈ 25 % margin and written into the spec's AC-8, `timing.nnhs` and
   `docs/api/assets.md`. Files: plan.md ("Optimisation round", "Console run 2 and budgets set"). Covers AC-8.

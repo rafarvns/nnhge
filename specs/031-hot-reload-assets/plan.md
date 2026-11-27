@@ -1,6 +1,6 @@
 # Plan 031: Hot reload of assets
 
-Status: approved 2026-11-26 (the maintainer, the eleven questions at the end as recommended); implemented 2026-11-27; Linux checks and console run 1 passed; console run 2 (sprite libraries, music, font, timing) pending
+Status: approved 2026-11-26 (the maintainer, the eleven questions at the end as recommended); implemented 2026-11-27; Linux checks and console runs 1 and 2 passed
 are this plan's decisions; eleven plan-level questions at the end)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decisions D53, D54 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
@@ -1265,3 +1265,19 @@ C. The interactive yes/no loop below (about 2 minutes; the lead edits a file on 
 
 Log: `build/logs/sprites-<date>-<time>.txt`. The first failure to look for: `transfer: could not write the file` (the SD
 card's `sdmc:/3ds/<data folder>/.nnh_reload/` could not be created or written).
+
+### Console run 2 (2026-11-27, Old 3DS XL, 3ds-dev of main after the merge)
+
+- **D**, `check.nnhs`: the 12 sums equal the PC's (`770785CB` … `1294E48A`), 11 reloads including the walker sprite
+  library, the music and the HUD font, `PASS (59 lines)`, `put back 7`. Save → frame 2.12–2.50 s; music 3.71 s.
+- **E**, `errors.nnhs`: the broken map refused by its conversion (the game names `levels/room.tmj`), the valid one
+  applied (2.43 s), the schema change refused by `nnh` before anything was sent (R31) and named by the game
+  (`data_types.cpp: needs a rebuild and restart`), `PASS (18 lines)`, `put back 2`.
+- **F**, `timing.nnhs`: save → frame for the PNG 2.27 s, the map 2.08 s, the data file 2.12 s. AC-8's target (< 3 s) is
+  met: the optimisation round (no `BUILD_ALWAYS` on the assetc sub-build, Ninja called directly) brought the console
+  from 3.0–3.3 s to ≈ 2.1–2.5 s. Bench: idle frame 0.479 ms average (worst 4.2 ms) with `nnh` attached after three
+  batches; asset reads 52 µs each through the overlay. The target stays as specified (< 3 s); the idle and read
+  numbers are recorded for the next comparison.
+
+Logs: `E:\RANDOM\nnhge-console-r2-{d,e,f}.log` (the maintainer's machine). Every console check of spec 031 has passed;
+what stays open is the test and measurement list under "Not done".

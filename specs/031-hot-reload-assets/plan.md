@@ -1161,6 +1161,19 @@ still links the reload core in Development, through its textures (the texture ki
   (spec 021) and `transitions_self_check_matches_its_golden_checkpoints` (spec 023), touch no reload code and pass in
   the forward and Linux orders; not investigated here (noted for the lead).
 
+- **A flaky script ctest found on the way** (`sprites_reload_script_pc` failed one run in two; the data smoke's earlier
+  "nothing changed" was the same): `copy_file` on Windows keeps the copied file's time, so a source restored from its
+  backup was *older* than its converted output, Ninja didn't rebuild it, and the next run's mirror started from the
+  swapped output ("reload: nothing changed in the converted assets"). Setting the time afterwards with
+  `fs::last_write_time` didn't take on MinGW (the review's S10 test passed anyway: it only compared with an hour-old
+  time). `copy_now` now copies by reading and writing the bytes, so the file's time is the copy's: the sprites ctest
+  passed 6 runs in a row, the reload ctests twice. (The `nnh_data/` diagnosis above was right about the folder clash, but
+  this, not the clash, is what made the data smoke say "nothing changed" on Windows.)
+
+Guards (sixth session): ctest pc-debug 378 (377 + the flaky sprites ctest, fixed and rerun 6 times), pc-release 337/337;
+`nnh_tests` 4142 forward, `--reverse` 2 failures outside spec 031 (above); 0 warnings on all four presets; 3ds-release
+`hello` `8c687f3d…` / `5cd5d950…`, pc-release 134 880 / 22 052 / 212 400, identical to T0.1.
+
 ### Not done (open, for the lead or a next session)
 
 - Stage 0: T0.1–T0.3's reference comparisons against `cf15822` need a reference tree (a clone plus four preset builds,

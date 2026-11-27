@@ -25,12 +25,25 @@ std::string flat(const std::string& source) {
     return out;
 }
 
-/// copy_file keeps the source's time on some systems (MSVC's CopyFile2): the build must see the file as changed.
+/// Copies by reading and writing the bytes, so the target's time is "now": copy_file keeps the source's time on Windows
+/// (CopyFile), and a restored source older than its converted output would never be rebuilt (the next run then found
+/// the swapped output already there: "nothing changed"). Setting the time afterwards isn't reliable either (MinGW).
 bool copy_now(const std::string& from, const std::string& to, std::error_code& ec) {
-    if (!fs::copy_file(from, to, fs::copy_options::overwrite_existing, ec)) return false;
-    fs::last_write_time(to, fs::file_time_type::clock::now(), ec);
     ec.clear();
-    return true;
+    std::FILE* in = std::fopen(from.c_str(), "rb");
+    if (in == nullptr) return false;
+    std::FILE* out = std::fopen(to.c_str(), "wb");
+    if (out == nullptr) {
+        std::fclose(in);
+        return false;
+    }
+    char buffer[64 * 1024];
+    bool ok = true;
+    std::size_t n = 0;
+    while (ok && (n = std::fread(buffer, 1, sizeof buffer, in)) > 0) ok = std::fwrite(buffer, 1, n, out) == n;
+    ok = ok && std::ferror(in) == 0;
+    std::fclose(in);
+    return std::fclose(out) == 0 && ok;
 }
 
 } // namespace

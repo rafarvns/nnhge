@@ -1,9 +1,10 @@
 #pragma once
-// What this nnh was built from (spec 033 FR-1, D56 item 6): the engine version, the protocol versions it speaks, the
-// host it was built for and how it was built. A release nnh (spec 034) is built with the engine archive's URL and
-// SHA-256 (the CMake cache entries NNH_RELEASE_ENGINE_URL and NNH_RELEASE_ENGINE_SHA256), which `nnh new` writes as a
-// new project's pin; any other nnh is a checkout build and knows the checkout it was built from. The definitions reach
-// build_info.cpp only, so changing them recompiles one file. Tested in tools/nnh/tests/test_build_info.cpp.
+// What this nnh was built from (spec 033 FR-1, D56 item 6): the engine version, the protocol versions it
+// speaks, the host it was built for and how it was built. A release nnh (spec 034) is built with the engine
+// archive's URL and SHA-256 (the CMake cache entries NNH_RELEASE_ENGINE_URL and NNH_RELEASE_ENGINE_SHA256),
+// which `nnh new` writes as a new project's pin; any other nnh is a checkout build and knows the checkout it
+// was built from. The definitions reach build_info.cpp only, so changing them recompiles one file. Tested in
+// tools/nnh/tests/test_build_info.cpp.
 
 #include <string>
 

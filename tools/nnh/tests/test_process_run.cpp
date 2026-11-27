@@ -1,14 +1,14 @@
-// Running programs with a time limit and bounded output (process_run.hpp, spec 033 FR-18). CMake is the helper program:
-// it is on every machine that builds nnh (NNH_TOOL_TEST_CMAKE).
-
-#include <chrono>
-#include <fstream>
-#include <string>
+// Running programs with a time limit and bounded output (process_run.hpp, spec 033 FR-18). CMake is the
+// helper program: it is on every machine that builds nnh (NNH_TOOL_TEST_CMAKE).
 
 #include "doctor/probes.hpp"
 #include "doctor/tool_versions.hpp"
 #include "process_run.hpp"
 #include "test.hpp"
+
+#include <chrono>
+#include <fstream>
+#include <string>
 
 using namespace nnh::tool;
 
@@ -22,7 +22,8 @@ NNH_TEST(a_program_runs_with_its_arguments_and_exit_code) {
 
 NNH_TEST(stdout_and_stderr_are_both_read) {
     const std::string script = std::string(NNH_TOOL_TEST_TMP) + "/process_run_stderr.cmake";
-    std::ofstream(script) << "message(\"to stderr\")\nexecute_process(COMMAND ${CMAKE_COMMAND} -E echo to stdout)\n";
+    std::ofstream(script)
+        << "message(\"to stderr\")\nexecute_process(COMMAND ${CMAKE_COMMAND} -E echo to stdout)\n";
     const RunResult r = run_program(NNH_TOOL_TEST_CMAKE, {"-P", script}, 10000, 4096);
     CHECK(r.started && r.exit_code == 0);
     CHECK(r.output.find("to stderr") != std::string::npos && r.output.find("to stdout") != std::string::npos);
@@ -31,7 +32,8 @@ NNH_TEST(stdout_and_stderr_are_both_read) {
 NNH_TEST(a_program_past_its_time_limit_is_killed) {
     const auto start = std::chrono::steady_clock::now();
     const RunResult r = run_program(NNH_TOOL_TEST_CMAKE, {"-E", "sleep", "20"}, 300, 4096);
-    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+    const auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
     CHECK(r.started && r.timed_out && r.exit_code == -1);
     CHECK(ms.count() < 5000);
 }

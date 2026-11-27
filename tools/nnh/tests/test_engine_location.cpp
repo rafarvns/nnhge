@@ -1,12 +1,12 @@
 // Which engine a new project uses (new/engine_location.hpp, spec 033 FR-9, FR-10).
 
-#include <filesystem>
-#include <fstream>
-#include <string>
-
 #include "build_info.hpp"
 #include "new/engine_location.hpp"
 #include "test.hpp"
+
+#include <filesystem>
+#include <fstream>
+#include <string>
 
 using namespace nnh::tool;
 
@@ -36,11 +36,14 @@ std::string fake_version(const std::string& dir) {
 
 std::string joined(const std::vector<std::string>& lines) {
     std::string all;
-    for (const std::string& l : lines) all += l + "\n";
+    for (const std::string& l : lines)
+        all += l + "\n";
     return all;
 }
 
-bool has(const std::string& text, const std::string& part) { return text.find(part) != std::string::npos; }
+bool has(const std::string& text, const std::string& part) {
+    return text.find(part) != std::string::npos;
+}
 
 } // namespace
 
@@ -86,14 +89,16 @@ NNH_TEST(the_set_lines_are_skipped_when_the_variable_already_names_the_folder) {
         CHECK(c.ok && !has(out, "export ") && has(out, "NNHGE_ENGINE_DIR already names it"));
     }
     // Linux paths are case-sensitive
-    const EngineChoice l = choose_engine(checkout("/home/me/nnhge"), "", "/home/me/NNHGE", false, fake_version);
+    const EngineChoice l =
+        choose_engine(checkout("/home/me/nnhge"), "", "/home/me/NNHGE", false, fake_version);
     CHECK(has(joined(l.notes), "export NNHGE_ENGINE_DIR=/home/me/nnhge"));
 }
 
 NNH_TEST(another_folder_in_the_variable_is_named) {
     const EngineChoice c = choose_engine(checkout("E:/src/nnhge"), "", "E:/other", true, fake_version);
     const std::string out = joined(c.notes);
-    CHECK(c.ok && has(out, "NNHGE_ENGINE_DIR is set to E:/other: builds of this project will use that engine"));
+    CHECK(c.ok &&
+          has(out, "NNHGE_ENGINE_DIR is set to E:/other: builds of this project will use that engine"));
     CHECK(has(out, "export NNHGE_ENGINE_DIR=E:/src/nnhge"));
 }
 
@@ -103,7 +108,8 @@ NNH_TEST(a_release_nnh_pins_its_archive_and_needs_no_variable) {
     CHECK(c.local_dir.empty());
     CHECK(!has(joined(c.notes), "export "));
     const EngineChoice set = choose_engine(release(), "", "E:/other", true, fake_version);
-    CHECK(has(joined(set.notes), "NNHGE_ENGINE_DIR is set to E:/other") && set.engine_url == release().engine_url);
+    CHECK(has(joined(set.notes), "NNHGE_ENGINE_DIR is set to E:/other") &&
+          set.engine_url == release().engine_url);
     const EngineChoice local = choose_engine(release(), "E:/src/nnhge", nullptr, true, fake_version);
     CHECK(local.ok && local.local_dir == "E:/src/nnhge" && local.engine_url == release().engine_url);
     CHECK(has(joined(local.notes), "export NNHGE_ENGINE_DIR=E:/src/nnhge"));
@@ -126,7 +132,8 @@ NNH_TEST(the_engine_option_accepts_msys_and_relative_forms) {
 }
 
 NNH_TEST(the_engine_version_is_read_from_its_top_level_project) {
-    CHECK(engine_version_from_cmakelists("cmake_minimum_required(VERSION 3.25)\n\nproject(nnhge VERSION 0.1.0 LANGUAGES C CXX)\n") ==
+    CHECK(engine_version_from_cmakelists(
+              "cmake_minimum_required(VERSION 3.25)\n\nproject(nnhge VERSION 0.1.0 LANGUAGES C CXX)\n") ==
           "0.1.0");
     CHECK(engine_version_from_cmakelists("project(nnhge VERSION 12.34.56)") == "12.34.56");
     CHECK(engine_version_from_cmakelists("project(mygame VERSION 0.1.0)").empty());

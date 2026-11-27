@@ -45,6 +45,7 @@ add_library(nnh_tool_lib STATIC
     src/cli.cpp
     src/cli_new_doctor.cpp
     src/commands/build.cpp
+    src/commands/doctor.cpp
     src/commands/install.cpp
     src/commands/new.cpp
     src/commands/project.cpp
@@ -53,8 +54,15 @@ add_library(nnh_tool_lib STATIC
     src/commands/run_reload.cpp
     src/commands/serve.cpp
     src/console_link.cpp
+    src/doctor/checks_3ds.cpp
+    src/doctor/checks_host.cpp
+    src/doctor/checks_network.cpp
+    src/doctor/checks_optional.cpp
+    src/doctor/checks_project.cpp
     src/doctor/doctor_report.cpp
+    src/doctor/fix_lines.cpp
     src/doctor/probes_system.cpp
+    src/doctor/project_versions.cpp
     src/doctor/tool_versions.cpp
     src/fbi.cpp
     src/file_server.cpp
@@ -171,6 +179,10 @@ if(NNH_BUILD_TESTS)
         tests/test_cli.cpp
         tests/test_configure_command.cpp
         tests/test_console_link.cpp
+        tests/test_doctor_3ds.cpp
+        tests/test_doctor_host.cpp
+        tests/test_doctor_network.cpp
+        tests/test_doctor_project.cpp
         tests/test_doctor_report.cpp
         tests/test_engine_location.cpp
         tests/test_fbi.cpp

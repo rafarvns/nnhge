@@ -40,13 +40,15 @@ std::wstring widen(const std::string& s) {
     return w;
 }
 
-RunResult run(const std::string& program, const std::vector<std::string>& args, int timeout_ms, std::size_t max_output) {
+RunResult run(const std::string& program, const std::vector<std::string>& args, int timeout_ms,
+              std::size_t max_output) {
     RunResult r;
     SECURITY_ATTRIBUTES sa{sizeof sa, nullptr, TRUE};
     HANDLE read_end = nullptr, write_end = nullptr;
     if (!CreatePipe(&read_end, &write_end, &sa, 0)) return r;
     SetHandleInformation(read_end, HANDLE_FLAG_INHERIT, 0);
-    HANDLE nul = CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, nullptr);
+    HANDLE nul =
+        CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, nullptr);
     STARTUPINFOW si{};
     si.cb = sizeof si;
     si.dwFlags = STARTF_USESTDHANDLES;
@@ -80,7 +82,9 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
         if (!PeekNamedPipe(read_end, nullptr, 0, nullptr, &available, nullptr)) break; // every writer closed
         if (available > 0) {
             DWORD got = 0;
-            if (!ReadFile(read_end, buffer, available < sizeof buffer ? available : sizeof buffer, &got, nullptr)) break;
+            if (!ReadFile(read_end, buffer, available < sizeof buffer ? available : sizeof buffer, &got,
+                          nullptr))
+                break;
             keep(r.output, buffer, got, max_output);
             continue;
         }
@@ -103,7 +107,8 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
     return r;
 }
 #else
-RunResult run(const std::string& program, const std::vector<std::string>& args, int timeout_ms, std::size_t max_output) {
+RunResult run(const std::string& program, const std::vector<std::string>& args, int timeout_ms,
+              std::size_t max_output) {
     RunResult r;
     int fds[2];
     if (pipe(fds) != 0) return r;
@@ -116,7 +121,8 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
     posix_spawn_file_actions_addclose(&actions, fds[1]);
     std::vector<char*> argv;
     argv.push_back(const_cast<char*>(program.c_str()));
-    for (const std::string& a : args) argv.push_back(const_cast<char*>(a.c_str()));
+    for (const std::string& a : args)
+        argv.push_back(const_cast<char*>(a.c_str()));
     argv.push_back(nullptr);
     pid_t pid = 0;
     const int spawned = posix_spawnp(&pid, program.c_str(), &actions, nullptr, argv.data(), environ);
@@ -155,7 +161,8 @@ RunResult run(const std::string& program, const std::vector<std::string>& args, 
     if (!exited) waitpid(pid, &status, 0);
     close(fds[0]);
     if (!r.timed_out && WIFEXITED(status)) r.exit_code = WEXITSTATUS(status);
-    // A program that could not be executed after the spawn (posix_spawnp reports most failures itself) exits 127.
+    // A program that could not be executed after the spawn (posix_spawnp reports most failures itself) exits
+    // 127.
     if (!r.timed_out && r.exit_code == 127 && r.output.empty()) r.started = false;
     return r;
 }

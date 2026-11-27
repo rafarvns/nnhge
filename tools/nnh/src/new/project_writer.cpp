@@ -11,8 +11,10 @@ struct Created {
 
     void undo(const NewFs& fs) {
         for (auto it = items.rbegin(); it != items.rend(); ++it) {
-            if (it->second) fs.remove_folder(it->first);
-            else fs.remove_file(it->first);
+            if (it->second)
+                fs.remove_folder(it->first);
+            else
+                fs.remove_file(it->first);
         }
         items.clear();
     }
@@ -20,11 +22,14 @@ struct Created {
 
 std::string refusal(const std::string& folder, PathKind kind) {
     switch (kind) {
-    case PathKind::File: return folder + " exists and is a file: nothing was changed (pick another name)";
+    case PathKind::File:
+        return folder + " exists and is a file: nothing was changed (pick another name)";
     case PathKind::Folder:
         return folder + " exists and is not empty: nothing was changed (pick another name, or empty it)";
-    case PathKind::Link: return folder + " is a link: nothing was changed (pick another name)";
-    default: return folder + " exists and is not a folder: nothing was changed (pick another name)";
+    case PathKind::Link:
+        return folder + " is a link: nothing was changed (pick another name)";
+    default:
+        return folder + " exists and is not a folder: nothing was changed (pick another name)";
     }
 }
 
@@ -60,7 +65,8 @@ WriteResult write_project(const std::string& folder, const std::vector<OutputFil
     for (const OutputFile& f : files) {
         for (const std::string& sub : parents(f.path)) {
             bool known = false;
-            for (const std::string& m : made) known = known || m == sub;
+            for (const std::string& m : made)
+                known = known || m == sub;
             if (known) continue;
             const std::string path = folder + "/" + sub;
             if (!fs.create_folder(path)) return fail("create the folder " + path);

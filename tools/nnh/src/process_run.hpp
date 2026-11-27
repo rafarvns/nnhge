@@ -1,9 +1,9 @@
 #pragma once
-// Running a program and reading what it says (spec 033 FR-18, D56 item 5): no shell (the arguments go to the program
-// as they are), stdout and stderr merged, a time limit after which the program is killed, and a bound on the output
-// kept (the rest is read and dropped, so the program never blocks on a full pipe). `nnh doctor` reads tool versions
-// this way. Windows: CreateProcessW with each argument quoted by the C runtime's rules; elsewhere posix_spawnp and
-// poll. Tested in tools/nnh/tests/test_process_run.cpp.
+// Running a program and reading what it says (spec 033 FR-18, D56 item 5): no shell (the arguments go to the
+// program as they are), stdout and stderr merged, a time limit after which the program is killed, and a bound
+// on the output kept (the rest is read and dropped, so the program never blocks on a full pipe). `nnh doctor`
+// reads tool versions this way. Windows: CreateProcessW with each argument quoted by the C runtime's rules;
+// elsewhere posix_spawnp and poll. Tested in tools/nnh/tests/test_process_run.cpp.
 
 #include <cstddef>
 #include <string>

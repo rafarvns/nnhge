@@ -110,27 +110,27 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 6: `nnh doctor`'s checks (FR-18, FR-19, FR-23)
 
-- [ ] **T6.1** About and Simulator (CMake, Ninja, compiler with minimum/checked, SDL3 per host, macOS and MSVC `warn`)
+- [x] **T6.1** About and Simulator (CMake, Ninja, compiler with minimum/checked, SDL3 per host, macOS and MSVC `warn`)
   — files: `doctor/checks_host.cpp`, `doctor/checks.hpp`, `doctor/doctor_limits.hpp` — test: `test_doctor_host.cpp`
   (AC-6: CMake 3.20 `FAIL`, Ninja missing `FAIL`, untested compiler `warn`, macOS `warn`) — covers FR-19, FR-23
-- [ ] **T6.2** 3DS (devkitPro per OS, libraries, MSYS2 with CMake/Ninja inside, host compiler for 3DS) and Optional —
+- [x] **T6.2** 3DS (devkitPro per OS, libraries, MSYS2 with CMake/Ninja inside, host compiler for 3DS) and Optional —
   files: `doctor/checks_3ds.cpp`, `doctor/checks_optional.cpp` — test: `test_doctor_3ds.cpp` (AC-6: `DEVKITPRO` unset
   `FAIL` + link, MSYS2 without Ninja `FAIL` + `pacman` line, no host compiler `FAIL`; optional never `FAIL`) — covers
   FR-19, FR-23
-- [ ] **T6.3** This project (`nnh.toml`, engine version from the cache or `nnh.toml` or the repository, presets,
+- [x] **T6.3** This project (`nnh.toml`, engine version from the cache or `nnh.toml` or the repository, presets,
   `NNHGE_ENGINE_DIR`, disk) — files: `doctor/checks_project.cpp` — test: `test_doctor_project.cpp` (AC-6: version ≠ →
   `warn`) — covers FR-19
-- [ ] **T6.4** Console and Downloads (only with the options; LAN only; pinned URLs listed; CA-certificate failure fix;
+- [x] **T6.4** Console and Downloads (only with the options; LAN only; pinned URLs listed; CA-certificate failure fix;
   the temporary script removed) — files: `doctor/checks_network.cpp`, `cmake/nnh_sdl3_pin.cmake`, `cmake/nnh_sdl3.cmake`
   — test: `test_doctor_network.cpp` (AC-8: no network probe without the options; the URL list equals the pins) — covers
   FR-18, FR-19
-- [ ] **T6.5** Fix lines per problem and host, package names and links verified (winget IDs, Ubuntu packages,
+- [x] **T6.5** Fix lines per problem and host, package names and links verified (winget IDs, Ubuntu packages,
   devkitPro's pages) — files: `doctor/fix_lines.{hpp,cpp}` — test: the check tests assert each fix — covers FR-20
-- [ ] **T6.6** `commands/doctor.cpp` glue; real runs on Windows (AC-7: inside a generated project every required check
+- [x] **T6.6** `commands/doctor.cpp` glue; real runs on Windows (AC-7: inside a generated project every required check
   `ok`, exit 0; `DEVKITPRO_MSYS2` pointing at an MSYS2 without Ninja → `FAIL` + fix, exit 1, Simulator still ready;
   `--pc`), offline time measured, project and user-config listings unchanged (AC-8), every fix line pasted in
   PowerShell, cmd and Git Bash — covers FR-18 to FR-21, FR-23
-- [ ] **T6.7** Stage end: guards.
+- [x] **T6.7** Stage end: guards.
 
 ## Stage 7: versions on a protocol refusal (FR-22)
 

@@ -1,10 +1,11 @@
-// The real file system of nnh new (project_writer.hpp NewFs): UTF-8 paths, exclusive creates, links never followed.
-// Windows: wide APIs (_wopen, CreateDirectoryW, ...), so a folder name outside the ANSI code page works; elsewhere POSIX.
+// The real file system of nnh new (project_writer.hpp NewFs): UTF-8 paths, exclusive creates, links never
+// followed. Windows: wide APIs (_wopen, CreateDirectoryW, ...), so a folder name outside the ANSI code page
+// works; elsewhere POSIX.
+
+#include "new/project_writer.hpp"
 
 #include <cstdio>
 #include <filesystem>
-
-#include "new/project_writer.hpp"
 
 #ifdef _WIN32
 #include <fcntl.h>
@@ -20,7 +21,9 @@
 namespace nnh::tool {
 namespace {
 
-std::filesystem::path u8path(const std::string& s) { return std::filesystem::path(std::u8string(s.begin(), s.end())); }
+std::filesystem::path u8path(const std::string& s) {
+    return std::filesystem::path(std::u8string(s.begin(), s.end()));
+}
 
 PathKind kind_of(const std::string& path) {
     namespace fs = std::filesystem;
@@ -30,14 +33,15 @@ PathKind kind_of(const std::string& path) {
     const DWORD attributes = GetFileAttributesW(p.c_str());
     if (attributes == INVALID_FILE_ATTRIBUTES) {
         const DWORD error = GetLastError();
-        return error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND ? PathKind::Missing : PathKind::Other;
+        return error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND ? PathKind::Missing
+                                                                              : PathKind::Other;
     }
     if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) return PathKind::Link; // symbolic links and junctions
     if (!(attributes & FILE_ATTRIBUTE_DIRECTORY)) return PathKind::File;
 #else
     const fs::file_status s = fs::symlink_status(p, ec);
-    if (ec || s.type() == fs::file_type::not_found) return ec && s.type() != fs::file_type::not_found ? PathKind::Other
-                                                                                                    : PathKind::Missing;
+    if (ec || s.type() == fs::file_type::not_found)
+        return ec && s.type() != fs::file_type::not_found ? PathKind::Other : PathKind::Missing;
     if (s.type() == fs::file_type::symlink) return PathKind::Link;
     if (s.type() == fs::file_type::regular) return PathKind::File;
     if (s.type() != fs::file_type::directory) return PathKind::Other;
@@ -57,7 +61,8 @@ bool create_folder(const std::string& path) {
 
 bool create_file(const std::string& path, const std::string& bytes) {
 #ifdef _WIN32
-    const int fd = _wopen(u8path(path).c_str(), _O_CREAT | _O_EXCL | _O_WRONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
+    const int fd =
+        _wopen(u8path(path).c_str(), _O_CREAT | _O_EXCL | _O_WRONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
 #else
     const int fd = open(path.c_str(), O_CREAT | O_EXCL | O_WRONLY | O_CLOEXEC, 0666);
 #endif

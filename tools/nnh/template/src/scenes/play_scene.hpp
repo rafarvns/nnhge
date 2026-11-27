@@ -1,7 +1,7 @@
 #pragma once
-// The game's one scene: a sprite moved by the Circle Pad or the D-Pad on the top screen, a sound on A, text on both
-// screens, START quits. Its state lives here (a scene owns what it uses); input is queried every frame; the end of a
-// sound arrives as an event. NNHGE docs: api/scene.md.
+// The game's one scene: a sprite moved by the Circle Pad or the D-Pad on the top screen, a sound on A, text
+// on both screens, START quits. Its state lives here (a scene owns what it uses); input is queried every
+// frame; the end of a sound arrives as an event. NNHGE docs: api/scene.md.
 
 #include <nnh/audio.hpp>
 #include <nnh/events.hpp>
@@ -10,13 +10,13 @@
 #include <nnh/texture.hpp>
 
 class PlayScene final : public nnh::Scene {
-public:
+  public:
     void on_enter() override; // loads the assets, subscribes to events
     void on_exit() override;  // gives them back
     void update() override;   // changes state, 60 times a second
     void draw() override;     // only reads state
 
-private:
+  private:
     void move_player();
     void on_sound_finished(const nnh::SoundFinished& finished);
 

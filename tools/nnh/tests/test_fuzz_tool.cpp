@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "doctor/project_versions.hpp"
 #include "doctor/tool_versions.hpp"
 #include "preset_names.hpp"
 #include "project_file.hpp"
@@ -199,4 +200,16 @@ NNH_TEST(tool_version_parsers_survive_mutated_outputs) { // spec 033 FR-19: doct
         CHECK(nnh::tool::pacman_version(folders, "libctru").size() <= text.size() + 2);
     }
     CHECK(valid > 0 && valid < 6000);
+}
+
+NNH_TEST(project_readers_of_doctor_survive_mutated_files) { // spec 033: a project's cache and CMakeLists.txt
+    const std::string seed = "# cache\nFOO:BOOL=ON\nNNHGE_VERSION:INTERNAL=0.1.0\nset(nnhge_url \"https://a/b.tar.gz\")\n";
+    Rng rng{97};
+    for (int i = 0; i < 6000; ++i) {
+        std::string text = seed;
+        mutate(text, rng);
+        const std::string v = nnh::tool::cache_engine_version(text), url = nnh::tool::project_pin_url(text);
+        CHECK(v.size() <= 32 && url.size() <= text.size());
+        CHECK(url.find('"') == std::string::npos && url.find('\n') == std::string::npos);
+    }
 }

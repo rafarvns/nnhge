@@ -2,16 +2,18 @@
 
 #include "new/template_render.hpp"
 
-#include <utility>
-
 #include "new/project_name.hpp"
+
+#include <utility>
 
 namespace nnh::tool {
 namespace {
 
 constexpr const char* kRepository = "https://github.com/rafarvns/nnhge";
 
-bool placeholder_char(char c) { return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'; }
+bool placeholder_char(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+}
 
 /// "0.1" of "0.1.0".
 std::string major_minor(const std::string& version) {
@@ -21,18 +23,22 @@ std::string major_minor(const std::string& version) {
 }
 
 std::string author_line(const NewInputs& in) {
-    if (in.author.empty()) return "    # AUTHOR \"Your name\"             # shown in the HOME Menu (default: \"Unknown\")";
+    if (in.author.empty())
+        return "    # AUTHOR \"Your name\"             # shown in the HOME Menu (default: \"Unknown\")";
     return "    AUTHOR \"" + in.author + "\"";
 }
 
 /// README text about the engine this project uses (its section "The engine").
 std::string engine_state(const NewInputs& in) {
     if (!in.engine_url.empty()) {
-        return "This project pins NNHGE " + in.engine_version + ": `CMakeLists.txt` downloads that release's archive "
+        return "This project pins NNHGE " + in.engine_version +
+               ": `CMakeLists.txt` downloads that release's archive "
                "and checks its SHA-256, so every build uses the same engine.";
     }
-    return "No engine release is pinned yet: this project was made by an `nnh` built from an engine checkout, so it "
-           "builds with a local engine. Set `NNHGE_ENGINE_DIR` to that checkout (below) before the first build; "
+    return "No engine release is pinned yet: this project was made by an `nnh` built from an engine "
+           "checkout, so it "
+           "builds with a local engine. Set `NNHGE_ENGINE_DIR` to that checkout (below) before the first "
+           "build; "
            "`nnh new` printed the lines for your shells.";
 }
 
@@ -69,7 +75,8 @@ bool render_text(const std::string& text, const NewInputs& in, std::string& out,
             continue;
         }
         std::size_t end = i + 1;
-        while (end < text.size() && placeholder_char(text[end])) ++end;
+        while (end < text.size() && placeholder_char(text[end]))
+            ++end;
         if (end == i + 1 || end >= text.size() || text[end] != '@') { // not a placeholder: '@' as written
             out += text[i++];
             continue;

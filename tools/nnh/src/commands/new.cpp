@@ -1,10 +1,6 @@
-// nnh new <name> (spec 033 FR-3 to FR-11, D56): validate the values, choose the engine, render the embedded template,
-// write it all or nothing, then say what was made and what to run next. Runs no other program and needs no network.
-
-#include <cstdio>
-#include <cstdlib>
-#include <filesystem>
-#include <string>
+// nnh new <name> (spec 033 FR-3 to FR-11, D56): validate the values, choose the engine, render the embedded
+// template, write it all or nothing, then say what was made and what to run next. Runs no other program and
+// needs no network.
 
 #include "build_info.hpp"
 #include "commands.hpp"
@@ -13,6 +9,11 @@
 #include "new/project_writer.hpp"
 #include "new/template_render.hpp"
 #include "new/unique_id.hpp"
+
+#include <cstdio>
+#include <cstdlib>
+#include <filesystem>
+#include <string>
 
 namespace nnh::tool {
 namespace {
@@ -68,22 +69,27 @@ int command_new(const Options& options) {
 
     const BuildInfo& info = build_info();
     const bool windows = info.os == "windows";
-    const std::string engine = options.engine.empty() ? "" : engine_dir_from_option(options.engine, current_folder(), windows);
-    const EngineChoice choice = choose_engine(info, engine, std::getenv("NNHGE_ENGINE_DIR"), windows, engine_folder_version);
+    const std::string engine =
+        options.engine.empty() ? "" : engine_dir_from_option(options.engine, current_folder(), windows);
+    const EngineChoice choice =
+        choose_engine(info, engine, std::getenv("NNHGE_ENGINE_DIR"), windows, engine_folder_version);
     if (!choice.ok) return refuse(choice.error + ": nothing was created");
     in.engine_url = choice.engine_url;
     in.engine_sha256 = choice.engine_sha256;
 
     const RenderResult rendered = render_project(in);
-    if (!rendered.ok) return refuse("this nnh's template is broken (" + rendered.error + "): please report it");
+    if (!rendered.ok)
+        return refuse("this nnh's template is broken (" + rendered.error + "): please report it");
     const WriteResult written = write_project(in.name, rendered.files, system_new_fs());
     if (!written.ok) return refuse(written.error);
 
     std::printf("nnh: created %s/ (%zu files; CIA UNIQUE_ID %s)\n", in.name.c_str(), rendered.files.size(),
                 format_unique_id(in.unique_id).c_str());
-    for (const std::string& line : choice.notes) std::printf("%s\n", line.c_str());
-    std::printf("next:\n  cd %s\n  nnh run %s --pc\n  nnh run %s              (Homebrew Launcher open, press Y)\n",
-                in.name.c_str(), in.name.c_str(), in.name.c_str());
+    for (const std::string& line : choice.notes)
+        std::printf("%s\n", line.c_str());
+    std::printf(
+        "next:\n  cd %s\n  nnh run %s --pc\n  nnh run %s              (Homebrew Launcher open, press Y)\n",
+        in.name.c_str(), in.name.c_str(), in.name.c_str());
     return 0;
 }
 

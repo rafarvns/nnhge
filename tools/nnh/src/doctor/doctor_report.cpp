@@ -5,22 +5,29 @@
 namespace nnh::tool {
 namespace {
 
-constexpr std::size_t kNameWidth = 14;
+constexpr std::size_t kNameWidth = 16; // "NNHGE_ENGINE_DIR"
 
-const char* word(CheckState s) { return s == CheckState::Ok ? "ok" : (s == CheckState::Warn ? "warn" : "FAIL"); }
+const char* word(CheckState s) {
+    return s == CheckState::Ok ? "ok" : (s == CheckState::Warn ? "warn" : "FAIL");
+}
 const char* colour_of(CheckState s) {
     return s == CheckState::Ok ? "\x1b[32m" : (s == CheckState::Warn ? "\x1b[33m" : "\x1b[31m");
 }
 
 int count(const DoctorGroup& g, CheckState state) {
     int n = 0;
-    for (const DoctorCheck& c : g.checks) n += c.state == state ? 1 : 0;
+    for (const DoctorCheck& c : g.checks)
+        n += c.state == state ? 1 : 0;
     return n;
 }
 
-std::string plural(int n, const char* one, const char* many) { return std::to_string(n) + " " + (n == 1 ? one : many); }
+std::string plural(int n, const char* one, const char* many) {
+    return std::to_string(n) + " " + (n == 1 ? one : many);
+}
 
-bool is_3ds(const DoctorGroup& g) { return g.name == "3DS"; }
+bool is_3ds(const DoctorGroup& g) {
+    return g.name == "3DS";
+}
 
 std::string verdict(const DoctorGroup& g, bool pc_only) {
     if (!g.not_checked.empty()) return g.name + ": not checked (" + g.not_checked + ")";
@@ -54,7 +61,8 @@ std::string format_report(const DoctorReport& report, bool colour, bool pc_only)
         }
     }
     out += "\n";
-    for (const std::string& line : verdict_lines(report, pc_only)) out += line + "\n";
+    for (const std::string& line : verdict_lines(report, pc_only))
+        out += line + "\n";
     return out;
 }
 

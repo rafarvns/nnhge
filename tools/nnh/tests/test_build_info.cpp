@@ -1,12 +1,12 @@
 // What nnh was built from (build_info.hpp, spec 033 FR-1).
 
-#include <cctype>
-#include <string>
-
 #include "build_info.hpp"
 #include "nnh_link/messages.hpp"
 #include "remote/remote_wire.hpp"
 #include "test.hpp"
+
+#include <cctype>
+#include <string>
 
 using namespace nnh::tool;
 
@@ -74,7 +74,7 @@ NNH_TEST(this_nnh_reports_its_engine_version_protocols_and_host) {
     CHECK(info.link_protocol == nnh::link::kProtocolVersion);
     CHECK(info.os == "windows" || info.os == "linux" || info.os == "macos");
     CHECK(info.arch == "x64" || info.arch == "x86" || info.arch == "arm64" || info.arch == "arm");
-    CHECK(!info.release()); // the tests are built without NNH_RELEASE_ENGINE_URL
+    CHECK(!info.release());            // the tests are built without NNH_RELEASE_ENGINE_URL
     CHECK(!info.checkout_dir.empty()); // a checkout build knows its checkout
     CHECK(version_line(info).rfind("nnh " + info.version + " (", 0) == 0);
 }

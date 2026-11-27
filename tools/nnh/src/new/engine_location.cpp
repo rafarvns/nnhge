@@ -2,16 +2,17 @@
 
 #include "new/engine_location.hpp"
 
-#include <filesystem>
-
 #include "repo.hpp"
 #include "text_file.hpp"
+
+#include <filesystem>
 
 namespace nnh::tool {
 namespace {
 
 std::string without_trailing_slash(std::string path) {
-    while (path.size() > 1 && path.back() == '/' && !(path.size() == 3 && path[1] == ':')) path.pop_back();
+    while (path.size() > 1 && path.back() == '/' && !(path.size() == 3 && path[1] == ':'))
+        path.pop_back();
     return path;
 }
 
@@ -29,10 +30,11 @@ bool same_folder(const std::string& a, const std::string& b, bool windows) {
 
 /// The local engine's lines: which folder, why the variable, the set-lines unless it already names it.
 void local_notes(EngineChoice& c, bool pinned, const char* env, bool windows) {
-    c.notes.push_back(pinned ? "nnh: this project pins its engine release; the local engine " + c.local_dir + " (NNHGE " +
-                                   c.local_version + ") replaces it while NNHGE_ENGINE_DIR names it."
-                             : "nnh: this project uses the local engine " + c.local_dir + " (NNHGE " + c.local_version +
-                                   "; no engine release is pinned: this nnh was built from a checkout).");
+    c.notes.push_back(
+        pinned ? "nnh: this project pins its engine release; the local engine " + c.local_dir + " (NNHGE " +
+                     c.local_version + ") replaces it while NNHGE_ENGINE_DIR names it."
+               : "nnh: this project uses the local engine " + c.local_dir + " (NNHGE " + c.local_version +
+                     "; no engine release is pinned: this nnh was built from a checkout).");
     const bool set = env != nullptr && *env != '\0';
     if (set && same_folder(env, c.local_dir, windows)) {
         c.notes.push_back("     NNHGE_ENGINE_DIR already names it.");
@@ -44,13 +46,14 @@ void local_notes(EngineChoice& c, bool pinned, const char* env, bool windows) {
     }
     c.notes.push_back(pinned ? "     To build with it, set NNHGE_ENGINE_DIR in your shell:"
                              : "     Builds need NNHGE_ENGINE_DIR; set it in your shell:");
-    for (const std::string& line : env_lines(c.local_dir, windows)) c.notes.push_back("       " + line);
+    for (const std::string& line : env_lines(c.local_dir, windows))
+        c.notes.push_back("       " + line);
 }
 
 } // namespace
 
-EngineChoice choose_engine(const BuildInfo& info, const std::string& engine_option, const char* env_value, bool windows,
-                           const EngineVersionOf& version_of) {
+EngineChoice choose_engine(const BuildInfo& info, const std::string& engine_option, const char* env_value,
+                           bool windows, const EngineVersionOf& version_of) {
     EngineChoice c;
     if (info.release()) {
         c.engine_url = info.engine_url;
@@ -60,7 +63,8 @@ EngineChoice choose_engine(const BuildInfo& info, const std::string& engine_opti
         c.local_dir = engine_option;
         c.local_version = version_of(c.local_dir);
         if (c.local_version.empty()) {
-            c.error = "--engine " + c.local_dir + " is not an NNHGE engine folder (no project(nnhge VERSION ...) in its "
+            c.error = "--engine " + c.local_dir +
+                      " is not an NNHGE engine folder (no project(nnhge VERSION ...) in its "
                       "CMakeLists.txt, or no cmake/nnh_game.cmake)";
             return c;
         }
@@ -107,7 +111,8 @@ std::vector<std::string> env_lines(const std::string& folder, bool windows) {
     }
     return {"Git Bash:    export NNHGE_ENGINE_DIR=" + q,
             "PowerShell:  $env:NNHGE_ENGINE_DIR = \"" + folder + "\"",
-            std::string("cmd:         ") + (space ? "set \"NNHGE_ENGINE_DIR=" + folder + "\"" : "set NNHGE_ENGINE_DIR=" + folder),
+            std::string("cmd:         ") +
+                (space ? "set \"NNHGE_ENGINE_DIR=" + folder + "\"" : "set NNHGE_ENGINE_DIR=" + folder),
             "every new shell (Windows): setx NNHGE_ENGINE_DIR " + q};
 }
 
@@ -142,7 +147,8 @@ std::string engine_version_from_cmakelists(std::string_view text) {
 
 std::string engine_folder_version(const std::string& dir) {
     std::error_code ec;
-    if (!std::filesystem::is_regular_file(std::filesystem::path(dir) / "cmake" / "nnh_game.cmake", ec)) return "";
+    if (!std::filesystem::is_regular_file(std::filesystem::path(dir) / "cmake" / "nnh_game.cmake", ec))
+        return "";
     return engine_version_from_cmakelists(read_text_file(dir + "/CMakeLists.txt", 64u * 1024u));
 }
 

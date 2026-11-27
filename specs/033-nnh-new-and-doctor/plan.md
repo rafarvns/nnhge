@@ -800,3 +800,93 @@ installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16
   `test_doctor_report.cpp` 6, the parsers' mini-fuzz in `test_fuzz_tool.cpp`), the first three files seen red against
   stubs (10 failing tests; the report stub crashed on an empty verdict list). The real-probe case was written after
   `probes_system.cpp` (a smoke of the real machine, not a rule).
+
+### Stage 6 results (`nnh doctor`'s checks)
+
+- Files: `doctor/checks.hpp` (context, one function per group, `run_doctor`), `checks_host.cpp` (About, Simulator, the
+  shared helpers, the SDL3 pins), `checks_3ds.cpp`, `checks_optional.cpp`, `checks_project.cpp`, `checks_network.cpp`,
+  `project_versions.{hpp,cpp}` (the cache and pin readers, mini-fuzzed), `fix_lines.{hpp,cpp}` (one table per
+  problem and host: Windows, Debian-like, other Linux, macOS), `doctor_limits.hpp`, `commands/doctor.cpp`;
+  `cmake/nnh_sdl3_pin.cmake` (the SDL3 version, URLs and hashes, included by `nnh_sdl3.cmake`; no behaviour change,
+  a unit test compares nnh's URLs with it).
+- Refinements, decided here:
+  - **Windows `DEVKITPRO` unset is `ok`**, not `warn` (the plan's table): `nnh` configures 3DS presets through
+    devkitPro's login shell, which sets it, so nothing `nnh` does fails; the line says so ("C:/devkitPro (DEVKITPRO
+    unset: fine, nnh's devkitPro shell sets it)"). A `warn` would have made AC-7's "every required check ok" false on
+    the maintainer's machine, where it is unset. `DEVKITPRO=/opt/devkitpro` (what devkitPro's installer sets) is read
+    as `C:/devkitPro`.
+  - The compiler CMake would pick: `CXX`, else `c++`, `g++`, `clang++`, and `cl` on Windows (`cl` run without
+    arguments: it prints its banner).
+  - Azahar is only looked for on `PATH`, never run (a GUI program might open a window for `--version`).
+  - The name column is 16 wide (`NNHGE_ENGINE_DIR`).
+  - The MSYS2 probe is one fixed `bash -lc` text with markers (`nnh-cmake=…`, `nnh-ninja=…`, the `cmake --version` line,
+    `nnh-ninja-version=…`): no user text in it.
+  - `--online` fetches the SDL3 package this host's first configure needs (MinGW package on Windows, the source archive
+    on Linux without a system SDL3 and on macOS, nothing with a system SDL3) and, in a game project, the engine URL of
+    `set(nnhge_url "…")` when it is a plain `https://`/`file://` URL (anything a CMake script would read is skipped);
+    the CA bundle passed is `CMAKE_TLS_CAINFO`, else Git for Windows' (what `nnh_sdl3.cmake` does).
+- Tests: 348 → 382 (`test_doctor_host.cpp` 10, `test_doctor_3ds.cpp` 8, `test_doctor_project.cpp` 9,
+  `test_doctor_network.cpp` 6, a mini-fuzz of the project readers), seen red against stub groups (the first project
+  tests failed, the rest crashed on missing groups). AC-6's list: CMake 3.20 `FAIL` + `https://cmake.org/download/`;
+  Ninja missing `FAIL` + `winget install Ninja-build.Ninja` / `sudo apt install ninja-build`; `DEVKITPRO` unset (Linux)
+  `FAIL` + `export DEVKITPRO=/opt/devkitpro`, devkitPro missing + the installer link; MSYS2 without Ninja `FAIL` +
+  `C:/devkitPro/msys2/usr/bin/bash.exe -lc "pacman -S --needed cmake ninja"`; no host compiler `FAIL` + the WinLibs
+  line; GCC 12 / clang 17 `warn`; engine 0.2.0 ≠ 0.1.0 `warn`; macOS `warn`; exit codes with `--pc`.
+- T6.5, fix lines verified: `winget show --id <id> --exact` found `Kitware.CMake`, `Ninja-build.Ninja`,
+  `BrechtSanders.WinLibs.POSIX.UCRT`, `Ccache.Ccache`, `Git.Git`; Ubuntu 24.04 packages `cmake`, `ninja-build`, `g++`,
+  `g++-13`, `pkg-config`, `libx11-dev libxext-dev libwayland-dev libxkbcommon-dev`, `libasound2-dev libpulse-dev`,
+  `ccache`, `git`, `ca-certificates` (the names SDL's Linux README and Ubuntu use); devkitPro's pages
+  `https://github.com/devkitPro/installer/releases` (Windows installer) and `https://devkitpro.org/wiki/devkitPro_pacman`
+  (Linux, macOS). The paste-able devkitPro form `C:/devkitPro/msys2/usr/bin/bash.exe -lc "pacman …"` was run (with the
+  harmless `pacman -Q cmake ninja`) in Git Bash, PowerShell and a cmd batch file: the same output in all three. No
+  install or `setx` line was run (they change the machine).
+- T6.6, real runs on Windows inside a generated project (`E:/RANDOM/n033/demo`, `NNHGE_ENGINE_DIR` set):
+  ```
+  About
+    ok    nnh              nnh 0.1.0 (protocol 1, link 1, windows-x64, from a source checkout)
+    ok    system           Windows 11 (10.0.26100)
+  Simulator
+    ok    cmake            4.4.2 (C:/Users/…/mingw64/bin/cmake.exe)
+    ok    ninja            1.13.2 (C:/Users/…/mingw64/bin/ninja.exe)
+    ok    C++ compiler     GCC 16.2.0 (C:/Users/…/mingw64/bin/c++.exe)
+    ok    SDL3             downloaded at the first PC configure (SDL3 3.4.20, pinned)
+  3DS
+    ok    devkitPro        C:/devkitPro (DEVKITPRO unset: fine, nnh's devkitPro shell sets it)
+    ok    devkitARM        r68 (C:/devkitPro/devkitARM)
+    ok    libctru          2.7.1
+    ok    citro2d          1.7.0
+    ok    citro3d          1.7.1
+    ok    devkitPro shell  C:/devkitPro/msys2 (cmake 4.0.2, ninja 1.13.2)
+    ok    host compiler    C:/Users/…/mingw64/bin/g++.exe
+  Optional
+    ok    ccache           4.13.6 (…/ccache.exe)
+    ok    git              2.55.0 (C:/Program Files/Git/mingw64/bin/git.exe)
+    warn  Azahar           not found (a 3DS emulator, to try .3dsx files on the PC)
+          fix: https://azahar-emu.org/
+  This project
+    ok    nnh.toml         E:/RANDOM/n033/demo (demo)
+    ok    engine           0.1.0 (build/pc-dev/CMakeCache.txt; this nnh: 0.1.0)
+    ok    presets          pc-dev, pc-release, 3ds-dev, 3ds-release
+    ok    NNHGE_ENGINE_DIR E:/RANDOM/…/spec-033 (NNHGE 0.1.0)
+    ok    disk             10.0 GB free
+
+  Simulator: ready
+  3DS: ready
+  Optional: 1 warning
+  Console: not checked (--console <ip> or --online)
+  Downloads: not checked (--online)
+  This project: ready
+  ```
+  exit 0, 2.09 s offline (AC-7 Windows). With `DEVKITPRO_MSYS2` at an empty folder: `FAIL devkitPro shell no
+  …/fake-msys2/usr/bin/bash.exe` + the installer link, "3DS: not ready (1 problem)", "Simulator: ready", exit 1; with
+  `--pc` exit 0 ("not counted: --pc"). With `DEVKITPRO` at a missing folder: `FAIL devkitPro` + the installer link,
+  exit 1. (An MSYS2 *without Ninja* could not be made on this machine without uninstalling devkitPro's Ninja: that
+  case is covered by `the_devkitpro_shell_needs_cmake_and_ninja_inside`.) `--console 8.8.8.8`: exit 2 before any
+  check. `--online` (2.7 s): `ok SDL3 https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-devel-
+  3.4.20-mingw.tar.gz` (the only URL; the project has no pin), `FAIL console none answered on the local network` + its
+  fix (no console was on), exit 1. AC-8: the listings (names, sizes, times) of the project folder (without `build/`)
+  and of `%APPDATA%/nnhge/` were equal before and after `--online`, and no `nnh-doctor-*.cmake` was left in `%TEMP%`.
+- `clang-format` (23.1.5) run on the new C++ files; the comments it re-wrapped badly were fixed by hand.
+- Stage end: `nnh_tool_tests` 382/382, ctests `nnh_tool`, `nnh_pin_check`, `nnh_new_files`, `nnh_template_smoke`,
+  `nnh_script_pc_smoke` green, `pc-debug` 0 warnings; `cmake/` changed, so `3ds-release` and `3ds-dev` rebuilt: 0
+  warnings, `hello.3dsx` SHA-256 `92e8dbd2…408f` unchanged.

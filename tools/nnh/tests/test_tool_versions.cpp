@@ -1,12 +1,12 @@
 // Tool versions from recorded outputs (doctor/tool_versions.hpp, spec 033 FR-19, AC-6). The outputs in
 // tools/nnh/tests/data/doctor/ were recorded from the real tools (see its README.md).
 
+#include "doctor/tool_versions.hpp"
+#include "test.hpp"
+
 #include <fstream>
 #include <iterator>
 #include <string>
-
-#include "doctor/tool_versions.hpp"
-#include "test.hpp"
 
 using namespace nnh::tool;
 
@@ -39,7 +39,8 @@ NNH_TEST(gcc_banners_of_every_packaging_are_read) {
     CompilerVersion c = compiler_version(recorded("gcc-16.2-winlibs.txt"));
     CHECK(c.kind == CompilerKind::Gcc && is(c.version, 16, 2, 0));
     c = compiler_version(recorded("gcc-13.3-ubuntu.txt"));
-    CHECK(c.kind == CompilerKind::Gcc && is(c.version, 13, 3, 0)); // not the package's "13.3.0-6ubuntu2~24.04.1"
+    CHECK(c.kind == CompilerKind::Gcc &&
+          is(c.version, 13, 3, 0)); // not the package's "13.3.0-6ubuntu2~24.04.1"
     c = compiler_version(recorded("gcc-12.4-ubuntu.txt"));
     CHECK(c.kind == CompilerKind::Gcc && is(c.version, 12, 4, 0));
     c = compiler_version(recorded("arm-none-eabi-gcc-devkitarm-r68.txt"));
@@ -73,9 +74,10 @@ NNH_TEST(versions_compare_and_print) {
 }
 
 NNH_TEST(pacman_folder_names_give_package_versions) {
-    const std::vector<std::string> windows = {"3ds-cmake-1.5.2-1", "citro2d-1.7.0-1", "citro3d-1.7.1-2",
-                                              "devkitARM-r68-1", "devkitARM-gdb-14.1-1", "devkitarm-gcc-16.1.0-1",
-                                              "libctru-2.7.1-1", "ninja-1.13.2-2", "cmake-4.0.2-1"};
+    const std::vector<std::string> windows = {
+        "3ds-cmake-1.5.2-1", "citro2d-1.7.0-1",      "citro3d-1.7.1-2",
+        "devkitARM-r68-1",   "devkitARM-gdb-14.1-1", "devkitarm-gcc-16.1.0-1",
+        "libctru-2.7.1-1",   "ninja-1.13.2-2",       "cmake-4.0.2-1"};
     CHECK(pacman_version(windows, "libctru") == "2.7.1");
     CHECK(pacman_version(windows, "citro2d") == "1.7.0");
     CHECK(pacman_version(windows, "citro3d") == "1.7.1");

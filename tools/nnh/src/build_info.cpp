@@ -1,6 +1,6 @@
 // This nnh's build information (build_info.hpp). The only source with the build-time definitions
-// (tools/nnh/CMakeLists.txt): NNH_TOOL_VERSION, NNH_RELEASE_ENGINE_URL, NNH_RELEASE_ENGINE_SHA256 and, without a pin,
-// NNH_TOOL_ENGINE_DIR.
+// (tools/nnh/CMakeLists.txt): NNH_TOOL_VERSION, NNH_RELEASE_ENGINE_URL, NNH_RELEASE_ENGINE_SHA256 and,
+// without a pin, NNH_TOOL_ENGINE_DIR.
 
 #include "build_info.hpp"
 

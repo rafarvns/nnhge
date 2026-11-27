@@ -1,11 +1,12 @@
-// nnh new's name, title, author and unique ID rules (new/project_name.hpp, new/unique_id.hpp; spec 033 FR-4, FR-11).
-
-#include <set>
-#include <string>
+// nnh new's name, title, author and unique ID rules (new/project_name.hpp, new/unique_id.hpp; spec 033 FR-4,
+// FR-11).
 
 #include "new/project_name.hpp"
 #include "new/unique_id.hpp"
 #include "test.hpp"
+
+#include <set>
+#include <string>
 
 using namespace nnh::tool;
 
@@ -19,8 +20,8 @@ bool refused(const std::string& name, const char* rule_part) {
 } // namespace
 
 NNH_TEST(valid_game_names_are_accepted) {
-    for (const char* name : {"a", "demo", "my-game", "my_game", "game2", "z9-_", "abcdefghijklmnopqrstuvwxyz012345",
-                             "console", "nnhgame", "distant", "tester"}) {
+    for (const char* name : {"a", "demo", "my-game", "my_game", "game2", "z9-_",
+                             "abcdefghijklmnopqrstuvwxyz012345", "console", "nnhgame", "distant", "tester"}) {
         const NameCheck c = check_name(name);
         CHECK(c.ok);
         CHECK(c.rule.empty());
@@ -51,15 +52,17 @@ NNH_TEST(names_with_other_characters_case_or_length_are_refused) {
 }
 
 NNH_TEST(names_windows_reserves_are_refused) {
-    for (const char* name : {"con", "nul", "aux", "prn", "com1", "com9", "lpt1", "lpt9"}) CHECK(refused(name, "Windows"));
+    for (const char* name : {"con", "nul", "aux", "prn", "com1", "com9", "lpt1", "lpt9"})
+        CHECK(refused(name, "Windows"));
     CHECK(check_name("com0").ok);
     CHECK(check_name("com10").ok);
     CHECK(check_name("lpt").ok);
 }
 
 NNH_TEST(target_names_the_engine_or_cmake_use_are_refused) {
-    for (const char* name : {"dist", "all", "clean", "install", "test", "help", "package", "package_source",
-                             "edit_cache", "rebuild_cache", "list_install_components", "nnh", "nnh_x", "nnh-x"}) {
+    for (const char* name :
+         {"dist", "all", "clean", "install", "test", "help", "package", "package_source", "edit_cache",
+          "rebuild_cache", "list_install_components", "nnh", "nnh_x", "nnh-x"}) {
         CHECK(refused(name, "target name"));
     }
 }
@@ -82,7 +85,8 @@ NNH_TEST(titles_and_authors_are_short_printable_utf8) {
     CHECK(check_text_field("Jo\xc3\xa3o's Game 2: \xe3\x82\xb2\xe3\x83\xbc\xe3\x83\xa0", false).ok); // UTF-8
     CHECK(check_text_field(std::string(64, 'x'), false).ok);
     std::string sixty_four_chars;
-    for (int i = 0; i < 64; ++i) sixty_four_chars += "\xc3\xa9"; // 64 characters, 128 bytes
+    for (int i = 0; i < 64; ++i)
+        sixty_four_chars += "\xc3\xa9"; // 64 characters, 128 bytes
     CHECK(check_text_field(sixty_four_chars, false).ok);
     CHECK(!check_text_field(sixty_four_chars + "x", false).ok);
     CHECK(check_text_field(std::string(65, 'x'), false).rule.find("64") != std::string::npos);
@@ -92,7 +96,8 @@ NNH_TEST(titles_and_authors_are_short_printable_utf8) {
         const TextCheck c = check_text_field(bad, false);
         CHECK(!c.ok && c.rule.find("can't hold") != std::string::npos);
     }
-    for (const char* bad : {"a\tb", "a\nb", "a\x7f", "a\xc2\x85"}) CHECK(check_text_field(bad, false).rule.find("control") != std::string::npos);
+    for (const char* bad : {"a\tb", "a\nb", "a\x7f", "a\xc2\x85"})
+        CHECK(check_text_field(bad, false).rule.find("control") != std::string::npos);
     for (const char* bad : {"\xff", "a\xc3", "\xc0\xaf", "\xed\xa0\x80", "\xf4\x90\x80\x80"}) {
         CHECK(check_text_field(bad, false).rule.find("UTF-8") != std::string::npos);
     }

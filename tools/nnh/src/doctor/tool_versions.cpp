@@ -8,7 +8,9 @@ namespace {
 constexpr std::size_t kMaxRead = 64u * 1024u;
 constexpr int kMaxDigits = 6;
 
-bool digit(char c) { return c >= '0' && c <= '9'; }
+bool digit(char c) {
+    return c >= '0' && c <= '9';
+}
 
 /// The number at `i` (at most kMaxDigits digits), advancing `i`; -1 when there is none or it is too long.
 int number_at(std::string_view t, std::size_t& i) {
@@ -47,7 +49,9 @@ std::string_view first_line(std::string_view t) {
     return end == std::string_view::npos ? t : t.substr(0, end);
 }
 
-bool contains(std::string_view t, std::string_view part) { return t.find(part) != std::string_view::npos; }
+bool contains(std::string_view t, std::string_view part) {
+    return t.find(part) != std::string_view::npos;
+}
 
 } // namespace
 
@@ -59,7 +63,8 @@ std::string Version::text() const {
 Version first_version(std::string_view text, std::size_t from) {
     text = text.substr(0, std::min(text.size(), kMaxRead));
     for (std::size_t i = from; i < text.size(); ++i) {
-        if (!digit(text[i]) || (i > 0 && (digit(text[i - 1]) || text[i - 1] == '.'))) continue; // a number's start
+        if (!digit(text[i]) || (i > 0 && (digit(text[i - 1]) || text[i - 1] == '.')))
+            continue; // a number's start
         const Version v = version_at(text, i);
         if (v.valid()) return v;
     }
@@ -73,7 +78,9 @@ Version cmake_version(std::string_view output) {
     return version_at(line, kPrefix.size());
 }
 
-Version ninja_version(std::string_view output) { return version_at(first_line(output), 0); }
+Version ninja_version(std::string_view output) {
+    return version_at(first_line(output), 0);
+}
 
 CompilerVersion compiler_version(std::string_view output) {
     const std::string_view line = first_line(output);
@@ -87,7 +94,8 @@ CompilerVersion compiler_version(std::string_view output) {
     } else if (const std::size_t clang = line.find("clang version "); clang != std::string_view::npos) {
         c.kind = CompilerKind::Clang;
         c.version = first_version(line, clang);
-    } else if (contains(line, "(GCC)") || contains(line, "g++") || contains(line, "gcc") || contains(line, "c++")) {
+    } else if (contains(line, "(GCC)") || contains(line, "g++") || contains(line, "gcc") ||
+               contains(line, "c++")) {
         // "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0": the version follows the last ')'
         const std::size_t close = line.rfind(')');
         c.kind = CompilerKind::Gcc;

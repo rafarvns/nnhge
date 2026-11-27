@@ -1,5 +1,6 @@
-// The options of nnh new and nnh doctor (cli.hpp, spec 033 FR-2). Values are taken as typed: nnh new checks the name,
-// title, author, engine folder and unique ID itself (exit 1); only the command line's shape is checked here (exit 2).
+// The options of nnh new and nnh doctor (cli.hpp, spec 033 FR-2). Values are taken as typed: nnh new checks
+// the name, title, author, engine folder and unique ID itself (exit 1); only the command line's shape is
+// checked here (exit 2).
 
 #include "cli.hpp"
 #include "link_types.hpp"
@@ -66,7 +67,8 @@ bool parse_doctor(const std::vector<std::string>& args, Options& out, std::strin
                 return false;
             }
             if (!is_local_network(*address)) {
-                error = "--console " + out.console + " is not on the local network (nnh only talks to the LAN)";
+                error =
+                    "--console " + out.console + " is not on the local network (nnh only talks to the LAN)";
                 return false;
             }
         } else if (!a.empty() && a[0] == '-') {

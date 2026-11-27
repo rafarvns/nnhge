@@ -2,11 +2,10 @@
 
 #include <cmath>
 #include <cstdio>
-#include <utility>
-
 #include <nnh/gfx.hpp>
 #include <nnh/input.hpp>
 #include <nnh/log.hpp>
+#include <utility>
 
 NNH_LOG_CHANNEL(game); // lines like "I game play: started" in the log and in nnh run (api/log.md)
 
@@ -16,18 +15,25 @@ constexpr float kSpeed = 2.0f;    // pixels per frame (the game runs at 60 frame
 constexpr float kDeadZone = 0.2f; // Circle Pad values closer to the centre count as rest
 constexpr float kSize = 32.0f;    // the sprite's width and height
 constexpr float kTopWidth = 400.0f, kTopHeight = 240.0f; // the top screen, in pixels
-constexpr int kByeFrames = 30;    // half a second of "Bye!" before the game ends
+constexpr int kByeFrames = 30;                           // half a second of "Bye!" before the game ends
 
-float clamped(float value, float low, float high) { return value < low ? low : (value > high ? high : value); }
+float clamped(float value, float low, float high) {
+    return value < low ? low : (value > high ? high : value);
+}
 
 } // namespace
 
 void PlayScene::on_enter() {
-    // Assets by path, without the extension (api/assets.md). A failed load logs an error; the game goes on without it.
-    if (auto texture = nnh::load_texture("art/player")) player_ = std::move(texture.value());
-    else NNH_LOG_ERROR(game, "play: art/player: %s", texture.error().message);
-    if (auto sound = nnh::load_sound("sfx/blip")) blip_ = std::move(sound.value());
-    else NNH_LOG_ERROR(game, "play: sfx/blip: %s", sound.error().message);
+    // Assets by path, without the extension (api/assets.md). A failed load logs an error; the game goes on
+    // without it.
+    if (auto texture = nnh::load_texture("art/player"))
+        player_ = std::move(texture.value());
+    else
+        NNH_LOG_ERROR(game, "play: art/player: %s", texture.error().message);
+    if (auto sound = nnh::load_sound("sfx/blip"))
+        blip_ = std::move(sound.value());
+    else
+        NNH_LOG_ERROR(game, "play: sfx/blip: %s", sound.error().message);
 
     nnh::gfx::set_clear_color(nnh::Screen::Top, nnh::rgb(32, 48, 96)); // the screens' background (api/gfx.md)
     nnh::gfx::set_clear_color(nnh::Screen::Bottom, nnh::rgb(24, 24, 24));
@@ -36,7 +42,9 @@ void PlayScene::on_enter() {
     sound_done_ = nnh::events::subscribe<&PlayScene::on_sound_finished>(this);
 }
 
-void PlayScene::on_exit() { sound_done_.reset(); }
+void PlayScene::on_exit() {
+    sound_done_.reset();
+}
 
 void PlayScene::update() {
     if (!started_) { // on the scene's first frame: a test script is attached by then (tests/smoke.nnhs)
@@ -74,7 +82,8 @@ void PlayScene::move_player() {
     position_.y = clamped(position_.y + dy * kSpeed, 0, kTopHeight - kSize);
     const bool moving = dx != 0 || dy != 0;
     if (moving_ && !moving) { // one line each time the sprite comes to rest (the test script waits for it)
-        NNH_LOG_INFO(game, "play: stopped at (%d, %d)", static_cast<int>(position_.x), static_cast<int>(position_.y));
+        NNH_LOG_INFO(game, "play: stopped at (%d, %d)", static_cast<int>(position_.x),
+                     static_cast<int>(position_.y));
     }
     moving_ = moving;
 }
@@ -88,13 +97,14 @@ void PlayScene::draw() {
     const nnh::Screen top = nnh::Screen::Top, bottom = nnh::Screen::Bottom;
     nnh::gfx::draw(top, player_, position_);
     nnh::gfx::draw_text(top, {8, 8}, NNH_GAME_TITLE, {.scale = 2, .shadow = true}); // TITLE in CMakeLists.txt
-    nnh::gfx::draw_text(top, {8, 226}, "Circle Pad: move   A: sound   START: quit", {.color = nnh::colors::gray});
+    nnh::gfx::draw_text(top, {8, 226}, "Circle Pad: move   A: sound   START: quit",
+                        {.color = nnh::colors::gray});
     if (bye_frames_ > 0) {
         nnh::gfx::draw_text(top, {kTopWidth / 2, 108}, "Bye!", {.scale = 3, .align = nnh::TextAlign::Center});
     }
 
-    char line[48];
-    std::snprintf(line, sizeof line, "Sounds finished: %d", blips_finished_); // no heap: a buffer on the stack
+    char line[48]; // no heap in a frame: a buffer on the stack
+    std::snprintf(line, sizeof line, "Sounds finished: %d", blips_finished_);
     nnh::gfx::draw_text(bottom, {8, 8}, "This is the bottom screen.");
     nnh::gfx::draw_text(bottom, {8, 24}, line, {.color = nnh::colors::yellow});
     nnh::gfx::draw_text(bottom, {8, 200}, "Change src/scenes/play_scene.cpp,\nthen run the game again.",

@@ -72,6 +72,8 @@ int command_serve(const Options& options);
 
 /// nnh new <name> (commands/new.cpp, spec 033 FR-3): writes a game project into ./<name>. 0 created, 1 refused or failed.
 int command_new(const Options& options);
+/// nnh doctor (commands/doctor.cpp, spec 033 FR-18): the report; 0 ready, 1 a required check failed.
+int command_doctor(const Options& options);
 int command_unpair();
 
 } // namespace nnh::tool

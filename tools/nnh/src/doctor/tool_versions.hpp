@@ -1,9 +1,10 @@
 #pragma once
-// Reading tool versions from what the tools print (spec 033 FR-19, D56 item 5): `cmake --version`, `ninja --version`,
-// a C++ compiler's `--version` (GCC, MinGW-w64/WinLibs, clang, Apple clang) or MSVC `cl`'s banner,
-// `arm-none-eabi-gcc --version`, and devkitPro's pacman package folder names. Bounded (only the first 64 KiB are read,
-// numbers of at most 6 digits) and pure; tested on recorded outputs (tools/nnh/tests/data/doctor/) and mini-fuzzed in
-// tools/nnh/tests/test_tool_versions.cpp and test_fuzz_tool.cpp.
+// Reading tool versions from what the tools print (spec 033 FR-19, D56 item 5): `cmake --version`, `ninja
+// --version`, a C++ compiler's `--version` (GCC, MinGW-w64/WinLibs, clang, Apple clang) or MSVC `cl`'s
+// banner, `arm-none-eabi-gcc --version`, and devkitPro's pacman package folder names. Bounded (only the first
+// 64 KiB are read, numbers of at most 6 digits) and pure; tested on recorded outputs
+// (tools/nnh/tests/data/doctor/) and mini-fuzzed in tools/nnh/tests/test_tool_versions.cpp and
+// test_fuzz_tool.cpp.
 
 #include <compare>
 #include <string>

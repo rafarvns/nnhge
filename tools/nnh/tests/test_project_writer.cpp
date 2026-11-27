@@ -1,5 +1,8 @@
 // Writing a new project: never overwrite, all or nothing (new/project_writer.hpp, spec 033 FR-5, FR-6).
 
+#include "new/project_writer.hpp"
+#include "test.hpp"
+
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -7,16 +10,15 @@
 #include <memory>
 #include <string>
 
-#include "new/project_writer.hpp"
-#include "test.hpp"
-
 using namespace nnh::tool;
 
 namespace {
 
 namespace fs = std::filesystem;
 
-fs::path u8(const std::string& s) { return fs::path(std::u8string(s.begin(), s.end())); }
+fs::path u8(const std::string& s) {
+    return fs::path(std::u8string(s.begin(), s.end()));
+}
 
 std::string fresh(const char* name) {
     const fs::path p = fs::path(NNH_TOOL_TEST_TMP) / "writer" / name;
@@ -43,17 +45,22 @@ std::string read(const fs::path& p) {
 std::string listing(const fs::path& root) {
     std::string out;
     std::error_code ec;
-    for (auto it = fs::recursive_directory_iterator(root, ec); it != fs::recursive_directory_iterator(); ++it) {
+    for (auto it = fs::recursive_directory_iterator(root, ec); it != fs::recursive_directory_iterator();
+         ++it) {
         const auto& e = *it;
-        out += e.path().generic_string() + "|" + (e.is_regular_file() ? std::to_string(e.file_size()) : "dir") + "|" +
+        out += e.path().generic_string() + "|" +
+               (e.is_regular_file() ? std::to_string(e.file_size()) : "dir") + "|" +
                std::to_string(e.last_write_time().time_since_epoch().count()) + "\n";
     }
     return out;
 }
 
-bool has(const std::string& text, const char* part) { return text.find(part) != std::string::npos; }
+bool has(const std::string& text, const char* part) {
+    return text.find(part) != std::string::npos;
+}
 
-/// The real file system with create_file failing on call `fail_at` (0-based) and create_folder on `fail_folder_at`.
+/// The real file system with create_file failing on call `fail_at` (0-based) and create_folder on
+/// `fail_folder_at`.
 NewFs failing_fs(int fail_at, int fail_folder_at = -1) {
     NewFs real = system_new_fs();
     auto files = std::make_shared<int>(0);
@@ -74,7 +81,8 @@ NNH_TEST(a_new_folder_gets_every_file_and_sub_folder) {
     const std::string base = fresh("new");
     const WriteResult r = write_project(base + "/demo", project(), system_new_fs());
     CHECK(r.ok && r.error.empty());
-    for (const OutputFile& f : project()) CHECK(read(fs::path(base) / "demo" / f.path) == f.bytes);
+    for (const OutputFile& f : project())
+        CHECK(read(fs::path(base) / "demo" / f.path) == f.bytes);
 }
 
 NNH_TEST(an_existing_empty_folder_is_filled) {
@@ -109,7 +117,8 @@ NNH_TEST(a_link_is_refused_unchanged) {
     fs::create_directories(fs::path(base) / "target");
     fs::create_directory_symlink(fs::path(base) / "target", fs::path(base) / "demo", ec);
     if (ec) {
-        std::printf("     (no symbolic link made here: %s; the rule was checked with a fake)\n", ec.message().c_str());
+        std::printf("     (no symbolic link made here: %s; the rule was checked with a fake)\n",
+                    ec.message().c_str());
         return;
     }
     const std::string before = listing(base);

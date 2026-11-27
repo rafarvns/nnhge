@@ -1,17 +1,17 @@
 // The real probes of nnh doctor (probes.hpp): this machine's environment, files, programs, disk and network.
 
-#include <algorithm>
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
-#include <random>
-
 #include "console_link.hpp"
 #include "doctor/probes.hpp"
 #include "host_compiler.hpp"
 #include "netloader.hpp"
 #include "text_file.hpp"
 #include "user_config.hpp"
+
+#include <algorithm>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <random>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -22,7 +22,9 @@ namespace {
 
 namespace fs = std::filesystem;
 
-fs::path u8path(const std::string& s) { return fs::path(std::u8string(s.begin(), s.end())); }
+fs::path u8path(const std::string& s) {
+    return fs::path(std::u8string(s.begin(), s.end()));
+}
 
 std::string os_name() {
 #if defined(_WIN32)
@@ -30,12 +32,14 @@ std::string os_name() {
     OSVERSIONINFOW v{};
     v.dwOSVersionInfoSize = sizeof v;
     const HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
-    const auto get = ntdll ? reinterpret_cast<RtlGetVersionFn>(reinterpret_cast<void*>(GetProcAddress(ntdll, "RtlGetVersion")))
+    const auto get = ntdll ? reinterpret_cast<RtlGetVersionFn>(
+                                 reinterpret_cast<void*>(GetProcAddress(ntdll, "RtlGetVersion")))
                            : nullptr;
     if (!get || get(&v) != 0) return "Windows";
-    const std::string number = std::to_string(v.dwMajorVersion) + "." + std::to_string(v.dwMinorVersion) + "." +
-                               std::to_string(v.dwBuildNumber);
-    const char* name = v.dwMajorVersion == 10 ? (v.dwBuildNumber >= 22000 ? "Windows 11" : "Windows 10") : "Windows";
+    const std::string number = std::to_string(v.dwMajorVersion) + "." + std::to_string(v.dwMinorVersion) +
+                               "." + std::to_string(v.dwBuildNumber);
+    const char* name =
+        v.dwMajorVersion == 10 ? (v.dwBuildNumber >= 22000 ? "Windows 11" : "Windows 10") : "Windows";
     return std::string(name) + " (" + number + ")";
 #elif defined(__APPLE__)
     return "macOS";
@@ -56,16 +60,19 @@ std::string find_console(const std::string& console) {
         const Settings settings = load_user_settings(); // read only: doctor writes nothing
         const auto remembered = settings.find("console");
         if (remembered != settings.end()) {
-            if (const auto last = parse_ipv4(remembered->second); last && is_local_network(*last)) targets.push_back(*last);
+            if (const auto last = parse_ipv4(remembered->second); last && is_local_network(*last))
+                targets.push_back(*last);
         }
-        for (const Ipv4& b : net::local_broadcast_addresses()) targets.push_back(b);
+        for (const Ipv4& b : net::local_broadcast_addresses())
+            targets.push_back(b);
         targets.push_back(Ipv4{{255, 255, 255, 255}});
     }
     const auto found = discover_console(targets, kNetloaderPort, kNetloaderPort, 3, 1000);
     return found && is_local_network(*found) ? to_string(*found) : "";
 }
 
-/// One byte of `url` through `cmake -P` on a script made for it in the system's temporary folder (removed after).
+/// One byte of `url` through `cmake -P` on a script made for it in the system's temporary folder (removed
+/// after).
 std::string fetch(const std::string& cmake, const std::string& url, const std::string& cainfo) {
     std::error_code ec;
     const fs::path dir = fs::temp_directory_path(ec);
@@ -74,12 +81,14 @@ std::string fetch(const std::string& cmake, const std::string& url, const std::s
     const fs::path script = dir / ("nnh-doctor-" + std::to_string(random()) + ".cmake");
     {
         std::ofstream out(script, std::ios::binary);
-        out << "file(DOWNLOAD \"" << url << "\" RANGE_START 0 RANGE_END 0 STATUS st TIMEOUT 8 INACTIVITY_TIMEOUT 8";
+        out << "file(DOWNLOAD \"" << url
+            << "\" RANGE_START 0 RANGE_END 0 STATUS st TIMEOUT 8 INACTIVITY_TIMEOUT 8";
         if (!cainfo.empty()) out << " TLS_CAINFO \"" << cainfo << "\"";
         out << ")\nmessage(\"nnh-status: ${st}\")\n";
         if (!out) return "could not write a temporary script";
     }
-    const RunResult r = run_program(cmake, {"-P", script.string()}, kDoctorProgramTimeoutMs, kDoctorMaxOutput);
+    const RunResult r =
+        run_program(cmake, {"-P", script.string()}, kDoctorProgramTimeoutMs, kDoctorMaxOutput);
     fs::remove(script, ec);
     if (!r.started) return "cmake did not start";
     if (r.timed_out) return "no answer in 10 s";

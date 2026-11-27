@@ -11,17 +11,33 @@ namespace {
 constexpr std::size_t kMaxName = 32;
 constexpr std::size_t kMaxText = 64;
 
-const char* const kReservedTargets[] = {"dist",       "all",          "clean",         "install",
-                                        "test",       "help",         "package",       "package_source",
-                                        "edit_cache", "rebuild_cache", "list_install_components", "nnh"};
+const char* const kReservedTargets[] = {"dist",
+                                        "all",
+                                        "clean",
+                                        "install",
+                                        "test",
+                                        "help",
+                                        "package",
+                                        "package_source",
+                                        "edit_cache",
+                                        "rebuild_cache",
+                                        "list_install_components",
+                                        "nnh"};
 
-bool lower(char c) { return c >= 'a' && c <= 'z'; }
-bool digit(char c) { return c >= '0' && c <= '9'; }
-bool name_char(char c) { return lower(c) || digit(c) || c == '_' || c == '-'; }
+bool lower(char c) {
+    return c >= 'a' && c <= 'z';
+}
+bool digit(char c) {
+    return c >= '0' && c <= '9';
+}
+bool name_char(char c) {
+    return lower(c) || digit(c) || c == '_' || c == '-';
+}
 
 bool windows_device(std::string_view n) {
     if (n == "con" || n == "nul" || n == "aux" || n == "prn") return true;
-    return n.size() == 4 && (n.substr(0, 3) == "com" || n.substr(0, 3) == "lpt") && n[3] >= '1' && n[3] <= '9';
+    return n.size() == 4 && (n.substr(0, 3) == "com" || n.substr(0, 3) == "lpt") && n[3] >= '1' &&
+           n[3] <= '9';
 }
 
 bool reserved_target(std::string_view n) {
@@ -63,7 +79,8 @@ std::string sanitized(std::string_view text) {
         out += c;
     }
     if (out.size() > kMaxName) out.resize(kMaxName);
-    while (!out.empty() && (out.back() == '-' || out.back() == '_')) out.pop_back();
+    while (!out.empty() && (out.back() == '-' || out.back() == '_'))
+        out.pop_back();
     return out;
 }
 
@@ -73,7 +90,8 @@ std::string suggestion_for(std::string_view name) {
     return !s.empty() && s != name && broken_rule(s).empty() ? s : "";
 }
 
-/// Decodes one UTF-8 character at `i` (strict: no overlongs, surrogates or values past U+10FFFF). false = invalid.
+/// Decodes one UTF-8 character at `i` (strict: no overlongs, surrogates or values past U+10FFFF). false =
+/// invalid.
 bool next_code_point(std::string_view t, std::size_t& i, std::uint32_t& cp) {
     const auto b = static_cast<unsigned char>(t[i]);
     int extra = 0;
@@ -128,14 +146,18 @@ TextCheck check_text_field(std::string_view text, bool allow_empty) {
 
 std::optional<std::uint32_t> parse_unique_id(std::string_view text, std::string& error) {
     std::string_view digits = text;
-    if (digits.size() > 2 && digits[0] == '0' && (digits[1] == 'x' || digits[1] == 'X')) digits.remove_prefix(2);
+    if (digits.size() > 2 && digits[0] == '0' && (digits[1] == 'x' || digits[1] == 'X'))
+        digits.remove_prefix(2);
     std::uint64_t value = 0;
     bool any = false;
     for (char c : digits) {
         int d = -1;
-        if (c >= '0' && c <= '9') d = c - '0';
-        else if (c >= 'a' && c <= 'f') d = c - 'a' + 10;
-        else if (c >= 'A' && c <= 'F') d = c - 'A' + 10;
+        if (c >= '0' && c <= '9')
+            d = c - '0';
+        else if (c >= 'a' && c <= 'f')
+            d = c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F')
+            d = c - 'A' + 10;
         if (d < 0) {
             any = false;
             break;

@@ -1171,10 +1171,9 @@ still links the reload core in Development, through its textures (the texture ki
 - Stage 4: T4.1's tests of tileset and mesh textures following a texture reload and of a texture refused for Linear
   memory (the fake platform's texture_create has no failure control yet); T4.2's tests of the pseudo-language and of a
   font rebaked in the same batch.
-- Stage 5: T5.1's test of a library moved after loading and ASan's proof (VM); T5.3's test of a stream whose file is
-  replaced underneath (`fake::replace_asset`); T5.4's full-texture-table and fallback tests.
-- Stage 6: T6.1's tests of more submeshes and new textures; T6.2's "17 edited → 16 tracked" and "no live values links
-  nothing" tests.
+- Stage 5: T5.4's full-texture-table and fallback tests. (Done in the fifth session: T5.1's moved library, T5.3's
+  rewritten stream and crossfade, T6.1's submeshes and new texture, T6.2's 16-tunable cap; `nm` shows `hello` links no
+  FR-23 code and `live` does.)
 - Stage 7: `RELOAD_SHOT` (the scripts take the screenshots instead), the `tight` scene with `huge.png` (errors.nnhs's
   linear-memory refusal on the console), the plan's OFL font copy (the HUD BMFont is used instead).
 - Stage 8: T8.4's `compare.sh` against T0.1 (no reference tree).

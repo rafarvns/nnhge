@@ -53,16 +53,16 @@ NNH_TEST(a_checkout_nnh_uses_its_own_checkout_and_prints_the_set_lines) {
     CHECK(c.engine_url.empty() && c.engine_sha256.empty()); // no pin: the guard
     const std::string out = joined(c.notes);
     CHECK(has(out, "local engine E:/src/nnhge"));
-    CHECK(has(out, "export NNHGE_ENGINE_DIR=E:/src/nnhge"));
-    CHECK(has(out, "$env:NNHGE_ENGINE_DIR = \"E:/src/nnhge\""));
-    CHECK(has(out, "set NNHGE_ENGINE_DIR=E:/src/nnhge"));
-    CHECK(has(out, "setx NNHGE_ENGINE_DIR E:/src/nnhge"));
+    CHECK(has(out, "export NNHGE_ENGINE_DIR='E:/src/nnhge'"));
+    CHECK(has(out, "$env:NNHGE_ENGINE_DIR = 'E:/src/nnhge'"));
+    CHECK(has(out, "set \"NNHGE_ENGINE_DIR=E:/src/nnhge\""));
+    CHECK(has(out, "setx NNHGE_ENGINE_DIR \"E:/src/nnhge\""));
 }
 
 NNH_TEST(linux_prints_export_and_the_profile_hint) {
     const EngineChoice c = choose_engine(checkout("/home/me/nnhge"), "", nullptr, false, fake_version);
     const std::string out = joined(c.notes);
-    CHECK(c.ok && has(out, "export NNHGE_ENGINE_DIR=/home/me/nnhge") && has(out, "~/.profile"));
+    CHECK(c.ok && has(out, "export NNHGE_ENGINE_DIR='/home/me/nnhge'") && has(out, "~/.profile"));
     CHECK(!has(out, "setx") && !has(out, "PowerShell"));
 }
 
@@ -91,7 +91,7 @@ NNH_TEST(the_set_lines_are_skipped_when_the_variable_already_names_the_folder) {
     // Linux paths are case-sensitive
     const EngineChoice l =
         choose_engine(checkout("/home/me/nnhge"), "", "/home/me/NNHGE", false, fake_version);
-    CHECK(has(joined(l.notes), "export NNHGE_ENGINE_DIR=/home/me/nnhge"));
+    CHECK(has(joined(l.notes), "export NNHGE_ENGINE_DIR='/home/me/nnhge'"));
 }
 
 NNH_TEST(another_folder_in_the_variable_is_named) {
@@ -99,7 +99,7 @@ NNH_TEST(another_folder_in_the_variable_is_named) {
     const std::string out = joined(c.notes);
     CHECK(c.ok &&
           has(out, "NNHGE_ENGINE_DIR is set to E:/other: builds of this project will use that engine"));
-    CHECK(has(out, "export NNHGE_ENGINE_DIR=E:/src/nnhge"));
+    CHECK(has(out, "export NNHGE_ENGINE_DIR='E:/src/nnhge'"));
 }
 
 NNH_TEST(a_release_nnh_pins_its_archive_and_needs_no_variable) {
@@ -112,13 +112,13 @@ NNH_TEST(a_release_nnh_pins_its_archive_and_needs_no_variable) {
           set.engine_url == release().engine_url);
     const EngineChoice local = choose_engine(release(), "E:/src/nnhge", nullptr, true, fake_version);
     CHECK(local.ok && local.local_dir == "E:/src/nnhge" && local.engine_url == release().engine_url);
-    CHECK(has(joined(local.notes), "export NNHGE_ENGINE_DIR=E:/src/nnhge"));
+    CHECK(has(joined(local.notes), "export NNHGE_ENGINE_DIR='E:/src/nnhge'"));
 }
 
 NNH_TEST(paths_with_spaces_are_quoted_in_every_shell) {
     const auto lines = joined(env_lines("E:/my src/nnhge", true));
-    CHECK(has(lines, "export NNHGE_ENGINE_DIR=\"E:/my src/nnhge\""));
-    CHECK(has(lines, "$env:NNHGE_ENGINE_DIR = \"E:/my src/nnhge\""));
+    CHECK(has(lines, "export NNHGE_ENGINE_DIR='E:/my src/nnhge'"));
+    CHECK(has(lines, "$env:NNHGE_ENGINE_DIR = 'E:/my src/nnhge'"));
     CHECK(has(lines, "set \"NNHGE_ENGINE_DIR=E:/my src/nnhge\""));
     CHECK(has(lines, "setx NNHGE_ENGINE_DIR \"E:/my src/nnhge\""));
 }
@@ -154,4 +154,14 @@ NNH_TEST(an_engine_folder_needs_its_project_and_the_game_module) {
     CHECK(engine_folder_version(root.generic_string()) == "0.3.1");
     CHECK(engine_folder_version((root / "missing").generic_string()).empty());
     CHECK(engine_folder_version(NNH_TOOL_SOURCE_DIR "/../..") == build_info().version); // this checkout
+}
+
+NNH_TEST(set_lines_quote_what_each_shell_would_read) { // review 033: ( ) ' $ and the backtick
+    const auto lines = joined(env_lines("E:/a (b) c'd $e `f", true));
+    CHECK(has(lines, "export NNHGE_ENGINE_DIR='E:/a (b) c'\\''d $e `f'"));     // bash: '\'' closes, quotes, reopens
+    CHECK(has(lines, "$env:NNHGE_ENGINE_DIR = 'E:/a (b) c''d $e `f'"));       // PowerShell: '' inside '...'
+    CHECK(has(lines, "set \"NNHGE_ENGINE_DIR=E:/a (b) c'd $e `f\""));         // cmd: the whole assignment quoted
+    CHECK(has(lines, "setx NNHGE_ENGINE_DIR \"E:/a (b) c'd $e `f\""));
+    const auto linux_lines = joined(env_lines("/home/me/it's $here", false));
+    CHECK(has(linux_lines, "export NNHGE_ENGINE_DIR='/home/me/it'\\''s $here'"));
 }

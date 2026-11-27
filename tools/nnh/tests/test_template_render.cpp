@@ -229,14 +229,23 @@ NNH_TEST(the_template_cmakelists_carries_name_title_id_and_the_guard) {
           std::string::npos);
     CHECK(t.find("NNHGE_VERSION VERSION_LESS 0.1)") != std::string::npos);
     CHECK(t.find("# AUTHOR \"Your name\"") != std::string::npos);
-    CHECK(t.find("blob/main/docs/guides/packaging.md") != std::string::npos);
+    CHECK(t.find("# Docs for this engine version: https://github.com/rafarvns/nnhge/blob/main/docs\n") !=
+          std::string::npos);
+    // Every comment of nnh_add_game starts in the same column (the author line included), and no line is long
+    CHECK(t.find("    # AUTHOR \"Your name\"               # shown in the HOME Menu") != std::string::npos);
+    CHECK(t.find("    ASSETS assets                      # ") != std::string::npos);
+    for (std::size_t start = 0, end = 0; start < t.size(); start = end + 1) {
+        end = t.find('\n', start);
+        if (end == std::string::npos) end = t.size();
+        CHECK(end - start <= 120);
+    }
     in.engine_url = "https://github.com/rafarvns/nnhge/archive/refs/tags/v0.1.0.tar.gz";
     in.engine_sha256 = std::string(64, 'c');
     r = render_project(in);
     cmake = output(r, "CMakeLists.txt");
     CHECK(cmake && cmake->bytes.find("set(nnhge_url \"" + in.engine_url + "\")") != std::string::npos);
     CHECK(cmake && cmake->bytes.find("set(nnhge_sha256 \"" + in.engine_sha256 + "\")") != std::string::npos);
-    CHECK(cmake && cmake->bytes.find("blob/v0.1.0/docs/") != std::string::npos);
+    CHECK(cmake && cmake->bytes.find("blob/v0.1.0/docs\n") != std::string::npos);
 }
 
 NNH_TEST(the_template_readme_has_every_section) {

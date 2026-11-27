@@ -38,6 +38,11 @@ struct Probes {
         fetch;
 };
 
+/// The CMake script `fetch` runs: one byte of `url`, with `cainfo` as TLS_CAINFO when not empty ('\' -> '/').
+/// "" (nothing to run) when `url` is not a plain https:// or file:// URL or either value holds a character a CMake
+/// script would read (a quote, '$', ';', a control character, a backslash in the URL).
+std::string doctor_fetch_script(const std::string& url, const std::string& cainfo);
+
 /// The real probes of this machine.
 Probes system_probes();
 

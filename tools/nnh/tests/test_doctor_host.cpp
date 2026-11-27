@@ -157,3 +157,10 @@ NNH_TEST(debian_family_comes_from_os_release) {
     CHECK(linux_host("ID=arch\nID_LIKE=archlinux\n") == Host::OtherLinux);
     CHECK(linux_host("") == Host::OtherLinux);
 }
+
+NNH_TEST(a_cxx_that_is_not_a_program_is_named) { // review 033: CXX="ccache g++"
+    FakeMachine m = linux_machine();
+    m.env["CXX"] = "ccache g++";
+    const DoctorCheck c = check(simulator(m, Host::Debian), "Simulator", "C++ compiler");
+    CHECK(c.state == CheckState::Fail && has(c.found, "CXX=ccache g++ not found") && has(c.found, "LAUNCHER"));
+}

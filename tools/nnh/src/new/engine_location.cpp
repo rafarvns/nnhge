@@ -103,17 +103,28 @@ std::string engine_dir_from_option(const std::string& option, const std::string&
     return without_trailing_slash(out);
 }
 
-std::vector<std::string> env_lines(const std::string& folder, bool windows) {
-    const bool space = folder.find(' ') != std::string::npos;
-    const std::string q = space ? "\"" + folder + "\"" : folder;
-    if (!windows) {
-        return {"export NNHGE_ENGINE_DIR=" + q, "(add that line to ~/.profile for every new shell)"};
+namespace {
+
+/// `text` in single quotes, each `'` written as `quote_inside` (bash: '\'' ; PowerShell: '').
+std::string single_quoted(const std::string& text, const char* quote_inside) {
+    std::string out = "'";
+    for (char c : text) {
+        if (c == '\'') out += quote_inside;
+        else out += c;
     }
-    return {"Git Bash:    export NNHGE_ENGINE_DIR=" + q,
-            "PowerShell:  $env:NNHGE_ENGINE_DIR = \"" + folder + "\"",
-            std::string("cmd:         ") +
-                (space ? "set \"NNHGE_ENGINE_DIR=" + folder + "\"" : "set NNHGE_ENGINE_DIR=" + folder),
-            "every new shell (Windows): setx NNHGE_ENGINE_DIR " + q};
+    return out + "'";
+}
+
+} // namespace
+
+std::vector<std::string> env_lines(const std::string& folder, bool windows) {
+    // Single quotes: bash and PowerShell read nothing inside them ($, `, parentheses); cmd quotes the whole
+    // assignment; setx (cmd or PowerShell) takes a double-quoted value (Windows paths can't hold '"').
+    const std::string bash = "export NNHGE_ENGINE_DIR=" + single_quoted(folder, "'\\''");
+    if (!windows) return {bash, "(add that line to ~/.profile for every new shell)"};
+    return {"Git Bash:    " + bash, "PowerShell:  $env:NNHGE_ENGINE_DIR = " + single_quoted(folder, "''"),
+            "cmd:         set \"NNHGE_ENGINE_DIR=" + folder + "\"",
+            "every new shell (Windows): setx NNHGE_ENGINE_DIR \"" + folder + "\""};
 }
 
 std::string engine_version_from_cmakelists(std::string_view text) {

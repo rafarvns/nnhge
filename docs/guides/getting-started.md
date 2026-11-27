@@ -65,8 +65,8 @@ nnh doctor
 
 One line per tool (`ok`, `warn` or `FAIL`) and a `fix:` line under each problem: the command to paste or the page to
 open. It ends with one verdict per group (`Simulator: ready`, `3DS: not ready (1 problem)`) and exits 0 when everything
-required is there. `--pc` checks only what the simulator needs; `--online` also tries the downloads a first build
-makes and looks for your console. Details: [the nnh tool](nnh-tool.md#checking-your-machine-nnh-doctor).
+required is there. With `--pc` the 3DS group is still checked and shown, but its problems don't count in the exit
+code (for simulator-only work); `--online` also tries the downloads a first build makes and looks for your console. Details: [the nnh tool](nnh-tool.md#checking-your-machine-nnh-doctor).
 
 ## 4. Make a game
 

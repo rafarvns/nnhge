@@ -13,6 +13,9 @@ set(cases
     "|${hash}|NNH_RELEASE_ENGINE_URL and NNH_RELEASE_ENGINE_SHA256 go together"
     "http://example.org/a.tar.gz|${hash}|NNH_RELEASE_ENGINE_URL .* is not an https:// or file:// URL"
     "https://example.org/a b.tar.gz|${hash}|NNH_RELEASE_ENGINE_URL .* is not an https:// or file:// URL"
+    "https://example.org/a<b>.tar.gz|${hash}|NNH_RELEASE_ENGINE_URL .* is not an https:// or file:// URL"
+    "https://example.org/{a}.tar.gz|${hash}|NNH_RELEASE_ENGINE_URL .* is not an https:// or file:// URL"
+    "https://example.org/a^b.tar.gz|${hash}|NNH_RELEASE_ENGINE_URL .* is not an https:// or file:// URL"
     "https://example.org/a.tar.gz|${hash}0|NNH_RELEASE_ENGINE_SHA256 .* is not 64 hex digits"
     "https://example.org/a.tar.gz|0123|NNH_RELEASE_ENGINE_SHA256 .* is not 64 hex digits"
     "https://example.org/a.tar.gz|zz23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef|NNH_RELEASE_ENGINE_SHA256 .* is not 64 hex digits")

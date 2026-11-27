@@ -11,7 +11,8 @@ function(nnh_check_release_pin url sha256)
         message(FATAL_ERROR "nnh: NNH_RELEASE_ENGINE_URL and NNH_RELEASE_ENGINE_SHA256 go together "
                             "(URL \"${url}\", SHA-256 \"${sha256}\"): set both or neither")
     endif()
-    if(NOT url MATCHES "^(https|file)://[^ \t\"\\\\]+$")
+    # The characters nnh doctor accepts in a URL it fetches (checks_network.cpp safe_url): letters, digits, -._~:/?#[]@!&'()*+,=%
+    if(NOT url MATCHES "^(https|file)://[]A-Za-z0-9._~:/?#[@!&'()*+,=%-]+$")
         message(FATAL_ERROR "nnh: NNH_RELEASE_ENGINE_URL \"${url}\" is not an https:// or file:// URL")
     endif()
     if(NOT sha256 MATCHES "^[0-9a-fA-F]+$")

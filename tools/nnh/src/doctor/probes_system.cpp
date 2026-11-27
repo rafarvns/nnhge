@@ -4,13 +4,13 @@
 #include "doctor/probes.hpp"
 #include "host_compiler.hpp"
 #include "netloader.hpp"
+#include "new/project_writer.hpp"
 #include "text_file.hpp"
 #include "user_config.hpp"
 
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <random>
 
 #ifdef _WIN32
@@ -71,25 +71,22 @@ std::string find_console(const std::string& console) {
     return found && is_local_network(*found) ? to_string(*found) : "";
 }
 
-/// One byte of `url` through `cmake -P` on a script made for it in the system's temporary folder (removed
-/// after).
+/// One byte of `url` through `cmake -P` on a script made for it in the system's temporary folder: created
+/// exclusively (create_file_exclusive removes it if the write fails), passed as UTF-8, removed after.
 std::string fetch(const std::string& cmake, const std::string& url, const std::string& cainfo) {
+    const std::string text = doctor_fetch_script(url, cainfo);
+    if (text.empty()) return "the URL or the CA bundle path holds characters a CMake script would read";
     std::error_code ec;
     const fs::path dir = fs::temp_directory_path(ec);
     if (ec) return "no temporary folder";
     std::random_device random;
-    const fs::path script = dir / ("nnh-doctor-" + std::to_string(random()) + ".cmake");
-    {
-        std::ofstream out(script, std::ios::binary);
-        out << "file(DOWNLOAD \"" << url
-            << "\" RANGE_START 0 RANGE_END 0 STATUS st TIMEOUT 8 INACTIVITY_TIMEOUT 8";
-        if (!cainfo.empty()) out << " TLS_CAINFO \"" << cainfo << "\"";
-        out << ")\nmessage(\"nnh-status: ${st}\")\n";
-        if (!out) return "could not write a temporary script";
+    const std::u8string u8 = (dir / ("nnh-doctor-" + std::to_string(random()) + ".cmake")).generic_u8string();
+    const std::string script(u8.begin(), u8.end());
+    if (!create_file_exclusive(script, text, static_cast<std::size_t>(-1))) {
+        return "could not write a temporary script";
     }
-    const RunResult r =
-        run_program(cmake, {"-P", script.string()}, kDoctorProgramTimeoutMs, kDoctorMaxOutput);
-    fs::remove(script, ec);
+    const RunResult r = run_program(cmake, {"-P", script}, kDoctorProgramTimeoutMs, kDoctorMaxOutput);
+    fs::remove(u8path(script), ec);
     if (!r.started) return "cmake did not start";
     if (r.timed_out) return "no answer in 10 s";
     const std::size_t at = r.output.find("nnh-status: ");
@@ -98,7 +95,28 @@ std::string fetch(const std::string& cmake, const std::string& url, const std::s
     return status.rfind("0;", 0) == 0 ? "" : status;
 }
 
+/// No character a quoted CMake argument would read: quotes, '$', ';', backslashes, control characters.
+bool plain_for_cmake(const std::string& text) {
+    for (char c : text) {
+        if (static_cast<unsigned char>(c) < 0x20 || c == 0x7f || c == '"' || c == '$' || c == ';' || c == '\\') {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
+
+std::string doctor_fetch_script(const std::string& url, const std::string& cainfo) {
+    std::string ca = cainfo;
+    std::replace(ca.begin(), ca.end(), '\\', '/');
+    const bool scheme = url.rfind("https://", 0) == 0 || url.rfind("file://", 0) == 0;
+    if (!scheme || url.size() > 2048 || !plain_for_cmake(url) || !plain_for_cmake(ca)) return "";
+    std::string script =
+        "file(DOWNLOAD \"" + url + "\" RANGE_START 0 RANGE_END 0 STATUS st TIMEOUT 8 INACTIVITY_TIMEOUT 8";
+    if (!ca.empty()) script += " TLS_CAINFO \"" + ca + "\"";
+    return script + ")\nmessage(\"nnh-status: ${st}\")\n";
+}
 
 Probes system_probes() {
     Probes p;

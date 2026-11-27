@@ -1,5 +1,5 @@
-# Text files with LF line ends everywhere; assets are binary (never converted)
-* text=auto
+# Text files with LF line endings everywhere; assets are binary (never converted)
+* text=auto eol=lf
 *.png binary
 *.wav binary
 *.ogg binary

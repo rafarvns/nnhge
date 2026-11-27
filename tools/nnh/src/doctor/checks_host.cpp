@@ -93,7 +93,11 @@ DoctorCheck judge_compiler(const CompilerVersion& c, const std::string& path, Ho
 DoctorCheck compiler_check(const Probes& p, const DoctorContext& c) {
     const std::string path = host_compiler_path(p, c);
     if (path.empty()) {
-        return bad(CheckState::Fail, "C++ compiler", "no g++, c++, clang++ or cl on PATH",
+        const std::string cxx = p.env("CXX");
+        return bad(CheckState::Fail, "C++ compiler",
+                   cxx.empty() ? "no g++, c++, clang++ or cl on PATH"
+                               : "CXX=" + cxx + " not found (a program name or a full path; a launcher such as "
+                                                "ccache goes in CMAKE_CXX_COMPILER_LAUNCHER)",
                    fix_for(Problem::InstallCompiler, c.host));
     }
     const bool cl = path.size() >= 6 && path.compare(path.size() - 6, 6, "cl.exe") == 0;

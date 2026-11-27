@@ -63,9 +63,11 @@ DoctorCheck fetch_check(const Probes& p, Host host, const char* name, const std:
                              error.rfind("77;", 0) == 0;
     const std::size_t host_start = url.find("://") + 3;
     const std::string server = url.substr(host_start, url.find('/', host_start) - host_start);
+    // With CMAKE_TLS_CAINFO unset the build already used Git's bundle: pointing the variable at it changes nothing,
+    // so the fix is then the page that explains the variable.
+    const std::string bundle = p.env("CMAKE_TLS_CAINFO").empty() ? "" : git_ca_bundle(p, host);
     return {CheckState::Fail, name, url + ": " + error,
-            certificate ? fix_for(Problem::CaCertificates, host, git_ca_bundle(p, host))
-                        : fix_for(Problem::Unreachable, host, server)};
+            certificate ? fix_for(Problem::CaCertificates, host, bundle) : fix_for(Problem::Unreachable, host, server)};
 }
 
 } // namespace

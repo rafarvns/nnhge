@@ -24,7 +24,7 @@ std::string major_minor(const std::string& version) {
 
 std::string author_line(const NewInputs& in) {
     if (in.author.empty())
-        return "    # AUTHOR \"Your name\"             # shown in the HOME Menu (default: \"Unknown\")";
+        return "    # AUTHOR \"Your name\"               # shown in the HOME Menu (default: \"Unknown\")";
     return "    AUTHOR \"" + in.author + "\"";
 }
 

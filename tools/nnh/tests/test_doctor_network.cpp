@@ -79,6 +79,7 @@ NNH_TEST(a_certificate_failure_gets_the_ca_fix) {
     m.fetch_error = "60;\"SSL peer certificate or SSH remote key was not OK\"";
     m.files.insert("C:/Program Files/Git/mingw64/etc/ssl/certs/ca-bundle.crt");
     m.env["ProgramFiles"] = "C:\\Program Files";
+    m.env["CMAKE_TLS_CAINFO"] = "C:/old/ca.crt"; // set to another bundle: point it at Git's
     DoctorContext c = context(Host::Windows);
     c.online = true;
     DoctorReport r;
@@ -86,6 +87,11 @@ NNH_TEST(a_certificate_failure_gets_the_ca_fix) {
     const DoctorCheck s = check(r, "Downloads", "SDL3");
     CHECK(s.state == CheckState::Fail && has(s.found, "certificate"));
     CHECK(s.fix == "setx CMAKE_TLS_CAINFO \"C:/Program Files/Git/mingw64/etc/ssl/certs/ca-bundle.crt\"");
+    m.env.erase("CMAKE_TLS_CAINFO"); // unset: the build already used Git's bundle, so a setx would change nothing
+    DoctorReport unset;
+    check_downloads(m.probes(), c, unset);
+    CHECK(check(unset, "Downloads", "SDL3").fix ==
+          "https://cmake.org/cmake/help/latest/variable/CMAKE_TLS_CAINFO.html");
     m.fetch_error = "6;\"Could not resolve hostname\"";
     DoctorReport other;
     check_downloads(m.probes(), c, other);
@@ -122,4 +128,15 @@ NNH_TEST(the_sdl3_pins_match_the_engines_cmake) {
     CHECK(has(text, "set(NNH_SDL3_SOURCE_URL \"${NNH_SDL3_URL_BASE}/SDL3-${NNH_SDL3_VERSION}.tar.gz\")"));
     CHECK(mingw == real_base + "/SDL3-devel-" + kSdl3Version + "-mingw.tar.gz");
     CHECK(source == real_base + "/SDL3-" + kSdl3Version + ".tar.gz");
+}
+
+NNH_TEST(the_fetch_script_refuses_values_cmake_would_read) { // review 033
+    const std::string ok = doctor_fetch_script("https://github.com/a/b.tar.gz", "C:\\Program Files\\Git\\ca-bundle.crt");
+    CHECK(has(ok, "file(DOWNLOAD \"https://github.com/a/b.tar.gz\" RANGE_START 0 RANGE_END 0"));
+    CHECK(has(ok, "TLS_CAINFO \"C:/Program Files/Git/ca-bundle.crt\""));
+    CHECK(!has(doctor_fetch_script("https://x/a", ""), "TLS_CAINFO"));
+    CHECK(doctor_fetch_script("https://x/a", "C:/x\")\nexecute_process(COMMAND calc)#").empty());
+    CHECK(doctor_fetch_script("https://x/a", "C:/${HOME}/ca.crt").empty());
+    CHECK(doctor_fetch_script("https://x/a\")\nmessage(boom)#", "").empty());
+    CHECK(doctor_fetch_script("http://x/a", "").empty());
 }

@@ -24,6 +24,9 @@ export PATH="$PATH:/e/src/nnhge/build/pc-release/tools/nnh"      # PowerShell: $
 nnh --version
 ```
 
+On Linux the same, with a Linux folder: `git clone https://github.com/rafarvns/nnhge.git ~/src/nnhge`, `cd
+~/src/nnhge`, the two `cmake` lines, then `export PATH="$PATH:$HOME/src/nnhge/build/pc-release/tools/nnh"`.
+
 The last line prints `nnh 0.1.0 (protocol 1, link 1, windows-x64, from a source checkout)`. Put the `PATH` line in your
 shell's profile (`~/.bashrc`, your PowerShell `$PROFILE`) to keep it.
 
@@ -52,8 +55,8 @@ commands. Because this `nnh` was built from a checkout, the project uses that ch
 environment variable `NNHGE_ENGINE_DIR`, and `nnh new` prints the lines that set it, for example:
 
 ```sh
-export NNHGE_ENGINE_DIR=E:/src/nnhge        # Git Bash (PowerShell: $env:NNHGE_ENGINE_DIR = "E:/src/nnhge")
-setx NNHGE_ENGINE_DIR E:/src/nnhge          # Windows: for every new shell too
+export NNHGE_ENGINE_DIR='E:/src/nnhge'      # Git Bash and Linux (PowerShell: $env:NNHGE_ENGINE_DIR = 'E:/src/nnhge')
+setx NNHGE_ENGINE_DIR "E:/src/nnhge"        # Windows: for every new shell too
 ```
 
 Run the one for your shell (and `setx` once, so new shells have it). The name must be lowercase letters, digits, `_`

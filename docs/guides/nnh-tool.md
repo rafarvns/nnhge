@@ -63,14 +63,16 @@ engine pin. The files (the list is stable from release to release; the code in t
   characters and none of `"`, `\`, `$`, `;`, `@` or a backtick. **`--unique-id`**: `0x00300`–`0xF7FFF` (default: a
   random one from the operating system's random source; keep it for the life of the game,
   [packaging](packaging.md#choosing-a-unique-id)).
-- **Never overwrites**: `<name>` must not exist, or be an empty folder (not a link). Every file is created new; on any
-  failure (disk full, permissions) everything `nnh new` created is removed and it says which file failed. Nothing is
-  written outside the new folder.
+- **Never overwrites**: `<name>` must not exist, or be an empty folder (not a link; on Windows any reparse point counts
+  as one, so an empty folder that OneDrive manages is refused as a link). Every file is created new; on any
+  failure (disk full, permissions) everything `nnh new` created is removed, a half-written file included, and it says
+  which file failed (and names anything it could not remove). Nothing is written outside the new folder.
 - **The engine**: an `nnh` built with an engine release pin (spec 034's release builds) writes that pin. An `nnh` built
   from a checkout (every `nnh` today) writes an empty pin and a guard that stops a configure without a local engine
   (never an unverified download), checks its own checkout (or `--engine <path>`, an engine folder; MSYS forms like
   `/e/src/nnhge` work) and prints the lines that set `NNHGE_ENGINE_DIR` in Git Bash, PowerShell, cmd and for every new
-  shell (`setx`), unless the variable already names that folder. The path is written into no file.
+  shell (`setx`), unless the variable already names that folder: single-quoted for Git Bash and PowerShell, the whole
+  assignment quoted for cmd, so a path with spaces, `$` or parentheses pastes as it is. The path is written into no file.
 - Exit codes: 0 created; 1 refused (a name, a value, a folder in the way, an engine folder that isn't one) or failed;
   2 a bad command line (an unknown option, no name).
 
@@ -100,7 +102,10 @@ This project: ready
 
 `ok`, `warn` (it works with a limit or a risk) or `FAIL` (a build or run that needs it will fail); under every `warn`
 and `FAIL` one `fix:` line, a command to paste (on Windows it works alike in PowerShell, cmd and Git Bash) or a link
-when installing needs an official installer. Colours follow `nnh run`'s rules (`NO_COLOR` turns them off).
+when installing needs an official installer. Colours follow `nnh run`'s rules (`NO_COLOR` turns them off). A fix
+never quotes a program path: with devkitPro's MSYS2 in a folder with a space, the fix is devkitPro's pacman page.
+`DEVKITPRO`, `DEVKITPRO_MSYS2` or `NNHGE_ENGINE_DIR` written in MSYS form (`/d/devkitPro`) gets a hint to write it in
+drive form (`D:/devkitPro`): only MSYS shells read the other form.
 
 | Group | Checks |
 |---|---|

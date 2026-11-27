@@ -1,12 +1,16 @@
 # Embeds a project template into nnh (spec 033 FR-7, D56 item 1): the listed files of SOURCE_DIR, in the order given,
 # become one C++ source defining `const nnh::tool::TemplateFile <SYMBOL>[]` and `<SYMBOL>_count`
-# (src/new/template_files.hpp). Text files have their line endings normalised to LF; images and sounds (.png, .wav) are
+# (src/new/template_files.hpp). Text files have their line endings normalised to LF; binaries (images, sounds, fonts) are
 # copied byte for byte. "x.in" is written as "x" and rendered (placeholders); "gitignore"/"gitattributes" are written as
 # dotfiles, so they never act on the engine repository.
 #   cmake -DSOURCE_DIR=<template> -DOUTPUT=<file.cpp> -DSYMBOL=<name> "-DFILES=a|b/c.in|..." -P embed_template.cmake
 cmake_minimum_required(VERSION 3.25)
 
 string(REPLACE "|" ";" FILES "${FILES}")
+# One list of each kind (a ".in" suffix is looked through); any other extension stops the build.
+set(binary_extensions .png .wav .ogg .ttf .otf .glb .bin)
+set(text_extensions .txt .md .json .toml .cmake .cpp .hpp .h .c .nnhs)
+set(text_names CMakeLists.txt gitignore gitattributes)
 
 set(body "")
 set(table "")
@@ -20,10 +24,17 @@ foreach(stored IN LISTS FILES)
     # file(WRITE) is a text write on Windows.)
     file(READ "${path}" hex HEX)
     string(REGEX REPLACE "([0-9a-f][0-9a-f])" ",\\1" tokens "${hex}")
-    set(text false)
-    if(NOT stored MATCHES "\\.(png|wav)$")
+    string(REGEX REPLACE "\\.in$" "" kind "${stored}")
+    get_filename_component(name "${kind}" NAME)
+    string(REGEX MATCH "\\.[^.]*$" extension "${name}")
+    if(extension IN_LIST binary_extensions)
+        set(text false)
+    elseif(extension IN_LIST text_extensions OR name IN_LIST text_names)
         set(text true)
         string(REPLACE ",0d,0a" ",0a" tokens "${tokens}")
+    else()
+        message(FATAL_ERROR "embed_template: ${stored}: unknown extension \"${extension}\": add it to the text or "
+                            "binary list of tools/nnh/embed_template.cmake")
     endif()
     string(LENGTH "${tokens}" length)
     math(EXPR size "${length} / 3")

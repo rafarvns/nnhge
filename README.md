@@ -130,6 +130,7 @@ this repository once (prebuilt releases come with 1.0), then let it check your t
 cmake --preset pc-release && cmake --build --preset pc-release --target nnh   # add build/pc-release/tools/nnh to PATH
 nnh doctor                                  # what is missing, and the command that fixes it
 nnh new my-game                             # a game project: a scene, a sprite, a sound, a test script, a .cia
+export NNHGE_ENGINE_DIR='E:/src/nnhge'      # your engine checkout: nnh new prints this line for your shell
 cd my-game
 nnh run my-game --pc                        # the simulator
 nnh run my-game                             # the 3DS: Homebrew Launcher open, press Y

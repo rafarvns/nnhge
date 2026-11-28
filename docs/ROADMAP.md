@@ -407,7 +407,9 @@ spec; the order below is a proposal.
   works in the repository too); the core is archived from a response file in 3DS presets (longest command 27,354 →
   2,533 characters, `hello` byte-identical). Proof: `tests/consumer/` and the `consumer`/`consumer-full` ctests; guide
   [game projects](guides/game-projects.md). Done 2026-11-27: review, Linux pass (GCC 13/14, 32-bit, ASan, every consumer way, the copy's 3DS builds through `nnh`) and console run (script PASS, `.cia` from the HOME Menu) passed.
-- [ ] `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs — [spec 033](../specs/033-nnh-new-and-doctor/spec.md)
+- [x] `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs — [spec 033](../specs/033-nnh-new-and-doctor/spec.md)
+  (D56; guide [your first game](guides/your-first-game.md)). Done 2026-11-27: review, Linux pass and console run (a
+  generated `demo` outside the repository: smoke script PASS on the Old 3DS XL, its `.cia` from the HOME Menu) passed.
 - [ ] Versions, API stability and releases — [spec 034](../specs/034-versions-and-releases/spec.md)
 
 ## After 1.0 (planned 2026-11-26)

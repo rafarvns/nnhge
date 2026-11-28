@@ -1,6 +1,6 @@
 # Plan 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: approved 2026-11-27 (the maintainer, the ten questions at the end as recommended; question 4 authorises `apt install` of older compilers on VM 120)
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed; merged); approved 2026-11-27 (the maintainer, the ten questions at the end as recommended; question 4 authorises `apt install` of older compilers on VM 120)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D56 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
 Uses spec 032 and D55 (the game-project contract: the engine as a subproject, `nnh.toml`, the six presets,
@@ -1112,3 +1112,13 @@ presets read `$env{DEVKITPRO}`, so a 3DS configure would fail).
   `fix: export DEVKITPRO=/opt/devkitpro`, "Simulator: ready", "3DS: not ready (1 problem)"; with it exit 0, "3DS:
   ready"; `nnh build demo` and `--release` built, `dist` made `demo.cia`, longest 3DS command 3,207 characters (9.8 %);
   the smoke script `nnh: PASS (23 lines, frames 1-96)`.
+
+### Console run (2026-11-27, Old 3DS XL)
+
+From `E:/RANDOM/n033console`, with the worktree's pc-release `nnh` on `PATH` and `NNHGE_ENGINE_DIR` set: `nnh new demo`
+(12 files), `nnh doctor` (Simulator, 3DS and This project ready; Azahar the one optional warning). `nnh run demo --script
+tests/smoke.nnhs` → `nnh: PASS (23 lines, frames 1-96)`: `play: running` at frame 31, `play: blip` at 42, `play: stopped
+at (244, 104)` at 83, `play: quit` at 95; the screenshot shows the title, the sprite and the controls line. `nnh install
+demo` → the first try got "FBI didn't answer in time" (the Windows Firewall prompt for the new pc-release `nnh.exe`); the
+second installed the `.cia`, and the maintainer confirmed it runs well from the HOME Menu.
+

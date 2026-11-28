@@ -1,6 +1,6 @@
 # Spec 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: approved 2026-11-27 (the maintainer, every open question as recommended); FR-8, FR-9 and FR-10 amended
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed; merged); approved 2026-11-27 (the maintainer, every open question as recommended); FR-8, FR-9 and FR-10 amended
 2026-11-27 by [plan 033](plan.md) to follow D55 (the local engine is the environment variable `NNHGE_ENGINE_DIR`, not a
 `CMakeUserPresets.json`), pending the maintainer's confirmation (plan question 1)
 Author: NNHGE maintainers · Date: 2026-11-26

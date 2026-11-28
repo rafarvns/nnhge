@@ -1,6 +1,6 @@
 # Tasks 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: approved 2026-11-27 (with plan.md)
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed; merged); approved 2026-11-27 (with plan.md)
 Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 Each task: one or a few TDD loops (test first, red seen, then green). `[P]` = can be done in parallel with the previous
@@ -169,16 +169,16 @@ task. While developing run only the touched filters (`build/pc-debug/tools/nnh/n
 
 ## Stage 9: review and Linux pass (together, once)
 
-- [ ] **T9.1** One independent review (`nnh-reviewer`) and one `scripts/vm_check.sh final` on VM 120 (full `ctest` with
+- [x] **T9.1** One independent review (`nnh-reviewer`) and one `scripts/vm_check.sh final` on VM 120 (full `ctest` with
   `consumer-full` including `nnh_new_smoke`, GCC 14, 32-bit, ASan/UBSan, T8.5's steps); the reports and `doctor`
   outputs pasted into plan.md (AC-2/AC-3/AC-7/AC-10 Linux).
-- [ ] **T9.2** Fixes, test first; re-checked with `scripts/vm_check.sh fast`.
+- [x] **T9.2** Fixes, test first; re-checked with `scripts/vm_check.sh fast`.
 
 ## Stage 10: console run, merge, status
 
-- [ ] **T10.1** Console (Old 3DS XL; the maintainer presses Y once per step): from a generated project outside the
+- [x] **T10.1** Console (Old 3DS XL; the maintainer presses Y once per step): from a generated project outside the
   repository, `nnh run demo --script tests/smoke.nnhs` → `nnh: PASS`; `nnh install demo` → FBI installs the `.cia`;
   "Does it start from the HOME Menu with the default icon and banner? (yes/no)" — covers FR-15, FR-16 (AC-4)
-- [ ] **T10.2** `docs/ROADMAP.md` checkbox and budget table; `specs/README.md` row; spec, plan and tasks status →
+- [x] **T10.2** `docs/ROADMAP.md` checkbox and budget table; `specs/README.md` row; spec, plan and tasks status →
   implemented; D56 → implemented (change-log line).
-- [ ] **T10.3** Merge to `main`; post-merge `ctest -LE consumer-full` on `main`; generated test folders deleted.
+- [x] **T10.3** Merge to `main`; post-merge `ctest -LE consumer-full` on `main`; generated test folders deleted.

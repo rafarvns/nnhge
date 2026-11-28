@@ -130,7 +130,7 @@ Details: plan 032, "Stage 0 results" to "Stage 6 results".
 Spec 033 (`nnh new`, `nnh doctor`), 2026-11-27, same machine, 7 warm runs interleaved: a project made by `nnh new`
 outside the repository, edit `src/scenes/play_scene.cpp` → simulator (`pc-dev`) 2.34–2.37 s, median 2.36 s, against
 the repository's `hello` (`pc-debug`) 2.03–2.14 s, median 2.06 s, in the same series: **over the < 2 s budget, like
-`hello` on this machine since spec 032 (2.02–2.09 s)**; the template's compile is 0.25 s longer than `hello`'s (more
+`hello` on this machine since spec 032 (2.02–2.09 s); an exception for 1.0, approved 2026-11-27 ("After 1.0", item 3)**; the template's compile is 0.25 s longer than `hello`'s (more
 headers at `-O2 -g`), the link (1.2–1.4 s) dominates both; → `.3dsx` (`3ds-dev`) 3.54–3.69 s (median 3.61 s, `hello`
 3.56 s). A new project's builds: `pc-dev` 38 MB, `3ds-dev` 43 MB, `3ds-release` 36 MB. `hello.3dsx` byte-identical.
 `nnh doctor` offline 2.1 s. Details: plan 033, "Stage 0 results" to "Stage 8 results".
@@ -429,6 +429,9 @@ spec; the order below is a proposal.
      (RTC), step counter, play coins
    - [ ] System applets: software keyboard, Mii selector, error and message dialogs
    - [ ] StreetPass and notifications (only if homebrew support turns out reliable enough)
+3. **Engine build speed**: a one-file edit back under 2 s on the simulator (the link dominates, 1.2–1.4 s; try lld/mold,
+   lighter debug info at link, or a split debug build), measured like for like on `hello` and the `nnh new` template
+   (the exception approved for 1.0: [plan 033](../specs/033-nnh-new-and-doctor/plan.md#decisions-after-the-review)).
 
 ## Later
 - [ ] Hot reload of game code in the simulator

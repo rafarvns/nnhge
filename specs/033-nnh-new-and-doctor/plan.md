@@ -524,7 +524,7 @@ writes a build folder).
 |---------|-----|------|
 | I | ✅ | One template source for both systems; `nnh`'s system code stays in the tool (`process_run`, `new_fs_system`, `probes_system`) |
 | II | ✅ | No engine change; the template is `hello`-sized; 60 Hz and controls checked on the Old 3DS |
-| III | ⚠️ | **AC-5/FR-17 not met for the simulator** (review round, like for like in `pc-debug`, 7 warm interleaved runs: the template's `play_scene.cpp` edit median 2.48 s, the repository's `hello` median 2.17 s, both over the < 2 s budget on this machine; `.3dsx` 3.61 s, within < 5 s): a question for the maintainer under "What is open". The e2e under `consumer-full`; the default `ctest` adds ≈ 12 s; the version and pin definitions recompile one `nnh` file |
+| III | ⚠️ | Exception approved by the maintainer 2026-11-27 for 1.0: template 2.48 s, hello 2.17 s (pc-debug, like for like); the link dominates; follow-up after 1.0 (the simulator edit of AC-5/FR-17 over the < 2 s budget, 7 warm interleaved runs; `.3dsx` 3.61 s, within < 5 s; see "Decisions after the review"). The e2e under `consumer-full`; the default `ctest` adds ≈ 12 s; the version and pin definitions recompile one `nnh` file |
 | IV | ✅ | Template: scene, queries, `SoundFinished` |
 | V | ✅ | No engine change; template allocation-free per frame |
 | VI | ✅ | Pure functions over fakes first; template proven by scripts; mutants |
@@ -1003,10 +1003,7 @@ sprite move with the Circle Pad and the D-Pad, A play the blip and START quit? (
   doctor` with and without `DEVKITPRO`, a generated project's 3DS builds). The template's sources were not built with
   GCC 12 or clang 16/17 (they didn't exist at T0.3).
 - CMake 3.25 itself was not measured (T0.2): fetching a CMake binary onto the VM was not allowed in this session.
-- **Maintainer question (constitution III, AC-5/FR-17):** the simulator edit budget (< 2 s) is missed on this
-  machine, like for like in `pc-debug`: the template's edit median 2.48 s, `hello`'s 2.17 s (review round); the link
-  of a static program dominates (1.2–1.4 s). Record an exception for 1.0, or open an engine build-speed item (link
-  time)?
+- The simulator edit budget is settled: see "Decisions after the review" below.
 - AC-7's "MSYS2 without Ninja" was shown with an MSYS2 folder without bash (the unit test covers the Ninja case).
 - The console run (T10.1) and the status changes (T10.2).
 
@@ -1084,3 +1081,34 @@ project's script then passed three runs in a row (`nnh: PASS (23 lines, frames 1
 `nnh doctor` with `DEVKITPRO` unset on Linux: `FAIL devkitPro /opt/devkitpro found, but DEVKITPRO is not set (the 3DS
 presets read it)`, `fix: export DEVKITPRO=/opt/devkitpro`, exit 1: what FR-19, AC-7 and the plan's table ask (the
 presets read `$env{DEVKITPRO}`, so a 3DS configure would fail).
+
+### Decisions after the review
+
+- **Simulator edit budget (constitution III, AC-5/FR-17): exception approved by the maintainer 2026-11-27 for 1.0**
+  (option a). Like for like in `pc-debug` (7 warm interleaved runs): the template's `play_scene.cpp` edit median
+  2.48 s, the repository's `hello` 2.17 s, both over the < 2 s budget on the maintainer's machine; the link of a static
+  program dominates (1.2–1.4 s). The budget itself stays in the constitution and in `docs/tech/cmake.md`; the
+  follow-up is the "Engine build speed" item of the ROADMAP's "After 1.0".
+
+### Linux checks after the smoke fix (2026-11-27, VM 120)
+
+- `scripts/vm_check.sh fast` (FUZZ `tests/fuzz_remote`): GCC 13 `nnh_tests` 4143/0, `nnh_tool_tests` 401/0,
+  `nnh_assetc_tests` 333/0; ASan/UBSan 4143/0, 333/0, 401/0; `fuzz_remote` 639,560 runs in 121 s, exit 0.
+- Two findings on the way, both fixed:
+  - `a_program_that_never_stops_writing_is_still_killed_at_its_limit` failed on Linux: without
+    `cmake_minimum_required` CMake 3.28 warns about `while(TRUE)` (CMP0130) and the script ended at once. The script
+    now starts with `cmake_minimum_required(VERSION 3.25)` and loops on `n LESS 1000000000`; the test asks for
+    `timed_out` and at most `max_output` bytes (a slow machine prints nothing in 300 ms). Neither on Windows nor on
+    Linux does the old read loop fail this test (`nnh` reads faster than CMake writes; checked on the VM with the old
+    `process_run.cpp`): it is a regression test of the deadline-first loop, not a reproduction.
+  - **`scripts/vm_check.sh sync` left stale objects**: a file whose content changed was touched, but the next sync's
+    `tar -x` put the file's own older time back (its content unchanged by then), so a build folder not built in
+    between (here `build/asan`, last built by the earlier `final` from the older tree) kept objects of the old content
+    (`the_template_cmakelists_carries_name_title_id_and_the_guard` failed under ASan only). The sync now records each
+    file's time before extracting and keeps the newer one for an unchanged file; checked on the VM (a touch survives
+    the next sync).
+- The `final` step for the generated project, re-run on its own: `nnh doctor` without `DEVKITPRO` exit 1 with
+  `FAIL devkitPro /opt/devkitpro found, but DEVKITPRO is not set (the 3DS presets read it)` and
+  `fix: export DEVKITPRO=/opt/devkitpro`, "Simulator: ready", "3DS: not ready (1 problem)"; with it exit 0, "3DS:
+  ready"; `nnh build demo` and `--release` built, `dist` made `demo.cia`, longest 3DS command 3,207 characters (9.8 %);
+  the smoke script `nnh: PASS (23 lines, frames 1-96)`.

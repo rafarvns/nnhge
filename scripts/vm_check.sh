@@ -14,7 +14,8 @@
 #
 # The tree is sent with each file's own modification time, so Ninja and ccache rebuild only what changed; a file
 # whose content changed since the last sync is touched on the VM, so an object built there after the file's local
-# edit (a build that ran while the edit was being made) is still rebuilt. Files deleted locally are deleted on the
+# edit (a build that ran while the edit was being made) is still rebuilt, and a later sync doesn't take that touch back
+# (tar restores the older time of an unchanged file; the newer one is kept). Files deleted locally are deleted on the
 # VM too (build/ is never touched by the sync).
 set -eu
 mode="${1:-fast}"
@@ -27,8 +28,12 @@ sync_tree() {
     tr '\n' '\0' < .vm_files | tar --null -T - -cf - .vm_files | ssh "$host" '
         set -e; mkdir -p ~/wt/nnhge; cd ~/wt/nnhge
         find . -path ./build -prune -o -type f -print0 | xargs -0 -r md5sum > /tmp/vm_sums 2>/dev/null || true
+        find . -path ./build -prune -o -type f -printf "%T@ %p\n" > /tmp/vm_times 2>/dev/null || true
         tar -xf -
         md5sum --quiet -c /tmp/vm_sums 2>/dev/null | sed -n "s/: FAILED\$//p" | while IFS= read -r f; do touch -- "$f"; done
+        # tar puts back each file'"'"'s own (older) time, which would undo a touch of an earlier sync before anything was
+        # built from it: an unchanged file keeps the newer of its two times.
+        while read -r t f; do t=${t%.*}; if [ -f "$f" ] && [ "$(stat -c %Y -- "$f")" -lt "$t" ]; then touch -d "@$t" -- "$f"; fi; done < /tmp/vm_times || true
         find . -path ./build -prune -o -type f -print | sed "s|^\./||" | grep -v "^\.vm_files$" | sort > /tmp/vm_have
         sort .vm_files > /tmp/vm_want
         comm -23 /tmp/vm_have /tmp/vm_want | while IFS= read -r f; do rm -f -- "$f"; done'

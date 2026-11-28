@@ -432,7 +432,7 @@ ssh nnhge-build 'cd ~/wt/nnhge && F="-m32 -msse2 -mfpmath=sse" && cmake --preset
 
 | Command | What it does | Use |
 |---------|--------------|-----|
-| `scripts/vm_check.sh sync` | Sends the working tree with each file's own time and deletes files removed locally; the VM's build folders stay, so Ninja and ccache rebuild only what changed | before any manual command |
+| `scripts/vm_check.sh sync` | Sends the working tree with each file's own time and deletes files removed locally; a file whose content changed is touched, and a later sync keeps that newer time (before 2026-11-27 tar put the older one back, so a build folder not built in between kept stale objects); the VM's build folders stay, so Ninja and ccache rebuild only what changed | before any manual command |
 | `scripts/vm_check.sh fast` | Sync, then unit tests (`nnh_tests`, `nnh_tool_tests`, `nnh_assetc_tests`) on GCC 13 and under clang ASan/UBSan, and the `FUZZ` targets for 2 min each | while fixing findings |
 | `scripts/vm_check.sh final` | Sync, then the full ctest on GCC 13 (end-to-end `*_script_pc` tests included), the consumer tests' `consumer-full` ways, the consumer project's 3DS builds through `nnh` from a copy under `/tmp` and a fresh `3ds-dev` `nnh build animation` (spec 032), a project made by `nnh new` under `/tmp` (`nnh doctor` without and with `DEVKITPRO`, its 3DS builds and `.cia` through `nnh`, its smoke script; spec 033), unit tests on GCC 14 and the 32-bit host, ASan/UBSan, and the `FUZZ` targets for 10 min each | once, when the implementation is complete, before the merge |
 

@@ -178,6 +178,11 @@ session's first batch and at shutdown, and Release builds contain no code that r
 - Every workflow declares minimal `permissions` (CI: `contents: read`; only the wiki job has
   `contents: write`) and actions are pinned by commit SHA (`# vN` comment next to it). CI runs manually.
 - New dependencies follow `docs/tech/cmake.md` (small, permissive, pinned, justified).
+- Releases (spec 034, D57; status: design): `release.yml` runs only by hand with a dry run by default; only its `draft`
+  job has `contents: write`, and it only creates a draft (never publishes); `GITHUB_TOKEN` is its only secret; the
+  devkitPro container is pinned by digest (shared with `ci.yml`), the Windows toolchain by SHA-256, actions by commit
+  SHA, all checked by a ctest. The engine archive a release `nnh` pins is hash-checked before that `nnh` is built and
+  read back after. Tags and publishing are the maintainer's; published releases are immutable.
 
 ## Reporting a vulnerability
 

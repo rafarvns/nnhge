@@ -85,6 +85,12 @@ engine/core/archive/                         spec 032: the static nnh_core archi
 scripts/                                     small helpers (dkp.sh, docs tool, hooks)
 ```
 
+> Status: design (spec 034, D57 proposed). Planned additions: `engine/core/include/nnh/version.hpp` (the engine's one
+> version, read by CMake before `project()` through `cmake/nnh_version_read.cmake`); `tests/compat/v1/` (the frozen
+> compile-only check of the 1.x surface, built with the examples); `scripts/release/` (one script per release artifact,
+> their tests in `scripts/release/tests/`); `scripts/docs_stability.py` and `scripts/docs_changelog.py` beside the docs
+> tool; `CHANGELOG.md` at the root; `.github/workflows/release.yml`. See [plan 034](../../specs/034-versions-and-releases/plan.md).
+
 A game made with NNHGE follows the same idea, in a game project of its own ([guide](../guides/game-projects.md)):
 
 ```

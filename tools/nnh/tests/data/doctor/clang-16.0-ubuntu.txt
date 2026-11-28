@@ -1,0 +1,4 @@
+Ubuntu clang version 16.0.6 (23ubuntu4)
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /usr/bin

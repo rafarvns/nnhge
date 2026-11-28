@@ -1,41 +1,99 @@
 # Getting started
 
+Install the tools for your system, get `nnh`, let `nnh doctor` check the result, then make a game with `nnh new`:
+[Your first game](your-first-game.md) walks the whole path. Working on the engine itself is at the end
+([Working inside the engine repository](#working-inside-the-engine-repository)).
+
 ## 1. Install the tools
 
-### Windows (primary platform)
+### Windows (the main platform)
 
-1. **Host compiler, CMake, Ninja**: [WinLibs](https://winlibs.com/) MinGW-w64 GCC (UCRT, POSIX threads)
-   ships all three: `winget install BrechtSanders.WinLibs.POSIX.UCRT`.
-   Git for Windows provides the shell (Git Bash) used by the scripts.
-2. **devkitPro** (3DS toolchain): run the graphical installer from
-   <https://github.com/devkitPro/installer/releases> and select **3DS Development**. It installs to
-   `C:\devkitPro`, with its own MSYS2.
-3. **Ninja inside devkitPro's MSYS2** (devkitPro's CMake toolchain only runs from there):
+1. **Host compiler, CMake, Ninja**: [WinLibs](https://winlibs.com/) MinGW-w64 GCC (UCRT, POSIX threads) ships all
+   three: `winget install BrechtSanders.WinLibs.POSIX.UCRT`. Git for Windows (`winget install Git.Git`) gives Git Bash
+   and `git`.
+2. **devkitPro** (the 3DS toolchain): run the graphical installer from
+   <https://github.com/devkitPro/installer/releases> and select **3DS Development**. It installs to `C:\devkitPro`,
+   with its own MSYS2.
+3. **CMake and Ninja inside devkitPro's MSYS2** (`nnh` builds for the 3DS there):
    ```sh
-   /c/devkitPro/msys2/usr/bin/bash.exe -lc 'pacman -S --needed --noconfirm ninja'
+   C:/devkitPro/msys2/usr/bin/bash.exe -lc "pacman -S --needed cmake ninja"
    ```
+   (the same line works in PowerShell, cmd and Git Bash).
 
-The first PC configure downloads the SDL3 development package (prebuilt, ~5 MB) into the build folder.
-If CMake reports `certificate signer not trusted`, the build reuses Git for Windows' CA bundle
-automatically; otherwise set the environment variable `CMAKE_TLS_CAINFO` to a CA bundle file.
+The first PC configure downloads the SDL3 development package (prebuilt, ~5 MB) into the build folder. If CMake reports
+`certificate signer not trusted`, the build reuses Git for Windows' CA bundle automatically; otherwise set the
+environment variable `CMAKE_TLS_CAINFO` to a CA bundle file (`nnh doctor --online` checks it).
 
-### Linux / macOS (not yet tested)
+### Linux
 
-Install CMake ≥ 3.25, Ninja and a C++20 compiler. SDL3 is used from the system if installed, otherwise
-built from source on first configure; on Linux that needs SDL's build dependencies
-(list: <https://wiki.libsdl.org/SDL3/README-linux>; the Ubuntu package names are in `.github/workflows/ci.yml`). For 3DS, install devkitPro pacman and `sudo dkp-pacman -S 3ds-dev`.
+CMake ≥ 3.25, Ninja and GCC ≥ 12 or clang ≥ 16 (the project checks GCC 13 and 14 and clang 18 on Ubuntu 24.04). SDL3 is
+used from the system if installed, otherwise built from source on the first configure, which needs `pkg-config` and
+SDL's build dependencies; on Debian or Ubuntu:
 
-## 2. Build and run on PC (simulator)
+```sh
+sudo apt install cmake ninja-build g++ pkg-config libx11-dev libxext-dev libwayland-dev libxkbcommon-dev \
+                 libasound2-dev libpulse-dev
+```
+
+For the 3DS, install [devkitPro pacman](https://devkitpro.org/wiki/devkitPro_pacman), then `sudo dkp-pacman -S
+3ds-dev` and `export DEVKITPRO=/opt/devkitpro` (in `~/.profile`).
+
+### macOS
+
+Best effort, not checked by the project: Xcode's command-line tools (`xcode-select --install`), `brew install cmake
+ninja`, devkitPro pacman for the 3DS. `nnh doctor` reports macOS as `warn`.
+
+## 2. Get `nnh`
+
+Until prebuilt `nnh` releases exist (spec 034), build it from an engine checkout; that checkout is then the engine your
+projects use (through `NNHGE_ENGINE_DIR`, which `nnh new` explains):
+
+```sh
+git clone https://github.com/rafarvns/nnhge.git
+cd nnhge
+cmake --preset pc-release
+cmake --build --preset pc-release --target nnh      # -> build/pc-release/tools/nnh/nnh(.exe)
+```
+
+Add `build/pc-release/tools/nnh` to your `PATH` ([Your first game](your-first-game.md#2-get-nnh) shows the lines).
+
+## 3. Check with `nnh doctor`
+
+```sh
+nnh doctor
+```
+
+One line per tool (`ok`, `warn` or `FAIL`) and a `fix:` line under each problem: the command to paste or the page to
+open. It ends with one verdict per group (`Simulator: ready`, `3DS: not ready (1 problem)`) and exits 0 when everything
+required is there. With `--pc` the 3DS group is still checked and shown, but its problems don't count in the exit
+code (for simulator-only work); `--online` also tries the downloads a first build makes and looks for your console. Details: [the nnh tool](nnh-tool.md#checking-your-machine-nnh-doctor).
+
+## 4. Make a game
+
+```sh
+nnh new my-game
+```
+
+Then follow [Your first game](your-first-game.md): run it in the simulator and on the console, run its test script,
+change it, install it on the HOME Menu. A project made by hand, or one that adds the engine as a git submodule or a
+copied folder, works the same way: [Game projects](game-projects.md).
+
+## Working inside the engine repository
+
+For engine contributors: the engine repository is itself a project `nnh` works in, with every example and test.
+
+### Build and run on PC (simulator)
 
 ```sh
 cmake --preset pc-debug
 cmake --build --preset pc-debug
 build/pc-debug/examples/hello/hello.exe
+ctest --preset pc-debug
 ```
 
 Keyboard mapping: see [api/input.md](../api/input.md). Simulator options: [api/simulator.md](../api/simulator.md).
 
-## 3. Build for 3DS
+### Build for the 3DS
 
 From Git Bash (the script runs the command inside devkitPro's environment):
 
@@ -44,15 +102,14 @@ scripts/dkp.sh cmake --preset 3ds-release
 scripts/dkp.sh cmake --build --preset 3ds-release
 ```
 
-Output: `build/3ds-release/examples/hello/hello.3dsx`.
+Output: `build/3ds-release/examples/hello/hello.3dsx`. `nnh build hello` does the same without the script.
 
-## 4. Run on a 3DS
+### Run on a 3DS
 
 The console needs custom firmware with the Homebrew Launcher.
 
 - **Over Wi-Fi**: open the Homebrew Launcher, press **Y** (netloader), then on the PC:
   ```sh
-  cmake --build --preset pc-debug                    # builds the nnh tool too
   build/pc-debug/tools/nnh/nnh run hello             # build, send, show the game's log
   ```
   `nnh` finds the console and remembers it; `--console <ip>` sets it ([the nnh tool](nnh-tool.md)).
@@ -63,12 +120,9 @@ The console needs custom firmware with the Homebrew Launcher.
 - **By SD card**: copy the `.3dsx` to `sdmc:/3ds/` and open it from the Homebrew Launcher.
 - **Emulator**: open the `.3dsx` in [Azahar](https://azahar-emu.org/).
 
-## 5. Make your own game
+### A game inside the repository
 
-A game lives best in its own folder and repository, with the engine as a pinned dependency: a `CMakeLists.txt` that
-adds the engine (a hash-pinned download, your local engine checkout, a git submodule or a copied folder), the six
-presets and an `nnh.toml`, written by hand today ([Game projects](game-projects.md)); `nnh build`, `run`, `install`
-and `serve` work from that folder as they do here. Whichever way, the game's own folder has a `CMakeLists.txt`:
+To try something quickly, a folder with a `CMakeLists.txt` added by `add_subdirectory()` from the top-level one:
 
 ```cmake
 nnh_add_game(mygame
@@ -79,10 +133,7 @@ nnh_add_game(mygame
     ICON icon.png)   # optional, 48x48
 ```
 
-added with `add_subdirectory(mygame)` from the project's `CMakeLists.txt` (or, to try something quickly inside this
-repository, from its top-level one). Images, sounds and levels go in an
-assets folder (`ASSETS assets`, [api/assets.md](../api/assets.md)); levels can be drawn in Tiled
-([Levels in Tiled](levels.md)) or built in code ([api/tilemap.md](../api/tilemap.md)). A generated project
-(`nnh new`) comes with spec 033. To give it to players — a `.3dsx`, or a `.cia` with
-a banner for the HOME Menu, installed over the network with FBI — see
+Images, sounds and levels go in an assets folder (`ASSETS assets`, [api/assets.md](../api/assets.md)); levels can be
+drawn in Tiled ([Levels in Tiled](levels.md)) or built in code ([api/tilemap.md](../api/tilemap.md)). To give a game
+to players — a `.3dsx`, or a `.cia` with a banner for the HOME Menu, installed over the network with FBI — see
 [Distributing your game](packaging.md).

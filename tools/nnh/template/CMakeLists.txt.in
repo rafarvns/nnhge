@@ -1,0 +1,32 @@
+# @title@: a game made with NNHGE (https://github.com/rafarvns/nnhge). Build and run it with nnh: README.md.
+# Docs for this engine version: @docs_base@
+cmake_minimum_required(VERSION 3.25)
+project(@name@ LANGUAGES C CXX)
+
+# The engine, pinned by URL and SHA-256 (docs: guides/game-projects.md). To upgrade, paste the two lines of a newer
+# release's notes. NNHGE_ENGINE_DIR (an engine checkout) replaces the download: see README.md, "The engine".
+set(nnhge_url "@engine_url@")
+set(nnhge_sha256 "@engine_sha256@")
+if(nnhge_url STREQUAL "" AND NOT FETCHCONTENT_SOURCE_DIR_NNHGE)
+    message(FATAL_ERROR "@name@: no engine release is pinned: set NNHGE_ENGINE_DIR to an engine checkout, "
+                        "or paste a release's URL and SHA-256 above (README.md, \"The engine\")")
+endif()
+include(FetchContent)
+FetchContent_Declare(nnhge URL "${nnhge_url}" URL_HASH SHA256=${nnhge_sha256} DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_MakeAvailable(nnhge)
+if(NNHGE_VERSION VERSION_LESS @engine_min@)
+    message(FATAL_ERROR "@name@ needs NNHGE @engine_min@ or later (found \"${NNHGE_VERSION}\")")
+endif()
+
+# Every keyword: docs tech/cmake.md; the HOME Menu ones (TITLE, AUTHOR, ICON, CIA ...): guides/packaging.md
+nnh_add_game(@name@
+    SOURCES src/main.cpp src/scenes/play_scene.cpp
+    ASSETS assets                      # images, sounds, maps, data: api/assets.md
+    TITLE "@title@"
+    # DESCRIPTION "One line"           # HOME Menu text (default: "Made with NNHGE")
+@author_line@
+    VERSION 0.1.0
+    # ICON icon.png                    # 48x48 HOME Menu icon (default: the NNHGE icon)
+    # IMAGES / DATA_SCHEMA / LANGUAGES # embedded images, data assets, translations
+    # (after UNIQUE_ID: BANNER, BANNER_AUDIO, PRODUCT_CODE; default banner: the NNHGE one)
+    CIA UNIQUE_ID @unique_id@)             # keep this number for the life of the game

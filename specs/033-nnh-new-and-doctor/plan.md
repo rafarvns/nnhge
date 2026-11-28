@@ -1,6 +1,6 @@
 # Plan 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: approved 2026-11-27 (the maintainer, the ten questions at the end as recommended; question 4 authorises `apt install` of older compilers on VM 120)
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed; merged); approved 2026-11-27 (the maintainer, the ten questions at the end as recommended; question 4 authorises `apt install` of older compilers on VM 120)
 Spec: [spec.md](spec.md) · Tasks: [tasks.md](tasks.md) · Decision D56 (proposed,
 [decisions.md](../../docs/architecture/decisions.md))
 Uses spec 032 and D55 (the game-project contract: the engine as a subproject, `nnh.toml`, the six presets,
@@ -524,7 +524,7 @@ writes a build folder).
 |---------|-----|------|
 | I | ✅ | One template source for both systems; `nnh`'s system code stays in the tool (`process_run`, `new_fs_system`, `probes_system`) |
 | II | ✅ | No engine change; the template is `hello`-sized; 60 Hz and controls checked on the Old 3DS |
-| III | ✅ | Budgets measured on a generated project (AC-5); the e2e under `consumer-full`; the default `ctest` adds ≈ 12 s; the version and pin definitions recompile one `nnh` file |
+| III | ⚠️ | Exception approved by the maintainer 2026-11-27 for 1.0: template 2.48 s, hello 2.17 s (pc-debug, like for like); the link dominates; follow-up after 1.0 (the simulator edit of AC-5/FR-17 over the < 2 s budget, 7 warm interleaved runs; `.3dsx` 3.61 s, within < 5 s; see "Decisions after the review"). The e2e under `consumer-full`; the default `ctest` adds ≈ 12 s; the version and pin definitions recompile one `nnh` file |
 | IV | ✅ | Template: scene, queries, `SoundFinished` |
 | V | ✅ | No engine change; template allocation-free per frame |
 | VI | ✅ | Pure functions over fakes first; template proven by scripts; mutants |
@@ -577,3 +577,548 @@ amended to it). Flagged: questions 1, 3 and 4; risks 1, 3 and 4.
 10. **FR-22 in `nnh serve`**: the PC prints the versions when NNH Link's handshake fails for the link protocol version;
     the console's message stays NNH Link's? *Recommendation: yes* — the console side belongs to spec 011's app and would
     need a new NNH Link build for a message only.
+
+## Implementation results
+
+### Stage 0 results (2026-11-27; worktree `spec-033` at `c30c22c`)
+
+T0.1, Windows (WinLibs GCC 16.2.0, CMake 4.4.2, Ninja, ccache; devkitARM r68 / devkitPro CMake 4.0.2), in the worktree:
+- free on `E:` before the builds 12 GB, after the four preset folders 10 GB (`pc-debug` 798 MB, `3ds-dev` 208 MB,
+  `3ds-release` 188 MB);
+- fresh `pc-debug` configure 13.9 s (SDL3 from the main checkout's download through
+  `FETCHCONTENT_SOURCE_DIR_NNH_SDL3_PREBUILT`), build 5 min 31 s cold, 0 warnings; `3ds-release` and `3ds-dev` configure +
+  build 2 min 19 s / 2 min 12 s, 0 warnings;
+- `nnh_tool_tests`: 279 tests, 14.1 s; `nnh.exe` (Debug) 22,238,914 bytes;
+- `3ds-release` `hello.3dsx` SHA-256 `92e8dbd27aa0d256be55726e9d0d5dbae6de232d34a9783d72647505bdd2408f` (the baseline
+  for every later comparison in this worktree; the binary embeds the folder, so only same-folder values compare);
+- edit `examples/hello/main.cpp`, three runs: simulator (`pc-debug`) 2.15 / 2.10 / 2.07 s, `.3dsx` (`3ds-dev`) 3.65 /
+  3.46 / 3.67 s. The simulator number is already above the 2 s budget before any change of this spec (spec 032 measured
+  2.02–2.09 s in `pc-debug` on the same machine): pre-existing, recorded, not caused here.
+
+T0.2:
+- **The no-pin `CMakeLists.txt` shape** (empty `nnhge_url`/`nnhge_sha256`, the guard, `FetchContent_Declare` with an empty
+  `URL` and `URL_HASH SHA256=`), with a stub engine folder (`project(nnhge VERSION 0.1.0)`, a `cmake_parse_arguments`
+  `nnh_add_game`): Ubuntu's CMake 3.28.3 on VM 120 configures with `FETCHCONTENT_SOURCE_DIR_NNHGE` set (no download step,
+  no warning; `AUTHOR ""` parsed silently, CMP0174 does not exist before 3.31) and without it stops at the guard before
+  any `_deps` folder exists. CMake 3.25 itself was **not measured**: fetching a CMake 3.25 binary onto the VM was not
+  allowed in this session (no system change was wanted either); 3.25 stays the documented minimum (spec 032 measured its
+  presets schema).
+- **`file(DOWNLOAD <url> RANGE_START 0 RANGE_END 0)` without an output file**, the SDL3 release URL (a GitHub redirect):
+  devkitPro's MSYS2 CMake 4.0.2 `0;"No error"` in 1.1 s; VM 120's CMake 3.28.3 `0;"No error"` in 0.46 s; nothing written
+  in the folder. **WinLibs' native CMake 4.4.2: status 60 ("SSL peer certificate … was not OK")**: it ships without CA
+  certificates, exactly the failure the Downloads group must catch; with `-DCMAKE_TLS_CAINFO=<Git for Windows'
+  ca-bundle.crt>` (what `cmake/nnh_sdl3.cmake` already does) `0;"No error"` in 0.78 s. So `doctor --online` passes the
+  same CA bundle the build would (FR-19: "through the same CMake the build uses").
+- **devkitPro's MSYS2 probe** `bash -lc "command -v cmake ninja; cmake --version; ninja --version"`: 1.14 s
+  (`/usr/bin/cmake`, `/usr/bin/ninja`, 4.0.2, 1.13.2). Note: `bash -lc` starts in the MSYS2 home folder.
+- **pacman database folders**: Windows `C:/devkitPro/msys2/var/lib/pacman/local/` holds `devkitARM-r68-1`,
+  `libctru-2.7.1-1`, `citro2d-1.7.0-1`, `citro3d-1.7.1-2`, `devkitarm-gcc-16.1.0-1`, `devkitarm-newlib-4.6.0.20260123-5`,
+  `cmake-4.0.2-1`, `ninja-1.13.2-2`; VM 120 (devkitPro extracted from the Docker image) has
+  `/opt/devkitpro/pacman/var/lib/pacman/local/` with `devkitARM-r68-1`, `libctru-2.7.0-1`, `citro2d-1.7.0-1`,
+  `citro3d-1.7.1-2`. devkitARM's version is `r68` (not dotted): the parser keeps it as text.
+- **Exclusive create**: covered by `test_project_writer.cpp` (MinGW `_wopen` here; Linux at the stage 9 pass).
+- **MSVC `cl`**: none on this machine; the parser is tested on a recorded banner sample.
+
+T0.3 (question 4, `sudo apt install g++-12 clang-16 clang-17` on VM 120): each compiler built, from the synced
+worktree, `nnh_core`, `nnh_platform_pc`, the examples whose APIs the template uses (`hello`, `scenes`, `input`,
+`sprites`, `text`, `audio`) and `nnh` itself (Debug, `-Wall -Wextra`), SDL3 from source:
+
+| Compiler | Result |
+|---|---|
+| GCC 12.4.0 | 0 errors, 0 warnings (132 s) |
+| clang 16.0.6 | 0 errors, 0 warnings (161 s) |
+| clang 17.0.6 | 0 errors, 0 warnings (152 s) |
+
+The minimums are therefore GCC 12 and clang 16 (the oldest tried; older ones were not installed, so below them `doctor`
+says `FAIL` as "older than any compiler the project has built with"). The template's own sources were not built with
+them (they did not exist yet); the stage 9 pass builds them with GCC 13/14 and clang 18. The three compilers stay
+installed on the VM (≈ 0.9 GB; removable with `sudo apt remove g++-12 clang-16 clang-17`).
+
+### Stage 1 results (`nnh --version` and the command line)
+
+- `build_info.{hpp,cpp}`: the only source with the definitions (`NNH_TOOL_VERSION`, `NNH_RELEASE_ENGINE_URL`,
+  `NNH_RELEASE_ENGINE_SHA256`, and `NNH_TOOL_ENGINE_DIR` only without a pin), set with `set_source_files_properties`
+  on that one file. `nnh --version` on Windows: `nnh 0.1.0 (protocol 1, link 1, windows-x64, from a source checkout)`,
+  exit 0; it runs before `net::startup()`.
+- Refinement (T1.2): the pin check is a function in `tools/nnh/nnh_release_pin.cmake` (`nnh_check_release_pin`), called
+  by `tools/nnh/CMakeLists.txt` on the two cache entries; the ctest `nnh_pin_check` runs it in `cmake -P` children
+  (10 cases: none, `https://`, `file://`, half a pin each way, `http://`, a space, 65 and 4 digits, non-hex), which
+  needs no scratch configure (1.8 s). Seen red with the function emptied (7 of 10 cases failed).
+- CLI: `parse_new`/`parse_doctor` live in `cli_new_doctor.cpp` in the namespace `nnh::tool::cli_parts` (a nested
+  `detail` would hide `nnh::detail` from every file that includes `cli.hpp`). The name of `nnh new` is `Options::game`.
+  `nnh doctor --console` must parse as IPv4 and be on the LAN, else exit 2 before anything runs (question 8);
+  `nnh new` without a name, a second name or an unknown option exits 2; `--title ""` is accepted by the parser and
+  refused by `nnh new` itself (exit 1).
+- Tests: 279 → 287 (`test_build_info.cpp` 3, `test_cli.cpp` +5), all seen red first (a stubbed `version_line`, stub
+  parsers).
+- Stage end: `nnh_tool_tests` green, ctests `nnh_tool`, `nnh_pin_check`, `nnh_script_pc_smoke` green, `pc-debug` 0
+  warnings, `docs_tool.py check` 0 broken links. No 3DS check: `tools/nnh/` is not part of 3DS presets.
+- The default `ctest -LE consumer-full -j4` took 627 s here; its four `reload_*` failures were caused by editing
+  `tools/nnh/CMakeLists.txt` while it ran (those tests rebuild in the same build folder, which re-ran CMake on a
+  half-edited file) and passed when re-run (stage 2 end). Lesson kept: no CMake edits during a ctest run.
+
+### Stage 2 results (`nnh new`'s core)
+
+- `new/project_name`: the FR-4 rules in this order, each named in the refusal: empty, a path separator, `..`, a drive
+  letter, a leading `-`/`.`, more than 32 characters, a character outside `[a-z0-9_-]` (upper case included: "only
+  lowercase letters, digits, '_' and '-'"), not starting with a letter, a Windows device name, a target name
+  (`dist all clean install test help package package_source edit_cache rebuild_cache list_install_components nnh`,
+  `nnh_*`, `nnh-*`). The suggestion lower-cases, turns each run of other characters into one `-`, starts at the first
+  letter, cuts at 32 and appends `-game` to a device or target name; nothing when the result is still invalid
+  (`nnh_x`, `!!!`). Titles and authors: strict UTF-8 (no overlongs, surrogates or > U+10FFFF), ≤ 64 characters, no
+  C0/DEL/C1 controls, none of `" \ $ ; @ `` ` ``. `--unique-id`: `0x`/`0X` optional, hex only, the homebrew range.
+- `new/engine_location`: as designed; `engine_dir_from_option` makes `--engine` absolute (MSYS form, `\`, relative to
+  the current folder); the set-lines are quoted only when the path has a space (cmd as `set "NNHGE_ENGINE_DIR=..."`).
+  An engine folder = `CMakeLists.txt` with a line starting `project(nnhge VERSION x.y.z` + `cmake/nnh_game.cmake`.
+- Refinement (T2.4): `file(WRITE)` is a text write on Windows (`\n` became `\r\n`, seen in the stand-in), so the embed
+  script normalises line endings in hex: the bytes become `,xx` tokens and `,0d,0a` → `,0a` (a pair can only match at a
+  token boundary). The stand-in (`tools/nnh/tests/data/template_standin/`) is committed, its `greeting.txt.in` kept with
+  CRLF by `-text` in `.gitattributes`; `art/blob.png` holds NUL, CR LF and 0xFF bytes. The generated source is always
+  rewritten (the command only runs when a listed file or the script changed).
+- `.gitattributes`: `tools/nnh/template/** text eol=lf`, then `*.png`/`*.wav` under it `binary` again (a later line
+  wins), and the stand-in's `-text`.
+- Placeholders may hold digits (`@engine_sha256@`); a `@` not followed by `word@` is copied; values are never scanned
+  again; an unknown placeholder fails the render naming the stored file.
+- `new/new_fs_system`: Windows uses `GetFileAttributesW` (a reparse point, symbolic link or junction, is a link),
+  `CreateDirectoryW`, `_wopen(_O_CREAT | _O_EXCL | _O_BINARY)`, `DeleteFileW`, `RemoveDirectoryW` from UTF-8; elsewhere
+  `symlink_status`, `mkdir`, `open(O_CREAT | O_EXCL | O_CLOEXEC)`, `unlink`, `rmdir`. MinGW's
+  `std::filesystem::create_directory_symlink` reports "Function not implemented", so the real-link case of
+  `a_link_is_refused_unchanged` is skipped here (it runs on Linux) and the rule is checked with a fake `kind`.
+- Tests: 287 → 323 (`test_project_name.cpp` 8, `test_engine_location.cpp` 11, `test_template_render.cpp` 7,
+  `test_project_writer.cpp` 9 + 1 in `test_template_render.cpp`'s embed check), seen red against stubs (181 failing
+  checks; a stubbed render crashed on an empty file list, so the test now stops when the count is wrong).
+- Mutation spot-check, one per file, each killed: the Windows-device rule dropped (`names_windows_reserves_are_refused`);
+  the random range from 0 (`random_unique_ids_stay_in_the_homebrew_range`); case-sensitive folder comparison on Windows
+  (`the_set_lines_are_skipped_when_the_variable_already_names_the_folder`); an unknown placeholder copied
+  (`an_unknown_placeholder_is_an_error`; the first try, `continue` without advancing, hung the test: killed by hand);
+  the rollback skipped (three writer tests); `_O_EXCL` → `_O_TRUNC` (`the_system_create_is_exclusive`).
+- Stage end: `nnh_tool_tests` 323/323, ctests `nnh_tool`, `nnh_pin_check`, `nnh_script_pc_smoke` and the four
+  `reload_*` green, `pc-debug` 0 warnings.
+
+### Stage 3 results (the template)
+
+- The twelve files are embedded in the order of `NNH_TEMPLATE_FILES`; the render tests check the exact list, LF text,
+  no leftover `@word@`, no checkout path in any file, `nnh.toml` read back with no warning, the presets byte-equal to
+  `tests/consumer/CMakePresets.json` (CR removed from the checkout's copy), the `CMakeLists.txt` values (name, title,
+  ID, the guard, `VERSION_LESS 0.1`, the commented author, docs links per build kind) and every README section. Seen
+  red with only two files embedded (3 of the 6 new tests).
+- `CMakeLists.txt.in` follows the sketch, plus a commented `DESCRIPTION` line and one comment naming `BANNER`,
+  `BANNER_AUDIO`, `PRODUCT_CODE` (they belong after `CIA UNIQUE_ID`, so they can't be a commented keyword line of
+  their own). The author line, when not given: `# AUTHOR "Your name"  # shown in the HOME Menu (default: "Unknown")`.
+- Refinement (T3.3): the scene logs `play: started` on its **first `update()`**, not in `on_enter()`: `on_enter()` runs
+  at frame 0, before a test script attaches, and a script's frames start at 1 (the first run failed with "no matching
+  line in frames 1-61"). The script waits 10 frames after each `expect` before the next input (`nnh` warned that input
+  right after a log line may reach the console late).
+- The scene sets both screens' clear colours, draws the sprite, the title (`NNH_GAME_TITLE`, scale 2 with a shadow),
+  the controls, "Bye!" while quitting, and counts the blips that ended (`SoundFinished` for its own voice) on the
+  bottom screen with a stack buffer. `main.cpp` 19 lines, `play_scene.hpp` 32, `play_scene.cpp` 105.
+- Includes: `main.cpp` uses `"scenes/play_scene.hpp"`, the scene's source `"play_scene.hpp"` (relative to each file:
+  no include path is added for a game's own folders).
+- `nnh_template_check` (TITLE "Template Check") gets `nnh_engine_options` (`-Wall -Wextra -fno-exceptions -fno-rtti`)
+  and `-Werror`: 0 warnings in `pc-debug`, `pc-dev` and `pc-release`.
+- `nnh_template_smoke`: PASS in `pc-debug` and `pc-dev` (3.0 s), `nnh: PASS (19 lines, frames 1-66)`; the two PNGs of
+  `screenshot moved` checked; not registered in Release (no remote control). A copy expecting `play: blop` made it fail
+  (`nnh exited with 1`), seen once.
+- T3.4: the screenshot of the check game (`NNH_EXIT_AFTER_FRAMES=30`) and the script's `moved` pair read back: title
+  and controls on the top screen, the sprite (moved right to (244, 104) in the script), the bottom screen's text and
+  "Sounds finished: 1" after the blip.
+- Assets: `player.png` (155 bytes) drawn by `tools/nnh/make_template_player.py`; `blip.wav` = `tests/data/sounds/
+  ok_mono16.wav` (byte-equal to the consumer fixture's `blip.wav`), synthesized by `tests/data/sounds/make_sounds.py`.
+  Provenance in `tools/nnh/template/README.md`.
+- T3.5 licence note, files checked: `third_party/ryu/LICENSE-Boost` (Boost 1.0), the stb READMEs and the licence
+  blocks at the end of `stb_vorbis.c`, `stb_image.h`, `stb_truetype.h` (MIT or public domain). devkitPro's installed
+  `licenses/` folder (`C:/devkitPro/licenses/`) holds only its tools' `COPYING` files (3dslink, 3dstools, gdb, ...): no
+  newlib, libctru, citro2d or citro3d licence is installed, so the README names the licences and links newlib's
+  `COPYING.NEWLIB` upstream rather than a local file.
+
+### Stage 4 results (`nnh new` end to end)
+
+- `commands/new.cpp` (≈ 100 lines): name → title/author → unique ID → engine → render → write → print. It runs before
+  `net::startup()`. Output on Windows (checkout `nnh`, variable unset):
+  `nnh: created my-game/ (12 files; CIA UNIQUE_ID 0x28259)`, the local-engine line, the four set-lines, `next:` with
+  `cd`, `nnh run my-game --pc`, `nnh run my-game`. Refusals go to stderr, exit 1 (`nnh: "My Game" can't be a game
+  name: only lowercase letters, digits, '_' and '-' (try my-game)`); an engine refusal ends with ": nothing was
+  created".
+- ctest `nnh_new_files` (1.1 s; `NNHGE_ENGINE_DIR` unset through `ENVIRONMENT_MODIFICATION`): `--version`'s line,
+  `help`, exit 2 for an unknown option and no name, exit 1 for "My Game" (with the suggestion), `../escape`, an ID
+  outside the range and a folder that is not an engine, with nothing created by any refusal; the twelve files; no
+  checkout path in `CMakeLists.txt`; a second `new demo` refused; two runs with the same inputs byte-identical (the
+  name aside); two random IDs differ (a third draw before failing). Seen red before `command_new` was wired.
+- ctest `nnh_new_smoke` (label `consumer-full`, `RESOURCE_LOCK consumer`, folders under `build/<preset>/consumer/
+  new_smoke/`, deleted on success): Windows `pc-debug` 234 s. Local way: `nnh new` 0 s, configure `pc-dev` 16 s,
+  `nnh build demo --pc` 72 s (no warning), smoke script 3 s, PASS. Pinned way (archive packed with spec 032's
+  `consumer_pack_engine`, URL and SHA-256 pasted, variable unset, the archive really unpacked in `_deps/nnhge-src`):
+  configure 23 s, build 72 s, script 3 s, PASS.
+- T4.3, Windows, a project made by `nnh new demo` in `E:/RANDOM/n033/demo` (outside the repository), `NNHGE_ENGINE_DIR`
+  set, `DEVKITPRO` unset in the shell, no `scripts/dkp.sh`: `nnh build demo` (3ds-dev) 61 s, `nnh build demo
+  --release` 60 s (`demo.3dsx` 348,720 bytes), `cmake --build build/3ds-dev --target dist` 9 s (`dist/demo/demo.cia`
+  and `.3dsx`), 0 warnings each; `scripts/check_command_length.sh` PASS on both folders.
+- T4.4 budgets (AC-5), 7 warm runs interleaved with the repository's `hello` in the same series:
+
+  | Edit | Runs 1–5 | Median (7) |
+  |---|---|---|
+  | `src/scenes/play_scene.cpp` → simulator (`pc-dev`, the preset `nnh run --pc` uses) | 2.34–2.37 s | 2.36 s |
+  | `examples/hello/main.cpp` → simulator (`pc-debug`) | 2.03–2.14 s | 2.06 s |
+  | `play_scene.cpp` → `.3dsx` (`3ds-dev`) | 3.54–3.69 s | 3.61 s |
+  | `hello` → `.3dsx` (`3ds-dev`) | 3.51–3.60 s | 3.56 s |
+
+  Runs 6 and 7 had outliers (19.1 s, 13.2 s, 5.97 s: another process on the machine) and are left out of the ranges.
+  **The simulator budget (< 2 s) is not met on this machine today, by the template nor by `hello`**: `hello` measured
+  2.07–2.15 s before any change of this spec (stage 0) and 2.02–2.09 s at spec 032's end. Broken down with
+  `NINJA_STATUS=%e` in `pc-dev`: the template's compile 0.79 s (hello's 0.54 s: more headers at `-O2 -g`), the link
+  1.2–1.3 s (hello's 1.4 s); the rest is CMake and Ninja start-up. The template adds ≈ 0.25 s of compile over `hello`
+  and nothing to the link; the link of a static `-O2 -g` program dominates. Not fixed here (an engine build-speed
+  question, not this spec's code): flagged for the maintainer. The `.3dsx` budget (< 5 s) is met.
+- Disk of the generated project after the four builds: `pc-dev` 38 MB, `3ds-dev` 43 MB, `3ds-release` 36 MB (116 MB
+  in all, the compiler cache warm). `doctor`'s thresholds re-set from it: `FAIL` below 0.1 GB (one PC and one 3DS
+  build), `warn` below 0.35 GB (≈ 3× the three folders).
+
+### Stage 5 results (`nnh doctor`'s core)
+
+- `process_run`: Windows `CreateProcessW` (suspended, assigned to a job with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`,
+  then resumed, so the time limit also kills what the program started, e.g. `bash -lc`'s children), stdin `NUL`,
+  stdout and stderr on one pipe read with `PeekNamedPipe`; elsewhere `posix_spawnp` + `poll` + `SIGKILL`. After the
+  program exits, what is left in the pipe is read and the loop stops even if a grandchild still holds the pipe.
+  `windows_command_line` quotes like the C runtime (backslashes doubled only before a quote or the closing quote).
+- `tool_versions`: `cmake --version` must start with `cmake version `; Ninja's first line is the version; compilers by
+  their banner (`Optimizing Compiler Version`, `Apple clang version`, `clang version`, else GCC when the line names
+  `gcc`/`g++`/`c++`/`(GCC)`: the version after the last `)`, so Ubuntu's `13.3.0-6ubuntu2~24.04.1` package suffix is
+  skipped); numbers of at most 6 digits, 64 KiB read; pacman folders `<name>-<version>-<release>` (`devkitARM-r68-1` →
+  `r68`, `devkitARM-gdb-*` and `3ds-cmake-*` not taken for `devkitARM`/`cmake`). Recorded outputs in
+  `tools/nnh/tests/data/doctor/` (its README says which are real recordings and which are format samples).
+- `doctor_report`: `  <state:6><name:15><found>`, `        fix: <one line>` under every warn/FAIL, a blank line, the
+  verdicts; About has no verdict line (`DoctorGroup::verdict`), a group not checked shows only its verdict; the
+  not-required groups (About, Optional) say "N problems (not required)"; `--pc` keeps the 3DS checks and says
+  "not counted: --pc". Colours wrap only the state word (green/yellow/red).
+- `Probes` (`doctor/probes.hpp`): env, is_file, is_dir, read_file (bounded), list_dir, find_program, run (10 s, 64 KiB),
+  free_bytes, os_name (`RtlGetVersion`: "Windows 11 (10.0.26100)"; `/etc/os-release`'s `PRETTY_NAME`), and the two
+  network probes, `find_console` (the remembered console read from `nnh.ini`, never written, plus the broadcasts, or
+  only `--console`) and `fetch` (a uniquely named script in the system's temporary folder, `file(DOWNLOAD ... RANGE_START
+  0 RANGE_END 0 ... [TLS_CAINFO])`, removed after). Fakes: `tools/nnh/tests/doctor_fakes.hpp` (`FakeMachine`; the
+  network probes count their calls).
+- Tests: 323 → 348 (`test_process_run.cpp` 7 incl. the real-probe smoke, `test_tool_versions.cpp` 5,
+  `test_doctor_report.cpp` 6, the parsers' mini-fuzz in `test_fuzz_tool.cpp`), the first three files seen red against
+  stubs (10 failing tests; the report stub crashed on an empty verdict list). The real-probe case was written after
+  `probes_system.cpp` (a smoke of the real machine, not a rule).
+
+### Stage 6 results (`nnh doctor`'s checks)
+
+- Files: `doctor/checks.hpp` (context, one function per group, `run_doctor`), `checks_host.cpp` (About, Simulator, the
+  shared helpers, the SDL3 pins), `checks_3ds.cpp`, `checks_optional.cpp`, `checks_project.cpp`, `checks_network.cpp`,
+  `project_versions.{hpp,cpp}` (the cache and pin readers, mini-fuzzed), `fix_lines.{hpp,cpp}` (one table per
+  problem and host: Windows, Debian-like, other Linux, macOS), `doctor_limits.hpp`, `commands/doctor.cpp`;
+  `cmake/nnh_sdl3_pin.cmake` (the SDL3 version, URLs and hashes, included by `nnh_sdl3.cmake`; no behaviour change,
+  a unit test compares nnh's URLs with it).
+- Refinements, decided here:
+  - **Windows `DEVKITPRO` unset is `ok`**, not `warn` (the plan's table): `nnh` configures 3DS presets through
+    devkitPro's login shell, which sets it, so nothing `nnh` does fails; the line says so ("C:/devkitPro (DEVKITPRO
+    unset: fine, nnh's devkitPro shell sets it)"). A `warn` would have made AC-7's "every required check ok" false on
+    the maintainer's machine, where it is unset. `DEVKITPRO=/opt/devkitpro` (what devkitPro's installer sets) is read
+    as `C:/devkitPro`.
+  - The compiler CMake would pick: `CXX`, else `c++`, `g++`, `clang++`, and `cl` on Windows (`cl` run without
+    arguments: it prints its banner).
+  - Azahar is only looked for on `PATH`, never run (a GUI program might open a window for `--version`).
+  - The name column is 16 wide (`NNHGE_ENGINE_DIR`).
+  - The MSYS2 probe is one fixed `bash -lc` text with markers (`nnh-cmake=…`, `nnh-ninja=…`, the `cmake --version` line,
+    `nnh-ninja-version=…`): no user text in it.
+  - `--online` fetches the SDL3 package this host's first configure needs (MinGW package on Windows, the source archive
+    on Linux without a system SDL3 and on macOS, nothing with a system SDL3) and, in a game project, the engine URL of
+    `set(nnhge_url "…")` when it is a plain `https://`/`file://` URL (anything a CMake script would read is skipped);
+    the CA bundle passed is `CMAKE_TLS_CAINFO`, else Git for Windows' (what `nnh_sdl3.cmake` does).
+- Tests: 348 → 382 (`test_doctor_host.cpp` 10, `test_doctor_3ds.cpp` 8, `test_doctor_project.cpp` 9,
+  `test_doctor_network.cpp` 6, a mini-fuzz of the project readers), seen red against stub groups (the first project
+  tests failed, the rest crashed on missing groups). AC-6's list: CMake 3.20 `FAIL` + `https://cmake.org/download/`;
+  Ninja missing `FAIL` + `winget install Ninja-build.Ninja` / `sudo apt install ninja-build`; `DEVKITPRO` unset (Linux)
+  `FAIL` + `export DEVKITPRO=/opt/devkitpro`, devkitPro missing + the installer link; MSYS2 without Ninja `FAIL` +
+  `C:/devkitPro/msys2/usr/bin/bash.exe -lc "pacman -S --needed cmake ninja"`; no host compiler `FAIL` + the WinLibs
+  line; GCC 12 / clang 17 `warn`; engine 0.2.0 ≠ 0.1.0 `warn`; macOS `warn`; exit codes with `--pc`.
+- T6.5, fix lines verified: `winget show --id <id> --exact` found `Kitware.CMake`, `Ninja-build.Ninja`,
+  `BrechtSanders.WinLibs.POSIX.UCRT`, `Ccache.Ccache`, `Git.Git`; Ubuntu 24.04 packages `cmake`, `ninja-build`, `g++`,
+  `g++-13`, `pkg-config`, `libx11-dev libxext-dev libwayland-dev libxkbcommon-dev`, `libasound2-dev libpulse-dev`,
+  `ccache`, `git`, `ca-certificates` (the names SDL's Linux README and Ubuntu use); devkitPro's pages
+  `https://github.com/devkitPro/installer/releases` (Windows installer) and `https://devkitpro.org/wiki/devkitPro_pacman`
+  (Linux, macOS). The paste-able devkitPro form `C:/devkitPro/msys2/usr/bin/bash.exe -lc "pacman …"` was run (with the
+  harmless `pacman -Q cmake ninja`) in Git Bash, PowerShell and a cmd batch file: the same output in all three. No
+  install or `setx` line was run (they change the machine).
+- T6.6, real runs on Windows inside a generated project (`E:/RANDOM/n033/demo`, `NNHGE_ENGINE_DIR` set):
+  ```
+  About
+    ok    nnh              nnh 0.1.0 (protocol 1, link 1, windows-x64, from a source checkout)
+    ok    system           Windows 11 (10.0.26100)
+  Simulator
+    ok    cmake            4.4.2 (C:/Users/…/mingw64/bin/cmake.exe)
+    ok    ninja            1.13.2 (C:/Users/…/mingw64/bin/ninja.exe)
+    ok    C++ compiler     GCC 16.2.0 (C:/Users/…/mingw64/bin/c++.exe)
+    ok    SDL3             downloaded at the first PC configure (SDL3 3.4.20, pinned)
+  3DS
+    ok    devkitPro        C:/devkitPro (DEVKITPRO unset: fine, nnh's devkitPro shell sets it)
+    ok    devkitARM        r68 (C:/devkitPro/devkitARM)
+    ok    libctru          2.7.1
+    ok    citro2d          1.7.0
+    ok    citro3d          1.7.1
+    ok    devkitPro shell  C:/devkitPro/msys2 (cmake 4.0.2, ninja 1.13.2)
+    ok    host compiler    C:/Users/…/mingw64/bin/g++.exe
+  Optional
+    ok    ccache           4.13.6 (…/ccache.exe)
+    ok    git              2.55.0 (C:/Program Files/Git/mingw64/bin/git.exe)
+    warn  Azahar           not found (a 3DS emulator, to try .3dsx files on the PC)
+          fix: https://azahar-emu.org/
+  This project
+    ok    nnh.toml         E:/RANDOM/n033/demo (demo)
+    ok    engine           0.1.0 (build/pc-dev/CMakeCache.txt; this nnh: 0.1.0)
+    ok    presets          pc-dev, pc-release, 3ds-dev, 3ds-release
+    ok    NNHGE_ENGINE_DIR E:/RANDOM/…/spec-033 (NNHGE 0.1.0)
+    ok    disk             10.0 GB free
+
+  Simulator: ready
+  3DS: ready
+  Optional: 1 warning
+  Console: not checked (--console <ip> or --online)
+  Downloads: not checked (--online)
+  This project: ready
+  ```
+  exit 0, 2.09 s offline (AC-7 Windows). With `DEVKITPRO_MSYS2` at an empty folder: `FAIL devkitPro shell no
+  …/fake-msys2/usr/bin/bash.exe` + the installer link, "3DS: not ready (1 problem)", "Simulator: ready", exit 1; with
+  `--pc` exit 0 ("not counted: --pc"). With `DEVKITPRO` at a missing folder: `FAIL devkitPro` + the installer link,
+  exit 1. (An MSYS2 *without Ninja* could not be made on this machine without uninstalling devkitPro's Ninja: that
+  case is covered by `the_devkitpro_shell_needs_cmake_and_ninja_inside`.) `--console 8.8.8.8`: exit 2 before any
+  check. `--online` (2.7 s): `ok SDL3 https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-devel-
+  3.4.20-mingw.tar.gz` (the only URL; the project has no pin), `FAIL console none answered on the local network` + its
+  fix (no console was on), exit 1. AC-8: the listings (names, sizes, times) of the project folder (without `build/`)
+  and of `%APPDATA%/nnhge/` were equal before and after `--online`, and no `nnh-doctor-*.cmake` was left in `%TEMP%`.
+- `clang-format` (23.1.5) run on the new C++ files; the comments it re-wrapped badly were fixed by hand.
+- Stage end: `nnh_tool_tests` 382/382, ctests `nnh_tool`, `nnh_pin_check`, `nnh_new_files`, `nnh_template_smoke`,
+  `nnh_script_pc_smoke` green, `pc-debug` 0 warnings; `cmake/` changed, so `3ds-release` and `3ds-dev` rebuilt: 0
+  warnings, `hello.3dsx` SHA-256 `92e8dbd2…408f` unchanged.
+
+### Stage 7 results (versions on a protocol refusal)
+
+- `protocol_mismatch.{hpp,cpp}`: `protocol_mismatch_message(side, theirs, ours, nnh_version, project_engine)`; with the
+  project's engine known and different: "… use the nnh of NNHGE <x>, or change the project's engine pin to <ours>";
+  unknown: "… use the nnh of the game's engine release, or rebuild the game with NNHGE <ours>"; equal to this nnh's
+  (a stale game binary): "… rebuild the game (it was built with another engine than this project's)"; a refused
+  Hello has no version to name ("the game refused nnh's remote protocol version 1 (nnh 0.1.0; this project's engine:
+  0.2.0)…"). `serve_end_text` turns nnh serve's "the console speaks link protocol version N" into the Link message.
+- Refinement (T7.2): the versions reach the runner through `ScriptRunner::set_versions(nnh_version, project_engine)`,
+  not new `RunnerOptions` members: GCC's `-Wmissing-field-initializers` warns for every designated initializer that
+  leaves a member out, and 22 initialisations (run.cpp and the tests) leave them out. `commands/project.cpp`'s
+  `name_versions(run, built)` sets them once the game is built (the preset's `CMakeCache.txt` `NNHGE_VERSION`, the
+  engine really built), from `run.cpp` and `run_pc.cpp`.
+- The Hello's answer and refusal moved to `remote/script_runner_hello.cpp` (39 lines); `script_runner.cpp` 389 → 373.
+  A refusal is a `Rejected` record for sequence number 0 (the Hello's) before attaching.
+- `link/src/server_session.cpp` (the PC side of NNH Link's handshake, also compiled into the 3DS app's library): "the
+  console speaks another protocol version" → "the console speaks link protocol version N"; the console's own text is
+  unchanged (question 10).
+- Tests: 382 → 389 (`test_protocol_mismatch.cpp` 4, `test_script_runner.cpp` +2 (a game answering version 2, a game
+  rejecting the Hello), `test_serve.cpp` +1), each seen red (a stub builder; the runner's old message; a stub
+  `serve_end_text`). `nnh_link_tests` 55/55.
+- Stage end: `nnh_tool_tests` 389/389, ctests `nnh_tool`, `nnh_script_pc_smoke`, `nnh_template_smoke` green, `pc-debug`
+  0 warnings; `link/` changed, so `3ds-release` and `3ds-dev` rebuilt: 0 warnings, `hello.3dsx` unchanged
+  (`92e8dbd2…408f`).
+
+### Stage 8 results (mutants, docs, the verbatim walk)
+
+- T8.1, 19 hand mutants of the planned list, one at a time, each judged by `nnh_tool_tests` (filters named), every one
+  killed:
+
+  | Mutant | Killed by |
+  |---|---|
+  | the `..` rule dropped | `names_with_separators_dots_or_drive_letters_are_refused` |
+  | the suggestion's `-game` dropped | `a_refusal_suggests_a_valid_spelling_when_one_is_obvious` |
+  | an existing empty folder treated as non-empty | `an_existing_empty_folder_is_filled` |
+  | a link accepted | `a_link_is_refused_unchanged` |
+  | the release pin ignored | `a_release_nnh_pins_its_archive_and_needs_no_variable` |
+  | the set-lines printed when the variable already names the folder | `the_set_lines_are_skipped_when_the_variable_already_names_the_folder` |
+  | the checkout default not checked | `a_moved_checkout_is_refused_with_a_hint` |
+  | the unique-ID range off by one | `unique_ids_are_parsed_in_the_homebrew_range` |
+  | CMake's minimum raised to 3.26 / lowered to 3.20 | `cmake_missing_or_older_than_3_25_fails` (both) |
+  | GCC's minimum raised to 13 (minimum = checked) | `compilers_below_the_minimum_fail_and_unchecked_ones_warn` |
+  | `warn` counted in the exit code | `the_exit_code_counts_only_failures_of_required_groups` |
+  | `--pc` ignored | `the_exit_code_counts_only_failures_of_required_groups` |
+  | the Downloads group run without `--online` | `no_network_probe_runs_without_the_options` |
+  | `DEVKITPRO` unset not failing on Linux | `linux_needs_devkitpro_set_and_says_how` |
+  | the MSYS2 cmake/ninja check inverted (`||` → `&&`) | `the_devkitpro_shell_needs_cmake_and_ninja_inside` |
+  | the engine-version comparison inverted | `a_fresh_project_is_ready`, `another_engine_version_warns_with_the_fix` |
+  | FR-22's message without the project's version | `a_game_answering_another_version_gets_both_versions_and_the_fix`, `a_game_with_another_version_names_both_and_the_fix` |
+  | the program time limit ignored | `a_program_past_its_time_limit_is_killed` |
+
+  With stage 2's six (the device rule, the random range, the case-sensitive folder comparison, an unknown placeholder
+  copied, the rollback skipped, `_O_EXCL` → `_O_TRUNC`): 25 mutants, 25 killed. The guard inverted in
+  `CMakeLists.txt.in` was not killed by a unit test at first (only `nnh_new_smoke` would catch it): the render test now
+  checks the guard's exact line.
+- T8.2–T8.3 docs: `docs/guides/your-first-game.md` (new), `getting-started.md` rewritten (tools per system with the
+  `pacman` line for CMake and Ninja in devkitPro's MSYS2, `nnh` from a checkout, `nnh doctor`, `nnh new`, then "Working
+  inside the engine repository"), `nnh-tool.md` (`nnh new`, `nnh doctor` with its groups, report, exit codes and the
+  limits table, `--version`, the FR-22 message), the README's quick start, `game-projects.md` (`nnh new` generates it,
+  the root layout), `docs/tech/cmake.md` (the template's embedding, the pin cache entries, the four ctests,
+  `nnh_sdl3_pin.cmake`, the final pass's new steps), `project-structure.md`, `CLAUDE.md` (summary, layout, build lines),
+  `decisions.md` (D56 change-log line), the ROADMAP's budget paragraph. `docs_tool.py check`: 223 files, 0 broken links.
+- T8.4, "Your first game" followed on Windows in an empty folder (`E:/RANDOM/n033walk`, deleted after), with the
+  worktree as the engine checkout instead of a fresh clone: `cmake --build --preset pc-release --target nnh` (0
+  warnings), `PATH` extended, `nnh --version`, `nnh doctor` (exit 0; "This project: not checked" outside a project),
+  `nnh new my-game --title "My Game" --author "Me"` (the output the guide shows), `export NNHGE_ENGINE_DIR=…`,
+  `nnh run my-game --pc` (first configure downloaded SDL3, the engine built, the window showed "My Game", the sprite and
+  both screens' text: 91 s with `NNH_EXIT_AFTER_FRAMES=90`), the smoke script `nnh: PASS (19 lines, frames 1-66)`,
+  `kSpeed` changed and rebuilt, `assets/sfx/jump.wav` added with the guide's three lines (builds with 0 warnings, the
+  smoke script still passes). One fix to the page: the edit-and-rebuild time measured 2.3–2.6 s through `nnh build`
+  (`cmake --build` alone 2.3–2.4 s, `nnh build`'s no-op 0.8 s), so it says "two or three seconds" instead of "about
+  two". The keyboard map was corrected (arrows = D-Pad, I/J/K/L = Circle Pad).
+- T8.5: `scripts/vm_check.sh final` gains the generated project under `/tmp`: `nnh doctor` with `DEVKITPRO` unset (its
+  exit, the `FAIL devkitPro` line and fix, the verdicts) and set (exit and the whole report), `nnh build demo`,
+  `--release`, `dist` (the `.cia`), the command-length check on both 3DS folders, and the smoke script in the headless
+  simulator; `nnh_new_smoke` already runs with `ctest -L consumer-full`. Not run here (stage 9).
+
+### Console run (stage 10, for the maintainer; not run yet)
+
+From Git Bash on Windows, a project made by `nnh new` outside the repository, the worktree's `nnh` and engine (an Old
+3DS XL on the LAN; the maintainer presses Y once per step):
+
+```sh
+W=E:/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-033
+cmake --build --preset pc-release --target nnh        # in $W (or use $W/build/pc-debug/tools/nnh/nnh)
+export PATH="$PATH:/e/RANDOM/native-nintendo-homebrew-game-engine-nnhge/.claude/worktrees/spec-033/build/pc-release/tools/nnh"
+export NNHGE_ENGINE_DIR=$W
+mkdir -p E:/RANDOM/n033console && cd E:/RANDOM/n033console
+nnh new demo
+cd demo
+nnh doctor                                            # expect: every required check ok, exit 0
+nnh run demo --script tests/smoke.nnhs                # 3DS: Homebrew Launcher open, press Y -> nnh: PASS, exit 0
+nnh install demo                                      # 3DS: FBI -> Remote Install -> Receive URLs over the network
+```
+
+Questions after the install: "Does `demo` start from the HOME Menu with the NNHGE default icon and banner, and does the
+sprite move with the Circle Pad and the D-Pad, A play the blip and START quit? (yes/no)". Afterwards:
+`rm -rf E:/RANDOM/n033console` (and the title can be deleted with FBI).
+- T8.6, final Windows guards (2026-11-27): builds `pc-debug`, `pc-release` (full, 257 s), `3ds-dev`, `3ds-release`: 0
+  warnings each; `hello.3dsx` (3ds-release) `92e8dbd27aa0d256be55726e9d0d5dbae6de232d34a9783d72647505bdd2408f`,
+  unchanged from stage 0; longest 3DS command 2,533 characters (7.7 %) in both 3DS presets, as before; `ctest
+  -LE consumer-full -j4`: `pc-debug` 385/385 in 556 s (stage 1: 383 tests, 627 s), `pc-release` 343/343 in 126 s;
+  `ctest -L consumer-full -R nnh_new_smoke` (`pc-debug`) passed in 129 s (the compiler cache warm); `nnh_tool_tests`
+  389/389 (279 at stage 0). Free on `E:` 9.1 GB.
+
+### What is open (for stage 9 and 10)
+
+- The review and the Linux `final` pass (T9.1): `nnh_new_smoke` and the template's builds on GCC 13/14 and clang 18,
+  the real-link case of `a_link_is_refused_unchanged`, the exclusive create on Linux, the new `final` steps (`nnh
+  doctor` with and without `DEVKITPRO`, a generated project's 3DS builds). The template's sources were not built with
+  GCC 12 or clang 16/17 (they didn't exist at T0.3).
+- CMake 3.25 itself was not measured (T0.2): fetching a CMake binary onto the VM was not allowed in this session.
+- The simulator edit budget is settled: see "Decisions after the review" below.
+- AC-7's "MSYS2 without Ninja" was shown with an MSYS2 folder without bash (the unit test covers the Ninja case).
+- The console run (T10.1) and the status changes (T10.2).
+
+### Review round (2026-11-27): fixes
+
+The independent review asked for changes (two blockers). Every point fixed in the worktree, test first where it was
+code; the commits `1a4902b` (blockers and should-fix code), `0db9805` (nits and docs) and the plan update.
+
+- **Blocker 1, FR-6 with a real write failure:** `create_file` removes a half-written file when a write or the close
+  fails (the `NewFs::create_file` contract says so). `create_file_exclusive(path, bytes, fail_after)` is the real
+  create with a test hook that makes the real write fail after N bytes. Tests (seen red: the file stayed):
+  `a_real_write_failure_after_the_open_leaves_no_file`, `a_write_failing_mid_file_leaves_nothing_behind` (the third
+  file fails mid-write: no folder left).
+- **Blocker 2:** the FR-22 runner cases moved to `tools/nnh/tests/test_script_runner_hello.cpp`;
+  `test_script_runner.cpp` back to 385 lines.
+- **3, the time limit:** both loops of `run_program` check the deadline first in every iteration (a program that keeps
+  writing is killed; what it wrote past `max_output` is still drained only until the deadline). Test
+  `a_program_that_never_stops_writing_is_still_killed_at_its_limit` (a CMake script printing a 64 KiB line forever,
+  300 ms): it could **not** be seen red on Windows, where `nnh` reads faster than CMake writes, so the old loop still
+  reached its deadline check between writes; it stays as the regression test (Linux runs it at stage 9). Also on
+  Windows only the pipe and `NUL` are inherited (`PROC_THREAD_ATTRIBUTE_HANDLE_LIST`, falling back to the old call if
+  the list can't be built).
+- **4, the rollback's own failures:** `undo` collects what it could not remove; the error then says "could not remove
+  X, Y (remove them by hand)", exit 1. Test `what_the_rollback_cannot_remove_is_named` (red first).
+- **5, docs:** README's quick start sets `NNHGE_ENGINE_DIR`; getting-started says `--pc` shows the 3DS group without
+  counting it.
+- **6, `DEVKITPRO_MSYS2`:** cleaned (`\` → `/`, no trailing `/`); with a space in it, the fix is devkitPro's pacman page
+  instead of a command. Values in MSYS form (`/d/...`) of `DEVKITPRO`, `DEVKITPRO_MSYS2` and `NNHGE_ENGINE_DIR` get
+  "write it in drive form: D:/...". Tests (red first): `the_msys2_folder_is_normalised_and_a_space_gets_the_docs_link`,
+  `an_msys_form_path_outside_msys_gets_the_drive_form_hint`, `the_engine_variable_in_msys_form_and_in_the_repository`.
+- **7, AC-5 like for like** (`pc-debug` both, a project made by `nnh new` outside the repository configured with the
+  parent's SDL3, one warm-up then 7 interleaved runs, edit + `cmake --build --preset pc-debug --target <game>`):
+
+  | Run | 1 | 2 | 3 | 4 | 5 | 6 | 7 | Median |
+  |---|---|---|---|---|---|---|---|---|
+  | template `play_scene.cpp` | 2.48 | 2.51 | 2.43 | 2.45 | 2.50 | 2.57 | 2.47 | **2.48 s** |
+  | `examples/hello/main.cpp` | 2.26 | 2.26 | 2.10 | 2.17 | 2.17 | 2.00 | 2.06 | **2.17 s** |
+
+  Both over the 2 s budget; the template +0.31 s. The after-design Constitution Check now marks III ⚠️ and "What is
+  open" carries the question.
+- **Nits:** the set-lines single-quoted for Git Bash and PowerShell (`'''`, `''`), `set "X=..."` for cmd, a quoted
+  `setx` (test with `( ) ' $` and a backtick); `doctor --online`'s script built by `doctor_fetch_script`, which
+  refuses a URL or CA path with a quote, `$`, `;`, a backslash or a control character (test with hostile values), the
+  file created exclusively, removed if the write fails, passed as UTF-8; `embed_template.cmake` with one list of
+  binary and one of text extensions, failing on any other; the release pin's URL character set equal to doctor's
+  (three more `nnh_pin_check` cases, red first); the repository's `NNHGE_ENGINE_DIR` line "not set"; the generated
+  `CMakeLists.txt` with one docs line at the top, every line ≤ 120 columns (tested) and the commented `AUTHOR` aligned;
+  the template's `.gitattributes` `* text=auto eol=lf`; `CXX="ccache g++"` named ("CXX=... not found ...
+  CMAKE_CXX_COMPILER_LAUNCHER"); the OneDrive (reparse point) refusal documented; with `CMAKE_TLS_CAINFO` unset a
+  certificate failure gets the docs link, not a no-op `setx`; `<algorithm>` where `std::min` is used; a Linux clone
+  path in "Your first game".
+- Tests: 389 → 399 in `nnh_tool_tests`.
+- Guards after the round (Windows): `pc-debug`, `pc-release`, `3ds-dev`, `3ds-release` 0 warnings; `hello.3dsx`
+  `92e8dbd27aa0d256be55726e9d0d5dbae6de232d34a9783d72647505bdd2408f`, unchanged from the stage 0 baseline in this
+  worktree; `nnh_tool_tests` 399/399; `ctest --preset pc-debug -LE consumer-full -j4` 385/385 (556 s);
+  `nnh_new_smoke` passed (131 s); `docs_tool.py check` 223 files, 0 broken links. The Linux `final` pass that was
+  running during this round used the tree synced before it: the fixes above still need a `scripts/vm_check.sh fast`.
+
+### Linux final pass (2026-11-27): the template's smoke script
+
+The final pass (run from the tree before the review round) passed everything but one step: the generated project's
+smoke script in the headless simulator, `FAIL at tests/smoke.nnhs:6: expect "play: started": no matching line in frames
+1-61`. Reproduced on VM 120: the game logged `[f1 0.000s] play: started` and only then `[f1 0.067s] PC attached`. The
+connection to `nnh` completes during frame 1, after the first `update()`; the runner reads log lines only from its
+Hello's answer on (D28; `lines_from_before_the_hello_is_answered_are_not_matched` now pins this down), so on a fast
+machine the line came too early. Stage 3's refinement (log on the first `update()`) only moved the race. Fix: every
+`expect` of the smoke script waits for a line the script's own input causes. The scene logs `play: started` in
+`on_enter()` again (for people reading the log) and answers SELECT with `play: running, the sprite at (x, y)`; the
+script starts `wait 30`, `tap SELECT`, `expect "play: running" 10` (the consumer fixture's pattern), and waits 10 frames
+before `screenshot moved` (the warning nnh gave). The deterministic test
+`the_smoke_script_only_expects_lines_its_own_input_causes` (red on the old script) guards it. On VM 120 the generated
+project's script then passed three runs in a row (`nnh: PASS (23 lines, frames 1-96)`), and on Windows
+`nnh_template_smoke` passes.
+
+`nnh doctor` with `DEVKITPRO` unset on Linux: `FAIL devkitPro /opt/devkitpro found, but DEVKITPRO is not set (the 3DS
+presets read it)`, `fix: export DEVKITPRO=/opt/devkitpro`, exit 1: what FR-19, AC-7 and the plan's table ask (the
+presets read `$env{DEVKITPRO}`, so a 3DS configure would fail).
+
+### Decisions after the review
+
+- **Simulator edit budget (constitution III, AC-5/FR-17): exception approved by the maintainer 2026-11-27 for 1.0**
+  (option a). Like for like in `pc-debug` (7 warm interleaved runs): the template's `play_scene.cpp` edit median
+  2.48 s, the repository's `hello` 2.17 s, both over the < 2 s budget on the maintainer's machine; the link of a static
+  program dominates (1.2–1.4 s). The budget itself stays in the constitution and in `docs/tech/cmake.md`; the
+  follow-up is the "Engine build speed" item of the ROADMAP's "After 1.0".
+
+### Linux checks after the smoke fix (2026-11-27, VM 120)
+
+- `scripts/vm_check.sh fast` (FUZZ `tests/fuzz_remote`): GCC 13 `nnh_tests` 4143/0, `nnh_tool_tests` 401/0,
+  `nnh_assetc_tests` 333/0; ASan/UBSan 4143/0, 333/0, 401/0; `fuzz_remote` 639,560 runs in 121 s, exit 0.
+- Two findings on the way, both fixed:
+  - `a_program_that_never_stops_writing_is_still_killed_at_its_limit` failed on Linux: without
+    `cmake_minimum_required` CMake 3.28 warns about `while(TRUE)` (CMP0130) and the script ended at once. The script
+    now starts with `cmake_minimum_required(VERSION 3.25)` and loops on `n LESS 1000000000`; the test asks for
+    `timed_out` and at most `max_output` bytes (a slow machine prints nothing in 300 ms). Neither on Windows nor on
+    Linux does the old read loop fail this test (`nnh` reads faster than CMake writes; checked on the VM with the old
+    `process_run.cpp`): it is a regression test of the deadline-first loop, not a reproduction.
+  - **`scripts/vm_check.sh sync` left stale objects**: a file whose content changed was touched, but the next sync's
+    `tar -x` put the file's own older time back (its content unchanged by then), so a build folder not built in
+    between (here `build/asan`, last built by the earlier `final` from the older tree) kept objects of the old content
+    (`the_template_cmakelists_carries_name_title_id_and_the_guard` failed under ASan only). The sync now records each
+    file's time before extracting and keeps the newer one for an unchanged file; checked on the VM (a touch survives
+    the next sync).
+- The `final` step for the generated project, re-run on its own: `nnh doctor` without `DEVKITPRO` exit 1 with
+  `FAIL devkitPro /opt/devkitpro found, but DEVKITPRO is not set (the 3DS presets read it)` and
+  `fix: export DEVKITPRO=/opt/devkitpro`, "Simulator: ready", "3DS: not ready (1 problem)"; with it exit 0, "3DS:
+  ready"; `nnh build demo` and `--release` built, `dist` made `demo.cia`, longest 3DS command 3,207 characters (9.8 %);
+  the smoke script `nnh: PASS (23 lines, frames 1-96)`.
+
+### Console run (2026-11-27, Old 3DS XL)
+
+From `E:/RANDOM/n033console`, with the worktree's pc-release `nnh` on `PATH` and `NNHGE_ENGINE_DIR` set: `nnh new demo`
+(12 files), `nnh doctor` (Simulator, 3DS and This project ready; Azahar the one optional warning). `nnh run demo --script
+tests/smoke.nnhs` → `nnh: PASS (23 lines, frames 1-96)`: `play: running` at frame 31, `play: blip` at 42, `play: stopped
+at (244, 104)` at 83, `play: quit` at 95; the screenshot shows the title, the sprite and the controls line. `nnh install
+demo` → the first try got "FBI didn't answer in time" (the Windows Firewall prompt for the new pc-release `nnh.exe`); the
+second installed the `.cia`, and the maintainer confirmed it runs well from the HOME Menu.
+

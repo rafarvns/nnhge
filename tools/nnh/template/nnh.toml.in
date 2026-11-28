@@ -1,0 +1,3 @@
+# This file marks the folder as an NNHGE game project for nnh (@docs_base@/guides/game-projects.md).
+name = "@name@"
+engine = "@engine_version@"

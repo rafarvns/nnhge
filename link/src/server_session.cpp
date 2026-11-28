@@ -23,7 +23,9 @@ std::string why(Connection::Status status, const std::string& when) {
 std::string handshake(Connection& c, ServerHandshake& hs, const Hello& console, ServerHooks& hooks,
                       PairingGuard& guard, int timeout_ms) {
     for (const auto& out : hs.on_hello(console, hooks.secret_of(console.id))) c.send_frame(out);
-    if (console.version != kProtocolVersion) return "the console speaks another protocol version";
+    if (console.version != kProtocolVersion) { // nnh serve names both versions (spec 033 FR-22)
+        return "the console speaks link protocol version " + std::to_string(console.version);
+    }
     Frame f;
     while (!hs.done()) {
         const auto status = c.receive(f, timeout_ms);

@@ -23,6 +23,7 @@
 #include <deque>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "remote/game_records.hpp"
@@ -68,6 +69,12 @@ public:
 
     /// The game connected. Script mode sends Hello; interactive mode waits for the first command.
     void start();
+    /// The versions a protocol refusal names (spec 033 FR-22): this nnh's engine version and the project's ("" =
+    /// unknown). Before start().
+    void set_versions(std::string nnh_version, std::string project_engine) {
+        nnh_version_ = std::move(nnh_version);
+        project_engine_ = std::move(project_engine);
+    }
     /// The game didn't answer the Hello in time (Error).
     void no_answer();
     void on_line(const std::string& line);
@@ -123,6 +130,9 @@ private:
     // shared (script_runner.cpp)
     void send(wire::Message message, int line, const std::string& name);
     void send_hello();
+    // the Hello's answer or refusal (script_runner_hello.cpp, spec 033 FR-22)
+    void hello_record(const Record& record);
+    bool hello_refused(const Record& record);
     void send_bye();
     void tick(std::uint32_t frame);
     void screen(Record& record);
@@ -170,6 +180,7 @@ private:
 
     Script script_;
     RunnerOptions options_;
+    std::string nnh_version_, project_engine_; ///< named on a protocol refusal
     std::vector<Segment> segments_;
     std::size_t segment_ = 0;
     std::size_t next_event_ = 0;

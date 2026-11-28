@@ -1,0 +1,89 @@
+# @title@
+
+A game made with [NNHGE](https://github.com/rafarvns/nnhge) for the Nintendo 3DS and the PC simulator, started with
+`nnh new @name@`. The engine's guides and API pages: @docs_base@ (start with
+[Your first game](@docs_base@/guides/your-first-game.md)).
+
+## Build and run
+
+`nnh` builds and runs the game from this folder (or any folder below it). Check your tools first with `nnh doctor`.
+
+```sh
+nnh run @name@ --pc        # the simulator: a window with both screens
+nnh run @name@             # the 3DS: open the Homebrew Launcher, press Y; the log appears here
+nnh build @name@ --release # a Release .3dsx in build/3ds-release/
+```
+
+With CMake alone: `cmake --preset pc-dev` then `cmake --build --preset pc-dev` (presets `pc-debug`, `pc-dev`,
+`pc-release`, `3ds-debug`, `3ds-dev`, `3ds-release`; outputs in `build/<preset>/`).
+
+## The test script
+
+`tests/smoke.nnhs` drives the game: it taps A, pushes the Circle Pad, takes a screenshot and quits, checking the
+game's log lines on the way. Run it in the simulator or on the console (Development builds):
+
+```sh
+nnh run @name@ --pc --script tests/smoke.nnhs
+nnh run @name@ --script tests/smoke.nnhs
+```
+
+It prints `nnh: PASS` and exits 0, or names the line that failed. Screenshots and the log land in `build/logs/`.
+Script commands: @docs_base@/guides/testing-on-the-console.md.
+
+## What is where
+
+| Path | What |
+|---|---|
+| `src/main.cpp` | starts the engine and runs the first scene |
+| `src/scenes/play_scene.*` | the scene: input, sound, drawing, the log lines the test script checks |
+| `assets/` | images, sounds, maps and data, packed with the game (`assets/art/player.png`, `assets/sfx/blip.wav`) |
+| `tests/smoke.nnhs` | the test script |
+| `CMakeLists.txt` | the engine and the game (`nnh_add_game`) |
+| `CMakePresets.json`, `nnh.toml` | the presets `nnh` uses, and the file that marks this folder as an NNHGE project |
+
+A new source file goes into `SOURCES` in `CMakeLists.txt`; a new asset only needs to be in `assets/`.
+
+## Install on the HOME Menu (.cia)
+
+```sh
+nnh install @name@         # builds the .cia and sends it to FBI (Remote Install -> Receive URLs over the network)
+```
+
+`CIA UNIQUE_ID @unique_id@` in `CMakeLists.txt` identifies the game on the console: keep it for the life of the game
+(changing it installs a second copy). Icon, banner and title: @docs_base@/guides/packaging.md.
+
+## The engine
+
+@engine_state@
+
+- **Upgrading** a pinned project: paste the two lines (`nnhge_url`, `nnhge_sha256`) from a newer release's notes into
+  `CMakeLists.txt`, then build again. Use the `nnh` of the same release: the game and `nnh` must speak the same
+  protocol (`nnh doctor` checks it).
+- **A local engine** (an engine checkout, e.g. to try an engine change): set the environment variable
+  `NNHGE_ENGINE_DIR` to its folder; the presets hand it to CMake in place of the download. It applies to every
+  project on this computer while it is set.
+
+```sh
+export NNHGE_ENGINE_DIR=E:/src/nnhge       # Git Bash, Linux (add it to ~/.profile to keep it)
+$env:NNHGE_ENGINE_DIR = "E:/src/nnhge"     # PowerShell
+setx NNHGE_ENGINE_DIR E:/src/nnhge         # Windows, every new shell
+```
+
+## Version control
+
+`.gitignore` and `.gitattributes` are ready: `git init`, then commit everything (the build folders stay out).
+
+## Licence
+
+Your game's licence is your choice: this project has no `LICENSE` file until you add one.
+
+- **NNHGE** is under the zlib licence: it asks nothing of a shipped game (no notice needed in a binary).
+- What the engine builds into a game: **SDL3** (PC only), **libctru**, **citro2d** and **citro3d** (3DS) are zlib
+  too; **stb_vorbis** is MIT or public domain, your choice (the public-domain option needs no notice); **Ryu**
+  (Apache-2.0 or Boost 1.0; only in Debug/Development builds of games that use live values) needs no notice for a
+  binary under Boost 1.0. `stb_image` and `stb_truetype` run only in build tools, never in the game.
+- **devkitARM's runtime** (3DS): libstdc++ and libgcc come under the GCC Runtime Library Exception (no notice for a
+  normal build); the C library, **newlib**, is a collection of BSD-style licences, some of which ask for their notice
+  in a binary distribution. Crediting devkitPro and newlib in your game's credits or readme is a good habit; the
+  licences: https://sourceware.org/newlib/COPYING.NEWLIB.
+- No Nintendo SDK, leaked code or copyrighted assets: only your own work and assets you may use.

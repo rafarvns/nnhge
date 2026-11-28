@@ -11,6 +11,7 @@
 #include "serve/pairing_codes.hpp"
 #include "serve/pairs_file.hpp"
 #include "serve/serve_hooks.hpp"
+#include "protocol_mismatch.hpp"
 #include "test.hpp"
 
 using namespace nnh::tool;
@@ -126,4 +127,13 @@ NNH_TEST(shell_output_arrives_line_by_line_and_can_be_stopped) {
     });
     CHECK(stopped == -1 && lines.size() == 1);
     CHECK(run_shell_lines("exit 3", shell, [](const std::string&) { return true; }) == 3);
+}
+
+NNH_TEST(serve_names_the_versions_when_nnh_link_speaks_another_protocol) { // spec 033 FR-22
+    const std::string m = nnh::tool::serve_end_text("the console speaks link protocol version 2", "0.1.0");
+    CHECK(m == "NNH Link speaks link protocol version 2, nnh 0.1.0 speaks 1: use the NNH Link and the nnh of the same "
+               "NNHGE release");
+    CHECK(nnh::tool::serve_end_text("the console left", "0.1.0") == "the console left");
+    CHECK(nnh::tool::serve_end_text("the console speaks link protocol version x", "0.1.0") ==
+          "the console speaks link protocol version x");
 }

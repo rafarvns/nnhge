@@ -1,0 +1,2 @@
+g++-12 (Ubuntu 12.4.0-2ubuntu1~24.04.1) 12.4.0
+Copyright (C) 2022 Free Software Foundation, Inc.

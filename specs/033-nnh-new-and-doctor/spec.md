@@ -1,6 +1,6 @@
 # Spec 033: `nnh new`, `nnh doctor`, `nnh --version` and the newcomer docs
 
-Status: approved 2026-11-27 (the maintainer, every open question as recommended); FR-8, FR-9 and FR-10 amended
+Status: **implemented 2026-11-27** (review, Linux pass and console run passed; merged); approved 2026-11-27 (the maintainer, every open question as recommended); FR-8, FR-9 and FR-10 amended
 2026-11-27 by [plan 033](plan.md) to follow D55 (the local engine is the environment variable `NNHGE_ENGINE_DIR`, not a
 `CMakeUserPresets.json`), pending the maintainer's confirmation (plan question 1)
 Author: NNHGE maintainers · Date: 2026-11-26
@@ -215,7 +215,9 @@ and a rewritten getting-started page walk the whole path.
   Y; `nnh install demo` installs the `.cia` through FBI and the game starts from the HOME Menu with the default icon and
   banner. (FR-15, FR-16)
 - **AC-5** Budgets, measured and recorded in the ROADMAP table: one edit to the generated scene's source rebuilds in
-  < 2 s (simulator) and < 5 s (`.3dsx`). (FR-17)
+  < 2 s (simulator) and < 5 s (`.3dsx`). (FR-17) *Note 2026-11-27: the simulator part is not met on the maintainer's
+  machine (2.48 s, `hello` 2.17 s); the maintainer approved an exception for 1.0, recorded in
+  [plan 033](plan.md#decisions-after-the-review), with a follow-up after 1.0.*
 - **AC-6** `doctor` rule tests in `nnh_tool_tests` with faked tool outputs and a faked file system: CMake 3.20 → `FAIL`
   + fix; Ninja missing → `FAIL` + fix; `DEVKITPRO` unset → 3DS `FAIL` + the installer link; devkitPro's MSYS2 without
   Ninja → `FAIL` + the paste-able `pacman` line; no host compiler for 3DS → `FAIL` + fix; an untested compiler version →

@@ -7,6 +7,22 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
     error.clear();
     if (args.empty() || args[0] == "help" || args[0] == "--help" || args[0] == "-h") return true;
     const std::string& command = args[0];
+    if (command == "--version") { // spec 033 FR-1
+        out.command = Command::Version;
+        if (args.size() > 1) {
+            error = "--version takes nothing after it";
+            return false;
+        }
+        return true;
+    }
+    if (command == "new") {
+        out.command = Command::New;
+        return cli_parts::parse_new(args, out, error);
+    }
+    if (command == "doctor") {
+        out.command = Command::Doctor;
+        return cli_parts::parse_doctor(args, out, error);
+    }
     if (command == "build") {
         out.command = Command::Build;
     } else if (command == "run") {
@@ -109,8 +125,19 @@ bool parse_command_line(const std::vector<std::string>& args, Options& out, std:
 bool closes_game_at_end(const Options& options) { return !options.script.empty() && !options.keep_open; }
 
 const char* help_text() {
-    return "nnh — the NNHGE tool (specs 010, 011, 013)\n"
+    return "nnh — the NNHGE tool (specs 010, 011, 013, 033)\n"
            "\n"
+           "  nnh new <name> [--title <text>] [--author <text>] [--engine <path>] [--unique-id <hex>]\n"
+           "                                        create the game project <name>/ in this folder (a scene, a\n"
+           "                                        sprite, a sound, a test script, a .cia set up); --engine\n"
+           "                                        <path>: the local engine (NNHGE_ENGINE_DIR); --unique-id:\n"
+           "                                        the .cia's ID, 0x00300-0xF7FFF (default: a random one)\n"
+           "  nnh doctor [--online] [--console <ip>] [--pc]\n"
+           "                                        check the tools (and the project you are in): one line per\n"
+           "                                        check, a fix under each problem; exit 0 ready, 1 not.\n"
+           "                                        --online also tries the pinned downloads and finds the\n"
+           "                                        console; --console <ip> checks that console; --pc: the 3DS\n"
+           "                                        tools are reported but don't fail\n"
            "  nnh build <game> [--release] [--pc]   build a game for the 3DS (Development) or the PC\n"
            "  nnh run <game> [--release] [--console <ip>] [--pc] [--script <file.nnhs>] [--keep-open]\n"
            "                [--no-build] [--tunes <file>] [--hold] [--no-reload]\n"
@@ -135,6 +162,7 @@ const char* help_text() {
            "  nnh serve [--release]                 wait for NNH Link on the console: it lists the games,\n"
            "                                        asks for builds and starts them (spec 011); Ctrl+C stops\n"
            "  nnh unpair                            forget every console paired with nnh serve\n"
+           "  nnh --version                         this nnh's version, protocols, system and build kind\n"
            "  nnh help                              this text\n"
            "\n"
            "<game> is the target name given to nnh_add_game(). The console is found on the local network\n"

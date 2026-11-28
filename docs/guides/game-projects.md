@@ -1,9 +1,13 @@
 # Game projects
 
 A game can live in its own folder and its own repository, with NNHGE as a pinned dependency
-([spec 032](../../specs/032-game-projects/spec.md), decision D55). This page writes such a project by hand; `nnh new`
-(spec 033) will generate the same files. The engine repository's own `tests/consumer/` is a complete example, built by
-the engine's tests in every way below.
+([spec 032](../../specs/032-game-projects/spec.md), decision D55). `nnh new mygame` generates one
+([the nnh tool](nnh-tool.md#a-new-project-nnh-new), [Your first game](your-first-game.md)): the layout of the sketch
+below with everything at the root (`src/`, `assets/`, `tests/` next to `CMakeLists.txt`) and the pinned download of
+way 1, whose URL and SHA-256 stay empty, behind a guard, until `nnh` is a release build (spec 034): such a project
+builds with the local engine of `NNHGE_ENGINE_DIR`. This page explains the pieces, and how to write a project by hand
+or add the engine another way. The engine repository's own `tests/consumer/` is a complete example, built by the
+engine's tests in every way below.
 
 ```
 mygame/
